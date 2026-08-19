@@ -42,7 +42,7 @@ jobs:
         run: |
           mkdir -p package/zap/bin
           cp native/target/${{ matrix.target }}/release/${{ matrix.binary }} package/zap/bin/
-          cp install.sh README.md package/zap/
+          cp install.sh README.md CHANGELOG.md package/zap/
           cp -R docs examples package/zap/
           chmod 0755 package/zap/bin/${{ matrix.binary }}
           tar -czf "${{ matrix.archive }}" -C package zap
@@ -53,7 +53,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force package/zap/bin | Out-Null
           Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          Copy-Item install_windows.bat, README.md package/zap/
+          Copy-Item install_windows.bat, README.md, CHANGELOG.md package/zap/
           Copy-Item -Recurse docs, examples package/zap/
           Compress-Archive -Path package/zap/* -DestinationPath "${{ matrix.archive }}"
           (Get-FileHash "${{ matrix.archive }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.archive }}" | Out-File -Encoding ascii "${{ matrix.archive }}.sha256"

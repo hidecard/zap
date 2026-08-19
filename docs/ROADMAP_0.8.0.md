@@ -14,10 +14,22 @@ Zap v0.8.0 သည် language runtime ကို အလျင်အမြန် f
 | `zap lint` | Implemented |
 | `zap check --json` | Implemented |
 | Optional variable annotations | Implemented |
+| Function parameter/return annotations နှင့် runtime checks | Implemented in current v0.9 work |
+| Static signature validation in `zap check` | Implemented in current v0.9 work |
+| Structured JSON diagnostics (`kind`, `message`, `error`) | Implemented in current v0.9 work |
+| Checked integer arithmetic နှင့် modulo-by-zero diagnostics | Implemented in audit patch |
 | Structured `Result` | Planned |
 | `async/await` နှင့် channels | Planned |
 | HTTP client | Planned |
 | Package registry/lockfile | Planned |
+
+## Audit Findings နှင့် Production Gaps
+
+လက်ရှိ v0.9 development တွင် function parameter နှင့် return annotations များကို `number`၊ `text`၊ `bool`၊ `list`၊ `map`၊ `none` နှင့် `any` အတွက် runtime call checks ဖြင့် အကောင်အထည်ဖော်ထားပြီး typed-function regression test ပါဝင်သည်။ `zap check` တွင် function signature များအတွက် unknown annotation ကို static စစ်ဆေးပြီး `zap check --json` သည် `kind`၊ `message` နှင့် `error` fields ပါသော structured diagnostic ပြန်ပေးသည်။
+
+v0.8.0 comparative audit အရ Zap ၏ အဓိက production gaps များမှာ source span အပြည့်အစုံပါသော structured diagnostics၊ function call argument ၏ static type inference၊ explicit import/export modules၊ lockfile/checksum package workflow၊ HTTP/encoding/regex standard-library coverage၊ test filtering/coverage/fuzzing၊ နှင့် cancellation ပါသော async tasks ဖြစ်သည်။ Python ၏ typing နှင့် callable/generic annotations၊ JavaScript ၏ import/export/dynamic modules၊ Go ၏ modules/testing/fuzzing/profiling၊ Dart ၏ Futures/Streams/isolates တို့က mature ecosystem baseline အဖြစ် reference လုပ်ထားသည်။
+
+Audit patch တွင် signed integer arithmetic ကို checked operations အဖြစ် ပြောင်းလဲထားပြီး addition၊ subtraction၊ multiplication overflow နှင့် division/modulo by zero များကို process panic မဖြစ်စေဘဲ user-facing runtime error အဖြစ် ပြန်ပေးသည်။ Native regression tests သည် 24 မှ 26 tests သို့ တိုးပြီး အားလုံး pass ဖြစ်သည်။
 
 ## v0.9.0 Priority Order
 
@@ -64,6 +76,10 @@ Timeout၊ status code၊ headers၊ body size limit နှင့် TLS error �
 
 Generics၊ multiple inheritance၊ shared mutable threads၊ reflection၊ native mobile bindings နှင့် package registry ကို semantics နှင့် security boundary များ မတည်ငြိမ်မီ မထည့်သင့်သေးပါ။
 
+## Detailed Implementation Checklist
+
+အလုပ်တစ်ခုချင်းစီ၏ implementation order၊ release mapping၊ security checklist နှင့် acceptance criteria အပြည့်အစုံကို [`TODO_ZAP_MM.md`](TODO_ZAP_MM.md) တွင် ဖတ်ရှုနိုင်သည်။
+
 ## Release Acceptance Criteria
 
 - Native tests များ pass ဖြစ်ရမည်။
@@ -71,3 +87,5 @@ Generics၊ multiple inheritance၊ shared mutable threads၊ reflection၊ nati
 - README၊ Syntax Guide၊ Burmese Learning Guide နှင့် Usage Guide တို့တွင် implemented/proposed boundary တူညီရမည်။
 - CLI error များသည် non-zero exit code ပြန်ပေးရမည်။
 - Release archive တစ်ခုစီတွင် SHA-256 checksum ပါရမည်။
+- Arithmetic overflow နှင့် zero-division regression tests pass ဖြစ်ရမည်။
+- Audit တွင် ဖော်ပြထားသော implemented/proposed feature boundary ကို Burmese guide တွင်လည်း တူညီစွာ ထိန်းသိမ်းရမည်။

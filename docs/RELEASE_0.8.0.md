@@ -14,13 +14,13 @@ zap check --json .
 `zap check --json` သည် `zap.toml`၊ package name၊ version နှင့် entry file ကို machine-readable JSON အဖြစ် ပြန်ပေးသည်။ Editor၊ CI နှင့် automation scripts များတွင် အသုံးပြုနိုင်သည်။
 
 ```json
-{"ok":true,"project":"my-zap-project@0.8.0 (main.zp)"}
+{"ok":true,"project":"my-zap-project 0.8.0 (main: main.zp)"}
 ```
 
 မမှန်သော project ဖြစ်ပါက—
 
 ```json
-{"ok":false,"error":"missing zap.toml in ..."}
+{"ok":false,"kind":"ProjectError","message":"cannot read zap.toml: No such file or directory","error":"cannot read zap.toml: No such file or directory"}
 ```
 
 ## Standard Library
@@ -41,7 +41,7 @@ v0.8.0 သည် v0.7.1 တွင် ပြင်ဆင်ထားသော OOP
 
 ## Verification
 
-Release မတင်မီ `cargo test`၊ `git diff --check`၊ `zap lint` နှင့် `zap check --json` ကို CI/local workflow တွင် run လုပ်ရမည်။ Cross-platform release archives များတွင် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 binaries၊ README၊ docs၊ examples နှင့် SHA-256 checksum ပါဝင်သည်။
+Release မတင်မီ `cargo test`၊ `cargo check`၊ `git diff --check`၊ `zap lint` နှင့် `zap check --json` ကို CI/local workflow တွင် run လုပ်ရမည်။ Native regression tests 25 ခု pass ဖြစ်ရမည်။ Cross-platform release archives များတွင် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 binaries၊ README၊ docs၊ examples နှင့် SHA-256 checksum ပါဝင်သည်။
 
 ## မပါဝင်သေးသောအရာများ
 

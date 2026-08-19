@@ -8,7 +8,8 @@ Zap သည် စတင်လေ့လာသူများအတွက် synta
 
 | အချက် | အခြေအနေ |
 |---|---|
-| Current development line | `v0.8.0` |
+| Stable release line | `v0.8.0` |
+| Current development line | `v0.9.0` development |
 | Runtime | Native Rust runtime |
 | CLI | `zap` |
 | Source file | `.zp`၊ ဥပမာ `main.zp` |
@@ -422,13 +423,13 @@ Production compiler၊ bytecode execution၊ package registry နှင့် fr
 
 ### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Native runtime version `0.8.0`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ class/parent validation၊ inherited constructors၊ method override၊ `zap build`၊ explicit `zap run`၊ `zap lint`၊ `zap check --json`၊ updated documentation နှင့် 24-test regression suite များ ပါဝင်သည်။
+Native runtime version `0.8.0`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ class/parent validation၊ inherited constructors၊ method override၊ `zap build`၊ explicit `zap run`၊ `zap lint`၊ `zap check --json`၊ updated documentation နှင့် 25-test regression suite များ ပါဝင်သည်။ v0.9 development line တွင် function parameter/return annotations၊ runtime type checks၊ static signature validation နှင့် structured JSON diagnostics ကို ထပ်မံတည်ဆောက်ထားသည်။
 
 ### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.8.0 သည် OOP audit အပေါ် developer tooling foundation အဖြစ် `zap lint` နှင့် `zap check --json` ကို ထည့်သွင်းသော release ဖြစ်သည်။
+Structured `Result` error model၊ function-call static type inference၊ file/line/column JSON fields၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.8.0 သည် OOP audit အပေါ် developer tooling foundation အဖြစ် `zap lint` နှင့် `zap check --json` ကို ထည့်သွင်းသော stable release ဖြစ်ပြီး v0.9 development line သည် type safety နှင့် diagnostics ကို ဦးစားပေးသည်။
 
-`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.8.0.md`](docs/ROADMAP_0.8.0.md)၊ release notes ကို [`docs/RELEASE_0.8.0.md`](docs/RELEASE_0.8.0.md)၊ v0.7 history ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
+`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.8.0.md`](docs/ROADMAP_0.8.0.md)၊ stable release notes ကို [`docs/RELEASE_0.8.0.md`](docs/RELEASE_0.8.0.md)၊ v0.9 development release notes ကို [`docs/RELEASE_0.9.0.md`](docs/RELEASE_0.9.0.md)၊ change log ကို [`CHANGELOG.md`](CHANGELOG.md)၊ v0.7 history ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
 
 ## Documentation Map
 
@@ -438,6 +439,9 @@ Structured `Result` error model၊ source line/column diagnostics၊ HTTP client
 | [`docs/LANGUAGE_GUIDE.md`](docs/LANGUAGE_GUIDE.md) | Complete language usage guide |
 | [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) | Syntax နှင့် code reference |
 | [`docs/USAGE.md`](docs/USAGE.md) | Installation၊ CLI နှင့် usage workflow |
+| [`CHANGELOG.md`](CHANGELOG.md) | Version changes နှင့် verified development history |
+| [`docs/RELEASE_0.9.0.md`](docs/RELEASE_0.9.0.md) | v0.9.0 development scope နှင့် limitations |
+| [`docs/TODO_ZAP_MM.md`](docs/TODO_ZAP_MM.md) | ကျန်ရှိ feature များအတွက် မြန်မာ To-do list |
 | [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) | v0.7.0 implemented scope နှင့် v0.8.0 priorities |
 | [`docs/RELEASE_0.7.1.md`](docs/RELEASE_0.7.1.md) | OOP audit patch release notes နှင့် verification |
 | [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) | v0.6.0 implementation history |

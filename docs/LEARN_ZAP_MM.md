@@ -951,5 +951,35 @@ zap check --json .
 4. `zap lint` ဖြင့် tabs၊ trailing whitespace နှင့် long lines စစ်နိုင်ခြင်း။
 5. `zap check --json` ဖြင့် project diagnostics ကို automation-friendly JSON အဖြစ် ရယူနိုင်ခြင်း။
 6. Implemented features နှင့် roadmap-only features ကို documentation မှ ခွဲခြားနားလည်နိုင်ခြင်း။
+7. Integer overflow၊ division by zero နှင့် modulo by zero များသည် runtime error အဖြစ် ပြန်လာပြီး process မပျက်စီးစေရန် နားလည်နိုင်ခြင်း။
+8. Function parameter နှင့် return type annotation များကို အသုံးပြုနိုင်ခြင်း။
 
-နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။
+### Function Type Annotation အသစ်
+
+Zap တွင် function signature ကို အောက်ပါအတိုင်း ရေးနိုင်သည်။ `number`၊ `text`၊ `bool`၊ `list`၊ `map`၊ `none` နှင့် `any` တို့ကို လက်ရှိ runtime မှ စစ်ဆေးပေးသည်။
+
+```zap
+fn add(a: number, b: number) -> number:
+    return a + b
+
+say add(2, 3)
+```
+
+`add("wrong", 3)` ကဲ့သို့ annotation နှင့် မကိုက်ညီသော argument ကို ပေးပါက function မလုပ်ဆောင်ဘဲ `type mismatch` runtime error ပြန်ပေးမည်။ `zap check` သည် function signature ထဲရှိ မသိသော annotation များကို static စစ်ဆေးပေးပြီး `zap check --json` သည် အောက်ပါပုံစံဖြင့် machine-readable diagnostic ပြန်ပေးနိုင်သည်။
+
+```json
+{
+  "ok": false,
+  "kind": "TypeError",
+  "message": "TypeError at main.zp:1: unknown type annotation 'unknown_type'",
+  "error": "TypeError at main.zp:1: unknown type annotation 'unknown_type'"
+}
+```
+
+လက်ရှိ static check သည် annotation syntax နှင့် allowed type names ကို စစ်ဆေးသည့်အဆင့် ဖြစ်သည်။ Function call တစ်ခုချင်းစီ၏ argument type ကို static inference ဖြင့် စစ်ဆေးခြင်းကို နောက်အဆင့်တွင် ဆက်လက်တိုးချဲ့မည်။
+
+### v0.9.0 Audit Note
+
+လက်ရှိ stable v0.8.0 runtime တွင် structured `Result`၊ function-call static type inference၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များ မပါဝင်သေးပါ။ လက်ရှိ development build တွင် function parameter/return annotation runtime checks၊ static signature validation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ ၎င်းတို့သည် v0.9.0 အတွက် အဆင့်လိုက်တည်ဆောက်မည့် roadmap features များ ဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
+
+နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ comparative audit ကို [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။
