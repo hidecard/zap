@@ -115,9 +115,10 @@ pub(crate) fn evaluate_with_propagation(
     if let Some(inner) = trimmed.strip_suffix('?') {
         let value = expression(inner.trim(), vars, funcs)?;
         match value {
-            Value::ResultOk(value) => Ok(EvalOutcome::Value(*value)),
+            Value::ResultOk(value) | Value::OptionSome(value) => Ok(EvalOutcome::Value(*value)),
             Value::ResultErr(error) => Ok(EvalOutcome::Propagate(Value::ResultErr(error))),
-            _ => Err("? expects a Result value".into()),
+            Value::OptionNone => Ok(EvalOutcome::Propagate(Value::OptionNone)),
+            _ => Err("? expects a Result or Option value".into()),
         }
     } else {
         Ok(EvalOutcome::Value(expression(trimmed, vars, funcs)?))

@@ -532,7 +532,7 @@ fn rejects_question_operator_for_non_result_values() {
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("? expects a Result value"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("? expects a Result or Option value"));
 }
 
 #[test]
@@ -888,4 +888,22 @@ fn rejects_non_text_map_key_annotations() {
     let _ = std::fs::remove_dir_all(&root);
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("expects map<number, text>"));
+}
+
+#[test]
+fn propagates_option_values_with_question_operator() {
+    let file = std::env::temp_dir().join("zap_option_question_test.zp");
+    std::fs::write(
+        &file,
+        "fn read_name():\n    let value = some(\"Zap\")\n    return value?\nfn missing_name():\n    return option_none()?\nsay read_name()\nsay is_option_none(missing_name())\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Zap\ntrue\n");
 }
