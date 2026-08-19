@@ -285,9 +285,11 @@ fn redact_sensitive(message: &str) -> String {
                         while cursor < bytes.len() && bytes[cursor] != quote {
                             cursor += 1;
                         }
-                        (cursor < bytes.len())
-                            .then_some(cursor + 1)
-                            .unwrap_or(cursor)
+                        if cursor < bytes.len() {
+                            cursor + 1
+                        } else {
+                            cursor
+                        }
                     } else {
                         redacted[cursor..]
                             .find(|character: char| {

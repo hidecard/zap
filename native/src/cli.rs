@@ -23,7 +23,7 @@ fn parse_test_args(args: &[String]) -> Result<(PathBuf, TestOptions), String> {
                 return Err(format!("unknown test option: {value}"));
             }
             value => {
-                if dir != PathBuf::from("tests") {
+                if dir != Path::new("tests") {
                     return Err("test command accepts only one directory".to_string());
                 }
                 dir = PathBuf::from(value);
