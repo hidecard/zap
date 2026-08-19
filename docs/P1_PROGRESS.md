@@ -15,10 +15,11 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 | Explicit `super.init()` dispatch | Implemented | Native OOP integration test |
 | Explicit `super.method()` dispatch | Implemented | Parent override integration test |
 | Runtime map-key validation | Implemented | Full runtime annotation path covered |
+| Result/Option question-operator propagation | Implemented | Result and Option propagation regression tests |
 
 ## Current verification baseline
 
-The native Rust suite currently passes **52 tests**: 25 unit tests and 27 integration tests. Formatting passes with `cargo fmt --all -- --check`. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **53 tests**: 25 unit tests and 28 integration tests. Formatting passes with `cargo fmt --all -- --check`. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
 
 ## Remaining P1 gates
 

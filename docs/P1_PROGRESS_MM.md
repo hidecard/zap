@@ -15,10 +15,11 @@ Zap P1 Language Core ကို အဆင့်လိုက် အကောင်
 | Explicit `super.init()` dispatch | ပြီးစီး | Native OOP integration test |
 | Explicit `super.method()` dispatch | ပြီးစီး | Parent override integration test |
 | Runtime map-key validation | ပြီးစီး | Runtime annotation path အပြည့်စုံ စစ်ဆေး |
+| Result/Option question-operator propagation | ပြီးစီး | Result နှင့် Option propagation regression tests |
 
 ## လက်ရှိ verification baseline
 
-Native Rust test suite သည် လက်ရှိ **test 52 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 25 ခုနှင့် integration test 27 ခု ပါဝင်ပါသည်။ `cargo fmt --all -- --check` လည်း pass ဖြစ်ပါသည်။ Local sandbox တွင် Rust Clippy component မပါသောကြောင့် Clippy ကို local မှ verify မလုပ်နိုင်သေးပါ။ ထို့ကြောင့် Clippy ကို CI/environment release gate အဖြစ် ဆက်လက်ထားရှိပြီး local အောင်မြင်သည်ဟု မကြေညာထားပါ။
+Native Rust test suite သည် လက်ရှိ **test 53 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 25 ခုနှင့် integration test 28 ခု ပါဝင်ပါသည်။ `cargo fmt --all -- --check` လည်း pass ဖြစ်ပါသည်။ Local sandbox တွင် Rust Clippy component မပါသောကြောင့် Clippy ကို local မှ verify မလုပ်နိုင်သေးပါ။ ထို့ကြောင့် Clippy ကို CI/environment release gate အဖြစ် ဆက်လက်ထားရှိပြီး local အောင်မြင်သည်ဟု မကြေညာထားပါ။
 
 ## ကျန်ရှိသေးသော P1 release gates
 
