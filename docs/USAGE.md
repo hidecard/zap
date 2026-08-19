@@ -1,4 +1,4 @@
-# Zap 0.7.0 — Complete Usage Guide
+# Zap 0.7.1 — Complete Usage Guide
 
 စတင်လေ့လာသူများအတွက် lesson-based Burmese course ကို [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md) တွင် ဖတ်ရှုနိုင်သည်။
 
@@ -228,7 +228,7 @@ Zap binary ကို ဖယ်ရှားခြင်းသည် system ပေ
 
 ## 10. Current limitations
 
-Zap 0.7.0 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Full static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ v0.7.0 တွင် `is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`၊ `read_lines` နှင့် `write_lines` ပါဝင်သည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
+Zap 0.7.1 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Full static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ v0.7.1 တွင် `is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`၊ `read_lines` နှင့် `write_lines` ပါဝင်ပြီး OOP class validation၊ inherited constructors နှင့် method override behavior ကို audit ပြင်ဆင်ထားသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
 
 ## 11. Project files
 

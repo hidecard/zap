@@ -758,7 +758,7 @@ say directory["primary"].name_value()
 
 ### 15.8 OOP အတွက် သတိပြုရန်
 
-v0.6.0 တွင် class၊ object၊ constructor၊ methods၊ properties၊ `self` နှင့် single inheritance ကို အသုံးပြုနိုင်သည်။ Interfaces၊ abstract classes၊ private fields၊ generics နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။ Class name များကို စာလုံးကြီးဖြင့် စတင်ရေးခြင်းသည် ဖတ်ရလွယ်ကူစေသည်။
+v0.7.0 တွင် class registry validation၊ class၊ object၊ constructor၊ methods၊ mutable properties၊ `self`၊ parent constructor initialization၊ method override နှင့် single inheritance ကို အသုံးပြုနိုင်သည်။ မရှိသော class သို့မဟုတ် parent class ကို အသုံးပြုပါက runtime/class declaration error ပြန်ပေးသည်။ Interfaces၊ abstract classes၊ private fields၊ generics၊ explicit `super` method calls နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။ Class name များကို စာလုံးကြီးဖြင့် စတင်ရေးခြင်းသည် ဖတ်ရလွယ်ကူစေသည်။
 
 ## OOP Learning Checkpoint
 
@@ -785,8 +785,9 @@ OOP lesson အပါအဝင် beginner foundation ပြည့်စုံရ
 5. File၊ path၊ environment နှင့် time APIs များ အသုံးပြုနိုင်ခြင်း။
 6. Module နှင့် `zap.toml` project တည်ဆောက်နိုင်ခြင်း။
 7. `zap fmt`၊ `zap check`၊ `zap build` နှင့် `zap test` workflow အသုံးပြုနိုင်ခြင်း။
-8. Class၊ object၊ constructor၊ method နှင့် inheritance အသုံးပြုနိုင်ခြင်း။
-9. OOP mini project တစ်ခုကို ကိုယ်တိုင်ရေး၊ စမ်းသပ်ပြီး ပြင်ဆင်နိုင်ခြင်း။
+8. Class၊ object၊ constructor၊ method၊ property state နှင့် inheritance အသုံးပြုနိုင်ခြင်း။
+9. Unknown class/parent error များကို နားလည်ပြီး စစ်ဆေးနိုင်ခြင်း။
+10. OOP mini project တစ်ခုကို ကိုယ်တိုင်ရေး၊ စမ်းသပ်ပြီး ပြင်ဆင်နိုင်ခြင်း။
 
 ## OOP Lesson အတွက် Test Example
 
@@ -807,7 +808,7 @@ say "OOP test passed"
 
 ## Current Stable Boundary
 
-OOP feature သည် v0.6.0 native runtime တွင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ v0.7.0 တွင် collection နှင့် line-based file helpers များ ထပ်မံပါဝင်လာသည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
+OOP feature သည် v0.7.0 native runtime တွင် class validation၊ parent constructor initialization၊ method override နှင့် mutable object state အပါအဝင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ v0.7.0 တွင် collection နှင့် line-based file helpers များလည်း ပါဝင်လာသည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
 
 သင်ခန်းစာအားလုံးပြီးနောက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) နှင့် [`ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တို့ကို ဆက်လက်ဖတ်ရှုပါ။
 
