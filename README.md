@@ -8,6 +8,9 @@
 [![Runtime: Rust](https://img.shields.io/badge/runtime-Rust-orange.svg)](native/)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/hidecard/zap/actions)
 [![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Docs-0969da.svg)](https://github.com/hidecard/zap/tree/master/docs)
+
+**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md)
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
@@ -27,6 +30,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The `v0.9
 | Platforms | Linux, Windows, and macOS ARM64 release workflows |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
+| Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | 25 native unit tests and 47 integration tests passing |
 
 ## Native Runtime Architecture
