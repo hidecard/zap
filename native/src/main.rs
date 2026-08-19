@@ -1,3 +1,5 @@
+#![allow(clippy::missing_const_for_thread_local)]
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -605,7 +607,7 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after contains".into());
                 }
                 Value::Bool(match collection {
-                    Value::List(xs) => xs.iter().any(|x| *x == item),
+                    Value::List(xs) => xs.contains(&item),
                     Value::Text(s) => match item {
                         Value::Text(q) => s.contains(&q),
                         _ => false,
@@ -1272,8 +1274,8 @@ fn indented(lines: &[String], start: usize) -> (Vec<String>, usize) {
     let mut body = Vec::new();
     while i < lines.len() && (lines[i].starts_with(' ') || lines[i].starts_with('\t')) {
         let line = &lines[i];
-        let normalized = if line.starts_with('\t') {
-            line[1..].to_string()
+        let normalized = if let Some(stripped) = line.strip_prefix('\t') {
+            stripped.to_string()
         } else {
             line.strip_prefix("    ").unwrap_or(line).to_string()
         };
@@ -1685,9 +1687,7 @@ fn execute_lines(
                     .collect::<Vec<_>>();
                 for (name, function) in inherited {
                     let child_name = format!("{class_name}.{name}");
-                    if !funcs.contains_key(&child_name) {
-                        funcs.insert(child_name, function);
-                    }
+                    funcs.entry(child_name).or_insert(function);
                 }
             }
             i = end;
@@ -2116,6 +2116,7 @@ fn static_expr_type(
     None
 }
 
+#[allow(clippy::too_many_arguments)]
 fn validate_static_call(
     name: &str,
     args: &[String],
