@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v0.8.0 Stable**
+**လက်ရှိအခြေအနေ — v0.9.0 release ပြီးနောက် native runtime hardening**
 
-Zap v0.8.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ `zap run`၊ `zap lint`၊ `zap check --json` နှင့် cross-platform release workflow များ ပါဝင်ပြီး native integration tests 25 ခု အောင်မြင်နေသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
+Zap v0.9.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ structured `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native module loader တွင် explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးပြီး native integration tests 31 ခု အောင်မြင်နေသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -29,6 +29,10 @@ Zap v0.8.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 - [x] `zap run`၊ `zap init`၊ `zap build`၊ `zap test`၊ `zap fmt` နှင့် `zap lint`
 - [x] `zap check --json` machine-readable diagnostics
 - [x] Local module resolution (`main directory`၊ `modules/`၊ `lib/`)
+- [x] Explicit `import`/`export` visibility semantics နှင့် private symbol isolation
+- [x] Canonical-path module cache ဖြင့် module တစ်ခုကို run တစ်ကြိမ်သာ load လုပ်ခြင်း
+- [x] Active import stack ဖြင့် circular import detection
+- [x] Absolute module path rejection နှင့် module boundary hardening
 - [x] Cross-platform release workflow နှင့် SHA-256 checksums
 - [x] Integer overflow နှင့် division/modulo-by-zero runtime safety patch
 - [x] Burmese beginner guide၊ syntax guide၊ usage guide နှင့် audit document
@@ -52,7 +56,7 @@ Zap v0.8.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 - [ ] `project.rs` — manifest၊ module၊ project validation
 - [ ] `cli.rs` — command-line argument handling
 - [ ] Public/internal API boundary များကို ရှင်းလင်းစွာ သတ်မှတ်ရန်။
-- [ ] Architecture ခွဲပြီးနောက် ရှိပြီးသား test 25 ခုလုံး pass ဖြစ်ရမည်။
+- [ ] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်ရမည်။
 
 ## 2.2 Source location နှင့် diagnostics
 
@@ -71,16 +75,20 @@ Zap v0.8.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 ```
 
 - [x] `zap check --json` တွင် `kind`၊ `message` နှင့် `error` fields ထည့်ရန်။
-- [ ] `file`၊ `line` နှင့် `column` ကို JSON fields အဖြစ် သီးခြားထည့်ရန်။
+- [x] `file`၊ `line` နှင့် `column` ကို JSON fields အဖြစ် သီးခြားထည့်ရန်။
 - [ ] Human-readable error နှင့် JSON error နှစ်မျိုးလုံး တူညီသော diagnostic model ကို အသုံးပြုရန်။
 - [ ] CLI exit code သတ်မှတ်ချက် ပြုလုပ်ရန်။ `0` = success၊ `1` = program/check failure၊ `2` = CLI usage error။
 
 ## 2.3 Error model
 
-- [ ] Internal Rust `String` error များကို `ZapError` enum ဖြင့် အစားထိုးရန်။
+- [ ] Internal Rust `String` error များကို `ZapError` enum ဖြင့် အစားထိုးရန်။ `Result`/`Option` value foundation သည် ပြီးစီးပြီးဖြစ်သည်။
 - [ ] `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError` နှင့် `OverflowError` များ သတ်မှတ်ရန်။
-- [ ] User program ထဲတွင် recoverable error အသုံးပြုရန် `Result` value ဒီဇိုင်းချရန်။
-- [ ] `Option`/`none` semantics ကို ရှင်းလင်းရန်။
+- [x] User program ထဲတွင် recoverable value အသုံးပြုရန် `ok(value)` နှင့် `err(value)` Result constructors ထည့်ရန်။
+- [x] `some(value)`၊ `option_none()`၊ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` helpers ထည့်ရန်။
+- [x] `unwrap` နှင့် `unwrap_or` semantics ကို သတ်မှတ်ရန်။
+- [x] Result/Option JSON serialization နှင့် `type()` support ထည့်ရန်။
+- [ ] Result/Option payload ကို static type checker မှ စစ်ရန်။
+- [ ] Error propagation နှင့် `try`/`catch` equivalent semantics သတ်မှတ်ရန်။
 - [ ] Error message တွင် secret၊ environment value နှင့် password များ မပေါက်ကြားစေရန် စစ်ရန်။
 - [ ] Panic၊ unchecked unwrap နှင့် silent fallback များကို user input path များတွင် ဖယ်ရှားရန်။
 
@@ -122,9 +130,16 @@ fn add(a: number, b: number) -> number:
 - [x] Function argument type ကို function call အချိန်တွင် runtime စစ်ရန်။
 - [x] Return expression type နှင့် function return annotation ကို runtime စစ်ရန်။
 - [x] Function signature ၏ annotation syntax နှင့် allowed types ကို `zap check` တွင် static စစ်ရန်။
-- [ ] Function call argument count နှင့် argument type ကို `zap check` တွင် static စစ်ရန်။
+- [x] Function call argument count နှင့် literal argument type ကို `zap check` တွင် static စစ်ရန်။
+- [x] Literal variable expression၊ arithmetic/text nested expression နှင့် annotated function-return expression များ၏ inferred type ကို function call အတွင်း static စစ်ရန်။
+- [ ] Branch/loop control-flow အတွင်း type narrowing နှင့် reassignment inference တိုးရန်။
+- [x] Annotated variable literal/nested-expression mismatch ကို `zap check` တွင် စစ်ရန်။
 - [x] Unknown function annotation များအတွက် `zap check` နှင့် `zap check --json` diagnostic ထုတ်ရန်။
-- [ ] Function call type mismatch ကို runtime error နှင့် static diagnostic နှစ်မျိုးအဖြစ် ထုတ်ရန်။
+- [x] Function call ၏ argument count နှင့် literal argument type mismatch ကို `zap check --json` structured diagnostic အဖြစ် ထုတ်ရန်။
+- [x] Literal variable နှင့် ရိုးရိုး nested expression များ၏ inferred type mismatch ကို static diagnostic အဖြစ် ထုတ်ရန်။
+- [ ] Complex nested call၊ collection element နှင့် control-flow expression များ၏ inferred type mismatch ကို တိုးချဲ့ရန်။
+
+`zap check --json` သည် ယခု `file`၊ `line` နှင့် `column` fields များကို သီးခြားပြန်ပေးနိုင်ပြီး editor/CI tooling များက diagnostic location ကို တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 - [x] `any` type ၏ လက်ရှိ permissive runtime semantics ကို documentation တွင် ဖော်ပြရန်။
 - [ ] Generic list/map/function design ကို syntax မတည်ငြိမ်မီ အရင်ဆုံးရေးသားသတ်မှတ်ရန်။
 
@@ -141,13 +156,14 @@ fn add(a: number, b: number) -> number:
 
 ## 3.3 Stable module system
 
-- [ ] `use` syntax ကို explicit `import`/`export` semantics ဖြင့် တည်ငြိမ်စေရန်။
-- [ ] Export မလုပ်ထားသော symbol ကို module အပြင်မှ မမြင်ရအောင်လုပ်ရန်။
-- [ ] Module တစ်ခုကို နှစ်ကြိမ် load မဖြစ်စေရန် module cache ထည့်ရန်။
-- [ ] Circular import detection ထည့်ရန်။
+- [x] `use` syntax နှင့်အတူ explicit `import`/`export` semantics တည်ငြိမ်စေရန်။
+- [x] Export မလုပ်ထားသော symbol ကို module အပြင်မှ မမြင်ရအောင်လုပ်ရန်။
+- [x] Module တစ်ခုကို နှစ်ကြိမ် load မဖြစ်စေရန် canonical-path module cache ထည့်ရန်။
+- [x] Circular import detection ထည့်ရန်။
 - [ ] Relative path၊ package name နှင့် standard module resolution rules သတ်မှတ်ရန်။
-- [ ] Module path traversal (`../`) ကို project root အပြင် မထွက်စေရန် ကာကွယ်ရန်။
-- [ ] API documentation နှင့် module example များ ထည့်ရန်။
+- [x] Absolute module path များကို reject လုပ်ပြီး module boundary ကို မတော်တဆ ပြင်ပဖိုင်သို့ မချဲ့စေရန် ကာကွယ်ရန်။
+- [ ] `../` traversal ကို project root အပြင် မထွက်စေရန် root-aware policy ထပ်မံတင်းကျပ်ရန်။
+- [x] API documentation နှင့် module example များ ထည့်ရန်။
 
 ## 3.4 Standard library တိုးချဲ့ခြင်း
 

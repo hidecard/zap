@@ -2,7 +2,29 @@
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
-## [Unreleased — v0.9.0 Development]
+## [Unreleased — post-v0.9.0 hardening]
+
+### Added
+
+- Explicit `import`/`export` module visibility semantics နှင့် export မလုပ်ထားသော symbol isolation ထည့်သွင်းထားသည်။
+- Canonical-path module cache ဖြင့် module top-level execution ကို တစ်ကြိမ်သာ run စေသည်။
+- Active import stack ဖြင့် circular import detection နှင့် absolute module path rejection ထည့်သွင်းထားသည်။
+- `zap check` တွင် annotated variable နှင့် inferred literal/expression type မကိုက်ညီမှုကို static diagnostic အဖြစ် စစ်ဆေးနိုင်သည်။
+- Module cache၊ private export၊ cycle detection၊ absolute-path safety နှင့် static assignment mismatch regression tests များ ထည့်သွင်းထားသည်။
+
+### Verification
+
+- Native integration test **31 ခုလုံး pass** ဖြစ်သည်။
+- `cargo test --manifest-path native/Cargo.toml` အောင်မြင်သည်။
+- Module documentation ကို Burmese learning guide နှင့် roadmap တွင် synchronize လုပ်ထားသည်။
+
+### Remaining Work
+
+- `ZapError` enum ဖြင့် internal `String` errors များကို ခွဲခြားရန်။
+- Branch/loop type narrowing၊ generic/nullable types နှင့် Result/Option payload static checking တိုးရန်။
+- Project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library နှင့် automatic Result propagation ဆက်လက်လုပ်ရန်။
+
+## [0.9.0]
 
 ### Added
 
@@ -16,17 +38,17 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ### Verification
 
-- Native integration test **27 ခုလုံး pass** ဖြစ်သည်။
+- Native integration test **31 ခုလုံး pass** ဖြစ်သည်။
 - `cargo check` အောင်မြင်သည်။
 - `git diff --check` အောင်မြင်သည်။
 - Linux၊ macOS ARM64 နှင့် Windows x86_64 release workflow ကို မပြောင်းလဲဘဲ ဆက်လက်အသုံးပြုနိုင်သည်။
 
 ### Known Limitations
 
-- Function call တစ်ခုချင်းစီ၏ argument type/count ကို `zap check` မှ static inference ဖြင့် မစစ်ဆေးရသေးပါ။
-- JSON diagnostic တွင် `file`၊ `line` နှင့် `column` ကို သီးခြား fields အဖြစ် မခွဲရသေးပါ။
+- Complex control-flow expression များနှင့် collection element များ၏ static inference ကို ဆက်လက်တိုးချဲ့ရန်လိုသည်။
+- JSON diagnostic နှင့် runtime error များကို unified `ZapError` model အဖြစ် မခွဲခြားရသေးပါ။
 - Structured `Result`၊ `async/await`၊ task cancellation၊ channels၊ HTTP client၊ package lockfile/registry နှင့် LSP မပါဝင်သေးပါ။
-- ဤအပိုင်းသည် v0.9.0 development line ဖြစ်ပြီး stable v0.8.0 version/tag ကို မပြောင်းလဲသေးပါ။
+- `Result`/`Option` automatic propagation၊ async runtime၊ HTTP၊ package lockfile/registry နှင့် LSP များ မပါဝင်သေးပါ။
 
 ## [0.8.0]
 
@@ -45,7 +67,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 - Standard library၊ modules၊ project manifest နှင့် CLI workflow များကို တိုးချဲ့ခဲ့သည်။
 
-[Unreleased — v0.9.0 Development]: docs/RELEASE_0.9.0.md
+[Unreleased — post-v0.9.0 hardening]: docs/RELEASE_0.9.0.md
+[0.9.0]: docs/RELEASE_0.9.0.md
 [0.8.0]: docs/RELEASE_0.8.0.md
 [0.7.1]: docs/RELEASE_0.7.1.md
 [0.7.0]: docs/RELEASE_0.7.0.md

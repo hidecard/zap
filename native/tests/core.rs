@@ -319,3 +319,56 @@ fn runs_oop_override_and_empty_class() {
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
     assert_eq!(String::from_utf8_lossy(&output.stdout), "child\nobject\n");
 }
+
+#[test]
+fn caches_explicit_module_execution_and_exports_only_public_symbols() {
+    let root = std::env::temp_dir().join("zap_module_cache_test");
+    std::fs::create_dir_all(&root).unwrap();
+    let module = root.join("counter.zp");
+    let main = root.join("main.zp");
+    std::fs::write(&module, "say \"loaded\"\nlet secret = 99\nexport let answer = 42\nexport fn value():\n    return answer\n").unwrap();
+    std::fs::write(&main, "import \"counter\"\nimport \"counter\"\nsay value()\nsay answer\n").unwrap();
+    let output = Command::new(binary()).arg(&main).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "loaded\n42\n42\n");
+}
+
+#[test]
+fn rejects_circular_explicit_imports() {
+    let root = std::env::temp_dir().join("zap_module_cycle_test");
+    std::fs::create_dir_all(&root).unwrap();
+    let main = root.join("main.zp");
+    std::fs::write(root.join("a.zp"), "import \"b\"\nexport let a = 1\n").unwrap();
+    std::fs::write(root.join("b.zp"), "import \"a\"\nexport let b = 2\n").unwrap();
+    std::fs::write(&main, "import \"a\"\n").unwrap();
+    let output = Command::new(binary()).arg(&main).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("circular import detected"));
+}
+
+#[test]
+fn rejects_absolute_module_paths() {
+    let file = std::env::temp_dir().join("zap_absolute_import_test.zp");
+    let module = std::env::temp_dir().join("zap_absolute_target.zp");
+    std::fs::write(&module, "export let value = 1\n").unwrap();
+    std::fs::write(&file, format!("import \"{}\"\n", module.display())).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    let _ = std::fs::remove_file(&module);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("absolute module paths are not allowed"));
+}
+
+#[test]
+fn check_rejects_annotated_variable_mismatch() {
+    let root = std::env::temp_dir().join("zap_static_assignment_test");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(root.join("zap.toml"), "[package]\nname = \"static-assignment\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n").unwrap();
+    std::fs::write(root.join("main.zp"), "let count: number = \"wrong\"\n").unwrap();
+    let output = Command::new(binary()).args(["check", root.to_str().unwrap()]).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("variable 'count' expects number, got text"));
+}

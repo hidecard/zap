@@ -464,14 +464,14 @@ if has_env("PATH"):
 Project root တွင် `modules/greetings.zp` ဖိုင်ဖန်တီးပါ။
 
 ```zap
-fn greet(name):
+export fn greet(name):
     return "Hello, " + name
 ```
 
-`main.zp` တွင် import လုပ်ပါ။
+`main.zp` တွင် explicit import လုပ်ပါ။ `export` မပါသော function/variable များသည် module အပြင်မှ မမြင်ရပါ။
 
 ```zap
-use "greetings"
+import "greetings"
 say greet("Zap")
 ```
 
@@ -503,6 +503,10 @@ zap check .
 zap build .
 zap main.zp
 ```
+
+### Module rules
+
+`import` ဖြင့် module တစ်ခုကို အကြိမ်များစွာ ခေါ်လျှင် runtime သည် canonical path အပေါ်အခြေခံသော cache ကို အသုံးပြုသဖြင့် module top-level code ကို တစ်ကြိမ်သာ run သည်။ Module နှစ်ခု အပြန်အလှန် import လုပ်ပါက circular import error ပြမည်။ Absolute filesystem path import များကို လုံခြုံရေးအရ ခွင့်မပြုပါ။ အဟောင်း code များအတွက် `use "greetings"` သည် legacy import အဖြစ် ဆက်လက်အလုပ်လုပ်နိုင်သော်လည်း library အသစ်များတွင် explicit `import`/`export` ကို အသုံးပြုသင့်သည်။
 
 ### လေ့ကျင့်ခန်း
 
@@ -976,10 +980,43 @@ say add(2, 3)
 }
 ```
 
-လက်ရှိ static check သည် annotation syntax နှင့် allowed type names ကို စစ်ဆေးသည့်အဆင့် ဖြစ်သည်။ Function call တစ်ခုချင်းစီ၏ argument type ကို static inference ဖြင့် စစ်ဆေးခြင်းကို နောက်အဆင့်တွင် ဆက်လက်တိုးချဲ့မည်။
+လက်ရှိ `zap check` သည် function definition ၏ annotation syntax/allowed type names အပြင် သိရှိထားသော function call များ၏ argument အရေအတွက်၊ literal argument type၊ variable မှ inferred type နှင့် ရိုးရိုး nested expression type များကိုပါ static စစ်ဆေးပေးသည်။ ဥပမာ `add(1)`၊ `greet(42)`၊ `let first = "wrong"` ပြီး `add(first, 2)` သို့မဟုတ် `add("a" + "b", 2)` ကဲ့သို့ မကိုက်ညီသော call များကို program မ run မီ ဖော်ထုတ်နိုင်သည်။ Variable inference သည် လက်ရှိ literal၊ arithmetic/text expression နှင့် annotated function return အခြေခံအဆင့်ဖြစ်ပြီး complex control-flow inference ကို နောက်အဆင့်တွင် တိုးချဲ့မည်။
+
+```bash
+zap check --json .
+```
+
+```json
+{
+  "ok": false,
+  "kind": "TypeError",
+  "file": "main.zp",
+  "line": 3,
+  "column": 1,
+  "message": "function 'add' expects 2 arguments, got 1"
+}
+```
+
+ဤ structured fields များကို CI၊ editor နှင့် automation tools များက file၊ line၊ column အလိုက် တိုက်ရိုက်အသုံးပြုနိုင်သည်။
+
+### Result နှင့် Option အသုံးပြုပုံ
+v0.9.0 တွင် recoverable value အဖြစ် `ok(value)`၊ `err(value)`၊ `some(value)` နှင့် `option_none()` ကို အသုံးပြုနိုင်သည်။ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` ဖြင့် value အမျိုးအစားကို စစ်ဆေးနိုင်ပြီး `unwrap` သို့မဟုတ် `unwrap_or` ဖြင့် value ကို ရယူနိုင်သည်။
+
+```zap
+let success = ok(42)
+let failure = err("network error")
+let name = some("Zap")
+let missing = option_none()
+
+say is_ok(success)
+say unwrap(success)
+say unwrap_or(failure, 0)
+say unwrap_or(missing, "unknown")
+```
+
+`unwrap(err(...))` သို့မဟုတ် `unwrap(option_none())` ကို စစ်ဆေးခြင်းမရှိဘဲ ခေါ်ပါက runtime error ပြန်ပေးသည်။ `Result` နှင့် `Option` တန်ဖိုးများကို JSON အဖြစ်လည်း serialize လုပ်နိုင်သည်။ လက်ရှိအဆင့်တွင် payload static type validation နှင့် automatic error propagation မပြီးသေးပါ။
 
 ### v0.9.0 Audit Note
-
-လက်ရှိ stable v0.8.0 runtime တွင် structured `Result`၊ function-call static type inference၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များ မပါဝင်သေးပါ။ လက်ရှိ development build တွင် function parameter/return annotation runtime checks၊ static signature validation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ ၎င်းတို့သည် v0.9.0 အတွက် အဆင့်လိုက်တည်ဆောက်မည့် roadmap features များ ဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
+v0.9.0 တွင် function parameter/return annotation runtime checks၊ static signature validation၊ known function-call argument count/literal type checking၊ variable/nested-expression inference၊ `Result`/`Option` foundation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ Generic type inference၊ control-flow narrowing၊ explicit module exports၊ automatic error propagation၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များမှာ မပြီးသေးသော roadmap features များ ဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
 
 နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ comparative audit ကို [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။

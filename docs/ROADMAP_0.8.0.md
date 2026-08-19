@@ -16,7 +16,7 @@ Zap v0.8.0 သည် language runtime ကို အလျင်အမြန် f
 | Optional variable annotations | Implemented |
 | Function parameter/return annotations နှင့် runtime checks | Implemented in current v0.9 work |
 | Static signature validation in `zap check` | Implemented in current v0.9 work |
-| Structured JSON diagnostics (`kind`, `message`, `error`) | Implemented in current v0.9 work |
+| Structured JSON diagnostics (`kind`, `message`, `error`, `file`, `line`, `column`) | Implemented in current v0.9 work |
 | Checked integer arithmetic နှင့် modulo-by-zero diagnostics | Implemented in audit patch |
 | Structured `Result` | Planned |
 | `async/await` နှင့် channels | Planned |
@@ -25,11 +25,11 @@ Zap v0.8.0 သည် language runtime ကို အလျင်အမြန် f
 
 ## Audit Findings နှင့် Production Gaps
 
-လက်ရှိ v0.9 development တွင် function parameter နှင့် return annotations များကို `number`၊ `text`၊ `bool`၊ `list`၊ `map`၊ `none` နှင့် `any` အတွက် runtime call checks ဖြင့် အကောင်အထည်ဖော်ထားပြီး typed-function regression test ပါဝင်သည်။ `zap check` တွင် function signature များအတွက် unknown annotation ကို static စစ်ဆေးပြီး `zap check --json` သည် `kind`၊ `message` နှင့် `error` fields ပါသော structured diagnostic ပြန်ပေးသည်။
+လက်ရှိ v0.9 development တွင် function parameter နှင့် return annotations များကို `number`၊ `text`၊ `bool`၊ `list`၊ `map`၊ `none` နှင့် `any` အတွက် runtime call checks ဖြင့် အကောင်အထည်ဖော်ထားပြီး typed-function regression test ပါဝင်သည်။ `zap check` တွင် function signature၊ argument count/type၊ literal variable နှင့် ရိုးရိုး nested expression များကို static စစ်ဆေးပြီး `zap check --json` သည် `kind`၊ `message`၊ `error`၊ `file`၊ `line` နှင့် `column` fields ပါသော structured diagnostic ပြန်ပေးသည်။
 
-v0.8.0 comparative audit အရ Zap ၏ အဓိက production gaps များမှာ source span အပြည့်အစုံပါသော structured diagnostics၊ function call argument ၏ static type inference၊ explicit import/export modules၊ lockfile/checksum package workflow၊ HTTP/encoding/regex standard-library coverage၊ test filtering/coverage/fuzzing၊ နှင့် cancellation ပါသော async tasks ဖြစ်သည်။ Python ၏ typing နှင့် callable/generic annotations၊ JavaScript ၏ import/export/dynamic modules၊ Go ၏ modules/testing/fuzzing/profiling၊ Dart ၏ Futures/Streams/isolates တို့က mature ecosystem baseline အဖြစ် reference လုပ်ထားသည်။
+v0.8.0 comparative audit အရ Zap ၏ ကျန်ရှိနေသေးသော အဓိက production gaps များမှာ control-flow type narrowing၊ generic/nullable/union type system၊ explicit import/export modules၊ lockfile/checksum package workflow၊ HTTP/encoding/regex standard-library coverage၊ test filtering/coverage/fuzzing၊ နှင့် cancellation ပါသော async tasks ဖြစ်သည်။ Source-location ပါသော structured JSON diagnostics နှင့် ရိုးရိုး function-call static inference များကို v0.9 development တွင် ပြီးစီးထားသည်။ Python ၏ typing နှင့် callable/generic annotations၊ JavaScript ၏ import/export/dynamic modules၊ Go ၏ modules/testing/fuzzing/profiling၊ Dart ၏ Futures/Streams/isolates တို့က mature ecosystem baseline အဖြစ် reference လုပ်ထားသည်။
 
-Audit patch တွင် signed integer arithmetic ကို checked operations အဖြစ် ပြောင်းလဲထားပြီး addition၊ subtraction၊ multiplication overflow နှင့် division/modulo by zero များကို process panic မဖြစ်စေဘဲ user-facing runtime error အဖြစ် ပြန်ပေးသည်။ Native regression tests သည် 24 မှ 26 tests သို့ တိုးပြီး အားလုံး pass ဖြစ်သည်။
+Audit patch တွင် signed integer arithmetic ကို checked operations အဖြစ် ပြောင်းလဲထားပြီး addition၊ subtraction၊ multiplication overflow နှင့် division/modulo by zero များကို process panic မဖြစ်စေဘဲ user-facing runtime error အဖြစ် ပြန်ပေးသည်။ Native regression tests သည် 24 မှ 32 tests သို့ တိုးပြီး အားလုံး pass ဖြစ်သည်။
 
 ## v0.9.0 Priority Order
 
@@ -49,7 +49,7 @@ else:
 
 ### 2။ Type Checking တိုးချဲ့မှု
 
-လက်ရှိ variable annotation အပြင် function parameter နှင့် return type များကို `zap check` မှ စစ်ဆေးမည်။ Runtime တွင် dynamic behavior ကို မဖျက်ဘဲ static diagnostics အဖြစ် စတင်မည်။
+လက်ရှိ function parameter/return annotation၊ function-call argument count/type၊ literal variable နှင့် ရိုးရိုး nested expression များကို `zap check` မှ static စစ်ဆေးပြီးဖြစ်သည်။ နောက်ထပ် control-flow narrowing၊ reassignment inference၊ generic collection နှင့် nullable/union type များကို တိုးချဲ့မည်။ Runtime တွင် dynamic behavior ကို မဖျက်ဘဲ static diagnostics အဖြစ် ဆက်လက်တည်ဆောက်မည်။
 
 ```zap
 fn add(a: number, b: number) -> number:
