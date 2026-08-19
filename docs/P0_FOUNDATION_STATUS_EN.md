@@ -2,15 +2,18 @@
 
 ## AST migration status
 
-Zap now has a source-span-aware AST foundation in `native/src/ast.rs`. The parser accepts expressions with precedence, calls, and indexing, together with assignments, returns, `break`, `continue`, `if/else`, `while`, and `for` blocks. Function and class declarations are now represented as first-class AST nodes.
+Zap now has a source-span-aware AST foundation in `native/src/ast.rs`. The parser accepts expressions with precedence, calls, and indexing, together with assignments, typed `let` declarations, `say`, imports, returns, `break`, `continue`, `if/else`, `while`, and `for` blocks. Function and class declarations are now represented as first-class AST nodes.
 
 | Declaration | Supported AST shape | Notes |
 |---|---|---|
 | `fn add(a: number) -> number:` | `Stmt::Function` | Stores the name, parameter names, optional parameter annotations, optional return annotation, and indented body. |
 | `class Child(Parent):` | `Stmt::Class` | Stores the class name, optional single parent name, and indented body. |
+| `let total: number = 1` | `Stmt::Declaration` | Stores the variable name, optional annotation, value, and source span. |
+| `say value` | `Stmt::Say` | Stores the output expression for later AST execution. |
+| `import` / `use` | `Stmt::Import` | Stores the module path and explicit-import mode. |
 | `if` / `while` / `for` | Control-flow statement nodes | Uses the same indentation-aware block parser. |
 
-The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. The legacy evaluator remains available for compatibility while the evaluator migration proceeds incrementally.
+The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. The legacy evaluator remains available for compatibility while the evaluator migration proceeds incrementally. This slice deliberately expands the AST contract first; it does not yet replace the legacy function/class registry or line-based execution path.
 
 ## Runtime safety semantics
 

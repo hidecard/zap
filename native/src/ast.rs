@@ -78,6 +78,16 @@ pub(crate) enum Stmt {
         name: String,
         value: Spanned<Expr>,
     },
+    Declaration {
+        name: String,
+        annotation: Option<String>,
+        value: Spanned<Expr>,
+    },
+    Say(Spanned<Expr>),
+    Import {
+        path: String,
+        explicit: bool,
+    },
     Return(Option<Spanned<Expr>>),
     If {
         condition: Spanned<Expr>,
@@ -326,6 +336,38 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
     if trimmed == "continue" {
         return Ok(Spanned::new(Stmt::Continue, span(trimmed.len())));
     }
+    if let Some(rest) = trimmed.strip_prefix("say ") {
+        return Ok(Spanned::new(
+            Stmt::Say(parse_expression(rest.trim())?),
+            span(trimmed.len()),
+        ));
+    }
+    if let Some(rest) = trimmed.strip_prefix("import ") {
+        let path = rest.trim().trim_matches(';').trim().trim_matches('"');
+        if path.is_empty() {
+            return Err("import expects a module path".to_string());
+        }
+        return Ok(Spanned::new(
+            Stmt::Import {
+                path: path.to_string(),
+                explicit: true,
+            },
+            span(trimmed.len()),
+        ));
+    }
+    if let Some(rest) = trimmed.strip_prefix("use ") {
+        let path = rest.trim().trim_matches(';').trim().trim_matches('"');
+        if path.is_empty() {
+            return Err("use expects a module path".to_string());
+        }
+        return Ok(Spanned::new(
+            Stmt::Import {
+                path: path.to_string(),
+                explicit: false,
+            },
+            span(trimmed.len()),
+        ));
+    }
     if let Some(rest) = trimmed.strip_prefix("return") {
         if rest.is_empty() || rest.chars().next().is_some_and(char::is_whitespace) {
             let value = rest.trim();
@@ -338,18 +380,44 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
         }
     }
 
+    if let Some(rest) = trimmed.strip_prefix("let ") {
+        let (target, value) = rest
+            .split_once('=')
+            .ok_or_else(|| "declaration expects '='".to_string())?;
+        let (name, annotation) = target
+            .trim()
+            .split_once(':')
+            .map_or((target.trim(), None), |(name, ty)| {
+                (name.trim(), Some(ty.trim().to_string()))
+            });
+        if name.is_empty() || value.trim().is_empty() {
+            return Err("declaration requires a name and value".to_string());
+        }
+        return Ok(Spanned::new(
+            Stmt::Declaration {
+                name: name.to_string(),
+                annotation,
+                value: parse_expression(value.trim())?,
+            },
+            span(trimmed.len()),
+        ));
+    }
+
     if let Some(equal) = trimmed.find('=') {
         let is_comparison = trimmed.as_bytes().get(equal + 1) == Some(&b'=')
             || (equal > 0 && trimmed.as_bytes()[equal - 1] == b'=');
         if !is_comparison {
             let name = trimmed[..equal].trim();
-            if name.is_empty()
-                || !name.chars().enumerate().all(|(index, character)| {
-                    character == '_'
-                        || character.is_ascii_alphanumeric()
-                            && (index > 0 || character.is_ascii_alphabetic())
-                })
-            {
+            let valid_target = !name.is_empty()
+                && name.split('.').all(|part| {
+                    !part.is_empty()
+                        && part.chars().enumerate().all(|(index, character)| {
+                            character == '_'
+                                || character.is_ascii_alphanumeric()
+                                    && (index > 0 || character.is_ascii_alphabetic())
+                        })
+                });
+            if !valid_target {
                 return Err(format!("invalid assignment target at 1:{}", leading + 1));
             }
             let value = trimmed[equal + 1..].trim();
@@ -386,7 +454,9 @@ fn parse_function_header(
     text: &str,
 ) -> Option<Result<(String, Vec<(String, Option<String>)>, Option<String>), String>> {
     let header = text.strip_suffix(':')?;
-    let signature = header.strip_prefix("fn ")?;
+    let signature = header
+        .strip_prefix("fn ")
+        .or_else(|| header.strip_prefix("def "))?;
     let open = signature.find('(')?;
     let close = signature.rfind(')')?;
     if close < open {
@@ -450,7 +520,12 @@ fn parse_function_header(
 fn parse_class_header(text: &str) -> Option<Result<(String, Option<String>), String>> {
     let header = text.strip_suffix(':')?;
     let declaration = header.strip_prefix("class ")?;
-    let (name, base) = if let Some(open) = declaration.find('(') {
+    let declaration = declaration.strip_suffix(':').unwrap_or(declaration).trim();
+    let (name, base) = if let Some(rest) = declaration.strip_prefix(" ") {
+        (rest.trim(), None)
+    } else if let Some((name, parent)) = declaration.split_once(" extends ") {
+        (name.trim(), Some(parent.trim().to_string()))
+    } else if let Some(open) = declaration.find('(') {
         let close = declaration.rfind(')')?;
         if close <= open || !declaration[close + 1..].trim().is_empty() {
             return Some(Err("class inheritance header is malformed".to_string()));
@@ -779,6 +854,27 @@ mod tests {
             Stmt::Class { ref name, ref base, .. }
                 if name == "Child" && base.as_deref() == Some("Parent")
         ));
+    }
+
+    #[test]
+    fn parses_runtime_statement_forms() {
+        let program = parse_program(
+            "let total: number = 1 + 2\nsay total\nobj.value = total\nimport \"math.zp\"\nuse \"helpers.zp\"\n",
+        )
+        .expect("valid runtime statements");
+        assert!(
+            matches!(program.statements[0].node, Stmt::Declaration { ref name, ref annotation, .. } if name == "total" && annotation.as_deref() == Some("number"))
+        );
+        assert!(matches!(program.statements[1].node, Stmt::Say(_)));
+        assert!(
+            matches!(program.statements[2].node, Stmt::Assignment { ref name, .. } if name == "obj.value")
+        );
+        assert!(
+            matches!(program.statements[3].node, Stmt::Import { ref path, explicit: true } if path == "math.zp")
+        );
+        assert!(
+            matches!(program.statements[4].node, Stmt::Import { ref path, explicit: false } if path == "helpers.zp")
+        );
     }
 
     #[test]
