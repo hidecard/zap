@@ -2,7 +2,7 @@
 
 ## လက်ရှိ native implementation
 
-Zap native runtime ကို Rust ဖြင့်ရေးထားပြီး Python runtime မလိုအပ်ပါ။ လက်ရှိ native core တွင် lexer၊ expression parser နှင့် runtime evaluator ပါဝင်သည်။
+Zap native runtime ကို Rust ဖြင့်ရေးသားထားပြီး source files များကို standalone execution pipeline ဖြင့် run ပေးသည်။ လက်ရှိ native core တွင် lexer၊ expression parser နှင့် runtime evaluator ပါဝင်သည်။
 
 | Feature | Status |
 |---|---|

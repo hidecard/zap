@@ -5,7 +5,7 @@
 
 ## ရည်ရွယ်ချက်
 
-Zap သည် Python ကဲ့သို့ ဖတ်ရလွယ်ကူပြီး JavaScript ကဲ့သို့ Web application များတွင် အသုံးပြုရလွယ်ကူသော general-purpose programming language ဖြစ်မည်။ ပထမဆုံး version တွင် learning curve ကို လျှော့ချရန် indentation-based syntax၊ ရိုးရှင်းသော data types နှင့် တိကျသော error messages များကို ဦးစားပေးမည်။
+Zap သည် ဖတ်ရလွယ်ကူပြီး Web application များတွင် အသုံးပြုရလွယ်ကူသော general-purpose programming language ဖြစ်မည်။ ပထမဆုံး version တွင် learning curve ကို လျှော့ချရန် indentation-based syntax၊ ရိုးရှင်းသော data types နှင့် တိကျသော error messages များကို ဦးစားပေးမည်။
 
 Web နှင့် AI တို့ကို language core ထဲသို့ အလွန်အမင်းထည့်သွင်းမည့်အစား standard library နှင့် package system အဖြစ် ထားရှိမည်။ ထိုနည်းလမ်းသည် language ကို သေးငယ်ပြီး သင်ယူရလွယ်ကူစေသလို၊ နောက်ပိုင်းတွင် web server၊ HTTP client၊ JSON၊ data science နှင့် model API များကို လွယ်ကူစွာ ထပ်တိုးနိုင်စေသည်။
 
@@ -13,7 +13,7 @@ Web နှင့် AI တို့ကို language core ထဲသို့ �
 
 | မူ | ဆုံးဖြတ်ချက် |
 |---|---|
-| Syntax | Python-like indentation နှင့် English keywords |
+| Syntax | Indentation-based blocks နှင့် ရှင်းလင်းသော English keywords |
 | Runtime | ပထမ prototype တွင် tree-walk interpreter |
 | Typing | Dynamic typing; နောက်ပိုင်း optional type hints |
 | Strings | Double quote နှင့် single quote နှစ်မျိုးစလုံး |
@@ -21,7 +21,7 @@ Web နှင့် AI တို့ကို language core ထဲသို့ �
 | Errors | Line number၊ source snippet နှင့် ပြင်ဆင်ရန် အကြံပြုချက် ပါမည် |
 | Web | `web` standard module မှ server/request API ပေးမည် |
 | AI | `ai` module မှ provider-neutral text generation API ပေးမည် |
-| Interoperability | ပထမအဆင့်တွင် Python host functions ဖြင့် extension ပြုလုပ်နိုင်မည် |
+| Interoperability | ပထမအဆင့်တွင် native modules နှင့် package APIs ဖြင့် extension ပြုလုပ်နိုင်မည် |
 
 ## နမူနာ program
 
@@ -68,7 +68,7 @@ say answer.text
 
 ## နောက်တစ်ဆင့်
 
-နောက်ထပ် implementation သည် tokenizer၊ parser၊ AST နှင့် evaluator ပါသော Python-based reference interpreter ဖြစ်မည်။ ထို reference implementation သည် language semantics ကို မြန်မြန်စမ်းသပ်ရန် သင့်တော်ပြီး၊ နောက်ပိုင်းတွင် Zap source ကို bytecode သို့မဟုတ် JavaScript/Python target သို့ compile လုပ်ရန် အခြေခံဖြစ်မည်။
+နောက်ထပ် implementation သည် tokenizer၊ parser၊ AST နှင့် evaluator အလွှာများကို native runtime အတွင်း ပိုမိုခိုင်မာအောင် တည်ဆောက်မည်။ ထို architecture သည် language semantics ကို တိကျစွာ ထိန်းသိမ်းပေးပြီး၊ နောက်ပိုင်းတွင် Zap source ကို bytecode သို့မဟုတ် optimized execution format သို့ ပြောင်းလဲနိုင်ရန် အခြေခံဖြစ်မည်။
 
 ## References
 

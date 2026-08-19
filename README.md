@@ -1,6 +1,6 @@
 # Zap Programming Language
 
-> **Zap** သည် Python-like syntax ဖြင့် လေ့လာရလွယ်ကူပြီး Python မလိုဘဲ တိုက်ရိုက် run နိုင်သော standalone programming language ဖြစ်သည်။ Zap ၏ native runtime ကို Rust ဖြင့်ရေးသားထားပြီး `.zp` source files များကို Linux၊ macOS နှင့် Windows တွင် `zap` CLI ဖြင့် အသုံးပြုနိုင်ရန် ရည်ရွယ်ထားသည်။
+> **Zap** သည် ရိုးရှင်းသော indentation-based syntax ဖြင့် လေ့လာရလွယ်ကူပြီး standalone အဖြစ် တိုက်ရိုက် run နိုင်သော programming language ဖြစ်သည်။ `.zp` source files များကို Linux၊ macOS နှင့် Windows တွင် `zap` CLI ဖြင့် အသုံးပြုနိုင်ရန် ရည်ရွယ်ထားသည်။
 
 Zap ၏ အဓိကရည်ရွယ်ချက်မှာ beginner များအတွက် ရိုးရှင်းသော syntax နှင့် developer များအတွက် တဖြည်းဖြည်းချဲ့ထွင်နိုင်သော native runtime တစ်ခုကို ပေါင်းစပ်ပေးရန်ဖြစ်သည်။ Web၊ Mobile၊ AI နှင့် IoT frameworks များသည် language core တည်ငြိမ်ပြီးနောက် သီးခြား ecosystem အဖြစ် တည်ဆောက်မည်ဖြစ်သည်။
 
@@ -19,11 +19,11 @@ Zap သည် **native core prototype / early development release** အဆင့
 | Modules | source-relative `use "module.zp"` imports၊ `modules/` နှင့် `lib/` search paths |
 | Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text` |
 | Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap fmt` |
-| Installation | Python မလိုသော prebuilt native binary package |
+| Installation | Prebuilt native binary package |
 
-## Python မလိုဘဲ Install လုပ်ခြင်း
+## Zap ကို Install လုပ်ခြင်း
 
-End users များအတွက် **Rust နှင့် Python နှစ်ခုလုံး မလိုပါ**။ GitHub Releases မှ သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး extract လုပ်ပါ။ Linux/macOS တွင် archive directory ထဲမှ installer ကို run လုပ်ပါ။
+End users များအတွက် development toolchain မလိုပါ။ GitHub Releases မှ သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး extract လုပ်ပါ။ Linux/macOS တွင် archive directory ထဲမှ installer ကို run လုပ်ပါ။
 
 ```bash
 tar -xzf zap-linux-x86_64.tar.gz
@@ -72,7 +72,7 @@ make native
 cargo build --release --manifest-path native/Cargo.toml
 ```
 
-Source build သည် development အတွက်သာ ဖြစ်သည်။ ပုံမှန် user installation အတွက် prebuilt release archive ကို အသုံးပြုခြင်းဖြင့် Rust နှင့် Python မလိုတော့ပါ။
+Source build သည် development အတွက်သာ ဖြစ်သည်။ ပုံမှန် user installation အတွက် prebuilt release archive ကို အသုံးပြုခြင်းဖြင့် အပို development toolchain မလိုတော့ပါ။
 
 ## CLI အသုံးပြုနည်း
 
@@ -85,7 +85,7 @@ zap check path/to/project   # specific project validate
 zap fmt main.zp             # source formatting
 ```
 
-`zap` သည် file path ကို တိုက်ရိုက်လက်ခံသော native runtime ဖြစ်သည်။ Python reference implementation သည် repository ထဲတွင် compatibility နှင့် experimentation အတွက်သာ ကျန်ရှိပြီး ပုံမှန် Zap အသုံးပြုမှုအတွက် မလိုအပ်ပါ။
+`zap` သည် file path ကို တိုက်ရိုက်လက်ခံသော native runtime ဖြစ်သည်။ Repository ထဲရှိ reference tooling သည် language behavior စမ်းသပ်ရန်အတွက်သာ ဖြစ်ပြီး ပုံမှန် Zap အသုံးပြုမှုအတွက် မလိုအပ်ပါ။
 
 ## ပထမဆုံး Zap Program
 
@@ -213,7 +213,7 @@ Block and statement executor
 Native Rust runtime
 ```
 
-Runtime သည် Python interpreter သို့ source ပြန်မပို့ဘဲ Rust code ဖြင့် တိုက်ရိုက် execute လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`NATIVE.md`](NATIVE.md) တွင် ဖတ်နိုင်သည်။
+Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`NATIVE.md`](NATIVE.md) တွင် ဖတ်နိုင်သည်။
 
 ## Release Package တည်ဆောက်ခြင်း
 
@@ -233,13 +233,7 @@ Native runtime နှင့် integration tests များကို run လ�
 make native-test
 ```
 
-Python reference prototype tests များသည် optional ဖြစ်ပြီး—
-
-```bash
-python3 -m unittest -v test_zap.py
-```
-
-ဟု run လုပ်နိုင်သည်။ Native runtime သည် Python မလိုသော primary implementation ဖြစ်သောကြောင့် end-user installation နှင့် native CLI tests များအတွက် Python မလိုပါ။
+Reference compatibility tests များသည် optional ဖြစ်ပြီး project development အတွင်းသာ အသုံးပြုနိုင်သည်။ End-user installation နှင့် native CLI အသုံးပြုမှုအတွက် အပို runtime မလိုပါ။
 
 ## Repository ဖိုင်များ
 
@@ -247,7 +241,7 @@ python3 -m unittest -v test_zap.py
 |---|---|
 | `native/` | Rust native runtime၊ Cargo metadata နှင့် integration tests |
 | `bin/zap` | Local release build ထုတ်ထားသော native CLI binary |
-| `zap.py` | Optional Python reference prototype |
+| `zap.py` | Optional reference tooling |
 | `hello.zp`, `advanced.zp` | Language examples |
 | `native_hello.zp` | Native runtime smoke-test example |
 | `install.sh` | Linux/macOS binary installer |

@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-REM Python မလိုသော Zap native installer.
+REM Standalone Zap native installer.
 set "ZAP_SOURCE=%~dp0bin\zap.exe"
 if not exist "%ZAP_SOURCE%" (
   if /I "%ZAP_BUILD_FROM_SOURCE%"=="1" (
@@ -30,5 +30,5 @@ set "PATH=%PATH%;%ZAP_BIN%"
 
 echo Zap native installed globally: 
 call "%ZAP_BIN%\zap.exe" --version
-echo Python မလိုပါ။ Command Prompt အသစ္ဖြင့္ၿပီး မည္သည့္ folder မွာမဆို zap file.zp ဟု run လုပ္ႏိုင္ပါသည္။
+echo Standalone Zap ကို install လုပ်ပြီးပါပြီ။ Command Prompt အသစ်ဖွင့်ပြီး မည်သည့် folder မှာမဆို zap file.zp ဟု run လုပ်နိုင်ပါသည်။
 endlocal

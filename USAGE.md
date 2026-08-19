@@ -2,9 +2,9 @@
 
 ## 1. Zap ဆိုတာဘာလဲ
 
-Zap သည် Python နှင့် JavaScript ကဲ့သို့ လေ့လာရလွယ်ကူရန် ရည်ရွယ်ထားသော Web နှင့် AI application programming language ဖြစ်သည်။ ယခု install လုပ်ရန်အတွက် recommended runtime သည် Python မလိုသော standalone Rust native binary ဖြစ်သည်။
+Zap သည် လေ့လာရလွယ်ကူသော syntax၊ native execution နှင့် Web/AI application များအတွက် တဖြည်းဖြည်းချဲ့ထွင်နိုင်သော general-purpose programming language ဖြစ်သည်။ ယခု install လုပ်ရန်အတွက် recommended runtime သည် standalone native binary ဖြစ်သည်။
 
-> `zap` native runtime သည် `.zp` source files များကို Python မလိုဘဲ တိုက်ရိုက် execute လုပ်သည်။ Python implementation သည် language features စမ်းသပ်ရန် optional reference prototype သာဖြစ်သည်။
+> `zap` native runtime သည် `.zp` source files များကို အပို runtime မလိုဘဲ တိုက်ရိုက် execute လုပ်သည်။ Reference tooling သည် language behavior စမ်းသပ်ရန် optional ဖြစ်သည်။
 
 ## 2. One-click installation
 
@@ -17,7 +17,7 @@ cd zap
 bash install.sh
 ```
 
-Installer သည် standalone `zap` binary ကို user account ၏ `~/.local/bin` သို့ install လုပ်ပြီး `.bashrc` သို့မဟုတ် `.zshrc` ထဲတွင် PATH ကို update လုပ်ပါမည်။ Python၊ pip သို့မဟုတ် virtual environment မလိုပါ။ Terminal အသစ်တစ်ခု ပြန်ဖွင့်ပြီး installation ကို စစ်ပါ။
+Installer သည် standalone `zap` binary ကို user account ၏ `~/.local/bin` သို့ install လုပ်ပြီး `.bashrc` သို့မဟုတ် `.zshrc` ထဲတွင် PATH ကို update လုပ်ပါမည်။ အပို runtime သို့မဟုတ် package manager မလိုပါ။ Terminal အသစ်တစ်ခု ပြန်ဖွင့်ပြီး installation ကို စစ်ပါ။
 
 ```bash
 zap --version
@@ -40,14 +40,14 @@ zap --version
 
 ### Release archive မှ direct installation
 
-Python မရှိသောစက်တွင် GitHub Releases မှ သင့် operating system နှင့်ကိုက်ညီသော archive ကို download/extract လုပ်ပြီး binary ကို PATH ထဲသို့ ထည့်ပါ။ Source checkout မှ install လုပ်လျှင် `install.sh` သည် Rust toolchain ရှိပါက binary ကို build လုပ်ပေးနိုင်သည်။ End users များအတွက် prebuilt release archive ကို အသုံးပြုရန် အကြံပြုသည်။
+GitHub Releases မှ သင့် operating system နှင့်ကိုက်ညီသော archive ကို download/extract လုပ်ပြီး binary ကို PATH ထဲသို့ ထည့်ပါ။ Source checkout မှ install လုပ်လျှင် `install.sh` သည် Rust toolchain ရှိပါက binary ကို build လုပ်ပေးနိုင်သည်။ End users များအတွက် prebuilt release archive ကို အသုံးပြုရန် အကြံပြုသည်။
 
 ## 3. CLI commands
 
 | Command | ရည်ရွယ်ချက် |
 |---|---|
 | `zap --version` | Native Zap version ကို ပြသည် |
-| `zap file.zp` | Zap source file ကို Python မလိုဘဲ execute လုပ်သည် |
+| `zap file.zp` | Zap source file ကို standalone runtime ဖြင့် execute လုပ်သည် |
 | `zap --help` | Native CLI usage ကို ပြသည် |
 | `zap fmt file.zp` | `.zp` source file ကို canonical whitespace ဖြင့် format လုပ်သည် |
 | `zap check [dir]` | `zap.toml` နှင့် project entry file ကို validate လုပ်သည် |
@@ -61,7 +61,7 @@ printf 'say "Hello from Zap"\n' > main.zp
 zap main.zp
 ```
 
-Native CLI သည် source file path ကို တိုက်ရိုက်လက်ခံသောကြောင့် project တစ်ခုချင်းစီတွင် Python သို့မဟုတ် အခြား runtime dependency မလိုအပ်ပါ။
+Native CLI သည် source file path ကို တိုက်ရိုက်လက်ခံသောကြောင့် project တစ်ခုချင်းစီတွင် အခြား runtime dependency မလိုအပ်ပါ။
 
 ## 4. Project manifest နှင့် modules
 
@@ -180,13 +180,13 @@ Local binary package ထုတ်ရန်—
 make package
 ```
 
-Python reference prototype tests များသည် optional ဖြစ်ပြီး compatibility စမ်းသပ်မှုအတွက်သာ အသုံးပြုသည်။
+Reference compatibility tests များသည် optional ဖြစ်ပြီး language behavior စမ်းသပ်မှုအတွက်သာ အသုံးပြုသည်။
 
 ## 7. Uninstall
 
 Linux/macOS တွင် installer ထည့်ထားသော user-level `zap` binary ကို ဖယ်ရှားပြီး shell profile ထဲရှိ Zap PATH line ကို ဖယ်ရှားပါ။ Windows တွင် `%USERPROFILE%\\.zap\\bin\\zap.exe` ကို ဖယ်ရှားပြီး user PATH ထဲရှိ Zap entry ကို ဖယ်ရှားပါ။
 
-Zap binary ကို ဖယ်ရှားခြင်းသည် Python package သို့မဟုတ် system Python ကို မထိခိုက်ပါ။
+Zap binary ကို ဖယ်ရှားခြင်းသည် system ပေါ်ရှိ အခြား software များကို မထိခိုက်ပါ။
 
 ## 8. Current limitations
 
@@ -198,8 +198,8 @@ Zap 0.3 သည် production compiler မဟုတ်သေးသော early na
 |---|---|
 | `native/` | Rust native runtime နှင့် integration tests |
 | `bin/zap` | Local native CLI binary |
-| `zap.py` | Optional Python reference prototype |
-| `setup.py` | Optional reference-package metadata |
+| `zap.py` | Optional reference tooling |
+| `setup.py` | Legacy reference-package metadata |
 | `install.sh` | Linux/macOS global user installer |
 | `install_windows.bat` | Windows installer |
 | `README.md` | Project overview |
@@ -207,7 +207,7 @@ Zap 0.3 သည် production compiler မဟုတ်သေးသော early na
 | `DESIGN.md` | Language design specification |
 | `hello.zp` | Basic example |
 | `advanced.zp` | Function/map/loop/JSON/AI example |
-| `test_zap.py` | Automated tests |
+| `test_zap.py` | Reference compatibility tests |
 | `LICENSE` | MIT License |
 
 ## References

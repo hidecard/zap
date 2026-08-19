@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zap 0.2: readable source-to-Python reference runtime for Web/AI experiments."""
+"""Zap 0.2: readable reference runtime for Web/AI experiments."""
 from __future__ import annotations
 import json, sys, os, argparse, urllib.request, urllib.parse
 __version__ = "0.2.0"
@@ -43,7 +43,7 @@ def convert_expr(s):
         if s.startswith(prefix):
             s = func + s[len(prefix):] + ")"
             break
-    # Zap booleans/null and simple property access work naturally in Python.
+    # Zap booleans/null and simple property access are normalized here.
     s = s.replace(" true", " True").replace(" false", " False").replace(" none", " None")
     if s.startswith("true"): s = "True" + s[4:]
     if s.startswith("false"): s = "False" + s[5:]
@@ -78,7 +78,7 @@ def translate(src):
             # fn name(a, b): -> def name(a, b):
             py = "def " + body[3:]
         elif body.startswith("map "):
-            # map user = { ... } is ordinary Python dictionary syntax.
+            # map user = { ... } uses the runtime's map representation.
             py = body[4:]
         elif body.startswith("json.parse "): py = "json.loads(" + body[11:] + ")"
         elif body.startswith("json.stringify "): py = "json.dumps(" + body[15:] + ")"
@@ -104,7 +104,7 @@ def main():
     parser = argparse.ArgumentParser(prog="zap", description="Zap Web/AI programming language")
     parser.add_argument("--version", action="version", version=f"Zap {__version__}")
     sub = parser.add_subparsers(dest="command")
-    run_cmd = sub.add_parser("run", help="run a .zp file with the optional reference prototype")
+    run_cmd = sub.add_parser("run", help="run a .zp file with the optional reference runtime")
     run_cmd.add_argument("file")
     new_cmd = sub.add_parser("new", help="create a starter Zap project")
     new_cmd.add_argument("name")

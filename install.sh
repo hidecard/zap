@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Python မလိုသော Zap native installer.
+# Standalone Zap native installer.
 # Release archive ထဲတွင် bin/zap binary ပါလျှင် တိုက်ရိုက် install လုပ်သည်။
-# Binary package မှ install လုပ်သောအခါ Python နှင့် Rust မလိုပါ။ Source build သည် explicit opt-in ဖြစ်သည်.။
+# Binary package မှ install လုပ်သောအခါ အပို development toolchain မလိုပါ။ Source build သည် explicit opt-in ဖြစ်သည်။
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 USER_BIN="${ZAP_INSTALL_DIR:-$HOME/.local/bin}"
 BINARY="${SCRIPT_DIR}/bin/zap"
@@ -38,7 +38,7 @@ esac
 
 export PATH="$USER_BIN:$PATH"
 echo "Zap native installed globally: $("$USER_BIN/zap" --version)"
-echo "Python မလိုပါ။ Terminal အသစ်ဖွင့်ပြီး မည်သည့် folder မှာမဆို 'zap file.zp' ဟု run လုပ်နိုင်ပါသည်။"
+echo "Standalone Zap ကို install လုပ်ပြီးပါပြီ။ Terminal အသစ်ဖွင့်ပြီး မည်သည့် folder မှာမဆို 'zap file.zp' ဟု run လုပ်နိုင်ပါသည်။"
 if ! command -v zap >/dev/null 2>&1; then
   echo "Current shell အတွက်: export PATH=\"$USER_BIN:\$PATH\""
 fi
