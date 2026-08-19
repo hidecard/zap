@@ -27,7 +27,7 @@ End users များအတွက် development toolchain မလိုပါ�
 
 ```bash
 tar -xzf zap-linux-x86_64.tar.gz
-cd zap-0.4.0
+cd zap-0.5.0
 bash install.sh
 ```
 
@@ -50,7 +50,7 @@ zap main.zp
 Windows တွင် release archive ကို extract ပြီး `bin\zap.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်ပါသည်။
 
 ```bat
-cd zap-0.4.0
+cd zap-0.5.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
@@ -257,7 +257,7 @@ Block and statement executor
 Native Rust runtime
 ```
 
-Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`docs/NATIVE.md`](docs/NATIVE.md) တွင် ဖတ်နိုင်သည်။
+Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`docs/NATIVE.md`](docs/NATIVE.md) တွင် ဖတ်နိုင်သည်။ v0.5.0 ပြောင်းလဲချက်များနှင့် release အသုံးပြုနည်းကို [`docs/RELEASE_0.5.0.md`](docs/RELEASE_0.5.0.md) တွင် ဖတ်နိုင်သည်။
 
 ## Release Package တည်ဆောက်ခြင်း
 
@@ -299,6 +299,7 @@ Native integration tests များသည် `native/tests/` အောက်�
 | `docs/USAGE.md` | Detailed usage guide |
 | `docs/SYNTAX_GUIDE.md` | Detailed syntax reference and runnable examples |
 | `docs/LANGUAGE_GUIDE.md` | Beginner-to-intermediate language usage guide |
+| `docs/RELEASE_0.5.0.md` | v0.5.0 release notes and download workflow |
 | `docs/ECOSYSTEM.md` | Future Web/Mobile/AI/IoT ecosystem plan |
 | `docs/PACKAGES.md` | Package ecosystem planning notes |
 | `Makefile` | Build၊ test နှင့် package shortcuts |
