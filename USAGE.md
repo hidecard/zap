@@ -28,7 +28,7 @@ zap --version
 Release archive ကို extract လုပ်ပြီး `bin\zap.exe` ရှိကြောင်း စစ်ပါ။ `.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
 ```bat
-cd zap-0.3.0
+cd zap-0.4.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
@@ -36,7 +36,7 @@ bin\zap.exe main.zp
 မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက `install_windows.bat` ကို **Command Prompt မှ Run as administrator မလိုဘဲ double-click သို့မဟုတ် command line ဖြင့်** run လုပ်ပါ။ Installer သည် `%USERPROFILE%\.zap\bin\zap.exe` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
 
 ```bat
-cd zap-0.3.0
+cd zap-0.4.0
 install_windows.bat
 ```
 

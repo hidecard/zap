@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:-x86_64-unknown-linux-gnu}"
-VERSION="${ZAP_VERSION:-0.3.0}"
+VERSION="${ZAP_VERSION:-0.4.0}"
 case "$TARGET" in
   x86_64-unknown-linux-gnu) ARCHIVE="zap-linux-x86_64.tar.gz"; BINARY="zap" ;;
   aarch64-apple-darwin) ARCHIVE="zap-macos-arm64.tar.gz"; BINARY="zap" ;;

@@ -27,7 +27,7 @@ End users များအတွက် development toolchain မလိုပါ�
 
 ```bash
 tar -xzf zap-linux-x86_64.tar.gz
-cd zap-0.3.0
+cd zap-0.4.0
 bash install.sh
 ```
 
@@ -50,7 +50,7 @@ zap main.zp
 Windows တွင် release archive ကို extract ပြီး `bin\zap.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်ပါသည်။
 
 ```bat
-cd zap-0.3.0
+cd zap-0.4.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
