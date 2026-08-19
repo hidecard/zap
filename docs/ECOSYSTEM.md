@@ -37,6 +37,7 @@ Zap IoT သည် GPIO၊ I2C၊ SPI၊ UART၊ sensors၊ actuators၊ MQTT၊ 
 ```text
 zap main.zp
 zap check
+zap test
 zap fmt main.zp
 zap --version
 zap --help

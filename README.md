@@ -18,7 +18,7 @@ Zap သည် **native core prototype / early development release** အဆင့
 | Functions | parameters၊ calls၊ `return`၊ local scope၊ nested lexical closures |
 | Modules | source-relative `use "module.zp"` imports၊ `modules/` နှင့် `lib/` search paths |
 | Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text` |
-| Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap fmt` |
+| Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap test`၊ `zap fmt`၊ `zap init` |
 | Installation | Prebuilt native binary package |
 
 ## Zap ကို Install လုပ်ခြင်း
@@ -108,6 +108,8 @@ zap --version               # runtime version
 zap --help                  # command help
 zap check                   # current project manifest validate
 zap check path/to/project   # specific project validate
+zap test                    # run tests/*.zp test files
+zap test path/to/tests      # run a selected test directory
 zap init path/to/project    # create a new Zap project
 zap fmt main.zp             # source formatting
 ```
@@ -187,6 +189,8 @@ main = "main.zp"
 hello-app/
 ├── zap.toml
 ├── main.zp
+├── tests/
+│   └── app_test.zp
 ├── modules/
 │   └── math.zp
 └── lib/
@@ -215,6 +219,7 @@ Project အသစ်တစ်ခုကို CLI ဖြင့် scaffold လု
 zap init hello-zap
 cd hello-zap
 zap check
+zap test
 zap main.zp
 ```
 

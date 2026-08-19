@@ -1,0 +1,11 @@
+fn add(a, b):
+    return a + b
+
+let values = [1, 2, 3]
+assert(add(2, 3) == 5, "add failed")
+assert(len(values) == 3, "list length failed")
+assert(contains(values, 2), "contains failed")
+assert(type(values) == "list", "type failed")
+say "Zap smoke test passed"
+
+main = none

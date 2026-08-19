@@ -60,6 +60,7 @@ GitHub Releases မှ သင့် operating system နှင့်ကိုက
 | `zap --help` | Native CLI usage ကို ပြသည် |
 | `zap fmt file.zp` | `.zp` source file ကို canonical whitespace ဖြင့် format လုပ်သည် |
 | `zap check [dir]` | `zap.toml` နှင့် project entry file ကို validate လုပ်သည် |
+| `zap test [dir]` | `*_test.zp` files များကို run လုပ်သည် |
 | `zap init <dir>` | Zap project အသစ် scaffold လုပ်သည် |
 
 Project အသစ်တစ်ခုကို မည်သည့် directory တွင်မဆို ဖန်တီးပြီး `.zp` file ကို run လုပ်နိုင်သည်။ Source file ကို format ပြင်ဆင်ရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ ဥပမာ—
@@ -72,6 +73,17 @@ zap main.zp
 ```
 
 Native CLI သည် source file path ကို တိုက်ရိုက်လက်ခံသောကြောင့် project တစ်ခုချင်းစီတွင် အခြား runtime dependency မလိုအပ်ပါ။
+
+### Zap test runner
+
+Project-level tests များကို `tests/` directory အောက်တွင် `*_test.zp` naming ဖြင့် သိမ်းပါ။ ထို့နောက်—
+
+```bash
+zap test
+zap test path/to/tests
+```
+
+ဟု run လုပ်နိုင်သည်။ Test file တစ်ခုအတွင်း `assert(condition, message)` ကို အသုံးပြုပြီး failure ဖြစ်ပါက command သည် non-zero exit code ဖြင့် ရပ်တန့်သည်။
 
 ## 4. Project manifest နှင့် modules
 
@@ -200,7 +212,7 @@ Zap binary ကို ဖယ်ရှားခြင်းသည် system ပေ
 
 ## 8. Current limitations
 
-Zap 0.3 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
+Zap 0.4 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
 
 ## 9. Project files
 
@@ -218,6 +230,7 @@ Zap 0.3 သည် production compiler မဟုတ်သေးသော early na
 | `../examples/tasks.zp` | Function/map/loop/assert example |
 | `../examples/data.zp` | JSON and file I/O example |
 | `native/tests/` | Native runtime integration tests |
+| `tests/` | User-facing `*_test.zp` test files |
 | `LICENSE` | MIT License |
 
 ## References
