@@ -1040,10 +1040,12 @@ fn static_expr_type(
     let value = raw.trim();
     if let Some(inner) = value.strip_suffix('?') {
         let result_type = static_expr_type(inner.trim(), vars, signatures)?;
-        return result_type
-            .strip_prefix("result<")
-            .and_then(|rest| rest.strip_suffix('>'))
-            .map(str::to_string);
+        return ["result<", "option<"].iter().find_map(|prefix| {
+            result_type
+                .strip_prefix(prefix)
+                .and_then(|rest| rest.strip_suffix('>'))
+                .map(str::to_string)
+        });
     }
     if value.starts_with('[') && value.ends_with(']') {
         let inner = &value[1..value.len() - 1];

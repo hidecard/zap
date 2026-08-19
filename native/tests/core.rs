@@ -907,3 +907,26 @@ fn propagates_option_values_with_question_operator() {
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "Zap\ntrue\n");
 }
+
+#[test]
+fn check_unwraps_option_question_operator_types() {
+    let root = std::env::temp_dir().join("zap_option_question_check");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"option-question\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "let value: number = some(1)?\n").unwrap();
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
