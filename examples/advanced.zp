@@ -1,0 +1,18 @@
+# Functions, collections, JSON, and control flow
+fn summarize(items):
+    let total = len(items)
+    let first = items[0]
+    return {"total": total, "first": first, "labels": join(items, ", ")}
+
+let topics = ["web", "mobile", "ai", "iot"]
+let summary = summarize(topics)
+
+say summary["first"]
+say summary["labels"]
+say json(summary)
+assert(summary["total"] == 4, "four topics expected")
+
+let count = 0
+while count < 3:
+    say count
+    count = count + 1

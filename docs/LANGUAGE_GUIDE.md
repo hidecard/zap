@@ -459,7 +459,7 @@ cargo test --manifest-path native/Cargo.toml
 
 | ဖိုင် | ရည်ရွယ်ချက် |
 |---|---|
-| `README.md` | Project overview နှင့် quick start |
+| `../README.md` | Project overview နှင့် quick start |
 | `LANGUAGE_GUIDE.md` | Beginner-to-intermediate language usage guide |
 | `SYNTAX_GUIDE.md` | Syntax reference နှင့် runnable examples |
 | `CORE_SPEC.md` | Core language behavior နှင့် implementation status |
@@ -467,3 +467,5 @@ cargo test --manifest-path native/Cargo.toml
 | `NATIVE.md` | Native runtime architecture နှင့် build information |
 | `DESIGN.md` | Zap design principles နှင့် roadmap |
 | `USAGE.md` | Installation နှင့် CLI usage |
+| `ECOSYSTEM.md` | Web၊ Mobile၊ AI နှင့် IoT ecosystem plan |
+| `../examples/` | Runnable Zap examples |

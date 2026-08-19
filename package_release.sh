@@ -19,9 +19,11 @@ mkdir -p "$DIST/zap-$VERSION/bin"
 cp "$SOURCE" "$DIST/zap-$VERSION/$BINARY"
 if [ "$TARGET" != "x86_64-pc-windows-msvc" ]; then mv "$DIST/zap-$VERSION/$BINARY" "$DIST/zap-$VERSION/bin/zap"; else mv "$DIST/zap-$VERSION/$BINARY" "$DIST/zap-$VERSION/bin/zap.exe"; fi
 if [ "$TARGET" = "x86_64-pc-windows-msvc" ]; then
-  cp "$ROOT/install_windows.bat" "$ROOT/README.md" "$ROOT/USAGE.md" "$ROOT/NATIVE.md" "$ROOT/PACKAGE.md" "$ROOT/SYNTAX_GUIDE.md" "$DIST/zap-$VERSION/"
+  cp "$ROOT/install_windows.bat" "$ROOT/README.md" "$DIST/zap-$VERSION/"
+  cp -R "$ROOT/docs" "$ROOT/examples" "$DIST/zap-$VERSION/"
 else
-  cp "$ROOT/install.sh" "$ROOT/README.md" "$ROOT/USAGE.md" "$ROOT/NATIVE.md" "$ROOT/PACKAGE.md" "$ROOT/SYNTAX_GUIDE.md" "$DIST/zap-$VERSION/"
+  cp "$ROOT/install.sh" "$ROOT/README.md" "$DIST/zap-$VERSION/"
+  cp -R "$ROOT/docs" "$ROOT/examples" "$DIST/zap-$VERSION/"
 fi
 chmod 0755 "$DIST/zap-$VERSION/bin/$([ "$TARGET" = "x86_64-pc-windows-msvc" ] && echo zap.exe || echo zap)"
 if [[ "$ARCHIVE" == *.zip ]]; then

@@ -96,9 +96,9 @@ Source build သည် development အတွက်သာ ဖြစ်သည်�
 
 ## Language Usage Guide
 
-အသေးစိတ် language usage ကို beginner အဆင့်မှ project development အထိ ဖတ်ရှုရန် [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) ကို အသုံးပြုပါ။ ထို guide တွင် values၊ variables၊ operators၊ conditions၊ loops၊ functions၊ closures၊ lists၊ maps၊ JSON၊ file I/O၊ modules၊ error debugging နှင့် complete project examples များ ပါဝင်သည်။
+အသေးစိတ် language usage ကို beginner အဆင့်မှ project development အထိ ဖတ်ရှုရန် [`docs/LANGUAGE_GUIDE.md`](docs/LANGUAGE_GUIDE.md) ကို အသုံးပြုပါ။ ထို guide တွင် values၊ variables၊ operators၊ conditions၊ loops၊ functions၊ closures၊ lists၊ maps၊ JSON၊ file I/O၊ modules၊ error debugging နှင့် complete project examples များ ပါဝင်သည်။
 
-Syntax reference အတွက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ project manifest အတွက် [`PACKAGE.md`](PACKAGE.md) နှင့် native runtime အတွက် [`NATIVE.md`](NATIVE.md) ကို ဖတ်ရှုနိုင်သည်။
+Syntax reference အတွက် [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md)၊ project manifest အတွက် [`docs/PACKAGE.md`](docs/PACKAGE.md) နှင့် native runtime အတွက် [`docs/NATIVE.md`](docs/NATIVE.md) ကို ဖတ်ရှုနိုင်သည်။
 
 ## CLI အသုံးပြုနည်း
 
@@ -205,7 +205,7 @@ Runtime သည် main source file ရှိသော directory၊ project ၏ `
 zap check
 ```
 
-အသေးစိတ် package manifest specification ကို [`PACKAGE.md`](PACKAGE.md) တွင် ဖတ်နိုင်သည်။
+အသေးစိတ် package manifest specification ကို [`docs/PACKAGE.md`](docs/PACKAGE.md) တွင် ဖတ်နိုင်သည်။
 
 ## Project စတင်ဖန်တီးခြင်း
 
@@ -250,7 +250,7 @@ Block and statement executor
 Native Rust runtime
 ```
 
-Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`NATIVE.md`](NATIVE.md) တွင် ဖတ်နိုင်သည်။
+Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`docs/NATIVE.md`](docs/NATIVE.md) တွင် ဖတ်နိုင်သည်။
 
 ## Release Package တည်ဆောက်ခြင်း
 
@@ -270,7 +270,7 @@ Native runtime နှင့် integration tests များကို run လ�
 make native-test
 ```
 
-Reference compatibility tests များသည် optional ဖြစ်ပြီး project development အတွင်းသာ အသုံးပြုနိုင်သည်။ End-user installation နှင့် native CLI အသုံးပြုမှုအတွက် အပို runtime မလိုပါ။
+Native integration tests များသည် `native/tests/` အောက်တွင် ရှိပြီး `cargo test --manifest-path native/Cargo.toml` ဖြင့် run နိုင်သည်။ End-user installation နှင့် native CLI အသုံးပြုမှုအတွက် အပို runtime မလိုပါ။
 
 ## Repository ဖိုင်များ
 
@@ -278,21 +278,22 @@ Reference compatibility tests များသည် optional ဖြစ်ပြ�
 |---|---|
 | `native/` | Rust native runtime၊ Cargo metadata နှင့် integration tests |
 | `bin/zap` | Local release build ထုတ်ထားသော native CLI binary |
-| `zap.py` | Optional reference tooling |
-| `hello.zp`, `advanced.zp` | Language examples |
-| `native_hello.zp` | Native runtime smoke-test example |
+| `examples/` | Runnable language examples နှင့် native smoke tests |
+| `legacy/` | Archived prototype tooling; active runtime မဟုတ်ပါ |
 | `install.sh` | Linux/macOS binary installer |
 | `install_windows.bat` | Windows binary installer |
 | `build_native.sh`, `build_native.bat` | Native binary build helpers |
 | `package_release.sh` | Binary-only release archive builder |
 | `.github/workflows/release.yml` | Cross-platform release automation |
-| `CORE_SPEC.md` | Language core specification |
-| `DESIGN.md` | Language design notes |
-| `NATIVE.md` | Native runtime documentation |
-| `PACKAGE.md` | `zap.toml` manifest နှင့် package layout specification |
-| `USAGE.md` | Detailed usage guide |
-| `SYNTAX_GUIDE.md` | Detailed syntax reference and runnable examples |
-| `ECOSYSTEM.md` | Future Web/Mobile/AI/IoT ecosystem plan |
+| `docs/CORE_SPEC.md` | Language core specification |
+| `docs/DESIGN.md` | Language design notes |
+| `docs/NATIVE.md` | Native runtime documentation |
+| `docs/PACKAGE.md` | `zap.toml` manifest နှင့် package layout specification |
+| `docs/USAGE.md` | Detailed usage guide |
+| `docs/SYNTAX_GUIDE.md` | Detailed syntax reference and runnable examples |
+| `docs/LANGUAGE_GUIDE.md` | Beginner-to-intermediate language usage guide |
+| `docs/ECOSYSTEM.md` | Future Web/Mobile/AI/IoT ecosystem plan |
+| `docs/PACKAGES.md` | Package ecosystem planning notes |
 | `Makefile` | Build၊ test နှင့် package shortcuts |
 
 ## Roadmap

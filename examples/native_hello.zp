@@ -1,10 +1,8 @@
-# Native Zap prototype
+# Native Zap smoke test
 say "Hello from standalone Zap"
-name = "Web AI"
+let name = "Web AI"
 say name
-count = 2 + 3 * 4
+let count = 2 + 3 * 4
 say count
 if true:
     say "Native runtime works"
-use web
-use ai

@@ -83,4 +83,4 @@ Native project တွင် AST parser တိုးတက်မှု၊ ပိ�
 
 > လက်ရှိ native runtime သည် early development release ဖြစ်ပြီး production compiler အဖြစ် မသတ်မှတ်ရသေးပါ။ Syntax နှင့် runtime behavior များသည် development အတွင်း ပြောင်းလဲနိုင်သောကြောင့် release notes နှင့် project specification များကို အမြဲစစ်ဆေးသင့်သည်။
 
-အသေးစိတ် user workflow ကို [`USAGE.md`](USAGE.md) နှင့် project overview ကို [`README.md`](README.md) တွင် ဖတ်ရှုနိုင်သည်။
+အသေးစိတ် user workflow ကို [`USAGE.md`](USAGE.md) နှင့် project overview ကို [`README.md`](../README.md) တွင် ဖတ်ရှုနိုင်သည်။

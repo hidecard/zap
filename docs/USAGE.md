@@ -1,10 +1,10 @@
-# Zap 0.2 — Complete Usage Guide
+# Zap 0.4 — Complete Usage Guide
 
 ## 1. Zap ဆိုတာဘာလဲ
 
 Zap သည် လေ့လာရလွယ်ကူသော syntax၊ native execution နှင့် Web/AI application များအတွက် တဖြည်းဖြည်းချဲ့ထွင်နိုင်သော general-purpose programming language ဖြစ်သည်။ ယခု install လုပ်ရန်အတွက် recommended runtime သည် standalone native binary ဖြစ်သည်။
 
-> `zap` native runtime သည် `.zp` source files များကို အပို runtime မလိုဘဲ တိုက်ရိုက် execute လုပ်သည်။ Reference tooling သည် language behavior စမ်းသပ်ရန် optional ဖြစ်သည်။
+> `zap` native runtime သည် `.zp` source files များကို အပို runtime မလိုဘဲ တိုက်ရိုက် execute လုပ်သည်။ ပုံမှန်အသုံးပြုသူများသည် release binary ကို တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 
 ## 2. One-click installation
 
@@ -190,7 +190,7 @@ Local binary package ထုတ်ရန်—
 make package
 ```
 
-Reference compatibility tests များသည် optional ဖြစ်ပြီး language behavior စမ်းသပ်မှုအတွက်သာ အသုံးပြုသည်။
+Language behavior အတွက် native integration tests များကို `native/tests/` အောက်တွင် ထိန်းသိမ်းထားပြီး `cargo test --manifest-path native/Cargo.toml` ဖြင့် run နိုင်သည်။
 
 ## 7. Uninstall
 
@@ -208,16 +208,16 @@ Zap 0.3 သည် production compiler မဟုတ်သေးသော early na
 |---|---|
 | `native/` | Rust native runtime နှင့် integration tests |
 | `bin/zap` | Local native CLI binary |
-| `zap.py` | Optional reference tooling |
-| `setup.py` | Legacy reference-package metadata |
+
 | `install.sh` | Linux/macOS global user installer |
 | `install_windows.bat` | Windows installer |
-| `README.md` | Project overview |
+| `../README.md` | Project overview |
 | `USAGE.md` | Complete usage guide |
 | `DESIGN.md` | Language design specification |
-| `hello.zp` | Basic example |
-| `advanced.zp` | Function/map/loop/JSON/AI example |
-| `test_zap.py` | Reference compatibility tests |
+| `../examples/hello.zp` | Basic example |
+| `../examples/tasks.zp` | Function/map/loop/assert example |
+| `../examples/data.zp` | JSON and file I/O example |
+| `native/tests/` | Native runtime integration tests |
 | `LICENSE` | MIT License |
 
 ## References
