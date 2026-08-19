@@ -1,0 +1,10 @@
+# Native Zap prototype
+say "Hello from standalone Zap"
+name = "Web AI"
+say name
+count = 2 + 3 * 4
+say count
+if true:
+    say "Native runtime works"
+use web
+use ai

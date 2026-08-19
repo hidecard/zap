@@ -1,0 +1,7 @@
+[package]
+name = "ai-app"
+version = "0.1.0"
+framework = "zap-ai"
+
+[dependencies]
+zap-ai = "0.1"

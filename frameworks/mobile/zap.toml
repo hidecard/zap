@@ -1,0 +1,7 @@
+[package]
+name = "mobile-app"
+version = "0.1.0"
+framework = "zap-mobile"
+
+[dependencies]
+zap-mobile = "0.1"

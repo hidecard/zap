@@ -1,0 +1,7 @@
+[package]
+name = "iot-device"
+version = "0.1.0"
+framework = "zap-iot"
+
+[dependencies]
+zap-iot = "0.1"

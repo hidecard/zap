@@ -1,0 +1,80 @@
+name: Zap Native Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: zap-linux-x86_64.tar.gz
+            binary: zap
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: zap-macos-arm64.tar.gz
+            binary: zap
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive: zap-macos-x86_64.tar.gz
+            binary: zap
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zap-windows-x86_64.zip
+            binary: zap.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build native binary
+        run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
+      - name: Package Unix binary
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p package/zap/bin
+          cp native/target/${{ matrix.target }}/release/${{ matrix.binary }} package/zap/bin/
+          cp install.sh USAGE.md NATIVE.md PACKAGE.md package/zap/
+          chmod 0755 package/zap/bin/${{ matrix.binary }}
+          tar -czf "${{ matrix.archive }}" -C package zap
+          sha256sum "${{ matrix.archive }}" > "${{ matrix.archive }}.sha256"
+      - name: Package Windows binary
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force package/zap/bin | Out-Null
+          Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
+          Copy-Item install_windows.bat, USAGE.md, NATIVE.md, PACKAGE.md package/zap/
+          Compress-Archive -Path package/zap/* -DestinationPath "${{ matrix.archive }}"
+          (Get-FileHash "${{ matrix.archive }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.archive }}" | Out-File -Encoding ascii "${{ matrix.archive }}.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            ${{ matrix.archive }}
+            ${{ matrix.archive }}.sha256
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*

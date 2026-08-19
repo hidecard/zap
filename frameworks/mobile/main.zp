@@ -1,0 +1,7 @@
+use mobile
+
+app = mobile.app "hello-mobile"
+app.screen "Home" {
+    text "Hello from Zap Mobile"
+}
+app.start

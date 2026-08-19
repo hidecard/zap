@@ -1,0 +1,5 @@
+use web
+
+app = web.app "hello-web"
+app.get "/" => "Hello from Zap Web"
+app.listen 8080

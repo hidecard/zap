@@ -1,0 +1,5 @@
+use ai
+
+assistant = ai.app "helper"
+answer = assistant.ask "Explain Zap in one sentence"
+say answer.text

@@ -1,0 +1,7 @@
+use iot
+
+device = iot.device "temperature-node"
+device.sensor "temperature" on_read(value):
+    say value
+device.connect "mqtt://localhost:1883"
+device.run
