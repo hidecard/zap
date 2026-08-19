@@ -85,9 +85,232 @@ pub(crate) struct Program {
     pub(crate) statements: Vec<Spanned<Stmt>>,
 }
 
+struct AstParser {
+    tokens: Vec<crate::lexer::SpannedToken>,
+    cursor: usize,
+}
+
+impl AstParser {
+    fn new(tokens: Vec<crate::lexer::SpannedToken>) -> Self {
+        Self { tokens, cursor: 0 }
+    }
+
+    fn current(&self) -> &crate::lexer::SpannedToken {
+        &self.tokens[self.cursor]
+    }
+
+    fn advance(&mut self) -> crate::lexer::SpannedToken {
+        let token = self.tokens[self.cursor].clone();
+        self.cursor += 1;
+        token
+    }
+
+    fn parse_complete(&mut self) -> Result<Spanned<Expr>, String> {
+        let expression = self.parse_expression(0)?;
+        if !matches!(self.current().token, crate::lexer::Token::End) {
+            return Err(format!(
+                "unexpected token after expression at {}:{}",
+                self.current().span.line,
+                self.current().span.column
+            ));
+        }
+        Ok(expression)
+    }
+
+    fn parse_expression(&mut self, min_precedence: u8) -> Result<Spanned<Expr>, String> {
+        let mut left = self.parse_prefix()?;
+        loop {
+            let (operator, precedence) = match self.current().token {
+                crate::lexer::Token::Or => (BinaryOp::Or, 1),
+                crate::lexer::Token::And => (BinaryOp::And, 2),
+                crate::lexer::Token::EqEq => (BinaryOp::Equal, 3),
+                crate::lexer::Token::NotEq => (BinaryOp::NotEqual, 3),
+                crate::lexer::Token::Less => (BinaryOp::Less, 4),
+                crate::lexer::Token::Greater => (BinaryOp::Greater, 4),
+                crate::lexer::Token::LessEq => (BinaryOp::LessEqual, 4),
+                crate::lexer::Token::GreaterEq => (BinaryOp::GreaterEqual, 4),
+                crate::lexer::Token::Plus => (BinaryOp::Add, 5),
+                crate::lexer::Token::Minus => (BinaryOp::Subtract, 5),
+                crate::lexer::Token::Star => (BinaryOp::Multiply, 6),
+                crate::lexer::Token::Slash => (BinaryOp::Divide, 6),
+                crate::lexer::Token::Percent => (BinaryOp::Remainder, 6),
+                _ => break,
+            };
+            if precedence < min_precedence {
+                break;
+            }
+            self.advance();
+            let right = self.parse_expression(precedence + 1)?;
+            let span = SourceSpan {
+                line: left.span.line,
+                column: left.span.column,
+                length: right.span.column + right.span.length - left.span.column,
+            };
+            left = Spanned::new(
+                Expr::Binary {
+                    left: Box::new(left),
+                    op: operator,
+                    right: Box::new(right),
+                },
+                span,
+            );
+        }
+        Ok(left)
+    }
+
+    fn parse_prefix(&mut self) -> Result<Spanned<Expr>, String> {
+        let token = self.advance();
+        match token.token {
+            crate::lexer::Token::Minus => {
+                let value = self.parse_expression(7)?;
+                let span = SourceSpan {
+                    line: token.span.line,
+                    column: token.span.column,
+                    length: value.span.column + value.span.length - token.span.column,
+                };
+                Ok(Spanned::new(
+                    Expr::Unary {
+                        op: UnaryOp::Negate,
+                        value: Box::new(value),
+                    },
+                    span,
+                ))
+            }
+            crate::lexer::Token::Name(name) => {
+                let literal = match name.as_str() {
+                    "true" => Some(Literal::Bool(true)),
+                    "false" => Some(Literal::Bool(false)),
+                    "none" => Some(Literal::None),
+                    _ => None,
+                };
+                let expression = literal.map(Expr::Literal).unwrap_or(Expr::Name(name));
+                self.parse_postfix(Spanned::new(expression, token.span))
+            }
+            crate::lexer::Token::Number(value) => self.parse_postfix(Spanned::new(
+                Expr::Literal(Literal::Number(value)),
+                token.span,
+            )),
+            crate::lexer::Token::Text(value) => self.parse_postfix(Spanned::new(
+                Expr::Literal(Literal::Text(value)),
+                token.span,
+            )),
+            crate::lexer::Token::LParen => {
+                let expression = self.parse_expression(0)?;
+                let close = self.advance();
+                if !matches!(close.token, crate::lexer::Token::RParen) {
+                    return Err(format!(
+                        "expected ')' at {}:{}",
+                        close.span.line, close.span.column
+                    ));
+                }
+                self.parse_postfix(expression)
+            }
+            other => Err(format!(
+                "expected expression, got {other:?} at {}:{}",
+                token.span.line, token.span.column
+            )),
+        }
+    }
+
+    fn parse_postfix(&mut self, mut expression: Spanned<Expr>) -> Result<Spanned<Expr>, String> {
+        loop {
+            match self.current().token {
+                crate::lexer::Token::LParen => {
+                    self.advance();
+                    let mut args = Vec::new();
+                    if !matches!(self.current().token, crate::lexer::Token::RParen) {
+                        loop {
+                            args.push(self.parse_expression(0)?);
+                            if !matches!(self.current().token, crate::lexer::Token::Comma) {
+                                break;
+                            }
+                            self.advance();
+                        }
+                    }
+                    let close = self.advance();
+                    if !matches!(close.token, crate::lexer::Token::RParen) {
+                        return Err(format!(
+                            "expected ')' at {}:{}",
+                            close.span.line, close.span.column
+                        ));
+                    }
+                    let end = close.span.column + close.span.length;
+                    let callee_span = expression.span.clone();
+                    let callee = Spanned::new(
+                        std::mem::replace(&mut expression.node, Expr::Literal(Literal::None)),
+                        callee_span,
+                    );
+                    expression.span.length = end.saturating_sub(expression.span.column);
+                    expression.node = Expr::Call {
+                        callee: Box::new(callee),
+                        args,
+                    };
+                }
+                crate::lexer::Token::LBracket => {
+                    self.advance();
+                    let index = self.parse_expression(0)?;
+                    let close = self.advance();
+                    if !matches!(close.token, crate::lexer::Token::RBracket) {
+                        return Err(format!(
+                            "expected ']' at {}:{}",
+                            close.span.line, close.span.column
+                        ));
+                    }
+                    let end = close.span.column + close.span.length;
+                    let target_span = expression.span.clone();
+                    let target = Spanned::new(
+                        std::mem::replace(&mut expression.node, Expr::Literal(Literal::None)),
+                        target_span,
+                    );
+                    expression.span.length = end.saturating_sub(expression.span.column);
+                    expression.node = Expr::Index {
+                        target: Box::new(target),
+                        index: Box::new(index),
+                    };
+                }
+                _ => break,
+            }
+        }
+        Ok(expression)
+    }
+}
+
+pub(crate) fn parse_expression(source: &str) -> Result<Spanned<Expr>, String> {
+    let tokens = crate::lexer::tokenize_with_spans(source)?;
+    AstParser::new(tokens).parse_complete()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_precedence_and_preserves_expression_span() {
+        let expression = parse_expression("1 + 2 * 3").expect("valid expression");
+        assert_eq!(expression.span.line, 1);
+        assert!(matches!(
+            expression.node,
+            Expr::Binary {
+                op: BinaryOp::Add,
+                right,
+                ..
+            } if matches!(right.node, Expr::Binary { op: BinaryOp::Multiply, .. })
+        ));
+    }
+
+    #[test]
+    fn parses_call_and_index_postfix_nodes() {
+        let expression = parse_expression("items(1)[0]").expect("valid postfix expression");
+        assert!(
+            matches!(expression.node, Expr::Index { target, .. } if matches!(target.node, Expr::Call { .. }))
+        );
+    }
+
+    #[test]
+    fn rejects_trailing_tokens_with_location() {
+        let error = parse_expression("1 2").expect_err("trailing tokens must fail");
+        assert!(error.contains("unexpected token after expression at 1:3"));
+    }
 
     #[test]
     fn preserves_source_span_on_ast_nodes() {
