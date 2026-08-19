@@ -25,11 +25,11 @@ Tagged releases matching `v*` use the release workflow to build native archives,
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.2` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
+Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.3` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
 
 | Item | Current status |
 |---|---|
-| Current release line | `v0.9.2` |
+| Current release line | `v0.9.3` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -52,9 +52,9 @@ The native runtime is being maintained as focused Rust modules rather than a sin
 | `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
 | `project.rs` | Project, manifest, and module validation | Implemented |
 | `cli.rs` | CLI command orchestration and exit codes | Implemented |
-| `ast.rs` | AST-based execution architecture | Planned |
+| `ast.rs` | Source-span AST and native AST execution architecture | Implemented |
 
-The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. Token diagnostics now retain one-based source locations, sensitive diagnostic key/value pairs are redacted, runtime execution applies source-size, loop, and execution-depth limits, and expressions reject unused trailing tokens. The native suite currently covers **9 unit tests and 39 integration tests**.
+The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. Token diagnostics now retain one-based source locations, sensitive diagnostic key/value pairs are redacted, runtime execution applies source-size, loop, and execution-depth limits, and expressions reject unused trailing tokens. The native suite currently covers **25 unit tests and 47 integration tests**.
 
 ## Why Zap?
 
@@ -69,8 +69,8 @@ Download the archive for your operating system and CPU architecture from [Releas
 On Linux or macOS:
 
 ```bash
-tar -xzf zap-0.9.2-linux-x86_64.tar.gz
-cd zap-0.9.2
+tar -xzf zap-0.9.3-linux-x86_64.tar.gz
+cd zap
 bash install.sh
 zap --version
 ```

@@ -4,6 +4,21 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-08-19
+
+### Fixed
+
+- Native AST function နှင့် class method body များကို runtime `Function` object ထဲတွင် တိုက်ရိုက်သိမ်းပြီး source-line reconstruction မပြုဘဲ execute လုပ်နိုင်သည်။
+- AST execution routing နှင့် legacy OOP/function/module compatibility အတွက် regression coverage တိုးချဲ့ထားသည်။
+- CI Rust quality gate တွင် stable Clippy နှင့် local toolchain နှစ်ခုလုံးကို ကိုက်ညီစေရန် indentation validation နှင့် AST compatibility checks များကို ပြင်ဆင်ထားသည်။
+
+### Verification
+
+- Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အားလုံးအောင်မြင်သည်။
+- OOP class၊ inheritance၊ constructor၊ override၊ property assignment၊ function၊ method၊ module နှင့် Unicode regression tests များ အားလုံးအောင်မြင်သည်။
+- Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release workflow matrix ကို အသုံးပြုသည်။
+
+
 ### Added
 
 - Dedicated `ZapError` diagnostic boundary ထည့်သွင်းထားသည်။ Human-readable runtime output နှင့် `zap check --json` output တို့သည် error kind၊ message နှင့် source location metadata ကို တူညီသော model ဖြင့် ထုတ်ပေးနိုင်သည်။

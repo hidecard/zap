@@ -26,6 +26,7 @@ impl Drop for ExecutionGuard {
     }
 }
 
+#[allow(clippy::manual_is_multiple_of)]
 fn validate_indentation(lines: &[String]) -> Result<(), String> {
     let mut style: Option<&'static str> = None;
     for (index, line) in lines.iter().enumerate() {
@@ -572,9 +573,10 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
                 ..
             } => {
                 ast_program_compatible(then_branch)
-                    && else_branch
-                        .as_ref()
-                        .map_or(true, |branch| ast_program_compatible(branch))
+                    && match else_branch.as_ref() {
+                        Some(branch) => ast_program_compatible(branch),
+                        None => true,
+                    }
             }
             Stmt::While { body, .. } | Stmt::For { body, .. } => ast_program_compatible(body),
             _ => true,
