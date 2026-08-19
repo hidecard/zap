@@ -24,6 +24,18 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 - `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ runtime String errors ၏ အပြည့်အဝ ZapError conversion၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
 
+## [0.9.2] - 2026-08-19
+
+### Added
+
+- Release workflow တွင် Rust formatting၊ Clippy၊ Cargo check နှင့် native unit/integration tests များကို cross-platform build မစတင်မီ quality gate အဖြစ် ထည့်သွင်းထားသည်။
+- `v0.9.2` tag သည် `native/Cargo.toml` version နှင့် ကိုက်ညီမှုကို CI တွင် အလိုအလျောက်စစ်ဆေးသည်။
+- Native package နှင့် CLI version ကို `0.9.2` သို့ update လုပ်ထားသည်။
+
+### Verification
+
+- Release build matrix သည် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 အတွက် quality gate အောင်မြင်ပြီးမှသာ artifact packaging နှင့် GitHub Release publishing ပြုလုပ်မည်။
+
 ## [0.9.1] - 2026-08-19
 
 ### Added

@@ -53,7 +53,7 @@ fn run_test_command(args: &[String]) {
 /// Dispatches Zap command-line arguments and owns CLI exit behavior.
 pub fn run_cli(args: &[String]) {
     if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
-        println!("zap 0.9.1 (native)");
+        println!("zap 0.9.2 (native)");
         return;
     }
     if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
