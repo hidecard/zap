@@ -767,7 +767,7 @@ fn validates_generic_collection_and_variant_annotations() {
     .expect("write manifest");
     std::fs::write(
         valid_root.join("main.zp"),
-        "let numbers: list<number> = [1, 2, 3]\nlet labels: map<text, number> = {\"one\": 1}\nlet answer: result<number> = ok(42)\nlet name: option<text> = some(\"Zap\")\nsay unwrap(answer)\n",
+        "let numbers: list<number> = [1, 2, 3]\nlet labels: map<text, number> = {\"one\": 1}\nlet answer: result<number> = ok(42)\nlet name: option<text> = some(\"Zap\")\nlet missing: option<number> = option_none()\nsay unwrap(answer)\n",
     )
     .expect("write source");
     let output = std::process::Command::new(binary())

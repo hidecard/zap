@@ -192,6 +192,9 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
     if expected_base != actual_base {
         return false;
     }
+    if actual_base == "option" && actual_inner == "any" {
+        return true;
+    }
     let (Some(expected_args), Some(actual_args)) = (
         split_type_args(expected_inner),
         split_type_args(actual_inner),
