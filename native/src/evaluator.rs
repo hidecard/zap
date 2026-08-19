@@ -356,30 +356,109 @@ fn value_type(v: &Value) -> &'static str {
         Value::None => "none",
     }
 }
-pub(crate) fn check_annotation(name: &str, annotation: &str, value: &Value) -> Result<(), String> {
-    let expected = annotation.trim();
-    if expected.is_empty() {
-        return Ok(());
+
+fn split_generic_args(inner: &str) -> Result<Vec<&str>, String> {
+    let mut args = Vec::new();
+    let mut start = 0;
+    let mut depth = 0usize;
+    for (index, character) in inner.char_indices() {
+        match character {
+            '<' => depth += 1,
+            '>' => {
+                depth = depth
+                    .checked_sub(1)
+                    .ok_or_else(|| "unbalanced type annotation".to_string())?
+            }
+            ',' if depth == 0 => {
+                let argument = inner[start..index].trim();
+                if argument.is_empty() {
+                    return Err("generic type arguments cannot be empty".to_string());
+                }
+                args.push(argument);
+                start = index + character.len_utf8();
+            }
+            _ => {}
+        }
     }
-    let valid = matches!(
+    if depth != 0 {
+        return Err("unbalanced type annotation".to_string());
+    }
+    let argument = inner[start..].trim();
+    if argument.is_empty() {
+        return Err("generic type arguments cannot be empty".to_string());
+    }
+    args.push(argument);
+    Ok(args)
+}
+
+fn generic_annotation(annotation: &str) -> Option<(&str, &str)> {
+    let open = annotation.find('<')?;
+    if !annotation.ends_with('>') || open == 0 {
+        return None;
+    }
+    Some((
+        &annotation[..open],
+        &annotation[open + 1..annotation.len() - 1],
+    ))
+}
+
+fn matches_annotation(annotation: &str, value: &Value) -> Result<bool, String> {
+    let expected = annotation.trim();
+    if expected.is_empty() || expected == "any" {
+        return Ok(true);
+    }
+    if let Some((base, inner)) = generic_annotation(expected) {
+        let args = split_generic_args(inner)?;
+        return match (base.trim(), value) {
+            ("list", Value::List(items)) if args.len() == 1 => {
+                items.iter().try_fold(true, |valid, item| {
+                    Ok(valid && matches_annotation(args[0], item)?)
+                })
+            }
+            ("map", Value::Map(entries)) if args.len() == 2 => {
+                entries.values().try_fold(true, |valid, item| {
+                    Ok(valid && matches_annotation(args[1], item)?)
+                })
+            }
+            ("result", Value::ResultOk(item) | Value::ResultErr(item)) if args.len() == 1 => {
+                matches_annotation(args[0], item)
+            }
+            ("option", Value::OptionSome(item)) if args.len() == 1 => {
+                matches_annotation(args[0], item)
+            }
+            ("option", Value::OptionNone) if args.len() == 1 => Ok(true),
+            ("list" | "map" | "result" | "option", _) => Ok(false),
+            _ => Err(format!(
+                "unknown or invalid generic type annotation: {expected}"
+            )),
+        };
+    }
+    Ok(matches!(
         (expected, value_type(value)),
         ("text", "text")
             | ("number", "number")
             | ("bool", "bool")
             | ("list", "list")
             | ("map", "map")
+            | ("object", "object")
             | ("result", "result")
             | ("option", "option")
             | ("none", "none")
-            | ("any", _)
-    );
-    if valid {
-        Ok(())
-    } else {
-        Err(format!(
+    ))
+}
+
+pub(crate) fn check_annotation(name: &str, annotation: &str, value: &Value) -> Result<(), String> {
+    let expected = annotation.trim();
+    if expected.is_empty() || expected == "any" {
+        return Ok(());
+    }
+    match matches_annotation(expected, value) {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(format!(
             "type mismatch for {name}: expected {expected}, got {}",
             value_type(value)
-        ))
+        )),
+        Err(error) => Err(format!("invalid type annotation for {name}: {error}")),
     }
 }
 

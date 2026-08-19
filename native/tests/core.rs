@@ -754,3 +754,68 @@ fn rejects_module_parent_directory_traversal() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("may not traverse parent directories"));
 }
+
+#[test]
+fn validates_generic_collection_and_variant_annotations() {
+    let valid_root = std::env::temp_dir().join("zap_generic_annotations_valid");
+    let _ = std::fs::remove_dir_all(&valid_root);
+    std::fs::create_dir_all(&valid_root).expect("create temp project");
+    std::fs::write(
+        valid_root.join("zap.toml"),
+        "[package]\nname = \"generic-valid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .expect("write manifest");
+    std::fs::write(
+        valid_root.join("main.zp"),
+        "let numbers: list<number> = [1, 2, 3]\nlet labels: map<text, number> = {\"one\": 1}\nlet answer: result<number> = ok(42)\nlet name: option<text> = some(\"Zap\")\nsay unwrap(answer)\n",
+    )
+    .expect("write source");
+    let output = std::process::Command::new(binary())
+        .args(["check", valid_root.to_str().expect("utf8 path")])
+        .output()
+        .expect("run check");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let invalid_root = std::env::temp_dir().join("zap_generic_annotations_invalid");
+    let _ = std::fs::remove_dir_all(&invalid_root);
+    std::fs::create_dir_all(&invalid_root).expect("create temp project");
+    std::fs::write(
+        invalid_root.join("zap.toml"),
+        "[package]\nname = \"generic-invalid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .expect("write manifest");
+    std::fs::write(
+        invalid_root.join("main.zp"),
+        "let numbers: list<number> = [1, \"wrong\"]\n",
+    )
+    .expect("write source");
+    let output = std::process::Command::new(binary())
+        .args(["check", invalid_root.to_str().expect("utf8 path")])
+        .output()
+        .expect("run check");
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("expects list<number>, got list<any>"));
+}
+
+#[test]
+fn rejects_malformed_generic_annotations() {
+    let root = std::env::temp_dir().join("zap_generic_annotations_malformed");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).expect("create temp project");
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"generic-malformed\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .expect("write manifest");
+    std::fs::write(root.join("main.zp"), "let values: list<> = []\n").expect("write source");
+    let output = std::process::Command::new(binary())
+        .args(["check", root.to_str().expect("utf8 path")])
+        .output()
+        .expect("run check");
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown type annotation 'list<>'"));
+}

@@ -115,6 +115,47 @@ pub(crate) fn generic_type(base: &str, inner: &str) -> String {
     format!("{base}<{}>", inner.trim())
 }
 
+fn generic_parts(annotation: &str) -> Option<(&str, &str)> {
+    let open = annotation.find('<')?;
+    if !annotation.ends_with('>') || open == 0 {
+        return None;
+    }
+    Some((
+        &annotation[..open],
+        &annotation[open + 1..annotation.len() - 1],
+    ))
+}
+
+fn split_type_args(inner: &str) -> Option<Vec<&str>> {
+    let mut args = Vec::new();
+    let mut start = 0;
+    let mut depth = 0usize;
+    for (index, ch) in inner.char_indices() {
+        match ch {
+            '<' => depth += 1,
+            '>' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                let part = inner[start..index].trim();
+                if part.is_empty() {
+                    return None;
+                }
+                args.push(part);
+                start = index + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    let part = inner[start..].trim();
+    if part.is_empty() {
+        return None;
+    }
+    args.push(part);
+    Some(args)
+}
+
 pub(crate) fn is_allowed_annotation(annotation: &str) -> bool {
     let value = annotation.trim();
     if [
@@ -124,15 +165,17 @@ pub(crate) fn is_allowed_annotation(annotation: &str) -> bool {
     {
         return true;
     }
-    for base in ["result", "option"] {
-        if let Some(inner) = value
-            .strip_prefix(&format!("{base}<"))
-            .and_then(|rest| rest.strip_suffix('>'))
-        {
-            return is_allowed_annotation(inner);
-        }
+    let Some((base, inner)) = generic_parts(value) else {
+        return false;
+    };
+    let Some(args) = split_type_args(inner) else {
+        return false;
+    };
+    match base {
+        "list" | "option" | "result" => args.len() == 1 && is_allowed_annotation(args[0]),
+        "map" => args.len() == 2 && args.iter().all(|arg| is_allowed_annotation(arg)),
+        _ => false,
     }
-    false
 }
 
 pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
@@ -141,18 +184,23 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
     if expected == "any" || expected == actual {
         return true;
     }
-    for base in ["result", "option"] {
-        if let Some(expected_inner) = expected
-            .strip_prefix(&format!("{base}<"))
-            .and_then(|rest| rest.strip_suffix('>'))
-        {
-            if let Some(actual_inner) = actual
-                .strip_prefix(&format!("{base}<"))
-                .and_then(|rest| rest.strip_suffix('>'))
-            {
-                return expected_inner == "any" || expected_inner == actual_inner;
-            }
-        }
+    let (Some((expected_base, expected_inner)), Some((actual_base, actual_inner))) =
+        (generic_parts(expected), generic_parts(actual))
+    else {
+        return false;
+    };
+    if expected_base != actual_base {
+        return false;
     }
-    false
+    let (Some(expected_args), Some(actual_args)) = (
+        split_type_args(expected_inner),
+        split_type_args(actual_inner),
+    ) else {
+        return false;
+    };
+    expected_args.len() == actual_args.len()
+        && expected_args
+            .iter()
+            .zip(actual_args)
+            .all(|(expected, actual)| annotation_matches(expected, actual))
 }

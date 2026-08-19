@@ -1034,6 +1034,37 @@ fn static_expr_type(
             .and_then(|rest| rest.strip_suffix('>'))
             .map(str::to_string);
     }
+    if value.starts_with('[') && value.ends_with(']') {
+        let inner = &value[1..value.len() - 1];
+        let mut item_type: Option<String> = None;
+        for item in split_static_args(inner) {
+            let Some(kind) = static_expr_type(&item, vars, signatures) else {
+                continue;
+            };
+            if let Some(current) = &item_type {
+                if current != &kind {
+                    item_type = Some("any".into());
+                    break;
+                }
+            } else {
+                item_type = Some(kind);
+            }
+        }
+        return Some(generic_type("list", item_type.as_deref().unwrap_or("any")));
+    }
+    if value.starts_with('{') && value.ends_with('}') {
+        let inner = &value[1..value.len() - 1];
+        let mut value_type = "any".to_string();
+        for entry in split_static_args(inner) {
+            if let Some((_, raw_value)) = entry.split_once(':') {
+                if let Some(kind) = static_expr_type(raw_value, vars, signatures) {
+                    value_type = kind;
+                    break;
+                }
+            }
+        }
+        return Some(format!("map<text,{value_type}>"));
+    }
     if let Some(kind) = static_literal_type(value) {
         return Some(kind.to_string());
     }
@@ -1191,6 +1222,14 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                     .unwrap_or((left.trim(), None));
                 if let Some(kind) = static_expr_type(right, &vars, &signatures) {
                     if let Some(expected) = annotation {
+                        if !is_allowed_annotation(expected) {
+                            return Err(format!(
+                                "TypeError at {}:{}:1: unknown type annotation '{}'",
+                                file.display(),
+                                line_index + 1,
+                                expected
+                            ));
+                        }
                         if !annotation_matches(expected, &kind) {
                             return Err(format!(
                                 "TypeError at {}:{}:1: variable '{}' expects {}, got {}",
