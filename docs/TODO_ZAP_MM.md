@@ -54,8 +54,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `stdlib.rs` — pure math/text standard-library operations ၏ ပထမဆုံး extraction
 - [x] `diagnostics.rs` — structured errors
 - [x] `project.rs` — manifest၊ module၊ project validation
-- [ ] `cli.rs` — command-line argument handling
-- [ ] Public/internal API boundary များကို ပိုမိုရှင်းလင်းစွာ သတ်မှတ်ရန်။
+- [x] `cli.rs` — command-line argument handling နှင့် command orchestration
+- [x] Public/internal API boundary များကို `cli.rs`၊ `project.rs` နှင့် evaluator modules အကြား ပိုမိုရှင်းလင်းစွာ သတ်မှတ်ရန်။
 - [x] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်သည်။
 
 `stdlib.rs` extraction သည် ပထမ milestone ဖြစ်ပြီး path၊ file I/O၊ JSON၊ collection နှင့် system helpers များကို ထပ်မံခွဲထုတ်ရန် ကျန်ရှိသည်။
@@ -80,7 +80,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `zap check --json` တွင် `kind`၊ `message` နှင့် `error` fields ထည့်ရန်။
 - [x] `file`၊ `line` နှင့် `column` ကို JSON fields အဖြစ် သီးခြားထည့်ရန်။
 - [x] Human-readable error နှင့် `zap check --json` error နှစ်မျိုးလုံးသည် `ZapError` diagnostic boundary ကို အသုံးပြုရန်။
-- [ ] CLI exit code သတ်မှတ်ချက် ပြုလုပ်ရန်။ `0` = success၊ `1` = program/check failure၊ `2` = CLI usage error။
+- [x] CLI exit code သတ်မှတ်ချက် ပြုလုပ်ရန်။ `0` = success၊ `1` = program/check failure၊ `2` = CLI usage error။
 
 ## 2.3 Error model
 

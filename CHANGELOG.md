@@ -13,10 +13,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Native runtime ကို `diagnostics.rs`၊ `lexer.rs`၊ `parser.rs`၊ `value.rs`၊ `evaluator.rs` နှင့် `project.rs` modules များအဖြစ် ခွဲခြားထားသည်။
 - `stdlib.rs` တွင် pure math/text built-in operation dispatch ၏ ပထမဆုံး extraction ကို ထည့်သွင်းထားသည်။
 - Module refactor အပြီး native unit tests 3 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။
+- CLI command orchestration ကို `cli.rs` သို့ ခွဲထုတ်ပြီး `0` success၊ `1` program/check failure နှင့် `2` usage error exit-code policy ကို သတ်မှတ်ထားသည်။
 
 ### Planned
 
-- `cli.rs` extraction၊ `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ CLI exit-code standardization၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
+- `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
 
 ## [0.9.1] - 2026-08-19
 

@@ -51,10 +51,10 @@ The native runtime is being maintained as focused Rust modules rather than a sin
 | `stdlib.rs` | Pure math and text built-in operations | First extraction implemented |
 | `diagnostics.rs` | `ZapError` and structured diagnostics | Implemented |
 | `project.rs` | Project, manifest, and module validation | Implemented |
-| `cli.rs` | CLI command orchestration | Planned |
+| `cli.rs` | CLI command orchestration and exit codes | Implemented |
 | `ast.rs` | AST-based execution architecture | Planned |
 
-The modularization refactor preserves the existing language behavior. The native suite currently covers **3 unit tests and 35 integration tests**.
+The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. The native suite currently covers **3 unit tests and 35 integration tests**.
 
 ## Why Zap?
 
