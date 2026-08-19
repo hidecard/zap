@@ -865,3 +865,27 @@ fn check_rejects_incompatible_reassignment() {
     assert!(String::from_utf8_lossy(&output.stderr)
         .contains("variable 'count' expects number, got text"));
 }
+
+#[test]
+fn rejects_non_text_map_key_annotations() {
+    let root = std::env::temp_dir().join("zap_map_key_annotation_test");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"map-key\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "let values: map<number, text> = {\"one\": \"1\"}\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("expects map<number, text>"));
+}

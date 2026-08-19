@@ -201,9 +201,18 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
     ) else {
         return false;
     };
-    expected_args.len() == actual_args.len()
+    if expected_args.len() != actual_args.len() {
+        return false;
+    }
+    if expected_base == "map"
         && expected_args
-            .iter()
-            .zip(actual_args)
-            .all(|(expected, actual)| annotation_matches(expected, actual))
+            .first()
+            .is_some_and(|key| *key != "text" && *key != "any")
+    {
+        return false;
+    }
+    expected_args
+        .iter()
+        .zip(actual_args)
+        .all(|(expected, actual)| annotation_matches(expected, actual))
 }
