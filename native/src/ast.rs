@@ -280,6 +280,73 @@ pub(crate) fn parse_expression(source: &str) -> Result<Spanned<Expr>, String> {
     AstParser::new(tokens).parse_complete()
 }
 
+pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
+    let trimmed = source.trim();
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+        return Err("empty or comment-only statement".to_string());
+    }
+    let leading = source.len() - source.trim_start().len();
+    let span = |length: usize| SourceSpan {
+        line: 1,
+        column: leading + 1,
+        length: length.max(1),
+    };
+
+    if trimmed == "break" {
+        return Ok(Spanned::new(Stmt::Break, span(trimmed.len())));
+    }
+    if trimmed == "continue" {
+        return Ok(Spanned::new(Stmt::Continue, span(trimmed.len())));
+    }
+    if let Some(rest) = trimmed.strip_prefix("return") {
+        if rest.is_empty() || rest.chars().next().is_some_and(char::is_whitespace) {
+            let value = rest.trim();
+            let statement = if value.is_empty() {
+                Stmt::Return(None)
+            } else {
+                Stmt::Return(Some(parse_expression(value)?))
+            };
+            return Ok(Spanned::new(statement, span(trimmed.len())));
+        }
+    }
+
+    if let Some(equal) = trimmed.find('=') {
+        let is_comparison = trimmed.as_bytes().get(equal + 1) == Some(&b'=')
+            || (equal > 0 && trimmed.as_bytes()[equal - 1] == b'=');
+        if !is_comparison {
+            let name = trimmed[..equal].trim();
+            if name.is_empty()
+                || !name.chars().enumerate().all(|(index, character)| {
+                    character == '_'
+                        || character.is_ascii_alphanumeric()
+                            && (index > 0 || character.is_ascii_alphabetic())
+                })
+            {
+                return Err(format!("invalid assignment target at 1:{}", leading + 1));
+            }
+            let value = trimmed[equal + 1..].trim();
+            if value.is_empty() {
+                return Err(format!(
+                    "missing assignment value at 1:{}",
+                    leading + equal + 2
+                ));
+            }
+            return Ok(Spanned::new(
+                Stmt::Assignment {
+                    name: name.to_string(),
+                    value: parse_expression(value)?,
+                },
+                span(trimmed.len()),
+            ));
+        }
+    }
+
+    Ok(Spanned::new(
+        Stmt::Expression(parse_expression(trimmed)?),
+        span(trimmed.len()),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -310,6 +377,39 @@ mod tests {
     fn rejects_trailing_tokens_with_location() {
         let error = parse_expression("1 2").expect_err("trailing tokens must fail");
         assert!(error.contains("unexpected token after expression at 1:3"));
+    }
+
+    #[test]
+    fn parses_statement_forms_with_spans() {
+        assert!(
+            matches!(parse_statement("value = 1 + 2").unwrap().node, Stmt::Assignment { name, .. } if name == "value")
+        );
+        assert!(matches!(
+            parse_statement("return value").unwrap().node,
+            Stmt::Return(Some(_))
+        ));
+        assert!(matches!(
+            parse_statement("break").unwrap().node,
+            Stmt::Break
+        ));
+        assert!(matches!(
+            parse_statement("continue").unwrap().node,
+            Stmt::Continue
+        ));
+        assert!(matches!(
+            parse_statement("value + 1").unwrap().node,
+            Stmt::Expression(_)
+        ));
+    }
+
+    #[test]
+    fn rejects_invalid_statement_targets_and_missing_values() {
+        assert!(parse_statement("1value = 2").is_err());
+        assert!(parse_statement("value =").is_err());
+        assert!(matches!(
+            parse_statement("returning").unwrap().node,
+            Stmt::Expression(_)
+        ));
     }
 
     #[test]

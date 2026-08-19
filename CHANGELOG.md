@@ -23,6 +23,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - User-facing source reads/writes၊ module imports နှင့် project test reads များအတွက် 8 MiB bounded file I/O limit ထည့်သွင်းထားသည်။ Oversized input ကို file content မဖတ်မီ typed error ဖြင့် reject လုပ်သည်။
 - Source-span-aware `ast.rs` foundation ကို expression၊ literal၊ call၊ index၊ statement နှင့် program nodes များဖြင့် ထည့်သွင်းထားသည်။ Existing line-based evaluator ကို မပြတ်တောက်စေရန် compatibility foundation အဖြစ် စတင်ထားသည်။
 - `run_checked` typed runtime boundary နှင့် regression coverage ထည့်သွင်းပြီး runtime String error များကို CLI အဆင့်မတိုင်မီ `ZapError` model သို့ ပြောင်းပေးသည်။
+- AST compatibility parser တွင် assignment၊ return၊ break၊ continue နှင့် expression statements များကို source-span-aware statement nodes အဖြစ် parse လုပ်နိုင်အောင် ထည့်သွင်းထားသည်။ Existing line-based evaluator ကို မပြတ်တောက်စေရန် parser migration ကို အဆင့်လိုက် ဆက်လက်လုပ်ဆောင်နေသည်။
+- AST statement parser regression tests ထည့်သွင်းပြီး native unit tests စုစုပေါင်း 18 ခုနှင့် integration tests 47 ခု အောင်မြင်ထားသည်။
 
 ### Planned
 
