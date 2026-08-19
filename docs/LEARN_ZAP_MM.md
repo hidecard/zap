@@ -1014,9 +1014,52 @@ say unwrap_or(failure, 0)
 say unwrap_or(missing, "unknown")
 ```
 
-`unwrap(err(...))` သို့မဟုတ် `unwrap(option_none())` ကို စစ်ဆေးခြင်းမရှိဘဲ ခေါ်ပါက runtime error ပြန်ပေးသည်။ `Result` နှင့် `Option` တန်ဖိုးများကို JSON အဖြစ်လည်း serialize လုပ်နိုင်သည်။ လက်ရှိအဆင့်တွင် payload static type validation နှင့် automatic error propagation မပြီးသေးပါ။
+`unwrap(err(...))` သို့မဟုတ် `unwrap(option_none())` ကို စစ်ဆေးခြင်းမရှိဘဲ ခေါ်ပါက runtime error ပြန်ပေးသည်။ `Result` နှင့် `Option` တန်ဖိုးများကို JSON အဖြစ်လည်း serialize လုပ်နိုင်သည်။ လက်ရှိအဆင့်တွင် Result/Option payload static type validation မပြီးသေးသော်လည်း Result error အတွက် `?` automatic propagation ကို အသုံးပြုနိုင်ပြီဖြစ်သည်။
 
 ### v0.9.0 Audit Note
-v0.9.0 တွင် function parameter/return annotation runtime checks၊ static signature validation၊ known function-call argument count/literal type checking၊ variable/nested-expression inference၊ `Result`/`Option` foundation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ Generic type inference၊ control-flow narrowing၊ explicit module exports၊ automatic error propagation၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များမှာ မပြီးသေးသော roadmap features များ ဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
+v0.9.0 တွင် function parameter/return annotation runtime checks၊ static signature validation၊ known function-call argument count/literal type checking၊ variable/nested-expression inference၊ `Result`/`Option` foundation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ Generic type inference၊ control-flow narrowing၊ Result/Option payload static validation၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များမှာ မပြီးသေးသော roadmap features များ ဖြစ်သည်။ Result error အတွက် `?` automatic propagation ကို ထည့်သွင်းပြီးဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
 
 နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ comparative audit ကို [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။
+
+## Lesson 18 — Result နှင့် `?` Automatic Propagation
+
+Zap တွင် `ok(value)` နှင့် `err(value)` ဖြင့် Result value များကို ဖန်တီးနိုင်သည်။ `is_ok(result)` နှင့် `is_err(result)` ဖြင့် အခြေအနေစစ်နိုင်ပြီး `unwrap(result)` သို့မဟုတ် `unwrap_or(result, fallback)` ဖြင့် value ကို ရယူနိုင်သည်။
+
+Function တစ်ခုအတွင်း Result error ကို အပေါ်သို့ ပြန်ပို့လိုပါက expression နောက်တွင် `?` ကို ထည့်နိုင်သည်။ `ok(value)?` သည် value ကို ဖြည်ပေးပြီး `err(error)?` သည် လက်ရှိ function မှ `err(error)` ကို ချက်ချင်း return ပြန်ပေးသည်။ ထို့ကြောင့် nested function များတွင် error ကို တစ်ဆင့်ချင်း စစ်ဆေးရေးသားစရာ မလိုတော့ပါ။
+
+```zap
+fn read_user():
+    return err("user not found")
+
+fn load_profile():
+    let user = read_user()?
+    return ok(user)
+
+let result = load_profile()
+say is_err(result)
+```
+
+အထက်ပါ program ၏ output သည် `true` ဖြစ်သည်။ `read_user()` က error ပြန်ပေးသောကြောင့် `load_profile()` သည် `return ok(user)` သို့ မရောက်ဘဲ error Result ကို အပေါ် function သို့ ပြန်ပို့သည်။ Success case တွင်—
+
+```zap
+fn read_number():
+    return ok(41)
+
+fn calculate():
+    let number = read_number()?
+    return ok(number + 1)
+
+say unwrap(calculate())
+```
+
+ဟုရေးနိုင်ပြီး output သည် `42` ဖြစ်မည်။ `?` ကို Result မဟုတ်သော value ပေါ်တွင် သုံးပါက runtime error ပြန်ရမည်။ Option value များအတွက် လက်ရှိတွင် `is_some`၊ `is_option_none`၊ `unwrap` နှင့် `unwrap_or` ကို အသုံးပြုနိုင်သည်။
+
+### Lesson 18 လေ့ကျင့်ခန်း
+
+1. `find_task(id)` function တစ်ခုရေးပြီး task မတွေ့ပါက `err("not found")` ပြန်ပေးပါ။
+2. အခြား function တစ်ခုတွင် `find_task(id)?` ဖြင့် error ကို အပေါ်သို့ propagate လုပ်ပါ။
+3. Success နှင့် error နှစ်မျိုးလုံးအတွက် `is_ok`၊ `is_err` နှင့် `unwrap_or` ကို စမ်းသပ်ပါ။
+
+### Lesson 18 checkpoint
+
+Result value တစ်ခုကို ဖန်တီးခြင်း၊ စစ်ဆေးခြင်း၊ ဖြည်ခြင်းနှင့် `?` ဖြင့် error ကို function အပေါ်သို့ အလိုအလျောက် ပြန်ပို့ခြင်းတို့ကို နားလည်ပြီး အသုံးပြုနိုင်ရမည်။

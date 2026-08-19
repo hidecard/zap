@@ -372,3 +372,35 @@ fn check_rejects_annotated_variable_mismatch() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("variable 'count' expects number, got text"));
 }
+
+#[test]
+fn propagates_result_errors_with_question_operator() {
+    let file = std::env::temp_dir().join("zap_result_propagation_test.zp");
+    let source = "fn load():\n    return err(\"missing\")\n\nfn wrapper():\n    let value = load()?\n    return ok(value)\n\nlet result = wrapper()\nsay is_err(result)\n";
+    std::fs::write(&file, source).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "true\n");
+}
+
+#[test]
+fn unwraps_ok_result_with_question_operator() {
+    let file = std::env::temp_dir().join("zap_result_success_propagation_test.zp");
+    let source = "fn load():\n    return ok(42)\n\nfn wrapper():\n    let value = load()?\n    return ok(value + 1)\n\nlet result = wrapper()\nsay unwrap(result)\n";
+    std::fs::write(&file, source).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "43\n");
+}
+
+#[test]
+fn rejects_question_operator_for_non_result_values() {
+    let file = std::env::temp_dir().join("zap_invalid_result_propagation_test.zp");
+    std::fs::write(&file, "fn wrapper():\n    let value = 42?\n    return value\n\nwrapper()\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("? expects a Result value"));
+}

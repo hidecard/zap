@@ -88,7 +88,7 @@ Zap v0.9.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 - [x] `unwrap` နှင့် `unwrap_or` semantics ကို သတ်မှတ်ရန်။
 - [x] Result/Option JSON serialization နှင့် `type()` support ထည့်ရန်။
 - [ ] Result/Option payload ကို static type checker မှ စစ်ရန်။
-- [ ] Error propagation နှင့် `try`/`catch` equivalent semantics သတ်မှတ်ရန်။
+- [x] Result error အတွက် `?` automatic propagation semantics သတ်မှတ်ပြီး အကောင်အထည်ဖော်ရန်။ `try`/`catch` equivalent နှင့် typed payload propagation သည် နောက်ထပ်အလုပ်ဖြစ်သည်။
 - [ ] Error message တွင် secret၊ environment value နှင့် password များ မပေါက်ကြားစေရန် စစ်ရန်။
 - [ ] Panic၊ unchecked unwrap နှင့် silent fallback များကို user input path များတွင် ဖယ်ရှားရန်။
 

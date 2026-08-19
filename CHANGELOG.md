@@ -11,10 +11,12 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Active import stack ဖြင့် circular import detection နှင့် absolute module path rejection ထည့်သွင်းထားသည်။
 - `zap check` တွင် annotated variable နှင့် inferred literal/expression type မကိုက်ညီမှုကို static diagnostic အဖြစ် စစ်ဆေးနိုင်သည်။
 - Module cache၊ private export၊ cycle detection၊ absolute-path safety နှင့် static assignment mismatch regression tests များ ထည့်သွင်းထားသည်။
+- Result-returning expression များအတွက် `?` automatic error propagation ထည့်သွင်းထားသည်။ `ok(value)?` သည် value ကို ဖြည်ပေးပြီး `err(error)?` သည် လက်ရှိ function မှ error Result ကို ပြန်ပို့သည်။
+- Result propagation success/error နှင့် invalid non-Result operand အတွက် integration tests များ ထည့်သွင်းထားသည်။
 
 ### Verification
 
-- Native integration test **31 ခုလုံး pass** ဖြစ်သည်။
+- Native integration test **34 ခုလုံး pass** ဖြစ်သည်။
 - `cargo test --manifest-path native/Cargo.toml` အောင်မြင်သည်။
 - Module documentation ကို Burmese learning guide နှင့် roadmap တွင် synchronize လုပ်ထားသည်။
 
@@ -22,7 +24,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 - `ZapError` enum ဖြင့် internal `String` errors များကို ခွဲခြားရန်။
 - Branch/loop type narrowing၊ generic/nullable types နှင့် Result/Option payload static checking တိုးရန်။
-- Project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library နှင့် automatic Result propagation ဆက်လက်လုပ်ရန်။
+- Project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library နှင့် Result/Option payload static validation ဆက်လက်လုပ်ရန်။
 
 ## [0.9.0]
 
@@ -38,7 +40,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ### Verification
 
-- Native integration test **31 ခုလုံး pass** ဖြစ်သည်။
+- Native integration test **34 ခုလုံး pass** ဖြစ်သည်။
 - `cargo check` အောင်မြင်သည်။
 - `git diff --check` အောင်မြင်သည်။
 - Linux၊ macOS ARM64 နှင့် Windows x86_64 release workflow ကို မပြောင်းလဲဘဲ ဆက်လက်အသုံးပြုနိုင်သည်။
