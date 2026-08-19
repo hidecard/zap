@@ -25,10 +25,6 @@ jobs:
             target: aarch64-apple-darwin
             archive: zap-macos-arm64.tar.gz
             binary: zap
-          - os: macos-13
-            target: x86_64-apple-darwin
-            archive: zap-macos-x86_64.tar.gz
-            binary: zap
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             archive: zap-windows-x86_64.zip

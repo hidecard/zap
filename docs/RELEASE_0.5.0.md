@@ -10,7 +10,7 @@ Zap v0.5.0 သည် native runtime၊ project testing workflow နှင့် 
 - Standard runtime helpers နှင့် collection/text/numeric utilities
 - `docs/` အောက်တွင် language၊ syntax၊ usage၊ package နှင့် ecosystem guides များကို စနစ်တကျခွဲထားခြင်း
 - `examples/` အောက်တွင် run နိုင်သော beginner နှင့် practical programs များ ပါဝင်ခြင်း
-- Windows၊ Linux နှင့် macOS native binary release archives
+- Windows၊ Linux နှင့် macOS ARM64 native binary release archives
 - SHA-256 checksum files ဖြင့် archive verification
 
 ## Quick Start
