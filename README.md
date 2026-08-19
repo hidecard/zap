@@ -17,11 +17,11 @@ Start with the **English beginner course** or the **မြန်မာ beginner 
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.0` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
+Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.1` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
 
 | Item | Current status |
 |---|---|
-| Current release line | `v0.9.0` |
+| Current release line | `v0.9.1` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -43,8 +43,8 @@ Download the archive for your operating system and CPU architecture from [Releas
 On Linux or macOS:
 
 ```bash
-tar -xzf zap-0.9.0-linux-x86_64.tar.gz
-cd zap-0.9.0
+tar -xzf zap-0.9.1-linux-x86_64.tar.gz
+cd zap-0.9.1
 bash install.sh
 zap --version
 ```

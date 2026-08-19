@@ -2,7 +2,13 @@
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
-## [Unreleased — post-v0.9.0 hardening]
+## [Unreleased]
+
+### Planned
+
+- Dedicated `ZapError` enum, deeper control-flow type narrowing, HTTP/URL/Regex standard-library modules, package lockfiles, and editor tooling remain planned.
+
+## [0.9.1] - 2026-08-19
 
 ### Added
 
@@ -69,7 +75,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 - Standard library၊ modules၊ project manifest နှင့် CLI workflow များကို တိုးချဲ့ခဲ့သည်။
 
-[Unreleased — post-v0.9.0 hardening]: docs/RELEASE_0.9.0.md
+[Unreleased]: docs/RELEASE_0.9.1.md
+[0.9.1]: docs/RELEASE_0.9.1.md
 [0.9.0]: docs/RELEASE_0.9.0.md
 [0.8.0]: docs/RELEASE_0.8.0.md
 [0.7.1]: docs/RELEASE_0.7.1.md
