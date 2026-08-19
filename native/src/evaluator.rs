@@ -259,7 +259,11 @@ pub(crate) fn call_function(
         local.insert(param.name.clone(), v);
     }
     let mut local_funcs = funcs.clone();
-    let value = match execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))? {
+    let value = match if let Some(body) = &f.ast_body {
+        execute_ast_program(body, &mut local, &mut local_funcs, Path::new("."))
+    } else {
+        execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))
+    }? {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
         Flow::Break | Flow::LoopContinue => {
@@ -293,7 +297,11 @@ pub(crate) fn call_method(
         local.insert(param.name.clone(), v);
     }
     let mut local_funcs = funcs.clone();
-    let value = match execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))? {
+    let value = match if let Some(body) = &f.ast_body {
+        execute_ast_program(body, &mut local, &mut local_funcs, Path::new("."))
+    } else {
+        execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))
+    }? {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
         Flow::Break | Flow::LoopContinue => {
@@ -557,7 +565,7 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
         .statements
         .iter()
         .all(|statement| match &statement.node {
-            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => false,
+            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => true,
             Stmt::If {
                 then_branch,
                 else_branch,
@@ -571,6 +579,131 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
             Stmt::While { body, .. } | Stmt::For { body, .. } => ast_program_compatible(body),
             _ => true,
         })
+}
+
+fn register_ast_function(
+    name: &str,
+    params: &[(String, Option<String>)],
+    return_type: &Option<String>,
+    body: &Program,
+    vars: &HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+) {
+    funcs.insert(
+        name.to_string(),
+        Rc::new(Function {
+            params: params
+                .iter()
+                .map(|(name, annotation)| Param {
+                    name: name.clone(),
+                    annotation: annotation.clone(),
+                })
+                .collect(),
+            return_annotation: return_type.clone(),
+            body: Vec::new(),
+            ast_body: Some(body.clone()),
+            closure: vars.clone(),
+        }),
+    );
+}
+
+fn register_ast_class(
+    name: &str,
+    base: &Option<String>,
+    body: &Program,
+    vars: &HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    funcs.insert(
+        format!("{name}.__class__"),
+        Rc::new(Function {
+            params: Vec::new(),
+            return_annotation: None,
+            body: Vec::new(),
+            ast_body: None,
+            closure: vars.clone(),
+        }),
+    );
+    if let Some(parent) = base {
+        if !funcs.contains_key(&format!("{parent}.__class__")) {
+            return Err(format!("unknown parent class: {parent}"));
+        }
+        funcs.insert(
+            format!("{name}.__parent__"),
+            Rc::new(Function {
+                params: Vec::new(),
+                return_annotation: None,
+                body: vec![parent.clone()],
+                ast_body: None,
+                closure: vars.clone(),
+            }),
+        );
+    }
+    for statement in &body.statements {
+        if let Stmt::Function {
+            name: method,
+            params,
+            return_type,
+            body,
+        } = &statement.node
+        {
+            if method == "init" {
+                funcs.insert(
+                    format!("{name}.__own_init__"),
+                    Rc::new(Function {
+                        params: Vec::new(),
+                        return_annotation: None,
+                        body: Vec::new(),
+                        ast_body: None,
+                        closure: vars.clone(),
+                    }),
+                );
+            }
+            let mut method_params = params
+                .iter()
+                .map(|(name, annotation)| Param {
+                    name: name.clone(),
+                    annotation: annotation.clone(),
+                })
+                .collect::<Vec<_>>();
+            if method_params.first().map(|param| param.name.as_str()) != Some("self") {
+                method_params.insert(
+                    0,
+                    Param {
+                        name: "self".into(),
+                        annotation: None,
+                    },
+                );
+            }
+            funcs.insert(
+                format!("{name}.{method}"),
+                Rc::new(Function {
+                    params: method_params,
+                    return_annotation: return_type.clone(),
+                    body: Vec::new(),
+                    ast_body: Some(body.clone()),
+                    closure: vars.clone(),
+                }),
+            );
+        }
+    }
+    if let Some(parent) = base {
+        let prefix = format!("{parent}.");
+        let inherited = funcs
+            .iter()
+            .filter(|(key, _)| key.starts_with(&prefix))
+            .map(|(key, function)| {
+                (
+                    key.trim_start_matches(&prefix).to_string(),
+                    function.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        for (method, function) in inherited {
+            funcs.entry(format!("{name}.{method}")).or_insert(function);
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn execute_ast_program(
@@ -701,7 +834,20 @@ pub(crate) fn execute_ast_program(
                 }
                 outcome
             }
-            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => unreachable!(),
+            Stmt::Function {
+                name,
+                params,
+                return_type,
+                body,
+            } => {
+                register_ast_function(name, params, return_type, body, vars, funcs);
+                Flow::Continue
+            }
+            Stmt::Class { name, base, body } => {
+                register_ast_class(name, base, body, vars, funcs)?;
+                Flow::Continue
+            }
+            Stmt::Import { path, explicit } => load_module(path, vars, funcs, base, *explicit)?,
         };
         match flow {
             Flow::Continue => {}
@@ -907,6 +1053,7 @@ pub(crate) fn execute_lines(
                     params: Vec::new(),
                     return_annotation: None,
                     body: Vec::new(),
+                    ast_body: None,
                     closure: vars.clone(),
                 }),
             );
@@ -920,6 +1067,7 @@ pub(crate) fn execute_lines(
                         params: Vec::new(),
                         return_annotation: None,
                         body: vec![parent_name],
+                        ast_body: None,
                         closure: vars.clone(),
                     }),
                 );
@@ -943,6 +1091,7 @@ pub(crate) fn execute_lines(
                                 params: Vec::new(),
                                 return_annotation: None,
                                 body: Vec::new(),
+                                ast_body: None,
                                 closure: vars.clone(),
                             }),
                         );
@@ -965,6 +1114,7 @@ pub(crate) fn execute_lines(
                             params,
                             return_annotation,
                             body: method_body,
+                            ast_body: None,
                             closure: vars.clone(),
                         }),
                     );
@@ -1010,6 +1160,7 @@ pub(crate) fn execute_lines(
                     params: args,
                     return_annotation,
                     body,
+                    ast_body: None,
                     closure: vars.clone(),
                 }),
             );
@@ -1020,6 +1171,7 @@ pub(crate) fn execute_lines(
                         params: Vec::new(),
                         return_annotation: None,
                         body: Vec::new(),
+                        ast_body: None,
                         closure: HashMap::new(),
                     }),
                 );
@@ -1227,6 +1379,22 @@ mod tests {
             .expect("AST execution should succeed");
         assert!(matches!(flow, super::Flow::Continue));
         assert_eq!(vars.get("total"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn executes_function_and_method_bodies_from_native_ast() {
+        let program = parse_program(
+            "fn add(a: number, b: number) -> number:\n    return a + b\nlet result: number = add(3, 3)\n",
+        )
+        .expect("valid declaration AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("native AST declarations should execute");
+        assert!(funcs
+            .get("add")
+            .is_some_and(|function| function.ast_body.is_some()));
+        assert_eq!(vars.get("result"), Some(&Value::Number(6)));
     }
 
     #[test]

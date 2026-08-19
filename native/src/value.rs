@@ -14,7 +14,10 @@ pub(crate) struct StaticSignature {
 pub(crate) struct Function {
     pub(crate) params: Vec<Param>,
     pub(crate) return_annotation: Option<String>,
+    /// Legacy source lines retained for compatibility with older declarations.
     pub(crate) body: Vec<String>,
+    /// Native AST body used by the migration path when available.
+    pub(crate) ast_body: Option<crate::ast::Program>,
     pub(crate) closure: HashMap<String, Value>,
 }
 #[derive(Clone, Debug, PartialEq)]

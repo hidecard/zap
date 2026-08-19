@@ -13,7 +13,7 @@ Zap now has a source-span-aware AST foundation in `native/src/ast.rs`. The parse
 | `import` / `use` | `Stmt::Import` | Stores the module path and explicit-import mode. |
 | `if` / `while` / `for` | Control-flow statement nodes | Uses the same indentation-aware block parser. |
 
-The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. `run()` now parses every parseable program through the AST boundary. AST-compatible statements execute directly, while functions, classes, and imports are deterministically lowered from AST nodes into the existing runtime registry path. This compatibility bridge preserves current behavior while making AST parsing the single program entry point; replacing the remaining legacy function/class body representation with native AST execution is the next refinement.
+The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. `run()` now parses every parseable program through the AST boundary. AST-compatible statements, functions, classes, and imports now execute through the native AST boundary. Function and method declarations store an optional `ast_body: Program` directly in the runtime `Function` representation; calls execute that body with the existing checked expression, annotation, flow, and loop-limit logic. Legacy source lines remain available only for legacy-created functions and compatibility fallback. This makes AST parsing and native AST execution the primary program path without removing the safety fallback.
 
 ## Runtime safety semantics
 
@@ -23,8 +23,8 @@ Sequence indexing is zero-based. A negative numeric index is not treated as Pyth
 
 ## Acceptance status
 
-The native suite currently passes **24 unit tests** and **47 integration tests**. The AST boundary is active for all parseable programs, with direct execution for compatible statements and safe lowering for declaration/module constructs. Resource limits and the legacy evaluator remain available as a compatibility safety net during the final native function/class body migration.
+The native suite currently passes **25 unit tests** and **47 integration tests**. The AST boundary and native AST execution are active for all parseable programs, including function and method bodies. Resource limits, typed diagnostics, and legacy source-line compatibility remain available for legacy-created runtime functions and unsupported fallback paths.
 
-## Next implementation boundary
+## P0 completion boundary
 
-The next safe milestone is to store native AST bodies in the function/class runtime representation and execute them without source reconstruction. That migration must preserve resource limits, typed diagnostics, module path restrictions, and cross-platform file handling.
+The final P0 AST body migration is complete for declarations created through the AST parser. Runtime functions and class methods now retain their `Program` body directly and execute without source reconstruction. The remaining legacy line-based representation is intentionally retained as a compatibility format for older/internal declarations. Future work may remove that fallback after a separate compatibility and release cycle.

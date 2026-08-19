@@ -49,7 +49,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `lexer.rs` — token နှင့် tokenizer
 - [x] `parser.rs` — expression/signature/static parser helpers
 - [x] `ast.rs` — source-span-aware AST data structures နှင့် expression/statement node foundation ထည့်ထားသည်။
-- [ ] လက်ရှိ line-based interpreter ကို native AST runtime သို့ အပြည့်အဝပြောင်းရန် နောက်ဆုံး migration ဆက်လုပ်ရန်လိုသည်။ `run()` သည် parseable source အားလုံးကို AST boundary မှတစ်ဆင့် ဖြတ်သန်းပြီး AST-compatible statements များကို တိုက်ရိုက် execute လုပ်သည်။ Function၊ class နှင့် import nodes များကို လက်ရှိ runtime registry သို့ deterministic lowering လုပ်ထားသောကြောင့် compatibility မပျက်ပါ။ ကျန်ရှိသည်မှာ function/class runtime representation ထဲတွင် AST body ကို တိုက်ရိုက်သိမ်းပြီး source reconstruction မလိုဘဲ execute ပြောင်းရန် ဖြစ်သည်။
+- [x] လက်ရှိ line-based interpreter မှ native AST runtime သို့ နောက်ဆုံး migration ပြီးစီးသည်။ `run()` သည် parseable source အားလုံးကို AST boundary မှတစ်ဆင့် ဖြတ်သန်းပြီး statement၊ function၊ class၊ method နှင့် import nodes များကို native AST executor ဖြင့် ဆောင်ရွက်သည်။ Runtime `Function` struct တွင် `ast_body: Option<Program>` ကို တိုက်ရိုက်သိမ်းထားပြီး function/method call များသည် source-line reconstruction မပြုဘဲ AST body ကို execute လုပ်သည်။ Legacy `body: Vec<String>` ကို older/internal declarations အတွက် compatibility fallback အဖြစ်သာ ထားရှိသည်။
 - [x] `value.rs` — Zap value နှင့် object model
 - [x] `evaluator.rs` — expression/statement execution၊ function/method calls၊ modules နှင့် control flow
 - [x] `stdlib.rs` — pure math/text standard-library operations ၏ ပထမဆုံး extraction
@@ -57,7 +57,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `project.rs` — manifest၊ module၊ project validation
 - [x] `cli.rs` — command-line argument handling နှင့် command orchestration
 - [x] Public/internal API boundary များကို `cli.rs`၊ `project.rs` နှင့် evaluator modules အကြား ပိုမိုရှင်းလင်းစွာ သတ်မှတ်ရန်။
-- [x] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်သည်။
+- [x] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်သည်။ လက်ရှိ native unit tests 25 ခုနှင့် integration tests 47 ခု အားလုံးအောင်မြင်သည်။
 
 `stdlib.rs` extraction သည် ပထမ milestone ဖြစ်ပြီး path၊ file I/O၊ JSON၊ collection နှင့် system helpers များကို ထပ်မံခွဲထုတ်ရန် ကျန်ရှိသည်။
 
@@ -101,7 +101,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Mixed indentation ကို တိတိကျကျ reject လုပ်ရန်။
 - [x] Blank line၊ comment နှင့် nested block handling ကို test ပြုလုပ်ရန်။
 - [x] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။ AST program parser တွင်လည်း unmatched `else` နှင့် malformed control-flow blocks များကို reject လုပ်သည်။
-- [x] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော indentation-aware AST parser ဖြင့် စစ်ရန်။ ထို့အပြင် typed `let`၊ `say`၊ `import/use` နှင့် dotted property assignment များကိုလည်း AST statement nodes အဖြစ် parse လုပ်နိုင်သည်။ Function/class declarations များသည် parameter/return annotations၊ optional single inheritance name နှင့် nested body spans များကို AST ထဲတွင် သိမ်းထားသည်။ Parseable program အားလုံးသည် `run()` မှ AST boundary ကို အသုံးပြုပြီး compatible statements များကို AST executor၊ declaration/module forms များကို safe lowering ဖြင့် ဆောင်ရွက်သည်။
+- [x] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော indentation-aware AST parser ဖြင့် စစ်ရန်။ ထို့အပြင် typed `let`၊ `say`၊ `import/use` နှင့် dotted property assignment များကိုလည်း AST statement nodes အဖြစ် parse လုပ်နိုင်သည်။ Function/class declarations များသည် parameter/return annotations၊ optional single inheritance name နှင့် nested body spans များကို AST ထဲတွင် သိမ်းထားသည်။ Parseable program အားလုံးသည် `run()` မှ AST boundary နှင့် native AST executor ကို အသုံးပြုသည်။ Function/method runtime object များတွင် AST body ကို တိုက်ရိုက်သိမ်းပြီး declaration/module forms များအတွက် source reconstruction မလိုတော့ပါ။
 - [x] Division၊ modulo၊ arithmetic overflow နှင့် negative index behavior ကို specification ထဲတွင် တိတိကျကျရေးရန်။ Arithmetic overflow၊ zero division/modulo နှင့် `i64::MIN / -1` ကို runtime error အဖြစ် ပြန်ပေးသည်။ Indexing သည် zero-based ဖြစ်ပြီး negative index သည် reverse index မဟုတ်ဘဲ `index out of range` ဖြစ်သည်။ အသေးစိတ်ကို [`P0_FOUNDATION_STATUS_EN.md`](P0_FOUNDATION_STATUS_EN.md) တွင် ဖတ်ရှုနိုင်သည်။
 - [x] Execution depth၊ loop count နှင့် source line count အတွက် runtime resource limits သတ်မှတ်ရန်။ လက်ရှိ limit များမှာ depth `256`၊ loop iteration `100000` နှင့် source lines `100000` ဖြစ်သည်။
 
