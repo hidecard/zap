@@ -29,7 +29,7 @@ Zap v0.8.0 သည် language runtime ကို အလျင်အမြန် f
 
 v0.8.0 comparative audit အရ Zap ၏ ကျန်ရှိနေသေးသော အဓိက production gaps များမှာ control-flow type narrowing၊ generic/nullable/union type system၊ explicit import/export modules၊ lockfile/checksum package workflow၊ HTTP/encoding/regex standard-library coverage၊ test filtering/coverage/fuzzing၊ နှင့် cancellation ပါသော async tasks ဖြစ်သည်။ Source-location ပါသော structured JSON diagnostics နှင့် ရိုးရိုး function-call static inference များကို v0.9 development တွင် ပြီးစီးထားသည်။ Python ၏ typing နှင့် callable/generic annotations၊ JavaScript ၏ import/export/dynamic modules၊ Go ၏ modules/testing/fuzzing/profiling၊ Dart ၏ Futures/Streams/isolates တို့က mature ecosystem baseline အဖြစ် reference လုပ်ထားသည်။
 
-Audit patch တွင် signed integer arithmetic ကို checked operations အဖြစ် ပြောင်းလဲထားပြီး addition၊ subtraction၊ multiplication overflow နှင့် division/modulo by zero များကို process panic မဖြစ်စေဘဲ user-facing runtime error အဖြစ် ပြန်ပေးသည်။ Native regression tests သည် 24 မှ 32 tests သို့ တိုးပြီး အားလုံး pass ဖြစ်သည်။
+Audit patch တွင် signed integer arithmetic ကို checked operations အဖြစ် ပြောင်းလဲထားပြီး addition၊ subtraction၊ multiplication overflow နှင့် division/modulo by zero များကို process panic မဖြစ်စေဘဲ user-facing runtime error အဖြစ် ပြန်ပေးသည်။ Native regression tests သည် လက်ရှိ 25 unit tests နှင့် 47 integration tests အဖြစ် စုစုပေါင်း 72 tests ရှိပြီး အားလုံး pass ဖြစ်သည်။
 
 ## v0.9.0 Priority Order
 
