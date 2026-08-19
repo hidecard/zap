@@ -1,5 +1,11 @@
 # Zap Programming Language
 
+![Zap Programming Language banner](assets/branding/zap-banner.png)
+
+<p align="center">
+  <img src="assets/branding/zap-logo.png" alt="Zap logo" width="240">
+</p>
+
 > **Zap** သည် `.zp` file extension အသုံးပြုသည့်၊ ဖတ်ရလွယ်ကူသော indentation-based syntax နှင့် standalone native runtime ပါဝင်သည့် general-purpose programming language ဖြစ်သည်။ Web၊ AI၊ Mobile နှင့် IoT ecosystem များအတွက် language core ကို ရိုးရှင်းပြီး ချဲ့ထွင်နိုင်အောင် တည်ဆောက်နေသည်။
 
 Zap သည် စတင်လေ့လာသူများအတွက် syntax ရိုးရှင်းစေရန် ရည်ရွယ်သော်လည်း functions၊ closures၊ JSON၊ file I/O၊ modules၊ project manifest နှင့် native CLI tooling များပါဝင်သည့် practical foundation တစ်ခုကို ပေးထားသည်။
