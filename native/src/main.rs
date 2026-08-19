@@ -1,4 +1,4 @@
-#![allow(clippy::missing_const_for_thread_local)]
+#![allow(clippy::missing_const_for_thread_local, clippy::type_complexity)]
 
 use std::{
     cell::RefCell,
