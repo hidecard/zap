@@ -450,6 +450,108 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
     }
 }
 
+fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mut Vec<String>) {
+    let prefix = "    ".repeat(indent);
+    match &statement.node {
+        Stmt::Expression(value) => out.push(format!("{prefix}{}", ast_expr_source(value))),
+        Stmt::Assignment { name, value } => {
+            out.push(format!("{prefix}{name} = {}", ast_expr_source(value)))
+        }
+        Stmt::Declaration {
+            name,
+            annotation,
+            value,
+        } => out.push(format!(
+            "{prefix}let {name}{} = {}",
+            annotation
+                .as_ref()
+                .map_or(String::new(), |ty| format!(": {ty}")),
+            ast_expr_source(value)
+        )),
+        Stmt::Say(value) => out.push(format!("{prefix}say {}", ast_expr_source(value))),
+        Stmt::Import { path, explicit } => out.push(format!(
+            "{prefix}{} \"{path}\"",
+            if *explicit { "import" } else { "use" }
+        )),
+        Stmt::Return(value) => out.push(format!(
+            "{prefix}return{}",
+            value.as_ref().map_or(String::new(), |value| format!(
+                " {}",
+                ast_expr_source(value)
+            ))
+        )),
+        Stmt::Break => out.push(format!("{prefix}break")),
+        Stmt::Continue => out.push(format!("{prefix}continue")),
+        Stmt::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            out.push(format!("{prefix}if {}:", ast_expr_source(condition)));
+            ast_program_lines(then_branch, indent + 1, out);
+            if let Some(branch) = else_branch {
+                out.push(format!("{prefix}else:"));
+                ast_program_lines(branch, indent + 1, out);
+            }
+        }
+        Stmt::While { condition, body } => {
+            out.push(format!("{prefix}while {}:", ast_expr_source(condition)));
+            ast_program_lines(body, indent + 1, out);
+        }
+        Stmt::For {
+            binding,
+            iterable,
+            body,
+        } => {
+            out.push(format!(
+                "{prefix}for {binding} in {}:",
+                ast_expr_source(iterable)
+            ));
+            ast_program_lines(body, indent + 1, out);
+        }
+        Stmt::Function {
+            name,
+            params,
+            return_type,
+            body,
+        } => {
+            let params = params
+                .iter()
+                .map(|(name, annotation)| {
+                    format!(
+                        "{name}{}",
+                        annotation
+                            .as_ref()
+                            .map_or(String::new(), |ty| format!(": {ty}"))
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            out.push(format!(
+                "{prefix}fn {name}({params}){}:",
+                return_type
+                    .as_ref()
+                    .map_or(String::new(), |ty| format!(" -> {ty}"))
+            ));
+            ast_program_lines(body, indent + 1, out);
+        }
+        Stmt::Class { name, base, body } => {
+            out.push(format!(
+                "{prefix}class {name}{}:",
+                base.as_ref()
+                    .map_or(String::new(), |base| format!(" extends {base}"))
+            ));
+            ast_program_lines(body, indent + 1, out);
+        }
+    }
+}
+
+fn ast_program_lines(program: &Program, indent: usize, out: &mut Vec<String>) {
+    for statement in &program.statements {
+        ast_stmt_lines(statement, indent, out);
+    }
+}
+
 pub(crate) fn ast_program_compatible(program: &Program) -> bool {
     program
         .statements
@@ -478,7 +580,9 @@ pub(crate) fn execute_ast_program(
     base: &Path,
 ) -> Result<Flow, String> {
     if !ast_program_compatible(program) {
-        return Err("AST program contains legacy-only declarations or imports".into());
+        let mut lines = Vec::new();
+        ast_program_lines(program, 0, &mut lines);
+        return execute_lines(&lines, vars, funcs, base);
     }
     let _guard = enter_execution(
         &program

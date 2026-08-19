@@ -13,7 +13,7 @@ Zap now has a source-span-aware AST foundation in `native/src/ast.rs`. The parse
 | `import` / `use` | `Stmt::Import` | Stores the module path and explicit-import mode. |
 | `if` / `while` / `for` | Control-flow statement nodes | Uses the same indentation-aware block parser. |
 
-The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. The legacy evaluator remains available for compatibility while the evaluator migration proceeds incrementally. This slice deliberately expands the AST contract first; it does not yet replace the legacy function/class registry or line-based execution path.
+The AST parser enforces four-space indentation, rejects tabs and mixed indentation, requires an indented body after every declaration or control-flow header, and preserves one-based source locations. `run()` now parses every parseable program through the AST boundary. AST-compatible statements execute directly, while functions, classes, and imports are deterministically lowered from AST nodes into the existing runtime registry path. This compatibility bridge preserves current behavior while making AST parsing the single program entry point; replacing the remaining legacy function/class body representation with native AST execution is the next refinement.
 
 ## Runtime safety semantics
 
@@ -23,8 +23,8 @@ Sequence indexing is zero-based. A negative numeric index is not treated as Pyth
 
 ## Acceptance status
 
-The native suite currently passes all AST unit tests and integration tests after the declaration-node extension. The P0 work still includes the incremental replacement of line-based evaluation with AST evaluation, while the parser and safety boundaries are now ready for that migration.
+The native suite currently passes **24 unit tests** and **47 integration tests**. The AST boundary is active for all parseable programs, with direct execution for compatible statements and safe lowering for declaration/module constructs. Resource limits and the legacy evaluator remain available as a compatibility safety net during the final native function/class body migration.
 
 ## Next implementation boundary
 
-The next safe milestone is to lower `Stmt::Function` and `Stmt::Class` into evaluator declarations without changing existing `.zp` behavior. That migration must preserve resource limits, typed diagnostics, module path restrictions, and cross-platform file handling.
+The next safe milestone is to store native AST bodies in the function/class runtime representation and execute them without source reconstruction. That migration must preserve resource limits, typed diagnostics, module path restrictions, and cross-platform file handling.
