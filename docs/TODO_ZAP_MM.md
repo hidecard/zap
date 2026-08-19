@@ -100,8 +100,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 - [x] Mixed indentation ကို တိတိကျကျ reject လုပ်ရန်။
 - [x] Blank line၊ comment နှင့် nested block handling ကို test ပြုလုပ်ရန်။
-- [x] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။
-- [ ] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော parser ဖြင့် စစ်ရန်။ Statement AST foundation တွင် assignment၊ return၊ break၊ continue နှင့် expression statements များကို parse လုပ်နိုင်ပြီဖြစ်သော်လည်း declaration/control-flow parser migration မပြီးသေးပါ။
+- [x] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။ AST program parser တွင်လည်း unmatched `else` နှင့် malformed control-flow blocks များကို reject လုပ်သည်။
+- [ ] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော parser ဖြင့် စစ်ရန်။ Statement AST foundation တွင် assignment၊ return၊ break၊ continue၊ expression၊ `if`၊ `while` နှင့် `for` statements များကို indentation-aware program/block parser ဖြင့် parse လုပ်နိုင်ပြီဖြစ်သော်လည်း function/class declarations နှင့် AST evaluator migration မပြီးသေးပါ။
 - [ ] Division၊ modulo၊ arithmetic overflow နှင့် negative index behavior ကို specification ထဲတွင် တိတိကျကျရေးရန်။
 - [x] Execution depth၊ loop count နှင့် source line count အတွက် runtime resource limits သတ်မှတ်ရန်။ လက်ရှိ limit များမှာ depth `256`၊ loop iteration `100000` နှင့် source lines `100000` ဖြစ်သည်။
 

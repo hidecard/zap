@@ -74,8 +74,25 @@ pub(crate) enum Expr {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Stmt {
     Expression(Spanned<Expr>),
-    Assignment { name: String, value: Spanned<Expr> },
+    Assignment {
+        name: String,
+        value: Spanned<Expr>,
+    },
     Return(Option<Spanned<Expr>>),
+    If {
+        condition: Spanned<Expr>,
+        then_branch: Program,
+        else_branch: Option<Program>,
+    },
+    While {
+        condition: Spanned<Expr>,
+        body: Program,
+    },
+    For {
+        binding: String,
+        iterable: Spanned<Expr>,
+        body: Program,
+    },
     Break,
     Continue,
 }
@@ -347,6 +364,173 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
     ))
 }
 
+#[derive(Clone, Debug)]
+struct SourceLine {
+    number: usize,
+    indent: usize,
+    text: String,
+}
+
+fn parse_control_header(text: &str) -> Option<(&str, &str)> {
+    let header = text.strip_suffix(':')?;
+    if let Some(condition) = header.strip_prefix("if ") {
+        return Some(("if", condition.trim()));
+    }
+    if let Some(condition) = header.strip_prefix("while ") {
+        return Some(("while", condition.trim()));
+    }
+    if let Some(rest) = header.strip_prefix("for ") {
+        return Some(("for", rest.trim()));
+    }
+    None
+}
+
+fn source_lines(source: &str) -> Result<Vec<SourceLine>, String> {
+    let mut lines = Vec::new();
+    for (index, raw) in source.lines().enumerate() {
+        let text = raw.trim();
+        if text.is_empty() || text.starts_with('#') {
+            continue;
+        }
+        let leading = raw.len() - raw.trim_start().len();
+        if raw[..leading].contains('\t') {
+            return Err(format!(
+                "tabs are not supported in AST blocks at line {}",
+                index + 1
+            ));
+        }
+        if leading % 4 != 0 {
+            return Err(format!("invalid indentation at line {}", index + 1));
+        }
+        lines.push(SourceLine {
+            number: index + 1,
+            indent: leading / 4,
+            text: text.to_string(),
+        });
+    }
+    Ok(lines)
+}
+
+fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Result<Program, String> {
+    let mut program = Program::default();
+    while *cursor < lines.len() {
+        let line = &lines[*cursor];
+        if line.indent < indent {
+            break;
+        }
+        if line.indent > indent {
+            return Err(format!("unexpected indentation at line {}", line.number));
+        }
+        let line_number = line.number;
+        let text = line.text.clone();
+        if text == "else:" {
+            break;
+        }
+        if let Some((kind, header)) = parse_control_header(&text) {
+            if header.is_empty() {
+                return Err(format!("missing {kind} condition at line {line_number}"));
+            }
+            *cursor += 1;
+            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                return Err(format!(
+                    "{kind} requires an indented block at line {line_number}"
+                ));
+            }
+            let body_indent = lines[*cursor].indent;
+            let body = parse_block(lines, cursor, body_indent)?;
+            let condition_or_iterable = if kind == "for" {
+                let (binding, iterable) = header.split_once(" in ").ok_or_else(|| {
+                    format!("for expects '<name> in <expression>' at line {line_number}")
+                })?;
+                if binding.trim().is_empty() {
+                    return Err(format!("for binding is missing at line {line_number}"));
+                }
+                let statement = Stmt::For {
+                    binding: binding.trim().to_string(),
+                    iterable: parse_expression(iterable.trim())?,
+                    body,
+                };
+                program.statements.push(Spanned::new(
+                    statement,
+                    SourceSpan {
+                        line: line_number,
+                        column: indent * 4 + 1,
+                        length: text.len(),
+                    },
+                ));
+                continue;
+            } else {
+                parse_expression(header)?
+            };
+            let statement = if kind == "if" {
+                let else_branch = if *cursor < lines.len()
+                    && lines[*cursor].indent == indent
+                    && lines[*cursor].text == "else:"
+                {
+                    *cursor += 1;
+                    if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                        return Err(format!(
+                            "else requires an indented block at line {line_number}"
+                        ));
+                    }
+                    let else_indent = lines[*cursor].indent;
+                    Some(parse_block(lines, cursor, else_indent)?)
+                } else {
+                    None
+                };
+                Stmt::If {
+                    condition: condition_or_iterable,
+                    then_branch: body,
+                    else_branch,
+                }
+            } else {
+                Stmt::While {
+                    condition: condition_or_iterable,
+                    body,
+                }
+            };
+            program.statements.push(Spanned::new(
+                statement,
+                SourceSpan {
+                    line: line_number,
+                    column: indent * 4 + 1,
+                    length: text.len(),
+                },
+            ));
+        } else {
+            *cursor += 1;
+            let mut statement = parse_statement(&text)?;
+            statement.span.line = line_number;
+            statement.span.column = indent * 4 + 1;
+            program.statements.push(statement);
+        }
+    }
+    Ok(program)
+}
+
+pub(crate) fn parse_program(source: &str) -> Result<Program, String> {
+    let lines = source_lines(source)?;
+    if lines.is_empty() {
+        return Ok(Program::default());
+    }
+    let root_indent = lines[0].indent;
+    if root_indent != 0 {
+        return Err(format!(
+            "program must start at indentation level zero at line {}",
+            lines[0].number
+        ));
+    }
+    let mut cursor = 0;
+    let program = parse_block(&lines, &mut cursor, 0)?;
+    if cursor < lines.len() {
+        return Err(format!(
+            "unexpected '{}' at line {}",
+            lines[cursor].text, lines[cursor].number
+        ));
+    }
+    Ok(program)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -410,6 +594,34 @@ mod tests {
             parse_statement("returning").unwrap().node,
             Stmt::Expression(_)
         ));
+    }
+
+    #[test]
+    fn parses_indented_control_flow_programs() {
+        let program = parse_program(
+            "if ready:\n    value = 1\nelse:\n    value = 2\nwhile value:\n    break\nfor item in items:\n    continue\n",
+        )
+        .expect("valid control-flow program");
+        assert_eq!(program.statements.len(), 3);
+        assert!(matches!(
+            program.statements[0].node,
+            Stmt::If {
+                else_branch: Some(_),
+                ..
+            }
+        ));
+        assert!(matches!(program.statements[1].node, Stmt::While { .. }));
+        assert!(
+            matches!(program.statements[2].node, Stmt::For { ref binding, .. } if binding == "item")
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_control_flow_blocks() {
+        assert!(parse_program("if ready:\nvalue = 1\n").is_err());
+        assert!(parse_program("for item:\n    continue\n").is_err());
+        assert!(parse_program("while ready:\n    break\nelse:\n    break\n").is_err());
+        assert!(parse_program("    value = 1\n").is_err());
     }
 
     #[test]

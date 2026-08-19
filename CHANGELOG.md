@@ -25,6 +25,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - `run_checked` typed runtime boundary နှင့် regression coverage ထည့်သွင်းပြီး runtime String error များကို CLI အဆင့်မတိုင်မီ `ZapError` model သို့ ပြောင်းပေးသည်။
 - AST compatibility parser တွင် assignment၊ return၊ break၊ continue နှင့် expression statements များကို source-span-aware statement nodes အဖြစ် parse လုပ်နိုင်အောင် ထည့်သွင်းထားသည်။ Existing line-based evaluator ကို မပြတ်တောက်စေရန် parser migration ကို အဆင့်လိုက် ဆက်လက်လုပ်ဆောင်နေသည်။
 - AST statement parser regression tests ထည့်သွင်းပြီး native unit tests စုစုပေါင်း 18 ခုနှင့် integration tests 47 ခု အောင်မြင်ထားသည်။
+- Indentation-aware AST program/block parser ဖြင့် `if`/`else`၊ `while` နှင့် `for ... in ...` control-flow statements များ၊ nested blocks နှင့် malformed/unmatched `else` diagnostics များကို ထည့်သွင်းထားသည်။ Existing line-based evaluator ကို မပြတ်တောက်စေရန် compatibility foundation အဖြစ် ဆက်လက်ထားရှိသည်။
+- Control-flow AST regression tests ပြီးနောက် native unit tests စုစုပေါင်း 20 ခုနှင့် integration tests 47 ခု အားလုံး အောင်မြင်ထားသည်။
 
 ### Planned
 
