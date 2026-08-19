@@ -2,6 +2,8 @@
 
 ![Zap Programming Language banner](assets/branding/zap-banner.png)
 
+[![Zap CI](https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg)](https://github.com/hidecard/zap/actions/workflows/ci.yml)
+
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
 Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow.
@@ -14,6 +16,12 @@ Zap is designed to make programming approachable while providing a clear path fr
 | မြန်မာ | [`docs/LEARN_ZAP_MM.md`](docs/LEARN_ZAP_MM.md) | [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) |
 
 Start with the **English beginner course** or the **မြန်မာ beginner course**, then use the reference guides when you need a complete syntax or built-in-function lookup.
+
+## Continuous Integration and Release Automation
+
+Every push to `master`/`main` and every pull request runs the CI workflow. It checks Rust formatting, Clippy warnings, compilation, the native integration suite, repository whitespace, and release builds for Linux x86_64, Windows x86_64, and macOS ARM64.
+
+Tagged releases matching `v*` use the release workflow to build native archives, generate SHA-256 checksum files, upload artifacts, and publish them to the corresponding GitHub Release. The workflow can also be started manually from the Actions tab.
 
 ## Project Status
 
