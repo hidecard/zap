@@ -93,6 +93,17 @@ pub(crate) enum Stmt {
         iterable: Spanned<Expr>,
         body: Program,
     },
+    Function {
+        name: String,
+        params: Vec<(String, Option<String>)>,
+        return_type: Option<String>,
+        body: Program,
+    },
+    Class {
+        name: String,
+        base: Option<String>,
+        body: Program,
+    },
     Break,
     Continue,
 }
@@ -371,6 +382,95 @@ struct SourceLine {
     text: String,
 }
 
+fn parse_function_header(
+    text: &str,
+) -> Option<Result<(String, Vec<(String, Option<String>)>, Option<String>), String>> {
+    let header = text.strip_suffix(':')?;
+    let signature = header.strip_prefix("fn ")?;
+    let open = signature.find('(')?;
+    let close = signature.rfind(')')?;
+    if close < open {
+        return Some(Err("function parameter list is malformed".to_string()));
+    }
+    let name = signature[..open].trim();
+    if name.is_empty() {
+        return Some(Err("function name is missing".to_string()));
+    }
+    let valid_name = name.chars().enumerate().all(|(index, character)| {
+        character == '_'
+            || character.is_ascii_alphanumeric() && (index > 0 || character.is_ascii_alphabetic())
+    });
+    if !valid_name {
+        return Some(Err(format!("invalid function name '{name}'")));
+    }
+    let params_text = &signature[open + 1..close];
+    let mut params = Vec::new();
+    if !params_text.trim().is_empty() {
+        for parameter in params_text.split(',') {
+            let parameter = parameter.trim();
+            let (parameter_name, annotation) = parameter
+                .split_once(':')
+                .map_or((parameter, None), |(name, annotation)| {
+                    (name.trim(), Some(annotation.trim()))
+                });
+            if parameter_name.is_empty() || parameter_name == "self" && annotation.is_some() {
+                return Some(Err("invalid function parameter".to_string()));
+            }
+            let valid_parameter = parameter_name
+                .chars()
+                .enumerate()
+                .all(|(index, character)| {
+                    character == '_'
+                        || character.is_ascii_alphanumeric()
+                            && (index > 0 || character.is_ascii_alphabetic())
+                });
+            if !valid_parameter {
+                return Some(Err(format!(
+                    "invalid function parameter '{parameter_name}'"
+                )));
+            }
+            let annotation = annotation
+                .filter(|value| !value.is_empty())
+                .map(str::to_string);
+            params.push((parameter_name.to_string(), annotation));
+        }
+    }
+    let suffix = signature[close + 1..].trim();
+    let return_type = suffix
+        .strip_prefix("->")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    if !suffix.is_empty() && return_type.is_none() {
+        return Some(Err("invalid function return annotation".to_string()));
+    }
+    Some(Ok((name.to_string(), params, return_type)))
+}
+
+fn parse_class_header(text: &str) -> Option<Result<(String, Option<String>), String>> {
+    let header = text.strip_suffix(':')?;
+    let declaration = header.strip_prefix("class ")?;
+    let (name, base) = if let Some(open) = declaration.find('(') {
+        let close = declaration.rfind(')')?;
+        if close <= open || !declaration[close + 1..].trim().is_empty() {
+            return Some(Err("class inheritance header is malformed".to_string()));
+        }
+        (
+            declaration[..open].trim(),
+            Some(declaration[open + 1..close].trim().to_string()),
+        )
+    } else {
+        (declaration.trim(), None)
+    };
+    if name.is_empty() {
+        return Some(Err("class name is missing".to_string()));
+    }
+    Some(Ok((
+        name.to_string(),
+        base.filter(|value| !value.is_empty()),
+    )))
+}
+
 fn parse_control_header(text: &str) -> Option<(&str, &str)> {
     let header = text.strip_suffix(':')?;
     if let Some(condition) = header.strip_prefix("if ") {
@@ -426,7 +526,50 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
         if text == "else:" {
             break;
         }
-        if let Some((kind, header)) = parse_control_header(&text) {
+        if let Some(function) = parse_function_header(&text) {
+            *cursor += 1;
+            let function = function?;
+            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                return Err(format!(
+                    "function requires an indented block at line {line_number}"
+                ));
+            }
+            let body_indent = lines[*cursor].indent;
+            let body = parse_block(lines, cursor, body_indent)?;
+            let (name, params, return_type) = function;
+            program.statements.push(Spanned::new(
+                Stmt::Function {
+                    name,
+                    params,
+                    return_type,
+                    body,
+                },
+                SourceSpan {
+                    line: line_number,
+                    column: indent * 4 + 1,
+                    length: text.len(),
+                },
+            ));
+        } else if let Some(class) = parse_class_header(&text) {
+            *cursor += 1;
+            let class = class?;
+            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                return Err(format!(
+                    "class requires an indented block at line {line_number}"
+                ));
+            }
+            let body_indent = lines[*cursor].indent;
+            let body = parse_block(lines, cursor, body_indent)?;
+            let (name, base) = class;
+            program.statements.push(Spanned::new(
+                Stmt::Class { name, base, body },
+                SourceSpan {
+                    line: line_number,
+                    column: indent * 4 + 1,
+                    length: text.len(),
+                },
+            ));
+        } else if let Some((kind, header)) = parse_control_header(&text) {
             if header.is_empty() {
                 return Err(format!("missing {kind} condition at line {line_number}"));
             }
@@ -614,6 +757,35 @@ mod tests {
         assert!(
             matches!(program.statements[2].node, Stmt::For { ref binding, .. } if binding == "item")
         );
+    }
+
+    #[test]
+    fn parses_function_and_class_declarations() {
+        let program = parse_program(
+            "fn add(a: number, b: number) -> number:\n    return a + b\nclass Child(Parent):\n    value = 1\n",
+        )
+        .expect("valid declarations");
+        assert!(matches!(
+            program.statements[0].node,
+            Stmt::Function { ref name, ref params, ref return_type, .. }
+                if name == "add"
+                    && params.len() == 2
+                    && params[0].0 == "a"
+                    && params[0].1.as_deref() == Some("number")
+                    && return_type.as_deref() == Some("number")
+        ));
+        assert!(matches!(
+            program.statements[1].node,
+            Stmt::Class { ref name, ref base, .. }
+                if name == "Child" && base.as_deref() == Some("Parent")
+        ));
+    }
+
+    #[test]
+    fn rejects_malformed_declaration_headers() {
+        assert!(parse_program("fn add(a: number:\n    return a\n").is_err());
+        assert!(parse_program("class Child(Parent:\n    value = 1\n").is_err());
+        assert!(parse_program("fn add():\nvalue = 1\n").is_err());
     }
 
     #[test]
