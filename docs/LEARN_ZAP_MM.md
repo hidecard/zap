@@ -11,6 +11,7 @@
 | Reusable code | 9–10 | Functions၊ return၊ closures |
 | Practical programming | 11–13 | File၊ path၊ JSON၊ modules၊ tests |
 | Project | 14 | Mini task tracker တည်ဆောက်ခြင်း |
+| OOP | 15 | Class၊ object၊ constructor၊ method နှင့် inheritance |
 
 ## Lesson 1 — Installation နှင့် Hello World
 
@@ -625,3 +626,186 @@ zap --help
 6. Module နှင့် `zap.toml` project တည်ဆောက်နိုင်ခြင်း။
 7. `zap fmt`၊ `zap check`၊ `zap build` နှင့် `zap test` workflow အသုံးပြုနိုင်ခြင်း။
 8. Mini project တစ်ခုကို ကိုယ်တိုင်ရေး၊ စမ်းသပ်ပြီး ပြင်ဆင်နိုင်ခြင်း။
+
+
+## Lesson 15: OOP — Class၊ Object၊ Method နှင့် Inheritance
+
+OOP ဆိုသည်မှာ data နှင့် ထို data ကို ကိုင်တွယ်သည့် behavior များကို object တစ်ခုအတွင်း စုစည်းရေးသားသည့် programming ပုံစံဖြစ်သည်။ Zap တွင် class သည် object များဖန်တီးရန် template ဖြစ်ပြီး object သည် class မှ ဖန်တီးထားသော အသုံးပြုနိုင်သည့် value ဖြစ်သည်။
+
+### 15.1 Class နှင့် Object
+
+```zp
+class User:
+    fn greet(self):
+        return "Hello from Zap"
+
+let user = new("User")
+say user.greet()
+```
+
+`class User:` သည် `User` class ကို ကြေညာသည်။ `new("User")` သည် object တစ်ခု ဖန်တီးပြီး `user.greet()` သည် method ကို ခေါ်သည်။ Method ၏ ပထမ parameter ဖြစ်သော `self` သည် လက်ရှိ object ကို ကိုယ်စားပြုသည်။
+
+### 15.2 Properties နှင့် `self`
+
+```zp
+class User:
+    fn show_name(self):
+        return self.name
+
+let user = new("User", {"name": "Zap Developer"})
+say user.show_name()
+```
+
+Object ဖန်တီးရာတွင် map ဖြင့် initial properties ထည့်နိုင်သည်။ Property အသစ် သတ်မှတ်ခြင်း သို့မဟုတ် ပြင်ဆင်ခြင်းကို method ထဲတွင် `self.property = value` ဖြင့် ရေးသည်။
+
+```zp
+class Counter:
+    fn increment(self):
+        self.value = self.value + 1
+        return self.value
+
+let counter = new("Counter", {"value": 0})
+say counter.increment()
+say counter.value
+```
+
+Expected output—
+
+```text
+1
+1
+```
+
+### 15.3 Constructor — `init`
+
+Class ထဲတွင် `init(self, ...)` method ရှိပါက object ဖန်တီးသောအခါ Zap runtime က အလိုအလျောက်ခေါ်ပေးသည်။
+
+```zp
+class Product:
+    fn init(self, name, price):
+        self.name = name
+        self.price = price
+
+    fn label(self):
+        return self.name + " - " + str(self.price)
+
+let product = new("Product", "Keyboard", 50)
+say product.label()
+```
+
+Constructor ၏ ရည်ရွယ်ချက်မှာ object ၏ initial state ကို တစ်နေရာတည်းတွင် သတ်မှတ်ရန်ဖြစ်သည်။ Constructor မရှိလျှင် map arguments ဖြင့် fields များကို တိုက်ရိုက်စတင်နိုင်သည်။
+
+### 15.4 Method Parameters နှင့် Return Values
+
+```zp
+class Calculator:
+    fn add(self, left, right):
+        return left + right + self.offset
+
+let calculator = new("Calculator", {"offset": 1})
+say calculator.add(2, 3)
+```
+
+Expected output သည် `6` ဖြစ်သည်။ `self` သည် implicit မဟုတ်ဘဲ method parameter list ထဲတွင် ရေးထားရမည်။
+
+### 15.5 Inheritance နှင့် Override
+
+Parent class ၏ behavior ကို child class က `extends` ဖြင့် ရယူနိုင်သည်။
+
+```zp
+class Animal:
+    fn speak(self):
+        return "sound"
+
+class Dog extends Animal:
+    fn speak(self):
+        return "woof"
+
+let dog = new("Dog")
+say dog.speak()
+```
+
+Child class တွင် အမည်တူ method ရှိပါက child method ကို အသုံးပြုသည်။ Parent method များကို မ override လုပ်ထားပါက child object မှ တိုက်ရိုက်ခေါ်နိုင်သည်။
+
+### 15.6 Objects နှင့် Collections
+
+Object များကို list နှင့် map အတွင်း ထည့်သိမ်းနိုင်သည်။
+
+```zp
+class User:
+    fn name_value(self):
+        return self.name
+
+let first = new("User", {"name": "A"})
+let second = new("User", {"name": "B"})
+let users = [first, second]
+let directory = {"primary": first}
+
+say users[1].name_value()
+say directory["primary"].name_value()
+```
+
+### 15.7 OOP Exercise များ
+
+**Exercise 1:** `Book` class တစ်ခုရေးပါ။ `title` နှင့် `author` properties ထည့်ပြီး `description()` method ဖြင့် `title + " by " + author` ပြန်ပေးပါ။
+
+**Exercise 2:** `BankAccount` class တစ်ခုရေးပါ။ `balance` property ထည့်ပြီး `deposit(amount)` method ဖြင့် balance တိုးပါ။
+
+**Exercise 3:** `Animal` parent class နှင့် `Cat`၊ `Dog` child classes ရေးပါ။ Child တစ်ခုစီတွင် `speak()` ကို override လုပ်ပါ။
+
+**Exercise 4:** `Task` class ဖြင့် mini task tracker ကို ပြန်ရေးပါ။ `complete()` method သည် `done` property ကို `true` ပြောင်းရမည်။
+
+### 15.8 OOP အတွက် သတိပြုရန်
+
+v0.6.0 တွင် class၊ object၊ constructor၊ methods၊ properties၊ `self` နှင့် single inheritance ကို အသုံးပြုနိုင်သည်။ Interfaces၊ abstract classes၊ private fields၊ generics နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။ Class name များကို စာလုံးကြီးဖြင့် စတင်ရေးခြင်းသည် ဖတ်ရလွယ်ကူစေသည်။
+
+## OOP Learning Checkpoint
+
+OOP lesson ပြီးဆုံးပါက အောက်ပါအရာများကို ကိုယ်တိုင်လုပ်နိုင်ရမည်။
+
+1. Class တစ်ခု ကြေညာပြီး `new()` ဖြင့် object ဖန်တီးနိုင်ခြင်း။
+2. `self` ဖြင့် property ဖတ်ခြင်းနှင့် ပြင်ခြင်း။
+3. `init()` constructor ရေးနိုင်ခြင်း။
+4. Method parameters နှင့် return values အသုံးပြုနိုင်ခြင်း။
+5. `extends` ဖြင့် inheritance နှင့် method override ရေးနိုင်ခြင်း။
+6. Object များကို list/map အတွင်း ထည့်ပြီး method ခေါ်နိုင်ခြင်း။
+7. OOP code အတွက် test file တစ်ခုရေးနိုင်ခြင်း။
+
+သင်ခန်းစာ၏ syntax reference ကို [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md) တွင် ဆက်လက်ဖတ်ရှုနိုင်သည်။
+
+## Updated Course Completion Checklist
+
+OOP lesson အပါအဝင် beginner foundation ပြည့်စုံရန်—
+
+1. `.zp` file ဖန်တီးပြီး `zap` ဖြင့် run လုပ်နိုင်ခြင်း။
+2. Variables၊ lists၊ maps နှင့် JSON data ကို အသုံးပြုနိုင်ခြင်း။
+3. `if`၊ `for` နှင့် `while` ဖြင့် logic ရေးနိုင်ခြင်း။
+4. Function နှင့် closure ဖြင့် code ပြန်လည်အသုံးပြုနိုင်ခြင်း။
+5. File၊ path၊ environment နှင့် time APIs များ အသုံးပြုနိုင်ခြင်း။
+6. Module နှင့် `zap.toml` project တည်ဆောက်နိုင်ခြင်း။
+7. `zap fmt`၊ `zap check`၊ `zap build` နှင့် `zap test` workflow အသုံးပြုနိုင်ခြင်း။
+8. Class၊ object၊ constructor၊ method နှင့် inheritance အသုံးပြုနိုင်ခြင်း။
+9. OOP mini project တစ်ခုကို ကိုယ်တိုင်ရေး၊ စမ်းသပ်ပြီး ပြင်ဆင်နိုင်ခြင်း။
+
+## OOP Lesson အတွက် Test Example
+
+```zp
+class User:
+    fn init(self, name):
+        self.name = name
+
+    fn greet(self):
+        return "Hello, " + self.name
+
+let user = new("User", "Tester")
+assert(user.greet() == "Hello, Tester", "greeting failed")
+say "OOP test passed"
+```
+
+ဤ example ကို `oop_test.zp` အဖြစ် သိမ်းပြီး `zap test` workflow ထဲတွင် အသုံးပြုနိုင်သည်။
+
+## Current Stable Boundary
+
+OOP feature သည် v0.6.0 native runtime တွင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable OOP API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
+
+သင်ခန်းစာအားလုံးပြီးနောက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) နှင့် [`ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တို့ကို ဆက်လက်ဖတ်ရှုပါ။

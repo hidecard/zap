@@ -1,6 +1,6 @@
 # Zap Syntax Guide
 
-ဤ guide သည် Zap `0.4.x` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
+ဤ guide သည် Zap `0.6.0` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
 
 > Zap သည် ရိုးရှင်းသော indentation-based block syntax၊ ရှင်းလင်းသော keywords နှင့် standalone CLI workflow ကို အဓိကထားသော programming language ဖြစ်သည်။
 
@@ -278,7 +278,65 @@ say result
 
 အထက်ပါ program သည် `15` ကို ထုတ်ပေးမည်။ ဤပုံစံသည် reusable calculation နှင့် callback-style logic များအတွက် အခြေခံဖြစ်သည်။
 
-## 14. Standard Utility Built-ins
+## 14. OOP: Classes၊ Objects နှင့် Methods
+
+Zap v0.6.0 တွင် class-based OOP foundation ပါဝင်သည်။ Class declaration သည် indentation-based ဖြစ်ပြီး method များကို `fn` ဖြင့် ရေးရသည်။ Object method ၏ ပထမ parameter သည် `self` ဖြစ်သည်။
+
+```zp
+class User:
+    fn init(self, name):
+        self.name = name
+
+    fn greet(self):
+        return "Hello, " + self.name
+
+let user = new("User", "Zap")
+say user.greet()
+say user.name
+```
+
+`new("ClassName", arguments...)` သည် object အသစ်ဖန်တီးပြီး `init(self, arguments...)` ရှိပါက constructor အဖြစ် အလိုအလျောက်ခေါ်သည်။ Initial property များကို map ဖြင့်လည်း ပေးနိုင်သည်။
+
+```zp
+class Device:
+    fn status(self):
+        return self.name + " is " + self.state
+
+let device = new("Device", {"name": "sensor", "state": "ready"})
+say device.status()
+```
+
+Property ဖတ်ခြင်းနှင့် ပြင်ခြင်း—
+
+```zp
+class Counter:
+    fn increment(self):
+        self.value = self.value + 1
+        return self.value
+
+let counter = new("Counter", {"value": 0})
+say counter.increment()
+say counter.value
+```
+
+Inheritance နှင့် method override ကို `extends` ဖြင့် ရေးနိုင်သည်။ Child class သည် parent method များကို အသုံးပြုနိုင်ပြီး အမည်တူ method ရှိပါက child method ကို ဦးစားပေးသည်။
+
+```zp
+class Animal:
+    fn speak(self):
+        return "sound"
+
+class Dog extends Animal:
+    fn speak(self):
+        return "woof"
+
+let dog = new("Dog")
+say dog.speak()
+```
+
+OOP boundary အနေဖြင့် v0.6.0 တွင် class၊ object၊ properties၊ methods၊ constructor နှင့် single inheritance ကို support လုပ်သည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
+
+## 15. Standard Utility Built-ins
 
 Zap native runtime တွင် type စစ်ဆေးခြင်း၊ collection ရှာဖွေခြင်း၊ text ပြောင်းလဲခြင်းနှင့် numeric calculation အတွက် built-ins များ ပါဝင်သည်။
 
@@ -308,7 +366,7 @@ let version = 3
 assert(version >= 1, "version must be positive")
 ```
 
-## 15. JSON
+## 16. JSON
 
 `json(value)` သည် Zap value ကို JSON text အဖြစ် encode လုပ်ပြီး `from_json(text)` သည် JSON text ကို Zap value အဖြစ် decode လုပ်သည်။
 
@@ -324,7 +382,7 @@ say decoded["name"]
 
 JSON data ကို application configuration သို့မဟုတ် API response များအတွက် အသုံးပြုရန် ရည်ရွယ်ထားသည်။
 
-## 16. File I/O
+## 17. File I/O
 
 စာသားဖိုင်ရေးရန် `write_text(path, text)` နှင့် ဖတ်ရန် `read_text(path)` ကို အသုံးပြုသည်။
 
@@ -337,7 +395,7 @@ say message
 
 Relative path များသည် program run လုပ်သော current working directory ကို အခြေခံသည်။ File permission နှင့် path validation များကို production အသုံးပြုမှုမတိုင်မီ စစ်ဆေးသင့်သည်။
 
-## 17. Modules
+## 18. Modules
 
 အခြား `.zp` file ထဲရှိ function များကို `use` ဖြင့် load လုပ်နိုင်သည်။ ဥပမာ project structure—
 
@@ -365,7 +423,7 @@ say triple(4)
 
 Runtime သည် main source file ရှိသော directory၊ `modules/` နှင့် `lib/` directories များအတွင်း module ကို ရှာဖွေသည်။ Project manifest ရှိလျှင် `zap check` ဖြင့် entry file နှင့် project structure ကို စစ်ဆေးနိုင်သည်။
 
-## 18. Complete Example: CLI Counter
+## 19. Complete Example: CLI Counter
 
 အောက်ပါ program သည် variable၊ function၊ loop၊ conditional နှင့် `continue`/`break` တို့ကို ပေါင်းစပ်အသုံးပြုထားသည်။
 
@@ -384,7 +442,7 @@ for number in range(8):
     say str(number) + " is " + label(number)
 ```
 
-## 19. Complete Example: JSON File
+## 20. Complete Example: JSON File
 
 ```zp
 let settings = {"app": "Zap Notes", "version": 1, "features": ["files", "json"]}
@@ -399,7 +457,7 @@ say loaded["app"]
 say loaded["features"][0]
 ```
 
-## 20. Complete Example: Small Project
+## 21. Complete Example: Small Project
 
 `zap.toml`—
 
@@ -428,6 +486,6 @@ zap fmt main.zp
 zap main.zp
 ```
 
-## 21. လက်ရှိအခြေအနေ နှင့် နောက်တစ်ဆင့်
+## 22. လက်ရှိအခြေအနေ နှင့် နောက်တစ်ဆင့်
 
 အထက်ပါ core syntax များသည် Zap native runtime ၏ လက်ရှိအခြေအနေကို ကိုယ်စားပြုသည်။ Web response helpers နှင့် `ai.ask` ကဲ့သို့သော Web/AI foundation API များသည် လက်ရှိတွင် foundation သို့မဟုတ် placeholder အဆင့်ဖြစ်နိုင်ပြီး production networking၊ provider integration၊ async runtime၊ type checking နှင့် package registry တို့ကို roadmap အဖြစ် ဆက်လက်တည်ဆောက်မည်။

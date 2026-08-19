@@ -85,6 +85,7 @@ zap main.zp
 | Operators | `+`၊ `-`၊ `*`၊ `/`၊ `%`၊ comparison၊ `and`၊ `or`၊ `not` |
 | Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
 | Functions | parameters၊ return values၊ local scope၊ nested closures |
+| OOP | `class`၊ `extends`၊ `new()`၊ `init()`၊ methods၊ properties၊ `self` |
 | Collections | list indexing၊ map indexing၊ `keys`၊ `contains`၊ `join` |
 | Text | `upper`၊ `lower`၊ `trim`၊ `split`၊ `str`၊ `len` |
 | JSON | `json` နှင့် `from_json` |
@@ -173,6 +174,39 @@ fn make_greeting(prefix):
 say add(4, 6)
 say make_greeting("Hello")
 ```
+
+### OOP: Classes၊ Objects နှင့် Methods
+
+Zap v0.6.0 တွင် beginner-friendly object-oriented programming foundation ပါဝင်သည်။ Class ကို `class` ဖြင့် ကြေညာပြီး object ကို `new("ClassName")` ဖြင့် ဖန်တီးနိုင်သည်။ Method ပထမ parameter သည် `self` ဖြစ်ပြီး object ၏ properties များကို `self.name` ပုံစံဖြင့် အသုံးပြုနိုင်သည်။
+
+```zap
+class User:
+    fn init(self, name):
+        self.name = name
+
+    fn greet(self):
+        return "Hello, " + self.name
+
+let user = new("User", "Zap")
+say user.greet()
+```
+
+Class များသည် `extends` ဖြင့် parent class မှ method များကို ရယူနိုင်ပြီး child class က method ကို override လုပ်နိုင်သည်။
+
+```zap
+class Animal:
+    fn speak(self):
+        return "sound"
+
+class Dog extends Animal:
+    fn speak(self):
+        return "woof"
+
+let dog = new("Dog")
+say dog.speak()
+```
+
+OOP ၏ syntax၊ object lifecycle၊ constructor နှင့် inheritance အသေးစိတ်ကို [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) နှင့် Burmese lesson guide ၏ OOP lesson တွင် ဖတ်ရှုနိုင်သည်။
 
 ### Maps နှင့် JSON
 
@@ -372,7 +406,7 @@ Production compiler၊ bytecode execution၊ package registry နှင့် fr
 
 ### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Native runtime version `0.6.0`၊ path/time/environment/math built-ins၊ optional variable annotations၊ `zap build`၊ updated documentation နှင့် regression tests များ ပါဝင်သည်။
+Native runtime version `0.6.0`၊ path/time/environment/math built-ins၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ `zap build`၊ updated documentation နှင့် regression tests များ ပါဝင်သည်။
 
 ### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 

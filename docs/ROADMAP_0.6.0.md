@@ -19,6 +19,25 @@ let enabled: bool = true
 
 လက်ရှိ validation သည် `text`၊ `number`၊ `bool`၊ `list`၊ `map`၊ `none` နှင့် `any` တို့ကို စစ်ဆေးပေးသည်။ Type မကိုက်ညီပါက program မလုပ်ဆောင်မီ error ပြန်ပေးမည်။
 
+## OOP Foundation — Implemented
+
+v0.6.0 native runtime တွင် class-based OOP foundation ကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ လက်ရှိ support အတွင်း `class` declaration၊ `new()` object creation၊ `init()` constructor၊ `self` receiver၊ property read/write၊ method arguments၊ single inheritance နှင့် method override ပါဝင်သည်။
+
+```zap
+class Animal:
+    fn speak(self):
+        return "sound"
+
+class Dog extends Animal:
+    fn speak(self):
+        return "woof"
+
+let dog = new("Dog")
+say dog.speak()
+```
+
+OOP boundary တွင် interfaces၊ abstract classes၊ private modifiers၊ generics နှင့် multiple inheritance များ မပါဝင်သေးပါ။ OOP integration tests နှင့် beginner lesson ကို release documentation ထဲတွင် ထည့်သွင်းထားသည်။
+
 ## Standard Library ဦးစားပေးအစီအစဉ်
 
 | အဆင့် | Module/API | ရည်ရွယ်ချက် |
@@ -67,6 +86,7 @@ zap <file.zp>        Zap program run ပြုလုပ်ခြင်း
 | Runtime | Linux၊ Windows နှင့် macOS ARM64 တွင် native binary run ရမည် |
 | Standard library | Path separator၊ environment နှင့် timing behavior များ cross-platform ဖြစ်ရမည် |
 | Type checking | မှန်ကန်သော annotation နှင့် မမှန်ကန်သော annotation နှစ်မျိုးစလုံး test ရှိရမည် |
+| OOP | Class၊ object၊ constructor၊ property၊ method နှင့် inheritance tests များ pass ဖြစ်ရမည် |
 | CLI | `init`၊ `check`၊ `build`၊ `fmt` နှင့် `test` commands များ documented ဖြစ်ရမည် |
 | Tests | Native integration tests အားလုံး pass ဖြစ်ရမည် |
 | Docs | Implemented feature နှင့် roadmap proposal ကို မရောထွေးဘဲ Burmese guides တွင် ဖော်ပြရမည် |

@@ -188,3 +188,25 @@ fn build_command_validates_project() {
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("built Zap project"));
 }
+
+
+
+#[test]
+fn runs_oop_classes_methods_and_inheritance() {
+    let file = std::env::temp_dir().join("zap_oop_core_test.zp");
+    std::fs::write(&file, "class User:\n    fn init(self, name):\n        self.name = name\n    fn greet(self):\n        return \"Hello, \" + self.name\nclass Admin extends User:\n    fn role(self):\n        return \"admin\"\nlet user = new(\"User\", \"Tester\")\nlet admin = new(\"Admin\", \"Root\")\nsay user.greet()\nsay admin.greet()\nsay admin.role()\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Hello, Tester\nHello, Root\nadmin\n");
+}
+
+#[test]
+fn runs_oop_property_assignment() {
+    let file = std::env::temp_dir().join("zap_oop_property_test.zp");
+    std::fs::write(&file, "class Counter:\n    fn increment(self):\n        self.value = self.value + 1\n        return self.value\nlet counter = new(\"Counter\", {\"value\": 0})\nsay counter.increment()\nsay counter.value\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "1\n1\n");
+}

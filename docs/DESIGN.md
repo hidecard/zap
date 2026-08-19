@@ -58,9 +58,27 @@ say answer.text
 
 Native v0.5.0 တွင် `web` နှင့် `ai` သည် module architecture အတွက် placeholder အဆင့်ဖြစ်သည်။ v0.6.0 တွင် `path`၊ `time`၊ `env` နှင့် basic `math` utilities ကို native built-ins အဖြစ် ထည့်သွင်းပြီး production-level networking၊ async runtime နှင့် model provider adapters များကို သီးခြား release အဖြစ် တဖြည်းဖြည်း ထည့်မည်။
 
+## v0.6.0 OOP Foundation
+
+Zap v0.6.0 တွင် beginner-friendly class-based OOP foundation ကို native runtime အတွင်း ထည့်သွင်းထားသည်။ Class declaration၊ object creation၊ `init` constructor၊ `self` method receiver၊ property read/write၊ method arguments၊ single inheritance နှင့် method override တို့ကို support လုပ်သည်။ Object များကို list၊ map၊ JSON နှင့် type inspection တို့နှင့် ပေါင်းစပ်အသုံးပြုနိုင်သည်။
+
+```zap
+class Device:
+    fn init(self, name):
+        self.name = name
+
+    fn label(self):
+        return "device: " + self.name
+
+let device = new("Device", "sensor")
+say device.label()
+```
+
+OOP implementation ၏ stable boundary တွင် interfaces၊ abstract classes၊ access modifiers၊ generics နှင့် multiple inheritance များ မပါဝင်သေးပါ။
+
 ## မထည့်သွင်းသေးသောအရာများ
 
-v0.6.0 တွင် class inheritance၊ macro system၊ package registry၊ full static type checker၊ threads နှင့် shared mutable concurrency များကို မထည့်သွင်းသေးပါ။ Async task၊ cancellation နှင့် channel model ကို design အဆင့်မှ စတင်ပြီး runtime semantics တည်ငြိမ်မှသာ production feature အဖြစ် ထည့်သွင်းမည်။
+v0.6.0 တွင် macro system၊ package registry၊ full static type checker၊ threads နှင့် shared mutable concurrency များကို မထည့်သွင်းသေးပါ။ Async task၊ cancellation နှင့် channel model ကို design အဆင့်မှ စတင်ပြီး runtime semantics တည်ငြိမ်မှသာ production feature အဖြစ် ထည့်သွင်းမည်။
 
 ## အောင်မြင်မှုစံနှုန်း
 
