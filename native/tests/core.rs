@@ -128,3 +128,36 @@ fn runs_conditionals() {
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "ok\n");
 }
+
+#[test]
+fn runs_collection_and_runtime_helpers() {
+    let file = std::env::temp_dir().join("zap_collection_helpers_test.zp");
+    std::fs::write(&file, "let user = {\"name\": \"Zap\", \"version\": 3}\nsay type(user)\nsay contains(user, \"name\")\nsay join(keys(user), \",\")\nsay contains(\"native runtime\", \"runtime\")\nassert(type(user) == \"map\", \"map type expected\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("map\n"));
+    assert!(stdout.contains("true\n"));
+    assert!(stdout.contains("version,name\n") || stdout.contains("name,version\n"));
+}
+
+#[test]
+fn reports_assertion_failures() {
+    let file = std::env::temp_dir().join("zap_assert_failure_test.zp");
+    std::fs::write(&file, "assert(false, \"expected failure\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("expected failure"));
+}
+
+#[test]
+fn runs_text_and_numeric_helpers() {
+    let file = std::env::temp_dir().join("zap_text_helpers_test.zp");
+    std::fs::write(&file, "say abs(-7)\nsay min(4, 9)\nsay max(4, 9)\nsay upper(\"zap\")\nsay lower(\"ZAP\")\nsay trim(\"  core  \")\nsay split(\"a,b,c\", \",\")[1]\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "7\n4\n9\nZAP\nzap\ncore\nb\n");
+}

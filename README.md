@@ -17,7 +17,7 @@ Zap သည် **native core prototype / early development release** အဆင့
 | Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
 | Functions | parameters၊ calls၊ `return`၊ local scope၊ nested lexical closures |
 | Modules | source-relative `use "module.zp"` imports၊ `modules/` နှင့် `lib/` search paths |
-| Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text` |
+| Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text` |
 | Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap fmt` |
 | Installation | Prebuilt native binary package |
 
@@ -82,6 +82,7 @@ zap --version               # runtime version
 zap --help                  # command help
 zap check                   # current project manifest validate
 zap check path/to/project   # specific project validate
+zap init path/to/project    # create a new Zap project
 zap fmt main.zp             # source formatting
 ```
 
@@ -183,6 +184,19 @@ zap check
 
 အသေးစိတ် package manifest specification ကို [`PACKAGE.md`](PACKAGE.md) တွင် ဖတ်နိုင်သည်။
 
+## Project စတင်ဖန်တီးခြင်း
+
+Project အသစ်တစ်ခုကို CLI ဖြင့် scaffold လုပ်ရန်—
+
+```bash
+zap init hello-zap
+cd hello-zap
+zap check
+zap main.zp
+```
+
+`zap init` သည် `zap.toml` manifest နှင့် run လုပ်နိုင်သော `main.zp` entry file ကို ဖန်တီးပေးသည်။ ရှိပြီးသား directory ကို မဖျက်ဘဲ အသစ်ဖန်တီးသည့် directory အတွက်သာ အသုံးပြုနိုင်သည်။
+
 ## Formatter
 
 Zap source ကို canonical whitespace format သို့ ပြောင်းရန်—
@@ -254,6 +268,7 @@ Reference compatibility tests များသည် optional ဖြစ်ပြ�
 | `NATIVE.md` | Native runtime documentation |
 | `PACKAGE.md` | `zap.toml` manifest နှင့် package layout specification |
 | `USAGE.md` | Detailed usage guide |
+| `SYNTAX_GUIDE.md` | Detailed syntax reference and runnable examples |
 | `ECOSYSTEM.md` | Future Web/Mobile/AI/IoT ecosystem plan |
 | `Makefile` | Build၊ test နှင့် package shortcuts |
 

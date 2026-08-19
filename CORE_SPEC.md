@@ -20,7 +20,7 @@ Zap native runtime ကို Rust ဖြင့်ရေးသားထားပ�
 
 | Loops | `while condition:` နှင့် `for item in list:` |
 | Maps | `{key: value}` နှင့် `map["key"]` |
-| Builtins | `len(list)` နှင့် `len(text)` |
+| Builtins | `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ JSON နှင့် file I/O |
 
 ## ဥပမာ
 
