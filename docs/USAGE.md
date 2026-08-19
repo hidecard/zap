@@ -1,4 +1,6 @@
-# Zap 0.4 — Complete Usage Guide
+# Zap 0.6.0 — Complete Usage Guide
+
+စတင်လေ့လာသူများအတွက် lesson-based Burmese course ကို [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md) တွင် ဖတ်ရှုနိုင်သည်။
 
 ## 1. Zap ဆိုတာဘာလဲ
 
@@ -28,7 +30,7 @@ zap --version
 Release archive ကို extract လုပ်ပြီး `bin\zap.exe` ရှိကြောင်း စစ်ပါ။ `.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
 ```bat
-cd zap-0.5.0
+cd zap-0.6.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
@@ -36,7 +38,7 @@ bin\zap.exe main.zp
 မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက `install_windows.bat` ကို **Command Prompt မှ Run as administrator မလိုဘဲ double-click သို့မဟုတ် command line ဖြင့်** run လုပ်ပါ။ Installer သည် `%USERPROFILE%\.zap\bin\zap.exe` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
 
 ```bat
-cd zap-0.5.0
+cd zap-0.6.0
 install_windows.bat
 ```
 
@@ -62,6 +64,7 @@ GitHub Releases မှ သင့် operating system နှင့်ကိုက
 | `zap check [dir]` | `zap.toml` နှင့် project entry file ကို validate လုပ်သည် |
 | `zap test [dir]` | Directory နှင့် subdirectories များအောက်ရှိ `*_test.zp` files အားလုံးကို run လုပ်သည် |
 | `zap init <dir>` | Zap project အသစ် scaffold လုပ်သည် |
+| `zap build [dir]` | Build-ready project validation ပြုလုပ်သည် |
 
 Project အသစ်တစ်ခုကို မည်သည့် directory တွင်မဆို ဖန်တီးပြီး `.zp` file ကို run လုပ်နိုင်သည်။ Source file ကို format ပြင်ဆင်ရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ ဥပမာ—
 
@@ -152,7 +155,7 @@ while count < 3:
     count = count + 1
 ```
 
-## 5. JSON, Web နှင့် AI
+## 6. JSON, Web နှင့် AI
 
 JSON ပြောင်းလဲရန်—
 
@@ -187,7 +190,7 @@ say answer["text"]
 
 လက်ရှိ `ai.ask` သည် placeholder provider ဖြစ်သည်။ API key၊ real model provider နှင့် production network integration များကို နောက် version တွင် ထည့်သွင်းရမည်။ API keys များကို Zap source code ထဲ မရေးသင့်ပါ။
 
-## 6. Development နှင့် tests
+## 7. Development နှင့် tests
 
 Native source code ကို ပြင်ပြီး test suite ကို run လုပ်ရန်—
 
@@ -204,17 +207,17 @@ make package
 
 Language behavior အတွက် native integration tests များကို `native/tests/` အောက်တွင် ထိန်းသိမ်းထားပြီး `cargo test --manifest-path native/Cargo.toml` ဖြင့် run နိုင်သည်။
 
-## 7. Uninstall
+## 8. Uninstall
 
 Linux/macOS တွင် installer ထည့်ထားသော user-level `zap` binary ကို ဖယ်ရှားပြီး shell profile ထဲရှိ Zap PATH line ကို ဖယ်ရှားပါ။ Windows တွင် `%USERPROFILE%\\.zap\\bin\\zap.exe` ကို ဖယ်ရှားပြီး user PATH ထဲရှိ Zap entry ကို ဖယ်ရှားပါ။
 
 Zap binary ကို ဖယ်ရှားခြင်းသည် system ပေါ်ရှိ အခြား software များကို မထိခိုက်ပါ။
 
-## 8. Current limitations
+## 9. Current limitations
 
-Zap 0.4 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
+Zap 0.6.0 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
 
-## 9. Project files
+## 10. Project files
 
 | File | Purpose |
 |---|---|

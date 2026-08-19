@@ -1,0 +1,627 @@
+# Learn Zap — Burmese Beginner Course
+
+ဒီစာအုပ်သည် Zap programming language ကို ပထမဆုံးစတင်လေ့လာမည့်သူများအတွက် ရေးထားသော lesson-based guide ဖြစ်သည်။ Lesson တစ်ခုစီတွင် အယူအဆ၊ code နမူနာ၊ run လုပ်ပုံ၊ expected output နှင့် လေ့ကျင့်ခန်း ပါဝင်သည်။ Code များကို ကိုယ်တိုင် `.zp` file ထဲရေးပြီး `zap file.zp` ဖြင့် စမ်းသပ်ပါ။
+
+## သင်ကြားရေးအစီအစဉ်
+
+| အပိုင်း | Lesson | ရည်ရွယ်ချက် |
+|---|---|---|
+| အခြေခံ | 1–4 | Program run၊ output၊ variables၊ operators |
+| Control flow | 5–8 | Condition၊ list၊ map၊ loops |
+| Reusable code | 9–10 | Functions၊ return၊ closures |
+| Practical programming | 11–13 | File၊ path၊ JSON၊ modules၊ tests |
+| Project | 14 | Mini task tracker တည်ဆောက်ခြင်း |
+
+## Lesson 1 — Installation နှင့် Hello World
+
+### ရည်ရွယ်ချက်
+
+Zap ကို install လုပ်ပြီး ပထမဆုံး source file တစ်ခု run တတ်ရန် ဖြစ်သည်။ Zap source file များသည် `.zp` extension အသုံးပြုသည်။
+
+### ပထမဆုံး file
+
+`hello.zp` ဖန်တီးပြီး အောက်ပါ code ရေးပါ။
+
+```zap
+say "Hello from Zap"
+say "မင်္ဂလာပါ Zap"
+```
+
+Run လုပ်ပါ။
+
+```bash
+zap hello.zp
+```
+
+Expected output—
+
+```text
+Hello from Zap
+မင်္ဂလာပါ Zap
+```
+
+### မှတ်သားရန်
+
+`say` သည် value တစ်ခုကို terminal တွင် ထုတ်ပြသသည့် Zap command ဖြစ်သည်။ Program တစ်ခုသည် အပေါ်မှအောက်သို့ အစဉ်လိုက် run သည်။
+
+### လေ့ကျင့်ခန်း
+
+သင့်အမည်၊ သင်လေ့လာရသည့်အကြောင်းအရာနှင့် ရည်မှန်းချက်ကို `say` သုံးပြီး သုံးကြောင်းရေးပါ။
+
+## Lesson 2 — Comments နှင့် Program Structure
+
+### Comments
+
+`#` ဖြင့် စသည့်စာကြောင်းကို runtime က မလုပ်ဆောင်ပါ။
+
+```zap
+# ဒီစာကြောင်းသည် မှတ်ချက်ဖြစ်သည်
+say "ဒီစာကြောင်းပဲ run မည်"
+```
+
+### Code ကို စနစ်တကျရေးခြင်း
+
+```zap
+# User information
+say "Name: Zap Learner"
+say "Level: Beginner"
+
+# Course information
+say "Course: Learn Zap"
+```
+
+Blank lines နှင့် comments များသည် code ကို ဖတ်ရလွယ်စေသည်။
+
+### လေ့ကျင့်ခန်း
+
+သင့် program ထဲတွင် comment သုံးကြောင်းထည့်ပြီး output နှစ်ကြောင်းပြပါ။
+
+## Lesson 3 — Variables နှင့် Value Types
+
+### Variable ဆိုတာဘာလဲ
+
+Variable သည် value တစ်ခုကို နာမည်ပေးပြီး သိမ်းထားသည့်နေရာဖြစ်သည်။ Zap တွင် `let` ဖြင့် variable အသစ်ဖန်တီးနိုင်သည်။
+
+```zap
+let name = "Aye Aye"
+let age = 18
+let active = true
+let nothing = none
+
+say name
+say age
+say active
+say nothing
+```
+
+Zap ၏ အခြေခံ value types များမှာ—
+
+| Type | နမူနာ |
+|---|---|
+| `text` | `"Hello"` |
+| `number` | `42` |
+| `bool` | `true`၊ `false` |
+| `list` | `[1, 2, 3]` |
+| `map` | `{"name": "Zap"}` |
+| `none` | `none` |
+
+### Reassignment
+
+```zap
+let score = 10
+score = score + 5
+say score
+```
+
+Expected output—
+
+```text
+15
+```
+
+### Type annotation
+
+Type ကို optional အနေဖြင့် ရေးနိုင်သည်။
+
+```zap
+let title: text = "Zap"
+let count: number = 3
+let published: bool = false
+```
+
+Type မကိုက်ပါက—
+
+```zap
+let count: number = "three"
+```
+
+runtime error ပြန်ပေးမည်။
+
+### လေ့ကျင့်ခန်း
+
+`student_name`၊ `lesson_count` နှင့် `completed` variables သုံးခုဖန်တီးပြီး type annotation ထည့်ပါ။
+
+## Lesson 4 — Operators နှင့် Calculations
+
+### Arithmetic
+
+```zap
+let a = 20
+let b = 6
+
+say a + b
+say a - b
+say a * b
+say a / b
+say a % b
+```
+
+`%` သည် remainder ကို ပြန်ပေးသည်။
+
+### Comparison
+
+```zap
+let score = 75
+
+say score == 75
+say score != 50
+say score > 60
+say score >= 75
+say score < 100
+say score <= 75
+```
+
+Comparison ၏ result သည် `true` သို့မဟုတ် `false` ဖြစ်သည်။
+
+### Boolean logic
+
+```zap
+let logged_in = true
+let verified = false
+
+say logged_in and verified
+say logged_in or verified
+say not verified
+```
+
+### လေ့ကျင့်ခန်း
+
+အမှတ်နှစ်ခု၏ စုစုပေါင်း၊ ပျမ်းမျှနှင့် အောင်/မအောင် boolean result ကို တွက်ချက်ပါ။
+
+## Lesson 5 — If နှင့် Else
+
+Condition မှန်လျှင် if block ကို run ပြီး မမှန်လျှင် else block ကို run သည်။
+
+```zap
+let age = 20
+
+if age >= 18:
+    say "Adult"
+else:
+    say "Minor"
+```
+
+Indentation သည် အရေးကြီးသည်။ `if` အောက်ရှိ code ကို indentation တစ်ဆင့်ထားရမည်။
+
+### Nested condition
+
+```zap
+let score = 82
+
+if score >= 80:
+    say "A"
+else:
+    if score >= 60:
+        say "B"
+    else:
+        say "C"
+```
+
+### လေ့ကျင့်ခန်း
+
+Temperature value တစ်ခုထားပြီး `hot`၊ `warm`၊ `cold` အဖြစ် condition သုံးမျိုးခွဲပြပါ။
+
+## Lesson 6 — Lists နှင့် Indexing
+
+List သည် value များကို အစဉ်လိုက် သိမ်းသည်။ Index သည် `0` မှ စသည်။
+
+```zap
+let fruits = ["apple", "banana", "orange"]
+
+say fruits[0]
+say fruits[2]
+say len(fruits)
+```
+
+Expected output—
+
+```text
+apple
+orange
+3
+```
+
+List ထဲတွင် number၊ text၊ bool နှင့် map များ ပေါင်းစပ်ထားနိုင်သည်။
+
+```zap
+let mixed = ["Zap", 6, true, none]
+say type(mixed[1])
+```
+
+### `range`
+
+```zap
+let numbers = range(5)
+say numbers
+
+let selected = range(2, 5)
+say selected
+```
+
+`range(5)` သည် `0` မှ `4` အထိ ထုတ်ပေးသည်။
+
+### လေ့ကျင့်ခန်း
+
+သင်ကြိုက်နှစ်သက်သည့် language သုံးခုကို list ထဲထည့်ပြီး ဒုတိယတစ်ခုကို output ပြပါ။
+
+## Lesson 7 — Maps နှင့် JSON
+
+Map သည် key နှင့် value အတွဲများကို သိမ်းသည်။
+
+```zap
+let user = {
+    "name": "Mya",
+    "age": 22,
+    "active": true
+}
+
+say user["name"]
+say user["age"]
+say keys(user)
+say contains(user, "name")
+```
+
+### Nested data
+
+```zap
+let profile = {
+    "name": "Zap User",
+    "skills": ["web", "ai"],
+    "address": {"city": "Yangon"}
+}
+
+say profile["skills"][0]
+say profile["address"]["city"]
+```
+
+### JSON encode/decode
+
+```zap
+let data = {"ok": true, "count": 3}
+let text = json(data)
+say text
+
+let decoded = from_json("{\"name\": \"Zap\"}")
+say decoded["name"]
+```
+
+### လေ့ကျင့်ခန်း
+
+Product တစ်ခု၏ `name`၊ `price`၊ `in_stock` နှင့် `tags` ပါသော map ဖန်တီးပြီး JSON အဖြစ် output ပြပါ။
+
+## Lesson 8 — For နှင့် While Loops
+
+### For loop
+
+```zap
+let items = ["read", "code", "test"]
+
+for item in items:
+    say item
+```
+
+`for` သည် list ထဲရှိ item တစ်ခုစီကို အလိုအလျောက် လှည့်ပတ်သည်။
+
+### Range ဖြင့် loop
+
+```zap
+for number in range(5):
+    say number
+```
+
+### While loop
+
+```zap
+let count = 1
+
+while count <= 3:
+    say count
+    count = count + 1
+```
+
+Loop ထဲတွင် variable ကို update မလုပ်ပါက `while` သည် မရပ်နိုင်ပါ။
+
+### Break နှင့် Continue
+
+```zap
+for number in range(5):
+    if number == 1:
+        continue
+    if number == 4:
+        break
+    say number
+```
+
+`continue` သည် လက်ရှိ iteration ကို ကျော်ပြီး `break` သည် loop တစ်ခုလုံးကို ရပ်သည်။
+
+### လေ့ကျင့်ခန်း
+
+`range(10)` ထဲမှ 5 မရောက်မီ number များကိုသာ output ပြပါ။ 2 ကို skip လုပ်ပါ။
+
+## Lesson 9 — Functions နှင့် Return
+
+Function သည် code ကို ပြန်လည်အသုံးပြုနိုင်ရန် နာမည်ပေးထားသော block ဖြစ်သည်။
+
+```zap
+fn greet(name):
+    return "Hello, " + name
+
+say greet("Zap")
+say greet("Learner")
+```
+
+### Parameters နှင့် calculation
+
+```zap
+fn multiply(a, b):
+    return a * b
+
+let result = multiply(6, 7)
+say result
+```
+
+### Function ထဲတွင် assert
+
+```zap
+fn divide(a, b):
+    assert(b != 0, "cannot divide by zero")
+    return a / b
+
+say divide(10, 2)
+```
+
+### လေ့ကျင့်ခန်း
+
+Number တစ်ခုသည် even ဖြစ်မဖြစ် စစ်ပြီး boolean ပြန်ပေးသည့် `is_even(number)` function ရေးပါ။
+
+## Lesson 10 — Scope နှင့် Closures
+
+Function ထဲက variable သည် local scope ဖြစ်သည်။ အပြင် function ၏ variable ကို nested function က အသုံးပြုနိုင်သည်။
+
+```zap
+fn make_message(prefix):
+    fn message(name):
+        return prefix + ", " + name
+    return message("Developer")
+
+say make_message("Welcome")
+```
+
+`prefix` သည် nested function ထဲတွင် တိုက်ရိုက်မဖန်တီးဘဲ အသုံးပြုနိုင်သောကြောင့် closure ဖြစ်သည်။
+
+### လေ့ကျင့်ခန်း
+
+`make_multiplier(factor)` function ရေးပြီး factor နှင့် number ကို မြှောက်ပေးသည့် nested function တစ်ခု ဖန်တီးပါ။
+
+## Lesson 11 — File I/O၊ Path နှင့် Time
+
+### File ရေးခြင်းနှင့်ဖတ်ခြင်း
+
+```zap
+let path = "notes.txt"
+write_text(path, "Zap is simple")
+let content = read_text(path)
+say content
+```
+
+### Path helper
+
+```zap
+let path = path_join("data", "users", "list.json")
+say path
+say basename(path)
+say dirname(path)
+say exists(path)
+```
+
+`path_join` သည် operating system ၏ path separator ကို အသုံးပြုသောကြောင့် platform မတူသည့်နေရာများတွင် သင့်တော်သည်။
+
+### Time နှင့် delay
+
+```zap
+let timestamp: number = now()
+say timestamp
+sleep(100)
+say "100 milliseconds later"
+```
+
+### Environment variable
+
+```zap
+if has_env("PATH"):
+    say "PATH is available"
+    say env("PATH")
+```
+
+### လေ့ကျင့်ခန်း
+
+`data` directory path ကို `path_join` ဖြင့် တည်ဆောက်ပြီး file ရှိပါက ဖတ်၊ မရှိပါက create လုပ်သည့် program ရေးပါ။
+
+## Lesson 12 — Modules နှင့် Project Structure
+
+Project root တွင် `modules/greetings.zp` ဖိုင်ဖန်တီးပါ။
+
+```zap
+fn greet(name):
+    return "Hello, " + name
+```
+
+`main.zp` တွင် import လုပ်ပါ။
+
+```zap
+use "greetings"
+say greet("Zap")
+```
+
+Project structure—
+
+```text
+my-project/
+├── zap.toml
+├── main.zp
+├── modules/
+│   └── greetings.zp
+└── tests/
+    └── greetings_test.zp
+```
+
+`zap.toml`—
+
+```toml
+[package]
+name = "my-project"
+version = "0.6.0"
+main = "main.zp"
+```
+
+Run—
+
+```bash
+zap check .
+zap build .
+zap main.zp
+```
+
+### လေ့ကျင့်ခန်း
+
+`math.zp` module ထဲတွင် `square(number)` function ရေးပြီး main file မှ import လုပ်ပါ။
+
+## Lesson 13 — Testing နှင့် Formatter
+
+Test file name သည် `_test.zp` ဖြင့်ဆုံးရမည်။
+
+```zap
+fn add(a, b):
+    return a + b
+
+assert(add(2, 3) == 5, "addition failed")
+assert(type(add(2, 3)) == "number", "type failed")
+say "all checks passed"
+```
+
+Run—
+
+```bash
+zap test
+```
+
+Code ကို format လုပ်ရန်—
+
+```bash
+zap fmt main.zp
+```
+
+Project အခြေအနေစစ်ရန်—
+
+```bash
+zap check .
+zap build .
+```
+
+### Test ရေးရာတွင် အကြံပြုချက်
+
+Test တစ်ခုတွင် behavior တစ်ခုကို အဓိကထားပါ။ `assert` message ကို အဓိပ္ပာယ်ရှိအောင် ရေးပါ။ Error case ကိုလည်း စမ်းသပ်ပါ။
+
+### လေ့ကျင့်ခန်း
+
+`is_even` function အတွက် even၊ odd နှင့် zero cases သုံးခုကို test ရေးပါ။
+
+## Lesson 14 — Complete Mini Project: Task Tracker
+
+အောက်ပါ project သည် list၊ map၊ loop၊ function၊ JSON နှင့် assert တို့ကို ပေါင်းစပ်ထားသည်။ `task_tracker.zp` အဖြစ် သိမ်းပါ။
+
+```zap
+fn completed_count(tasks):
+    let total = 0
+    for task in tasks:
+        if task["done"]:
+            total = total + 1
+    return total
+
+let tasks = [
+    {"title": "Learn variables", "done": true},
+    {"title": "Practise loops", "done": false},
+    {"title": "Build a project", "done": false}
+]
+
+let completed = completed_count(tasks)
+let summary = {
+    "total": len(tasks),
+    "completed": completed,
+    "remaining": len(tasks) - completed
+}
+
+assert(summary["total"] == 3, "task count failed")
+say json(summary)
+```
+
+Expected result သည် JSON object တစ်ခုဖြစ်ပြီး total၊ completed နှင့် remaining ပါဝင်မည်။ Map order သည် runtime implementation ပေါ်မူတည်၍ ပြောင်းနိုင်သောကြောင့် output string တစ်ခုလုံးနှင့် မနှိုင်းဘဲ key value များကို စစ်ပါ။
+
+### Project ကို တိုးချဲ့ရန်
+
+Task အသစ်ထည့်ရန် function ရေးပါ။ File ထဲသို့ task data သိမ်းပါ။ Due date field ထည့်ပါ။ Completed task များကိုသာ filter လုပ်ပါ။ ထို့နောက် `tests/` folder ထဲတွင် test file ဖန်တီးပါ။
+
+## ပြဿနာဖြေရှင်းခြင်း
+
+| ပြဿနာ | စစ်ဆေးရန် |
+|---|---|
+| `zap` command မတွေ့ | PATH နှင့် installer အခြေအနေ စစ်ပါ |
+| `main.zp` မတွေ့ | လက်ရှိ directory နှင့် file name စစ်ပါ |
+| `expected =` | `let name = value` ပုံစံကို စစ်ပါ |
+| `undefined variable` | Variable ကို အသုံးမပြုမီ ကြေညာထားပါသလား စစ်ပါ |
+| `undefined function` | Function name နှင့် module import စစ်ပါ |
+| `invalid operation` | Text နှင့် number ကို မမှန်ကန်စွာ မပေါင်းထားပါသလား စစ်ပါ |
+| `index out of range` | List index သည် `0` မှ စကြောင်း မှတ်ပါ |
+| Type mismatch | Annotation နှင့် assigned value type ကို တူအောင်ထားပါ |
+| File error | Path၊ permission နှင့် parent directory ရှိမရှိ စစ်ပါ |
+
+Version ကို စစ်ရန်—
+
+```bash
+zap --version
+```
+
+Help ကို စစ်ရန်—
+
+```bash
+zap --help
+```
+
+## နောက်တစ်ဆင့် လေ့လာရန်
+
+ဒီ course ပြီးပါက [`docs/SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md) တွင် syntax အပြည့်အစုံကို ပြန်လည်ကြည့်ပါ။ [`docs/LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) တွင် workflow နှင့် complete examples များကို လေ့လာပါ။ v0.6.0 ၏ future features များကို [`docs/ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တွင် ဖတ်ပါ။
+
+လက်ရှိ roadmap တွင် structured error model၊ HTTP client၊ async/await၊ tasks၊ channels၊ linting၊ JSON diagnostics နှင့် package management တို့ ပါဝင်သော်လည်း ၎င်းတို့အားလုံးသည် လက်ရှိ stable runtime feature မဟုတ်သေးပါ။
+
+## သင်တန်းပြီးဆုံးမှု စစ်ဆေးရန်
+
+အောက်ပါအရာများကို ကိုယ်တိုင်လုပ်နိုင်လျှင် beginner foundation ပြည့်စုံပြီဟု သတ်မှတ်နိုင်သည်။
+
+1. `.zp` file ဖန်တီးပြီး `zap` ဖြင့် run လုပ်နိုင်ခြင်း။
+2. Variables၊ lists၊ maps နှင့် JSON data ကို အသုံးပြုနိုင်ခြင်း။
+3. `if`၊ `for` နှင့် `while` ဖြင့် logic ရေးနိုင်ခြင်း။
+4. Function နှင့် closure ဖြင့် code ပြန်လည်အသုံးပြုနိုင်ခြင်း။
+5. File၊ path၊ environment နှင့် time APIs များ အသုံးပြုနိုင်ခြင်း။
+6. Module နှင့် `zap.toml` project တည်ဆောက်နိုင်ခြင်း။
+7. `zap fmt`၊ `zap check`၊ `zap build` နှင့် `zap test` workflow အသုံးပြုနိုင်ခြင်း။
+8. Mini project တစ်ခုကို ကိုယ်တိုင်ရေး၊ စမ်းသပ်ပြီး ပြင်ဆင်နိုင်ခြင်း။

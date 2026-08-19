@@ -1,339 +1,403 @@
 # Zap Programming Language
 
-> **Zap** သည် ရိုးရှင်းသော indentation-based syntax ဖြင့် လေ့လာရလွယ်ကူပြီး standalone အဖြစ် တိုက်ရိုက် run နိုင်သော programming language ဖြစ်သည်။ `.zp` source files များကို Linux၊ macOS နှင့် Windows တွင် `zap` CLI ဖြင့် အသုံးပြုနိုင်ရန် ရည်ရွယ်ထားသည်။
+> **Zap** သည် `.zp` file extension အသုံးပြုသည့်၊ ဖတ်ရလွယ်ကူသော indentation-based syntax နှင့် standalone native runtime ပါဝင်သည့် general-purpose programming language ဖြစ်သည်။ Web၊ AI၊ Mobile နှင့် IoT ecosystem များအတွက် language core ကို ရိုးရှင်းပြီး ချဲ့ထွင်နိုင်အောင် တည်ဆောက်နေသည်။
 
-Zap ၏ အဓိကရည်ရွယ်ချက်မှာ beginner များအတွက် ရိုးရှင်းသော syntax နှင့် developer များအတွက် တဖြည်းဖြည်းချဲ့ထွင်နိုင်သော native runtime တစ်ခုကို ပေါင်းစပ်ပေးရန်ဖြစ်သည်။ Web၊ Mobile၊ AI နှင့် IoT frameworks များသည် language core တည်ငြိမ်ပြီးနောက် သီးခြား ecosystem အဖြစ် တည်ဆောက်မည်ဖြစ်သည်။
+Zap သည် စတင်လေ့လာသူများအတွက် syntax ရိုးရှင်းစေရန် ရည်ရွယ်သော်လည်း functions၊ closures၊ JSON၊ file I/O၊ modules၊ project manifest နှင့် native CLI tooling များပါဝင်သည့် practical foundation တစ်ခုကို ပေးထားသည်။
 
-## လက်ရှိအခြေအနေ
+## လက်ရှိ Version
 
-Zap သည် **native core prototype / early development release** အဆင့်တွင် ရှိပါသည်။ Native Rust runtime သည် v0.6.0 development line တွင် အောက်ပါ core features များကို လက်ရှိထောက်ပံ့ထားသည်။
-
-| အပိုင်း | လက်ရှိ support |
+| အချက် | အခြေအနေ |
 |---|---|
-| Source extension | `.zp`၊ ဥပမာ `main.zp` |
-| Values | text၊ integer၊ boolean၊ list၊ map၊ none |
-| Variables | declaration နှင့် reassignment |
-| Operators | arithmetic၊ `%` modulus၊ comparison၊ `and`၊ `or`၊ `not` |
-| Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
-| Functions | parameters၊ calls၊ `return`၊ local scope၊ nested lexical closures |
-| Modules | source-relative `use "module.zp"` imports၊ `modules/` နှင့် `lib/` search paths |
-| Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text`၊ `now`၊ `sleep`၊ `env`၊ `has_env`၊ `exists`၊ `path_join`၊ `basename`၊ `dirname`၊ `pow`၊ `sqrt` |
-| Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap build`၊ `zap test`၊ `zap fmt`၊ `zap init` |
-| Installation | Prebuilt native binary package |
+| Current development line | `v0.6.0` |
+| Runtime | Native Rust runtime |
+| CLI | `zap` |
+| Source file | `.zp`၊ ဥပမာ `main.zp` |
+| Manifest | `zap.toml` |
+| Current platforms | Linux၊ Windows၊ macOS ARM64 release packages |
+| Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
+| Beginner lessons | [`docs/LEARN_ZAP_MM.md`](docs/LEARN_ZAP_MM.md) |
+| Full syntax reference | [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) |
 
-## v0.6.0 တွင် ထည့်သွင်းထားသော အခြေခံ APIs
+Zap သည် ဆက်လက်တိုးချဲ့နေသော early development language ဖြစ်သောကြောင့် stable အဖြစ် သတ်မှတ်ထားသော feature နှင့် roadmap proposal ကို ခွဲခြားဖတ်ရှုပါ။
 
-v0.6.0 development line တွင် file path၊ environment၊ time နှင့် numeric operations များအတွက် native built-ins များ ပါဝင်သည်။ Optional type annotation ကို variable declaration တွင် အသုံးပြုနိုင်သည်။
+## အမြန်စတင်ခြင်း
 
-```zap
-let project: text = path_join("src", "main.zp")
-let started: number = now()
-let has_path: bool = has_env("PATH")
+### 1။ Installation
 
-say basename(project)
-say started
-say has_path
-```
+GitHub ရှိ [Releases](https://github.com/hidecard/zap/releases) မှ သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး extract လုပ်ပါ။ Native binary သည် runtime dependency မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
-Project ၏ manifest နှင့် entry file ကို build မလုပ်မီ စစ်ဆေးနိုင်သည်။
+Linux သို့မဟုတ် macOS တွင်—
 
 ```bash
-zap check .
-zap build .
-zap test .
-```
-
-`async`/`await`၊ HTTP client၊ channels နှင့် package registry တို့သည် roadmap အဆင့်တွင် ရှိသေးပြီး လက်ရှိ stable runtime feature မဟုတ်သေးပါ။ အသေးစိတ်ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) တွင် ဖတ်ရှုနိုင်သည်။
-
-## Zap ကို Install လုပ်ခြင်း
-
-End users များအတွက် development toolchain မလိုပါ။ GitHub Releases မှ သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး extract လုပ်ပါ။ Linux/macOS တွင် archive directory ထဲမှ installer ကို run လုပ်ပါ။
-
-```bash
-tar -xzf zap-linux-x86_64.tar.gz
+tar -xzf zap-0.6.0-linux-x86_64.tar.gz
 cd zap-0.6.0
 bash install.sh
-```
-
-Terminal အသစ်ဖွင့်ပြီး installation ကို စစ်ဆေးပါ။
-
-```bash
 zap --version
-zap --help
 ```
 
-ထို့နောက် မည်သည့် folder မှာမဆို Zap source file ကို run နိုင်ပါသည်။
-
-```bash
-mkdir hello-zap
-cd hello-zap
-printf 'say "Hello from Zap"\n' > main.zp
-zap main.zp
-```
-
-Windows တွင် release archive ကို extract ပြီး `bin\zap.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်ပါသည်။
-
-```bat
-cd zap-0.6.0
-bin\zap.exe --version
-bin\zap.exe main.zp
-```
-
-မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက archive ထဲရှိ `install_windows.bat` ကို run လုပ်ပါ။ Installer သည် `zap.exe` ကို `%USERPROFILE%\.zap\bin` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
+Windows တွင် archive ကို extract ပြီး `install_windows.bat` ကို run လုပ်ပါ။ ထို့နောက် Command Prompt အသစ်ဖွင့်ပြီး—
 
 ```bat
 install_windows.bat
+zap --version
 ```
 
-Command Prompt အသစ်ဖွင့်ပြီး—
+Installer မသုံးဘဲ direct run လုပ်လိုပါက—
 
 ```bat
-zap --version
+bin\zap.exe main.zp
+```
+
+### 2။ ပထမဆုံး Program
+
+`hello.zp` file တစ်ခုဖန်တီးပါ။
+
+```zap
+say "Hello from Zap"
+```
+
+Run လုပ်ပါ။
+
+```bash
+zap hello.zp
+```
+
+### 3။ Project ဖန်တီးခြင်း
+
+```bash
+zap init hello-project
+cd hello-project
+zap check .
+zap build .
+zap test .
 zap main.zp
 ```
 
-PATH မပေါ်သေးပါက direct path ဖြင့် ဆက်သုံးနိုင်သည်။
+`zap init` သည် `zap.toml`၊ `main.zp` နှင့် starter test ပါဝင်သော project structure ကို ဖန်တီးပေးသည်။
 
-```bat
-"%USERPROFILE%\.zap\bin\zap.exe" main.zp
+## Zap Language Feature Matrix
+
+| အပိုင်း | လက်ရှိ support |
+|---|---|
+| Values | text၊ integer number၊ boolean၊ list၊ map၊ none |
+| Variables | `let` declaration နှင့် reassignment |
+| Optional annotations | `text`၊ `number`၊ `bool`၊ `list`၊ `map`၊ `none`၊ `any` |
+| Operators | `+`၊ `-`၊ `*`၊ `/`၊ `%`၊ comparison၊ `and`၊ `or`၊ `not` |
+| Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
+| Functions | parameters၊ return values၊ local scope၊ nested closures |
+| Collections | list indexing၊ map indexing၊ `keys`၊ `contains`၊ `join` |
+| Text | `upper`၊ `lower`၊ `trim`၊ `split`၊ `str`၊ `len` |
+| JSON | `json` နှင့် `from_json` |
+| Files | `read_text` နှင့် `write_text` |
+| Path/time/env | `path_join`၊ `basename`၊ `dirname`၊ `exists`၊ `now`၊ `sleep`၊ `env`၊ `has_env` |
+| Math | `abs`၊ `min`၊ `max`၊ `pow`၊ `sqrt` |
+| Modules | local `.zp` modules၊ `modules/` နှင့် `lib/` search paths |
+| CLI | `init`၊ `check`၊ `build`၊ `test`၊ `fmt`၊ run၊ help၊ version |
+
+## Syntax အခြေခံများ
+
+### Variables နှင့် Types
+
+```zap
+let name: text = "Zap"
+let version: number = 6
+let ready: bool = true
+let items: list = ["web", "ai", "iot"]
+let settings: map = {"mode": "dev", "debug": true}
+
+say name
+say version
+say type(items)
 ```
 
-Windows release archive တွင် executable သည် `bin\zap.exe` အဖြစ် ပါဝင်သောကြောင့် runtime dependency သို့မဟုတ် source toolchain မလိုပါ။
+Type annotation သည် optional ဖြစ်သည်။ Annotation ရေးထားပါက assigned value နှင့် type ကို runtime က စစ်ဆေးပေးသည်။ Annotation မရေးထားလည်း dynamic value အဖြစ် အသုံးပြုနိုင်သည်။
 
-### Source မှ build လုပ်ခြင်း
+### Comments
 
-Developer များသည် Rust toolchain ရှိပါက source မှ native binary build လုပ်နိုင်သည်။
-
-```bash
-make native
-./bin/zap --version
-./bin/zap main.zp
+```zap
+# ဒီစာကြောင်းသည် comment ဖြစ်သည်
+say "Comments are ignored by the runtime"
 ```
 
-သို့မဟုတ်—
+### Operators
 
-```bash
-cargo build --release --manifest-path native/Cargo.toml
+```zap
+let total = 10 + 5 * 2
+let remainder = 17 % 4
+let same = total == 20
+let allowed = same or not false
+
+say total
+say remainder
+say allowed
 ```
 
-Source build သည် development အတွက်သာ ဖြစ်သည်။ ပုံမှန် user installation အတွက် prebuilt release archive ကို အသုံးပြုခြင်းဖြင့် အပို development toolchain မလိုတော့ပါ။
+### Conditions
 
-## Language Usage Guide
+```zap
+let score = 85
 
-အသေးစိတ် language usage ကို beginner အဆင့်မှ project development အထိ ဖတ်ရှုရန် [`docs/LANGUAGE_GUIDE.md`](docs/LANGUAGE_GUIDE.md) ကို အသုံးပြုပါ။ ထို guide တွင် values၊ variables၊ operators၊ conditions၊ loops၊ functions၊ closures၊ lists၊ maps၊ JSON၊ file I/O၊ modules၊ error debugging နှင့် complete project examples များ ပါဝင်သည်။
-
-Syntax reference အတွက် [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md)၊ project manifest အတွက် [`docs/PACKAGE.md`](docs/PACKAGE.md) နှင့် native runtime အတွက် [`docs/NATIVE.md`](docs/NATIVE.md) ကို ဖတ်ရှုနိုင်သည်။
-
-## CLI အသုံးပြုနည်း
-
-```bash
-zap main.zp                 # program run
-zap --version               # runtime version
-zap --help                  # command help
-zap check                   # current project manifest validate
-zap check path/to/project   # specific project validate
-zap test                    # recursively run *_test.zp files under tests/
-zap test path/to/tests      # recursively run a selected test directory
-zap init path/to/project    # create a new Zap project
-zap fmt main.zp             # source formatting
+if score >= 80:
+    say "Excellent"
+else:
+    say "Keep practising"
 ```
 
-`zap` သည် file path ကို တိုက်ရိုက်လက်ခံသော native runtime ဖြစ်သည်။ Repository ထဲရှိ reference tooling သည် language behavior စမ်းသပ်ရန်အတွက်သာ ဖြစ်ပြီး ပုံမှန် Zap အသုံးပြုမှုအတွက် မလိုအပ်ပါ။
+Zap blocks များသည် indentation ဖြင့် သတ်မှတ်သည်။ Block အတွင်းရှိ code များကို indentation တစ်ဆင့်တည်း ထားပါ။
 
-## ပထမဆုံး Zap Program
+### Lists နှင့် Loops
 
-```zp
-let name = "Zap"
-let numbers = range(5)
+```zap
+let languages = ["Zap", "Rust", "Python"]
 
-say "Hello, " + name
+for language in languages:
+    say language
 
-for number in numbers:
-    if number == 2:
-        continue
-    if number == 4:
-        break
-    say number
+let n = 0
+while n < 3:
+    say n
+    n = n + 1
 ```
 
-Zap သည် indentation-based block syntax ကို အသုံးပြုသည်။ Block စတင်ရန် colon (`:`) သုံးပြီး နောက်လိုက် lines များကို indentation ဖြင့် ရေးသားသည်။
+### Functions နှင့် Closures
 
-## Functions နှင့် Closures
+```zap
+fn add(a, b):
+    return a + b
 
-```zp
-fn make_adder(base):
-    fn add(value):
-        return base + value
-    return add(10)
+fn make_greeting(prefix):
+    fn greet(name):
+        return prefix + ", " + name
+    return greet("Developer")
 
-let result = make_adder(5)
-say result
+say add(4, 6)
+say make_greeting("Hello")
 ```
 
-Function တစ်ခုအတွင်းရှိ variable များသည် local scope ရှိပြီး nested function သည် outer function ၏ variable များကို capture လုပ်နိုင်သည်။
+### Maps နှင့် JSON
 
-## Lists၊ Maps နှင့် JSON
+```zap
+let user = {
+    "name": "Zap User",
+    "age": 20,
+    "skills": ["web", "ai"]
+}
 
-```zp
-let user = {"name": "Ada", "language": "Zap"}
+say user["name"]
+say keys(user)
+say json(user)
 
-let encoded = json(user)
-say encoded
-
-let decoded = from_json(encoded)
-say decoded["name"]
+let decoded = from_json("{\"ok\": true}")
+say decoded["ok"]
 ```
 
-`json(value)` သည် Zap value ကို JSON text အဖြစ် encode လုပ်ပြီး `from_json(text)` သည် JSON text ကို Zap value အဖြစ် decode လုပ်သည်။
+### File I/O နှင့် Path
 
-## File I/O
+```zap
+let file = path_join("data", "note.txt")
 
-```zp
-write_text("message.txt", "Zap file I/O")
-let message = read_text("message.txt")
-say message
+if exists(file):
+    say read_text(file)
+else:
+    write_text(file, "Hello from Zap")
+    say "File created"
 ```
 
-File path များကို program ၏ current working directory အပေါ် အခြေခံ၍ အသုံးပြုသည်။ Production sandbox နှင့် permission policy များကို runtime အဆင့်တွင် ဆက်လက်တိုးချဲ့မည်။
+### Time နှင့် Environment
 
-## Modules နှင့် Project Manifest
+```zap
+let started_at: number = now()
+say started_at
 
-Project တစ်ခုတွင် `zap.toml` manifest ထည့်နိုင်သည်။
+if has_env("PATH"):
+    say env("PATH")
+
+sleep(10)
+say "finished"
+```
+
+## Built-in Reference
+
+| Function | အသုံးပြုပုံ | ရည်ရွယ်ချက် |
+|---|---|---|
+| `say` | `say value` | Output ပြသခြင်း |
+| `len` | `len(value)` | Text သို့မဟုတ် list အရှည် |
+| `range` | `range(5)`၊ `range(2, 5)` | Number list ဖန်တီးခြင်း |
+| `str` | `str(value)` | Value ကို text ပြောင်းခြင်း |
+| `type` | `type(value)` | Value type သိခြင်း |
+| `keys` | `keys(map)` | Map keys ရယူခြင်း |
+| `contains` | `contains(collection, item)` | ပါဝင်မှုစစ်ခြင်း |
+| `join` | `join(list, separator)` | List ကို text ပေါင်းခြင်း |
+| `upper/lower` | `upper(text)` | Text case ပြောင်းခြင်း |
+| `trim/split` | `trim(text)`၊ `split(text, sep)` | Text ပြင်ဆင်ခြင်း |
+| `json/from_json` | `json(value)` | JSON encode/decode |
+| `read_text/write_text` | `read_text(path)` | Text file I/O |
+| `path_join` | `path_join(a, b)` | Platform-aware path ပေါင်းခြင်း |
+| `basename/dirname` | `basename(path)` | Path အစိတ်အပိုင်းရယူခြင်း |
+| `exists` | `exists(path)` | File/path ရှိမရှိစစ်ခြင်း |
+| `now/sleep` | `now()`၊ `sleep(ms)` | Time နှင့် delay |
+| `env/has_env` | `env(name)` | Environment ဖတ်ခြင်း |
+| `abs/min/max` | `abs(-4)` | Numeric helpers |
+| `pow/sqrt` | `pow(2, 3)` | Power နှင့် square root |
+| `assert` | `assert(condition, message)` | Program/test condition စစ်ခြင်း |
+
+## CLI Command Reference
+
+```text
+zap <file.zp>       Zap source file ကို run လုပ်သည်
+zap init <dir>       Project အသစ် scaffold ဖန်တီးသည်
+zap check [dir]      zap.toml နှင့် main file စစ်သည်
+zap build [dir]      Build-ready project validation ပြုလုပ်သည်
+zap test [dir]       *_test.zp files များကို recursive run သည်
+zap fmt <file.zp>    Formatting ပြုလုပ်ပြီး file ကို update သည်
+zap --version        Runtime version ပြသည်
+zap --help           Command help ပြသည်
+```
+
+## Project Structure
+
+```text
+my-zap-project/
+├── zap.toml
+├── main.zp
+├── modules/
+│   └── helpers.zp
+├── lib/
+│   └── format.zp
+└── tests/
+    └── smoke_test.zp
+```
+
+Manifest နမူနာ—
 
 ```toml
 [package]
-name = "hello-app"
-version = "0.1.0"
+name = "my-zap-project"
+version = "0.6.0"
 main = "main.zp"
 ```
 
-အကြံပြု project layout သည်—
+Local module အသုံးပြုရန်—
 
-```text
-hello-app/
-├── zap.toml
-├── main.zp
-├── tests/
-│   ├── app_test.zp
-│   └── unit/
-│       └── math_test.zp
-├── modules/
-│   └── math.zp
-└── lib/
-    └── text.zp
+```zap
+use "helpers"
+say greet("Zap")
 ```
 
-Module ကို အောက်ပါအတိုင်း import လုပ်နိုင်သည်။
+Module resolution သည် source file ၏ directory၊ `modules/` နှင့် `lib/` တို့ကို ရှာဖွေသည်။
 
-```zp
-use "math.zp"
+## Testing
+
+Test file အမည်သည် `_test.zp` ဖြင့်ဆုံးရမည်။
+
+```zap
+fn add(a, b):
+    return a + b
+
+assert(add(2, 3) == 5, "add function failed")
+assert(type(add(2, 3)) == "number", "result type failed")
+say "test passed"
 ```
 
-Runtime သည် main source file ရှိသော directory၊ project ၏ `modules/` နှင့် `lib/` directories များအတွင်း module ကို ရှာဖွေသည်။ Manifest နှင့် main entry file ကို validate လုပ်ရန်—
+Run—
 
 ```bash
-zap check
-```
-
-အသေးစိတ် package manifest specification ကို [`docs/PACKAGE.md`](docs/PACKAGE.md) တွင် ဖတ်နိုင်သည်။
-
-## Project စတင်ဖန်တီးခြင်း
-
-Project အသစ်တစ်ခုကို CLI ဖြင့် scaffold လုပ်ရန်—
-
-```bash
-zap init hello-zap
-cd hello-zap
-zap check
 zap test
-zap main.zp
+zap test tests
 ```
 
-`zap init` သည် `zap.toml` manifest၊ run လုပ်နိုင်သော `main.zp` entry file နှင့် `tests/smoke_test.zp` starter test ကို ဖန်တီးပေးသည်။ ရှိပြီးသား directory ကို မဖျက်ဘဲ အသစ်ဖန်တီးသည့် directory အတွက်သာ အသုံးပြုနိုင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files အားလုံးကို အစဉ်လိုက်ရှာဖွေ run လုပ်သည်။
+Native runtime integration tests များကို—
 
-## Formatter
+```bash
+cd native
+cargo test
+```
 
-Zap source ကို canonical whitespace format သို့ ပြောင်းရန်—
+ဖြင့် run နိုင်သည်။
+
+## Formatting နှင့် Error Debugging
 
 ```bash
 zap fmt main.zp
+zap check .
 ```
 
-Formatter သည် indentation ကို normalize လုပ်ပြီး trailing whitespace များကို ဖယ်ရှားသည်။ လက်ရှိ formatter သည် syntax-changing formatter မဟုတ်သေးဘဲ safe whitespace normalization ကို ဦးစားပေးထားသည်။
+Error တက်ပါက file path၊ line အနီးရှိ syntax၊ variable name၊ function arguments နှင့် data type များကို အရင်စစ်ဆေးပါ။ `assert` တွင် အဓိပ္ပာယ်ရှိသော message ရေးပါ။
+
+```zap
+assert(total >= 0, "total must not be negative")
+```
+
+## Beginner Learning Path
+
+စတင်လေ့လာသူများသည် အောက်ပါအစီအစဉ်အတိုင်း လေ့လာသင့်သည်။
+
+| Lesson | အကြောင်းအရာ |
+|---|---|
+| 1 | Installation နှင့် Hello World |
+| 2 | Output၊ comments နှင့် program structure |
+| 3 | Variables နှင့် value types |
+| 4 | Operators နှင့် calculations |
+| 5 | Conditions |
+| 6 | Lists နှင့် indexing |
+| 7 | Maps နှင့် JSON |
+| 8 | `for` နှင့် `while` loops |
+| 9 | Functions နှင့် return |
+| 10 | Closures နှင့် scope |
+| 11 | File I/O၊ path၊ time နှင့် environment |
+| 12 | Modules နှင့် project structure |
+| 13 | Tests၊ formatter နှင့် CLI workflow |
+| 14 | Complete mini project |
+
+Lesson တစ်ခုစီတွင် explanation၊ runnable code၊ expected output နှင့် exercise ပါဝင်သည်။ [`docs/LEARN_ZAP_MM.md`](docs/LEARN_ZAP_MM.md) ကို ဖွင့်ပြီး Lesson 1 မှ စတင်ပါ။
+
+## Examples
+
+Repository ၏ `examples/` folder တွင် runnable examples များ ပါဝင်သည်။
+
+```bash
+zap examples/hello.zp
+zap examples/data.zp
+zap examples/tasks.zp
+zap examples/advanced.zp
+```
 
 ## Native Architecture
 
-Zap native runtime ၏ လုပ်ဆောင်ပုံမှာ—
+Zap ၏ runtime သည် Rust ဖြင့်ရေးသားထားသော standalone binary ဖြစ်သည်။ Source code သည် `native/`၊ language documentation သည် `docs/`၊ runnable examples သည် `examples/`၊ အဟောင်း prototype များသည် `legacy/` တွင် ခွဲထားသည်။ Runtime သည် source ကို tokenize လုပ်ပြီး expression evaluation နှင့် line execution အဆင့်များဖြင့် run သည်။
 
-```text
-.zp source
-    │
-    ▼
-Lexer / tokenizer
-    │
-    ▼
-Expression parser
-    │
-    ▼
-Block and statement executor
-    │
-    ▼
-Native Rust runtime
-```
+Production compiler၊ bytecode execution၊ package registry နှင့် framework layers များသည် နောက်ပိုင်း roadmap အစိတ်အပိုင်းများ ဖြစ်သည်။
 
-Runtime သည် source ကို native execution pipeline ဖြင့် တိုက်ရိုက် run လုပ်သည်။ Native package metadata နှင့် source code များသည် [`native/`](native/) directory ထဲတွင် ရှိသည်။ အသေးစိတ် native implementation notes ကို [`docs/NATIVE.md`](docs/NATIVE.md) တွင် ဖတ်နိုင်သည်။ v0.5.0 ပြောင်းလဲချက်များနှင့် release အသုံးပြုနည်းကို [`docs/RELEASE_0.5.0.md`](docs/RELEASE_0.5.0.md) တွင် ဖတ်နိုင်သည်။
+## v0.6.0 Status နှင့် Roadmap
 
-## Release Package တည်ဆောက်ခြင်း
+### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Rust toolchain ရှိသော maintainer များသည် local binary archive ထုတ်ရန်—
+Native runtime version `0.6.0`၊ path/time/environment/math built-ins၊ optional variable annotations၊ `zap build`၊ updated documentation နှင့် regression tests များ ပါဝင်သည်။
 
-```bash
-make package
-```
+### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-ဟု run လုပ်နိုင်သည်။ Archive ကို `dist/` directory ထဲတွင် ထုတ်ပေးပြီး `bin/zap`၊ installer နှင့် documentation များ ပါဝင်သည်။ SHA-256 checksum file ကိုလည်း အတူထုတ်ပေးသည်။ Release workflow သည် Linux၊ macOS Apple Silicon၊ macOS Intel နှင့် Windows targets များအတွက် binary-only archives ထုတ်ရန် ပြင်ဆင်ထားသည်။
+Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။
 
-## Tests
+`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
 
-Native runtime နှင့် integration tests များကို run လုပ်ရန်—
+## Documentation Map
 
-```bash
-make native-test
-```
-
-Native integration tests များသည် `native/tests/` အောက်တွင် ရှိပြီး `cargo test --manifest-path native/Cargo.toml` ဖြင့် run နိုင်သည်။ End-user installation နှင့် native CLI အသုံးပြုမှုအတွက် အပို runtime မလိုပါ။
-
-## Repository ဖိုင်များ
-
-| ဖိုင်/Directory | ရည်ရွယ်ချက် |
+| Document | ရည်ရွယ်ချက် |
 |---|---|
-| `native/` | Rust native runtime၊ Cargo metadata နှင့် integration tests |
-| `bin/zap` | Local release build ထုတ်ထားသော native CLI binary |
-| `examples/` | Runnable language examples နှင့် native smoke tests |
-| `legacy/` | Archived prototype tooling; active runtime မဟုတ်ပါ |
-| `install.sh` | Linux/macOS binary installer |
-| `install_windows.bat` | Windows binary installer |
-| `build_native.sh`, `build_native.bat` | Native binary build helpers |
-| `package_release.sh` | Binary-only release archive builder |
-| `.github/workflows/release.yml` | Cross-platform release automation |
-| `docs/CORE_SPEC.md` | Language core specification |
-| `docs/DESIGN.md` | Language design notes |
-| `docs/NATIVE.md` | Native runtime documentation |
-| `docs/PACKAGE.md` | `zap.toml` manifest နှင့် package layout specification |
-| `docs/USAGE.md` | Detailed usage guide |
-| `docs/SYNTAX_GUIDE.md` | Detailed syntax reference and runnable examples |
-| `docs/LANGUAGE_GUIDE.md` | Beginner-to-intermediate language usage guide |
-| `docs/RELEASE_0.5.0.md` | v0.5.0 release notes and download workflow |
-| `docs/ECOSYSTEM.md` | Future Web/Mobile/AI/IoT ecosystem plan |
-| `docs/PACKAGES.md` | Package ecosystem planning notes |
-| `Makefile` | Build၊ test နှင့် package shortcuts |
+| [`docs/LEARN_ZAP_MM.md`](docs/LEARN_ZAP_MM.md) | Beginner Burmese lessons နှင့် exercises |
+| [`docs/LANGUAGE_GUIDE.md`](docs/LANGUAGE_GUIDE.md) | Complete language usage guide |
+| [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) | Syntax နှင့် code reference |
+| [`docs/USAGE.md`](docs/USAGE.md) | Installation၊ CLI နှင့် usage workflow |
+| [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) | v0.6.0 implementation roadmap |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Language design principles |
+| [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) | Core၊ standard library နှင့် future frameworks |
+| [`docs/PACKAGES.md`](docs/PACKAGES.md) | Manifest၊ modules နှင့် package future |
+| [`docs/NATIVE.md`](docs/NATIVE.md) | Native runtime development |
 
-## Roadmap
+## Contributing
 
-Zap core ၏ လက်ရှိဦးစားပေးများမှာ ပိုမိုတိကျသော line/column diagnostics၊ formatter တိုးတက်မှု၊ package lockfile၊ dependency registry နှင့် bytecode/optimized execution ဖြစ်သည်။ Language core တည်ငြိမ်ပြီး tooling ပြည့်စုံလာသောအခါ Web၊ Android/Mobile၊ AI နှင့် IoT frameworks များကို Zap packages အဖြစ် စတင်တည်ဆောက်မည်။
-
-ယခု release သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်သည်။ Syntax နှင့် runtime behavior များသည် development အတွင်း ပြောင်းလဲနိုင်သောကြောင့် project examples၊ tests နှင့် specification files များကို အမြဲတမ်းအတူတကွ စစ်ဆေးသင့်သည်။
+Zap ကို စမ်းသပ်အသုံးပြုပြီး bug၊ syntax အခက်အခဲ၊ documentation ပြင်ဆင်ချက် သို့မဟုတ် feature proposal များကို GitHub repository ၏ Issues နှင့် Pull Requests မှတစ်ဆင့် တင်ပြနိုင်သည်။ Bug report တွင် operating system၊ `zap --version` output၊ source code အတိုနှင့် error output ကို ထည့်ပါ။
 
 ## License
 
-Zap သည် MIT License အောက်တွင် ဖြန့်ချိထားသည်။ အသေးစိတ်ကို [`LICENSE`](LICENSE) တွင် ဖတ်နိုင်သည်။
+Repository တွင် သတ်မှတ်ထားသော license စည်းမျဉ်းများကို လိုက်နာပါ။ License နှင့် release package အချက်အလက်များကို [GitHub repository](https://github.com/hidecard/zap) တွင် ကြည့်ရှုနိုင်သည်။
