@@ -12,6 +12,7 @@
 | Practical programming | 11–13 | File၊ path၊ JSON၊ modules၊ tests |
 | Project | 14 | Mini task tracker တည်ဆောက်ခြင်း |
 | OOP | 15 | Class၊ object၊ constructor၊ method နှင့် inheritance |
+| Standard library | 16 | Collection helpers နှင့် line-based file I/O |
 
 ## Lesson 1 — Installation နှင့် Hello World
 
@@ -806,6 +807,90 @@ say "OOP test passed"
 
 ## Current Stable Boundary
 
-OOP feature သည် v0.6.0 native runtime တွင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable OOP API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
+OOP feature သည် v0.6.0 native runtime တွင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ v0.7.0 တွင် collection နှင့် line-based file helpers များ ထပ်မံပါဝင်လာသည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
 
 သင်ခန်းစာအားလုံးပြီးနောက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) နှင့် [`ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တို့ကို ဆက်လက်ဖတ်ရှုပါ။
+
+## Lesson 16 — Collection Helpers နှင့် Line-based File I/O
+
+v0.7.0 တွင် list နှင့် map data များကို ပိုမိုလွယ်ကူစွာ ကိုင်တွယ်ရန် helper functions များ ထပ်တိုးထားသည်။ File ကို line တစ်ကြောင်းစီ ဖတ်ခြင်းနှင့် ရေးခြင်းကိုလည်း တိုက်ရိုက်လုပ်နိုင်သည်။
+
+### Collection helpers
+
+```zap
+let numbers = [4, 1, 8, 2]
+
+say is_empty(numbers)
+say sum(numbers)
+say min(4, 1)
+say max(8, 2)
+say reverse(numbers)
+say sort(numbers)
+say join(sort(numbers), ",")
+```
+
+Expected output—
+
+```text
+false
+15
+1
+8
+[2, 8, 1, 4]
+[1, 2, 4, 8]
+1,2,4,8
+```
+
+`sort` သည် number list သို့မဟုတ် text list ကို sort လုပ်ပေးသည်။ `reverse` သည် list အသစ်ကို ပြန်ပေးပြီး မူလ list ကို မပြောင်းပါ။ `sum` သည် number list အတွက်သာ အသုံးပြုရမည်။
+
+### Map မှ default value ရယူခြင်း
+
+```zap
+let user = {"name": "Zap", "role": "developer"}
+say get(user, "name", "unknown")
+say get(user, "email", "unknown")
+```
+
+Key မရှိပါက `get` ၏ တတိယ argument ဖြစ်သော default value ကို ပြန်ပေးသည်။ ထို့ကြောင့် optional configuration သို့မဟုတ် JSON data များကို စစ်ဆေးရာတွင် အသုံးဝင်သည်။
+
+### Line-based file I/O
+
+```zap
+let lines = ["first", "second", "third"]
+write_lines("items.txt", lines)
+
+let loaded = read_lines("items.txt")
+say len(loaded)
+say join(loaded, "|")
+```
+
+Expected output—
+
+```text
+3
+first|second|third
+```
+
+`write_lines` သည် list ထဲရှိ text တစ်ခုစီကို newline ဖြင့်ရေးပြီး `read_lines` သည် newline များကို ဖယ်ရှားကာ text list အဖြစ် ပြန်ပေးသည်။ Empty file သည် empty list အဖြစ် ပြန်ရနိုင်သည်။
+
+### Mini exercise
+
+1. `scores` number list တစ်ခုဖန်တီးပြီး `sum`၊ `min` နှင့် `max` ဖြင့် report ထုတ်ပါ။
+2. User names list ကို sort လုပ်ပြီး `write_lines` ဖြင့် file ထဲသိမ်းပါ။
+3. `read_lines` ဖြင့် ပြန်ဖတ်ပြီး `join` ဖြင့် terminal တွင် ပြပါ။
+4. Map ထဲမှ မရှိနိုင်သော key များကို `get` ဖြင့် default value သုံးပြီး ဖတ်ပါ။
+
+### Lesson 16 checkpoint
+
+Collection helper များကို မှန်ကန်သော value type နှင့် အသုံးပြုနိုင်ခြင်း၊ မူလ list မပြောင်းဘဲ sorted/reversed result ရယူနိုင်ခြင်း၊ line-based file read/write လုပ်နိုင်ခြင်းနှင့် missing map key အတွက် default value သတ်မှတ်နိုင်ခြင်းတို့ကို လုပ်နိုင်ရမည်။
+
+စာအုပ်၏ နောက်ဆုံး feature status ကို [`README.md`](../README.md) နှင့် [`docs/SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md) တွင် ဆက်လက်စစ်ဆေးပါ။
+
+## Updated Course Completion Checklist
+
+v0.7.0 foundation ပြည့်စုံရန် OOP နှင့် standard library lesson များအပြင်—
+
+1. `is_empty`၊ `sum`၊ `min`၊ `max`၊ `reverse`၊ `sort` နှင့် `join` ကို အသုံးပြုနိုင်ခြင်း။
+2. `get(map, key, default)` ဖြင့် missing map key ကို လုံခြုံစွာ ကိုင်တွယ်နိုင်ခြင်း။
+3. `read_lines` နှင့် `write_lines` ဖြင့် line-based text file workflow တည်ဆောက်နိုင်ခြင်း။
+4. Implemented features နှင့် roadmap-only features ကို documentation မှ ခွဲခြားနားလည်နိုင်ခြင်း။

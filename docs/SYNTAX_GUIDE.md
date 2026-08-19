@@ -1,6 +1,6 @@
 # Zap Syntax Guide
 
-ဤ guide သည် Zap `0.6.0` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
+ဤ guide သည် Zap `0.7.0` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
 
 > Zap သည် ရိုးရှင်းသော indentation-based block syntax၊ ရှင်းလင်းသော keywords နှင့် standalone CLI workflow ကို အဓိကထားသော programming language ဖြစ်သည်။
 
@@ -280,7 +280,7 @@ say result
 
 ## 14. OOP: Classes၊ Objects နှင့် Methods
 
-Zap v0.6.0 တွင် class-based OOP foundation ပါဝင်သည်။ Class declaration သည် indentation-based ဖြစ်ပြီး method များကို `fn` ဖြင့် ရေးရသည်။ Object method ၏ ပထမ parameter သည် `self` ဖြစ်သည်။
+Zap v0.7.0 တွင် class-based OOP foundation ပါဝင်သည်။ Class declaration သည် indentation-based ဖြစ်ပြီး method များကို `fn` ဖြင့် ရေးရသည်။ Object method ၏ ပထမ parameter သည် `self` ဖြစ်သည်။
 
 ```zp
 class User:
@@ -334,7 +334,7 @@ let dog = new("Dog")
 say dog.speak()
 ```
 
-OOP boundary အနေဖြင့် v0.6.0 တွင် class၊ object၊ properties၊ methods၊ constructor နှင့် single inheritance ကို support လုပ်သည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
+OOP boundary အနေဖြင့် v0.7.0 တွင် class၊ object၊ properties၊ methods၊ constructor နှင့် single inheritance ကို support လုပ်သည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
 
 ## 15. Standard Utility Built-ins
 
@@ -357,6 +357,12 @@ say upper("zap")               # ZAP
 say lower("ZAP")               # zap
 say trim("  core  ")           # core
 say split("a,b,c", ",")[1]    # b
+
+say is_empty([])             # true
+say sum([1, 2, 3])           # 6
+say reverse("Zap")           # paZ
+say join(sort([3, 1, 2]), ",") # 1,2
+say get({"name": "Zap"}, "missing", "default") # default
 ```
 
 `assert(condition, message)` သည် condition မှားလျှင် Zap error ဖြင့် program ကို ရပ်စေသည်။ Test နှင့် configuration validation များအတွက် အသုံးဝင်သည်။
@@ -391,6 +397,14 @@ write_text("message.txt", "Hello from Zap")
 
 let message = read_text("message.txt")
 say message
+```
+
+Line-based file helper များကိုလည်း အသုံးပြုနိုင်သည်။ `read_lines(path)` သည် text list ကို ပြန်ပေးပြီး `write_lines(path, lines)` သည် list ထဲရှိ text များကို newline ဖြင့်ရေးသည်။ Empty list ရေးလျှင် empty file ဖြစ်သည်။
+
+```zp
+write_lines("items.txt", ["one", "two"])
+let items = read_lines("items.txt")
+say join(items, "|")
 ```
 
 Relative path များသည် program run လုပ်သော current working directory ကို အခြေခံသည်။ File permission နှင့် path validation များကို production အသုံးပြုမှုမတိုင်မီ စစ်ဆေးသင့်သည်။

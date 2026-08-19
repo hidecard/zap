@@ -1,4 +1,4 @@
-# Zap 0.6.0 — Complete Usage Guide
+# Zap 0.7.0 — Complete Usage Guide
 
 စတင်လေ့လာသူများအတွက် lesson-based Burmese course ကို [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md) တွင် ဖတ်ရှုနိုင်သည်။
 
@@ -30,7 +30,7 @@ zap --version
 Release archive ကို extract လုပ်ပြီး `bin\zap.exe` ရှိကြောင်း စစ်ပါ။ `.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
 ```bat
-cd zap-0.6.0
+cd zap-0.7.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
@@ -38,7 +38,7 @@ bin\zap.exe main.zp
 မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက `install_windows.bat` ကို **Command Prompt မှ Run as administrator မလိုဘဲ double-click သို့မဟုတ် command line ဖြင့်** run လုပ်ပါ။ Installer သည် `%USERPROFILE%\.zap\bin\zap.exe` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
 
 ```bat
-cd zap-0.6.0
+cd zap-0.7.0
 install_windows.bat
 ```
 
@@ -59,6 +59,7 @@ GitHub Releases မှ သင့် operating system နှင့်ကိုက
 |---|---|
 | `zap --version` | Native Zap version ကို ပြသည် |
 | `zap file.zp` | Zap source file ကို standalone runtime ဖြင့် execute လုပ်သည် |
+| `zap run file.zp` | Source file ကို explicit run command ဖြင့် execute လုပ်သည် |
 | `zap --help` | Native CLI usage ကို ပြသည် |
 | `zap fmt file.zp` | `.zp` source file ကို canonical whitespace ဖြင့် format လုပ်သည် |
 | `zap check [dir]` | `zap.toml` နှင့် project entry file ကို validate လုပ်သည် |
@@ -72,7 +73,7 @@ Project အသစ်တစ်ခုကို မည်သည့် directory တ
 mkdir hello-app
 cd hello-app
 printf 'say "Hello from Zap"\n' > main.zp
-zap main.zp
+zap run main.zp
 ```
 
 Native CLI သည် source file path ကို တိုက်ရိုက်လက်ခံသောကြောင့် project တစ်ခုချင်းစီတွင် အခြား runtime dependency မလိုအပ်ပါ။
@@ -190,7 +191,19 @@ say answer["text"]
 
 လက်ရှိ `ai.ask` သည် placeholder provider ဖြစ်သည်။ API key၊ real model provider နှင့် production network integration များကို နောက် version တွင် ထည့်သွင်းရမည်။ API keys များကို Zap source code ထဲ မရေးသင့်ပါ။
 
-## 7. Development နှင့် tests
+## 7. Standard library helpers
+
+```zap
+let scores = [8, 3, 10, 5]
+say sum(scores)
+say join(sort(scores), ",")
+write_lines("notes.txt", ["one", "two"])
+say join(read_lines("notes.txt"), "|")
+```
+
+`get(map, key, default)` သည် မရှိသော map key အတွက် default value ပြန်ပေးသည်။ `read_lines` နှင့် `write_lines` သည် text file ကို line list အဖြစ် ကိုင်တွယ်သည်။
+
+## 8. Development နှင့် tests
 
 Native source code ကို ပြင်ပြီး test suite ကို run လုပ်ရန်—
 
@@ -207,17 +220,17 @@ make package
 
 Language behavior အတွက် native integration tests များကို `native/tests/` အောက်တွင် ထိန်းသိမ်းထားပြီး `cargo test --manifest-path native/Cargo.toml` ဖြင့် run နိုင်သည်။
 
-## 8. Uninstall
+## 9. Uninstall
 
 Linux/macOS တွင် installer ထည့်ထားသော user-level `zap` binary ကို ဖယ်ရှားပြီး shell profile ထဲရှိ Zap PATH line ကို ဖယ်ရှားပါ။ Windows တွင် `%USERPROFILE%\\.zap\\bin\\zap.exe` ကို ဖယ်ရှားပြီး user PATH ထဲရှိ Zap entry ကို ဖယ်ရှားပါ။
 
 Zap binary ကို ဖယ်ရှားခြင်းသည် system ပေါ်ရှိ အခြား software များကို မထိခိုက်ပါ။
 
-## 9. Current limitations
+## 10. Current limitations
 
-Zap 0.6.0 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
+Zap 0.7.0 သည် production compiler မဟုတ်သေးသော early native runtime ဖြစ်ပါသည်။ Full static type checking၊ remote package registry၊ lockfile၊ async runtime၊ full web server၊ streaming AI၊ security sandbox နှင့် native bytecode VM များကို ဆက်လက်တည်ဆောက်နေပါသည်။ v0.7.0 တွင် `is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`၊ `read_lines` နှင့် `write_lines` ပါဝင်သည်။ မယုံကြည်ရသော source code ကို production တွင် တိုက်ရိုက် run မလုပ်သင့်ပါ။
 
-## 10. Project files
+## 11. Project files
 
 | File | Purpose |
 |---|---|

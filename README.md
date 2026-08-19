@@ -8,7 +8,7 @@ Zap သည် စတင်လေ့လာသူများအတွက် synta
 
 | အချက် | အခြေအနေ |
 |---|---|
-| Current development line | `v0.6.0` |
+| Current development line | `v0.7.0` |
 | Runtime | Native Rust runtime |
 | CLI | `zap` |
 | Source file | `.zp`၊ ဥပမာ `main.zp` |
@@ -29,8 +29,8 @@ GitHub ရှိ [Releases](https://github.com/hidecard/zap/releases) မှ သ
 Linux သို့မဟုတ် macOS တွင်—
 
 ```bash
-tar -xzf zap-0.6.0-linux-x86_64.tar.gz
-cd zap-0.6.0
+tar -xzf zap-0.7.0-linux-x86_64.tar.gz
+cd zap-0.7.0
 bash install.sh
 zap --version
 ```
@@ -86,14 +86,14 @@ zap main.zp
 | Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
 | Functions | parameters၊ return values၊ local scope၊ nested closures |
 | OOP | `class`၊ `extends`၊ `new()`၊ `init()`၊ methods၊ properties၊ `self` |
-| Collections | list indexing၊ map indexing၊ `keys`၊ `contains`၊ `join` |
+| Collections | list indexing၊ map indexing၊ `keys`၊ `contains`၊ `join`၊ `is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get` |
 | Text | `upper`၊ `lower`၊ `trim`၊ `split`၊ `str`၊ `len` |
 | JSON | `json` နှင့် `from_json` |
-| Files | `read_text` နှင့် `write_text` |
+| Files | `read_text`၊ `write_text`၊ `read_lines`၊ `write_lines` |
 | Path/time/env | `path_join`၊ `basename`၊ `dirname`၊ `exists`၊ `now`၊ `sleep`၊ `env`၊ `has_env` |
 | Math | `abs`၊ `min`၊ `max`၊ `pow`၊ `sqrt` |
 | Modules | local `.zp` modules၊ `modules/` နှင့် `lib/` search paths |
-| CLI | `init`၊ `check`၊ `build`၊ `test`၊ `fmt`၊ run၊ help၊ version |
+| CLI | `init`၊ `check`၊ `build`၊ `test`၊ `fmt`၊ `run`၊ help၊ version |
 
 ## Syntax အခြေခံများ
 
@@ -177,7 +177,7 @@ say make_greeting("Hello")
 
 ### OOP: Classes၊ Objects နှင့် Methods
 
-Zap v0.6.0 တွင် beginner-friendly object-oriented programming foundation ပါဝင်သည်။ Class ကို `class` ဖြင့် ကြေညာပြီး object ကို `new("ClassName")` ဖြင့် ဖန်တီးနိုင်သည်။ Method ပထမ parameter သည် `self` ဖြစ်ပြီး object ၏ properties များကို `self.name` ပုံစံဖြင့် အသုံးပြုနိုင်သည်။
+Zap v0.7.0 တွင် beginner-friendly object-oriented programming foundation ပါဝင်သည်။ Class ကို `class` ဖြင့် ကြေညာပြီး object ကို `new("ClassName")` ဖြင့် ဖန်တီးနိုင်သည်။ Method ပထမ parameter သည် `self` ဖြစ်ပြီး object ၏ properties များကို `self.name` ပုံစံဖြင့် အသုံးပြုနိုင်သည်။
 
 ```zap
 class User:
@@ -189,6 +189,12 @@ class User:
 
 let user = new("User", "Zap")
 say user.greet()
+```
+
+Explicit command အဖြစ်လည်း run နိုင်သည်။
+
+```bash
+zap run main.zp
 ```
 
 Class များသည် `extends` ဖြင့် parent class မှ method များကို ရယူနိုင်ပြီး child class က method ကို override လုပ်နိုင်သည်။
@@ -307,7 +313,7 @@ Manifest နမူနာ—
 ```toml
 [package]
 name = "my-zap-project"
-version = "0.6.0"
+version = "0.7.0"
 main = "main.zp"
 ```
 
@@ -402,17 +408,17 @@ Zap ၏ runtime သည် Rust ဖြင့်ရေးသားထားသေ�
 
 Production compiler၊ bytecode execution၊ package registry နှင့် framework layers များသည် နောက်ပိုင်း roadmap အစိတ်အပိုင်းများ ဖြစ်သည်။
 
-## v0.6.0 Status နှင့် Roadmap
+## v0.7.0 Status နှင့် Roadmap
 
 ### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Native runtime version `0.6.0`၊ path/time/environment/math built-ins၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ `zap build`၊ updated documentation နှင့် regression tests များ ပါဝင်သည်။
+Native runtime version `0.7.0`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ `zap build`၊ explicit `zap run`၊ updated documentation နှင့် 21-test regression suite များ ပါဝင်သည်။
 
 ### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။
+Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.7.0 သည် standard library၊ OOP foundation နှင့် developer workflow ကို တည်ငြိမ်စေသော release ဖြစ်သည်။
 
-`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
+`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md)၊ v0.6 history ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
 
 ## Documentation Map
 
@@ -422,7 +428,8 @@ Structured `Result` error model၊ source line/column diagnostics၊ HTTP client
 | [`docs/LANGUAGE_GUIDE.md`](docs/LANGUAGE_GUIDE.md) | Complete language usage guide |
 | [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) | Syntax နှင့် code reference |
 | [`docs/USAGE.md`](docs/USAGE.md) | Installation၊ CLI နှင့် usage workflow |
-| [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) | v0.6.0 implementation roadmap |
+| [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) | v0.7.0 implemented scope နှင့် v0.8.0 priorities |
+| [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) | v0.6.0 implementation history |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | Language design principles |
 | [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) | Core၊ standard library နှင့် future frameworks |
 | [`docs/PACKAGES.md`](docs/PACKAGES.md) | Manifest၊ modules နှင့် package future |

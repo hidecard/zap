@@ -210,3 +210,27 @@ fn runs_oop_property_assignment() {
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
     assert_eq!(String::from_utf8_lossy(&output.stdout), "1\n1\n");
 }
+
+#[test]
+fn runs_v070_collection_and_line_helpers() {
+    let file = std::env::temp_dir().join("zap_v070_helpers_test.zp");
+    let lines = std::env::temp_dir().join("zap_v070_lines.txt");
+    let path = lines.to_string_lossy().replace('\\', "\\\\");
+    let source = format!("let values = [4, 1, 8, 2]\nsay is_empty(values)\nsay sum(values)\nsay join(sort(values), \",\")\nwrite_lines(\"{}\", [\"one\", \"two\"])\nsay join(read_lines(\"{}\"), \"|\")\n", path, path);
+    std::fs::write(&file, source).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    let _ = std::fs::remove_file(&lines);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "false\n15\n1,2,4,8\none|two\n");
+}
+
+#[test]
+fn gets_map_default_value() {
+    let file = std::env::temp_dir().join("zap_v070_get_test.zp");
+    std::fs::write(&file, "let user = {\"name\": \"Zap\"}\nsay get(user, \"name\", \"unknown\")\nsay get(user, \"email\", \"unknown\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Zap\nunknown\n");
+}
