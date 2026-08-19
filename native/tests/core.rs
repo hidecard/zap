@@ -7,7 +7,11 @@ fn binary() -> String {
 #[test]
 fn runs_arithmetic_and_lists() {
     let file = std::env::temp_dir().join("zap_core_test.zp");
-    std::fs::write(&file, "let items = [10, 20, 30]\nsay items[1]\nsay len(items)\n").unwrap();
+    std::fs::write(
+        &file,
+        "let items = [10, 20, 30]\nsay items[1]\nsay len(items)\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "20\n3\n");
@@ -16,7 +20,11 @@ fn runs_arithmetic_and_lists() {
 #[test]
 fn runs_functions_and_returns() {
     let file = std::env::temp_dir().join("zap_functions_test.zp");
-    std::fs::write(&file, "fn add(a, b):\n    return a + b\nlet result = add(7, 8)\nsay result\n").unwrap();
+    std::fs::write(
+        &file,
+        "fn add(a, b):\n    return a + b\nlet result = add(7, 8)\nsay result\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "15\n");
@@ -25,14 +33,26 @@ fn runs_functions_and_returns() {
 #[test]
 fn enforces_function_parameter_and_return_annotations() {
     let ok_file = std::env::temp_dir().join("zap_typed_function_test.zp");
-    std::fs::write(&ok_file, "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(2, 3)\n").unwrap();
+    std::fs::write(
+        &ok_file,
+        "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(2, 3)\n",
+    )
+    .unwrap();
     let ok = Command::new(binary()).arg(&ok_file).output().unwrap();
     let _ = std::fs::remove_file(&ok_file);
-    assert!(ok.status.success(), "{}", String::from_utf8_lossy(&ok.stderr));
+    assert!(
+        ok.status.success(),
+        "{}",
+        String::from_utf8_lossy(&ok.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&ok.stdout), "5\n");
 
     let bad_file = std::env::temp_dir().join("zap_typed_function_error_test.zp");
-    std::fs::write(&bad_file, "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(\"wrong\", 3)\n").unwrap();
+    std::fs::write(
+        &bad_file,
+        "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(\"wrong\", 3)\n",
+    )
+    .unwrap();
     let bad = Command::new(binary()).arg(&bad_file).output().unwrap();
     let _ = std::fs::remove_file(&bad_file);
     assert!(!bad.status.success());
@@ -43,7 +63,10 @@ fn enforces_function_parameter_and_return_annotations() {
 fn formats_zp_source_in_place() {
     let file = std::env::temp_dir().join("zap_formatter_test.zp");
     std::fs::write(&file, "say 1\t\n").unwrap();
-    let output = Command::new(binary()).args(["fmt", file.to_str().unwrap()]).output().unwrap();
+    let output = Command::new(binary())
+        .args(["fmt", file.to_str().unwrap()])
+        .output()
+        .unwrap();
     assert!(output.status.success());
     assert_eq!(std::fs::read_to_string(&file).unwrap(), "say 1\n");
     let _ = std::fs::remove_file(&file);
@@ -74,7 +97,10 @@ fn reads_and_writes_text_files() {
     let file = std::env::temp_dir().join("zap_file_test.txt");
     let program = std::env::temp_dir().join("zap_file_builtins_test.zp");
     let path = file.to_string_lossy().replace('\\', "\\\\");
-    let source = format!("write_text(\"{}\", \"hello\")\nsay read_text(\"{}\")\n", path, path);
+    let source = format!(
+        "write_text(\"{}\", \"hello\")\nsay read_text(\"{}\")\n",
+        path, path
+    );
     std::fs::write(&program, source).unwrap();
     let output = Command::new(binary()).arg(&program).output().unwrap();
     let _ = std::fs::remove_file(&file);
@@ -87,12 +113,22 @@ fn validates_zap_manifest_and_module_directory() {
     let root = std::env::temp_dir().join("zap_manifest_project");
     let modules = root.join("modules");
     std::fs::create_dir_all(&modules).unwrap();
-    std::fs::write(root.join("zap.toml"), "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n").unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
     std::fs::write(root.join("main.zp"), "use \"math\"\nsay triple(4)\n").unwrap();
     std::fs::write(modules.join("math.zp"), "fn triple(x):\n    return x * 3\n").unwrap();
-    let check = Command::new(binary()).args(["check", root.to_str().unwrap()]).output().unwrap();
+    let check = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
     assert!(check.status.success());
-    let run = Command::new(binary()).arg(root.join("main.zp")).output().unwrap();
+    let run = Command::new(binary())
+        .arg(root.join("main.zp"))
+        .output()
+        .unwrap();
     assert!(run.status.success());
     assert_eq!(String::from_utf8_lossy(&run.stdout), "12\n");
     let _ = std::fs::remove_dir_all(root);
@@ -122,7 +158,11 @@ fn runs_standard_builtins() {
 #[test]
 fn runs_boolean_logic() {
     let file = std::env::temp_dir().join("zap_boolean_test.zp");
-    std::fs::write(&file, "let ready = true\nlet valid = false\nsay ready and not valid\nsay ready or valid\n").unwrap();
+    std::fs::write(
+        &file,
+        "let ready = true\nlet valid = false\nsay ready and not valid\nsay ready or valid\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "true\ntrue\n");
@@ -140,7 +180,11 @@ fn runs_break_and_continue() {
 #[test]
 fn runs_conditionals() {
     let file = std::env::temp_dir().join("zap_condition_test.zp");
-    std::fs::write(&file, "let x = 14\nif x > 10:\n    say \"ok\"\nelse:\n    say \"bad\"\n").unwrap();
+    std::fs::write(
+        &file,
+        "let x = 14\nif x > 10:\n    say \"ok\"\nelse:\n    say \"bad\"\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "ok\n");
@@ -176,7 +220,10 @@ fn runs_text_and_numeric_helpers() {
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     assert!(output.status.success());
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "7\n4\n9\nZAP\nzap\ncore\nb\n");
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "7\n4\n9\nZAP\nzap\ncore\nb\n"
+    );
 }
 
 #[test]
@@ -198,9 +245,20 @@ fn runs_v060_standard_library_helpers() {
 fn check_json_reports_structured_type_diagnostics() {
     let root = std::env::temp_dir().join("zap_check_json_type_project");
     std::fs::create_dir_all(&root).unwrap();
-    std::fs::write(root.join("zap.toml"), "[package]\nname = \"diagnostic-demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n").unwrap();
-    std::fs::write(root.join("main.zp"), "fn bad(value: unknown_type) -> number:\n    return 1\n").unwrap();
-    let output = Command::new(binary()).args(["check", "--json", root.to_str().unwrap()]).output().unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"diagnostic-demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "fn bad(value: unknown_type) -> number:\n    return 1\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
     let _ = std::fs::remove_dir_all(&root);
     assert!(!output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -213,28 +271,40 @@ fn check_json_reports_structured_type_diagnostics() {
 fn build_command_validates_project() {
     let root = std::env::temp_dir().join("zap_v060_build_project");
     std::fs::create_dir_all(&root).unwrap();
-    std::fs::write(root.join("zap.toml"), "[package]\nname = \"build-demo\"\nversion = \"0.6.0\"\nmain = \"main.zp\"\n").unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"build-demo\"\nversion = \"0.6.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
     std::fs::write(root.join("main.zp"), "say \"build ok\"\n").unwrap();
-    let output = Command::new(binary()).args(["build", root.to_str().unwrap()]).output().unwrap();
+    let output = Command::new(binary())
+        .args(["build", root.to_str().unwrap()])
+        .output()
+        .unwrap();
     let _ = std::fs::remove_dir_all(&root);
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("built Zap project"));
 }
-
-
 
 #[test]
 fn rejects_division_modulo_by_zero_and_integer_overflow() {
     for (name, source, expected) in [
         ("zap_div_zero_test.zp", "say 1 / 0\n", "division by zero"),
         ("zap_mod_zero_test.zp", "say 1 % 0\n", "division by zero"),
-        ("zap_overflow_test.zp", "say 9223372036854775807 + 1\n", "integer overflow"),
+        (
+            "zap_overflow_test.zp",
+            "say 9223372036854775807 + 1\n",
+            "integer overflow",
+        ),
     ] {
         let file = std::env::temp_dir().join(name);
         std::fs::write(&file, source).unwrap();
         let output = Command::new(binary()).arg(&file).output().unwrap();
         let _ = std::fs::remove_file(&file);
-        assert!(!output.status.success(), "program unexpectedly succeeded: {name}");
+        assert!(
+            !output.status.success(),
+            "program unexpectedly succeeded: {name}"
+        );
         assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
     }
 }
@@ -245,8 +315,15 @@ fn runs_oop_classes_methods_and_inheritance() {
     std::fs::write(&file, "class User:\n    fn init(self, name):\n        self.name = name\n    fn greet(self):\n        return \"Hello, \" + self.name\nclass Admin extends User:\n    fn role(self):\n        return \"admin\"\nlet user = new(\"User\", \"Tester\")\nlet admin = new(\"Admin\", \"Root\")\nsay user.greet()\nsay admin.greet()\nsay admin.role()\n").unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "Hello, Tester\nHello, Root\nadmin\n");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "Hello, Tester\nHello, Root\nadmin\n"
+    );
 }
 
 #[test]
@@ -255,7 +332,11 @@ fn runs_oop_property_assignment() {
     std::fs::write(&file, "class Counter:\n    fn increment(self):\n        self.value = self.value + 1\n        return self.value\nlet counter = new(\"Counter\", {\"value\": 0})\nsay counter.increment()\nsay counter.value\n").unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "1\n1\n");
 }
 
@@ -269,8 +350,15 @@ fn runs_v070_collection_and_line_helpers() {
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     let _ = std::fs::remove_file(&lines);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "false\n15\n1,2,4,8\none|two\n");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "false\n15\n1,2,4,8\none|two\n"
+    );
 }
 
 #[test]
@@ -289,7 +377,11 @@ fn validates_oop_class_errors_and_parent_constructor() {
     std::fs::write(&file, "class Base:\n    fn init(self):\n        self.ready = true\nclass Child extends Base:\n    fn init(self):\n        self.child = true\nlet item = new(\"Child\")\nsay item.ready\nsay item.child\n").unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "true\ntrue\n");
 
     let missing = std::env::temp_dir().join("zap_oop_missing_class_test.zp");
@@ -303,7 +395,11 @@ fn validates_oop_class_errors_and_parent_constructor() {
 #[test]
 fn rejects_unknown_parent_class() {
     let file = std::env::temp_dir().join("zap_oop_missing_parent_test.zp");
-    std::fs::write(&file, "class Child extends Missing:\n    fn value(self):\n        return 1\n").unwrap();
+    std::fs::write(
+        &file,
+        "class Child extends Missing:\n    fn value(self):\n        return 1\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     assert!(!output.status.success());
@@ -316,7 +412,11 @@ fn runs_oop_override_and_empty_class() {
     std::fs::write(&file, "class Base:\n    fn label(self):\n        return \"base\"\nclass Child extends Base:\n    fn label(self):\n        return \"child\"\nclass Empty:\nlet child = new(\"Child\")\nlet empty = new(\"Empty\")\nsay child.label()\nsay type(empty)\n").unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "child\nobject\n");
 }
 
@@ -327,10 +427,18 @@ fn caches_explicit_module_execution_and_exports_only_public_symbols() {
     let module = root.join("counter.zp");
     let main = root.join("main.zp");
     std::fs::write(&module, "say \"loaded\"\nlet secret = 99\nexport let answer = 42\nexport fn value():\n    return answer\n").unwrap();
-    std::fs::write(&main, "import \"counter\"\nimport \"counter\"\nsay value()\nsay answer\n").unwrap();
+    std::fs::write(
+        &main,
+        "import \"counter\"\nimport \"counter\"\nsay value()\nsay answer\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&main).output().unwrap();
     let _ = std::fs::remove_dir_all(&root);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "loaded\n42\n42\n");
 }
 
@@ -358,19 +466,29 @@ fn rejects_absolute_module_paths() {
     let _ = std::fs::remove_file(&file);
     let _ = std::fs::remove_file(&module);
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("absolute module paths are not allowed"));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("absolute module paths are not allowed")
+    );
 }
 
 #[test]
 fn check_rejects_annotated_variable_mismatch() {
     let root = std::env::temp_dir().join("zap_static_assignment_test");
     std::fs::create_dir_all(&root).unwrap();
-    std::fs::write(root.join("zap.toml"), "[package]\nname = \"static-assignment\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n").unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"static-assignment\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
     std::fs::write(root.join("main.zp"), "let count: number = \"wrong\"\n").unwrap();
-    let output = Command::new(binary()).args(["check", root.to_str().unwrap()]).output().unwrap();
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
     let _ = std::fs::remove_dir_all(&root);
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("variable 'count' expects number, got text"));
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("variable 'count' expects number, got text"));
 }
 
 #[test]
@@ -380,7 +498,11 @@ fn propagates_result_errors_with_question_operator() {
     std::fs::write(&file, source).unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "true\n");
 }
 
@@ -391,14 +513,22 @@ fn unwraps_ok_result_with_question_operator() {
     std::fs::write(&file, source).unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "43\n");
 }
 
 #[test]
 fn rejects_question_operator_for_non_result_values() {
     let file = std::env::temp_dir().join("zap_invalid_result_propagation_test.zp");
-    std::fs::write(&file, "fn wrapper():\n    let value = 42?\n    return value\n\nwrapper()\n").unwrap();
+    std::fs::write(
+        &file,
+        "fn wrapper():\n    let value = 42?\n    return value\n\nwrapper()\n",
+    )
+    .unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     assert!(!output.status.success());
