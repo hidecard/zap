@@ -531,6 +531,16 @@ Run—
 zap test
 ```
 
+Test များများရှိသော project များတွင် filter ဖြင့် သက်ဆိုင်ရာ test file များကိုသာ ရွေးနိုင်သည်။ ပထမဆုံး failure ဖြစ်သည်နှင့် ရပ်ရန် `--fail-fast`၊ CI tool များအတွက် machine-readable result ထုတ်ရန် `--json` ကို အသုံးပြုနိုင်သည်။
+
+```bash
+zap test tests --filter arithmetic
+zap test tests --fail-fast
+zap test tests --json
+```
+
+မသိသော test option သည် usage error ဖြစ်ပြီး exit code `2` ပြန်ပေးသည်။ Test failure ဖြစ်ပါက exit code `1` ပြန်ပေးသည်။
+
 Code ကို format လုပ်ရန်—
 
 ```bash

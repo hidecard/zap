@@ -76,12 +76,23 @@ impl<'a> ExprParser<'a> {
         Ok(args)
     }
     fn peek(&self) -> &Token {
-        &self.tokens[self.pos]
+        let last = self.tokens.len().saturating_sub(1);
+        &self.tokens[self.pos.min(last)]
     }
     fn take(&mut self) -> Token {
-        let x = self.tokens[self.pos].clone();
-        self.pos += 1;
-        x
+        let token = self.peek().clone();
+        self.pos = self.pos.saturating_add(1);
+        token
+    }
+    fn parse_complete(&mut self) -> Result<Value, String> {
+        let value = self.parse(0)?;
+        if *self.peek() != Token::End {
+            return Err(format!(
+                "unexpected token after expression: {:?}",
+                self.peek()
+            ));
+        }
+        Ok(value)
     }
     fn parse(&mut self, min: u8) -> Result<Value, String> {
         let mut left = match self.take() {

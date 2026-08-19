@@ -337,6 +337,16 @@ zap test tests
 
 The native runtime integration suite can be run from the repository with `cargo test --manifest-path native/Cargo.toml`.
 
+For larger projects, narrow the run with `--filter`, stop after the first failure with `--fail-fast`, or produce machine-readable output with `--json`:
+
+```bash
+zap test tests --filter arithmetic
+zap test tests --fail-fast
+zap test tests --json
+```
+
+Unknown test options are usage errors and return exit code `2`; a failing test returns exit code `1`.
+
 ## Lesson 17 — CLI Workflow and Diagnostics
 
 The main commands are:

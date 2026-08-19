@@ -578,3 +578,71 @@ fn check_validates_result_and_option_payload_types() {
     assert!(stdout.contains("\"kind\":\"TypeError\""));
     assert!(stdout.contains("result<number>"));
 }
+
+#[test]
+fn rejects_unused_tokens_after_expression() {
+    let file = std::env::temp_dir().join("zap_expression_end_test.zp");
+    std::fs::write(&file, "say 1 2\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected token after expression"));
+}
+
+#[test]
+fn reports_malformed_source_with_line_and_column() {
+    let file = std::env::temp_dir().join("zap_malformed_span_test.zp");
+    std::fs::write(&file, "say 1\nsay @\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("1:1"),
+        "expected source location in stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("unexpected character"),
+        "expected lexer diagnostic: {stderr}"
+    );
+}
+
+#[test]
+fn test_command_accepts_filter_fail_fast_and_json_options() {
+    let root = std::env::temp_dir().join("zap_test_options_project");
+    let tests = root.join("tests");
+    std::fs::create_dir_all(&tests).unwrap();
+    std::fs::write(tests.join("first_test.zp"), "assert(1 == 1, \"first\")\n").unwrap();
+    std::fs::write(tests.join("second_test.zp"), "assert(2 == 2, \"second\")\n").unwrap();
+    let output = Command::new(binary())
+        .args([
+            "test",
+            "--filter",
+            "first",
+            "--fail-fast",
+            "--json",
+            root.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"passed\":1"));
+    assert!(stdout.contains("first_test.zp"));
+    assert!(!stdout.contains("second_test.zp"));
+}
+
+#[test]
+fn test_command_rejects_unknown_options_with_usage_exit_code() {
+    let output = Command::new(binary())
+        .args(["test", "--unknown"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown test option"));
+}

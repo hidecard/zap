@@ -54,7 +54,7 @@ The native runtime is being maintained as focused Rust modules rather than a sin
 | `cli.rs` | CLI command orchestration and exit codes | Implemented |
 | `ast.rs` | AST-based execution architecture | Planned |
 
-The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. Token diagnostics now retain one-based source locations, sensitive diagnostic key/value pairs are redacted, and runtime execution applies source-size, loop, and execution-depth limits. The native suite currently covers **9 unit tests and 35 integration tests**.
+The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. Token diagnostics now retain one-based source locations, sensitive diagnostic key/value pairs are redacted, runtime execution applies source-size, loop, and execution-depth limits, and expressions reject unused trailing tokens. The native suite currently covers **9 unit tests and 39 integration tests**.
 
 ## Why Zap?
 
@@ -112,10 +112,11 @@ cd hello-project
 zap check .
 zap build .
 zap test .
+zap test . --filter smoke --fail-fast --json
 zap main.zp
 ```
 
-`zap init` creates a project manifest, an entry file, and a starter test structure.
+`zap init` creates a project manifest, an entry file, and a starter test structure. The test runner accepts `--filter <text>` to select matching paths, `--fail-fast` to stop after the first failure, and `--json` to emit machine-readable results. Invalid test options return usage exit code `2`.
 
 ## Language Overview
 

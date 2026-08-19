@@ -26,6 +26,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     validate_function_calls(&source, &main_path)?;
     Ok(format!("{name} {version} (main: {main})"))
 }
+
 pub(crate) fn resolve_module(base: &Path, raw: &str) -> Option<PathBuf> {
     let candidate = if Path::new(raw).extension().is_some() {
         raw.to_string()
@@ -39,6 +40,7 @@ pub(crate) fn resolve_module(base: &Path, raw: &str) -> Option<PathBuf> {
     ];
     candidates.into_iter().find(|p| p.is_file())
 }
+
 pub(crate) fn collect_test_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
     for entry in fs::read_dir(dir)
         .map_err(|e| format!("cannot read test directory {}: {e}", dir.display()))?
@@ -60,28 +62,124 @@ pub(crate) fn collect_test_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result
     }
     Ok(())
 }
-pub(crate) fn run_zap_tests(dir: &Path) -> Result<usize, String> {
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct TestOptions {
+    pub(crate) filter: Option<String>,
+    pub(crate) fail_fast: bool,
+    pub(crate) json: bool,
+}
+
+struct TestResult {
+    path: PathBuf,
+    passed: bool,
+    error: Option<String>,
+}
+
+fn json_escape(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+}
+
+fn print_test_report(results: &[TestResult], skipped: usize, json: bool) {
+    let passed = results.iter().filter(|result| result.passed).count();
+    let failed = results.len() - passed;
+    if json {
+        let cases = results
+            .iter()
+            .map(|result| {
+                let error = result
+                    .error
+                    .as_deref()
+                    .map(|value| format!("\"{}\"", json_escape(value)))
+                    .unwrap_or_else(|| "null".to_string());
+                format!(
+                    "{{\"path\":\"{}\",\"passed\":{},\"error\":{}}}",
+                    json_escape(&result.path.display().to_string()),
+                    result.passed,
+                    error
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        println!(
+            "{{\"passed\":{},\"failed\":{},\"skipped\":{},\"tests\":[{}]}}",
+            passed, failed, skipped, cases
+        );
+    } else {
+        println!(
+            "test result: {} passed; {} failed; {} skipped",
+            passed, failed, skipped
+        );
+    }
+}
+
+pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_test_files(dir, &mut files)?;
     files.sort();
-    if files.is_empty() {
-        return Err(format!("no *_test.zp files found in {}", dir.display()));
+    let selected = files
+        .into_iter()
+        .filter(|path| {
+            options
+                .filter
+                .as_deref()
+                .map(|filter| path.display().to_string().contains(filter))
+                .unwrap_or(true)
+        })
+        .collect::<Vec<_>>();
+    if selected.is_empty() {
+        return Err(match &options.filter {
+            Some(filter) => format!(
+                "no test files matched filter `{filter}` in {}",
+                dir.display()
+            ),
+            None => format!("no *_test.zp files found in {}", dir.display()),
+        });
     }
-    let mut passed = 0;
-    for path in files {
-        let source = fs::read_to_string(&path)
-            .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-        match run(&source, path.parent().unwrap_or(Path::new("."))) {
+
+    let selected_count = selected.len();
+    let mut results = Vec::new();
+    for path in selected {
+        let outcome = fs::read_to_string(&path)
+            .map_err(|e| format!("cannot read {}: {e}", path.display()))
+            .and_then(|source| run(&source, path.parent().unwrap_or(Path::new("."))));
+        match outcome {
             Ok(()) => {
-                println!("ok   {}", path.display());
-                passed += 1;
+                if !options.json {
+                    println!("ok   {}", path.display());
+                }
+                results.push(TestResult {
+                    path,
+                    passed: true,
+                    error: None,
+                });
             }
             Err(error) => {
-                eprintln!("FAIL {}: {}", path.display(), error);
-                return Err(format!("{} test file(s) failed", path.display()));
+                if !options.json {
+                    eprintln!("FAIL {}: {}", path.display(), error);
+                }
+                results.push(TestResult {
+                    path,
+                    passed: false,
+                    error: Some(error),
+                });
+                if options.fail_fast {
+                    break;
+                }
             }
         }
     }
-    println!("{} Zap test file(s) passed", passed);
-    Ok(passed)
+
+    let skipped = selected_count.saturating_sub(results.len());
+    print_test_report(&results, skipped, options.json);
+    let passed = results.iter().filter(|result| result.passed).count();
+    if results.iter().any(|result| !result.passed) {
+        Err(format!("{} test file(s) failed", results.len() - passed))
+    } else {
+        Ok(passed)
+    }
 }

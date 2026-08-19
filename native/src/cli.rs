@@ -1,7 +1,54 @@
+use super::project::TestOptions;
 use super::*;
 
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
 pub const EXIT_USAGE_ERROR: i32 = 2;
+
+fn parse_test_args(args: &[String]) -> Result<(PathBuf, TestOptions), String> {
+    let mut options = TestOptions::default();
+    let mut dir = PathBuf::from("tests");
+    let mut index = 2;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--filter" => {
+                index += 1;
+                let value = args
+                    .get(index)
+                    .ok_or_else(|| "--filter requires a test name or path".to_string())?;
+                options.filter = Some(value.clone());
+            }
+            "--fail-fast" => options.fail_fast = true,
+            "--json" => options.json = true,
+            value if value.starts_with('-') => {
+                return Err(format!("unknown test option: {value}"));
+            }
+            value => {
+                if dir != PathBuf::from("tests") {
+                    return Err("test command accepts only one directory".to_string());
+                }
+                dir = PathBuf::from(value);
+            }
+        }
+        index += 1;
+    }
+    Ok((dir, options))
+}
+
+fn run_test_command(args: &[String]) {
+    let (dir, options) = match parse_test_args(args) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Zap test usage error: {error}");
+            process::exit(EXIT_USAGE_ERROR);
+        }
+    };
+    if let Err(error) = run_zap_tests(&dir, &options) {
+        if !options.json {
+            eprintln!("Zap test error: {error}");
+        }
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+}
 
 /// Dispatches Zap command-line arguments and owns CLI exit behavior.
 pub fn run_cli(args: &[String]) {
@@ -79,11 +126,8 @@ pub fn run_cli(args: &[String]) {
         print_project_json(Path::new(&args[3]));
         return;
     }
-    if args.len() == 2 && args[1] == "test" {
-        if let Err(e) = run_zap_tests(Path::new("tests")) {
-            eprintln!("Zap test error: {e}");
-            process::exit(EXIT_PROGRAM_FAILURE);
-        }
+    if args.len() >= 2 && args[1] == "test" {
+        run_test_command(args);
         return;
     }
     if args.len() == 2 && args[1] == "build" {
@@ -104,13 +148,6 @@ pub fn run_cli(args: &[String]) {
                 eprintln!("Zap build error: {e}");
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
-        }
-        return;
-    }
-    if args.len() == 3 && args[1] == "test" {
-        if let Err(e) = run_zap_tests(Path::new(&args[2])) {
-            eprintln!("Zap test error: {e}");
-            process::exit(EXIT_PROGRAM_FAILURE);
         }
         return;
     }

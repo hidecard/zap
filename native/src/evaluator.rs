@@ -168,7 +168,8 @@ pub(crate) fn expression(
     vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<Value, String> {
-    ExprParser::new(&tokenize(raw)?, vars, funcs).parse(0)
+    let tokens = tokenize(raw)?;
+    ExprParser::new(&tokens, vars, funcs).parse_complete()
 }
 
 pub(crate) fn call_function(
