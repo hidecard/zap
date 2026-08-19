@@ -895,3 +895,61 @@ v0.7.0 foundation ပြည့်စုံရန် OOP နှင့် standard
 2. `get(map, key, default)` ဖြင့် missing map key ကို လုံခြုံစွာ ကိုင်တွယ်နိုင်ခြင်း။
 3. `read_lines` နှင့် `write_lines` ဖြင့် line-based text file workflow တည်ဆောက်နိုင်ခြင်း။
 4. Implemented features နှင့် roadmap-only features ကို documentation မှ ခွဲခြားနားလည်နိုင်ခြင်း။
+
+## Lesson 17 — Lint နှင့် JSON Project Diagnostics
+
+v0.8.0 တွင် source style နှင့် project manifest ကို editor/CI workflow များအတွက် စစ်ဆေးနိုင်သော tooling နှစ်မျိုး ပါဝင်လာသည်။
+
+### `zap lint`
+
+`zap lint` သည် tabs၊ trailing whitespace နှင့် အလွန်ရှည်သော line များကို ရှာဖွေပေးသည်။
+
+```bash
+zap lint main.zp
+```
+
+အမှားမရှိပါက—
+
+```text
+lint ok: main.zp
+```
+
+ဟု ပြသည်။ Issue ရှိပါက line number ပါသော warning ပြပြီး command သည် non-zero exit code ဖြင့် ပြန်ထွက်သည်။
+
+### `zap check --json`
+
+Project တစ်ခုတွင် `zap.toml`၊ package name၊ version နှင့် main entry file မှန်ကန်မှုကို JSON အဖြစ် စစ်ဆေးနိုင်သည်။
+
+```bash
+zap check --json .
+```
+
+အောင်မြင်ပါက—
+
+```json
+{"ok":true,"project":"hello-zap 0.1.0 (main: main.zp)"}
+```
+
+မအောင်မြင်ပါက `ok` သည် `false` ဖြစ်ပြီး `error` field ထဲတွင် အကြောင်းပြချက် ပါဝင်သည်။ ဤ output သည် shell script၊ CI pipeline နှင့် future editor integration များအတွက် အသုံးဝင်သည်။
+
+### Mini exercise
+
+1. `main.zp` ထဲတွင် tab တစ်ခု ထည့်ပြီး `zap lint main.zp` ဖြင့် စစ်ပါ။
+2. Line အဆုံးတွင် မလိုအပ်သော spaces ထည့်ပြီး lint warning ကို ကြည့်ပါ။
+3. `zap.toml` မှ `main` file name ကို မမှန်အောင်ပြင်ပြီး `zap check --json .` ဖြင့် JSON error ကို ကြည့်ပါ။
+4. Manifest ကို ပြန်ပြင်ပြီး `ok: true` output ပြန်ရအောင် စမ်းပါ။
+
+### Lesson 17 checkpoint
+
+`zap lint` ဖြင့် source style issue ရှာနိုင်ခြင်း၊ `zap check --json` ဖြင့် machine-readable project result ရယူနိုင်ခြင်း၊ success/error JSON နှစ်မျိုးကို ခွဲခြားဖတ်နိုင်ခြင်းနှင့် CI အတွက် command exit status အရေးကြီးကြောင်း နားလည်ရမည်။
+
+## v0.8.0 Course Completion Checklist
+
+1. OOP class၊ constructor၊ property၊ method နှင့် inheritance ကို အသုံးပြုနိုင်ခြင်း။
+2. Collection helpers၊ map default lookup နှင့် line-based file I/O ကို အသုံးပြုနိုင်ခြင်း။
+3. `zap run` ဖြင့် explicit source execution ပြုလုပ်နိုင်ခြင်း။
+4. `zap lint` ဖြင့် tabs၊ trailing whitespace နှင့် long lines စစ်နိုင်ခြင်း။
+5. `zap check --json` ဖြင့် project diagnostics ကို automation-friendly JSON အဖြစ် ရယူနိုင်ခြင်း။
+6. Implemented features နှင့် roadmap-only features ကို documentation မှ ခွဲခြားနားလည်နိုင်ခြင်း။
+
+နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။

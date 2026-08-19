@@ -8,7 +8,7 @@ Zap သည် စတင်လေ့လာသူများအတွက် synta
 
 | အချက် | အခြေအနေ |
 |---|---|
-| Current development line | `v0.7.0` |
+| Current development line | `v0.8.0` |
 | Runtime | Native Rust runtime |
 | CLI | `zap` |
 | Source file | `.zp`၊ ဥပမာ `main.zp` |
@@ -29,8 +29,8 @@ GitHub ရှိ [Releases](https://github.com/hidecard/zap/releases) မှ သ
 Linux သို့မဟုတ် macOS တွင်—
 
 ```bash
-tar -xzf zap-0.7.0-linux-x86_64.tar.gz
-cd zap-0.7.0
+tar -xzf zap-0.8.0-linux-x86_64.tar.gz
+cd zap-0.8.0
 bash install.sh
 zap --version
 ```
@@ -93,7 +93,7 @@ zap main.zp
 | Path/time/env | `path_join`၊ `basename`၊ `dirname`၊ `exists`၊ `now`၊ `sleep`၊ `env`၊ `has_env` |
 | Math | `abs`၊ `min`၊ `max`၊ `pow`၊ `sqrt` |
 | Modules | local `.zp` modules၊ `modules/` နှင့် `lib/` search paths |
-| CLI | `init`၊ `check`၊ `build`၊ `test`၊ `fmt`၊ `run`၊ help၊ version |
+| CLI | `init`၊ `check`၊ `check --json`၊ `build`၊ `test`၊ `fmt`၊ `lint`၊ `run`၊ help၊ version |
 
 ## Syntax အခြေခံများ
 
@@ -280,6 +280,9 @@ say "finished"
 | `abs/min/max` | `abs(-4)` | Numeric helpers |
 | `pow/sqrt` | `pow(2, 3)` | Power နှင့် square root |
 | `assert` | `assert(condition, message)` | Program/test condition စစ်ခြင်း |
+| `is_empty/sum/reverse/sort` | `sum(list)`၊ `sort(list)` | Collection helpers |
+| `get` | `get(map, key, default)` | Safe map lookup |
+| `read_lines/write_lines` | `read_lines(path)` | Line-based file I/O |
 
 ## CLI Command Reference
 
@@ -287,9 +290,11 @@ say "finished"
 zap <file.zp>       Zap source file ကို run လုပ်သည်
 zap init <dir>       Project အသစ် scaffold ဖန်တီးသည်
 zap check [dir]      zap.toml နှင့် main file စစ်သည်
+zap check --json [dir] JSON diagnostics ဖြင့် project စစ်သည်
 zap build [dir]      Build-ready project validation ပြုလုပ်သည်
 zap test [dir]       *_test.zp files များကို recursive run သည်
 zap fmt <file.zp>    Formatting ပြုလုပ်ပြီး file ကို update သည်
+zap lint <file.zp>    Style နှင့် whitespace warnings စစ်သည်
 zap --version        Runtime version ပြသည်
 zap --help           Command help ပြသည်
 ```
@@ -313,7 +318,7 @@ Manifest နမူနာ—
 ```toml
 [package]
 name = "my-zap-project"
-version = "0.7.0"
+version = "0.8.0"
 main = "main.zp"
 ```
 
@@ -359,7 +364,9 @@ cargo test
 
 ```bash
 zap fmt main.zp
+zap lint main.zp
 zap check .
+zap check --json .
 ```
 
 Error တက်ပါက file path၊ line အနီးရှိ syntax၊ variable name၊ function arguments နှင့် data type များကို အရင်စစ်ဆေးပါ။ `assert` တွင် အဓိပ္ပာယ်ရှိသော message ရေးပါ။
@@ -388,6 +395,9 @@ assert(total >= 0, "total must not be negative")
 | 12 | Modules နှင့် project structure |
 | 13 | Tests၊ formatter နှင့် CLI workflow |
 | 14 | Complete mini project |
+| 15 | OOP classes၊ constructors နှင့် inheritance |
+| 16 | Collections နှင့် line-based file helpers |
+| 17 | Lint နှင့် JSON project diagnostics |
 
 Lesson တစ်ခုစီတွင် explanation၊ runnable code၊ expected output နှင့် exercise ပါဝင်သည်။ [`docs/LEARN_ZAP_MM.md`](docs/LEARN_ZAP_MM.md) ကို ဖွင့်ပြီး Lesson 1 မှ စတင်ပါ။
 
@@ -408,17 +418,17 @@ Zap ၏ runtime သည် Rust ဖြင့်ရေးသားထားသေ�
 
 Production compiler၊ bytecode execution၊ package registry နှင့် framework layers များသည် နောက်ပိုင်း roadmap အစိတ်အပိုင်းများ ဖြစ်သည်။
 
-## v0.7.1 Status နှင့် Roadmap
+## v0.8.0 Status နှင့် Roadmap
 
 ### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Native runtime version `0.7.1`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ class/parent validation၊ inherited constructors၊ method override၊ `zap build`၊ explicit `zap run`၊ updated documentation နှင့် 24-test regression suite များ ပါဝင်သည်။
+Native runtime version `0.8.0`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ class/parent validation၊ inherited constructors၊ method override၊ `zap build`၊ explicit `zap run`၊ `zap lint`၊ `zap check --json`၊ updated documentation နှင့် 24-test regression suite များ ပါဝင်သည်။
 
 ### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.7.1 သည် v0.7.0 standard library၊ OOP foundation နှင့် developer workflow ကို audit ပြုလုပ်ပြီး class validation နှင့် constructor behavior ကို တည်ငြိမ်စေသော patch release ဖြစ်သည်။
+Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.8.0 သည် OOP audit အပေါ် developer tooling foundation အဖြစ် `zap lint` နှင့် `zap check --json` ကို ထည့်သွင်းသော release ဖြစ်သည်။
 
-`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md)၊ v0.6 history ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
+`async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.8.0.md`](docs/ROADMAP_0.8.0.md)၊ release notes ကို [`docs/RELEASE_0.8.0.md`](docs/RELEASE_0.8.0.md)၊ v0.7 history ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
 
 ## Documentation Map
 

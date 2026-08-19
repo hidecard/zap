@@ -30,7 +30,7 @@ zap --version
 Release archive ကို extract လုပ်ပြီး `bin\zap.exe` ရှိကြောင်း စစ်ပါ။ `.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
 ```bat
-cd zap-0.7.0
+cd zap-0.8.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```
@@ -38,7 +38,7 @@ bin\zap.exe main.zp
 မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက `install_windows.bat` ကို **Command Prompt မှ Run as administrator မလိုဘဲ double-click သို့မဟုတ် command line ဖြင့်** run လုပ်ပါ။ Installer သည် `%USERPROFILE%\.zap\bin\zap.exe` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
 
 ```bat
-cd zap-0.7.0
+cd zap-0.8.0
 install_windows.bat
 ```
 
@@ -66,6 +66,8 @@ GitHub Releases မှ သင့် operating system နှင့်ကိုက
 | `zap test [dir]` | Directory နှင့် subdirectories များအောက်ရှိ `*_test.zp` files အားလုံးကို run လုပ်သည် |
 | `zap init <dir>` | Zap project အသစ် scaffold လုပ်သည် |
 | `zap build [dir]` | Build-ready project validation ပြုလုပ်သည် |
+| `zap lint <file.zp>` | Tabs၊ trailing whitespace နှင့် long lines စစ်သည် |
+| `zap check --json [dir]` | CI/editor အတွက် JSON project diagnostics ထုတ်သည် |
 
 Project အသစ်တစ်ခုကို မည်သည့် directory တွင်မဆို ဖန်တီးပြီး `.zp` file ကို run လုပ်နိုင်သည်။ Source file ကို format ပြင်ဆင်ရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ ဥပမာ—
 
@@ -100,7 +102,7 @@ version = "0.1.0"
 main = "main.zp"
 ```
 
-စစ်ဆေးရန် `zap check` ကို အသုံးပြုပါ။ `use "math"` သို့မဟုတ် `use "math.zp"` module များကို main file directory၊ `modules/` နှင့် `lib/` အောက်တွင် ရှာဖွေပါသည်။ အသေးစိတ်ကို `PACKAGE.md` တွင် ဖတ်ရှုနိုင်သည်။
+စစ်ဆေးရန် `zap check` ကို အသုံးပြုပါ။ CI သို့မဟုတ် editor integration အတွက် `zap check --json .` ကို အသုံးပြုပါ။ Source style စစ်ရန် `zap lint main.zp` ကို အသုံးပြုပါ။ `use "math"` သို့မဟုတ် `use "math.zp"` module များကို main file directory၊ `modules/` နှင့် `lib/` အောက်တွင် ရှာဖွေပါသည်။ အသေးစိတ်ကို `PACKAGE.md` တွင် ဖတ်ရှုနိုင်သည်။
 
 ## 5. Zap language examples
 

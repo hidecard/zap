@@ -1,6 +1,6 @@
 # Zap Syntax Guide
 
-ဤ guide သည် Zap `0.7.0` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
+ဤ guide သည် Zap `0.8.0` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax၊ standard built-ins နှင့် developer tooling များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
 
 > Zap သည် ရိုးရှင်းသော indentation-based block syntax၊ ရှင်းလင်းသော keywords နှင့် standalone CLI workflow ကို အဓိကထားသော programming language ဖြစ်သည်။
 
@@ -19,14 +19,16 @@ zap --help
 zap --version
 ```
 
-Project အသစ်စတင်ရန် `zap init hello-zap`၊ manifest စစ်ဆေးရန် `zap check`၊ test files များ run ရန် `zap test` နှင့် source ကို whitespace အတိုင်းပြန်ညှိရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။
+Project အသစ်စတင်ရန် `zap init hello-zap`၊ manifest စစ်ဆေးရန် `zap check`၊ machine-readable diagnostics အတွက် `zap check --json .`၊ test files များ run ရန် `zap test`၊ style စစ်ရန် `zap lint main.zp` နှင့် source ကို whitespace အတိုင်းပြန်ညှိရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။
 
 ```bash
 zap init hello-zap
 cd hello-zap
 zap check
+zap check --json .
+zap lint main.zp
 zap test
-zap main.zp
+zap run main.zp
 ```
 
 ## 2. Comments
