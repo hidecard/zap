@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v0.9.0 release ပြီးနောက် native runtime hardening**
+**လက်ရှိအခြေအနေ — v0.9.1 release ပြီးနောက် native runtime modularization နှင့် foundation hardening**
 
-Zap v0.9.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ structured `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native module loader တွင် explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးပြီး native integration tests 31 ခု အောင်မြင်နေသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 3 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -45,18 +45,21 @@ Zap v0.9.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 
 ## 2.1 Runtime architecture ခွဲခြားခြင်း
 
-- [ ] `native/src/main.rs` ကို module များခွဲရန်။
-- [ ] `lexer.rs` — token နှင့် tokenizer
-- [ ] `parser.rs` — expression/statement parser
-- [ ] `ast.rs` — AST data structures
-- [ ] `value.rs` — Zap value နှင့် object model
-- [ ] `evaluator.rs` — expression/statement execution
-- [ ] `stdlib.rs` — built-in functions
-- [ ] `diagnostics.rs` — structured errors
-- [ ] `project.rs` — manifest၊ module၊ project validation
+- [x] `native/src/main.rs` ၏ core runtime logic ကို dependency အလိုက် modules ခွဲရန်။
+- [x] `lexer.rs` — token နှင့် tokenizer
+- [x] `parser.rs` — expression/signature/static parser helpers
+- [ ] `ast.rs` — AST data structures (လက်ရှိ line-based interpreter ကို AST architecture သို့ ပြောင်းရန် နောက်ထပ် language milestone လိုသည်)
+- [x] `value.rs` — Zap value နှင့် object model
+- [x] `evaluator.rs` — expression/statement execution၊ function/method calls၊ modules နှင့် control flow
+- [x] `stdlib.rs` — pure math/text standard-library operations ၏ ပထမဆုံး extraction
+- [x] `diagnostics.rs` — structured errors
+- [x] `project.rs` — manifest၊ module၊ project validation
 - [ ] `cli.rs` — command-line argument handling
-- [ ] Public/internal API boundary များကို ရှင်းလင်းစွာ သတ်မှတ်ရန်။
-- [ ] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်ရမည်။
+- [ ] Public/internal API boundary များကို ပိုမိုရှင်းလင်းစွာ သတ်မှတ်ရန်။
+- [x] Architecture ခွဲပြီးနောက် လက်ရှိ native test suite အားလုံး pass ဖြစ်သည်။
+
+`stdlib.rs` extraction သည် ပထမ milestone ဖြစ်ပြီး path၊ file I/O၊ JSON၊ collection နှင့် system helpers များကို ထပ်မံခွဲထုတ်ရန် ကျန်ရှိသည်။
+
 
 ## 2.2 Source location နှင့် diagnostics
 

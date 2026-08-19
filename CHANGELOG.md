@@ -10,10 +10,13 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - `result<number>`၊ `result<text>`၊ `option<number>` နှင့် `option<text>` payload annotations နှင့် `ok`/`err`/`some` constructor inference ကို static checker တွင် ထည့်သွင်းထားသည်။
 - `ZapError` အတွက် syntax၊ name၊ type၊ value၊ I/O၊ file-not-found၊ permission၊ overflow နှင့် project error variants များ ထည့်သွင်းထားသည်။
 - ZapError classification နှင့် diagnostic location regression unit tests များ ထည့်သွင်းထားသည်။
+- Native runtime ကို `diagnostics.rs`၊ `lexer.rs`၊ `parser.rs`၊ `value.rs`၊ `evaluator.rs` နှင့် `project.rs` modules များအဖြစ် ခွဲခြားထားသည်။
+- `stdlib.rs` တွင် pure math/text built-in operation dispatch ၏ ပထမဆုံး extraction ကို ထည့်သွင်းထားသည်။
+- Module refactor အပြီး native unit tests 3 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။
 
 ### Planned
 
-- Deeper control-flow type narrowing, HTTP/URL/Regex standard-library modules, package lockfiles, and editor tooling remain planned.
+- `cli.rs` extraction၊ `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ CLI exit-code standardization၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
 
 ## [0.9.1] - 2026-08-19
 
@@ -35,9 +38,9 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ### Remaining Work
 
-- Runtime internals အားလုံး၏ `String` return types များကို `ZapError` သို့ တိုက်ရိုက်ပြောင်းလဲသည့် architecture refactor ဆက်လုပ်ရန်။
-- Branch/loop type narrowing၊ generic/nullable types နှင့် Result/Option payload static checking တိုးရန်။
-- Project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library နှင့် Result/Option payload static validation ဆက်လက်လုပ်ရန်။
+- Runtime internals အားလုံး၏ `String` return types များကို `ZapError` သို့ တိုက်ရိုက်ပြောင်းလဲပြီး evaluator boundary ကို ပိုမိုခိုင်မာစေရန်။
+- Branch/loop type narrowing၊ generic/nullable types နှင့် AST-based parser architecture တိုးရန်။
+- `cli.rs` extraction၊ standard-library modules အပြည့်အစုံ၊ project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library ဆက်လက်လုပ်ရန်။
 
 ## [0.9.0]
 

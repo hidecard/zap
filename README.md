@@ -38,6 +38,24 @@ Zap is actively evolving toward a production-ready language ecosystem. The `v0.9
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
+### Native Runtime Architecture
+
+The native runtime is being maintained as focused Rust modules rather than a single implementation file.
+
+| Module | Responsibility | Status |
+|---|---|---|
+| `lexer.rs` | Tokenization | Implemented |
+| `parser.rs` | Expression, signature, and static parsing helpers | Implemented |
+| `value.rs` | Runtime values and object model | Implemented |
+| `evaluator.rs` | Evaluation, functions, methods, modules, and control flow | Implemented |
+| `stdlib.rs` | Pure math and text built-in operations | First extraction implemented |
+| `diagnostics.rs` | `ZapError` and structured diagnostics | Implemented |
+| `project.rs` | Project, manifest, and module validation | Implemented |
+| `cli.rs` | CLI command orchestration | Planned |
+| `ast.rs` | AST-based execution architecture | Planned |
+
+The modularization refactor preserves the existing language behavior. The native suite currently covers **3 unit tests and 35 integration tests**.
+
 ## Why Zap?
 
 Zap focuses on a small and readable language core. Programs use familiar constructs such as variables, functions, collections, conditions, loops, classes, modules, and tests without requiring a large amount of ceremony. The runtime is distributed as a native executable, and `.zp` files can be run directly from the command line.

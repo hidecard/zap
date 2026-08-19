@@ -18,6 +18,7 @@ use parser::{
     split_static_args, static_literal_type,
 };
 mod evaluator;
+mod stdlib;
 
 use evaluator::{
     call_function, call_method, execute_lines, json_to_value, operate, value_to_json, Flow,
@@ -235,108 +236,32 @@ impl<'a> ExprParser<'a> {
                     _ => return Err("dirname expects a text path".into()),
                 }
             }
-            Token::Name(n) if n == "pow" && *self.peek() == Token::LParen => {
+            Token::Name(n)
+                if ["pow", "min", "max"].contains(&n.as_str()) && *self.peek() == Token::LParen =>
+            {
                 self.take();
-                let base = self.parse(0)?;
+                let left = self.parse(0)?;
                 if self.take() != Token::Comma {
-                    return Err("expected comma in pow".into());
+                    return Err(format!("expected comma in {n}"));
                 }
-                let exponent = self.parse(0)?;
+                let right = self.parse(0)?;
                 if self.take() != Token::RParen {
-                    return Err("expected ) after pow".into());
+                    return Err(format!("expected ) after {n}"));
                 }
-                match (base, exponent) {
-                    (Value::Number(a), Value::Number(b)) if b >= 0 => Value::Number(
-                        a.checked_pow(b as u32)
-                            .ok_or("pow result overflow".to_string())?,
-                    ),
-                    _ => return Err("pow expects a number and a non-negative exponent".into()),
-                }
+                stdlib::binary(&n, left, right)?
+                    .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
-            Token::Name(n) if n == "sqrt" && *self.peek() == Token::LParen => {
+            Token::Name(n)
+                if ["sqrt", "abs", "upper", "lower", "trim"].contains(&n.as_str())
+                    && *self.peek() == Token::LParen =>
+            {
                 self.take();
                 let value = self.parse(0)?;
                 if self.take() != Token::RParen {
-                    return Err("expected ) after sqrt".into());
+                    return Err(format!("expected ) after {n}"));
                 }
-                match value {
-                    Value::Number(x) if x >= 0 => Value::Number((x as f64).sqrt().round() as i64),
-                    _ => return Err("sqrt expects a non-negative number".into()),
-                }
-            }
-            Token::Name(n) if n == "abs" && *self.peek() == Token::LParen => {
-                self.take();
-                let v = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after abs".into());
-                }
-                match v {
-                    Value::Number(x) => Value::Number(x.abs()),
-                    _ => return Err("abs expects a number".into()),
-                }
-            }
-            Token::Name(n) if n == "min" && *self.peek() == Token::LParen => {
-                self.take();
-                let a = self.parse(0)?;
-                if self.take() != Token::Comma {
-                    return Err("expected comma in min".into());
-                }
-                let b = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after min".into());
-                }
-                match (a, b) {
-                    (Value::Number(x), Value::Number(y)) => Value::Number(x.min(y)),
-                    _ => return Err("min expects numbers".into()),
-                }
-            }
-            Token::Name(n) if n == "max" && *self.peek() == Token::LParen => {
-                self.take();
-                let a = self.parse(0)?;
-                if self.take() != Token::Comma {
-                    return Err("expected comma in max".into());
-                }
-                let b = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after max".into());
-                }
-                match (a, b) {
-                    (Value::Number(x), Value::Number(y)) => Value::Number(x.max(y)),
-                    _ => return Err("max expects numbers".into()),
-                }
-            }
-            Token::Name(n) if n == "upper" && *self.peek() == Token::LParen => {
-                self.take();
-                let v = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after upper".into());
-                }
-                match v {
-                    Value::Text(x) => Value::Text(x.to_uppercase()),
-                    _ => return Err("upper expects text".into()),
-                }
-            }
-            Token::Name(n) if n == "lower" && *self.peek() == Token::LParen => {
-                self.take();
-                let v = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after lower".into());
-                }
-                match v {
-                    Value::Text(x) => Value::Text(x.to_lowercase()),
-                    _ => return Err("lower expects text".into()),
-                }
-            }
-            Token::Name(n) if n == "trim" && *self.peek() == Token::LParen => {
-                self.take();
-                let v = self.parse(0)?;
-                if self.take() != Token::RParen {
-                    return Err("expected ) after trim".into());
-                }
-                match v {
-                    Value::Text(x) => Value::Text(x.trim().into()),
-                    _ => return Err("trim expects text".into()),
-                }
+                stdlib::unary(&n, value)?
+                    .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
             Token::Name(n) if n == "split" && *self.peek() == Token::LParen => {
                 self.take();
