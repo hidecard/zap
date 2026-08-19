@@ -21,6 +21,11 @@ jobs:
           GH_TOKEN: ${{ secrets.ZAP_DOCS_DISPATCH_TOKEN }}
           SOURCE_SHA: ${{ github.sha }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::notice::ZAP_DOCS_DISPATCH_TOKEN is not configured; skipping external documentation rebuild notification."
+            exit 0
+          fi
+
           gh api repos/hidecard/zap-docu/dispatches \
             --method POST \
             --field event_type=zap-docs-updated \
