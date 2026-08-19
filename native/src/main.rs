@@ -866,16 +866,27 @@ impl<'a> ExprParser<'a> {
                 if *self.peek() == Token::LParen {
                     self.take();
                     let args = self.call_args()?;
-                    let class_name = match &left {
-                        Value::Object { class_name, .. } => class_name.clone(),
+                    let (dispatch_class, receiver) = match &left {
+                        Value::Object { class_name, .. } => (class_name.clone(), left.clone()),
+                        Value::Text(class_name)
+                            if self.vars.contains_key("self")
+                                && self.funcs.contains_key(&format!("{class_name}.__class__")) =>
+                        {
+                            let receiver = self
+                                .vars
+                                .get("self")
+                                .cloned()
+                                .ok_or("super calls require a method receiver".to_string())?;
+                            (class_name.clone(), receiver)
+                        }
                         _ => return Err("methods can only be called on objects".into()),
                     };
                     let f = self
                         .funcs
-                        .get(&format!("{class_name}.{member}"))
-                        .ok_or(format!("undefined method: {class_name}.{member}"))?
+                        .get(&format!("{dispatch_class}.{member}"))
+                        .ok_or(format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
-                    left = call_method(&f, args, left, self.funcs)?;
+                    left = call_method(&f, args, receiver, self.funcs)?;
                 } else {
                     left = match left {
                         Value::Object { fields, .. } => fields

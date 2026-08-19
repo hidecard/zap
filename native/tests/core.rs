@@ -819,3 +819,24 @@ fn rejects_malformed_generic_annotations() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("unknown type annotation 'list<>'"));
 }
+
+#[test]
+fn runs_explicit_super_constructor_and_method_calls() {
+    let file = std::env::temp_dir().join("zap_oop_super_test.zp");
+    std::fs::write(
+        &file,
+        "class Base:\n    fn init(self):\n        self.ready = true\n    fn label(self):\n        return \"base\"\nclass Child extends Base:\n    fn init(self):\n        super.init()\n        self.child = true\n    fn label(self):\n        return super.label() + \"-child\"\nlet item = new(\"Child\")\nsay item.ready\nsay item.child\nsay item.label()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "true\ntrue\nbase-child\n"
+    );
+}

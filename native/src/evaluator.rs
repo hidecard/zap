@@ -291,6 +291,16 @@ pub(crate) fn call_method(
     }
     let mut local = f.closure.clone();
     local.insert("self".into(), self_value);
+    if let Some(Value::Text(owner_class)) = local.get("__zap_owner_class").cloned() {
+        if let Some(Value::Text(parent_class)) = funcs
+            .get(&format!("{owner_class}.__parent__"))
+            .and_then(|parent| parent.body.first())
+            .cloned()
+            .map(Value::Text)
+        {
+            local.insert("super".into(), Value::Text(parent_class));
+        }
+    }
     for (param, v) in f.params.iter().skip(1).zip(args) {
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
@@ -756,6 +766,8 @@ fn register_ast_class(
                     },
                 );
             }
+            let mut method_closure = vars.clone();
+            method_closure.insert("__zap_owner_class".into(), Value::Text(name.to_string()));
             funcs.insert(
                 format!("{name}.{method}"),
                 Rc::new(Function {
@@ -763,7 +775,7 @@ fn register_ast_class(
                     return_annotation: return_type.clone(),
                     body: Vec::new(),
                     ast_body: Some(body.clone()),
-                    closure: vars.clone(),
+                    closure: method_closure,
                 }),
             );
         }
@@ -1189,6 +1201,9 @@ pub(crate) fn execute_lines(
                         );
                     }
                     let (method_body, method_end) = indented(&body, j + 1);
+                    let mut method_closure = vars.clone();
+                    method_closure
+                        .insert("__zap_owner_class".into(), Value::Text(class_name.clone()));
                     funcs.insert(
                         format!("{class_name}.{}", method_name.trim()),
                         Rc::new(Function {
@@ -1196,7 +1211,7 @@ pub(crate) fn execute_lines(
                             return_annotation,
                             body: method_body,
                             ast_body: None,
-                            closure: vars.clone(),
+                            closure: method_closure,
                         }),
                     );
                     j = method_end;
