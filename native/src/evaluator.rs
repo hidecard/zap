@@ -426,6 +426,9 @@ fn matches_annotation(annotation: &str, value: &Value) -> Result<bool, String> {
                 })
             }
             ("map", Value::Map(entries)) if args.len() == 2 => {
+                if args[0].trim() != "text" && args[0].trim() != "any" {
+                    return Ok(false);
+                }
                 entries.values().try_fold(true, |valid, item| {
                     Ok(valid && matches_annotation(args[1], item)?)
                 })
