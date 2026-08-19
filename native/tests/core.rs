@@ -161,3 +161,30 @@ fn runs_text_and_numeric_helpers() {
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "7\n4\n9\nZAP\nzap\ncore\nb\n");
 }
+
+#[test]
+fn runs_v060_standard_library_helpers() {
+    let file = std::env::temp_dir().join("zap_v060_stdlib_test.zp");
+    std::fs::write(&file, "say basename(path_join(\"tmp\", \"zap\", \"main.zp\"))\nsay dirname(\"tmp/zap/main.zp\")\nsay pow(2, 4)\nsay sqrt(16)\nsay has_env(\"PATH\")\nsay type(now())\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("main.zp\n"));
+    assert!(stdout.contains("tmp/zap\n") || stdout.contains("tmp\\\\zap\n"));
+    assert!(stdout.contains("16\n"));
+    assert!(stdout.contains("true\n"));
+    assert!(stdout.contains("number\n"));
+}
+
+#[test]
+fn build_command_validates_project() {
+    let root = std::env::temp_dir().join("zap_v060_build_project");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(root.join("zap.toml"), "[package]\nname = \"build-demo\"\nversion = \"0.6.0\"\nmain = \"main.zp\"\n").unwrap();
+    std::fs::write(root.join("main.zp"), "say \"build ok\"\n").unwrap();
+    let output = Command::new(binary()).args(["build", root.to_str().unwrap()]).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("built Zap project"));
+}

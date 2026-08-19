@@ -6,7 +6,7 @@ Zap ၏ အဓိကရည်ရွယ်ချက်မှာ beginner မျ�
 
 ## လက်ရှိအခြေအနေ
 
-Zap သည် **native core prototype / early development release** အဆင့်တွင် ရှိပါသည်။ Native Rust runtime သည် အောက်ပါ core features များကို လက်ရှိထောက်ပံ့ထားသည်။
+Zap သည် **native core prototype / early development release** အဆင့်တွင် ရှိပါသည်။ Native Rust runtime သည် v0.6.0 development line တွင် အောက်ပါ core features များကို လက်ရှိထောက်ပံ့ထားသည်။
 
 | အပိုင်း | လက်ရှိ support |
 |---|---|
@@ -17,9 +17,33 @@ Zap သည် **native core prototype / early development release** အဆင့
 | Control flow | `if/else`၊ `for`၊ `while`၊ `break`၊ `continue` |
 | Functions | parameters၊ calls၊ `return`၊ local scope၊ nested lexical closures |
 | Modules | source-relative `use "module.zp"` imports၊ `modules/` နှင့် `lib/` search paths |
-| Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text` |
-| Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap test`၊ `zap fmt`၊ `zap init` |
+| Built-ins | `say`၊ `len`၊ `range`၊ `str`၊ `type`၊ `keys`၊ `contains`၊ `join`၊ `abs`၊ `min`၊ `max`၊ `upper`၊ `lower`၊ `trim`၊ `split`၊ `assert`၊ `json`၊ `from_json`၊ `read_text`၊ `write_text`၊ `now`၊ `sleep`၊ `env`၊ `has_env`၊ `exists`၊ `path_join`၊ `basename`၊ `dirname`၊ `pow`၊ `sqrt` |
+| Tooling | `zap --help`၊ `zap --version`၊ `zap check`၊ `zap build`၊ `zap test`၊ `zap fmt`၊ `zap init` |
 | Installation | Prebuilt native binary package |
+
+## v0.6.0 တွင် ထည့်သွင်းထားသော အခြေခံ APIs
+
+v0.6.0 development line တွင် file path၊ environment၊ time နှင့် numeric operations များအတွက် native built-ins များ ပါဝင်သည်။ Optional type annotation ကို variable declaration တွင် အသုံးပြုနိုင်သည်။
+
+```zap
+let project: text = path_join("src", "main.zp")
+let started: number = now()
+let has_path: bool = has_env("PATH")
+
+say basename(project)
+say started
+say has_path
+```
+
+Project ၏ manifest နှင့် entry file ကို build မလုပ်မီ စစ်ဆေးနိုင်သည်။
+
+```bash
+zap check .
+zap build .
+zap test .
+```
+
+`async`/`await`၊ HTTP client၊ channels နှင့် package registry တို့သည် roadmap အဆင့်တွင် ရှိသေးပြီး လက်ရှိ stable runtime feature မဟုတ်သေးပါ။ အသေးစိတ်ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) တွင် ဖတ်ရှုနိုင်သည်။
 
 ## Zap ကို Install လုပ်ခြင်း
 
@@ -27,7 +51,7 @@ End users များအတွက် development toolchain မလိုပါ�
 
 ```bash
 tar -xzf zap-linux-x86_64.tar.gz
-cd zap-0.5.0
+cd zap-0.6.0
 bash install.sh
 ```
 
@@ -50,7 +74,7 @@ zap main.zp
 Windows တွင် release archive ကို extract ပြီး `bin\zap.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်ပါသည်။
 
 ```bat
-cd zap-0.5.0
+cd zap-0.6.0
 bin\zap.exe --version
 bin\zap.exe main.zp
 ```

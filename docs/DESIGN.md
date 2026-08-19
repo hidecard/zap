@@ -1,6 +1,6 @@
 # Zap Programming Language — Initial Design
 
-**Version:** 0.1.0-draft  
+**Version:** 0.6.0 design update  
 **Author:** Manus AI
 
 ## ရည်ရွယ်ချက်
@@ -15,10 +15,10 @@ Web နှင့် AI တို့ကို language core ထဲသို့ �
 |---|---|
 | Syntax | Indentation-based blocks နှင့် ရှင်းလင်းသော English keywords |
 | Runtime | ပထမ prototype တွင် tree-walk interpreter |
-| Typing | Dynamic typing; နောက်ပိုင်း optional type hints |
+| Typing | Dynamic typing; v0.6.0 မှစ၍ variable-level optional type annotations ကို စစ်ဆေးနိုင်မည် |
 | Strings | Double quote နှင့် single quote နှစ်မျိုးစလုံး |
 | Collections | list, map, set ကို built-in အဖြစ် ထည့်မည် |
-| Errors | Line number၊ source snippet နှင့် ပြင်ဆင်ရန် အကြံပြုချက် ပါမည် |
+| Errors | Runtime error message များကို ပြသမည်။ Structured source diagnostics သည် v0.6.x အတွင်း တိုးချဲ့မည် |
 | Web | `web` standard module မှ server/request API ပေးမည် |
 | AI | `ai` module မှ provider-neutral text generation API ပေးမည် |
 | Interoperability | ပထမအဆင့်တွင် native modules နှင့် package APIs ဖြင့် extension ပြုလုပ်နိုင်မည် |
@@ -56,15 +56,21 @@ answer = ai.ask "Explain HTTP in one sentence"
 say answer.text
 ```
 
-ပထမ prototype တွင် `web` နှင့် `ai` သည် placeholder built-ins အဖြစ် ရှိမည်။ Production-level networking၊ async runtime နှင့် model provider adapters များကို MVP interpreter အောင်မြင်ပြီးနောက် ထည့်မည်။
+Native v0.5.0 တွင် `web` နှင့် `ai` သည် module architecture အတွက် placeholder အဆင့်ဖြစ်သည်။ v0.6.0 တွင် `path`၊ `time`၊ `env` နှင့် basic `math` utilities ကို native built-ins အဖြစ် ထည့်သွင်းပြီး production-level networking၊ async runtime နှင့် model provider adapters များကို သီးခြား release အဖြစ် တဖြည်းဖြည်း ထည့်မည်။
 
 ## မထည့်သွင်းသေးသောအရာများ
 
-ပထမ version တွင် class inheritance၊ macro system၊ native compiler၊ concurrency၊ package registry နှင့် static type checker များကို မထည့်သွင်းသေးပါ။ ဤအရာများသည် syntax နှင့် runtime တည်ငြိမ်ပြီးနောက် သီးခြား roadmap အဖြစ် ဆက်လက်တိုးချဲ့မည်။
+v0.6.0 တွင် class inheritance၊ macro system၊ package registry၊ full static type checker၊ threads နှင့် shared mutable concurrency များကို မထည့်သွင်းသေးပါ။ Async task၊ cancellation နှင့် channel model ကို design အဆင့်မှ စတင်ပြီး runtime semantics တည်ငြိမ်မှသာ production feature အဖြစ် ထည့်သွင်းမည်။
 
 ## အောင်မြင်မှုစံနှုန်း
 
 ပထမဆုံး MVP သည် variable assignment၊ literals၊ arithmetic၊ comparison၊ function call၊ `if`၊ `for`၊ `say` နှင့် module import ကို လုပ်ဆောင်နိုင်ရမည်။ သင်ခန်းစာတစ်ခုတည်းဖြင့် beginner သည် အခြေခံ program တစ်ခုရေးနိုင်ပြီး၊ Web နှင့် AI API ကို နောက်ပိုင်း standard modules မှတစ်ဆင့် သုံးနိုင်ရန် architecture က အဆင်သင့်ဖြစ်ရမည်။
+
+## v0.6.0 implementation direction
+
+v0.6.0 သည် native runtime၊ standard library နှင့် CLI workflow ကို ဦးစားပေးသည်။ `now()`၊ `sleep()`၊ `env()`၊ `has_env()`၊ `exists()`၊ path helpers နှင့် numeric helpers များသည် လက်တွေ့အသုံးပြုနိုင်သော အခြေခံ API များဖြစ်သည်။ Optional type annotation သည် beginner syntax ကို မပြောင်းလဲဘဲ `zap check` နှင့် runtime diagnostics များအတွက် အခြေခံပေးသည်။
+
+Concurrency အတွက် shared memory threads များကို အလျင်စလို မထည့်ဘဲ `async`/`await`၊ tasks၊ cancellation နှင့် channels ကို စနစ်တကျ သတ်မှတ်မည်။ ထို design သည် Web request၊ AI API နှင့် IoT event loop များအတွက် ရိုးရှင်းပြီး ချဲ့ထွင်နိုင်သော model ဖြစ်စေရန် ရည်ရွယ်သည်။ အသေးစိတ် roadmap ကို [`ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တွင် ဖတ်ရှုနိုင်သည်။
 
 ## နောက်တစ်ဆင့်
 
