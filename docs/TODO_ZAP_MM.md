@@ -2,7 +2,7 @@
 
 **လက်ရှိအခြေအနေ — v0.9.2 release နှင့် P0 foundation hardening**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 9 ခုနှင့် integration tests 47 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 13 ခုနှင့် integration tests 47 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -48,7 +48,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `native/src/main.rs` ၏ core runtime logic ကို dependency အလိုက် modules ခွဲရန်။
 - [x] `lexer.rs` — token နှင့် tokenizer
 - [x] `parser.rs` — expression/signature/static parser helpers
-- [ ] `ast.rs` — AST data structures (လက်ရှိ line-based interpreter ကို AST architecture သို့ ပြောင်းရန် နောက်ထပ် language milestone လိုသည်)
+- [x] `ast.rs` — source-span-aware AST data structures နှင့် expression/statement node foundation ထည့်ထားသည်။
+- [ ] လက်ရှိ line-based interpreter ကို AST architecture သို့ အပြည့်အဝပြောင်းရန် parser migration milestone ဆက်လုပ်ရန်လိုသည်။
 - [x] `value.rs` — Zap value နှင့် object model
 - [x] `evaluator.rs` — expression/statement execution၊ function/method calls၊ modules နှင့် control flow
 - [x] `stdlib.rs` — pure math/text standard-library operations ၏ ပထမဆုံး extraction
@@ -65,7 +66,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 - [x] Token တိုင်းတွင် `file`၊ `line` နှင့် `column` source span သိမ်းရန်။ Lexer သည် one-based line/column နှင့် token span ကို ထုတ်ပေးသည်။
 - [x] Lexer နှင့် parse-related error များတွင် အမှားဖြစ်သည့် source location ကို ပြရန်။
-- [ ] Runtime error schema သတ်မှတ်ရန်။
+- [x] Runtime error schema ကို `ZapError` kind/message/file/line/column model ဖြင့် သတ်မှတ်ပြီး `run_checked` typed boundary ထည့်ထားသည်။
 
 ```json
 {
@@ -84,7 +85,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 ## 2.3 Error model
 
-- [x] CLI diagnostic boundary တွင် internal Rust error message များကို `ZapError` enum ဖြင့် ခွဲခြားရန်။ `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError`၊ `OverflowError` နှင့် `ProjectError` kinds များကို သတ်မှတ်ထားသည်။ Runtime internals အားလုံးကို enum သို့ တိုက်ရိုက်ပြောင်းလဲခြင်းသည် နောက်ထပ် architecture refactor အဖြစ် ကျန်ရှိသည်။
+- [x] CLI diagnostic boundary တွင် internal Rust error message များကို `ZapError` enum ဖြင့် ခွဲခြားရန်။ `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError`၊ `OverflowError` နှင့် `ProjectError` kinds များကို သတ်မှတ်ထားသည်။ `run_checked` boundary မှ runtime String errors များကို typed `ZapError` သို့ ပြောင်းပေးသည်။ Runtime internals အားလုံးကို enum သို့ တိုက်ရိုက်ပြောင်းလဲခြင်းသည် နောက်ထပ် parser/evaluator migration အဖြစ် ကျန်ရှိသည်။
 - [x] `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError` နှင့် `OverflowError` များကို `ZapError` variants အဖြစ် သတ်မှတ်ရန်။
 - [x] User program ထဲတွင် recoverable value အသုံးပြုရန် `ok(value)` နှင့် `err(value)` Result constructors ထည့်ရန်။
 - [x] `some(value)`၊ `option_none()`၊ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` helpers ထည့်ရန်။

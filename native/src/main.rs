@@ -1,5 +1,6 @@
 #![allow(clippy::missing_const_for_thread_local, clippy::type_complexity)]
 
+mod ast;
 mod diagnostics;
 mod lexer;
 
@@ -39,6 +40,11 @@ thread_local! { static MODULE_LOADING: RefCell<Vec<PathBuf>> = const { RefCell::
 thread_local! { static MODULE_CACHE: RefCell<HashMap<PathBuf, (HashMap<String,Value>, HashMap<String,Rc<Function>>)>> = RefCell::new(HashMap::new()); }
 
 pub(crate) const MAX_FILE_BYTES: u64 = 8 * 1024 * 1024;
+pub(crate) type ZapResult<T> = Result<T, ZapError>;
+
+pub(crate) fn run_checked(source: &str, base: &Path) -> ZapResult<()> {
+    run(source, base).map_err(ZapError::from_message)
+}
 
 pub(crate) fn read_limited_text(path: &Path, operation: &str) -> Result<String, String> {
     let metadata = fs::metadata(path).map_err(|e| format!("{operation} failed: {e}"))?;
@@ -1338,5 +1344,13 @@ mod zap_error_tests {
         let _ = std::fs::remove_file(&path);
         let error = result.expect_err("oversized files must be rejected");
         assert!(error.contains("file exceeds"));
+    }
+
+    #[test]
+    fn wraps_runtime_string_errors_as_typed_errors() {
+        let error =
+            run_checked("say missing_name", Path::new(".")).expect_err("unknown names must fail");
+        assert_eq!(error.kind(), "NameError");
+        assert!(error.message().contains("undefined variable"));
     }
 }

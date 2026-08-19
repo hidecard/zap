@@ -157,8 +157,8 @@ pub fn run_cli(args: &[String]) {
             process::exit(EXIT_PROGRAM_FAILURE);
         });
         let base = Path::new(&args[2]).parent().unwrap_or(Path::new("."));
-        if let Err(e) = run(&source, base) {
-            eprintln!("Zap error: {}", ZapError::from_message(e));
+        if let Err(e) = run_checked(&source, base) {
+            eprintln!("Zap error: {e}");
             process::exit(EXIT_PROGRAM_FAILURE);
         }
         return;
@@ -201,8 +201,8 @@ pub fn run_cli(args: &[String]) {
         process::exit(EXIT_PROGRAM_FAILURE);
     });
     let base = Path::new(&args[1]).parent().unwrap_or(Path::new("."));
-    if let Err(e) = run(&source, base) {
-        eprintln!("Zap error: {}", ZapError::from_message(e));
+    if let Err(e) = run_checked(&source, base) {
+        eprintln!("Zap error: {e}");
         process::exit(EXIT_PROGRAM_FAILURE);
     }
 }

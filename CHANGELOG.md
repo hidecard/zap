@@ -15,12 +15,14 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - `Token` များတွင် one-based file/line/column source locations ထည့်သွင်းပြီး lexer diagnostics ကို source-aware ပြုလုပ်ထားသည်။
 - Diagnostic messages ထဲရှိ `password`၊ `secret`၊ `token` နှင့် `api_key` key/value များကို `<redacted>` အဖြစ် ဖုံးကွယ်ထားသည်။
 - Source line count၊ loop iteration နှင့် execution depth အတွက် runtime resource limits ထည့်သွင်းထားသည်။
-- Module refactor နှင့် P0 hardening အပြီး native unit tests 10 ခုနှင့် integration tests 47 ခု အောင်မြင်နေသည်။
+- Module refactor နှင့် P0 hardening အပြီး native unit tests 13 ခုနှင့် integration tests 47 ခု အောင်မြင်နေသည်။
 - CLI command orchestration ကို `cli.rs` သို့ ခွဲထုတ်ပြီး `0` success၊ `1` program/check failure နှင့် `2` usage error exit-code policy ကို သတ်မှတ်ထားသည်။
 - `zap test` တွင် `--filter`၊ `--fail-fast` နှင့် `--json` options များ ထည့်သွင်းပြီး unknown options များအတွက် usage error ပြန်ပေးသည်။
 - Expression parser သည် expression အပြီးတွင် မသုံးရသေးသော token များကျန်ရှိပါက diagnostic error ထုတ်ပေးပြီး malformed source tests များတွင် line/column diagnostics ကို စစ်ဆေးထားသည်။
 - Mixed indentation၊ nested blank/comment blocks၊ Windows-style path၊ permission failure နှင့် module parent-directory traversal regression tests များ ထည့်သွင်းထားသည်။
 - User-facing source reads/writes၊ module imports နှင့် project test reads များအတွက် 8 MiB bounded file I/O limit ထည့်သွင်းထားသည်။ Oversized input ကို file content မဖတ်မီ typed error ဖြင့် reject လုပ်သည်။
+- Source-span-aware `ast.rs` foundation ကို expression၊ literal၊ call၊ index၊ statement နှင့် program nodes များဖြင့် ထည့်သွင်းထားသည်။ Existing line-based evaluator ကို မပြတ်တောက်စေရန် compatibility foundation အဖြစ် စတင်ထားသည်။
+- `run_checked` typed runtime boundary နှင့် regression coverage ထည့်သွင်းပြီး runtime String error များကို CLI အဆင့်မတိုင်မီ `ZapError` model သို့ ပြောင်းပေးသည်။
 
 ### Planned
 
