@@ -534,3 +534,47 @@ fn rejects_question_operator_for_non_result_values() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("? expects a Result value"));
 }
+
+#[test]
+fn check_validates_result_and_option_payload_types() {
+    let valid_root = std::env::temp_dir().join("zap_result_option_payload_valid");
+    std::fs::create_dir_all(&valid_root).unwrap();
+    std::fs::write(
+        valid_root.join("zap.toml"),
+        "[package]\nname = \"payload-valid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        valid_root.join("main.zp"),
+        "let answer: result<number> = ok(42)\nlet name: option<text> = some(\"Zap\")\n",
+    )
+    .unwrap();
+    let valid = Command::new(binary())
+        .args(["check", valid_root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&valid_root);
+    assert!(valid.status.success());
+
+    let invalid_root = std::env::temp_dir().join("zap_result_option_payload_invalid");
+    std::fs::create_dir_all(&invalid_root).unwrap();
+    std::fs::write(
+        invalid_root.join("zap.toml"),
+        "[package]\nname = \"payload-invalid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        invalid_root.join("main.zp"),
+        "let answer: result<number> = ok(\"wrong\")\nlet name: option<number> = some(\"wrong\")\n",
+    )
+    .unwrap();
+    let invalid = Command::new(binary())
+        .args(["check", "--json", invalid_root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&invalid_root);
+    assert!(!invalid.status.success());
+    let stdout = String::from_utf8_lossy(&invalid.stdout);
+    assert!(stdout.contains("\"kind\":\"TypeError\""));
+    assert!(stdout.contains("result<number>"));
+}

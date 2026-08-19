@@ -116,7 +116,7 @@ zap main.zp
 | Files | text and line-based file I/O |
 | System helpers | paths, time, sleep, environment variables, and math helpers |
 | Modules | explicit `import`/`export`, local search paths, cache, and cycle detection |
-| Error values | `ok`, `err`, `some`, `option_none`, `unwrap`, `unwrap_or`, and `?` |
+| Error values | `ok`, `err`, `some`, `option_none`, `unwrap`, `unwrap_or`, typed `result<T>`/`option<T>`, and `?` |
 | Diagnostics | human-readable errors and `zap check --json` structured diagnostics |
 
 ## Syntax Examples
@@ -222,7 +222,14 @@ fn profile() -> Result:
     return ok(user)
 ```
 
-The `?` operator unwraps a successful Result and returns an error Result immediately when the expression contains an error.
+The `?` operator unwraps a successful Result and returns an error Result immediately when the expression contains an error. Result and Option payloads can also be checked statically with annotations such as `result<number>` and `option<text>`.
+
+```zap
+let answer: result<number> = ok(42)
+let username: option<text> = some("Zap")
+```
+
+The checker reports a `TypeError` when the constructor payload does not match the annotated payload type.
 
 ## Built-in Functions
 
@@ -330,7 +337,7 @@ The recommended order is to begin with installation and Hello World, then study 
 
 ## Current Roadmap
 
-The next development areas are deeper control-flow type narrowing, Result/Option payload checking, HTTP/URL/Regex standard-library modules, package metadata and lockfiles, asynchronous programming, and editor tooling. The project will continue to prioritize a stable language core, clear diagnostics, cross-platform behavior, and synchronized English/Burmese documentation.
+The next development areas are deeper control-flow type narrowing, HTTP/URL/Regex standard-library modules, package metadata and lockfiles, asynchronous programming, and editor tooling. The project will continue to prioritize a stable language core, clear diagnostics, cross-platform behavior, and synchronized English/Burmese documentation.
 
 ## Contributing
 

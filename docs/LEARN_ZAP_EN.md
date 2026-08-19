@@ -408,3 +408,23 @@ A failed check can produce output such as:
 ```
 
 Human-readable command failures and JSON check failures now share the same diagnostic classification. The evaluator still contains some legacy internal `String` error paths; replacing those internal return types with `ZapError` is a later architecture refactor and does not change the current `.zp` syntax.
+
+
+## Lesson 20 — Typed Result and Option Payloads
+
+Zap can statically check the value carried by a Result or Option. Use angle brackets in an annotation to describe the payload type:
+
+```zap
+let answer: result<number> = ok(42)
+let failure: result<text> = err("not found")
+let user: option<text> = some("Zap")
+let missing: option<number> = option_none()
+```
+
+The checker rejects mismatched payloads before execution:
+
+```zap
+let invalid: result<number> = ok("wrong")
+```
+
+Run `zap check --json .` to receive a machine-readable `TypeError`. `option_none()` is represented as `option<any>` and can be assigned to a typed Option because it carries no concrete payload.

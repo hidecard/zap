@@ -1082,3 +1082,23 @@ Check မအောင်မြင်ပါက အောက်ပါပုံစ�
 ```
 
 Human-readable command error နှင့် JSON check error နှစ်မျိုးစလုံးသည် တူညီသော diagnostic classification ကို အသုံးပြုသည်။ Runtime evaluator အတွင်းရှိ legacy Rust `String` error path အချို့ကို `ZapError` သို့ အပြည့်အဝပြောင်းရန်မှာ နောက်ထပ် architecture refactor ဖြစ်ပြီး လက်ရှိ `.zp` syntax ကို မပြောင်းလဲပါ။
+
+
+## Lesson 20 — Typed Result နှင့် Option Payload
+
+Zap တွင် Result သို့မဟုတ် Option အတွင်းသယ်ဆောင်ထားသည့် value ၏ type ကို static checker ဖြင့် စစ်နိုင်သည်။ Annotation ထဲတွင် angle bracket အသုံးပြုပြီး payload type ကို ရေးပါ။
+
+```zap
+let answer: result<number> = ok(42)
+let failure: result<text> = err("not found")
+let user: option<text> = some("Zap")
+let missing: option<number> = option_none()
+```
+
+Payload type မကိုက်ညီပါက program မ run မီ checker က reject လုပ်မည်။
+
+```zap
+let invalid: result<number> = ok("wrong")
+```
+
+Machine-readable `TypeError` ရရန် `zap check --json .` ကို အသုံးပြုနိုင်သည်။ `option_none()` သည် concrete payload မပါသောကြောင့် `option<any>` အဖြစ် သတ်မှတ်ပြီး typed Option များတွင် assign လုပ်နိုင်သည်။

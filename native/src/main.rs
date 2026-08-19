@@ -2215,7 +2215,7 @@ fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String>
             })?;
             for param in &params {
                 if let Some(annotation) = &param.annotation {
-                    if !allowed.contains(&annotation.as_str()) {
+                    if !is_allowed_annotation(annotation) {
                         return Err(format!(
                             "TypeError at {}:{}: unknown type annotation '{}'",
                             file.display(),
@@ -2320,12 +2320,65 @@ fn matching_paren(line: &str, open: usize) -> Option<usize> {
     }
     None
 }
+fn generic_type(base: &str, inner: &str) -> String {
+    format!("{base}<{}>", inner.trim())
+}
+
+fn is_allowed_annotation(annotation: &str) -> bool {
+    let value = annotation.trim();
+    if [
+        "text", "number", "bool", "list", "map", "object", "none", "any", "result", "option",
+    ]
+    .contains(&value)
+    {
+        return true;
+    }
+    for base in ["result", "option"] {
+        if let Some(inner) = value
+            .strip_prefix(&format!("{base}<"))
+            .and_then(|rest| rest.strip_suffix('>'))
+        {
+            return is_allowed_annotation(inner);
+        }
+    }
+    false
+}
+
+fn annotation_matches(expected: &str, actual: &str) -> bool {
+    let expected = expected.trim();
+    let actual = actual.trim();
+    if expected == "any" || expected == actual {
+        return true;
+    }
+    for base in ["result", "option"] {
+        if let Some(expected_inner) = expected
+            .strip_prefix(&format!("{base}<"))
+            .and_then(|rest| rest.strip_suffix('>'))
+        {
+            if let Some(actual_inner) = actual
+                .strip_prefix(&format!("{base}<"))
+                .and_then(|rest| rest.strip_suffix('>'))
+            {
+                return expected_inner == "any" || expected_inner == actual_inner;
+            }
+        }
+    }
+    false
+}
+
 fn static_expr_type(
     raw: &str,
     vars: &HashMap<String, String>,
     signatures: &HashMap<String, StaticSignature>,
 ) -> Option<String> {
     let value = raw.trim();
+    if let Some(inner) = value.strip_suffix('?') {
+        let result_type = static_expr_type(inner.trim(), vars, signatures)?;
+        return result_type
+            .strip_prefix("result<")
+            .and_then(|rest| rest.strip_suffix('>'))
+            .map(str::to_string);
+    }
     if let Some(kind) = static_literal_type(value) {
         return Some(kind.to_string());
     }
@@ -2338,6 +2391,25 @@ fn static_expr_type(
     if let Some(open) = value.find('(') {
         if value.ends_with(')') {
             let name = value[..open].trim();
+            let close = matching_paren(value, open)?;
+            let args = split_static_args(&value[open + 1..close]);
+            if name == "ok" || name == "err" {
+                let payload = args
+                    .first()
+                    .and_then(|arg| static_expr_type(arg, vars, signatures))
+                    .unwrap_or_else(|| "any".into());
+                return Some(generic_type("result", &payload));
+            }
+            if name == "some" {
+                let payload = args
+                    .first()
+                    .and_then(|arg| static_expr_type(arg, vars, signatures))
+                    .unwrap_or_else(|| "any".into());
+                return Some(generic_type("option", &payload));
+            }
+            if name == "option_none" {
+                return Some("option<any>".into());
+            }
             if let Some(signature) = signatures.get(name) {
                 return signature.return_annotation.clone();
             }
@@ -2405,7 +2477,7 @@ fn validate_static_call(
                 continue;
             }
             if let Some(actual) = static_expr_type(arg, vars, signatures) {
-                if expected != actual {
+                if !annotation_matches(expected, &actual) {
                     return Err(format!(
                         "TypeError at {}:{}:{}: argument '{}' for '{}' expects {}, got {}",
                         file.display(),
@@ -2464,7 +2536,7 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                     .unwrap_or((left.trim(), None));
                 if let Some(kind) = static_expr_type(right, &vars, &signatures) {
                     if let Some(expected) = annotation {
-                        if expected != "any" && expected != kind {
+                        if !annotation_matches(expected, &kind) {
                             return Err(format!(
                                 "TypeError at {}:{}:1: variable '{}' expects {}, got {}",
                                 file.display(),

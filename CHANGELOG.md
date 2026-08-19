@@ -7,6 +7,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 ### Added
 
 - Dedicated `ZapError` diagnostic boundary ထည့်သွင်းထားသည်။ Human-readable runtime output နှင့် `zap check --json` output တို့သည် error kind၊ message နှင့် source location metadata ကို တူညီသော model ဖြင့် ထုတ်ပေးနိုင်သည်။
+- `result<number>`၊ `result<text>`၊ `option<number>` နှင့် `option<text>` payload annotations နှင့် `ok`/`err`/`some` constructor inference ကို static checker တွင် ထည့်သွင်းထားသည်။
 - `ZapError` အတွက် syntax၊ name၊ type၊ value၊ I/O၊ file-not-found၊ permission၊ overflow နှင့် project error variants များ ထည့်သွင်းထားသည်။
 - ZapError classification နှင့် diagnostic location regression unit tests များ ထည့်သွင်းထားသည်။
 
