@@ -1,0 +1,14 @@
+fn completed_count(tasks):
+    let total = 0
+    for task in tasks:
+        if task["done"]:
+            total = total + 1
+    return total
+
+let tasks = [{"title": "learn syntax", "done": true}, {"title": "write a program", "done": true}, {"title": "build a project", "done": false}]
+
+let completed = completed_count(tasks)
+let summary = {"total": len(tasks), "completed": completed, "remaining": len(tasks) - completed}
+
+assert(summary["total"] > 0, "task list must not be empty")
+say json(summary)

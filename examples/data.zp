@@ -1,0 +1,9 @@
+let profile = {"name": "Zap", "targets": ["web", "mobile", "ai", "iot"]}
+
+let encoded = json(profile)
+write_text("profile.json", encoded)
+
+let restored = from_json(read_text("profile.json"))
+assert(type(restored) == "map", "profile must decode to a map")
+say restored["name"]
+say join(restored["targets"], ", ")

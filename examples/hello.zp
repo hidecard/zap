@@ -1,0 +1,6 @@
+# Basic Zap program
+let name = "Zap"
+say "Hello, " + name
+
+for item in ["web", "ai", "iot"]:
+    say item

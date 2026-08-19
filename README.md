@@ -94,6 +94,12 @@ cargo build --release --manifest-path native/Cargo.toml
 
 Source build သည် development အတွက်သာ ဖြစ်သည်။ ပုံမှန် user installation အတွက် prebuilt release archive ကို အသုံးပြုခြင်းဖြင့် အပို development toolchain မလိုတော့ပါ။
 
+## Language Usage Guide
+
+အသေးစိတ် language usage ကို beginner အဆင့်မှ project development အထိ ဖတ်ရှုရန် [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) ကို အသုံးပြုပါ။ ထို guide တွင် values၊ variables၊ operators၊ conditions၊ loops၊ functions၊ closures၊ lists၊ maps၊ JSON၊ file I/O၊ modules၊ error debugging နှင့် complete project examples များ ပါဝင်သည်။
+
+Syntax reference အတွက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ project manifest အတွက် [`PACKAGE.md`](PACKAGE.md) နှင့် native runtime အတွက် [`NATIVE.md`](NATIVE.md) ကို ဖတ်ရှုနိုင်သည်။
+
 ## CLI အသုံးပြုနည်း
 
 ```bash
@@ -143,10 +149,7 @@ Function တစ်ခုအတွင်းရှိ variable များသည�
 ## Lists၊ Maps နှင့် JSON
 
 ```zp
-let user = {
-    "name": "Ada",
-    "language": "Zap"
-}
+let user = {"name": "Ada", "language": "Zap"}
 
 let encoded = json(user)
 say encoded

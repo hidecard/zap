@@ -1,6 +1,6 @@
 # Zap Syntax Guide
 
-ဤ guide သည် Zap `0.3.x` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
+ဤ guide သည် Zap `0.4.x` native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax နှင့် standard built-ins များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
 
 > Zap သည် ရိုးရှင်းသော indentation-based block syntax၊ ရှင်းလင်းသော keywords နှင့် standalone CLI workflow ကို အဓိကထားသော programming language ဖြစ်သည်။
 
@@ -181,11 +181,7 @@ say project[2]
 Map သည် `{key: value}` ပုံစံဖြစ်သည်။ String key များကို double quotes ဖြင့် ရေးနိုင်သည်။ Value ကို `map["key"]` ပုံစံဖြင့် ဖတ်နိုင်သည်။
 
 ```zp
-let user = {
-    "name": "Ada",
-    "language": "Zap",
-    "active": true
-}
+let user = {"name": "Ada", "language": "Zap", "active": true}
 
 say user["name"]
 say user["language"]
@@ -195,10 +191,7 @@ say user["active"]
 Nested map နှင့် list များကို ပေါင်းစပ်အသုံးပြုနိုင်သည်။
 
 ```zp
-let app = {
-    "name": "ZapBoard",
-    "features": ["web", "ai"]
-}
+let app = {"name": "ZapBoard", "features": ["web", "ai"]}
 
 say app["name"]
 say app["features"][0]
@@ -319,10 +312,7 @@ assert(version >= 1, "version must be positive")
 `json(value)` သည် Zap value ကို JSON text အဖြစ် encode လုပ်ပြီး `from_json(text)` သည် JSON text ကို Zap value အဖြစ် decode လုပ်သည်။
 
 ```zp
-let user = {
-    "name": "Ada",
-    "skills": ["web", "ai"]
-}
+let user = {"name": "Ada", "skills": ["web", "ai"]}
 
 let encoded = json(user)
 say encoded
@@ -396,11 +386,7 @@ for number in range(8):
 ## 19. Complete Example: JSON File
 
 ```zp
-let settings = {
-    "app": "Zap Notes",
-    "version": 1,
-    "features": ["files", "json"]
-}
+let settings = {"app": "Zap Notes", "version": 1, "features": ["files", "json"]}
 
 let text = json(settings)
 write_text("settings.json", text)
