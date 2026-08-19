@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Zap is a simple, fast, beginner-friendly general-purpose programming language with clear syntax and a standalone native runtime.">
+  <title>Zap Programming Language</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="#top"><span class="brand-mark">Z</span><span>Zap</span></a>
+      <div class="nav-links">
+        <a href="#learn">Learn</a>
+        <a href="#status">Status</a>
+        <a href="#resources">Resources</a>
+        <a class="nav-button" href="https://github.com/hidecard/zap" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero container">
+      <div class="hero-copy">
+        <p class="eyebrow">A clear path from first program to real software</p>
+        <h1>Build with <span>Zap.</span></h1>
+        <p class="hero-text">A simple, readable general-purpose programming language with <code>.zp</code> source files and a standalone native runtime.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#learn">Start learning</a>
+          <a class="button secondary" href="https://github.com/hidecard/zap/releases/latest" target="_blank" rel="noreferrer">Download latest release</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="assets/zap-banner.png" alt="Zap programming language banner">
+      </div>
+    </section>
+
+    <section class="section container" id="learn">
+      <div class="section-heading">
+        <p class="eyebrow">Choose your language</p>
+        <h2>Learn Zap your way.</h2>
+        <p>Start with a guided course, then use the syntax reference when you need a precise lookup.</p>
+      </div>
+      <div class="language-grid">
+        <article class="language-card featured">
+          <div class="card-top"><span class="language-badge">EN</span><span class="card-label">Recommended start</span></div>
+          <h3>English documentation</h3>
+          <p>Lessons, examples, installation steps, modules, Result/Option values, and the <code>?</code> propagation operator.</p>
+          <div class="card-links">
+            <a href="https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md" target="_blank" rel="noreferrer">Beginner course →</a>
+            <a href="https://github.com/hidecard/zap/blob/master/docs/SYNTAX_GUIDE_EN.md" target="_blank" rel="noreferrer">Syntax reference →</a>
+          </div>
+        </article>
+        <article class="language-card">
+          <div class="card-top"><span class="language-badge mm">MM</span><span class="card-label">မြန်မာဘာသာ</span></div>
+          <h3>မြန်မာ documentation</h3>
+          <p>မြန်မာဘာသာဖြင့် lesson များ၊ syntax ရှင်းလင်းချက်များနှင့် လက်တွေ့ code examples များကို လေ့လာနိုင်ပါသည်။</p>
+          <div class="card-links">
+            <a href="https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md" target="_blank" rel="noreferrer">လေ့လာရန် →</a>
+            <a href="https://github.com/hidecard/zap/blob/master/docs/SYNTAX_GUIDE.md" target="_blank" rel="noreferrer">Syntax guide →</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section status-section" id="status">
+      <div class="container">
+        <div class="section-heading split-heading">
+          <div>
+            <p class="eyebrow">Live project health</p>
+            <h2>CI/CD status</h2>
+            <p>The repository validates every pull request and push, then builds release binaries for the supported platforms.</p>
+          <p class="workflow-badge"><a href="https://github.com/hidecard/zap/actions/workflows/ci.yml" target="_blank" rel="noreferrer"><img src="https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg" alt="Zap CI status"></a></p>
+          </div>
+          <a class="button secondary" href="https://github.com/hidecard/zap/actions" target="_blank" rel="noreferrer">Open Actions ↗</a>
+        </div>
+        <div class="status-grid">
+          <a class="status-card" href="https://github.com/hidecard/zap/actions/workflows/ci.yml" target="_blank" rel="noreferrer">
+            <span class="status-dot"></span><span><strong>Zap CI</strong><small>Formatting · Clippy · tests · builds</small></span><span class="arrow">↗</span>
+          </a>
+          <a class="status-card" href="https://github.com/hidecard/zap/actions/workflows/release.yml" target="_blank" rel="noreferrer">
+            <span class="status-dot amber"></span><span><strong>Native Release</strong><small>Linux · Windows · macOS ARM64</small></span><span class="arrow">↗</span>
+          </a>
+        </div>
+        <p class="status-note">For the most recent run result, open the workflow links above. GitHub provides the live check status and full build logs.</p>
+      </div>
+    </section>
+
+    <section class="section container" id="resources">
+      <div class="section-heading">
+        <p class="eyebrow">Explore the language</p>
+        <h2>Useful resources.</h2>
+      </div>
+      <div class="resource-grid">
+        <a class="resource-card" href="https://github.com/hidecard/zap/releases" target="_blank" rel="noreferrer"><span class="resource-icon">↓</span><span><strong>Releases</strong><small>Download native binaries and checksums.</small></span></a>
+        <a class="resource-card" href="https://github.com/hidecard/zap/blob/master/README.md" target="_blank" rel="noreferrer"><span class="resource-icon">R</span><span><strong>README</strong><small>Full English project overview and CLI guide.</small></span></a>
+        <a class="resource-card" href="https://github.com/hidecard/zap/blob/master/CHANGELOG.md" target="_blank" rel="noreferrer"><span class="resource-icon">Δ</span><span><strong>Changelog</strong><small>Version history and verified changes.</small></span></a>
+        <a class="resource-card" href="https://github.com/hidecard/zap/issues" target="_blank" rel="noreferrer"><span class="resource-icon">?</span><span><strong>Community</strong><small>Report issues and follow the roadmap.</small></span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner"><span>© 2026 Zap Programming Language</span><span>Open source · Native runtime · <a href="https://github.com/hidecard/zap" target="_blank" rel="noreferrer">GitHub ↗</a></span></div>
+  </footer>
+</body>
+</html>
