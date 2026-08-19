@@ -3,6 +3,11 @@
 ![Zap Programming Language banner](assets/branding/zap-banner.png)
 
 [![Zap CI](https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg)](https://github.com/hidecard/zap/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/hidecard/zap?display_name=tag&sort=semver&color=2ea44f)](https://github.com/hidecard/zap/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Rust Runtime](https://img.shields.io/badge/runtime-Rust-orange.svg)](native/)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/hidecard/zap/actions)
+[![Source Extension](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
