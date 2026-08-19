@@ -646,3 +646,111 @@ fn test_command_rejects_unknown_options_with_usage_exit_code() {
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("unknown test option"));
 }
+
+#[test]
+fn rejects_mixed_indentation() {
+    let file = std::env::temp_dir().join("zap_mixed_indentation_test.zp");
+    std::fs::write(&file, "if true:\n    say 1\n\tsay 2\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("mixed indentation"));
+}
+
+#[test]
+fn accepts_blank_lines_and_comments_inside_nested_blocks() {
+    let file = std::env::temp_dir().join("zap_nested_comments_test.zp");
+    std::fs::write(
+        &file,
+        "fn greet():\n    # comment before body\n\n    if true:\n        # nested comment\n        return \"ok\"\n\nsay greet()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "ok\n");
+}
+
+#[test]
+fn reports_unicode_runtime_values_without_corruption() {
+    let file = std::env::temp_dir().join("zap_unicode_test.zp");
+    std::fs::write(&file, "say \"မင်္ဂလာပါ\"\nsay len(\"မြန်မာ\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("မင်္ဂလာပါ"));
+}
+
+#[test]
+fn rejects_non_four_space_indentation() {
+    let file = std::env::temp_dir().join("zap_bad_indentation_test.zp");
+    std::fs::write(&file, "if true:\n  say 1\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("invalid indentation"));
+}
+
+#[test]
+fn reports_assertion_expected_and_actual_values() {
+    let file = std::env::temp_dir().join("zap_assertion_values_test.zp");
+    std::fs::write(&file, "assert(1 == 2)\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("expected") || stderr.contains("assertion"));
+}
+
+#[test]
+fn handles_windows_style_paths_as_data() {
+    let file = std::env::temp_dir().join("zap_windows_path_test.zp");
+    std::fs::write(
+        &file,
+        "say path_join(\"C:\\\\Users\", \"Zap\", \"main.zp\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("C:"));
+}
+
+#[test]
+fn rejects_permission_failures_without_panic() {
+    let file = std::env::temp_dir().join("zap_permission_failure_test.zp");
+    std::fs::write(
+        &file,
+        "say read_text(\"/definitely/missing/zap-file.txt\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("read_text failed"));
+}
+
+#[test]
+fn rejects_module_parent_directory_traversal() {
+    let root = std::env::temp_dir().join("zap_module_traversal_test");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(root.join("modules")).unwrap();
+    let main = root.join("main.zp");
+    std::fs::write(&main, "import ../outside\n").unwrap();
+    let output = Command::new(binary()).arg(&main).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("may not traverse parent directories"));
+}

@@ -1,11 +1,12 @@
-use std::{collections::HashMap, fs, path::Path, rc::Rc};
+use std::{collections::HashMap, path::Path, rc::Rc};
 
 use std::cell::Cell;
 
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
-    parse_signature, resolve_module, Function, Param, Value, MODULE_CACHE, MODULE_LOADING,
+    parse_signature, read_limited_text, resolve_module, Function, Param, Value, MODULE_CACHE,
+    MODULE_LOADING,
 };
 
 const MAX_EXECUTION_DEPTH: usize = 256;
@@ -24,7 +25,47 @@ impl Drop for ExecutionGuard {
     }
 }
 
+fn validate_indentation(lines: &[String]) -> Result<(), String> {
+    let mut style: Option<&'static str> = None;
+    for (index, line) in lines.iter().enumerate() {
+        let prefix: String = line
+            .chars()
+            .take_while(|ch| *ch == ' ' || *ch == '\t')
+            .collect();
+        if prefix.is_empty() {
+            continue;
+        }
+        let has_spaces = prefix.contains(' ');
+        let has_tabs = prefix.contains('\t');
+        if has_spaces && has_tabs {
+            return Err(format!(
+                "mixed indentation at line {}: use spaces or tabs, not both",
+                index + 1
+            ));
+        }
+        if has_spaces && prefix.chars().count() % 4 != 0 {
+            return Err(format!(
+                "invalid indentation at line {}: spaces must be groups of four",
+                index + 1
+            ));
+        }
+        let current = if has_tabs { "tabs" } else { "spaces" };
+        if let Some(previous) = style {
+            if previous != current {
+                return Err(format!(
+                    "mixed indentation at line {}: file uses both tabs and spaces",
+                    index + 1
+                ));
+            }
+        } else {
+            style = Some(current);
+        }
+    }
+    Ok(())
+}
+
 fn enter_execution(lines: &[String]) -> Result<ExecutionGuard, String> {
+    validate_indentation(lines)?;
     if lines.len() > MAX_SOURCE_LINES {
         return Err(format!(
             "source line limit exceeded: maximum is {MAX_SOURCE_LINES}"
@@ -137,28 +178,42 @@ pub(crate) fn value_to_json(v: &Value) -> serde_json::Value {
         Value::OptionNone => serde_json::json!({"__zap_variant":"none"}),
     }
 }
-pub(crate) fn json_to_value(v: serde_json::Value) -> Value {
+pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
     match v {
-        serde_json::Value::Null => Value::None,
-        serde_json::Value::Bool(x) => Value::Bool(x),
-        serde_json::Value::Number(x) => Value::Number(x.as_i64().unwrap_or(0)),
-        serde_json::Value::String(x) => Value::Text(x),
-        serde_json::Value::Array(xs) => Value::List(xs.into_iter().map(json_to_value).collect()),
+        serde_json::Value::Null => Ok(Value::None),
+        serde_json::Value::Bool(x) => Ok(Value::Bool(x)),
+        serde_json::Value::Number(x) => x
+            .as_i64()
+            .map(Value::Number)
+            .ok_or_else(|| "JSON number is outside Zap's integer range".to_string()),
+        serde_json::Value::String(x) => Ok(Value::Text(x)),
+        serde_json::Value::Array(xs) => xs
+            .into_iter()
+            .map(json_to_value)
+            .collect::<Result<Vec<_>, _>>()
+            .map(Value::List),
         serde_json::Value::Object(mut m) => match m.remove("__zap_variant") {
             Some(serde_json::Value::String(tag)) => match tag.as_str() {
-                "ok" => Value::ResultOk(Box::new(json_to_value(
-                    m.remove("value").unwrap_or(serde_json::Value::Null),
-                ))),
-                "err" => Value::ResultErr(Box::new(json_to_value(
-                    m.remove("value").unwrap_or(serde_json::Value::Null),
-                ))),
-                "some" => Value::OptionSome(Box::new(json_to_value(
-                    m.remove("value").unwrap_or(serde_json::Value::Null),
-                ))),
-                "none" => Value::OptionNone,
-                _ => Value::Map(m.into_iter().map(|(k, v)| (k, json_to_value(v))).collect()),
+                "ok" | "err" | "some" => {
+                    let value = m
+                        .remove("value")
+                        .ok_or_else(|| format!("JSON {tag} variant is missing its value"))?;
+                    let value = json_to_value(value)?;
+                    Ok(match tag.as_str() {
+                        "ok" => Value::ResultOk(Box::new(value)),
+                        "err" => Value::ResultErr(Box::new(value)),
+                        _ => Value::OptionSome(Box::new(value)),
+                    })
+                }
+                "none" => Ok(Value::OptionNone),
+                _ => Err(format!("unknown Zap JSON variant: {tag}")),
             },
-            _ => Value::Map(m.into_iter().map(|(k, v)| (k, json_to_value(v))).collect()),
+            Some(other) => Err(format!("Zap JSON variant must be text, got {other}")),
+            None => m
+                .into_iter()
+                .map(|(k, value)| json_to_value(value).map(|value| (k, value)))
+                .collect::<Result<HashMap<_, _>, _>>()
+                .map(Value::Map),
         },
     }
 }
@@ -242,8 +297,21 @@ pub(crate) fn call_method(
 pub(crate) fn indented(lines: &[String], start: usize) -> (Vec<String>, usize) {
     let mut i = start;
     let mut body = Vec::new();
-    while i < lines.len() && (lines[i].starts_with(' ') || lines[i].starts_with('\t')) {
+    while i < lines.len() {
         let line = &lines[i];
+        if line.trim().is_empty() {
+            body.push(String::new());
+            i += 1;
+            continue;
+        }
+        if !(line.starts_with(' ') || line.starts_with('\t')) {
+            if line.trim_start().starts_with('#') {
+                body.push(line.trim().to_string());
+                i += 1;
+                continue;
+            }
+            break;
+        }
         let normalized = if let Some(stripped) = line.strip_prefix('\t') {
             stripped.to_string()
         } else {
@@ -309,10 +377,17 @@ pub(crate) fn load_module(
     if raw_path.is_empty() {
         return Err("import expects a module path".into());
     }
-    if Path::new(raw_path).is_absolute() {
+    let requested_path = Path::new(raw_path);
+    if requested_path.is_absolute() {
         return Err("absolute module paths are not allowed".into());
     }
-    let candidate = if Path::new(raw_path).extension().is_some() {
+    if requested_path
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err("module paths may not traverse parent directories".into());
+    }
+    let candidate = if requested_path.extension().is_some() {
         raw_path.to_string()
     } else {
         format!("{raw_path}.zp")
@@ -380,8 +455,7 @@ pub(crate) fn load_module(
         return Err(format!("circular import detected: {chain}"));
     }
     MODULE_LOADING.with(|stack| stack.borrow_mut().push(canonical.clone()));
-    let imported_result = fs::read_to_string(&canonical)
-        .map_err(|e| format!("cannot import {}: {e}", canonical.display()));
+    let imported_result = read_limited_text(&canonical, "module import");
     let imported = match imported_result {
         Ok(value) => value,
         Err(error) => {
@@ -809,7 +883,7 @@ mod tests {
 
     #[test]
     fn rejects_unbounded_loop_iterations() {
-        let lines = vec!["while true:".into(), "  continue".into()];
+        let lines = vec!["while true:".into(), "    continue".into()];
         let result = execute_lines(
             &lines,
             &mut HashMap::<String, Value>::new(),

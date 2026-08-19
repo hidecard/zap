@@ -3,12 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{manifest_value, run, validate_function_calls, validate_function_signatures};
+use super::{
+    manifest_value, read_limited_text, run, validate_function_calls, validate_function_signatures,
+};
 
 pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let manifest = dir.join("zap.toml");
-    let text = fs::read_to_string(&manifest)
-        .map_err(|e| format!("cannot read {}: {e}", manifest.display()))?;
+    let text = read_limited_text(&manifest, "manifest read")?;
     let name = manifest_value(&text, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
@@ -20,8 +21,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
             main_path.display()
         ));
     }
-    let source = fs::read_to_string(&main_path)
-        .map_err(|e| format!("cannot read {}: {e}", main_path.display()))?;
+    let source = read_limited_text(&main_path, "source read")?;
     validate_function_signatures(&source, &main_path)?;
     validate_function_calls(&source, &main_path)?;
     Ok(format!("{name} {version} (main: {main})"))
@@ -144,8 +144,7 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
     let selected_count = selected.len();
     let mut results = Vec::new();
     for path in selected {
-        let outcome = fs::read_to_string(&path)
-            .map_err(|e| format!("cannot read {}: {e}", path.display()))
+        let outcome = read_limited_text(&path, "test read")
             .and_then(|source| run(&source, path.parent().unwrap_or(Path::new("."))));
         match outcome {
             Ok(()) => {

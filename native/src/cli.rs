@@ -152,7 +152,7 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() == 3 && args[1] == "run" {
-        let source = fs::read_to_string(&args[2]).unwrap_or_else(|e| {
+        let source = read_limited_text(Path::new(&args[2]), "source read").unwrap_or_else(|e| {
             eprintln!("{e}");
             process::exit(EXIT_PROGRAM_FAILURE);
         });
@@ -165,7 +165,7 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 3 && args[1] == "lint" {
         let path = Path::new(&args[2]);
-        let source = fs::read_to_string(path).unwrap_or_else(|e| {
+        let source = read_limited_text(path, "source read").unwrap_or_else(|e| {
             eprintln!("cannot read {}: {e}", path.display());
             process::exit(EXIT_PROGRAM_FAILURE);
         });
@@ -182,11 +182,11 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 3 && args[1] == "fmt" {
         let path = Path::new(&args[2]);
-        let source = fs::read_to_string(path).unwrap_or_else(|e| {
+        let source = read_limited_text(path, "source read").unwrap_or_else(|e| {
             eprintln!("cannot read {}: {e}", path.display());
             process::exit(EXIT_PROGRAM_FAILURE);
         });
-        fs::write(path, format_source(&source)).unwrap_or_else(|e| {
+        write_limited_text(path, &format_source(&source), "format write").unwrap_or_else(|e| {
             eprintln!("cannot write {}: {e}", path.display());
             process::exit(EXIT_PROGRAM_FAILURE);
         });
@@ -196,7 +196,7 @@ pub fn run_cli(args: &[String]) {
         eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap build [dir]\n       zap init <dir>\n       zap --version");
         process::exit(EXIT_USAGE_ERROR);
     }
-    let source = fs::read_to_string(&args[1]).unwrap_or_else(|e| {
+    let source = read_limited_text(Path::new(&args[1]), "source read").unwrap_or_else(|e| {
         eprintln!("{e}");
         process::exit(EXIT_PROGRAM_FAILURE);
     });

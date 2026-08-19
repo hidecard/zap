@@ -38,6 +38,33 @@ use std::{
 thread_local! { static MODULE_LOADING: RefCell<Vec<PathBuf>> = const { RefCell::new(Vec::new()) }; }
 thread_local! { static MODULE_CACHE: RefCell<HashMap<PathBuf, (HashMap<String,Value>, HashMap<String,Rc<Function>>)>> = RefCell::new(HashMap::new()); }
 
+pub(crate) const MAX_FILE_BYTES: u64 = 8 * 1024 * 1024;
+
+pub(crate) fn read_limited_text(path: &Path, operation: &str) -> Result<String, String> {
+    let metadata = fs::metadata(path).map_err(|e| format!("{operation} failed: {e}"))?;
+    if metadata.len() > MAX_FILE_BYTES {
+        return Err(format!(
+            "{operation} failed: file exceeds the {} byte limit",
+            MAX_FILE_BYTES
+        ));
+    }
+    fs::read_to_string(path).map_err(|e| format!("{operation} failed: {e}"))
+}
+
+pub(crate) fn write_limited_text(
+    path: &Path,
+    content: &str,
+    operation: &str,
+) -> Result<(), String> {
+    if content.len() as u64 > MAX_FILE_BYTES {
+        return Err(format!(
+            "{operation} failed: content exceeds the {} byte limit",
+            MAX_FILE_BYTES
+        ));
+    }
+    fs::write(path, content).map_err(|e| format!("{operation} failed: {e}"))
+}
+
 struct ExprParser<'a> {
     tokens: &'a [Token],
     pos: usize,
@@ -474,7 +501,11 @@ impl<'a> ExprParser<'a> {
                 if condition.truthy() {
                     Value::None
                 } else {
-                    return Err(message.show());
+                    return Err(format!(
+                        "{}: expected true, got {}",
+                        message.show(),
+                        condition.show()
+                    ));
                 }
             }
             Token::Name(n) if n == "json" && *self.peek() == Token::LParen => {
@@ -497,7 +528,7 @@ impl<'a> ExprParser<'a> {
                 match v {
                     Value::Text(s) => json_to_value(
                         serde_json::from_str(&s).map_err(|e| format!("from_json failed: {e}"))?,
-                    ),
+                    )?,
                     _ => return Err("from_json expects text".into()),
                 }
             }
@@ -584,9 +615,7 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after read_text".into());
                 }
                 match path {
-                    Value::Text(p) => Value::Text(
-                        fs::read_to_string(p).map_err(|e| format!("read_text failed: {e}"))?,
-                    ),
+                    Value::Text(p) => Value::Text(read_limited_text(Path::new(&p), "read_text")?),
                     _ => return Err("read_text expects a text path".into()),
                 }
             }
@@ -602,7 +631,7 @@ impl<'a> ExprParser<'a> {
                 }
                 match (path, content) {
                     (Value::Text(p), Value::Text(c)) => {
-                        fs::write(p, c).map_err(|e| format!("write_text failed: {e}"))?;
+                        write_limited_text(Path::new(&p), &c, "write_text")?;
                         Value::None
                     }
                     _ => return Err("write_text expects text path and content".into()),
@@ -616,10 +645,9 @@ impl<'a> ExprParser<'a> {
                 }
                 match path {
                     Value::Text(p) => Value::List(
-                        fs::read_to_string(p)
-                            .map_err(|e| format!("read_lines failed: {e}"))?
+                        read_limited_text(Path::new(&p), "read_lines")?
                             .lines()
-                            .map(|line| Value::Text(line.into()))
+                            .map(|line| Value::Text(line.to_string()))
                             .collect(),
                     ),
                     _ => return Err("read_lines expects a text path".into()),
@@ -648,7 +676,7 @@ impl<'a> ExprParser<'a> {
                                 return Err("write_lines expects a list of text".into());
                             }
                         }
-                        fs::write(p, out).map_err(|e| format!("write_lines failed: {e}"))?;
+                        write_limited_text(Path::new(&p), &out, "write_lines")?;
                         Value::None
                     }
                     _ => return Err("write_lines expects a text path and list".into()),
@@ -1300,5 +1328,15 @@ mod zap_error_tests {
         let error = ZapError::from_message("module import failed");
         assert_eq!(error.kind(), "ProjectError");
         assert!(error.to_string().contains("module import failed"));
+    }
+
+    #[test]
+    fn rejects_oversized_user_files_before_reading() {
+        let path = std::env::temp_dir().join("zap_oversized_file_test.zp");
+        std::fs::write(&path, vec![b'x'; (MAX_FILE_BYTES + 1) as usize]).unwrap();
+        let result = read_limited_text(&path, "test read");
+        let _ = std::fs::remove_file(&path);
+        let error = result.expect_err("oversized files must be rejected");
+        assert!(error.contains("file exceeds"));
     }
 }

@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v0.9.1 release ပြီးနောက် native runtime modularization နှင့် foundation hardening**
+**လက်ရှိအခြေအနေ — v0.9.2 release နှင့် P0 foundation hardening**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 3 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 9 ခုနှင့် integration tests 47 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -93,26 +93,26 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] `result<number>`၊ `result<text>`၊ `option<number>` နှင့် `option<text>` ကဲ့သို့သော Result/Option payload annotation များကို static type checker ဖြင့် စစ်ရန်။ `ok(value)`၊ `err(value)` နှင့် `some(value)` payload type မကိုက်ညီပါက `TypeError` diagnostic ထုတ်သည်။
 - [x] Result error အတွက် `?` automatic propagation semantics သတ်မှတ်ပြီး အကောင်အထည်ဖော်ရန်။ `try`/`catch` equivalent နှင့် typed payload propagation သည် နောက်ထပ်အလုပ်ဖြစ်သည်။
 - [x] Error message တွင် `password`၊ `secret`၊ `token` နှင့် `api_key` key/value များကို `<redacted>` အဖြစ် ဖုံးကွယ်ရန်။
-- [ ] Panic၊ unchecked unwrap နှင့် silent fallback များကို user input path များတွင် ဖယ်ရှားရန်။
+- [x] Panic၊ unchecked unwrap နှင့် silent fallback များကို user input path များတွင် ဖယ်ရှားရန်။ Production user-input paths များတွင် panic-causing `unwrap`/`expect` မရှိတော့ဘဲ JSON conversion fallback များကို typed errors ဖြင့် ပြောင်းထားသည်။
 
 ## 2.4 Parser correctness နှင့် language consistency
 
-- [ ] Mixed indentation ကို တိတိကျကျ reject လုပ်ရန်။
-- [ ] Blank line၊ comment နှင့် nested block handling ကို test ပြုလုပ်ရန်။
-- [ ] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။
+- [x] Mixed indentation ကို တိတိကျကျ reject လုပ်ရန်။
+- [x] Blank line၊ comment နှင့် nested block handling ကို test ပြုလုပ်ရန်။
+- [x] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။
 - [ ] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော parser ဖြင့် စစ်ရန်။
 - [ ] Division၊ modulo၊ arithmetic overflow နှင့် negative index behavior ကို specification ထဲတွင် တိတိကျကျရေးရန်။
 - [x] Execution depth၊ loop count နှင့် source line count အတွက် runtime resource limits သတ်မှတ်ရန်။ လက်ရှိ limit များမှာ depth `256`၊ loop iteration `100000` နှင့် source lines `100000` ဖြစ်သည်။
 
 ## 2.5 Test foundation
 
-- [ ] `zap test --filter <name>` ထည့်ရန်။
-- [ ] `zap test --fail-fast` ထည့်ရန်။
-- [ ] Test တစ်ခုချင်းစီအတွက် pass/fail summary ထုတ်ရန်။
-- [ ] Assertion တွင် expected/actual value ပြရန်။
-- [ ] Exit code နှင့် test result JSON report ထည့်ရန်။
-- [ ] Error cases၊ malformed source၊ Unicode၊ Windows path နှင့် permission failure tests တိုးရန်။
-- [ ] CI တွင် Linux၊ Windows နှင့် macOS ARM64 test matrix သတ်မှတ်ရန်။
+- [x] `zap test --filter <name>` ထည့်ရန်။
+- [x] `zap test --fail-fast` ထည့်ရန်။
+- [x] Test တစ်ခုချင်းစီအတွက် pass/fail summary ထုတ်ရန်။
+- [x] Assertion တွင် expected/actual value ပြရန်။
+- [x] Exit code နှင့် test result JSON report ထည့်ရန်။
+- [x] Error cases၊ malformed source၊ Unicode၊ Windows path နှင့် permission failure tests တိုးရန်။
+- [x] CI တွင် Linux၊ Windows နှင့် macOS ARM64 test matrix သတ်မှတ်ရန်။
 
 ---
 
@@ -165,7 +165,7 @@ fn add(a: number, b: number) -> number:
 - [x] Circular import detection ထည့်ရန်။
 - [ ] Relative path၊ package name နှင့် standard module resolution rules သတ်မှတ်ရန်။
 - [x] Absolute module path များကို reject လုပ်ပြီး module boundary ကို မတော်တဆ ပြင်ပဖိုင်သို့ မချဲ့စေရန် ကာကွယ်ရန်။
-- [ ] `../` traversal ကို project root အပြင် မထွက်စေရန် root-aware policy ထပ်မံတင်းကျပ်ရန်။
+- [x] `../` traversal ကို project root အပြင် မထွက်စေရန် parent-directory traversal rejection policy ထည့်ရန်။ Project-root canonical/symlink policy သည် နောက်ထပ် hardening အဖြစ် ကျန်ရှိသည်။
 - [x] API documentation နှင့် module example များ ထည့်ရန်။
 
 ## 3.4 Standard library တိုးချဲ့ခြင်း
