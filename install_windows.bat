@@ -2,33 +2,45 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-REM Standalone Zap native installer.
+REM Zap standalone Windows installer.
+REM The release archive already contains bin\zap.exe; no extra runtime is required.
 set "ZAP_SOURCE=%~dp0bin\zap.exe"
 if not exist "%ZAP_SOURCE%" (
-  if /I "%ZAP_BUILD_FROM_SOURCE%"=="1" (
-    where cargo >nul 2>nul
-    if errorlevel 1 (
-      echo Rust/cargo မေတြ႕ပါ။ Source build အတြက္ Rust toolchain လိုအပ္ပါသည္။
-      exit /b 1
-    )
-    echo Building Zap native runtime from source...
-    cargo build --release --manifest-path "%~dp0native\Cargo.toml"
-    if errorlevel 1 exit /b 1
-    set "ZAP_SOURCE=%~dp0native\target\release\zap.exe"
-  ) else (
-    echo Prebuilt Zap binary မေတြ႕ပါ။ Official Windows binary release archive ကို download လုပ္ပါ။
-    echo Source build လုပ္လိုပါက ZAP_BUILD_FROM_SOURCE=1 သတ္မွတ္ပါ။
-    exit /b 1
-  )
+  echo Zap binary မတွေ့ပါ: "%ZAP_SOURCE%"
+  echo Official Windows archive ထဲက bin\zap.exe ပါသော package ကို အသုံးပြုပါ။
+  exit /b 1
 )
 
 set "ZAP_BIN=%USERPROFILE%\.zap\bin"
 if not exist "%ZAP_BIN%" mkdir "%ZAP_BIN%"
-copy /Y "%ZAP_SOURCE%" "%ZAP_BIN%\zap.exe" >nul
-setx PATH "%PATH%;%ZAP_BIN%" >nul
-set "PATH=%PATH%;%ZAP_BIN%"
+if errorlevel 1 (
+  echo Zap installation directory ဖန်တီး၍ မရပါ: "%ZAP_BIN%"
+  exit /b 1
+)
 
-echo Zap native installed globally: 
-call "%ZAP_BIN%\zap.exe" --version
-echo Standalone Zap ကို install လုပ်ပြီးပါပြီ။ Command Prompt အသစ်ဖွင့်ပြီး မည်သည့် folder မှာမဆို zap file.zp ဟု run လုပ်နိုင်ပါသည်။
+copy /Y "%ZAP_SOURCE%" "%ZAP_BIN%\zap.exe" >nul
+if errorlevel 1 (
+  echo zap.exe ကို copy လုပ်၍ မရပါ။
+  exit /b 1
+)
+
+REM Persist the user-level PATH without setx's length/truncation limitations.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin=[Environment]::ExpandEnvironmentVariables('%ZAP_BIN%'); $current=[Environment]::GetEnvironmentVariable('Path','User'); if ([string]::IsNullOrWhiteSpace($current)) {$current=''}; $parts=$current -split ';' | Where-Object { $_ -and ($_ -ne $bin) }; [Environment]::SetEnvironmentVariable('Path', (($parts + $bin) -join ';'), 'User')"
+if errorlevel 1 (
+  echo User PATH ကို update လုပ်၍ မရပါ။ Direct path ဖြင့် ဆက်သုံးနိုင်ပါသည်:
+  echo "%ZAP_BIN%\zap.exe" --version
+) else (
+  echo User PATH ကို update လုပ်ပြီးပါပြီ။
+)
+
+set "PATH=%ZAP_BIN%;%PATH%"
+echo.
+echo Zap executable ကို install လုပ်ပြီးပါပြီ။
+"%ZAP_BIN%\zap.exe" --version
+echo.
+echo လက်ရှိ Command Prompt မှာ ချက်ချင်းသုံးရန်:
+echo   "%ZAP_BIN%\zap.exe" main.zp
+echo.
+echo Command Prompt အသစ်ဖွင့်ပြီး မည်သည့် folder မှာမဆို သုံးရန်:
+echo   zap main.zp
 endlocal

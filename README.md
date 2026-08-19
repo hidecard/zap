@@ -47,14 +47,34 @@ printf 'say "Hello from Zap"\n' > main.zp
 zap main.zp
 ```
 
-Windows တွင် release archive ကို extract ပြီး `install_windows.bat` ကို run လုပ်ပါ။ Command Prompt အသစ်ဖွင့်ပြီး အောက်ပါ command များကို အသုံးပြုပါ။
+Windows တွင် release archive ကို extract ပြီး `bin\zap.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်ပါသည်။
+
+```bat
+cd zap-0.3.0
+bin\zap.exe --version
+bin\zap.exe main.zp
+```
+
+မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက archive ထဲရှိ `install_windows.bat` ကို run လုပ်ပါ။ Installer သည် `zap.exe` ကို `%USERPROFILE%\.zap\bin` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
+
+```bat
+install_windows.bat
+```
+
+Command Prompt အသစ်ဖွင့်ပြီး—
 
 ```bat
 zap --version
 zap main.zp
 ```
 
-Installer သည် user-level directory ထဲသို့ binary ထည့်ပြီး PATH ကို update လုပ်ရန် ရည်ရွယ်ထားသောကြောင့် administrator permission မလိုသော installation flow ကို ဦးစားပေးထားသည်။
+PATH မပေါ်သေးပါက direct path ဖြင့် ဆက်သုံးနိုင်သည်။
+
+```bat
+"%USERPROFILE%\.zap\bin\zap.exe" main.zp
+```
+
+Windows release archive တွင် executable သည် `bin\zap.exe` အဖြစ် ပါဝင်သောကြောင့် runtime dependency သို့မဟုတ် source toolchain မလိုပါ။
 
 ### Source မှ build လုပ်ခြင်း
 

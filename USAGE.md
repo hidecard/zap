@@ -25,17 +25,26 @@ zap --version
 
 ### Windows
 
-`install_windows.bat` ကို double-click လုပ်ပါ။ သို့မဟုတ် Command Prompt တွင်—
+Release archive ကို extract လုပ်ပြီး `bin\zap.exe` ရှိကြောင်း စစ်ပါ။ `.exe` ကို installer မလိုဘဲ တိုက်ရိုက် run နိုင်သည်။
 
 ```bat
-cd zap
+cd zap-0.3.0
+bin\zap.exe --version
+bin\zap.exe main.zp
+```
+
+မည်သည့် folder မှာမဆို `zap` command သုံးလိုပါက `install_windows.bat` ကို **Command Prompt မှ Run as administrator မလိုဘဲ double-click သို့မဟုတ် command line ဖြင့်** run လုပ်ပါ။ Installer သည် `%USERPROFILE%\.zap\bin\zap.exe` သို့ copy လုပ်ပြီး user-level PATH ကို update လုပ်သည်။
+
+```bat
+cd zap-0.3.0
 install_windows.bat
 ```
 
-ထို့နောက် Command Prompt အသစ်တစ်ခုဖွင့်ပြီး—
+PATH update သည် လက်ရှိ Command Prompt အဟောင်းတွင် မပေါ်သေးပါက Command Prompt အသစ်ဖွင့်ပါ။ အမြဲတမ်း direct path ဖြင့်လည်း run နိုင်သည်။
 
 ```bat
-zap --version
+"%USERPROFILE%\.zap\bin\zap.exe" --version
+"%USERPROFILE%\.zap\bin\zap.exe" main.zp
 ```
 
 ### Release archive မှ direct installation
@@ -51,6 +60,7 @@ GitHub Releases မှ သင့် operating system နှင့်ကိုက
 | `zap --help` | Native CLI usage ကို ပြသည် |
 | `zap fmt file.zp` | `.zp` source file ကို canonical whitespace ဖြင့် format လုပ်သည် |
 | `zap check [dir]` | `zap.toml` နှင့် project entry file ကို validate လုပ်သည် |
+| `zap init <dir>` | Zap project အသစ် scaffold လုပ်သည် |
 
 Project အသစ်တစ်ခုကို မည်သည့် directory တွင်မဆို ဖန်တီးပြီး `.zp` file ကို run လုပ်နိုင်သည်။ Source file ကို format ပြင်ဆင်ရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ ဥပမာ—
 
