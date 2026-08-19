@@ -2,6 +2,7 @@ use std::{collections::HashMap, path::Path, rc::Rc};
 
 use std::cell::Cell;
 
+use crate::ast::{BinaryOp, Expr, Literal, Program, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
@@ -60,6 +61,17 @@ fn validate_indentation(lines: &[String]) -> Result<(), String> {
         } else {
             style = Some(current);
         }
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_source_layout(source: &str) -> Result<(), String> {
+    let lines = source.lines().map(str::to_string).collect::<Vec<_>>();
+    validate_indentation(&lines)?;
+    if lines.len() > MAX_SOURCE_LINES {
+        return Err(format!(
+            "source line limit exceeded: maximum is {MAX_SOURCE_LINES}"
+        ));
     }
     Ok(())
 }
@@ -360,6 +372,239 @@ pub(crate) fn check_annotation(name: &str, annotation: &str, value: &Value) -> R
             value_type(value)
         ))
     }
+}
+
+fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
+    match &expression.node {
+        Expr::Literal(Literal::Number(value)) => value.to_string(),
+        Expr::Literal(Literal::Text(value)) => format!(
+            "\"{}\"",
+            value
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n")
+                .replace('\r', "\\r")
+                .replace('\t', "\\t")
+        ),
+        Expr::Literal(Literal::Bool(value)) => value.to_string(),
+        Expr::Literal(Literal::None) => "none".into(),
+        Expr::Name(name) => name.clone(),
+        Expr::List(items) => format!(
+            "[{}]",
+            items
+                .iter()
+                .map(ast_expr_source)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        Expr::Map(items) => format!(
+            "{{{}}}",
+            items
+                .iter()
+                .map(|(key, value)| format!("{}: {}", ast_expr_source(key), ast_expr_source(value)))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        Expr::Unary {
+            op: UnaryOp::Negate,
+            value,
+        } => format!("(-{})", ast_expr_source(value)),
+        Expr::Unary {
+            op: UnaryOp::Not,
+            value,
+        } => format!("(not {})", ast_expr_source(value)),
+        Expr::Binary { left, op, right } => {
+            let operator = match op {
+                BinaryOp::Add => "+",
+                BinaryOp::Subtract => "-",
+                BinaryOp::Multiply => "*",
+                BinaryOp::Divide => "/",
+                BinaryOp::Remainder => "%",
+                BinaryOp::Equal => "==",
+                BinaryOp::NotEqual => "!=",
+                BinaryOp::Less => "<",
+                BinaryOp::Greater => ">",
+                BinaryOp::LessEqual => "<=",
+                BinaryOp::GreaterEqual => ">=",
+                BinaryOp::And => "and",
+                BinaryOp::Or => "or",
+            };
+            format!(
+                "({} {} {})",
+                ast_expr_source(left),
+                operator,
+                ast_expr_source(right)
+            )
+        }
+        Expr::Call { callee, args } => format!(
+            "{}({})",
+            ast_expr_source(callee),
+            args.iter()
+                .map(ast_expr_source)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        Expr::Index { target, index } => {
+            format!("{}[{}]", ast_expr_source(target), ast_expr_source(index))
+        }
+    }
+}
+
+pub(crate) fn ast_program_compatible(program: &Program) -> bool {
+    program
+        .statements
+        .iter()
+        .all(|statement| match &statement.node {
+            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => false,
+            Stmt::If {
+                then_branch,
+                else_branch,
+                ..
+            } => {
+                ast_program_compatible(then_branch)
+                    && else_branch
+                        .as_ref()
+                        .map_or(true, |branch| ast_program_compatible(branch))
+            }
+            Stmt::While { body, .. } | Stmt::For { body, .. } => ast_program_compatible(body),
+            _ => true,
+        })
+}
+
+pub(crate) fn execute_ast_program(
+    program: &Program,
+    vars: &mut HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+    base: &Path,
+) -> Result<Flow, String> {
+    if !ast_program_compatible(program) {
+        return Err("AST program contains legacy-only declarations or imports".into());
+    }
+    let _guard = enter_execution(
+        &program
+            .statements
+            .iter()
+            .map(|_| String::new())
+            .collect::<Vec<_>>(),
+    )?;
+    for statement in &program.statements {
+        let flow = match &statement.node {
+            Stmt::Expression(value) => {
+                let _ = expression(&ast_expr_source(value), vars, funcs)?;
+                Flow::Continue
+            }
+            Stmt::Assignment { name, value } => {
+                let evaluated = expression(&ast_expr_source(value), vars, funcs)?;
+                if let Some((object_name, field)) = name.split_once('.') {
+                    let object = vars
+                        .get_mut(object_name)
+                        .ok_or(format!("undefined variable: {object_name}"))?;
+                    match object {
+                        Value::Object { fields, .. } => {
+                            fields.borrow_mut().insert(field.into(), evaluated);
+                        }
+                        _ => return Err("property assignment expects an object".into()),
+                    }
+                } else {
+                    vars.insert(name.clone(), evaluated);
+                }
+                Flow::Continue
+            }
+            Stmt::Declaration {
+                name,
+                annotation,
+                value,
+            } => {
+                let evaluated = expression(&ast_expr_source(value), vars, funcs)?;
+                if let Some(annotation) = annotation {
+                    check_annotation(name, annotation, &evaluated)?;
+                }
+                vars.insert(name.clone(), evaluated);
+                Flow::Continue
+            }
+            Stmt::Say(value) => {
+                println!(
+                    "{}",
+                    expression(&ast_expr_source(value), vars, funcs)?.show()
+                );
+                Flow::Continue
+            }
+            Stmt::Return(value) => {
+                Flow::Return(value.as_ref().map_or(Ok(Value::None), |value| {
+                    expression(&ast_expr_source(value), vars, funcs)
+                })?)
+            }
+            Stmt::Break => Flow::Break,
+            Stmt::Continue => Flow::LoopContinue,
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if expression(&ast_expr_source(condition), vars, funcs)?.truthy() {
+                    execute_ast_program(then_branch, vars, funcs, base)?
+                } else if let Some(branch) = else_branch {
+                    execute_ast_program(branch, vars, funcs, base)?
+                } else {
+                    Flow::Continue
+                }
+            }
+            Stmt::While { condition, body } => {
+                let mut iterations = 0;
+                loop {
+                    if !expression(&ast_expr_source(condition), vars, funcs)?.truthy() {
+                        break Flow::Continue;
+                    }
+                    match execute_ast_program(body, vars, funcs, base)? {
+                        Flow::Continue | Flow::LoopContinue => {}
+                        Flow::Break => break Flow::Continue,
+                        flow @ Flow::Return(_) => break flow,
+                    }
+                    iterations += 1;
+                    if iterations >= MAX_LOOP_ITERATIONS {
+                        return Err(format!(
+                            "loop limit exceeded: maximum is {MAX_LOOP_ITERATIONS}"
+                        ));
+                    }
+                }
+            }
+            Stmt::For {
+                binding,
+                iterable,
+                body,
+            } => {
+                let value = expression(&ast_expr_source(iterable), vars, funcs)?;
+                let items = match value {
+                    Value::List(items) => items,
+                    _ => return Err("for expects a list".into()),
+                };
+                if items.len() > MAX_LOOP_ITERATIONS {
+                    return Err(format!(
+                        "loop limit exceeded: maximum is {MAX_LOOP_ITERATIONS}"
+                    ));
+                }
+                let mut outcome = Flow::Continue;
+                for item in items {
+                    vars.insert(binding.clone(), item);
+                    match execute_ast_program(body, vars, funcs, base)? {
+                        Flow::Continue | Flow::LoopContinue => {}
+                        Flow::Break => break,
+                        flow @ Flow::Return(_) => {
+                            outcome = flow;
+                            break;
+                        }
+                    }
+                }
+                outcome
+            }
+            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => unreachable!(),
+        };
+        match flow {
+            Flow::Continue => {}
+            flow => return Ok(flow),
+        }
+    }
+    Ok(Flow::Continue)
 }
 
 pub(crate) fn load_module(
@@ -862,9 +1107,23 @@ pub(crate) fn execute_lines(
 
 #[cfg(test)]
 mod tests {
-    use super::execute_lines;
+    use super::{execute_ast_program, execute_lines};
+    use crate::ast::parse_program;
     use crate::{Function, Value};
     use std::{collections::HashMap, path::Path, rc::Rc};
+
+    #[test]
+    fn executes_ast_compatible_statements() {
+        let program =
+            parse_program("let total: number = 1\nif total > 0:\n    total = total + 5\n")
+                .expect("valid AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        let flow = execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("AST execution should succeed");
+        assert!(matches!(flow, super::Flow::Continue));
+        assert_eq!(vars.get("total"), Some(&Value::Number(6)));
+    }
 
     #[test]
     fn rejects_oversized_source_blocks() {

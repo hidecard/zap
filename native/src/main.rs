@@ -23,7 +23,8 @@ mod evaluator;
 mod stdlib;
 
 use evaluator::{
-    call_function, call_method, execute_lines, json_to_value, operate, value_to_json, Flow,
+    ast_program_compatible, call_function, call_method, execute_ast_program, execute_lines,
+    json_to_value, operate, validate_source_layout, value_to_json, Flow,
 };
 
 use std::{
@@ -937,6 +938,17 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
     MODULE_CACHE.with(|cache| cache.borrow_mut().clear());
     let mut vars = HashMap::new();
     let mut funcs = HashMap::new();
+    validate_source_layout(source)?;
+    if let Ok(program) = ast::parse_program(source) {
+        if ast_program_compatible(&program) {
+            return match execute_ast_program(&program, &mut vars, &mut funcs, base)? {
+                Flow::Continue | Flow::Return(_) => Ok(()),
+                Flow::Break | Flow::LoopContinue => {
+                    Err("break/continue must be inside a loop".into())
+                }
+            };
+        }
+    }
     let lines = source.lines().map(str::to_string).collect::<Vec<_>>();
     match execute_lines(&lines, &mut vars, &mut funcs, base)? {
         Flow::Continue | Flow::Return(_) => Ok(()),
