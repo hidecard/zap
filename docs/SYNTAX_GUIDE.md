@@ -19,12 +19,13 @@ zap --help
 zap --version
 ```
 
-Project အသစ်စတင်ရန် `zap init hello-zap`၊ manifest စစ်ဆေးရန် `zap check` နှင့် source ကို whitespace အတိုင်းပြန်ညှိရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။
+Project အသစ်စတင်ရန် `zap init hello-zap`၊ manifest စစ်ဆေးရန် `zap check`၊ test files များ run ရန် `zap test` နှင့် source ကို whitespace အတိုင်းပြန်ညှိရန် `zap fmt main.zp` ကို အသုံးပြုနိုင်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။
 
 ```bash
 zap init hello-zap
 cd hello-zap
 zap check
+zap test
 zap main.zp
 ```
 

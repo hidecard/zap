@@ -433,13 +433,14 @@ say json(summary)
 
 ## 20. Recommended Development Workflow
 
-Zap project တစ်ခုကို စတင်သည့်အခါ `zap init` ဖြင့် scaffold ဖန်တီးပါ။ ထို့နောက် `main.zp` ကို တဖြည်းဖြည်းရေးသားပြီး `zap check` ဖြင့် manifest ကိုစစ်ဆေးကာ `zap fmt` ဖြင့် source style ကိုညှိပါ။ အဓိက logic များကို function များအဖြစ်ခွဲပြီး input data များကို `type` နှင့် `assert` ဖြင့် စောစီးစွာစစ်ဆေးပါ။
+Zap project တစ်ခုကို စတင်သည့်အခါ `zap init` ဖြင့် scaffold ဖန်တီးပါ။ ၎င်းသည် `zap.toml`၊ `main.zp` နှင့် အခြေခံ `tests/smoke_test.zp` ကို ဖန်တီးပေးသည်။ ထို့နောက် `main.zp` ကို တဖြည်းဖြည်းရေးသားပြီး `zap check` ဖြင့် manifest ကိုစစ်ဆေးကာ `zap fmt` ဖြင့် source style ကိုညှိပါ။ အဓိက logic များကို function များအဖြစ်ခွဲပြီး input data များကို `type` နှင့် `assert` ဖြင့် စောစီးစွာစစ်ဆေးပါ။
 
 ```bash
 zap init my-app
 cd my-app
 zap check
 zap fmt main.zp
+zap test
 zap main.zp
 ```
 
@@ -451,7 +452,7 @@ cargo test --manifest-path native/Cargo.toml
 
 ## 21. လက်ရှိအခြေအနေ နှင့် နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation နှင့် project scaffolding ပါဝင်သည်။ နောက်ထပ် language evolution အတွက် static type checking၊ richer diagnostics၊ first-class module exports၊ package registry၊ test runner၊ async I/O နှင့် platform-specific libraries များကို အဆင့်လိုက် တိုးချဲ့သွားမည်။
+လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation၊ project scaffolding နှင့် recursive project test runner ပါဝင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files များကို run လုပ်သည်။ နောက်ထပ် language evolution အတွက် static type checking၊ richer diagnostics၊ first-class module exports၊ package registry၊ async I/O နှင့် platform-specific libraries များကို အဆင့်လိုက် တိုးချဲ့သွားမည်။
 
 လက်ရှိ runtime တွင် တကယ်အလုပ်လုပ်ပြီးသား syntax ကိုသာ production source တွင် အသုံးပြုပါ။ မပြီးသေးသော Web၊ Mobile၊ AI နှင့် IoT libraries များကို roadmap အဖြစ် သတ်မှတ်ထားပြီး core language stability ရရှိပြီးနောက် သီးခြား package များအဖြစ် တည်ဆောက်မည်။
 

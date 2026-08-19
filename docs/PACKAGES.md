@@ -53,7 +53,7 @@ zap --version
 zap --help
 ```
 
-`zap test` သည် `tests/` directory အောက်ရှိ `*_test.zp` files များကို run လုပ်သည်။ `zap new`၊ `zap add`၊ `zap install`၊ `zap update`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။ အဆိုပါ command များသည် manifest နှင့် local module system တည်ငြိမ်ပြီးနောက် ဆက်လက်တည်ဆောက်မည့် tooling roadmap ဖြစ်သည်။
+`zap test` သည် `tests/` directory နှင့် ၎င်းအောက်ရှိ subdirectories များထဲမှ `*_test.zp` files အားလုံးကို path အလိုက် sort လုပ်ပြီး run လုပ်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။ `zap new`၊ `zap add`၊ `zap install`၊ `zap update`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။ အဆိုပါ command များသည် manifest နှင့် local module system တည်ငြိမ်ပြီးနောက် ဆက်လက်တည်ဆောက်မည့် tooling roadmap ဖြစ်သည်။
 
 ## Future package manager
 

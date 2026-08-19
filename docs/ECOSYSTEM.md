@@ -32,12 +32,13 @@ Zap IoT သည် GPIO၊ I2C၊ SPI၊ UART၊ sensors၊ actuators၊ MQTT၊ 
 
 ## Current commands versus roadmap
 
-လက်ရှိ native CLI တွင် အောက်ပါ commands များကို အသုံးပြုနိုင်သည်။
+လက်ရှိ native CLI တွင် အောက်ပါ commands များကို အသုံးပြုနိုင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files အားလုံးကို run လုပ်ပြီး `zap init` သည် starter smoke test ပါဝင်သော project ကို ဖန်တီးပေးသည်။
 
 ```text
 zap main.zp
 zap check
 zap test
+zap init my-app
 zap fmt main.zp
 zap --version
 zap --help

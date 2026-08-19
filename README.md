@@ -108,8 +108,8 @@ zap --version               # runtime version
 zap --help                  # command help
 zap check                   # current project manifest validate
 zap check path/to/project   # specific project validate
-zap test                    # run tests/*.zp test files
-zap test path/to/tests      # run a selected test directory
+zap test                    # recursively run *_test.zp files under tests/
+zap test path/to/tests      # recursively run a selected test directory
 zap init path/to/project    # create a new Zap project
 zap fmt main.zp             # source formatting
 ```
@@ -190,7 +190,9 @@ hello-app/
 ├── zap.toml
 ├── main.zp
 ├── tests/
-│   └── app_test.zp
+│   ├── app_test.zp
+│   └── unit/
+│       └── math_test.zp
 ├── modules/
 │   └── math.zp
 └── lib/
@@ -223,7 +225,7 @@ zap test
 zap main.zp
 ```
 
-`zap init` သည် `zap.toml` manifest နှင့် run လုပ်နိုင်သော `main.zp` entry file ကို ဖန်တီးပေးသည်။ ရှိပြီးသား directory ကို မဖျက်ဘဲ အသစ်ဖန်တီးသည့် directory အတွက်သာ အသုံးပြုနိုင်သည်။
+`zap init` သည် `zap.toml` manifest၊ run လုပ်နိုင်သော `main.zp` entry file နှင့် `tests/smoke_test.zp` starter test ကို ဖန်တီးပေးသည်။ ရှိပြီးသား directory ကို မဖျက်ဘဲ အသစ်ဖန်တီးသည့် directory အတွက်သာ အသုံးပြုနိုင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files အားလုံးကို အစဉ်လိုက်ရှာဖွေ run လုပ်သည်။
 
 ## Formatter
 
