@@ -2,6 +2,13 @@
 
 ![Zap Programming Language banner](assets/branding/zap-banner.png)
 
+[![Zap CI](https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg)](https://github.com/hidecard/zap/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/hidecard/zap?display_name=tag&sort=semver&color=2ea44f)](https://github.com/hidecard/zap/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Runtime: Rust](https://img.shields.io/badge/runtime-Rust-orange.svg)](native/)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/hidecard/zap/actions)
+[![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
+
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
 Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow.
@@ -48,9 +55,102 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Download the archive for your operating system and CPU architecture from [GitHub Releases](https://github.com/hidecard/zap/releases), extract it, and place the `zap` executable on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v0.9.3 GitHub Release](https://github.com/hidecard/zap/releases/tag/v0.9.3), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
-The `v0.9.3` release provides native archives and checksums for the supported Linux x86_64, Windows x86_64, and macOS ARM64 targets. The exact archive name depends on the selected release version and platform.
+### Supported Release Targets
+
+| Platform | Architecture | Archive format | Installation command or action |
+|---|---|---|---|
+| Linux | x86_64 | `.tar.gz` | Extract and run `bash install.sh` |
+| Windows | x86_64 | `.zip` | Extract and run `install_windows.bat` from Command Prompt |
+| macOS | ARM64 | `.tar.gz` | Extract, make the installer executable, and run `./install.sh` |
+
+The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
+
+### Linux Installation
+
+1. Open the [Zap releases page](https://github.com/hidecard/zap/releases) and download the Linux x86_64 `.tar.gz` archive and its checksum file.
+2. Extract the archive in a directory you control.
+3. Enter the extracted directory and run the installer:
+
+```bash
+tar -xzf zap-0.9.3-linux-x86_64.tar.gz
+cd zap
+bash install.sh
+```
+
+4. Open a new terminal, or reload your shell configuration, and verify the installation:
+
+```bash
+zap --version
+zap --help
+```
+
+If you prefer a local installation, keep the extracted `zap` executable in a project directory and run it with `./zap main.zp` without changing the system `PATH`.
+
+### macOS Installation
+
+1. Download the macOS ARM64 `.tar.gz` archive from the [v0.9.3 release](https://github.com/hidecard/zap/releases/tag/v0.9.3).
+2. Extract it and enter the extracted directory:
+
+```bash
+tar -xzf zap-0.9.3-macos-arm64.tar.gz
+cd zap
+```
+
+3. Run the installer. If macOS reports that the installer is not executable, grant execute permission first:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+4. Verify the installation:
+
+```bash
+zap --version
+zap --help
+```
+
+On Intel-based Macs, use a compatible release asset if one is published. Do not use the ARM64 archive unless your Mac supports ARM64 execution.
+
+### Windows Installation
+
+1. Download the Windows x86_64 `.zip` archive from the [v0.9.3 release](https://github.com/hidecard/zap/releases/tag/v0.9.3).
+2. Extract the archive to a folder such as `C:\Zap`.
+3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
+
+```bat
+cd C:\Zap
+install_windows.bat
+```
+
+4. Close and reopen Command Prompt so the updated `PATH` is loaded, then verify:
+
+```bat
+zap.exe --version
+zap.exe --help
+```
+
+If you do not want a global installation, run Zap directly from the extracted folder:
+
+```bat
+C:\Zap\bin\zap.exe main.zp
+```
+
+### Running a First `.zp` File
+
+After installation, create or open a Zap source file with the `.zp` extension and run it from any directory where the `zap` command is available:
+
+```bash
+zap main.zp
+```
+
+On Windows Command Prompt, the equivalent command is:
+
+```bat
+zap.exe main.zp
+```
 
 ## Language Overview
 
