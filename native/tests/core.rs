@@ -840,3 +840,28 @@ fn runs_explicit_super_constructor_and_method_calls() {
         "true\ntrue\nbase-child\n"
     );
 }
+
+#[test]
+fn check_rejects_incompatible_reassignment() {
+    let root = std::env::temp_dir().join("zap_reassignment_type_test");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"reassignment\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "let count: number = 1\ncount = \"wrong\"\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("variable 'count' expects number, got text"));
+}

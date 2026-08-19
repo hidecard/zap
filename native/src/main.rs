@@ -1263,9 +1263,22 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
             && !trimmed.contains(">=")
         {
             if let Some((name, right)) = trimmed.split_once('=') {
+                let name = name.trim();
                 if !name.contains(' ') && !name.contains('(') {
                     if let Some(kind) = static_expr_type(right, &vars, &signatures) {
-                        vars.insert(name.trim().to_string(), kind);
+                        if let Some(expected) = vars.get(name) {
+                            if !annotation_matches(expected, &kind) {
+                                return Err(format!(
+                                    "TypeError at {}:{}:1: variable '{}' expects {}, got {}",
+                                    file.display(),
+                                    line_index + 1,
+                                    name,
+                                    expected,
+                                    kind
+                                ));
+                            }
+                        }
+                        vars.insert(name.to_string(), kind);
                     }
                 }
             }
