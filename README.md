@@ -177,7 +177,7 @@ say make_greeting("Hello")
 
 ### OOP: Classes၊ Objects နှင့် Methods
 
-Zap v0.7.0 တွင် beginner-friendly object-oriented programming foundation ပါဝင်သည်။ Class ကို `class` ဖြင့် ကြေညာပြီး object ကို `new("ClassName")` ဖြင့် ဖန်တီးနိုင်သည်။ Method ပထမ parameter သည် `self` ဖြစ်ပြီး object ၏ properties များကို `self.name` ပုံစံဖြင့် အသုံးပြုနိုင်သည်။
+Zap v0.7.0 တွင် beginner-friendly object-oriented programming foundation ပါဝင်သည်။ Class ကို `class` ဖြင့် ကြေညာပြီး object ကို `new("ClassName")` ဖြင့် ဖန်တီးနိုင်သည်။ Runtime သည် class နှင့် parent class name များကို စစ်ဆေးပေးသည်။ Method ပထမ parameter သည် `self` ဖြစ်ပြီး object ၏ properties များကို `self.name` ပုံစံဖြင့် အသုံးပြုနိုင်သည်။
 
 ```zap
 class User:
@@ -197,7 +197,7 @@ Explicit command အဖြစ်လည်း run နိုင်သည်။
 zap run main.zp
 ```
 
-Class များသည် `extends` ဖြင့် parent class မှ method များကို ရယူနိုင်ပြီး child class က method ကို override လုပ်နိုင်သည်။
+Class များသည် `extends` ဖြင့် parent class မှ method များကို ရယူနိုင်ပြီး child class က method ကို override လုပ်နိုင်သည်။ Child class တွင် ကိုယ်ပိုင် `init` ရှိပါက parent constructor ကို အရင် run ပြီး child constructor ကို ဆက် run သည်။ မရှိသော class သို့မဟုတ် parent class ကို အသုံးပြုပါက clear error ပြန်ပေးသည်။
 
 ```zap
 class Animal:
@@ -408,15 +408,15 @@ Zap ၏ runtime သည် Rust ဖြင့်ရေးသားထားသေ�
 
 Production compiler၊ bytecode execution၊ package registry နှင့် framework layers များသည် နောက်ပိုင်း roadmap အစိတ်အပိုင်းများ ဖြစ်သည်။
 
-## v0.7.0 Status နှင့် Roadmap
+## v0.7.1 Status နှင့် Roadmap
 
 ### လက်ရှိအကောင်အထည်ဖော်ပြီးသောအရာများ
 
-Native runtime version `0.7.0`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ `zap build`၊ explicit `zap run`၊ updated documentation နှင့် 21-test regression suite များ ပါဝင်သည်။
+Native runtime version `0.7.1`၊ path/time/environment/math built-ins၊ collection helpers (`is_empty`၊ `sum`၊ `reverse`၊ `sort`၊ `get`)၊ line-based file helpers (`read_lines`၊ `write_lines`)၊ optional variable annotations၊ class-based OOP (`class`၊ `new`၊ `init`၊ `self`၊ properties၊ methods၊ `extends`)၊ class/parent validation၊ inherited constructors၊ method override၊ `zap build`၊ explicit `zap run`၊ updated documentation နှင့် 24-test regression suite များ ပါဝင်သည်။
 
 ### နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.7.0 သည် standard library၊ OOP foundation နှင့် developer workflow ကို တည်ငြိမ်စေသော release ဖြစ်သည်။
+Structured `Result` error model၊ source line/column diagnostics၊ HTTP client၊ async/await၊ tasks၊ channels၊ `zap lint`၊ `zap check --json`၊ `zap test --watch`၊ package lockfile နှင့် package registry များကို အဆင့်ဆင့် ဆက်လက်လုပ်ဆောင်မည်။ v0.7.1 သည် v0.7.0 standard library၊ OOP foundation နှင့် developer workflow ကို audit ပြုလုပ်ပြီး class validation နှင့် constructor behavior ကို တည်ငြိမ်စေသော patch release ဖြစ်သည်။
 
 `async`/`await`၊ HTTP client၊ channels နှင့် package registry များသည် ယခု stable runtime တွင် မပါဝင်သေးပါ။ အသေးစိတ် roadmap ကို [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md)၊ v0.6 history ကို [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) နှင့် design ကို [`docs/DESIGN.md`](docs/DESIGN.md) တွင် ဖတ်ရှုပါ။
 
@@ -429,6 +429,7 @@ Structured `Result` error model၊ source line/column diagnostics၊ HTTP client
 | [`docs/SYNTAX_GUIDE.md`](docs/SYNTAX_GUIDE.md) | Syntax နှင့် code reference |
 | [`docs/USAGE.md`](docs/USAGE.md) | Installation၊ CLI နှင့် usage workflow |
 | [`docs/ROADMAP_0.7.0.md`](docs/ROADMAP_0.7.0.md) | v0.7.0 implemented scope နှင့် v0.8.0 priorities |
+| [`docs/RELEASE_0.7.1.md`](docs/RELEASE_0.7.1.md) | OOP audit patch release notes နှင့် verification |
 | [`docs/ROADMAP_0.6.0.md`](docs/ROADMAP_0.6.0.md) | v0.6.0 implementation history |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | Language design principles |
 | [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) | Core၊ standard library နှင့် future frameworks |

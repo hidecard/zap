@@ -234,3 +234,40 @@ fn gets_map_default_value() {
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "Zap\nunknown\n");
 }
+
+#[test]
+fn validates_oop_class_errors_and_parent_constructor() {
+    let file = std::env::temp_dir().join("zap_oop_parent_test.zp");
+    std::fs::write(&file, "class Base:\n    fn init(self):\n        self.ready = true\nclass Child extends Base:\n    fn init(self):\n        self.child = true\nlet item = new(\"Child\")\nsay item.ready\nsay item.child\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "true\ntrue\n");
+
+    let missing = std::env::temp_dir().join("zap_oop_missing_class_test.zp");
+    std::fs::write(&missing, "let item = new(\"Missing\")\n").unwrap();
+    let output = Command::new(binary()).arg(&missing).output().unwrap();
+    let _ = std::fs::remove_file(&missing);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown class: Missing"));
+}
+
+#[test]
+fn rejects_unknown_parent_class() {
+    let file = std::env::temp_dir().join("zap_oop_missing_parent_test.zp");
+    std::fs::write(&file, "class Child extends Missing:\n    fn value(self):\n        return 1\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown parent class: Missing"));
+}
+
+#[test]
+fn runs_oop_override_and_empty_class() {
+    let file = std::env::temp_dir().join("zap_oop_override_test.zp");
+    std::fs::write(&file, "class Base:\n    fn label(self):\n        return \"base\"\nclass Child extends Base:\n    fn label(self):\n        return \"child\"\nclass Empty:\nlet child = new(\"Child\")\nlet empty = new(\"Empty\")\nsay child.label()\nsay type(empty)\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "child\nobject\n");
+}

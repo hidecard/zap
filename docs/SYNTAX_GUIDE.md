@@ -295,7 +295,7 @@ say user.greet()
 say user.name
 ```
 
-`new("ClassName", arguments...)` သည် object အသစ်ဖန်တီးပြီး `init(self, arguments...)` ရှိပါက constructor အဖြစ် အလိုအလျောက်ခေါ်သည်။ Initial property များကို map ဖြင့်လည်း ပေးနိုင်သည်။
+`new("ClassName", arguments...)` သည် class name မှန်ကန်မှုကို စစ်ပြီး object အသစ်ဖန်တီးသည်။ `init(self, arguments...)` ရှိပါက constructor အဖြစ် အလိုအလျောက်ခေါ်သည်။ Initial property များကို map ဖြင့်လည်း ပေးနိုင်သည်။ မရှိသော class ကို ဖန်တီးရန် ကြိုးစားပါက `unknown class` error ပြန်ပေးသည်။ Child class တွင် ကိုယ်ပိုင် `init` ရှိပါက parent ၏ `init` ကို အရင်ခေါ်ပြီးမှ child `init` ကို ခေါ်သည်။
 
 ```zp
 class Device:
@@ -334,7 +334,7 @@ let dog = new("Dog")
 say dog.speak()
 ```
 
-OOP boundary အနေဖြင့် v0.7.0 တွင် class၊ object၊ properties၊ methods၊ constructor နှင့် single inheritance ကို support လုပ်သည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
+OOP boundary အနေဖြင့် v0.7.0 တွင် class registry validation၊ object၊ mutable properties၊ methods၊ constructor၊ parent constructor initialization၊ method override နှင့် single inheritance ကို support လုပ်သည်။ မရှိသော parent class ကို `extends` လုပ်ပါက class declaration အဆင့်တွင် error ပြန်ပေးသည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers၊ explicit `super` method calls နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
 
 ## 15. Standard Utility Built-ins
 
