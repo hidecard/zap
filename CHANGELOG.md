@@ -12,12 +12,15 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - ZapError classification နှင့် diagnostic location regression unit tests များ ထည့်သွင်းထားသည်။
 - Native runtime ကို `diagnostics.rs`၊ `lexer.rs`၊ `parser.rs`၊ `value.rs`၊ `evaluator.rs` နှင့် `project.rs` modules များအဖြစ် ခွဲခြားထားသည်။
 - `stdlib.rs` တွင် pure math/text built-in operation dispatch ၏ ပထမဆုံး extraction ကို ထည့်သွင်းထားသည်။
-- Module refactor အပြီး native unit tests 3 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။
+- `Token` များတွင် one-based file/line/column source locations ထည့်သွင်းပြီး lexer diagnostics ကို source-aware ပြုလုပ်ထားသည်။
+- Diagnostic messages ထဲရှိ `password`၊ `secret`၊ `token` နှင့် `api_key` key/value များကို `<redacted>` အဖြစ် ဖုံးကွယ်ထားသည်။
+- Source line count၊ loop iteration နှင့် execution depth အတွက် runtime resource limits ထည့်သွင်းထားသည်။
+- Module refactor နှင့် P0 hardening အပြီး native unit tests 9 ခုနှင့် integration tests 35 ခု အောင်မြင်နေသည်။
 - CLI command orchestration ကို `cli.rs` သို့ ခွဲထုတ်ပြီး `0` success၊ `1` program/check failure နှင့် `2` usage error exit-code policy ကို သတ်မှတ်ထားသည်။
 
 ### Planned
 
-- `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
+- `ast.rs` redesign၊ remaining filesystem/JSON/collection standard-library extraction၊ runtime String errors ၏ အပြည့်အဝ ZapError conversion၊ deeper control-flow type narrowing၊ HTTP/URL/Regex modules၊ package lockfiles နှင့် editor tooling remain planned.
 
 ## [0.9.1] - 2026-08-19
 

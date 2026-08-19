@@ -1,10 +1,46 @@
 use std::{collections::HashMap, fs, path::Path, rc::Rc};
 
+use std::cell::Cell;
+
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
     parse_signature, resolve_module, Function, Param, Value, MODULE_CACHE, MODULE_LOADING,
 };
+
+const MAX_EXECUTION_DEPTH: usize = 256;
+const MAX_SOURCE_LINES: usize = 100_000;
+const MAX_LOOP_ITERATIONS: usize = 100_000;
+
+thread_local! {
+    static EXECUTION_DEPTH: Cell<usize> = const { Cell::new(0) };
+}
+
+struct ExecutionGuard;
+
+impl Drop for ExecutionGuard {
+    fn drop(&mut self) {
+        EXECUTION_DEPTH.with(|depth| depth.set(depth.get().saturating_sub(1)));
+    }
+}
+
+fn enter_execution(lines: &[String]) -> Result<ExecutionGuard, String> {
+    if lines.len() > MAX_SOURCE_LINES {
+        return Err(format!(
+            "source line limit exceeded: maximum is {MAX_SOURCE_LINES}"
+        ));
+    }
+    EXECUTION_DEPTH.with(|depth| {
+        if depth.get() >= MAX_EXECUTION_DEPTH {
+            Err(format!(
+                "execution depth limit exceeded: maximum is {MAX_EXECUTION_DEPTH}"
+            ))
+        } else {
+            depth.set(depth.get() + 1);
+            Ok(ExecutionGuard)
+        }
+    })
+}
 
 pub(crate) enum Flow {
     Continue,
@@ -415,6 +451,7 @@ pub(crate) fn execute_lines(
     funcs: &mut HashMap<String, Rc<Function>>,
     base: &Path,
 ) -> Result<Flow, String> {
+    let _execution_guard = enter_execution(lines)?;
     let mut i = 0;
     while i < lines.len() {
         let raw_line = lines[i].trim();
@@ -594,8 +631,10 @@ pub(crate) fn execute_lines(
                     Flow::Continue => {}
                 }
                 guard += 1;
-                if guard > 100000 {
-                    return Err("loop limit exceeded".into());
+                if guard >= MAX_LOOP_ITERATIONS {
+                    return Err(format!(
+                        "loop limit exceeded: maximum is {MAX_LOOP_ITERATIONS}"
+                    ));
                 }
             }
             i = end;
@@ -610,7 +649,17 @@ pub(crate) fn execute_lines(
             let (body, end) = indented(lines, i + 1);
             match value {
                 Value::List(items) => {
-                    for item in items {
+                    if items.len() > MAX_LOOP_ITERATIONS {
+                        return Err(format!(
+                            "loop limit exceeded: maximum is {MAX_LOOP_ITERATIONS}"
+                        ));
+                    }
+                    for (iteration, item) in items.into_iter().enumerate() {
+                        if iteration >= MAX_LOOP_ITERATIONS {
+                            return Err(format!(
+                                "loop limit exceeded: maximum is {MAX_LOOP_ITERATIONS}"
+                            ));
+                        }
                         vars.insert(name.trim().into(), item);
                         match execute_lines(&body, vars, funcs, base)? {
                             Flow::Return(v) => return Ok(Flow::Return(v)),
@@ -734,4 +783,41 @@ pub(crate) fn execute_lines(
         continue;
     }
     Ok(Flow::Continue)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::execute_lines;
+    use crate::{Function, Value};
+    use std::{collections::HashMap, path::Path, rc::Rc};
+
+    #[test]
+    fn rejects_oversized_source_blocks() {
+        let lines = vec![String::new(); 100_001];
+        let result = execute_lines(
+            &lines,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        );
+        match result {
+            Err(error) => assert!(error.contains("source line limit exceeded")),
+            Ok(_) => panic!("source limit should reject oversized input"),
+        }
+    }
+
+    #[test]
+    fn rejects_unbounded_loop_iterations() {
+        let lines = vec!["while true:".into(), "  continue".into()];
+        let result = execute_lines(
+            &lines,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        );
+        match result {
+            Err(error) => assert!(error.contains("loop limit exceeded")),
+            Ok(_) => panic!("loop limit should reject an unbounded loop"),
+        }
+    }
 }

@@ -63,8 +63,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 ## 2.2 Source location နှင့် diagnostics
 
-- [ ] Token တိုင်းတွင် `file`၊ `line` နှင့် `column` သိမ်းရန်။
-- [ ] Parse error ကို “unexpected token” တစ်ခုတည်းမဟုတ်ဘဲ အမှားဖြစ်သည့် source location နှင့် ပြရန်။
+- [x] Token တိုင်းတွင် `file`၊ `line` နှင့် `column` source span သိမ်းရန်။ Lexer သည် one-based line/column နှင့် token span ကို ထုတ်ပေးသည်။
+- [x] Lexer နှင့် parse-related error များတွင် အမှားဖြစ်သည့် source location ကို ပြရန်။
 - [ ] Runtime error schema သတ်မှတ်ရန်။
 
 ```json
@@ -92,7 +92,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Result/Option JSON serialization နှင့် `type()` support ထည့်ရန်။
 - [x] `result<number>`၊ `result<text>`၊ `option<number>` နှင့် `option<text>` ကဲ့သို့သော Result/Option payload annotation များကို static type checker ဖြင့် စစ်ရန်။ `ok(value)`၊ `err(value)` နှင့် `some(value)` payload type မကိုက်ညီပါက `TypeError` diagnostic ထုတ်သည်။
 - [x] Result error အတွက် `?` automatic propagation semantics သတ်မှတ်ပြီး အကောင်အထည်ဖော်ရန်။ `try`/`catch` equivalent နှင့် typed payload propagation သည် နောက်ထပ်အလုပ်ဖြစ်သည်။
-- [ ] Error message တွင် secret၊ environment value နှင့် password များ မပေါက်ကြားစေရန် စစ်ရန်။
+- [x] Error message တွင် `password`၊ `secret`၊ `token` နှင့် `api_key` key/value များကို `<redacted>` အဖြစ် ဖုံးကွယ်ရန်။
 - [ ] Panic၊ unchecked unwrap နှင့် silent fallback များကို user input path များတွင် ဖယ်ရှားရန်။
 
 ## 2.4 Parser correctness နှင့် language consistency
@@ -102,7 +102,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [ ] Expression အဆုံးတွင် မသုံးရသေးသော token ကျန်နေပါက error ပြရန်။
 - [ ] Function၊ class၊ `if`၊ `for` နှင့် `while` syntax တူညီသော parser ဖြင့် စစ်ရန်။
 - [ ] Division၊ modulo၊ arithmetic overflow နှင့် negative index behavior ကို specification ထဲတွင် တိတိကျကျရေးရန်။
-- [ ] Recursion depth၊ loop count နှင့် input size အတွက် resource limits သတ်မှတ်ရန်။
+- [x] Execution depth၊ loop count နှင့် source line count အတွက် runtime resource limits သတ်မှတ်ရန်။ လက်ရှိ limit များမှာ depth `256`၊ loop iteration `100000` နှင့် source lines `100000` ဖြစ်သည်။
 
 ## 2.5 Test foundation
 

@@ -49,12 +49,12 @@ The native runtime is being maintained as focused Rust modules rather than a sin
 | `value.rs` | Runtime values and object model | Implemented |
 | `evaluator.rs` | Evaluation, functions, methods, modules, and control flow | Implemented |
 | `stdlib.rs` | Pure math and text built-in operations | First extraction implemented |
-| `diagnostics.rs` | `ZapError` and structured diagnostics | Implemented |
+| `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
 | `project.rs` | Project, manifest, and module validation | Implemented |
 | `cli.rs` | CLI command orchestration and exit codes | Implemented |
 | `ast.rs` | AST-based execution architecture | Planned |
 
-The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. The native suite currently covers **3 unit tests and 35 integration tests**.
+The modularization refactor preserves the existing language behavior. CLI command failures use exit code `1`, invalid command usage uses exit code `2`, and successful commands return normally with exit code `0`. Token diagnostics now retain one-based source locations, sensitive diagnostic key/value pairs are redacted, and runtime execution applies source-size, loop, and execution-depth limits. The native suite currently covers **9 unit tests and 35 integration tests**.
 
 ## Why Zap?
 
@@ -135,7 +135,7 @@ zap main.zp
 | System helpers | paths, time, sleep, environment variables, and math helpers |
 | Modules | explicit `import`/`export`, local search paths, cache, and cycle detection |
 | Error values | `ok`, `err`, `some`, `option_none`, `unwrap`, `unwrap_or`, typed `result<T>`/`option<T>`, and `?` |
-| Diagnostics | human-readable errors and `zap check --json` structured diagnostics |
+| Diagnostics | human-readable errors, source locations, secret redaction, and `zap check --json` structured diagnostics |
 
 ## Syntax Examples
 
