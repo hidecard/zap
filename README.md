@@ -25,7 +25,7 @@ Tagged releases matching `v*` use the release workflow to build native archives,
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.1` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
+Zap is actively evolving toward a production-ready language ecosystem. The `v0.9.1` release line includes a native runtime, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, explicit module visibility, module caching, circular-import detection, and Result error propagation with `?`.
 
 | Item | Current status |
 |---|---|
@@ -330,7 +330,7 @@ The recommended order is to begin with installation and Hello World, then study 
 
 ## Current Roadmap
 
-The next development areas are a dedicated `ZapError` model, deeper control-flow type narrowing, Result/Option payload checking, HTTP/URL/Regex standard-library modules, package metadata and lockfiles, asynchronous programming, and editor tooling. The project will continue to prioritize a stable language core, clear diagnostics, cross-platform behavior, and synchronized English/Burmese documentation.
+The next development areas are deeper control-flow type narrowing, Result/Option payload checking, HTTP/URL/Regex standard-library modules, package metadata and lockfiles, asynchronous programming, and editor tooling. The project will continue to prioritize a stable language core, clear diagnostics, cross-platform behavior, and synchronized English/Burmese documentation.
 
 ## Contributing
 

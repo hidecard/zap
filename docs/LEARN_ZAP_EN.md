@@ -389,3 +389,22 @@ For a complete syntax inventory, continue with [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.
 ## Documentation Feedback
 
 Zap is still evolving. If an example differs from the installed runtime, report it with the Zap version, operating system, source file, and command used. This makes documentation corrections reproducible.
+
+
+## Lesson 19 — Structured ZapError Diagnostics
+
+Zap reports failures through a structured diagnostic boundary called `ZapError`. The current variants include `SyntaxError`, `NameError`, `TypeError`, `ValueError`, `IOError`, `FileNotFound`, `PermissionError`, `OverflowError`, and `ProjectError`. The runtime keeps the original message and, when available, the source file, line, and column.
+
+For automation and editor integration, use JSON diagnostics:
+
+```bash
+zap check --json .
+```
+
+A failed check can produce output such as:
+
+```json
+{"ok":false,"kind":"TypeError","file":"main.zp","line":4,"column":12,"message":"expected number, got text","error":"TypeError at main.zp:4:12: expected number, got text"}
+```
+
+Human-readable command failures and JSON check failures now share the same diagnostic classification. The evaluator still contains some legacy internal `String` error paths; replacing those internal return types with `ZapError` is a later architecture refactor and does not change the current `.zp` syntax.

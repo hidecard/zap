@@ -4,9 +4,15 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+### Added
+
+- Dedicated `ZapError` diagnostic boundary ထည့်သွင်းထားသည်။ Human-readable runtime output နှင့် `zap check --json` output တို့သည် error kind၊ message နှင့် source location metadata ကို တူညီသော model ဖြင့် ထုတ်ပေးနိုင်သည်။
+- `ZapError` အတွက် syntax၊ name၊ type၊ value၊ I/O၊ file-not-found၊ permission၊ overflow နှင့် project error variants များ ထည့်သွင်းထားသည်။
+- ZapError classification နှင့် diagnostic location regression unit tests များ ထည့်သွင်းထားသည်။
+
 ### Planned
 
-- Dedicated `ZapError` enum, deeper control-flow type narrowing, HTTP/URL/Regex standard-library modules, package lockfiles, and editor tooling remain planned.
+- Deeper control-flow type narrowing, HTTP/URL/Regex standard-library modules, package lockfiles, and editor tooling remain planned.
 
 ## [0.9.1] - 2026-08-19
 
@@ -28,7 +34,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ### Remaining Work
 
-- `ZapError` enum ဖြင့် internal `String` errors များကို ခွဲခြားရန်။
+- Runtime internals အားလုံး၏ `String` return types များကို `ZapError` သို့ တိုက်ရိုက်ပြောင်းလဲသည့် architecture refactor ဆက်လုပ်ရန်။
 - Branch/loop type narrowing၊ generic/nullable types နှင့် Result/Option payload static checking တိုးရန်။
 - Project-root-aware `../` traversal policy၊ HTTP/URL/Regex standard library နှင့် Result/Option payload static validation ဆက်လက်လုပ်ရန်။
 
@@ -54,7 +60,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 ### Known Limitations
 
 - Complex control-flow expression များနှင့် collection element များ၏ static inference ကို ဆက်လက်တိုးချဲ့ရန်လိုသည်။
-- JSON diagnostic နှင့် runtime error များကို unified `ZapError` model အဖြစ် မခွဲခြားရသေးပါ။
+- Runtime evaluator အတွင်းရှိ legacy `String` error return types များကို unified `ZapError` ဖြင့် အပြည့်အဝ အစားထိုးရန် ကျန်ရှိသည်။ CLI diagnostic boundary နှင့် JSON output တွင်တော့ `ZapError` ကို အသုံးပြုထားသည်။
 - Structured `Result`၊ `async/await`၊ task cancellation၊ channels၊ HTTP client၊ package lockfile/registry နှင့် LSP မပါဝင်သေးပါ။
 - `Result`/`Option` automatic propagation၊ async runtime၊ HTTP၊ package lockfile/registry နှင့် LSP များ မပါဝင်သေးပါ။
 

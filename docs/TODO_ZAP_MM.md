@@ -76,13 +76,13 @@ Zap v0.9.0 တွင် class-based OOP၊ inheritance၊ collection helpers၊ 
 
 - [x] `zap check --json` တွင် `kind`၊ `message` နှင့် `error` fields ထည့်ရန်။
 - [x] `file`၊ `line` နှင့် `column` ကို JSON fields အဖြစ် သီးခြားထည့်ရန်။
-- [ ] Human-readable error နှင့် JSON error နှစ်မျိုးလုံး တူညီသော diagnostic model ကို အသုံးပြုရန်။
+- [x] Human-readable error နှင့် `zap check --json` error နှစ်မျိုးလုံးသည် `ZapError` diagnostic boundary ကို အသုံးပြုရန်။
 - [ ] CLI exit code သတ်မှတ်ချက် ပြုလုပ်ရန်။ `0` = success၊ `1` = program/check failure၊ `2` = CLI usage error။
 
 ## 2.3 Error model
 
-- [ ] Internal Rust `String` error များကို `ZapError` enum ဖြင့် အစားထိုးရန်။ `Result`/`Option` value foundation သည် ပြီးစီးပြီးဖြစ်သည်။
-- [ ] `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError` နှင့် `OverflowError` များ သတ်မှတ်ရန်။
+- [x] CLI diagnostic boundary တွင် internal Rust error message များကို `ZapError` enum ဖြင့် ခွဲခြားရန်။ `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError`၊ `OverflowError` နှင့် `ProjectError` kinds များကို သတ်မှတ်ထားသည်။ Runtime internals အားလုံးကို enum သို့ တိုက်ရိုက်ပြောင်းလဲခြင်းသည် နောက်ထပ် architecture refactor အဖြစ် ကျန်ရှိသည်။
+- [x] `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError` နှင့် `OverflowError` များကို `ZapError` variants အဖြစ် သတ်မှတ်ရန်။
 - [x] User program ထဲတွင် recoverable value အသုံးပြုရန် `ok(value)` နှင့် `err(value)` Result constructors ထည့်ရန်။
 - [x] `some(value)`၊ `option_none()`၊ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` helpers ထည့်ရန်။
 - [x] `unwrap` နှင့် `unwrap_or` semantics ကို သတ်မှတ်ရန်။

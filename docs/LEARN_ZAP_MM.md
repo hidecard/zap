@@ -1063,3 +1063,22 @@ say unwrap(calculate())
 ### Lesson 18 checkpoint
 
 Result value တစ်ခုကို ဖန်တီးခြင်း၊ စစ်ဆေးခြင်း၊ ဖြည်ခြင်းနှင့် `?` ဖြင့် error ကို function အပေါ်သို့ အလိုအလျောက် ပြန်ပို့ခြင်းတို့ကို နားလည်ပြီး အသုံးပြုနိုင်ရမည်။
+
+
+## Lesson 19 — Structured ZapError Diagnostic
+
+Zap runtime တွင် error များကို `ZapError` ဟုခေါ်သော structured diagnostic boundary ဖြင့် ခွဲခြားပေးထားသည်။ လက်ရှိ error kind များမှာ `SyntaxError`၊ `NameError`၊ `TypeError`၊ `ValueError`၊ `IOError`၊ `FileNotFound`၊ `PermissionError`၊ `OverflowError` နှင့် `ProjectError` တို့ ဖြစ်သည်။ Error message နှင့်အတူ source file၊ line နှင့် column information ရှိပါက ထည့်သွင်းဖော်ပြပေးသည်။
+
+Automation သို့မဟုတ် editor integration အတွက် JSON diagnostic ကို အသုံးပြုနိုင်သည်။
+
+```bash
+zap check --json .
+```
+
+Check မအောင်မြင်ပါက အောက်ပါပုံစံမျိုး output ရနိုင်သည်။
+
+```json
+{"ok":false,"kind":"TypeError","file":"main.zp","line":4,"column":12,"message":"expected number, got text","error":"TypeError at main.zp:4:12: expected number, got text"}
+```
+
+Human-readable command error နှင့် JSON check error နှစ်မျိုးစလုံးသည် တူညီသော diagnostic classification ကို အသုံးပြုသည်။ Runtime evaluator အတွင်းရှိ legacy Rust `String` error path အချို့ကို `ZapError` သို့ အပြည့်အဝပြောင်းရန်မှာ နောက်ထပ် architecture refactor ဖြစ်ပြီး လက်ရှိ `.zp` syntax ကို မပြောင်းလဲပါ။

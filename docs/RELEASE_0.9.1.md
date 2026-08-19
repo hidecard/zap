@@ -47,7 +47,7 @@ The main README is now written in English and includes a language chooser. The r
 
 ## Known limitations
 
-The dedicated `ZapError` enum, advanced branch/loop type narrowing, Result/Option payload checking, HTTP/URL/Regex standard-library modules, package lockfiles, and LSP/editor tooling remain on the roadmap.
+The dedicated `ZapError` diagnostic boundary is now included. The remaining roadmap items are advanced branch/loop type narrowing, Result/Option payload checking, HTTP/URL/Regex standard-library modules, package lockfiles, and LSP/editor tooling. Some evaluator internals still use legacy Rust `String` error paths and are planned for a later architecture refactor.
 
 ## Upgrade
 

@@ -3,13 +3,274 @@
 use std::{
     cell::RefCell,
     collections::HashMap,
-    env, fs,
+    env, fmt, fs,
     path::{Path, PathBuf},
     process,
     rc::Rc,
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+#[derive(Clone, Debug, PartialEq)]
+enum ZapError {
+    Syntax {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Name {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Type {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Value {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Io {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    FileNotFound {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Permission {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Overflow {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+    Project {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
+}
+
+impl ZapError {
+    fn from_message(message: impl Into<String>) -> Self {
+        let message = message.into();
+        let (file, line, column) = diagnostic_location(&message);
+        let kind = if message.starts_with("SyntaxError")
+            || message.contains("unexpected character")
+            || message.contains("unexpected token")
+        {
+            "SyntaxError"
+        } else if message.starts_with("NameError")
+            || message.contains("unknown name")
+            || message.contains("undefined")
+        {
+            "NameError"
+        } else if message.starts_with("TypeError")
+            || message.contains("expects")
+            || message.contains("expected ")
+        {
+            "TypeError"
+        } else if message.contains("not found") || message.contains("No such file") {
+            "FileNotFound"
+        } else if message.contains("permission denied") || message.contains("Permission denied") {
+            "PermissionError"
+        } else if message.contains("overflow") || message.contains("exceeded") {
+            "OverflowError"
+        } else if message.contains("cannot read")
+            || message.contains("cannot write")
+            || message.contains("I/O")
+        {
+            "IOError"
+        } else if message.starts_with("ValueError") || message.contains("cannot ") {
+            "ValueError"
+        } else {
+            "ProjectError"
+        };
+        Self::with_kind(kind, message, file, line, column)
+    }
+
+    fn with_kind(kind: &str, message: String, file: String, line: usize, column: usize) -> Self {
+        match kind {
+            "SyntaxError" => Self::Syntax {
+                message,
+                file,
+                line,
+                column,
+            },
+            "NameError" => Self::Name {
+                message,
+                file,
+                line,
+                column,
+            },
+            "TypeError" => Self::Type {
+                message,
+                file,
+                line,
+                column,
+            },
+            "ValueError" => Self::Value {
+                message,
+                file,
+                line,
+                column,
+            },
+            "IOError" => Self::Io {
+                message,
+                file,
+                line,
+                column,
+            },
+            "FileNotFound" => Self::FileNotFound {
+                message,
+                file,
+                line,
+                column,
+            },
+            "PermissionError" => Self::Permission {
+                message,
+                file,
+                line,
+                column,
+            },
+            "OverflowError" => Self::Overflow {
+                message,
+                file,
+                line,
+                column,
+            },
+            _ => Self::Project {
+                message,
+                file,
+                line,
+                column,
+            },
+        }
+    }
+
+    fn kind(&self) -> &'static str {
+        match self {
+            Self::Syntax { .. } => "SyntaxError",
+            Self::Name { .. } => "NameError",
+            Self::Type { .. } => "TypeError",
+            Self::Value { .. } => "ValueError",
+            Self::Io { .. } => "IOError",
+            Self::FileNotFound { .. } => "FileNotFound",
+            Self::Permission { .. } => "PermissionError",
+            Self::Overflow { .. } => "OverflowError",
+            Self::Project { .. } => "ProjectError",
+        }
+    }
+
+    fn message(&self) -> &str {
+        let (message, _, _, _) = self.parts();
+        if message.starts_with(self.kind()) {
+            message
+                .split_once(": ")
+                .map(|(_, rest)| rest)
+                .unwrap_or(message)
+        } else {
+            message
+        }
+    }
+
+    fn parts(&self) -> (&str, &str, usize, usize) {
+        match self {
+            Self::Syntax {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Name {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Type {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Value {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Io {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::FileNotFound {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Permission {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Overflow {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Project {
+                message,
+                file,
+                line,
+                column,
+            } => (message, file, *line, *column),
+        }
+    }
+}
+
+impl fmt::Display for ZapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (_, file, line, column) = self.parts();
+        let message = self.message();
+        if file.is_empty() {
+            write!(f, "{}: {}", self.kind(), message)
+        } else {
+            write!(
+                f,
+                "{} at {}:{}:{}: {}",
+                self.kind(),
+                file,
+                line,
+                column,
+                message
+            )
+        }
+    }
+}
+
 thread_local! { static MODULE_LOADING: RefCell<Vec<PathBuf>> = const { RefCell::new(Vec::new()) }; }
 thread_local! { static MODULE_CACHE: RefCell<HashMap<PathBuf, (HashMap<String,Value>, HashMap<String,Rc<Function>>)>> = RefCell::new(HashMap::new()); }
 
@@ -2400,15 +2661,18 @@ fn print_project_json(dir: &Path) {
     match validate_project(dir) {
         Ok(info) => println!("{{\"ok\":true,\"project\":\"{}\"}}", json_escape(&info)),
         Err(error) => {
-            let kind = if error.starts_with("TypeError") {
-                "TypeError"
-            } else if error.starts_with("SyntaxError") {
-                "SyntaxError"
-            } else {
-                "ProjectError"
-            };
-            let (file, line, column) = diagnostic_location(&error);
-            println!("{{\"ok\":false,\"kind\":\"{}\",\"file\":\"{}\",\"line\":{},\"column\":{},\"message\":\"{}\",\"error\":\"{}\"}}",kind,json_escape(&file),line,column,json_escape(&error),json_escape(&error));
+            let diagnostic = ZapError::from_message(error);
+            let (_, file, line, column) = diagnostic.parts();
+            let message = diagnostic.message();
+            println!(
+                "{{\"ok\":false,\"kind\":\"{}\",\"file\":\"{}\",\"line\":{},\"column\":{},\"message\":\"{}\",\"error\":\"{}\"}}",
+                diagnostic.kind(),
+                json_escape(file),
+                line,
+                column,
+                json_escape(message),
+                json_escape(&diagnostic.to_string())
+            );
             process::exit(1);
         }
     }
@@ -2416,7 +2680,7 @@ fn print_project_json(dir: &Path) {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
-        println!("zap 0.9.0 (native)");
+        println!("zap 0.9.1 (native)");
         return;
     }
     if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
@@ -2531,7 +2795,7 @@ fn main() {
         });
         let base = Path::new(&args[2]).parent().unwrap_or(Path::new("."));
         if let Err(e) = run(&source, base) {
-            eprintln!("Zap error: {e}");
+            eprintln!("Zap error: {}", ZapError::from_message(e));
             process::exit(1);
         }
         return;
@@ -2575,7 +2839,45 @@ fn main() {
     });
     let base = Path::new(&args[1]).parent().unwrap_or(Path::new("."));
     if let Err(e) = run(&source, base) {
-        eprintln!("Zap error: {e}");
+        eprintln!("Zap error: {}", ZapError::from_message(e));
         process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod zap_error_tests {
+    use super::*;
+
+    #[test]
+    fn classifies_type_errors_and_preserves_location() {
+        let error = ZapError::from_message("TypeError at main.zp:4:12: expected number, got text");
+        assert_eq!(error.kind(), "TypeError");
+        assert_eq!(error.parts().1, "main.zp");
+        assert_eq!(error.parts().2, 4);
+        assert_eq!(error.parts().3, 12);
+        assert!(error.to_string().contains("TypeError at main.zp:4:12"));
+    }
+
+    #[test]
+    fn classifies_io_and_file_errors() {
+        assert_eq!(
+            ZapError::from_message("cannot read missing.zp: No such file").kind(),
+            "FileNotFound"
+        );
+        assert_eq!(
+            ZapError::from_message("cannot write output.zp: permission denied").kind(),
+            "PermissionError"
+        );
+        assert_eq!(
+            ZapError::from_message("cannot read config.zp: I/O failure").kind(),
+            "IOError"
+        );
+    }
+
+    #[test]
+    fn unknown_errors_use_project_kind_without_losing_message() {
+        let error = ZapError::from_message("module import failed");
+        assert_eq!(error.kind(), "ProjectError");
+        assert!(error.to_string().contains("module import failed"));
     }
 }
