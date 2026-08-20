@@ -1,5 +1,13 @@
 use serde_json::{json, Value};
-use std::io::{self, Read, Write};
+use std::{
+    cell::RefCell,
+    collections::BTreeMap,
+    io::{self, Read, Write},
+};
+
+thread_local! {
+    static DOCUMENTS: RefCell<BTreeMap<String, String>> = const { RefCell::new(BTreeMap::new()) };
+}
 
 pub fn run_stdio() -> Result<(), String> {
     let mut input = Vec::new();
@@ -68,7 +76,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "textDocumentSync": 1,
                     "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
                     "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
-                    "hoverProvider": false
+                    "hoverProvider": true
                 },
                 "serverInfo": {"name": "zap", "version": "1.0.0"}
             }
@@ -79,11 +87,17 @@ pub fn handle_message(message: &Value) -> Option<Value> {
             "result": null
         })),
         "textDocument/completion" => Some(completion_response(message)),
+        "textDocument/hover" => Some(hover_response(message)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
             let uri = document.get("uri")?.as_str()?;
             let text = document.get("text").and_then(Value::as_str).unwrap_or("");
+            DOCUMENTS.with(|documents| {
+                documents
+                    .borrow_mut()
+                    .insert(uri.to_string(), text.to_string());
+            });
             Some(publish_diagnostics(uri, text))
         }
         _ => None,
@@ -91,7 +105,19 @@ pub fn handle_message(message: &Value) -> Option<Value> {
 }
 
 fn completion_response(message: &Value) -> Value {
-    let items = [
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let position = &message["params"]["position"];
+    let prefix = source_prefix(
+        &source,
+        position["line"].as_u64().unwrap_or(0) as usize,
+        position["character"].as_u64().unwrap_or(0) as usize,
+    );
+    let mut candidates = vec![
         ("let", "Declare a local binding"),
         ("fn", "Declare a function"),
         ("if", "Start a conditional expression"),
@@ -101,15 +127,92 @@ fn completion_response(message: &Value) -> Value {
         ("class", "Declare a class"),
         ("import", "Import a module"),
         ("return", "Return a value from a function"),
-    ]
-    .into_iter()
-    .map(|(label, detail)| json!({"label": label, "kind": 14, "detail": detail}))
-    .collect::<Vec<_>>();
-    json!({
-        "jsonrpc": "2.0",
-        "id": message.get("id").cloned().unwrap_or(Value::Null),
-        "result": {"isIncomplete": false, "items": items}
-    })
+        ("async", "Declare an asynchronous function"),
+        ("await", "Await a Future value"),
+    ];
+    for line in source.lines() {
+        let declaration = line.trim();
+        if let Some(name) = declaration
+            .strip_prefix("let ")
+            .and_then(|value| value.split([':', '=']).next())
+        {
+            candidates.push((name.trim(), "Local binding"));
+        } else if let Some(name) = declaration
+            .strip_prefix("fn ")
+            .or_else(|| declaration.strip_prefix("async fn "))
+        {
+            if let Some(name) = name.split('(').next() {
+                candidates.push((name.trim(), "Function"));
+            }
+        }
+    }
+    candidates.dedup_by(|left, right| left.0 == right.0);
+    let items = candidates
+        .into_iter()
+        .filter(|(label, _)| prefix.is_empty() || label.starts_with(&prefix))
+        .map(|(label, detail)| json!({"label": label, "kind": 14, "detail": detail}))
+        .collect::<Vec<_>>();
+    json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": {"isIncomplete": false, "items": items}})
+}
+
+fn source_prefix(source: &str, line: usize, character: usize) -> String {
+    source
+        .lines()
+        .nth(line)
+        .unwrap_or("")
+        .chars()
+        .take(character)
+        .collect::<String>()
+        .rsplit(|value: char| !value.is_ascii_alphanumeric() && value != '_')
+        .next()
+        .unwrap_or("")
+        .to_string()
+}
+
+fn hover_response(message: &Value) -> Value {
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
+    let character = message["params"]["position"]["character"]
+        .as_u64()
+        .unwrap_or(0) as usize;
+    let word = source_prefix(&source, line, character);
+    let program = crate::ast::parse_program(&source).ok();
+    let description = program.as_ref().and_then(|program| {
+        program
+            .statements
+            .iter()
+            .find_map(|statement| match &statement.node {
+                crate::ast::Stmt::Function {
+                    name,
+                    return_type,
+                    is_async,
+                    ..
+                } if name == &word => Some(format!(
+                    "{}function `{name}` -> `{}`",
+                    if *is_async { "async " } else { "" },
+                    return_type.as_deref().unwrap_or("none")
+                )),
+                crate::ast::Stmt::Class { name, .. } if name == &word => {
+                    Some(format!("class `{name}`"))
+                }
+                crate::ast::Stmt::Declaration {
+                    name, annotation, ..
+                } if name == &word => Some(format!(
+                    "binding `{name}`: `{}`",
+                    annotation.as_deref().unwrap_or("inferred")
+                )),
+                _ => None,
+            })
+    });
+    let result = description
+        .map(|value| json!({"contents": {"kind": "markdown", "value": value}}))
+        .unwrap_or(Value::Null);
+    json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
 }
 
 fn publish_diagnostics(uri: &str, source: &str) -> Value {
@@ -178,7 +281,42 @@ mod tests {
         assert_eq!(response["id"], 8);
         assert_eq!(response["result"]["isIncomplete"], false);
         assert_eq!(response["result"]["items"][0]["label"], "let");
-        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 9);
+        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 11);
+    }
+
+    #[test]
+    fn completion_filters_by_document_prefix() {
+        let uri = "file:///completion.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "async fn load():\n    return 1\nlo"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 9, "method": "textDocument/completion",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 2}}
+        }))
+        .unwrap();
+        assert_eq!(response["result"]["items"][0]["label"], "load");
+    }
+
+    #[test]
+    fn hover_uses_parser_owned_function_metadata() {
+        let uri = "file:///hover.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "async fn load() -> number:\n    return 1\nload()\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 10, "method": "textDocument/hover",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 4}}
+        }))
+        .unwrap();
+        assert!(response["result"]["contents"]["value"]
+            .as_str()
+            .unwrap()
+            .contains("async function `load`"));
     }
 
     #[test]

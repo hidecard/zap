@@ -4,6 +4,21 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+### P2 Ecosystem progress
+
+- Remote registry index transport၊ HTTPS package downloads၊ content-addressed cache နှင့် SHA-256 integrity enforcement ကို ထည့်သွင်းထားသည်။
+- Metadata-validated remote package publishing နှင့် deterministic nested dependency graph traversal/cycle detection ကို ထည့်သွင်းထားသည်။
+- Stable-Rust compatible single-threaded async runtime foundation၊ `async fn`၊ deterministic `Future` values နှင့် `await` expressions ကို ထည့်သွင်းထားသည်။
+- Stdio JSON-RPC LSP တွင် text synchronization၊ deterministic diagnostics၊ parser-span hover နှင့် context-aware completion ကို ထည့်သွင်းထားသည်။
+- English/Burmese P2 roadmap၊ async/LSP guides နှင့် syntax references များကို synchronize ပြုလုပ်ထားသည်။
+
+### Verification
+
+- Native test suite: **223 tests passed**.
+- Formatting၊ `cargo check` နှင့် `git diff --check` အောင်မြင်သည်။
+- Strict Clippy နှင့် Linux၊ Windows၊ macOS ARM64 cross-platform checks များကို GitHub Actions တွင် အောင်မြင်စွာ verify ပြုလုပ်ထားသည်။
+- P2 အားလုံး green မဖြစ်မချင်း release tag မတင်ရသေးပါ။
+
 ## [1.0.0] - 2026-08-20
 
 ### P1 Language Core Release
@@ -136,7 +151,7 @@ Native tests 109 ခု၊ release build၊ formatting၊ whitespace၊ CLI vers
 
 - Standard library၊ modules၊ project manifest နှင့် CLI workflow များကို တိုးချဲ့ခဲ့သည်။
 
-[Unreleased]: docs/RELEASE_0.9.1.md
+[Unreleased]: docs/P2_PROGRESS.md
 [0.9.1]: docs/RELEASE_0.9.1.md
 [0.9.0]: docs/RELEASE_0.9.0.md
 [0.8.0]: docs/RELEASE_0.8.0.md

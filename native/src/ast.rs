@@ -73,6 +73,7 @@ pub(crate) enum Expr {
         callee: Box<Spanned<Expr>>,
         args: Vec<CallArg>,
     },
+    Await(Box<Spanned<Expr>>),
     Member {
         target: Box<Spanned<Expr>>,
         member: String,
@@ -127,6 +128,7 @@ pub(crate) enum Stmt {
         return_type: Option<String>,
         body: Program,
         visibility: String,
+        is_async: bool,
     },
     Class {
         name: String,
@@ -232,6 +234,15 @@ impl AstParser {
                     },
                     span,
                 ))
+            }
+            crate::lexer::Token::Name(name) if name == "await" => {
+                let value = self.parse_expression(7)?;
+                let span = SourceSpan {
+                    line: token.span.line,
+                    column: token.span.column,
+                    length: value.span.column + value.span.length - token.span.column,
+                };
+                Ok(Spanned::new(Expr::Await(Box::new(value)), span))
             }
             crate::lexer::Token::Name(name) => {
                 let literal = match name.as_str() {
@@ -545,23 +556,33 @@ fn parse_function_header(
             Vec<(String, Option<String>, Option<String>)>,
             Option<String>,
             String,
+            bool,
         ),
         String,
     >,
 > {
     let header = text.strip_suffix(':')?;
-    let (visibility, signature) = if let Some(rest) = header.strip_prefix("public fn ") {
-        ("public", rest)
-    } else if let Some(rest) = header.strip_prefix("private fn ") {
-        ("private", rest)
-    } else if let Some(rest) = header.strip_prefix("protected fn ") {
-        ("protected", rest)
-    } else if let Some(rest) = header.strip_prefix("fn ") {
-        ("public", rest)
-    } else {
-        let rest = header.strip_prefix("def ")?;
-        ("public", rest)
-    };
+    let (visibility, signature, is_async) =
+        if let Some(rest) = header.strip_prefix("public async fn ") {
+            ("public", rest, true)
+        } else if let Some(rest) = header.strip_prefix("private async fn ") {
+            ("private", rest, true)
+        } else if let Some(rest) = header.strip_prefix("protected async fn ") {
+            ("protected", rest, true)
+        } else if let Some(rest) = header.strip_prefix("async fn ") {
+            ("public", rest, true)
+        } else if let Some(rest) = header.strip_prefix("public fn ") {
+            ("public", rest, false)
+        } else if let Some(rest) = header.strip_prefix("private fn ") {
+            ("private", rest, false)
+        } else if let Some(rest) = header.strip_prefix("protected fn ") {
+            ("protected", rest, false)
+        } else if let Some(rest) = header.strip_prefix("fn ") {
+            ("public", rest, false)
+        } else {
+            let rest = header.strip_prefix("def ")?;
+            ("public", rest, false)
+        };
     let open = signature.find('(')?;
     let close = signature.rfind(')')?;
     if close < open {
@@ -642,6 +663,7 @@ fn parse_function_header(
         params,
         return_type,
         visibility.to_string(),
+        is_async,
     )))
 }
 
@@ -739,7 +761,7 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
             }
             let body_indent = lines[*cursor].indent;
             let body = parse_block(lines, cursor, body_indent)?;
-            let (name, params, return_type, visibility) = function;
+            let (name, params, return_type, visibility, is_async) = function;
             program.statements.push(Spanned::new(
                 Stmt::Function {
                     name,
@@ -747,6 +769,7 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
                     return_type,
                     body,
                     visibility,
+                    is_async,
                 },
                 SourceSpan {
                     line: line_number,
@@ -982,6 +1005,20 @@ mod tests {
             program.statements[1].node,
             Stmt::Class { ref name, ref base, .. }
                 if name == "Child" && base.as_deref() == Some("Parent")
+        ));
+    }
+
+    #[test]
+    fn parses_async_function_and_await_expression() {
+        let expression = parse_expression("await load() ").expect("valid await expression");
+        assert!(
+            matches!(expression.node, Expr::Await(value) if matches!(value.node, Expr::Call { .. }))
+        );
+        let program = parse_program("async fn load() -> number:\n    return 7\n")
+            .expect("valid async declaration");
+        assert!(matches!(
+            program.statements[0].node,
+            Stmt::Function { is_async: true, .. }
         ));
     }
 

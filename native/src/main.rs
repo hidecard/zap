@@ -347,6 +347,7 @@ impl<'a> ExprParser<'a> {
                         Value::Object { .. } => "object",
                         Value::ResultOk(_) | Value::ResultErr(_) => "result",
                         Value::OptionSome(_) | Value::OptionNone => "option",
+                        Value::Future(_) => "future",
                         Value::None => "none",
                     }
                     .into(),

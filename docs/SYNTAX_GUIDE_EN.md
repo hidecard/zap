@@ -109,7 +109,31 @@ say create_user("may")
 say create_user("may", "admin")
 ```
 
-Named arguments are not supported yet. See the complete [Default Function Parameters guide](DEFAULT_PARAMETERS_EN.md) for validation rules, method examples, and runnable samples.
+Named arguments are supported for function and method calls. See the complete [Default Function Parameters guide](DEFAULT_PARAMETERS_EN.md) for validation rules, method examples, and runnable samples.
+
+### Async functions and await
+
+Prefix a function declaration with `async` to return a deterministic `Future`. Use `await` to unwrap the completed result:
+
+```zap
+async fn load() -> number:
+    return 7
+
+let pending = load()
+let value: number = await pending
+say value
+```
+
+`await` is an expression and may also be applied directly to a call:
+
+```zap
+async fn answer() -> number:
+    return 42
+
+say (await answer()) + 1
+```
+
+The current runtime executes async bodies deterministically and does not create background threads. Timers, cancellation, and richer suspension behavior remain runtime roadmap items. See the [Async/LSP guide](ASYNC_LSP_EN.md) for the executor and editor protocol details.
 
 ## Classes
 

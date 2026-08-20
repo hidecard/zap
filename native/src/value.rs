@@ -16,6 +16,7 @@ pub(crate) struct Function {
     pub(crate) visibility: String,
     pub(crate) params: Vec<Param>,
     pub(crate) return_annotation: Option<String>,
+    pub(crate) is_async: bool,
     /// Legacy source lines retained for compatibility with older declarations.
     pub(crate) body: Vec<String>,
     /// Native AST body used by the migration path when available.
@@ -37,6 +38,7 @@ pub(crate) enum Value {
     ResultErr(Box<Value>),
     OptionSome(Box<Value>),
     OptionNone,
+    Future(Box<Value>),
     None,
 }
 impl Value {
@@ -55,6 +57,7 @@ impl Value {
             Self::ResultErr(x) => format!("Err({})", x.show()),
             Self::OptionSome(x) => format!("Some({})", x.show()),
             Self::OptionNone => "Option.none".into(),
+            Self::Future(value) => format!("Future({})", value.show()),
             Self::None => "none".into(),
         }
     }
@@ -69,6 +72,7 @@ impl Value {
             Self::ResultOk(_) => true,
             Self::ResultErr(_) => false,
             Self::OptionSome(_) => true,
+            Self::Future(_) => true,
             Self::OptionNone | Self::None => false,
         }
     }

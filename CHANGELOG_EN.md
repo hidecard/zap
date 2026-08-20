@@ -1,5 +1,22 @@
 # Zap Changelog
 
+## [Unreleased]
+
+### P2 Ecosystem progress
+
+- Added HTTPS registry index and artifact transport, content-addressed caching, and SHA-256 integrity enforcement.
+- Added validated remote publishing and deterministic nested dependency traversal with cycle diagnostics.
+- Added a stable-Rust-compatible single-threaded async runtime foundation with `async fn`, deterministic `Future` values, and `await` expressions.
+- Extended the stdio JSON-RPC LSP with text synchronization, deterministic diagnostics, parser-span hover, and context-aware completion.
+- Synchronized the English and Burmese P2 roadmaps, async/LSP guides, and syntax references.
+
+### Verification
+
+- Native test suite: **223 tests passed**.
+- Formatting, `cargo check`, and `git diff --check` pass locally.
+- Strict Clippy and Linux, Windows, and macOS ARM64 checks pass in GitHub Actions.
+- No release tag is created until every P2 track is green and verified.
+
 ## [1.0.0] — 2026-08-20
 
 Zap P1 establishes the first complete Language Core milestone for the standalone native runtime. This release focuses on predictable language semantics, direct AST execution, safe diagnostics, and a stable foundation for future ecosystem work.

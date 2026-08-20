@@ -505,3 +505,29 @@ zap main.zp
 ## 22. လက်ရှိအခြေအနေ နှင့် နောက်တစ်ဆင့်
 
 အထက်ပါ core syntax များသည် Zap native runtime ၏ လက်ရှိအခြေအနေကို ကိုယ်စားပြုသည်။ Web response helpers နှင့် `ai.ask` ကဲ့သို့သော Web/AI foundation API များသည် လက်ရှိတွင် foundation သို့မဟုတ် placeholder အဆင့်ဖြစ်နိုင်ပြီး production networking၊ provider integration၊ async runtime၊ type checking နှင့် package registry တို့ကို roadmap အဖြစ် ဆက်လက်တည်ဆောက်မည်။
+
+## Async functions နှင့် await
+
+Function declaration ရှေ့တွင် `async` ထည့်ပါက deterministic `Future` value ပြန်ပေးသော function ဖြစ်လာပါသည်။ ပြီးဆုံးသော result ကို ရယူရန် `await` ကို အသုံးပြုပါ။
+
+```zap
+async fn load() -> number:
+    return 7
+
+let pending = load()
+let value: number = await pending
+say value
+```
+
+`await` သည် expression ဖြစ်သောကြောင့် call ပေါ်တွင် တိုက်ရိုက်အသုံးပြုနိုင်ပါသည်။
+
+```zap
+async fn answer() -> number:
+    return 42
+
+say (await answer()) + 1
+```
+
+လက်ရှိ runtime သည် async body များကို deterministic အတိုင်း run လုပ်ပြီး background thread မဖန်တီးသေးပါ။ Timers၊ cancellation နှင့် ပိုမိုပြည့်စုံသော suspension behavior များမှာ နောက်ထပ် roadmap အလုပ်များဖြစ်ပါသည်။ Executor နှင့် editor protocol အသေးစိတ်အတွက် [Async/LSP Burmese guide](ASYNC_LSP_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။
+
+Named arguments များကို function နှင့် method call များတွင် အသုံးပြုနိုင်ပါသည်။ Default parameter validation နှင့် runnable examples များအတွက် [Default Parameters Burmese guide](DEFAULT_PARAMETERS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။

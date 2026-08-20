@@ -197,6 +197,9 @@ pub(crate) fn value_to_json(v: &Value) -> serde_json::Value {
             serde_json::json!({"__zap_variant":"some","value":value_to_json(x)})
         }
         Value::OptionNone => serde_json::json!({"__zap_variant":"none"}),
+        Value::Future(value) => {
+            serde_json::json!({"__zap_variant":"future","value":value_to_json(value)})
+        }
     }
 }
 pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
@@ -227,6 +230,12 @@ pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
                     })
                 }
                 "none" => Ok(Value::OptionNone),
+                "future" => {
+                    let value = m
+                        .remove("value")
+                        .ok_or_else(|| "JSON future variant is missing its value".to_string())?;
+                    Ok(Value::Future(Box::new(json_to_value(value)?)))
+                }
                 _ => Err(format!("unknown Zap JSON variant: {tag}")),
             },
             Some(other) => Err(format!("Zap JSON variant must be text, got {other}")),
@@ -311,6 +320,7 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
                 Value::Object { .. } => "object",
                 Value::ResultOk(_) | Value::ResultErr(_) => "result",
                 Value::OptionSome(_) | Value::OptionNone => "option",
+                Value::Future(_) => "future",
             };
             Ok(Some(Value::Text(type_name.into())))
         }
@@ -918,6 +928,10 @@ fn ast_expression(
             };
             operate(left, token, right)
         }
+        Expr::Await(value) => match ast_expression(value, vars, funcs)? {
+            Value::Future(value) => Ok(*value),
+            _ => Err("await expects a future value".into()),
+        },
         Expr::Call { callee, args } => {
             let values = args
                 .iter()
@@ -1126,7 +1140,11 @@ fn call_function_with_arguments(
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
-    Ok(value)
+    if f.is_async {
+        Ok(Value::Future(Box::new(value)))
+    } else {
+        Ok(value)
+    }
 }
 pub(crate) fn call_method(
     f: &Function,
@@ -1243,7 +1261,11 @@ fn call_method_with_arguments(
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
-    Ok(value)
+    if f.is_async {
+        Ok(Value::Future(Box::new(value)))
+    } else {
+        Ok(value)
+    }
 }
 
 pub(crate) fn indented(lines: &[String], start: usize) -> (Vec<String>, usize) {
@@ -1284,6 +1306,7 @@ fn value_type(v: &Value) -> &'static str {
         Value::Object { .. } => "object",
         Value::ResultOk(_) | Value::ResultErr(_) => "result",
         Value::OptionSome(_) | Value::OptionNone => "option",
+        Value::Future(_) => "future",
         Value::None => "none",
     }
 }
@@ -1476,6 +1499,7 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
         Expr::Index { target, index } => {
             format!("{}[{}]", ast_expr_source(target), ast_expr_source(index))
         }
+        Expr::Await(value) => format!("await {}", ast_expr_source(value)),
     }
 }
 
@@ -1555,6 +1579,7 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
             params,
             return_type,
             body,
+            is_async,
             ..
         } => {
             let params = params
@@ -1573,7 +1598,8 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
                 .collect::<Vec<_>>()
                 .join(", ");
             out.push(format!(
-                "{prefix}fn {name}({params}){}:",
+                "{prefix}{}fn {name}({params}){}:",
+                if *is_async { "async " } else { "" },
                 return_type
                     .as_ref()
                     .map_or(String::new(), |ty| format!(" -> {ty}"))
@@ -1625,6 +1651,7 @@ fn register_ast_function(
     visibility: &str,
     return_type: &Option<String>,
     body: &Program,
+    is_async: bool,
     vars: &HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
 ) {
@@ -1641,6 +1668,7 @@ fn register_ast_function(
                 })
                 .collect(),
             return_annotation: return_type.clone(),
+            is_async,
             body: Vec::new(),
             ast_body: Some(body.clone()),
             closure: Rc::new(RefCell::new(vars.clone())),
@@ -1661,6 +1689,7 @@ fn register_ast_class(
             visibility: "public".into(),
             params: Vec::new(),
             return_annotation: None,
+            is_async: false,
             body: Vec::new(),
             ast_body: None,
             closure: Rc::new(RefCell::new(vars.clone())),
@@ -1676,7 +1705,9 @@ fn register_ast_class(
                 visibility: "public".into(),
                 params: Vec::new(),
                 return_annotation: None,
+                is_async: false,
                 body: vec![parent.clone()],
+
                 ast_body: None,
                 closure: Rc::new(RefCell::new(vars.clone())),
             }),
@@ -1702,6 +1733,7 @@ fn register_ast_class(
                     visibility: visibility.clone(),
                     params: Vec::new(),
                     return_annotation: annotation.clone(),
+                    is_async: false,
                     body: Vec::new(),
                     ast_body: Some(default_body),
                     closure: Rc::new(RefCell::new(vars.clone())),
@@ -1713,6 +1745,7 @@ fn register_ast_class(
             return_type,
             body,
             visibility,
+            is_async,
         } = &statement.node
         {
             if method == "init" {
@@ -1722,6 +1755,7 @@ fn register_ast_class(
                         visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
+                        is_async: false,
                         body: Vec::new(),
                         ast_body: None,
                         closure: Rc::new(RefCell::new(vars.clone())),
@@ -1754,6 +1788,7 @@ fn register_ast_class(
                     visibility: visibility.clone(),
                     params: method_params,
                     return_annotation: return_type.clone(),
+                    is_async: *is_async,
                     body: Vec::new(),
                     ast_body: Some(body.clone()),
                     closure: Rc::new(RefCell::new(method_closure)),
@@ -1920,8 +1955,18 @@ pub(crate) fn execute_ast_program(
                 return_type,
                 body,
                 visibility,
+                is_async,
             } => {
-                register_ast_function(name, params, visibility, return_type, body, vars, funcs);
+                register_ast_function(
+                    name,
+                    params,
+                    visibility,
+                    return_type,
+                    body,
+                    *is_async,
+                    vars,
+                    funcs,
+                );
                 Flow::Continue
             }
             Stmt::Class { name, base, body } => {
@@ -2138,6 +2183,7 @@ pub(crate) fn execute_lines(
                     visibility: "public".into(),
                     params: Vec::new(),
                     return_annotation: None,
+                    is_async: false,
                     body: Vec::new(),
                     ast_body: None,
                     closure: Rc::new(RefCell::new(vars.clone())),
@@ -2153,7 +2199,9 @@ pub(crate) fn execute_lines(
                         visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
+                        is_async: false,
                         body: vec![parent_name],
+
                         ast_body: None,
                         closure: Rc::new(RefCell::new(vars.clone())),
                     }),
@@ -2186,6 +2234,7 @@ pub(crate) fn execute_lines(
                                 visibility: visibility.into(),
                                 params: Vec::new(),
                                 return_annotation: None,
+                                is_async: false,
                                 body: Vec::new(),
                                 ast_body: None,
                                 closure: Rc::new(RefCell::new(vars.clone())),
@@ -2214,6 +2263,7 @@ pub(crate) fn execute_lines(
                             visibility: visibility.into(),
                             params,
                             return_annotation,
+                            is_async: false,
                             body: method_body,
                             ast_body: None,
                             closure: Rc::new(RefCell::new(method_closure)),
@@ -2261,6 +2311,7 @@ pub(crate) fn execute_lines(
                     visibility: "public".into(),
                     params: args,
                     return_annotation,
+                    is_async: false,
                     body,
                     ast_body: None,
                     closure: Rc::new(RefCell::new(vars.clone())),
@@ -2273,6 +2324,7 @@ pub(crate) fn execute_lines(
                         visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
+                        is_async: false,
                         body: Vec::new(),
                         ast_body: None,
                         closure: Rc::new(RefCell::new(HashMap::new())),
@@ -2501,6 +2553,24 @@ mod tests {
             .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn executes_async_functions_and_awaits_results() {
+        let program = parse_program(
+            "async fn load() -> number:\n    return 7\nlet pending = load()\nlet result: number = await pending\n",
+        )
+        .expect("valid async AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("async AST program should execute");
+        assert_eq!(
+            vars.get("pending"),
+            Some(&Value::Future(Box::new(Value::Number(7))))
+        );
+        assert_eq!(vars.get("result"), Some(&Value::Number(7)));
+        assert!(funcs.get("load").is_some_and(|function| function.is_async));
     }
 
     #[test]

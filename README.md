@@ -18,7 +18,7 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, registry-ready package metadata validation, deterministic JSON registry indexes, local and HTTPS package transport, content-addressed cache with SHA-256 enforcement and offline reuse, checksum-verified archive publishing, a deterministic single-thread async runtime foundation, and an initial stdio LSP/editor foundation.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, registry-ready package metadata validation, deterministic JSON registry indexes, local and HTTPS package transport, content-addressed cache with SHA-256 enforcement and offline reuse, checksum-verified archive publishing, a deterministic single-thread async runtime foundation with `async fn`, `Future`, and `await`, and a stdio LSP/editor integration with parser-backed hover and context-aware completion.
 
 | Item | Current status |
 |---|---|
@@ -31,7 +31,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
-| Test status | 33 native unit tests and 187 integration tests passing (220 total) |
+| Test status | 223 native tests passing |
 
 ## Native Runtime Architecture
 
@@ -49,9 +49,10 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `project.rs` | Project, manifest, lockfile, dependency graph, metadata, and module validation | Implemented |
 | `cli.rs` | CLI command orchestration, async-check, LSP entry point, and exit codes | Implemented |
 | `async_runtime.rs` | Stable-Rust-compatible deterministic single-thread future executor foundation | Implemented foundation |
-| `lsp.rs` | Content-Length JSON-RPC stdio server and lint diagnostics publication | Implemented foundation |
+| `lsp.rs` | Content-Length JSON-RPC server, diagnostics, hover, and context-aware completion | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; `zap async-check` verifies the internal async runtime foundation and `zap lsp` starts the editor protocol server over stdio. The current LSP surface supports initialize, shutdown, text synchronization, lint diagnostics with deterministic source-line ranges, and a starter keyword completion list; context-aware completion, hover, formatting, and workspace indexing remain future work. See the [async/LSP English guide](docs/ASYNC_LSP_EN.md) or [Burmese guide](docs/ASYNC_LSP_MM.md), and the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum. The registry foundation validates local and HTTPS JSON indexes, selects exact versions, fetches and caches package artifacts, enforces SHA-256 integrity, supports offline reuse through `ZAP_OFFLINE=1`, and publishes checksum-verified archives over HTTPS; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; `zap async-check` verifies the internal async runtime foundation and `zap lsp` starts the editor protocol server over stdio. The current LSP surface supports initialize, shutdown, text synchronization, lint diagnostics with deterministic source-line ranges, parser-backed hover, and context-aware completion. Formatting, go-to-definition, and workspace indexing remain future work.
+ See the [async/LSP English guide](docs/ASYNC_LSP_EN.md) or [Burmese guide](docs/ASYNC_LSP_MM.md), and the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum. The registry foundation validates local and HTTPS JSON indexes, selects exact versions, fetches and caches package artifacts, enforces SHA-256 integrity, supports offline reuse through `ZAP_OFFLINE=1`, and publishes checksum-verified archives over HTTPS; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?
 
@@ -167,7 +168,7 @@ zap.exe main.zp
 | Type annotations | `text`, `number`, `bool`, `list`, `map`, `none`, and `any` |
 | Operators | arithmetic, comparison, `and`, `or`, and `not` |
 | Control flow | `if`, `else`, `for`, `while`, `break`, and `continue` |
-| Functions | parameters, return values, local scope, nested functions, and closures |
+| Functions | parameters, return values, local scope, nested functions, closures, `async fn`, `Future`, and `await` |
 | Classes | classes, constructors, methods, properties, inheritance, `self`, public/private/protected visibility, and `super` delegation |
 | Collections | indexing, keys, contains, join, get, sum, reverse, sort, and emptiness checks |
 | Text | upper, lower, trim, split, string conversion, and length |
