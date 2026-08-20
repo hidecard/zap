@@ -20,6 +20,8 @@
 - Bounded output နှင့် stable runtime errors ပါသော deterministic collection helpers `entries(map)` နှင့် `enumerate(list)` များကို ထည့်သွင်းထားပါသည်။
 - UTC time API များကို ထည့်သွင်းထားပြီး `utc_now()` သည် seconds နှင့် millisecond timestamp များကို ပြန်ပေးကာ `duration_parts(milliseconds)` နှင့် `duration_between(end_millis, start_millis)` သည် sign ထိန်းသိမ်းထားသော checked decomposition နှင့် overflow diagnostic များကို ပေးပါသည်။
 - UTC timestamp consistency၊ positive/negative duration နှင့် invalid input များအတွက် focused time regression tests များ ထည့်သွင်းပြီး API documentation ကို `docs/STDLIB_TIME_EN.md` နှင့် `docs/STDLIB_TIME_MM.md` တွင် ရေးသားထားပါသည်။
+- Deterministic structured logging builtins များကို ထည့်သွင်းထားပါသည်။ `log_record(level, message, fields)` သည် validation ပြီးသော map ကို ပြန်ပေးပြီး `log_json(level, message, fields)` သည် field name များကို စီထားသော canonical JSON ကို ပြန်ပေးပါသည်။
+- Structured logging အတွက် message 8 KiB၊ field 64 ခု၊ field-name 256 bytes နှင့် encoded output 64 KiB limits များ သတ်မှတ်ထားပြီး ordering၊ လက်ခံသော level၊ validation error နှင့် safety limit များကို regression tests ဖြင့် စစ်ဆေးထားပါသည်။ API documentation ကို `docs/STDLIB_LOGGING_EN.md` နှင့် `docs/STDLIB_LOGGING_MM.md` တွင် ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] — 2026-08-20

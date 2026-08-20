@@ -20,6 +20,8 @@
 - Added deterministic `entries(map)` and `enumerate(list)` collection helpers with bounded output and stable runtime errors.
 - Added UTC time APIs: `utc_now()` returns seconds and millisecond timestamps, while `duration_parts(milliseconds)` and `duration_between(end_millis, start_millis)` provide signed, checked decomposition with overflow diagnostics.
 - Added focused time regression tests covering UTC timestamp consistency, positive and negative durations, and invalid inputs; documented the APIs in `docs/STDLIB_TIME_EN.md` and `docs/STDLIB_TIME_MM.md`.
+- Added deterministic structured logging builtins: `log_record(level, message, fields)` returns a validated map, while `log_json(level, message, fields)` returns canonical JSON with sorted field names.
+- Bounded structured logging with an 8 KiB message limit, 64-field limit, 256-byte field-name limit, and 64 KiB encoded-output limit; added regression coverage for ordering, accepted levels, validation errors, and safety limits; documented the APIs in `docs/STDLIB_LOGGING_EN.md` and `docs/STDLIB_LOGGING_MM.md`.
 
 
 ## [2.0.4] — 2026-08-20

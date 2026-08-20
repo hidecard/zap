@@ -11,11 +11,14 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Transitive resolution၊ cache verification၊ stable install output၊ transitive artifact ပျောက်ဆုံးမှု၊ cached checksum မကိုက်ညီမှုနှင့် မပြည့်စုံသော v2 lockfile များအတွက် deterministic diagnostics ပါသော offline nested-registry integration fixtures များ ထည့်သွင်းထားပါသည်။
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
+### Standard library
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။
 - လက်ရှိ JSON safety limit အောက်တွင် runtime category ကို စစ်ဆေးပေးသော `from_json_typed(source, expected)` နှင့် UTF-8 byte များအစား Unicode scalar value များဖြင့် အလုပ်လုပ်သော `char_at`၊ `substring`၊ `codepoints` APIs များကို ထည့်သွင်းထားပါသည်။
 - Bounded output နှင့် stable runtime errors ပါသော deterministic collection helpers `entries(map)` နှင့် `enumerate(list)` များကို ထည့်သွင်းထားပါသည်။
 - UTC time API များကို ထည့်သွင်းထားပြီး `utc_now()` သည် seconds နှင့် millisecond timestamp များကို ပြန်ပေးကာ `duration_parts(milliseconds)` နှင့် `duration_between(end_millis, start_millis)` သည် sign ထိန်းသိမ်းထားသော checked decomposition နှင့် overflow diagnostic များကို ပေးပါသည်။
 - UTC timestamp consistency၊ positive/negative duration နှင့် invalid input များအတွက် regression tests များ၊ English/Burmese time guides များကို ထည့်သွင်းထားပါသည်။
+- Deterministic structured logging builtins `log_record(level, message, fields)` နှင့် `log_json(level, message, fields)` များကို ထည့်သွင်းထားပါသည်။ Canonical field ordering၊ accepted levels နှင့် validation rules များကို regression tests ဖြင့် စစ်ဆေးထားပါသည်။
+- Structured logging တွင် message 8 KiB၊ field 64 ခု၊ field-name 256 bytes နှင့် encoded JSON output 64 KiB safety limits များ သတ်မှတ်ထားပြီး English/Burmese guides များကို `docs/STDLIB_LOGGING_EN.md` နှင့် `docs/STDLIB_LOGGING_MM.md` တွင် ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] - 2026-08-20

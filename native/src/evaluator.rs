@@ -24,6 +24,10 @@ const MAX_EXECUTION_DEPTH: usize = 256;
 const MAX_SOURCE_LINES: usize = 100_000;
 const MAX_LOOP_ITERATIONS: usize = 100_000;
 const MAX_JSON_BYTES: usize = 8 * 1024 * 1024;
+const MAX_LOG_MESSAGE_BYTES: usize = 8 * 1024;
+const MAX_LOG_FIELDS: usize = 64;
+const MAX_LOG_FIELD_KEY_BYTES: usize = 256;
+const MAX_LOG_OUTPUT_BYTES: usize = 64 * 1024;
 
 #[derive(Clone, Debug)]
 pub(crate) struct CallArgument {
@@ -295,6 +299,25 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
     };
     match name {
+        "log_record" | "log_json" => {
+            expect(3)?;
+            let Value::Text(level) = &args[0] else {
+                return Err(format!("{name} expects level as text"));
+            };
+            let Value::Text(message) = &args[1] else {
+                return Err(format!("{name} expects message as text"));
+            };
+            let Value::Map(fields) = &args[2] else {
+                return Err(format!("{name} expects fields as a map"));
+            };
+            let record = structured_log_value(level, message, fields)?;
+            if name == "log_record" {
+                Ok(Some(record))
+            } else {
+                let encoded = structured_log_json(&record)?;
+                Ok(Some(Value::Text(encoded)))
+            }
+        }
         "json" => {
             expect(1)?;
             let encoded = serde_json::to_string(&value_to_json(&args[0]))
@@ -1064,6 +1087,72 @@ pub(crate) fn duration_value(milliseconds: i64) -> Result<Value, String> {
         ("seconds".into(), Value::Number(signed(seconds))),
         ("millis".into(), Value::Number(signed(millis))),
     ]))
+}
+
+fn structured_log_value(
+    level: &str,
+    message: &str,
+    fields: &HashMap<String, Value>,
+) -> Result<Value, String> {
+    if !matches!(level, "trace" | "debug" | "info" | "warn" | "error") {
+        return Err("log_record level must be trace, debug, info, warn, or error".into());
+    }
+    if message.is_empty() || message.len() > MAX_LOG_MESSAGE_BYTES {
+        return Err(format!(
+            "log_record message must contain 1 to {MAX_LOG_MESSAGE_BYTES} bytes"
+        ));
+    }
+    if fields.len() > MAX_LOG_FIELDS {
+        return Err(format!(
+            "log_record fields exceed the {MAX_LOG_FIELDS} entry limit"
+        ));
+    }
+    for key in fields.keys() {
+        if key.is_empty() || key.len() > MAX_LOG_FIELD_KEY_BYTES {
+            return Err(format!(
+                "log_record field names must contain 1 to {MAX_LOG_FIELD_KEY_BYTES} bytes"
+            ));
+        }
+    }
+    Ok(map_value([
+        ("level".into(), Value::Text(level.into())),
+        ("message".into(), Value::Text(message.into())),
+        ("fields".into(), Value::Map(fields.clone())),
+    ]))
+}
+
+fn structured_log_json(record: &Value) -> Result<String, String> {
+    let Value::Map(record_fields) = record else {
+        return Err("log_json internal record error".into());
+    };
+    let mut ordered = serde_json::Map::new();
+    for key in ["fields", "level", "message"] {
+        let value = record_fields
+            .get(key)
+            .ok_or_else(|| format!("log_json internal record missing {key}"))?;
+        if key == "fields" {
+            let Value::Map(fields) = value else {
+                return Err("log_json internal fields error".into());
+            };
+            let mut sorted_keys = fields.keys().collect::<Vec<_>>();
+            sorted_keys.sort();
+            let mut sorted_fields = serde_json::Map::new();
+            for field_key in sorted_keys {
+                sorted_fields.insert(field_key.clone(), value_to_json(&fields[field_key]));
+            }
+            ordered.insert(key.into(), serde_json::Value::Object(sorted_fields));
+        } else {
+            ordered.insert(key.into(), value_to_json(value));
+        }
+    }
+    let encoded = serde_json::to_string(&serde_json::Value::Object(ordered))
+        .map_err(|error| format!("log_json encode failed: {error}"))?;
+    if encoded.len() > MAX_LOG_OUTPUT_BYTES {
+        return Err(format!(
+            "log_json output exceeds the {MAX_LOG_OUTPUT_BYTES} byte limit"
+        ));
+    }
+    Ok(encoded)
 }
 
 fn map_value(entries: impl IntoIterator<Item = (String, Value)>) -> Value {
@@ -3861,6 +3950,98 @@ mod tests {
         )
         .expect_err("duration subtraction overflow should fail");
         assert!(between_error.contains("duration_between integer overflow"));
+    }
+
+    #[test]
+    fn builds_deterministic_structured_log_records() {
+        let mut fields = HashMap::new();
+        fields.insert("zeta".into(), Value::Number(2));
+        fields.insert("alpha".into(), Value::Text("zap".into()));
+        let record = direct_builtin(
+            "log_record",
+            vec![
+                Value::Text("info".into()),
+                Value::Text("started".into()),
+                Value::Map(fields.clone()),
+            ],
+        )
+        .expect("log_record should succeed")
+        .expect("log_record should return a value");
+        let Value::Map(record_fields) = record else {
+            panic!("log_record should return a map");
+        };
+        assert_eq!(
+            record_fields.get("level"),
+            Some(&Value::Text("info".into()))
+        );
+        assert_eq!(
+            record_fields.get("message"),
+            Some(&Value::Text("started".into()))
+        );
+        assert_eq!(record_fields.get("fields"), Some(&Value::Map(fields)));
+
+        let encoded = direct_builtin(
+            "log_json",
+            vec![
+                Value::Text("warn".into()),
+                Value::Text("slow request".into()),
+                Value::Map(
+                    [
+                        ("zeta".into(), Value::Number(2)),
+                        ("alpha".into(), Value::Text("zap".into())),
+                    ]
+                    .into_iter()
+                    .collect(),
+                ),
+            ],
+        )
+        .expect("log_json should succeed")
+        .expect("log_json should return a value");
+        assert_eq!(
+            encoded,
+            Value::Text(
+                "{\"fields\":{\"alpha\":\"zap\",\"zeta\":2},\"level\":\"warn\",\"message\":\"slow request\"}".into()
+            )
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_structured_log_inputs() {
+        let invalid_level = direct_builtin(
+            "log_record",
+            vec![
+                Value::Text("notice".into()),
+                Value::Text("message".into()),
+                Value::Map(HashMap::new()),
+            ],
+        )
+        .expect_err("unsupported log level should fail");
+        assert!(invalid_level.contains("level must be trace, debug, info, warn, or error"));
+
+        let empty_message = direct_builtin(
+            "log_record",
+            vec![
+                Value::Text("info".into()),
+                Value::Text(String::new()),
+                Value::Map(HashMap::new()),
+            ],
+        )
+        .expect_err("empty log message should fail");
+        assert!(empty_message.contains("message must contain 1 to"));
+
+        let oversized_fields = (0..65)
+            .map(|index| (format!("field{index}"), Value::Number(index)))
+            .collect();
+        let field_error = direct_builtin(
+            "log_record",
+            vec![
+                Value::Text("info".into()),
+                Value::Text("message".into()),
+                Value::Map(oversized_fields),
+            ],
+        )
+        .expect_err("too many log fields should fail");
+        assert!(field_error.contains("fields exceed the 64 entry limit"));
     }
 
     #[test]

@@ -165,6 +165,14 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "time",
     },
     PublicBuiltin {
+        name: "log_record",
+        domain: "logging",
+    },
+    PublicBuiltin {
+        name: "log_json",
+        domain: "logging",
+    },
+    PublicBuiltin {
         name: "env",
         domain: "system",
     },

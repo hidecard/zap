@@ -178,6 +178,25 @@ impl<'a> ExprParser<'a> {
                         .as_secs() as i64,
                 )
             }
+            Token::Name(n)
+                if (n == "log_record" || n == "log_json") && *self.peek() == Token::LParen =>
+            {
+                self.take();
+                let level = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err(format!("expected comma in {n}"));
+                }
+                let message = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err(format!("expected second comma in {n}"));
+                }
+                let fields = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err(format!("expected ) after {n}"));
+                }
+                direct_builtin(n.as_str(), vec![level, message, fields])?
+                    .ok_or_else(|| format!("unknown standard function: {n}"))?
+            }
             Token::Name(n) if n == "sleep" && *self.peek() == Token::LParen => {
                 self.take();
                 let v = self.parse(0)?;
