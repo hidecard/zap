@@ -1,10 +1,12 @@
 use std::cell::{Cell, RefCell};
 use std::{
     collections::HashMap,
-    io::Read,
+    io::{Read, Write},
+    net::TcpListener,
     path::Path,
     process::{Command, Stdio},
     rc::Rc,
+    thread,
     time::{Duration, Instant},
 };
 
@@ -637,6 +639,38 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
                 Ok(Some(Value::Bool(std::env::var_os(key).is_some())))
             }
         }
+        "env_get" => {
+            if args.len() != 2 {
+                return Err(format!("env_get expects 2 arguments, got {}", args.len()));
+            }
+            let (Value::Text(key), Value::Text(default)) = (&args[0], &args[1]) else {
+                return Err("env_get expects two text arguments".into());
+            };
+            Ok(Some(Value::Text(
+                std::env::var(key).unwrap_or_else(|_| default.clone()),
+            )))
+        }
+        "config_dir" => {
+            if !args.is_empty() {
+                return Err(format!(
+                    "config_dir expects 0 arguments, got {}",
+                    args.len()
+                ));
+            }
+            Ok(Some(Value::Text(configuration_directory())))
+        }
+        "config_path" => {
+            if args.len() != 1 {
+                return Err(format!(
+                    "config_path expects 1 argument, got {}",
+                    args.len()
+                ));
+            }
+            let Value::Text(name) = &args[0] else {
+                return Err("config_path expects a text file name".into());
+            };
+            Ok(Some(Value::Text(configuration_path(name)?)))
+        }
         "exists" => {
             if args.len() != 1 {
                 return Err(format!("exists expects 1 argument, got {}", args.len()));
@@ -683,10 +717,131 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
 const MAX_URL_BYTES: usize = 8 * 1024;
 const MAX_PROCESS_OUTPUT_BYTES: usize = 1024 * 1024;
 const MAX_HTTP_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+const MAX_HTTP_REQUEST_BYTES: usize = 64 * 1024;
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(10);
+const SERVER_TIMEOUT: Duration = Duration::from_secs(10);
+
+fn configuration_directory() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        return std::env::var("APPDATA")
+            .or_else(|_| std::env::var("LOCALAPPDATA"))
+            .unwrap_or_else(|_| ".".into());
+    }
+    #[cfg(target_os = "macos")]
+    {
+        return std::env::var("HOME")
+            .map(|home| format!("{home}/Library/Application Support"))
+            .unwrap_or_else(|_| ".".into());
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        std::env::var("XDG_CONFIG_HOME")
+            .or_else(|_| std::env::var("HOME").map(|home| format!("{home}/.config")))
+            .unwrap_or_else(|_| ".".into())
+    }
+}
+
+fn configuration_path(name: &str) -> Result<String, String> {
+    if name.is_empty() || name.contains('/') || name.contains('\\') || name == "." || name == ".." {
+        return Err("config_path expects a single relative file name".into());
+    }
+    Ok(Path::new(&configuration_directory())
+        .join(name)
+        .to_string_lossy()
+        .into())
+}
 
 fn map_value(entries: impl IntoIterator<Item = (String, Value)>) -> Value {
     Value::Map(entries.into_iter().collect())
+}
+
+fn http_serve_once(args: &[Value]) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err(format!(
+            "http_serve_once expects port and response body, got {} arguments",
+            args.len()
+        ));
+    }
+    let port = match args.first() {
+        Some(Value::Number(value)) if (0..=u16::MAX as i64).contains(value) => *value as u16,
+        _ => return Err("http_serve_once expects a numeric port from 0 to 65535".into()),
+    };
+    let body = match &args[1] {
+        Value::Text(value) => value,
+        _ => return Err("http_serve_once expects a text response body".into()),
+    };
+    if body.len() > MAX_HTTP_RESPONSE_BYTES {
+        return Err(format!(
+            "http_serve_once response exceeds the {MAX_HTTP_RESPONSE_BYTES} byte limit"
+        ));
+    }
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .map_err(|error| format!("http_serve_once failed to bind: {error}"))?;
+    listener
+        .set_nonblocking(true)
+        .map_err(|error| format!("http_serve_once failed to configure listener: {error}"))?;
+    let address = listener
+        .local_addr()
+        .map_err(|error| format!("http_serve_once failed to read address: {error}"))?;
+    let deadline = Instant::now() + SERVER_TIMEOUT;
+    let (mut stream, _) = loop {
+        match listener.accept() {
+            Ok(connection) => break connection,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                if Instant::now() >= deadline {
+                    return Err("http_serve_once timed out waiting for one request".into());
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(format!("http_serve_once failed to accept: {error}")),
+        }
+    };
+    stream
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .map_err(|error| format!("http_serve_once failed to configure request timeout: {error}"))?;
+    let mut request = Vec::new();
+    let mut buffer = [0u8; 4096];
+    loop {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("http_serve_once failed to read request: {error}"))?;
+        if count == 0 {
+            break;
+        }
+        request.extend_from_slice(&buffer[..count]);
+        if request.windows(4).any(|window| window == b"\\r\\n\\r\\n") {
+            break;
+        }
+        if request.len() > MAX_HTTP_REQUEST_BYTES {
+            return Err(format!(
+                "http_serve_once request exceeds the {MAX_HTTP_REQUEST_BYTES} byte limit"
+            ));
+        }
+    }
+    let request_text = String::from_utf8(request)
+        .map_err(|_| "http_serve_once request is not UTF-8".to_string())?;
+    let request_line = request_text.lines().next().unwrap_or("");
+    let mut parts = request_line.split_whitespace();
+    let method = parts.next().unwrap_or("");
+    let path = parts.next().unwrap_or("");
+    let version = parts.next().unwrap_or("");
+    if method.is_empty() || path.is_empty() || version != "HTTP/1.1" && version != "HTTP/1.0" {
+        return Err("http_serve_once received a malformed HTTP request".into());
+    }
+    let response = format!(
+        "HTTP/1.1 200 OK\\r\\nContent-Length: {}\\r\\nContent-Type: text/plain; charset=utf-8\\r\\nConnection: close\\r\\n\\r\\n{}",
+        body.len(), body
+    );
+    stream
+        .write_all(response.as_bytes())
+        .map_err(|error| format!("http_serve_once failed to write response: {error}"))?;
+    Ok(map_value([
+        ("address".into(), Value::Text(address.to_string())),
+        ("method".into(), Value::Text(method.into())),
+        ("path".into(), Value::Text(path.into())),
+        ("body".into(), Value::Text(body.clone())),
+    ]))
 }
 
 fn percent_encode(value: &str) -> String {
@@ -965,6 +1120,7 @@ pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Opti
             http_request(&[Value::Text("GET".into()), args[0].clone()]).map(Some)
         }
         "http_request" => Ok(Some(http_request(args)?)),
+        "http_serve_once" => Ok(Some(http_serve_once(args)?)),
         _ => Ok(None),
     }
 }
@@ -2876,7 +3032,7 @@ pub(crate) fn execute_lines(
 
 #[cfg(test)]
 mod tests {
-    use super::{execute_ast_program, execute_lines};
+    use super::{configuration_path, execute_ast_program, execute_lines, http_serve_once};
     use crate::ast::parse_program;
     use crate::{Function, Value};
     use std::{collections::HashMap, path::Path, rc::Rc};
@@ -2961,6 +3117,38 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn evaluates_configuration_builtins_from_native_ast() {
+        let program = parse_program(
+            "let fallback: text = env_get(\"ZAP_TEST_MISSING_ENV\", \"fallback\")\nlet directory: text = config_dir()\nlet file: text = config_path(\"settings.json\")\n",
+        )
+        .expect("valid configuration built-in AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("configuration built-ins should execute");
+        assert_eq!(vars.get("fallback"), Some(&Value::Text("fallback".into())));
+        let Value::Text(directory) = vars.get("directory").expect("config directory") else {
+            panic!("config_dir must return text");
+        };
+        let Value::Text(file) = vars.get("file").expect("config path") else {
+            panic!("config_path must return text");
+        };
+        assert!(file.starts_with(directory));
+        assert!(file.ends_with("settings.json"));
+
+        assert!(configuration_path("../escape.json").is_err());
+        assert!(configuration_path("nested/settings.json").is_err());
+    }
+
+    #[test]
+    fn validates_local_http_server_arguments() {
+        assert!(http_serve_once(&[Value::Number(-1), Value::Text("ok".into())]).is_err());
+        assert!(http_serve_once(&[Value::Number(0), Value::Number(1)]).is_err());
+        let oversized = "x".repeat(super::MAX_HTTP_RESPONSE_BYTES + 1);
+        assert!(http_serve_once(&[Value::Number(0), Value::Text(oversized)]).is_err());
     }
 
     #[test]

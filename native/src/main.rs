@@ -213,6 +213,41 @@ impl<'a> ExprParser<'a> {
                     _ => return Err("has_env expects a text key".into()),
                 }
             }
+            Token::Name(n) if n == "env_get" && *self.peek() == Token::LParen => {
+                self.take();
+                let key = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err("expected comma in env_get".into());
+                }
+                let default = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after env_get".into());
+                }
+                match (key, default) {
+                    (Value::Text(key), Value::Text(default)) => {
+                        Value::Text(env::var(key).unwrap_or(default))
+                    }
+                    _ => return Err("env_get expects two text arguments".into()),
+                }
+            }
+            Token::Name(n) if n == "config_dir" && *self.peek() == Token::LParen => {
+                self.take();
+                if self.take() != Token::RParen {
+                    return Err("expected ) after config_dir".into());
+                }
+                Value::Text(legacy_configuration_directory())
+            }
+            Token::Name(n) if n == "config_path" && *self.peek() == Token::LParen => {
+                self.take();
+                let name = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after config_path".into());
+                }
+                let Value::Text(name) = name else {
+                    return Err("config_path expects a text file name".into());
+                };
+                Value::Text(legacy_configuration_path(&name)?)
+            }
             Token::Name(n) if n == "exists" && *self.peek() == Token::LParen => {
                 self.take();
                 let path = self.parse(0)?;
@@ -1680,6 +1715,37 @@ fn print_project_json(dir: &Path) {
         }
     }
 }
+fn legacy_configuration_directory() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        return env::var("APPDATA")
+            .or_else(|_| env::var("LOCALAPPDATA"))
+            .unwrap_or_else(|_| ".".into());
+    }
+    #[cfg(target_os = "macos")]
+    {
+        return env::var("HOME")
+            .map(|home| format!("{home}/Library/Application Support"))
+            .unwrap_or_else(|_| ".".into());
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        env::var("XDG_CONFIG_HOME")
+            .or_else(|_| env::var("HOME").map(|home| format!("{home}/.config")))
+            .unwrap_or_else(|_| ".".into())
+    }
+}
+
+fn legacy_configuration_path(name: &str) -> Result<String, String> {
+    if name.is_empty() || name.contains('/') || name.contains('\\') || name == "." || name == ".." {
+        return Err("config_path expects a single relative file name".into());
+    }
+    Ok(Path::new(&legacy_configuration_directory())
+        .join(name)
+        .to_string_lossy()
+        .into())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     cli::run_cli(&args);

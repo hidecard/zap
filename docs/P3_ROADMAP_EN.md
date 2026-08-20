@@ -28,7 +28,7 @@ Focused parser/evaluator coverage verifies expression-required raise syntax, unc
 
 ## First implementation target: P3.1
 
-The P3.3 implementation has now added bounded `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, and direct non-shell `process_run` builtins. It also registers these APIs in the deterministic standard-library catalog and documents URL, process, and HTTP size and timeout limits. The remaining P3.3 work is to complete the safe configuration surface, add a deterministic local HTTP server primitive, and finish cross-platform network/process verification.
+The P3.3 implementation now includes bounded `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, and direct non-shell `process_run` builtins. The safe configuration slice includes `env_get`, `config_dir`, and `config_path`; it provides defaulted environment access, platform-aware configuration directories, and traversal-resistant single-file configuration paths. The local server slice adds `http_serve_once`, which binds to loopback, serves one request, and enforces request, response, and wait limits. All APIs are registered in the deterministic standard-library catalog and documented with their safety limits. The remaining P3.3 work is cross-platform network/process/configuration verification and final release hardening.
 
 P3.1 is the first priority because modules and workspaces are prerequisites for reusable web, AI, and standard-library packages. The implementation will extend the existing parser-owned spans and project resolver rather than introducing a second module model.
 

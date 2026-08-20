@@ -129,6 +129,18 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "system",
     },
     PublicBuiltin {
+        name: "env_get",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "config_dir",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "config_path",
+        domain: "system",
+    },
+    PublicBuiltin {
         name: "basename",
         domain: "system",
     },
@@ -154,6 +166,10 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     },
     PublicBuiltin {
         name: "http_request",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "http_serve_once",
         domain: "network",
     },
     PublicBuiltin {
