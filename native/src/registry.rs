@@ -497,9 +497,10 @@ pub fn publish_package(
     if let Some(token) = token {
         request = request.set("Authorization", &format!("Bearer {token}"));
     }
-    let response = request
-        .send_bytes(&bytes)
-        .map_err(|e| format!("registry publish failed: {e}"))?;
+    let response = request.send_bytes(&bytes).map_err(|error| match error {
+        ureq::Error::Status(status, _) => format!("registry publish failed with HTTP {status}"),
+        other => format!("registry publish failed: {other}"),
+    })?;
     if !(200..300).contains(&response.status()) {
         return Err(format!(
             "registry publish failed with HTTP {}",
@@ -620,9 +621,12 @@ fn fetch_source(source: &str) -> Result<Vec<u8>, String> {
     }
     if source.starts_with("http://") || source.starts_with("https://") {
         require_secure_transport(source)?;
-        let response = ureq::get(source)
-            .call()
-            .map_err(|e| format!("registry HTTP fetch failed: {e}"))?;
+        let response = ureq::get(source).call().map_err(|error| match error {
+            ureq::Error::Status(status, _) => {
+                format!("registry HTTP fetch failed with HTTP {status}")
+            }
+            other => format!("registry HTTP fetch failed: {other}"),
+        })?;
         let mut bytes = Vec::new();
         response
             .into_reader()
@@ -820,7 +824,10 @@ mod tests {
     };
     use std::collections::BTreeMap;
     use std::fs;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
     use std::path::Path;
+    use std::sync::{Mutex, OnceLock};
 
     #[test]
     fn index_is_sorted_and_exact_lookup_is_deterministic() {
@@ -876,6 +883,84 @@ mod tests {
         let error = publish_package("https://registry.invalid/publish", &archive, &package, None)
             .unwrap_err();
         assert!(error.contains("publish checksum mismatch"));
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    fn with_insecure_http<T>(operation: impl FnOnce() -> T) -> T {
+        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        std::env::set_var("ZAP_ALLOW_INSECURE_HTTP", "1");
+        let result = operation();
+        std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
+        result
+    }
+
+    fn local_http_response(status: &str, body: &[u8]) -> (String, std::thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let body = body.to_vec();
+        let status = status.to_string();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 4096];
+            let _ = stream.read(&mut request);
+            let headers = format!(
+                "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(headers.as_bytes()).unwrap();
+            stream.write_all(&body).unwrap();
+        });
+        (format!("http://{address}"), handle)
+    }
+
+    #[test]
+    fn insecure_http_registry_transport_is_rejected_by_default() {
+        std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
+        let error = read_index_source("http://127.0.0.1:1/index.json").unwrap_err();
+        assert!(error.contains("insecure HTTP registry transport is disabled"));
+    }
+
+    #[test]
+    fn malformed_remote_index_has_stable_diagnostic() {
+        let (url, handle) = local_http_response("200 OK", b"not-json");
+        let error =
+            with_insecure_http(|| read_index_source(&format!("{url}/index.json"))).unwrap_err();
+        handle.join().unwrap();
+        assert!(error.starts_with("registry index JSON is invalid:"));
+    }
+
+    #[test]
+    fn registry_index_reports_service_http_status() {
+        let (url, handle) =
+            local_http_response("503 Service Unavailable", b"temporarily unavailable");
+        let error =
+            with_insecure_http(|| read_index_source(&format!("{url}/index.json"))).unwrap_err();
+        handle.join().unwrap();
+        assert_eq!(error, "registry HTTP fetch failed with HTTP 503");
+    }
+
+    #[test]
+    fn registry_publish_reports_service_http_status() {
+        let root = std::env::temp_dir().join(format!("zap-publish-http-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let archive = root.join("package.pkg");
+        fs::write(&archive, b"package").unwrap();
+        let package = RegistryPackage {
+            name: "demo".into(),
+            version: "1.0.0".into(),
+            source: archive.display().to_string(),
+            checksum: sha256_hex(b"package"),
+            dependencies: BTreeMap::new(),
+        };
+        let (url, handle) =
+            local_http_response("503 Service Unavailable", b"temporarily unavailable");
+        let error = with_insecure_http(|| {
+            publish_package(&format!("{url}/publish"), &archive, &package, None)
+        })
+        .unwrap_err();
+        handle.join().unwrap();
+        assert_eq!(error, "registry publish failed with HTTP 503");
         fs::remove_dir_all(&root).unwrap();
     }
 

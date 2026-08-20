@@ -9,6 +9,7 @@
 - Updated `zap install` to report the complete resolved registry graph, including transitive packages, with deterministic `name@version` ordering while preserving the established dependency-count prefix.
 - Added offline nested-registry integration fixtures covering transitive resolution, cache verification, stable install output, missing transitive artifacts, cached checksum mismatches, and incomplete v2 lockfiles with deterministic diagnostics.
 - Added `zap registry gc [--dry-run] [dir]`, which derives keep entries from the canonical project lockfile, preserves referenced artifacts, reports stale and temporary candidates without mutation in dry-run mode, and deletes candidates in deterministic lexical order.
+- Added transport and registry-service failure coverage: insecure HTTP rejection, malformed remote-index diagnostics, and deterministic HTTP-status errors for non-2xx fetch and publish responses.
 
 
 ## [2.0.4] — 2026-08-20
