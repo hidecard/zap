@@ -15,6 +15,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let name = manifest_value(&text, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
+    validate_package_metadata(&text, "zap.toml")?;
     let main = manifest_value(&text, "main").unwrap_or_else(|| "main.zp".into());
     let main_path = dir.join(&main);
     if !main_path.is_file() {
@@ -91,6 +92,66 @@ fn parse_dependencies(manifest: &str) -> Result<BTreeMap<String, DependencySpec>
         }
     }
     Ok(dependencies)
+}
+
+fn validate_package_metadata(manifest: &str, context: &str) -> Result<(), String> {
+    let known = [
+        "description",
+        "authors",
+        "license",
+        "repository",
+        "checksum",
+    ];
+    let mut in_package = false;
+    for raw_line in manifest.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            in_package = line == "[package]";
+            continue;
+        }
+        if !in_package {
+            continue;
+        }
+        let Some((key, raw_value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if !known.contains(&key) {
+            continue;
+        }
+        let value = raw_value.trim();
+        if value.is_empty() || value.contains(['\n', '\r']) {
+            return Err(format!(
+                "{context}: metadata field `{key}` must not be empty"
+            ));
+        }
+        if key == "authors" {
+            let valid_array = value.starts_with('[') && value.ends_with(']') && value.len() > 2;
+            let valid_string = value.starts_with('"') && value.ends_with('"') && value.len() > 2;
+            if !valid_array && !valid_string {
+                return Err(format!(
+                    "{context}: metadata field `authors` must be a non-empty string or array"
+                ));
+            }
+        } else {
+            let quoted = value.starts_with('"') && value.ends_with('"') && value.len() > 2;
+            if !quoted {
+                return Err(format!(
+                    "{context}: metadata field `{key}` must be a non-empty string"
+                ));
+            }
+        }
+        if key == "checksum" {
+            let checksum = value.trim_matches('"');
+            if checksum.len() != 64 || !checksum.chars().all(|ch| ch.is_ascii_hexdigit()) {
+                return Err(format!("{context}: metadata field `checksum` must be a 64-character hexadecimal SHA-256 value"));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn canonical_lockfile(
@@ -243,6 +304,7 @@ fn visit_dependency(
         ));
     }
     let text = read_limited_text(&manifest_path, "local dependency manifest read")?;
+    validate_package_metadata(&text, &format!("dependency `{name}`"))?;
     let package_name = manifest_value(&text, "name")
         .ok_or_else(|| format!("dependency `{name}`: local zap.toml is missing package name"))?;
     manifest_value(&text, "version")
@@ -260,6 +322,7 @@ fn visit_dependency(
 pub(crate) fn write_lockfile(dir: &Path) -> Result<String, String> {
     let manifest_path = dir.join("zap.toml");
     let manifest = read_limited_text(&manifest_path, "manifest read")?;
+    validate_package_metadata(&manifest, "zap.toml")?;
     let name =
         manifest_value(&manifest, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version = manifest_value(&manifest, "version")
@@ -291,6 +354,7 @@ pub(crate) fn install_dependencies(dir: &Path) -> Result<String, String> {
 pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {
     let manifest_path = dir.join("zap.toml");
     let manifest = read_limited_text(&manifest_path, "manifest read")?;
+    validate_package_metadata(&manifest, "zap.toml")?;
     let name =
         manifest_value(&manifest, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version = manifest_value(&manifest, "version")

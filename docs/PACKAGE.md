@@ -55,6 +55,23 @@ zap lock path/to/project
 
 `zap check` နှင့် `zap build` များသည် dependency ရှိသော project များတွင် `zap.lock` မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းကို error ပြန်ပေးသည်။
 
+## Registry-ready package metadata
+
+`[package]` table ထဲတွင် နောက်ပိုင်း registry publishing အတွက် optional metadata fields များ ထည့်နိုင်သည်။ `zap lock` သို့မဟုတ် `zap update` မလုပ်မီ root package နှင့် nested local package များအားလုံးတွင် အဆိုပါ fields များကို locally validate လုပ်သည်။
+
+```toml
+[package]
+name = "hello-app"
+version = "0.1.0"
+description = "A small Zap application"
+authors = ["Zap Team"]
+license = "MIT"
+repository = "https://github.com/hidecard/zap"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+```
+
+`description`၊ `license` နှင့် `repository` တို့သည် အလွတ်မဖြစ်သော quoted string များ ဖြစ်ရမည်။ `authors` သည် အလွတ်မဖြစ်သော quoted string သို့မဟုတ် array ဖြစ်နိုင်သည်။ `checksum` ထည့်ထားပါက hexadecimal character 64 လုံးပါသော SHA-256 digest ဖြစ်ရမည်။ ယခုအဆင့်တွင် ဤ fields များသည် metadata validation အတွက်သာဖြစ်ပြီး remote registry lookup၊ publishing နှင့် package download များ မပြုလုပ်သေးပါ။
+
 ## Dependency ထည့်ခြင်း
 
 Manifest ကို တိုက်ရိုက်မပြင်ဘဲ dependency ထည့်ရန် `zap add` ကို အသုံးပြုနိုင်သည်။

@@ -4457,3 +4457,63 @@ fn rejects_nested_local_dependency_cycles_deterministically() {
     );
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn accepts_registry_ready_package_metadata() {
+    let root = std::env::temp_dir().join("zap_registry_metadata_valid");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"metadata-app\"\nversion = \"0.1.0\"\ndescription = \"A registry-ready package\"\nauthors = [\"Zap Team\"]\nlicense = \"MIT\"\nrepository = \"https://github.com/hidecard/zap\"\nchecksum = \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn rejects_invalid_registry_metadata() {
+    let root = std::env::temp_dir().join("zap_registry_metadata_invalid");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"metadata-app\"\nversion = \"0.1.0\"\nlicense = MIT\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("metadata field `license`"));
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn rejects_non_sha256_package_checksum() {
+    let root = std::env::temp_dir().join("zap_registry_checksum_invalid");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"checksum-app\"\nversion = \"0.1.0\"\nchecksum = \"deadbeef\"\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("64-character hexadecimal SHA-256"));
+    let _ = std::fs::remove_dir_all(&root);
+}

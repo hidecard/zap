@@ -73,6 +73,23 @@ hello-app/
 
 Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. Local dependencies are recursively traversed in lexicographic depth-first order, so nested local packages are validated before the command succeeds. If a canonical package path appears again on the active traversal stack, Zap rejects the graph with a deterministic diagnostic such as `dependency cycle detected: left -> right -> left`. The lockfile records the direct path as `local-lib = { path = "../local-lib" }` in canonical dependency order. Remote registry download and package publishing remain later ecosystem milestones.
 
+## Registry-ready package metadata
+
+The `[package]` table accepts optional metadata for future registry publication. These fields are validated locally before `zap lock` or `zap update` writes a lockfile, including for nested local packages.
+
+```toml
+[package]
+name = "hello-app"
+version = "0.1.0"
+description = "A small Zap application"
+authors = ["Zap Team"]
+license = "MIT"
+repository = "https://github.com/hidecard/zap"
+checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+```
+
+`description`, `license`, and `repository` must be non-empty quoted strings. `authors` may be a non-empty quoted string or array. When present, `checksum` must be exactly 64 hexadecimal characters representing a SHA-256 digest. These fields are metadata validation only at this stage; remote registry lookup, publishing, and downloads are not performed.
+
 ## Adding a dependency
 
 Use `zap add` to update the manifest without hand-editing the dependency table:

@@ -18,7 +18,7 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The current P1 development line includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, and registry-ready package metadata validation.
 
 | Item | Current status |
 |---|---|
@@ -31,7 +31,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The curre
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
-| Test status | 31 native unit tests and 78 integration tests passing (109 total) |
+| Test status | 31 native unit tests and 185 integration tests passing (216 total) |
 
 ## Native Runtime Architecture
 
@@ -46,10 +46,10 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `evaluator.rs` | Evaluation, functions, methods, modules, and control flow | Implemented |
 | `stdlib.rs` | Text, math, collection, filesystem, JSON, environment, path, and time built-in operations | Stabilized initial API surface |
 | `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
-| `project.rs` | Project, manifest, lockfile, and module validation | Implemented |
+| `project.rs` | Project, manifest, lockfile, dependency graph, metadata, and module validation | Implemented |
 | `cli.rs` | CLI command orchestration and exit codes | Implemented |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; see the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; see the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?
 
@@ -172,6 +172,6 @@ zap.exe main.zp
 | Data | JSON encoding and decoding |
 | Files | text and line-based file I/O |
 | System helpers | paths, time, sleep, environment variables, and math helpers |
-| Modules | explicit `import`/`export`, local search paths, cache, cycle detection, module-aware private access, and deterministic package lockfiles |
+| Modules | explicit `import`/`export`, local search paths, cache, cycle detection, module-aware private access, deterministic package lockfiles, nested local dependency graphs, and cycle validation |
 | Error values | `ok`, `err`, `some`, `option_none`, `unwrap`, `unwrap_or`, typed `result<T>`/`option<T>`, and `?` |
 | Diagnostics | human-readable errors, source locations, secret redaction, structured JSON diagnostics, and static type-narrowing errors |
