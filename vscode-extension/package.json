@@ -1,0 +1,119 @@
+{
+  "name": "zap-language-support",
+  "displayName": "Zap Language Support",
+  "description": "Syntax highlighting, completion, diagnostics, and run support for the Zap programming language.",
+  "version": "0.1.0",
+  "publisher": "zap-language",
+  "license": "MIT",
+  "engines": {
+    "vscode": ">=1.85.0"
+  },
+  "categories": ["Programming Languages", "Linters"],
+  "keywords": ["zap", "zap-language", "zp", "language-server"],
+  "activationEvents": [
+    "onLanguage:zap",
+    "onCommand:zap.runFile",
+    "onCommand:zap.checkWorkspace",
+    "onCommand:zap.restartDiagnostics"
+  ],
+  "main": "extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "zap",
+        "aliases": ["Zap", "zap"],
+        "extensions": [".zp"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "zap",
+        "scopeName": "source.zap",
+        "path": "./syntaxes/zap.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "zap",
+        "path": "./snippets/zap.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "zap.runFile",
+        "title": "Zap: Run Current File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "zap.checkWorkspace",
+        "title": "Zap: Check Workspace",
+        "icon": "$(check)"
+      },
+      {
+        "command": "zap.restartDiagnostics",
+        "title": "Zap: Restart Diagnostics",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "zap.runFile",
+          "when": "editorLangId == zap",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "zap.runFile",
+          "when": "editorLangId == zap",
+          "group": "zap@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "zap.runFile"
+        },
+        {
+          "command": "zap.checkWorkspace"
+        },
+        {
+          "command": "zap.restartDiagnostics"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Zap",
+      "properties": {
+        "zap.executable": {
+          "type": "string",
+          "default": "zap",
+          "description": "Path or command name for the Zap CLI executable."
+        },
+        "zap.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run `zap check --json` and show diagnostics for the active workspace."
+        },
+        "zap.diagnosticDelay": {
+          "type": "number",
+          "default": 350,
+          "minimum": 100,
+          "maximum": 3000,
+          "description": "Delay in milliseconds before checking a changed Zap file."
+        },
+        "zap.runInTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run Zap files in the integrated terminal instead of an output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node scripts/test-extension.js",
+    "package": "node scripts/package-extension.js"
+  }
+}
+

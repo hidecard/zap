@@ -1,0 +1,37 @@
+{
+  "Function": {
+    "prefix": "fn",
+    "body": ["fn ${1:name}(${2:args}) -> ${3:none}:", "    ${0:pass}"],
+    "description": "Create a Zap function"
+  },
+  "If statement": {
+    "prefix": "if",
+    "body": ["if ${1:condition}:", "    ${0:pass}"],
+    "description": "Create an if block"
+  },
+  "For loop": {
+    "prefix": "for",
+    "body": ["for ${1:item} in ${2:items}:", "    ${0:pass}"],
+    "description": "Create a for loop"
+  },
+  "Try catch": {
+    "prefix": "try",
+    "body": ["try:", "    ${1:pass}", "catch ${2:error}:", "    ${0:say(error)}"],
+    "description": "Create a structured error handler"
+  },
+  "Module import": {
+    "prefix": "import",
+    "body": ["import ${1:module.zp} as ${2:module}"],
+    "description": "Import a Zap module"
+  },
+  "Main entry": {
+    "prefix": "main",
+    "body": ["fn main() -> none:", "    ${0:say(\"Hello, Zap!\")}"],
+    "description": "Create a main function"
+  },
+  "Raise error": {
+    "prefix": "raise",
+    "body": ["raise ${0:message}"],
+    "description": "Raise a structured error value"
+  }
+}

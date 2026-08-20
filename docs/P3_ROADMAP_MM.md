@@ -14,7 +14,7 @@ P2 တွင် native runtime၊ deterministic registry transport နှင့�
 |---|---|---|---|
 | P3.1 | Module နှင့် workspace architecture | ရှင်းလင်းသော module/import syntax၊ deterministic search paths၊ duplicate/cycle diagnostics နှင့် cross-platform workspace tests | ပြီးစီး |
 | P3.2 | Structured error model | Native `raise`/`try`/`catch` propagation၊ တည်ငြိမ်သော diagnostics၊ catch binding restoration၊ re-raise support နှင့် deterministic runtime behavior | ပြီးစီး |
-| P3.3 | Production standard library | HTTP client/server primitives၊ URL handling၊ process execution boundaries နှင့် လုံခြုံသော environment/configuration APIs | စီစဉ်ထား |
+| P3.3 | Production standard library | HTTP client/server primitives၊ URL handling၊ process execution boundaries နှင့် လုံခြုံသော environment/configuration APIs | လုပ်ဆောင်နေ |
 | P3.4 | Async I/O integration | timers၊ sockets၊ files၊ cancellation၊ backpressure နှင့် resource budgets အတွက် deterministic runtime interfaces | စီစဉ်ထား |
 | P3.5 | Type-system productivity | Generic functions/collections၊ ပိုမိုကောင်းမွန်သော inference၊ pattern matching နှင့် exhaustiveness diagnostics | စီစဉ်ထား |
 | P3.6 | Tooling နှင့် language server | Full formatter၊ workspace indexing၊ rename/references၊ import assistance၊ semantic tokens နှင့် project-aware diagnostics | စီစဉ်ထား |
@@ -27,6 +27,8 @@ P3.2 တွင် `raise <expression>` နှင့် same-level `try`/`catch <
 Parser/evaluator focused coverage များတွင် expression လိုအပ်သော raise syntax၊ uncaught flow၊ nested catch shadow restoration၊ ပုံမှန်ပြီးဆုံးမှု၊ text မဟုတ်သော payload များနှင့် re-raise behavior တို့ကို စစ်ဆေးထားပါသည်။ နောက် release artifact မထုတ်မီ complete native suite နှင့် strict release checks များကို ဆက်လက်အောင်မြင်ရန် လိုအပ်ပါသည်။
 
 ## ပထမဆုံးအကောင်အထည်ဖော်မည့် P3.1
+
+P3.3 အကောင်အထည်ဖော်မှု၏ ပထမအဆင့်တွင် ကန့်သတ်ထားသော `url_parse`၊ `url_encode`၊ `url_decode`၊ `http_get`၊ `http_request` နှင့် shell မသုံးသော `process_run` builtin များကို ထည့်သွင်းထားပါသည်။ ဤ API များကို deterministic standard-library catalog တွင် မှတ်ပုံတင်ပြီး URL၊ process နှင့် HTTP size/timeout ကန့်သတ်ချက်များကို documentation တွင် ဖော်ပြထားပါသည်။ P3.3 ပြီးစီးရန် safe configuration surface၊ deterministic local HTTP server primitive နှင့် cross-platform network/process verification များ ကျန်ရှိနေပါသည်။
 
 P3.1 ကို ပထမဦးစားပေးအဖြစ် ရွေးချယ်ထားခြင်းမှာ modules နှင့် workspaces များသည် reusable web, AI နှင့် standard-library packages များအတွက် အခြေခံလိုအပ်ချက်ဖြစ်သောကြောင့် ဖြစ်ပါသည်။ P2 တွင်ရှိပြီးသား parser-owned spans နှင့် project resolver ကို အသုံးပြုပြီး module model အသစ်နှစ်ခု မဖြစ်စေရန် တိုးချဲ့မည်ဖြစ်ပါသည်။
 

@@ -14,7 +14,7 @@ P2 delivered the native runtime, deterministic registry transport and resolution
 |---|---|---|---|
 | P3.1 | Module and workspace architecture | Explicit module/import syntax, deterministic search paths, duplicate/cycle diagnostics, and cross-platform workspace tests | Complete |
 | P3.2 | Structured error model | Native `raise`/`try`/`catch` propagation, stable diagnostics, catch binding restoration, re-raise support, and deterministic runtime behavior | Complete |
-| P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | Planned |
+| P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | In progress |
 | P3.4 | Async I/O integration | Deterministic runtime interfaces for timers, sockets, files, cancellation, backpressure, and resource budgets | Planned |
 | P3.5 | Type-system productivity | Generic functions and collections, richer inference, pattern matching, and improved exhaustiveness diagnostics | Planned |
 | P3.6 | Tooling and language server | Full formatter, workspace indexing, rename/references, import assistance, semantic tokens, and project-aware diagnostics | Planned |
@@ -27,6 +27,8 @@ P3.2 adds `raise <expression>` and same-level `try`/`catch <binding>:` syntax to
 Focused parser/evaluator coverage verifies expression-required raise syntax, uncaught flow, nested catch shadow restoration, normal completion, non-text payloads, and re-raising. The complete native suite and strict release checks remain required before publishing the next release artifact.
 
 ## First implementation target: P3.1
+
+The P3.3 implementation has now added bounded `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, and direct non-shell `process_run` builtins. It also registers these APIs in the deterministic standard-library catalog and documents URL, process, and HTTP size and timeout limits. The remaining P3.3 work is to complete the safe configuration surface, add a deterministic local HTTP server primitive, and finish cross-platform network/process verification.
 
 P3.1 is the first priority because modules and workspaces are prerequisites for reusable web, AI, and standard-library packages. The implementation will extend the existing parser-owned spans and project resolver rather than introducing a second module model.
 

@@ -120,6 +120,46 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         name: "now",
         domain: "system",
     },
+    PublicBuiltin {
+        name: "env",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "has_env",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "basename",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "dirname",
+        domain: "system",
+    },
+    PublicBuiltin {
+        name: "url_parse",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "url_encode",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "url_decode",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "http_get",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "http_request",
+        domain: "network",
+    },
+    PublicBuiltin {
+        name: "process_run",
+        domain: "process",
+    },
 ];
 
 #[allow(dead_code)]

@@ -4915,3 +4915,92 @@ fn lsp_unknown_method_returns_framed_json_rpc_error_end_to_end() {
     assert!(stdout.contains("\"code\":-32601"));
     assert!(stdout.contains("Method not found"));
 }
+
+#[test]
+fn supports_p33_url_helpers_and_parsed_components() {
+    let file = std::env::temp_dir().join("zap_p33_url_test.zp");
+    std::fs::write(
+        &file,
+        "let parsed = url_parse(\"https://example.com:8443/api?q=zap#top\")\nsay parsed[\"scheme\"]\nsay parsed[\"host\"]\nsay parsed[\"port\"]\nsay url_encode(\"a b/c\")\nsay url_decode(\"a%20b%2Fc\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "https\nexample.com\nSome(8443)\na%20b%2Fc\na b/c\n"
+    );
+}
+
+#[test]
+fn supports_bounded_non_shell_process_execution() {
+    let file = std::env::temp_dir().join("zap_p33_process_test.zp");
+    let source = if cfg!(windows) {
+        "let result = process_run(\"cmd\", [\"/C\", \"echo zap\"])\nsay result[\"success\"]\nsay result[\"stdout\"]\n"
+    } else {
+        "let result = process_run(\"printf\", [\"zap\"])\nsay result[\"success\"]\nsay result[\"stdout\"]\n"
+    };
+    std::fs::write(&file, source).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.starts_with("true\n"), "{stdout}");
+    assert!(stdout.contains("zap"), "{stdout}");
+}
+
+#[test]
+fn rejects_invalid_p33_url_input_deterministically() {
+    let file = std::env::temp_dir().join("zap_p33_invalid_url_test.zp");
+    std::fs::write(&file, "say url_parse(\"not-a-url\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("url_parse expects an absolute URL"));
+}
+
+#[test]
+fn ast_and_legacy_paths_share_p33_url_behavior() {
+    let file = std::env::temp_dir().join("zap_p33_parity_test.zp");
+    std::fs::write(&file, "say url_encode(\"zap language\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "zap%20language\n");
+}
+
+#[test]
+fn rejects_process_shell_metacharacters_as_plain_arguments() {
+    let file = std::env::temp_dir().join("zap_p33_process_args_test.zp");
+    let source = if cfg!(windows) {
+        "let result = process_run(\"cmd\", [\"/C\", \"echo\", \"a & b\"])\nsay result[\"stdout\"]\n"
+    } else {
+        "let result = process_run(\"printf\", [\"%s\", \"a & b\"])\nsay result[\"stdout\"]\n"
+    };
+    std::fs::write(&file, source).unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("a & b"));
+}
+
+#[test]
+fn rejects_invalid_url_percent_escape_deterministically() {
+    let file = std::env::temp_dir().join("zap_p33_invalid_escape_test.zp");
+    std::fs::write(&file, "say url_decode(\"%ZZ\")\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("url_decode found invalid percent escape")
+    );
+}

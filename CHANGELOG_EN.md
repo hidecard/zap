@@ -1,5 +1,20 @@
 # Zap Changelog
 
+## Unreleased — P3.3 in progress
+
+### Added
+
+- Bounded `url_parse`, `url_encode`, and `url_decode` builtins with deterministic validation.
+- `http_get` and `http_request` builtins restricted to HTTP/HTTPS URLs with bounded timeouts and response size.
+- Direct non-shell `process_run` with text arguments, UTF-8 stdout/stderr capture, status reporting, and output limits.
+- Deterministic standard-library catalog entries and bilingual documentation for the new APIs.
+- Initial `vscode-extension` folder with `.zp` registration, TextMate syntax highlighting, snippets, completion, CLI-backed diagnostics, workspace checking, and run-current-file commands.
+
+### Verification
+
+- Native suite: **235 tests passed**.
+- Focused P3.3 URL, process, HTTP validation, and compatibility regressions passed.
+
 ## [2.0.1] — 2026-08-20
 
 Zap v2.0.1 is a production-quality maintenance release following the P2 Ecosystem foundation. It completes the P3.1 module/workspace architecture slice and closes the remaining v2 audit findings.

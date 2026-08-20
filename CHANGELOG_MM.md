@@ -1,5 +1,20 @@
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
+## Unreleased — P3.3 လုပ်ဆောင်နေဆဲ
+
+### ထည့်သွင်းထားသော အချက်များ
+
+- Deterministic validation ပါသော ကန့်သတ်ထားသည့် `url_parse`၊ `url_encode` နှင့် `url_decode` builtin များ။
+- HTTP/HTTPS URL များကိုသာ လက်ခံပြီး timeout နှင့် response-size limit ပါသော `http_get` နှင့် `http_request` builtin များ။
+- Shell မသုံးသော `process_run`၊ text argument များ၊ UTF-8 stdout/stderr capture၊ status report နှင့် output limit များ။
+- API အသစ်များအတွက် deterministic standard-library catalog နှင့် English/Burmese documentation update များ။
+- `.zp` registration၊ TextMate syntax highlighting၊ snippets၊ autocomplete၊ CLI-backed diagnostics၊ workspace check နှင့် current-file run command များပါသော `vscode-extension` folder အသစ်။
+
+### စစ်ဆေးမှု
+
+- Native suite: **tests 235 ခု pass** ဖြစ်ပါသည်။
+- P3.3 URL၊ process၊ HTTP validation နှင့် compatibility regression များ အောင်မြင်ပါသည်။
+
 ## [2.0.1] — 2026-08-20
 
 Zap v2.0.1 သည် P2 Ecosystem foundation နောက်ပိုင်း production-quality maintenance release ဖြစ်ပြီး P3.1 module/workspace architecture အပိုင်းကို ပြီးစီးစေကာ v2 audit findings များကို ပြင်ဆင်ထားပါသည်။

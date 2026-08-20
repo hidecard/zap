@@ -28,8 +28,8 @@ mod stdlib_catalog;
 
 use evaluator::{
     call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
-    direct_builtin, execute_ast_program, execute_lines, initialize_object_fields, json_to_value,
-    operate, validate_source_layout, value_to_json, Flow,
+    direct_builtin, direct_external_builtin, execute_ast_program, execute_lines,
+    initialize_object_fields, json_to_value, operate, validate_source_layout, value_to_json, Flow,
 };
 
 use std::{
@@ -819,6 +819,8 @@ impl<'a> ExprParser<'a> {
                 }
                 self.take();
                 if let Some(value) = direct_builtin(&n, args.clone())? {
+                    value
+                } else if let Some(value) = direct_external_builtin(&n, &args)? {
                     value
                 } else {
                     let f = self

@@ -1,6 +1,12 @@
-use std::{collections::HashMap, path::Path, rc::Rc};
-
 use std::cell::{Cell, RefCell};
+use std::{
+    collections::HashMap,
+    io::Read,
+    path::Path,
+    process::{Command, Stdio},
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
@@ -674,6 +680,295 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
     }
 }
 
+const MAX_URL_BYTES: usize = 8 * 1024;
+const MAX_PROCESS_OUTPUT_BYTES: usize = 1024 * 1024;
+const MAX_HTTP_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+const PROCESS_TIMEOUT: Duration = Duration::from_secs(10);
+
+fn map_value(entries: impl IntoIterator<Item = (String, Value)>) -> Value {
+    Value::Map(entries.into_iter().collect())
+}
+
+fn percent_encode(value: &str) -> String {
+    let mut output = String::new();
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~') {
+            output.push(byte as char);
+        } else {
+            output.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    output
+}
+
+fn percent_decode(value: &str) -> Result<String, String> {
+    let bytes = value.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] != b'%' {
+            output.push(bytes[index]);
+            index += 1;
+            continue;
+        }
+        if index + 2 >= bytes.len() {
+            return Err("url_decode found an incomplete percent escape".into());
+        }
+        let hex = std::str::from_utf8(&bytes[index + 1..index + 3])
+            .map_err(|_| "url_decode found invalid percent escape".to_string())?;
+        let byte = u8::from_str_radix(hex, 16)
+            .map_err(|_| "url_decode found invalid percent escape".to_string())?;
+        output.push(byte);
+        index += 3;
+    }
+    String::from_utf8(output).map_err(|_| "url_decode produced invalid UTF-8".into())
+}
+
+fn parse_url(value: &str) -> Result<Value, String> {
+    if value.len() > MAX_URL_BYTES {
+        return Err(format!(
+            "url_parse input exceeds the {MAX_URL_BYTES} byte limit"
+        ));
+    }
+    let (scheme, remainder) = value
+        .split_once("://")
+        .ok_or_else(|| "url_parse expects an absolute URL with a scheme".to_string())?;
+    if scheme.is_empty()
+        || !scheme
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'-' | b'.'))
+    {
+        return Err("url_parse found an invalid scheme".into());
+    }
+    let authority_end = remainder.find(['/', '?', '#']).unwrap_or(remainder.len());
+    let authority = &remainder[..authority_end];
+    if authority.is_empty() {
+        return Err("url_parse requires a host".into());
+    }
+    let (host, port) = if authority.starts_with('[') {
+        let close = authority
+            .find(']')
+            .ok_or_else(|| "url_parse found an invalid IPv6 host".to_string())?;
+        let host = &authority[..=close];
+        let port = authority[close + 1..]
+            .strip_prefix(':')
+            .map(|value| {
+                value
+                    .parse::<i64>()
+                    .map_err(|_| "url_parse found an invalid port".to_string())
+            })
+            .transpose()?;
+        (host, port)
+    } else {
+        match authority.rsplit_once(':') {
+            Some((host, port))
+                if !port.is_empty() && port.bytes().all(|byte| byte.is_ascii_digit()) =>
+            {
+                (
+                    host,
+                    Some(
+                        port.parse::<i64>()
+                            .map_err(|_| "url_parse found an invalid port".to_string())?,
+                    ),
+                )
+            }
+            _ => (authority, None),
+        }
+    };
+    if host.is_empty() {
+        return Err("url_parse requires a host".into());
+    }
+    let suffix = &remainder[authority_end..];
+    let (without_fragment, fragment) = suffix
+        .split_once('#')
+        .map_or((suffix, ""), |(prefix, value)| (prefix, value));
+    let (path, query) = without_fragment
+        .split_once('?')
+        .map_or((without_fragment, ""), |(path, value)| (path, value));
+    let path = if path.is_empty() { "/" } else { path };
+    let mut entries = vec![
+        ("scheme".into(), Value::Text(scheme.to_ascii_lowercase())),
+        ("host".into(), Value::Text(host.into())),
+        ("path".into(), Value::Text(path.into())),
+        ("query".into(), Value::Text(query.into())),
+        ("fragment".into(), Value::Text(fragment.into())),
+    ];
+    entries.push((
+        "port".into(),
+        port.map_or(Value::OptionNone, |value| {
+            Value::OptionSome(Box::new(Value::Number(value)))
+        }),
+    ));
+    Ok(map_value(entries))
+}
+
+fn process_run(args: &[Value]) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err(format!(
+            "process_run expects 2 arguments, got {}",
+            args.len()
+        ));
+    }
+    let Value::Text(command) = &args[0] else {
+        return Err("process_run expects a text command".into());
+    };
+    let Value::List(arguments) = &args[1] else {
+        return Err("process_run expects a list of text arguments".into());
+    };
+    let mut process = Command::new(command);
+    for argument in arguments {
+        let Value::Text(argument) = argument else {
+            return Err("process_run expects a list of text arguments".into());
+        };
+        process.arg(argument);
+    }
+    let started = Instant::now();
+    let output = process
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(|error| format!("process_run failed to start: {error}"))?;
+    if started.elapsed() > PROCESS_TIMEOUT {
+        return Err(format!(
+            "process_run exceeded the {} second limit",
+            PROCESS_TIMEOUT.as_secs()
+        ));
+    }
+    if output.stdout.len() > MAX_PROCESS_OUTPUT_BYTES
+        || output.stderr.len() > MAX_PROCESS_OUTPUT_BYTES
+    {
+        return Err(format!(
+            "process_run output exceeds the {MAX_PROCESS_OUTPUT_BYTES} byte limit"
+        ));
+    }
+    let stdout = String::from_utf8(output.stdout)
+        .map_err(|_| "process_run stdout is not UTF-8".to_string())?;
+    let stderr = String::from_utf8(output.stderr)
+        .map_err(|_| "process_run stderr is not UTF-8".to_string())?;
+    Ok(map_value([
+        (
+            "status".into(),
+            Value::Number(output.status.code().unwrap_or(-1) as i64),
+        ),
+        ("success".into(), Value::Bool(output.status.success())),
+        ("stdout".into(), Value::Text(stdout)),
+        ("stderr".into(), Value::Text(stderr)),
+    ]))
+}
+
+fn http_request(args: &[Value]) -> Result<Value, String> {
+    if args.len() != 2 && args.len() != 3 {
+        return Err(format!(
+            "http_request expects 2 or 3 arguments, got {}",
+            args.len()
+        ));
+    }
+    let Value::Text(method) = &args[0] else {
+        return Err("http_request expects a text method".into());
+    };
+    let Value::Text(url) = &args[1] else {
+        return Err("http_request expects a text URL".into());
+    };
+    let body = match args.get(2) {
+        None => None,
+        Some(Value::Text(body)) => Some(body.as_str()),
+        Some(_) => return Err("http_request expects a text body".into()),
+    };
+    let parsed = parse_url(url)?;
+    let Value::Map(parts) = parsed else {
+        unreachable!()
+    };
+    let scheme = match parts.get("scheme") {
+        Some(Value::Text(value)) => value,
+        _ => unreachable!(),
+    };
+    if scheme != "http" && scheme != "https" {
+        return Err("http_request supports only http and https URLs".into());
+    }
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(Duration::from_secs(10))
+        .timeout_read(Duration::from_secs(10))
+        .timeout_write(Duration::from_secs(10))
+        .build();
+    let request = agent.request(method, url);
+    let response = match body {
+        Some(body) => request.send_string(body),
+        None => request.call(),
+    }
+    .map_err(|error| format!("http_request failed: {error}"))?;
+    let status = response.status() as i64;
+    let mut reader = response
+        .into_reader()
+        .take((MAX_HTTP_RESPONSE_BYTES + 1) as u64);
+    let mut bytes = Vec::new();
+    reader
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("http_request failed to read response: {error}"))?;
+    if bytes.len() > MAX_HTTP_RESPONSE_BYTES {
+        return Err(format!(
+            "http_request response exceeds the {MAX_HTTP_RESPONSE_BYTES} byte limit"
+        ));
+    }
+    let body =
+        String::from_utf8(bytes).map_err(|_| "http_request response is not UTF-8".to_string())?;
+    Ok(map_value([
+        ("status".into(), Value::Number(status)),
+        (
+            "success".into(),
+            Value::Bool((200..400).contains(&(status as u16))),
+        ),
+        ("body".into(), Value::Text(body)),
+    ]))
+}
+
+pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    if let Some(value) = direct_io_builtin(name, args)? {
+        return Ok(Some(value));
+    }
+    if let Some(value) = direct_system_builtin(name, args)? {
+        return Ok(Some(value));
+    }
+    match name {
+        "url_parse" => {
+            if args.len() != 1 {
+                return Err(format!("url_parse expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("url_parse expects a text URL".into());
+            };
+            Ok(Some(parse_url(value)?))
+        }
+        "url_encode" => {
+            if args.len() != 1 {
+                return Err(format!("url_encode expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("url_encode expects text".into());
+            };
+            Ok(Some(Value::Text(percent_encode(value))))
+        }
+        "url_decode" => {
+            if args.len() != 1 {
+                return Err(format!("url_decode expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("url_decode expects text".into());
+            };
+            Ok(Some(Value::Text(percent_decode(value)?)))
+        }
+        "process_run" => Ok(Some(process_run(args)?)),
+        "http_get" => {
+            if args.len() != 1 {
+                return Err(format!("http_get expects 1 argument, got {}", args.len()));
+            }
+            http_request(&[Value::Text("GET".into()), args[0].clone()]).map(Some)
+        }
+        "http_request" => Ok(Some(http_request(args)?)),
+        _ => Ok(None),
+    }
+}
+
 fn is_same_or_subclass(current: &str, target: &str, funcs: &HashMap<String, Rc<Function>>) -> bool {
     let mut class = current.to_string();
     let mut visited = std::collections::HashSet::new();
@@ -965,6 +1260,8 @@ fn ast_expression(
                     } else if let Some(value) = direct_io_builtin(name, &positional)? {
                         Ok(value)
                     } else if let Some(value) = direct_system_builtin(name, &positional)? {
+                        Ok(value)
+                    } else if let Some(value) = direct_external_builtin(name, &positional)? {
                         Ok(value)
                     } else {
                         expression(&ast_expr_source(node), vars, funcs)
