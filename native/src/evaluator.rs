@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path, rc::Rc};
 
 use std::cell::{Cell, RefCell};
 
-use crate::ast::{BinaryOp, Expr, Literal, Program, Stmt, UnaryOp};
+use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
@@ -13,6 +13,12 @@ use crate::{
 const MAX_EXECUTION_DEPTH: usize = 256;
 const MAX_SOURCE_LINES: usize = 100_000;
 const MAX_LOOP_ITERATIONS: usize = 100_000;
+
+#[derive(Clone, Debug)]
+pub(crate) struct CallArgument {
+    pub(crate) name: Option<String>,
+    pub(crate) value: Value,
+}
 
 thread_local! {
     static EXECUTION_DEPTH: Cell<usize> = const { Cell::new(0) };
@@ -618,17 +624,35 @@ fn ast_expression(
         Expr::Call { callee, args } => {
             let values = args
                 .iter()
-                .map(|arg| ast_expression(arg, vars, funcs))
-                .collect::<Result<Vec<_>, _>>()?;
+                .map(|arg| match arg {
+                    CallArg::Positional(value) => Ok(CallArgument {
+                        name: None,
+                        value: ast_expression(value, vars, funcs)?,
+                    }),
+                    CallArg::Named { name, value } => Ok(CallArgument {
+                        name: Some(name.clone()),
+                        value: ast_expression(value, vars, funcs)?,
+                    }),
+                })
+                .collect::<Result<Vec<_>, String>>()?;
             match &callee.node {
                 Expr::Name(name) => {
                     if let Some(function) = funcs.get(name) {
-                        call_function(function, values, funcs)
-                    } else if let Some(value) = direct_builtin(name, values.clone())? {
+                        return call_function_with_arguments(function, values, funcs);
+                    } else if values.iter().any(|argument| argument.name.is_some()) {
+                        return Err(format!(
+                            "named arguments are not supported for built-in function: {name}"
+                        ));
+                    }
+                    let positional = values
+                        .iter()
+                        .map(|argument| argument.value.clone())
+                        .collect::<Vec<_>>();
+                    if let Some(value) = direct_builtin(name, positional.clone())? {
                         Ok(value)
-                    } else if let Some(value) = direct_io_builtin(name, &values)? {
+                    } else if let Some(value) = direct_io_builtin(name, &positional)? {
                         Ok(value)
-                    } else if let Some(value) = direct_system_builtin(name, &values)? {
+                    } else if let Some(value) = direct_system_builtin(name, &positional)? {
                         Ok(value)
                     } else {
                         expression(&ast_expr_source(node), vars, funcs)
@@ -664,7 +688,7 @@ fn ast_expression(
                         .get(&format!("{dispatch_class}.{}", member))
                         .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
-                    call_method(&function, values, receiver, funcs)
+                    call_method_with_arguments(&function, values, receiver, funcs)
                 }
                 _ => expression(&ast_expr_source(node), vars, funcs),
             }
@@ -707,6 +731,20 @@ pub(crate) fn call_function(
     args: Vec<Value>,
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<Value, String> {
+    call_function_with_arguments(
+        f,
+        args.into_iter()
+            .map(|value| CallArgument { name: None, value })
+            .collect(),
+        funcs,
+    )
+}
+
+fn call_function_with_arguments(
+    f: &Function,
+    args: Vec<CallArgument>,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<Value, String> {
     let required = f
         .params
         .iter()
@@ -722,9 +760,37 @@ pub(crate) fn call_function(
     }
     let mut local = f.closure.borrow().clone();
     let captured_keys = local.keys().cloned().collect::<Vec<_>>();
-    let mut provided = args.into_iter();
+    let mut positional_index = 0usize;
+    let mut named = HashMap::new();
+    let mut saw_named = false;
+    for argument in args {
+        if let Some(name) = argument.name {
+            saw_named = true;
+            if named.insert(name.clone(), argument.value).is_some() {
+                return Err(format!("duplicate named argument: {name}"));
+            }
+        } else {
+            if saw_named {
+                return Err("positional argument cannot follow a named argument".into());
+            }
+            if positional_index >= f.params.len() {
+                return Err(format!(
+                    "function expects at most {} arguments",
+                    f.params.len()
+                ));
+            }
+            let parameter = &f.params[positional_index];
+            named.insert(parameter.name.clone(), argument.value);
+            positional_index += 1;
+        }
+    }
+    for name in named.keys() {
+        if !f.params.iter().any(|param| param.name == *name) {
+            return Err(format!("unknown named argument: {name}"));
+        }
+    }
     for param in &f.params {
-        let v = if let Some(value) = provided.next() {
+        let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
             expression(default, &local, funcs)?
@@ -767,6 +833,22 @@ pub(crate) fn call_method(
     self_value: Value,
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<Value, String> {
+    call_method_with_arguments(
+        f,
+        args.into_iter()
+            .map(|value| CallArgument { name: None, value })
+            .collect(),
+        self_value,
+        funcs,
+    )
+}
+
+fn call_method_with_arguments(
+    f: &Function,
+    args: Vec<CallArgument>,
+    self_value: Value,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<Value, String> {
     let callable_params = f.params.iter().skip(1).collect::<Vec<_>>();
     let required = callable_params
         .iter()
@@ -793,9 +875,37 @@ pub(crate) fn call_method(
             local.insert("super".into(), Value::Text(parent_class));
         }
     }
-    let mut provided = args.into_iter();
+    let mut positional_index = 0usize;
+    let mut named = HashMap::new();
+    let mut saw_named = false;
+    for argument in args {
+        if let Some(name) = argument.name {
+            saw_named = true;
+            if named.insert(name.clone(), argument.value).is_some() {
+                return Err(format!("duplicate named argument: {name}"));
+            }
+        } else {
+            if saw_named {
+                return Err("positional argument cannot follow a named argument".into());
+            }
+            if positional_index >= callable_params.len() {
+                return Err(format!(
+                    "method expects at most {} arguments after self",
+                    callable_params.len()
+                ));
+            }
+            let parameter = &callable_params[positional_index];
+            named.insert(parameter.name.clone(), argument.value);
+            positional_index += 1;
+        }
+    }
+    for name in named.keys() {
+        if !callable_params.iter().any(|param| param.name == *name) {
+            return Err(format!("unknown named argument: {name}"));
+        }
+    }
     for param in callable_params {
-        let v = if let Some(value) = provided.next() {
+        let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
             expression(default, &local, funcs)?
@@ -1051,7 +1161,11 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
             "{}({})",
             ast_expr_source(callee),
             args.iter()
-                .map(ast_expr_source)
+                .map(|argument| match argument {
+                    CallArg::Positional(value) => ast_expr_source(value),
+                    CallArg::Named { name, value } =>
+                        format!("{} = {}", name, ast_expr_source(value)),
+                })
                 .collect::<Vec<_>>()
                 .join(", ")
         ),

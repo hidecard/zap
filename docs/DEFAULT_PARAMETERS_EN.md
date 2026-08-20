@@ -47,20 +47,21 @@ fn square(value: number = "one") -> number:
 
 Use `zap check` to detect annotation mismatches before running a project.
 
-## Positional binding
+## Positional and named binding
 
-Zap currently binds function arguments positionally. The first supplied argument is assigned to the first parameter, the second to the second parameter, and so on. Omitted parameters use their declared defaults.
+Zap supports both positional arguments and named arguments. Positional arguments bind from left to right. A named argument uses `parameter = expression` inside the call and binds directly to the parameter with that name. Omitted parameters use their declared defaults.
 
 ```zap
 fn connect(host: text = "localhost", port: number = 8080, secure: bool = false):
-    return host + ":" + str(port)
+    return host + ":" + str(port) + ":" + str(secure)
 
 say connect()
 say connect("api.example.com")
-say connect("api.example.com", 443, true)
+say connect(host = "api.example.com", secure = true)
+say connect(port = 443, host = "api.example.com")
 ```
 
-In the examples above, the calls use zero, one, and three positional arguments respectively. A later default cannot be selected while skipping an earlier required positional argument; named arguments are not part of this feature yet.
+Named arguments are useful when overriding a later default without supplying every earlier default. Positional arguments may appear before named arguments, but a positional argument may not follow a named argument. Thus `f(10, c = 30)` is valid while `f(a = 10, 20)` is rejected.
 
 ## Required and defaulted parameters together
 
@@ -132,11 +133,14 @@ say port_or_default(3000)
 |---|---|---|
 | A default requires a non-empty expression | `fn f(value =):` | Rejected during parsing |
 | Duplicate parameter names are rejected | `fn f(value, value):` | Rejected during parsing |
-| A supplied argument must match its annotation | `fn f(n: number = 1):` then `f("x")` | Runtime/static type error |
+| A supplied argument must match its annotation | `fn f(n: number = 1):` then `f(n = "x")` | Runtime/static type error |
 | A default must match its annotation | `fn f(n: number = "x"):` | Type-checking error when checked |
-| Too few required arguments are rejected | `fn f(a, b = 2):` then `f()` | Argument-count error |
+| Too few required arguments are rejected | `fn f(a, b = 2):` then `f()` | Missing-argument error |
 | Too many arguments are rejected | `fn f(a = 1):` then `f(1, 2)` | Argument-count error |
-| Binding is positional | `f(10, 20)` | First value binds to first parameter |
+| Unknown names are rejected | `fn f(a):` then `f(b = 1)` | Unknown named-argument error |
+| Duplicate names are rejected | `f(a = 1, a = 2)` | Duplicate named-argument error |
+| Positional-after-named is rejected | `f(a = 1, 2)` | Binding-order error |
+| Named binding selects parameters directly | `f(second = 20, first = 10)` | Values bind by name |
 
 A typical missing-argument diagnostic for a function with two required parameters is similar to:
 
@@ -176,7 +180,7 @@ Run it with:
 zap examples/default_parameters.zp
 ```
 
-The current implementation supports **positional default parameters**. Named arguments such as `greet(name = "Zap")` are reserved for a later structured-call implementation and should not be documented as available syntax yet.
+The current implementation supports **positional and named arguments together with default parameters**. Named calls such as `greet(name = "Zap")` are supported for user-defined functions and methods through the structured AST call path.
 
 ## Related references
 

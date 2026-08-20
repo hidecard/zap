@@ -47,20 +47,21 @@ fn square(value: number = "one") -> number:
 
 မ run မီ type error များကိုရှာဖွေရန် `zap check` ကိုအသုံးပြုပါ။
 
-## Positional binding
+## Positional နှင့် named binding
 
-လက်ရှိ Zap implementation တွင် function argument များကို **အစဉ်လိုက်** ချိတ်ဆက်သည်။ ပထမ argument သည် ပထမ parameter သို့၊ ဒုတိယ argument သည် ဒုတိယ parameter သို့ ချိတ်ဆက်သည်။ မပေးထားသော parameter များအတွက် default value ကို အသုံးပြုသည်။
+Zap သည် positional argument နှင့် named argument နှစ်မျိုးလုံးကို support လုပ်သည်။ Positional argument များကို ဘယ်မှညာသို့ အစဉ်လိုက်ချိတ်ဆက်သည်။ Named argument ကို call အတွင်း `parameter = expression` ပုံစံဖြင့်ရေးပြီး ထိုနာမည်ရှိ parameter သို့ တိုက်ရိုက်ချိတ်ဆက်သည်။ မပေးထားသော parameter များအတွက် သတ်မှတ်ထားသော default value ကို အသုံးပြုသည်။
 
 ```zap
 fn connect(host: text = "localhost", port: number = 8080, secure: bool = false):
-    return host + ":" + str(port)
+    return host + ":" + str(port) + ":" + str(secure)
 
 say connect()
 say connect("api.example.com")
-say connect("api.example.com", 443, true)
+say connect(host = "api.example.com", secure = true)
+say connect(port = 443, host = "api.example.com")
 ```
 
-အထက်ပါ call များတွင် argument သုညခု၊ တစ်ခုနှင့် သုံးခု အသီးသီးပါသည်။ အစောပိုင်း required positional parameter ကိုကျော်ပြီး နောက်ပိုင်း default parameter ကို တိုက်ရိုက်ရွေးချယ်နိုင်ခြင်း မရှိသေးပါ။ Named arguments သည် လက်ရှိ feature မဟုတ်သေးပါ။
+Named argument သည် အစောပိုင်း default များအားလုံးကို မရေးဘဲ နောက်ပိုင်း default တစ်ခုကို ပြောင်းလိုသောအခါ အသုံးဝင်သည်။ Named argument မတိုင်မီ positional argument ရေးနိုင်သော်လည်း named argument နောက်တွင် positional argument မရေးရပါ။ ထို့ကြောင့် `f(10, c = 30)` သည် မှန်ကန်ပြီး `f(a = 10, 20)` ကို reject လုပ်သည်။
 
 ## Required နှင့် defaulted parameter များကို ပေါင်းစပ်ခြင်း
 
@@ -132,11 +133,14 @@ say port_or_default(3000)
 |---|---|---|
 | Default expression မပါဘဲ `=` မရေးရ | `fn f(value =):` | Parse error |
 | Parameter name ထပ်မရေးရ | `fn f(value, value):` | Parse error |
-| ပေးထားသော argument သည် annotation နှင့်ကိုက်ညီရမည် | `f("x")` where `n: number` | Type error |
+| ပေးထားသော argument သည် annotation နှင့်ကိုက်ညီရမည် | `f(n = "x")` where `n: number` | Type error |
 | Default value သည် annotation နှင့်ကိုက်ညီရမည် | `fn f(n: number = "x"):` | Type-checking error |
-| Required argument အားလုံးပေးရမည် | `fn f(a, b = 2)` then `f()` | Argument-count error |
+| Required argument အားလုံးပေးရမည် | `fn f(a, b = 2)` then `f()` | Missing-argument error |
 | Parameter အရေအတွက်ထက် မပိုရ | `fn f(a = 1)` then `f(1, 2)` | Argument-count error |
-| Argument binding သည် positional ဖြစ်သည် | `f(10, 20)` | ပထမ value သည် ပထမ parameter သို့ ချိတ်သည် |
+| မသိသော named parameter ကို reject လုပ်ရမည် | `fn f(a)` then `f(b = 1)` | Unknown named-argument error |
+| Named name ထပ်မရေးရ | `f(a = 1, a = 2)` | Duplicate named-argument error |
+| Named နောက်တွင် positional မရေးရ | `f(a = 1, 2)` | Binding-order error |
+| Named binding သည် parameter name အတိုင်းချိတ်သည် | `f(second = 20, first = 10)` | Value များကို name အတိုင်း ချိတ်သည် |
 
 Required parameter နှစ်ခုရှိသော function ကို argument တစ်ခုတည်းဖြင့် ခေါ်ပါက diagnostic သည် အောက်ပါပုံစံနှင့် ဆင်တူမည်—
 
@@ -176,7 +180,7 @@ Run လုပ်ရန်—
 zap examples/default_parameters.zp
 ```
 
-လက်ရှိ implementation သည် **positional default parameters** ကို support လုပ်ထားသည်။ `greet(name = "Zap")` ကဲ့သို့သော named arguments များသည် structured-call implementation ပြီးစီးပြီးနောက်မှသာ ရရှိမည့် feature ဖြစ်သောကြောင့် လက်ရှိ Zap syntax အဖြစ် မယူဆရပါ။
+လက်ရှိ implementation သည် **positional နှင့် named arguments** နှစ်မျိုးလုံးကို default parameters နှင့်အတူ support လုပ်ထားသည်။ `greet(name = "Zap")` ကဲ့သို့သော named call များကို user-defined function နှင့် method များအတွက် structured AST call path မှတစ်ဆင့် အသုံးပြုနိုင်သည်။
 
 ## ဆက်လက်ဖတ်ရှုရန်
 

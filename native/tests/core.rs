@@ -31,6 +31,38 @@ fn runs_functions_and_returns() {
 }
 
 #[test]
+fn supports_named_function_arguments_and_defaults() {
+    let file = std::env::temp_dir().join("zap_named_arguments_test.zp");
+    std::fs::write(
+        &file,
+        "fn format_name(first, last, suffix = \"!\"):\n    return first + \" \" + last + suffix\nsay format_name(last = \"Lang\", first = \"Zap\")\nsay format_name(last = \"Lang\", first = \"Zap\", suffix = \".\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "Zap Lang!\nZap Lang.\n"
+    );
+
+    let invalid = std::env::temp_dir().join("zap_named_arguments_order_error.zp");
+    std::fs::write(
+        &invalid,
+        "fn add(a, b):\n    return a + b\nsay add(a = 1, 2)\n",
+    )
+    .unwrap();
+    let bad = Command::new(binary()).arg(&invalid).output().unwrap();
+    let _ = std::fs::remove_file(&invalid);
+    assert!(!bad.status.success());
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("positional argument cannot follow"));
+}
+
+#[test]
 fn enforces_function_parameter_and_return_annotations() {
     let ok_file = std::env::temp_dir().join("zap_typed_function_test.zp");
     std::fs::write(
@@ -324,6 +356,24 @@ fn runs_oop_classes_methods_and_inheritance() {
         String::from_utf8_lossy(&output.stdout),
         "Hello, Tester\nHello, Root\nadmin\n"
     );
+}
+
+#[test]
+fn supports_named_method_arguments() {
+    let file = std::env::temp_dir().join("zap_named_method_arguments_test.zp");
+    std::fs::write(
+        &file,
+        "class Greeter:\n    fn init(self, prefix):\n        self.prefix = prefix\n    fn greet(self, name, punctuation = \"!\"):\n        return self.prefix + name + punctuation\nlet greeter = new(\"Greeter\", \"Hello, \" )\nsay greeter.greet(punctuation = \".\", name = \"Zap\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Hello, Zap.\n");
 }
 
 #[test]

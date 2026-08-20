@@ -49,6 +49,12 @@ pub(crate) enum BinaryOp {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub(crate) enum CallArg {
+    Positional(Spanned<Expr>),
+    Named { name: String, value: Spanned<Expr> },
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Expr {
     Literal(Literal),
     Name(String),
@@ -65,7 +71,7 @@ pub(crate) enum Expr {
     },
     Call {
         callee: Box<Spanned<Expr>>,
-        args: Vec<Spanned<Expr>>,
+        args: Vec<CallArg>,
     },
     Member {
         target: Box<Spanned<Expr>>,
@@ -264,7 +270,26 @@ impl AstParser {
                     let mut args = Vec::new();
                     if !matches!(self.current().token, crate::lexer::Token::RParen) {
                         loop {
-                            args.push(self.parse_expression(0)?);
+                            let argument = if let crate::lexer::Token::Name(name) =
+                                self.current().token.clone()
+                            {
+                                if matches!(
+                                    self.tokens.get(self.cursor + 1).map(|token| &token.token),
+                                    Some(crate::lexer::Token::Equal)
+                                ) {
+                                    self.advance();
+                                    self.advance();
+                                    CallArg::Named {
+                                        name,
+                                        value: self.parse_expression(0)?,
+                                    }
+                                } else {
+                                    CallArg::Positional(self.parse_expression(0)?)
+                                }
+                            } else {
+                                CallArg::Positional(self.parse_expression(0)?)
+                            };
+                            args.push(argument);
                             if !matches!(self.current().token, crate::lexer::Token::Comma) {
                                 break;
                             }
