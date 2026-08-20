@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path, rc::Rc};
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 use crate::ast::{BinaryOp, Expr, Literal, Program, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
@@ -253,7 +253,8 @@ pub(crate) fn call_function(
             args.len()
         ));
     }
-    let mut local = f.closure.clone();
+    let mut local = f.closure.borrow().clone();
+    let captured_keys = local.keys().cloned().collect::<Vec<_>>();
     for (param, v) in f.params.iter().zip(args) {
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
@@ -272,6 +273,14 @@ pub(crate) fn call_function(
             return Err("break/continue cannot be used outside a loop".into())
         }
     };
+    {
+        let mut captured = f.closure.borrow_mut();
+        for key in &captured_keys {
+            if let Some(value) = local.get(key) {
+                captured.insert(key.clone(), value.clone());
+            }
+        }
+    }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -290,7 +299,8 @@ pub(crate) fn call_method(
             args.len()
         ));
     }
-    let mut local = f.closure.clone();
+    let mut local = f.closure.borrow().clone();
+    let captured_keys = local.keys().cloned().collect::<Vec<_>>();
     local.insert("self".into(), self_value);
     if let Some(Value::Text(owner_class)) = local.get("__zap_owner_class").cloned() {
         if let Some(Value::Text(parent_class)) = funcs
@@ -320,6 +330,16 @@ pub(crate) fn call_method(
             return Err("break/continue cannot be used outside a loop".into())
         }
     };
+    {
+        let mut captured = f.closure.borrow_mut();
+        for key in &captured_keys {
+            if key != "self" {
+                if let Some(value) = local.get(key) {
+                    captured.insert(key.clone(), value.clone());
+                }
+            }
+        }
+    }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -697,7 +717,7 @@ fn register_ast_function(
             return_annotation: return_type.clone(),
             body: Vec::new(),
             ast_body: Some(body.clone()),
-            closure: vars.clone(),
+            closure: Rc::new(RefCell::new(vars.clone())),
         }),
     );
 }
@@ -716,7 +736,7 @@ fn register_ast_class(
             return_annotation: None,
             body: Vec::new(),
             ast_body: None,
-            closure: vars.clone(),
+            closure: Rc::new(RefCell::new(vars.clone())),
         }),
     );
     if let Some(parent) = base {
@@ -730,7 +750,7 @@ fn register_ast_class(
                 return_annotation: None,
                 body: vec![parent.clone()],
                 ast_body: None,
-                closure: vars.clone(),
+                closure: Rc::new(RefCell::new(vars.clone())),
             }),
         );
     }
@@ -750,7 +770,7 @@ fn register_ast_class(
                         return_annotation: None,
                         body: Vec::new(),
                         ast_body: None,
-                        closure: vars.clone(),
+                        closure: Rc::new(RefCell::new(vars.clone())),
                     }),
                 );
             }
@@ -779,7 +799,7 @@ fn register_ast_class(
                     return_annotation: return_type.clone(),
                     body: Vec::new(),
                     ast_body: Some(body.clone()),
-                    closure: method_closure,
+                    closure: Rc::new(RefCell::new(method_closure)),
                 }),
             );
         }
@@ -1151,7 +1171,7 @@ pub(crate) fn execute_lines(
                     return_annotation: None,
                     body: Vec::new(),
                     ast_body: None,
-                    closure: vars.clone(),
+                    closure: Rc::new(RefCell::new(vars.clone())),
                 }),
             );
             if let Some(parent_name) = parent.clone() {
@@ -1165,7 +1185,7 @@ pub(crate) fn execute_lines(
                         return_annotation: None,
                         body: vec![parent_name],
                         ast_body: None,
-                        closure: vars.clone(),
+                        closure: Rc::new(RefCell::new(vars.clone())),
                     }),
                 );
             }
@@ -1189,7 +1209,7 @@ pub(crate) fn execute_lines(
                                 return_annotation: None,
                                 body: Vec::new(),
                                 ast_body: None,
-                                closure: vars.clone(),
+                                closure: Rc::new(RefCell::new(vars.clone())),
                             }),
                         );
                     }
@@ -1215,7 +1235,7 @@ pub(crate) fn execute_lines(
                             return_annotation,
                             body: method_body,
                             ast_body: None,
-                            closure: method_closure,
+                            closure: Rc::new(RefCell::new(method_closure)),
                         }),
                     );
                     j = method_end;
@@ -1261,7 +1281,7 @@ pub(crate) fn execute_lines(
                     return_annotation,
                     body,
                     ast_body: None,
-                    closure: vars.clone(),
+                    closure: Rc::new(RefCell::new(vars.clone())),
                 }),
             );
             if is_export {
@@ -1272,7 +1292,7 @@ pub(crate) fn execute_lines(
                         return_annotation: None,
                         body: Vec::new(),
                         ast_body: None,
-                        closure: HashMap::new(),
+                        closure: Rc::new(RefCell::new(HashMap::new())),
                     }),
                 );
             }

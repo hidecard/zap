@@ -18,7 +18,7 @@ pub(crate) struct Function {
     pub(crate) body: Vec<String>,
     /// Native AST body used by the migration path when available.
     pub(crate) ast_body: Option<crate::ast::Program>,
-    pub(crate) closure: HashMap<String, Value>,
+    pub(crate) closure: Rc<RefCell<HashMap<String, Value>>>,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Value {

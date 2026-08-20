@@ -996,3 +996,21 @@ fn check_rejects_incompatible_function_return() {
         "{diagnostic}"
     );
 }
+
+#[test]
+fn preserves_mutated_nested_closure_state() {
+    let file = std::env::temp_dir().join("zap_closure_state_test.zp");
+    std::fs::write(
+        &file,
+        "fn make_counter():\n    let count = 0\n    fn increment():\n        count = count + 1\n        return count\n    let first = increment()\n    let second = increment()\n    return second\nsay make_counter()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n");
+}
