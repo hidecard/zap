@@ -56,10 +56,10 @@ zap web new website
 zap mobile new android-app
 zap ai new assistant
 zap iot new sensor-node
-zap publish
+zap registry publish
 ```
 
-P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry-ready metadata validation၊ deterministic single-thread async runtime foundation နှင့် stdio LSP/editor foundation ပါဝင်သည်။ Remote registry၊ full async language syntax၊ timers၊ completion၊ hover၊ formatting နှင့် workspace indexing တို့မှာ ဆက်လက် roadmap ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
+P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry-ready metadata validation၊ local/HTTPS registry transport၊ content-addressed cache၊ checksum enforcement၊ validated remote publishing၊ `async fn`/`await` language syntax၊ deterministic single-thread async runtime နှင့် stdio LSP/editor foundation ပါဝင်သည်။ Signed indexes၊ version-range solving၊ cache garbage collection၊ server-side registry persistence၊ upload authentication၊ timers၊ cancellation၊ formatting၊ go-to-definition နှင့် workspace indexing တို့မှာ ဆက်လက် roadmap ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
 
 ## Recommended implementation order
 

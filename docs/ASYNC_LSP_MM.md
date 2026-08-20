@@ -4,7 +4,7 @@
 
 Zap P2 တွင် deterministic async language layer နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Runtime သည် single-threaded ဖြစ်ပြီး stable Rust နှင့် ကိုက်ညီပါသည်။ Language အနေဖြင့် `async fn`၊ deferred `Future` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
 
-Scheduling ကို deterministic အဖြစ် ထိန်းသိမ်းထားပါသည်။ လက်ရှိတွင် async call သည် function body ကို run ပြီး completed `Future` value အဖြစ် ပြန်ပေးသည်။ `await` သည် ထို value ကို evaluation အတွင်း unwrap လုပ်သည်။ Timers၊ cancellation၊ multi-thread scheduling နှင့် ပိုမိုပြည့်စုံသော suspension semantics များမှာ နောက်ထပ် runtime milestone များဖြစ်ပါသည်။
+Scheduling ကို deterministic အဖြစ် ထိန်းသိမ်းထားပါသည်။ လက်ရှိတွင် async call သည် function body ကို run ပြီး completed `Future` value အဖြစ် ပြန်ပေးသည်။ `await` သည် ထို value ကို evaluation အတွင်း unwrap လုပ်သည်။ `delay_ticks` သည် wall-clock မသုံးဘဲ poll-count အပေါ်အခြေခံသော deterministic delay ပေးပြီး `CancellationToken` နှင့် `Cancellable` သည် cooperative cancellation ပေးပါသည်။ Multi-thread scheduling နှင့် ပိုမိုပြည့်စုံသော suspension semantics များမှာ နောက်ထပ် runtime milestone များဖြစ်ပါသည်။
 
 ## Async Runtime
 
@@ -13,10 +13,12 @@ Native runtime တွင် deterministic executor operation သုံးမျ�
 | Operation | ရည်ရွယ်ချက် |
 |---|---|
 | `spawn(future)` | Async task ကို deterministic task queue ထဲ ထည့်သည်။ |
-| `run_until_idle()` | Task များကို spawn order အတိုင်း poll လုပ်ပြီး အားလုံးပြီးသည်အထိ run သည်။ |
+| `spawn_cancellable(future)` | `CancellationToken` ဖြင့် ထိန်းချုပ်နိုင်သော task ထည့်သည်။ |
+| `run_until_idle()` | လက်ရှိ queue pass အတွင်း task များကို spawn order အတိုင်း poll လုပ်သည်။ |
 | `block_on(future)` | Future တစ်ခုကို ပြီးဆုံးသည်အထိ synchronous အနေဖြင့် drive လုပ်သည်။ |
+| `delay_ticks(n)` | Poll count အပေါ်အခြေခံသော deterministic delay future ပြန်ပေးသည်။ |
 
-Executor သည် worker thread နှင့် external runtime dependency များကို မသုံးပါ။ ထို့ကြောင့် လက်ရှိ synchronous behavior ကို မပြောင်းလဲဘဲ နောက်ပိုင်း suspension၊ timers၊ cancellation နှင့် I/O integration များအတွက် တည်ငြိမ်သောအခြေခံ ရရှိပါသည်။
+Executor သည် worker thread နှင့် external runtime dependency များကို မသုံးပါ။ ထို့ကြောင့် လက်ရှိ synchronous behavior ကို မပြောင်းလဲဘဲ နောက်ပိုင်း suspension နှင့် I/O integration များအတွက် တည်ငြိမ်သောအခြေခံ ရရှိပါသည်။ Cancellation သည် cooperative ဖြစ်ပြီး cancelled task သည် ၎င်း၏ inner future ကို ဆက်လက်မ poll ဘဲ ပြီးဆုံးပါသည်။
 
 ## Async Language Syntax
 
@@ -57,12 +59,14 @@ Server သည် standard input/output မှတစ်ဆင့် `Content-Leng
 
 | Message | အပြုအမူ |
 |---|---|
-| `initialize` | Zap server information ကို ပြန်ပေးပြီး text synchronization၊ completion၊ diagnostics နှင့် hover capabilities များကို ကြေညာသည်။ |
+| `initialize` | Zap server information ကို ပြန်ပေးပြီး text synchronization၊ completion၊ diagnostics၊ hover၊ definition နှင့် workspace-symbol capabilities များကို ကြေညာသည်။ |
 | `shutdown` | အောင်မြင်သော null result ကို ပြန်ပေးသည်။ |
 | `textDocument/didOpen` | Document ကို သိမ်းဆည်းပြီး deterministic source ranges ပါသော lint diagnostics ထုတ်ပေးသည်။ |
 | `textDocument/didChange` | သိမ်းဆည်းထားသော document ကို အစားထိုးပြီး diagnostics အသစ် ထုတ်ပေးသည်။ |
 | `textDocument/completion` | လက်ရှိ source prefix အပေါ်မူတည်၍ keyword များကို filter လုပ်ပြီး document ထဲမှ top-level `let` နှင့် function declaration များကို ထည့်ပေးသည်။ |
 | `textDocument/hover` | သိမ်းဆည်းထားသော document ကို parse လုပ်ပြီး top-level function၊ class နှင့် declaration များအတွက် parser-owned metadata ပြသည်။ |
+| `textDocument/definition` | Referenced top-level declaration ကို parser-span source range သို့ resolve လုပ်သည်။ |
+| `workspace/symbol` | In-memory indexed documents များထဲမှ top-level declaration symbols များကို deterministic ရှာဖွေသည်။ |
 
 Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ context-aware ဖြစ်ပါသည်။ ဥပမာ `async fn load():` ပါသော document ထဲတွင် `lo` ရိုက်ထားပါက completion response တွင် `load` ကို function item အဖြစ် ပြန်ပေးပါသည်။ Hover သည် source position မှ active word ကို ရှာပြီး parser ၏ `SourceSpan` ပါသော AST မှ declaration အချက်အလက်ကို ပြန်ထုတ်ပါသည်။
 
@@ -70,6 +74,6 @@ Diagnostics များကို Zap ၏ ရှိပြီးသား lint im
 
 ## လက်ကျန် P2 နယ်ပယ်
 
-ယခု foundation သည် full workspace language server သို့မဟုတ် production asynchronous I/O runtime မဟုတ်သေးပါ။ Timers၊ cancellation၊ resource limits၊ richer suspension points၊ formatting၊ go-to-definition၊ document symbols၊ workspace-aware package/module indexing နှင့် signed indexes၊ range solving၊ cache garbage collection၊ server-side persistence ကဲ့သို့ registry features များမှာ ကျန်ရှိနေပါသည်။
+ယခု foundation သည် full workspace language server သို့မဟုတ် production asynchronous I/O runtime မဟုတ်သေးပါ။ Resource limits၊ richer suspension points၊ multi-thread scheduling၊ formatting၊ top-level ထက်ကျော်လွန်သော document symbols၊ workspace-aware package/module indexing နှင့် signed indexes၊ cache garbage collection၊ server-side persistence ကဲ့သို့ registry features များမှာ ကျန်ရှိနေပါသည်။
 
 Package workflow အတွက် [Burmese package guide](PACKAGE.md) နှင့် [P2 progress](P2_PROGRESS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [ASYNC_LSP_EN.md](ASYNC_LSP_EN.md) ကို ကြည့်ပါ။

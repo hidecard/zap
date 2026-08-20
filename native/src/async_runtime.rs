@@ -1,5 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker};
 
@@ -22,6 +23,20 @@ impl AsyncRuntime {
         F: Future<Output = ()> + 'static,
     {
         self.tasks.push(Box::pin(future));
+    }
+
+    /// Spawn a task that completes with cancellation instead of polling its
+    /// inner future after the returned token is cancelled.
+    pub fn spawn_cancellable<F>(&mut self, future: F) -> CancellationToken
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        let token = CancellationToken::new();
+        let task_token = token.clone();
+        self.spawn(async move {
+            let _ = Cancellable::new(future, task_token).await;
+        });
+        token
     }
 
     pub fn run_until_idle(&mut self) {
@@ -67,6 +82,98 @@ where
     }
 }
 
+/// A deterministic delay measured in executor polls rather than wall-clock time.
+/// A zero-tick delay is immediately ready; positive values require that many
+/// pending polls before becoming ready.
+#[allow(dead_code)]
+pub fn delay_ticks(ticks: u64) -> Delay {
+    Delay { remaining: ticks }
+}
+
+#[allow(dead_code)]
+pub struct Delay {
+    remaining: u64,
+}
+
+impl Future for Delay {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.remaining == 0 {
+            Poll::Ready(())
+        } else {
+            self.remaining -= 1;
+            context.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct CancellationToken {
+    cancelled: Arc<AtomicBool>,
+}
+
+#[allow(dead_code)]
+impl CancellationToken {
+    pub fn new() -> Self {
+        Self {
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::Acquire)
+    }
+}
+
+impl Default for CancellationToken {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Cancelled;
+
+#[allow(dead_code)]
+pub struct Cancellable<F> {
+    future: Pin<Box<F>>,
+    token: CancellationToken,
+}
+
+#[allow(dead_code)]
+impl<F> Cancellable<F> {
+    pub fn new(future: F, token: CancellationToken) -> Self {
+        Self {
+            future: Box::pin(future),
+            token,
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl<F> Future for Cancellable<F>
+where
+    F: Future,
+{
+    type Output = Result<F::Output, Cancelled>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        if this.token.is_cancelled() {
+            return Poll::Ready(Err(Cancelled));
+        }
+        this.future.as_mut().poll(context).map(Ok)
+    }
+}
+
 fn no_op_waker() -> Waker {
     Waker::from(Arc::new(NoopWaker))
 }
@@ -80,7 +187,7 @@ impl Wake for NoopWaker {
 
 #[cfg(test)]
 mod tests {
-    use super::{block_on, AsyncRuntime};
+    use super::{block_on, delay_ticks, AsyncRuntime, Cancellable, CancellationToken};
     use std::future::ready;
 
     #[test]
@@ -98,6 +205,51 @@ mod tests {
         }
         runtime.run_until_idle();
         assert_eq!(*output.lock().unwrap(), vec![1, 2, 3]);
+        assert_eq!(runtime.pending_tasks(), 0);
+    }
+
+    #[test]
+    fn delay_ticks_is_deterministic_and_non_blocking() {
+        assert_eq!(
+            block_on(async {
+                delay_ticks(0).await;
+                7_u8
+            }),
+            7
+        );
+        let mut runtime = AsyncRuntime::new();
+        runtime.spawn(async { delay_ticks(2).await });
+        runtime.run_until_idle();
+        assert_eq!(runtime.pending_tasks(), 1);
+        runtime.run_until_idle();
+        assert_eq!(runtime.pending_tasks(), 1);
+        runtime.run_until_idle();
+        assert_eq!(runtime.pending_tasks(), 0);
+    }
+
+    #[test]
+    fn cancellation_stops_inner_future_before_polling() {
+        let token = CancellationToken::new();
+        let polled = std::sync::Arc::new(std::sync::Mutex::new(false));
+        let marker = polled.clone();
+        let mut future = Box::pin(Cancellable::new(
+            async move { *marker.lock().unwrap() = true },
+            token.clone(),
+        ));
+        token.cancel();
+        assert_eq!(
+            block_on(async move { future.as_mut().await }),
+            Err(super::Cancelled)
+        );
+        assert!(!*polled.lock().unwrap());
+    }
+
+    #[test]
+    fn cancellable_spawn_is_removed_after_cancel() {
+        let mut runtime = AsyncRuntime::new();
+        let token = runtime.spawn_cancellable(async { panic!("cancelled task was polled") });
+        token.cancel();
+        runtime.run_until_idle();
         assert_eq!(runtime.pending_tasks(), 0);
     }
 }

@@ -64,6 +64,183 @@ pub fn find_package(
         .ok_or_else(|| format!("registry package not found: {name} {version}"))
 }
 
+/// Select the highest registry version satisfying a deterministic requirement.
+/// Supported forms are exact versions, partial versions (`1` or `1.2`),
+/// caret/tilde requirements, and comma-separated comparison clauses.
+pub fn find_package_requirement(
+    index: &[RegistryPackage],
+    name: &str,
+    requirement: &str,
+) -> Result<RegistryPackage, String> {
+    let requirement = VersionRequirement::parse(requirement)?;
+    index
+        .iter()
+        .filter(|package| package.name == name)
+        .filter_map(|package| {
+            Version::parse(&package.version)
+                .ok()
+                .filter(|version| requirement.matches(*version))
+                .map(|version| (version, package))
+        })
+        .max_by(
+            |(left_version, left_package), (right_version, right_package)| {
+                left_version
+                    .cmp(right_version)
+                    .then_with(|| left_package.version.cmp(&right_package.version))
+            },
+        )
+        .map(|(_, package)| package.clone())
+        .ok_or_else(|| {
+            format!("registry package does not satisfy requirement: {name} {requirement}")
+        })
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct Version {
+    major: u64,
+    minor: u64,
+    patch: u64,
+}
+
+impl Version {
+    fn parse(raw: &str) -> Result<Self, String> {
+        let core = raw.split(['-', '+']).next().unwrap_or(raw);
+        let parts = core.split('.').collect::<Vec<_>>();
+        if parts.is_empty() || parts.len() > 3 || parts.iter().any(|part| part.is_empty()) {
+            return Err(format!("invalid registry version: {raw}"));
+        }
+        let mut values = parts
+            .iter()
+            .map(|part| {
+                part.parse::<u64>()
+                    .map_err(|_| format!("invalid registry version: {raw}"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        while values.len() < 3 {
+            values.push(0);
+        }
+        Ok(Self {
+            major: values[0],
+            minor: values[1],
+            patch: values[2],
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+struct VersionRequirement {
+    clauses: Vec<VersionClause>,
+    display: String,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum VersionClause {
+    Exact(Version),
+    Greater(Version),
+    GreaterOrEqual(Version),
+    Less(Version),
+    LessOrEqual(Version),
+}
+
+impl VersionRequirement {
+    fn parse(raw: &str) -> Result<Self, String> {
+        let raw = raw.trim();
+        if raw.is_empty() {
+            return Err("registry version requirement must not be empty".to_string());
+        }
+        let mut clauses = Vec::new();
+        for token in raw
+            .split(',')
+            .map(str::trim)
+            .filter(|token| !token.is_empty())
+        {
+            let (operator, version_text) = if let Some(value) = token.strip_prefix(">=") {
+                (">=", value)
+            } else if let Some(value) = token.strip_prefix("<=") {
+                ("<=", value)
+            } else if let Some(value) = token.strip_prefix('>') {
+                (">", value)
+            } else if let Some(value) = token.strip_prefix('<') {
+                ("<", value)
+            } else if let Some(value) = token.strip_prefix('^') {
+                let version = Version::parse(value.trim())?;
+                clauses.push(VersionClause::GreaterOrEqual(version));
+                clauses.push(VersionClause::Less(Self::caret_upper(version)));
+                continue;
+            } else if let Some(value) = token.strip_prefix('~') {
+                let version = Version::parse(value.trim())?;
+                clauses.push(VersionClause::GreaterOrEqual(version));
+                clauses.push(VersionClause::Less(Self::tilde_upper(version)));
+                continue;
+            } else {
+                ("", token)
+            };
+            let version_text = version_text.trim();
+            let version = Version::parse(version_text)?;
+            clauses.push(match operator {
+                ">" => VersionClause::Greater(version),
+                ">=" => VersionClause::GreaterOrEqual(version),
+                "<" => VersionClause::Less(version),
+                "<=" => VersionClause::LessOrEqual(version),
+                _ => VersionClause::Exact(version),
+            });
+        }
+        if clauses.is_empty() {
+            return Err(format!("invalid registry version requirement: {raw}"));
+        }
+        Ok(Self {
+            clauses,
+            display: raw.to_string(),
+        })
+    }
+
+    fn matches(&self, version: Version) -> bool {
+        self.clauses.iter().all(|clause| match clause {
+            VersionClause::Exact(expected) => version == *expected,
+            VersionClause::Greater(expected) => version > *expected,
+            VersionClause::GreaterOrEqual(expected) => version >= *expected,
+            VersionClause::Less(expected) => version < *expected,
+            VersionClause::LessOrEqual(expected) => version <= *expected,
+        })
+    }
+
+    fn caret_upper(version: Version) -> Version {
+        if version.major > 0 {
+            Version {
+                major: version.major + 1,
+                minor: 0,
+                patch: 0,
+            }
+        } else if version.minor > 0 {
+            Version {
+                major: 0,
+                minor: version.minor + 1,
+                patch: 0,
+            }
+        } else {
+            Version {
+                major: 0,
+                minor: 0,
+                patch: version.patch + 1,
+            }
+        }
+    }
+
+    fn tilde_upper(version: Version) -> Version {
+        Version {
+            major: version.major,
+            minor: version.minor + 1,
+            patch: 0,
+        }
+    }
+}
+
+impl std::fmt::Display for VersionRequirement {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.display)
+    }
+}
+
 pub fn cache_package(
     source: &Path,
     cache_root: &Path,
@@ -305,5 +482,88 @@ mod tests {
         verify_cached_package(&cached, &package).unwrap();
         assert!(cached.ends_with(format!("demo/1.0.0/{checksum}.pkg")));
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn range_selection_prefers_highest_compatible_version() {
+        let checksum = sha256_hex(b"package");
+        let index = vec![
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.2.0".into(),
+                source: "a".into(),
+                checksum: checksum.clone(),
+            },
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.4.2".into(),
+                source: "b".into(),
+                checksum: checksum.clone(),
+            },
+            RegistryPackage {
+                name: "demo".into(),
+                version: "2.0.0".into(),
+                source: "c".into(),
+                checksum,
+            },
+        ];
+        assert_eq!(
+            super::find_package_requirement(&index, "demo", "^1.2.0")
+                .unwrap()
+                .version,
+            "1.4.2"
+        );
+    }
+
+    #[test]
+    fn range_selection_supports_tilde_and_comparator_intersections() {
+        let checksum = sha256_hex(b"package");
+        let index = vec![
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.2.0".into(),
+                source: "a".into(),
+                checksum: checksum.clone(),
+            },
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.2.9".into(),
+                source: "b".into(),
+                checksum: checksum.clone(),
+            },
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.3.0".into(),
+                source: "c".into(),
+                checksum,
+            },
+        ];
+        assert_eq!(
+            super::find_package_requirement(&index, "demo", "~1.2.0")
+                .unwrap()
+                .version,
+            "1.2.9"
+        );
+        assert_eq!(
+            super::find_package_requirement(&index, "demo", ">=1.2.0,<1.3.0")
+                .unwrap()
+                .version,
+            "1.2.9"
+        );
+    }
+
+    #[test]
+    fn range_selection_reports_deterministic_no_match_errors() {
+        let index = vec![RegistryPackage {
+            name: "demo".into(),
+            version: "1.0.0".into(),
+            source: "a".into(),
+            checksum: sha256_hex(b"package"),
+        }];
+        let error = super::find_package_requirement(&index, "demo", "^2.0.0").unwrap_err();
+        assert_eq!(
+            error,
+            "registry package does not satisfy requirement: demo ^2.0.0"
+        );
     }
 }

@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::registry::{
-    cache_package, find_package, package_cache_path, read_index, verify_cached_package,
+    cache_package, find_package_requirement, package_cache_path, read_index, verify_cached_package,
 };
 
 use super::{
@@ -394,7 +394,7 @@ fn resolve_registry_dependencies(
         let DependencySpec::Requirement(version) = spec else {
             continue;
         };
-        let package = find_package(&index, name, version)?;
+        let package = find_package_requirement(&index, name, version)?;
         let cached = package_cache_path(&cache_root, &package);
         if cached.is_file() {
             verify_cached_package(&cached, &package)?;

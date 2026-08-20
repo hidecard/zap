@@ -76,7 +76,9 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "textDocumentSync": 1,
                     "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
                     "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
-                    "hoverProvider": true
+                    "hoverProvider": true,
+                    "definitionProvider": true,
+                    "workspaceSymbolProvider": true
                 },
                 "serverInfo": {"name": "zap", "version": "1.0.0"}
             }
@@ -88,6 +90,8 @@ pub fn handle_message(message: &Value) -> Option<Value> {
         })),
         "textDocument/completion" => Some(completion_response(message)),
         "textDocument/hover" => Some(hover_response(message)),
+        "textDocument/definition" => Some(definition_response(message)),
+        "workspace/symbol" => Some(workspace_symbol_response(message)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
@@ -215,6 +219,97 @@ fn hover_response(message: &Value) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
 }
 
+fn definition_response(message: &Value) -> Value {
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let position = &message["params"]["position"];
+    let word = source_prefix(
+        &source,
+        position["line"].as_u64().unwrap_or(0) as usize,
+        position["character"].as_u64().unwrap_or(0) as usize,
+    );
+    let locations = declaration_symbols(uri, &source)
+        .into_iter()
+        .filter(|(name, _, _, _)| name == &word)
+        .map(|(_, _, range, _)| json!({"uri": uri, "range": range}))
+        .collect::<Vec<_>>();
+    let result = if locations.is_empty() {
+        Value::Null
+    } else {
+        Value::Array(locations)
+    };
+    json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
+}
+
+fn workspace_symbol_response(message: &Value) -> Value {
+    let query = message["params"]["query"].as_str().unwrap_or("");
+    let documents = DOCUMENTS.with(|documents| {
+        documents
+            .borrow()
+            .iter()
+            .map(|(uri, source)| (uri.clone(), source.clone()))
+            .collect::<Vec<_>>()
+    });
+    let symbols = documents
+        .iter()
+        .flat_map(|(uri, source)| {
+            declaration_symbols(uri, source)
+                .into_iter()
+                .map(|(name, kind, range, detail)| (uri.clone(), name, kind, range, detail))
+                .collect::<Vec<_>>()
+        })
+        .filter(|(_, name, _, _, _)| query.is_empty() || name.contains(query))
+        .map(|(uri, name, kind, range, detail)| {
+            json!({"name": name, "kind": kind, "location": {"uri": uri, "range": range}, "containerName": detail})
+        })
+        .collect::<Vec<_>>();
+    json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": symbols})
+}
+
+/// Return `(name, kind, range, detail)` for top-level declarations.
+fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, String)> {
+    let Ok(program) = crate::ast::parse_program(source) else {
+        return Vec::new();
+    };
+    program
+        .statements
+        .iter()
+        .filter_map(|statement| {
+            let (name, kind, detail) = match &statement.node {
+                crate::ast::Stmt::Function { name, is_async, .. } => (
+                    name.clone(),
+                    12,
+                    if *is_async {
+                        "async function"
+                    } else {
+                        "function"
+                    },
+                ),
+                crate::ast::Stmt::Class { name, .. } => (name.clone(), 5, "class"),
+                crate::ast::Stmt::Declaration { name, .. } => (name.clone(), 13, "binding"),
+                _ => return None,
+            };
+            let line_index = statement.span.line.saturating_sub(1);
+            let line = source.lines().nth(line_index).unwrap_or("");
+            let column = line
+                .find(&name)
+                .unwrap_or(statement.span.column.saturating_sub(1));
+            let start_line = line_index as u64;
+            let start_character = column as u64;
+            let end_character = start_character + name.chars().count() as u64;
+            let range = json!({
+                "start": {"line": start_line, "character": start_character},
+                "end": {"line": start_line, "character": end_character}
+            });
+            Some((name, kind, range, format!("{detail} in {uri}")))
+        })
+        .collect()
+}
+
 fn publish_diagnostics(uri: &str, source: &str) -> Value {
     let diagnostics = crate::lint_source(source)
         .into_iter()
@@ -320,11 +415,51 @@ mod tests {
     }
 
     #[test]
+    fn definition_returns_parser_span_location() {
+        let uri = "file:///definition.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn load():\n    return 1\nload()\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 11, "method": "textDocument/definition",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 4}}
+        }))
+        .unwrap();
+        assert_eq!(response["result"][0]["uri"], uri);
+        assert_eq!(response["result"][0]["range"]["start"]["line"], 0);
+        assert_eq!(response["result"][0]["range"]["start"]["character"], 3);
+    }
+
+    #[test]
+    fn workspace_symbols_are_filtered_deterministically() {
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": "file:///symbols.zp", "text": "class Box:\n    pass\nfn load():\n    return 1\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 12, "method": "workspace/symbol",
+            "params": {"query": "load"}
+        }))
+        .unwrap();
+        assert_eq!(response["result"].as_array().unwrap().len(), 1);
+        assert_eq!(response["result"][0]["name"], "load");
+    }
+
+    #[test]
     fn initialize_returns_deterministic_capabilities() {
         let response =
             handle_message(&json!({"jsonrpc":"2.0","id":7,"method":"initialize"})).unwrap();
         assert_eq!(response["id"], 7);
         assert_eq!(response["result"]["serverInfo"]["name"], "zap");
         assert_eq!(response["result"]["capabilities"]["textDocumentSync"], 1);
+        assert_eq!(
+            response["result"]["capabilities"]["definitionProvider"],
+            true
+        );
+        assert_eq!(
+            response["result"]["capabilities"]["workspaceSymbolProvider"],
+            true
+        );
     }
 }
