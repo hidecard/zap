@@ -2950,7 +2950,7 @@ fn update_install_round_trip_preserves_lockfile_bytes() {
 fn update_install_commands_are_available_with_current_version() {
     let output = Command::new(binary()).arg("--version").output().unwrap();
     assert!(output.status.success());
-    assert!(String::from_utf8_lossy(&output.stdout).contains("zap 1.0.0"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("zap 2.0.0"));
 }
 
 #[test]
@@ -3557,7 +3557,7 @@ fn install_update_commands_are_ready_for_future_registry() {
 fn update_install_commands_keep_current_release_version() {
     let output = Command::new(binary()).arg("--version").output().unwrap();
     assert!(output.status.success());
-    assert!(String::from_utf8_lossy(&output.stdout).contains("1.0.0"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("2.0.0"));
 }
 
 #[test]

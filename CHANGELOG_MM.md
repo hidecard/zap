@@ -1,5 +1,25 @@
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
+## [2.0.0] — 2026-08-20
+
+Zap P2 သည် native runtime၊ deterministic package registry၊ async foundation နှင့် editor integration များအတွက် Ecosystem milestone ကို ပြီးစီးစေပါသည်။
+
+### ထည့်သွင်းပြီးသော အင်္ဂါရပ်များ
+
+- Registry dependency များအတွက် exact၊ caret၊ tilde နှင့် comparator version-range selection ကို deterministic ပြုလုပ်ခြင်း။
+- HTTPS registry transport၊ SHA-256 artifact verification၊ signed-index HMAC verification၊ deterministic cache pruning၊ offline reuse နှင့် authenticated local registry persistence။
+- Checksum-verified package publishing၊ atomic artifact storage နှင့် signed index rewriting။
+- `async fn`၊ deterministic `Future` values၊ `await`၊ poll-based timers၊ cancellation tokens၊ cancellable tasks၊ task limits၊ poll budgets နှင့် deterministic suspension controls။
+- LSP document synchronization၊ diagnostics၊ hover၊ context-aware completion၊ formatting၊ go-to-definition နှင့် workspace symbols။
+- P2 foundation အပြည့်အစုံကို ဖော်ပြထားသော English/Burmese documentation updates များ။
+
+### Verification
+
+- Native test suite: **tests 223 ခု pass** ဖြစ်ပါသည်။
+- Formatting၊ `cargo check`၊ whitespace နှင့် strict Clippy gates များ အောင်မြင်ပါသည်။
+- Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 CI checks များ အောင်မြင်ပါသည်။
+- Release artifacts များကို tag-triggered GitHub Actions workflow မှ ထုတ်ပေးပါသည်။
+
 ## [Unreleased]
 
 ### P2 Ecosystem တိုးတက်မှု

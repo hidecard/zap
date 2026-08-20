@@ -18,11 +18,11 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, registry-ready package metadata validation, deterministic JSON registry indexes, local and HTTPS package transport, content-addressed cache with SHA-256 enforcement and offline reuse, checksum-verified archive publishing, a deterministic single-thread async runtime foundation with `async fn`, `Future`, and `await`, and a stdio LSP/editor integration with parser-backed hover and context-aware completion.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with `async fn`, `Future`, `await`, timers, cancellation, task budgets, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, and workspace symbols.
 
 | Item | Current status |
 |---|---|
-| Current release line | `v1.0.0` |
+| Current release line | `v2.0.0` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -31,7 +31,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
-| Test status | 223 native tests passing |
+| Test status | Native test suite verified by GitHub Actions |
 
 ## Native Runtime Architecture
 
@@ -62,7 +62,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v1.0.0 GitHub Release](https://github.com/hidecard/zap/releases/tag/v1.0.0), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.0.0 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.0.0), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -81,7 +81,7 @@ The exact archive filename may change with each release. Select the asset whose 
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-1.0.0-linux-x86_64.tar.gz
+tar -xzf zap-2.0.0-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -97,11 +97,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v1.0.0 release](https://github.com/hidecard/zap/releases/tag/v1.0.0).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.0.0 release](https://github.com/hidecard/zap/releases/tag/v2.0.0).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-1.0.0-macos-arm64.tar.gz
+tar -xzf zap-2.0.0-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -123,7 +123,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v1.0.0 release](https://github.com/hidecard/zap/releases/tag/v1.0.0).
+1. Download the Windows x86_64 `.zip` archive from the [v2.0.0 release](https://github.com/hidecard/zap/releases/tag/v2.0.0).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 
