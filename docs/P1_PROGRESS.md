@@ -32,7 +32,7 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 
 ## Current verification baseline
 
-The native Rust suite currently passes **104 tests**: 30 unit tests and 74 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **104 tests**: 30 unit tests and 74 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp), synchronized English/Burmese type-narrowing guides, and README links for the current learning materials. The native CLI version output now matches the documented `v0.9.3` development line. `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
 
 ## Ordered remaining P1 work
 
@@ -43,7 +43,7 @@ The native Rust suite currently passes **104 tests**: 30 unit tests and 74 integ
 | 3 | Control-flow type narrowing | Implemented | Continue broader nested-flow analysis and negative narrowing diagnostics for additional guard forms |
 | 4 | OOP visibility and initialization rules | Implemented | Continue broader module-aware field coverage and constructor diagnostic refinement |
 | 5 | Standard-library extraction and stabilization | Partial (filesystem/JSON/text/math/collection initial stabilization) | Complete API contracts, documented error behavior, broader edge-case coverage, and public module organization |
-| 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, and project checks |
+| 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, project checks, and version/help consistency |
 | 7 | Cross-platform and release gates | Pending | Linux, Windows, and macOS verification; bilingual changelog/release documentation; final P1 release only after all gates pass |
 
 The direct-AST migration is **in progress** but covers the current runtime built-in set. Named arguments are available for user-defined functions, methods, and closures. OOP now covers method and field modifiers, protected inheritance access, field default initialization, field assignment checks, and constructor visibility enforcement. Control-flow narrowing now handles single guards, `and`/`or` guard combinations, aliases, and restoration of the original option/result type after an `else` branch. Additional module-aware field coverage and constructor diagnostic refinement remain P1 hardening work. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.

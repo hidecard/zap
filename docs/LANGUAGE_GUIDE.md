@@ -292,7 +292,7 @@ say create_user("may")
 say create_user("may", "admin", false)
 ```
 
-Default value သည် parameter annotation နှင့် ကိုက်ညီရမည်။ ဥပမာ `number` parameter အတွက် text default ပေးထားခြင်းသည် မမှန်ကန်ပါ။ Named arguments များကို လက်ရှိ version တွင် မထောက်ပံ့သေးပါ။ အသေးစိတ် syntax၊ method/constructor examples နှင့် validation rules များအတွက် [`DEFAULT_PARAMETERS_MM.md`](DEFAULT_PARAMETERS_MM.md) ကိုဖတ်ပါ။
+Default value သည် parameter annotation နှင့် ကိုက်ညီရမည်။ ဥပမာ `number` parameter အတွက် text default ပေးထားခြင်းသည် မမှန်ကန်ပါ။ Named arguments များကို လက်ရှိ version တွင် function၊ method နှင့် closure များအတွက် ထောက်ပံ့ထားပါသည်။ အသေးစိတ် syntax၊ method/constructor examples နှင့် validation rules များအတွက် [`DEFAULT_PARAMETERS_MM.md`](DEFAULT_PARAMETERS_MM.md) ကိုဖတ်ပါ။ `option<T>` နှင့် `result<T>` အတွက် guard-based type narrowing ကို [`TYPE_NARROWING_MM.md`](TYPE_NARROWING_MM.md) တွင် လေ့လာနိုင်ပါသည်။
 
 ## 12. Closures နှင့် Scope
 
@@ -480,7 +480,7 @@ cargo test --manifest-path native/Cargo.toml
 
 ## 21. လက်ရှိအခြေအနေ နှင့် နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation၊ project scaffolding နှင့် recursive project test runner ပါဝင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files များကို run လုပ်သည်။ နောက်ထပ် language evolution အတွက် static type checking၊ richer diagnostics၊ first-class module exports၊ package registry၊ async I/O နှင့် platform-specific libraries များကို အဆင့်လိုက် တိုးချဲ့သွားမည်။
+လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation၊ project scaffolding နှင့် recursive project test runner ပါဝင်သည်။ Function/method/closure named arguments၊ OOP visibility၊ constructor delegation နှင့် `option<T>`/`result<T>` guard-based type narrowing များလည်း ပါဝင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files များကို run လုပ်သည်။ နောက်ထပ် language evolution အတွက် static type checking၊ richer diagnostics၊ first-class module exports၊ package registry၊ async I/O နှင့် platform-specific libraries များကို အဆင့်လိုက် တိုးချဲ့သွားမည်။
 
 လက်ရှိ runtime တွင် တကယ်အလုပ်လုပ်ပြီးသား syntax ကိုသာ production source တွင် အသုံးပြုပါ။ မပြီးသေးသော Web၊ Mobile၊ AI နှင့် IoT libraries များကို roadmap အဖြစ် သတ်မှတ်ထားပြီး core language stability ရရှိပြီးနောက် သီးခြား package များအဖြစ် တည်ဆောက်မည်။
 
