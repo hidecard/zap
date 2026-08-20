@@ -6,6 +6,8 @@
 
 - Legacy lockfile များကို conservative အတိုင်း migrate လုပ်ရန် `zap lock-migrate [dir]` command အသစ် ထည့်သွင်းထားပါသည်။
 - v1 lockfile compatibility ကို ဆက်လက်ထိန်းသိမ်းထားပြီး registry version သို့မဟုတ် checksum များကို မခန့်မှန်းပါ။ Registry-backed project များအတွက် verified registry metadata ရှိမှသာ migration လုပ်ပါသည်။
+- `zap install` သည် transitive package များအပါအဝင် resolved registry graph တစ်ခုလုံးကို deterministic `name@version` order ဖြင့် ပြသပြီး ရှိပြီးသား dependency-count prefix ကို ဆက်လက်ထိန်းသိမ်းထားပါသည်။
+- Transitive resolution၊ cache verification နှင့် stable install output အတွက် offline nested-registry integration fixture ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] — 2026-08-20

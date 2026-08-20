@@ -864,11 +864,23 @@ pub(crate) fn install_dependencies(dir: &Path) -> Result<String, String> {
     manifest_value(&manifest, "version").ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
     let locked = validate_lockfile(dir, &manifest)?;
-    resolve_registry_dependencies(dir, &dependencies, false, Some(&locked))?;
-    Ok(format!(
-        "installed {} locked dependencies",
-        dependencies.len()
-    ))
+    let resolved = resolve_registry_dependencies(dir, &dependencies, false, Some(&locked))?;
+    Ok(format_install_report(&resolved, dependencies.len()))
+}
+
+fn format_install_report(packages: &[LockedRegistryPackage], fallback_count: usize) -> String {
+    let labels = packages
+        .iter()
+        .map(|package| format!("{}@{}", package.name, package.version))
+        .collect::<Vec<_>>();
+    if labels.is_empty() {
+        return format!("installed {fallback_count} locked dependencies");
+    }
+    format!(
+        "installed {} locked dependencies: {}",
+        labels.len(),
+        labels.join(", ")
+    )
 }
 
 pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {

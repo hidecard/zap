@@ -6,6 +6,8 @@
 
 - Added the explicit `zap lock-migrate [dir]` command for conservative legacy lockfile migration.
 - Preserved v1 lockfile compatibility; migration refuses to invent registry versions or checksums and requires verified registry metadata for registry-backed projects.
+- Updated `zap install` to report the complete resolved registry graph, including transitive packages, with deterministic `name@version` ordering while preserving the established dependency-count prefix.
+- Added an offline nested-registry integration fixture covering transitive resolution, cache verification, and stable install output.
 
 
 ## [2.0.4] — 2026-08-20

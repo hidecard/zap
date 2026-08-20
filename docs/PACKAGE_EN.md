@@ -162,7 +162,7 @@ The command rejects duplicate names, keeps dependency entries in lexicographic o
 
 ## Installing and updating dependencies
 
-Use `zap install` to verify the existing manifest, canonical lockfile, and—when `ZAP_REGISTRY_INDEX` is configured—the registry cache without changing dependency requirements. It is the reproducible, CI-friendly command for checking that the project can be used exactly as locked. It rejects missing, stale, or non-canonical lockfiles, missing registry entries, and checksum mismatches.
+Use `zap install` to verify the existing manifest, canonical lockfile, and—when `ZAP_REGISTRY_INDEX` is configured—the registry cache without changing dependency requirements. It is the reproducible, CI-friendly command for checking that the project can be used exactly as locked. It rejects missing, stale, or non-canonical lockfiles, missing registry entries, and checksum mismatches. On success, it reports the complete resolved registry graph, including transitive packages, in deterministic `name@version` order; the count remains compatible with the established `installed N locked dependencies` prefix.
 
 ```bash
 zap install
@@ -174,6 +174,12 @@ Use `zap update` when the manifest is intentionally changed and the canonical lo
 ```bash
 zap update
 zap update path/to/project
+```
+
+For example, a project whose direct dependency `appdep` resolves to transitive package `leaf` reports:
+
+```text
+installed 2 locked dependencies: appdep@1.0.0, leaf@1.0.0
 ```
 
 `zap install` is validation-only, while `zap update` is the lockfile regeneration command. Both operate on the project directory and preserve the manifest contents and dependency ordering rules.

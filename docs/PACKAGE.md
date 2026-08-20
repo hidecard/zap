@@ -142,7 +142,7 @@ zap add web 0.3 path/to/project
 
 ## `zap install` နှင့် `zap update`
 
-`zap install` သည် လက်ရှိ `zap.toml`၊ canonical `zap.lock` နှင့် `ZAP_REGISTRY_INDEX` သတ်မှတ်ထားပါက registry cache ကို ပြောင်းလဲခြင်းမရှိဘဲ စစ်ဆေးပေးသည်။ Missing/stale lockfile၊ missing registry entry နှင့် checksum mismatch များကို reject လုပ်သောကြောင့် CI နှင့် reproducible project validation အတွက် အသုံးပြုနိုင်သည်။
+`zap install` သည် လက်ရှိ `zap.toml`၊ canonical `zap.lock` နှင့် `ZAP_REGISTRY_INDEX` သတ်မှတ်ထားပါက registry cache ကို ပြောင်းလဲခြင်းမရှိဘဲ စစ်ဆေးပေးသည်။ Missing/stale lockfile၊ missing registry entry နှင့် checksum mismatch များကို reject လုပ်သောကြောင့် CI နှင့် reproducible project validation အတွက် အသုံးပြုနိုင်သည်။ အောင်မြင်ပါက direct dependency များသာမက transitive registry package များပါဝင်သော resolved graph တစ်ခုလုံးကို `name@version` ပုံစံဖြင့် deterministic order အတိုင်း ပြသပြီး ယခင် `installed N locked dependencies` count prefix ကို ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ```bash
 zap install
@@ -154,6 +154,12 @@ Manifest ကို ရည်ရွယ်ချက်ရှိရှိ ပြေ
 ```bash
 zap update
 zap update path/to/project
+```
+
+ဥပမာ direct dependency `appdep` မှ transitive package `leaf` သို့ resolve ဖြစ်ပါက output သည်—
+
+```text
+installed 2 locked dependencies: appdep@1.0.0, leaf@1.0.0
 ```
 
 `zap install` သည် validation-only command ဖြစ်ပြီး `zap update` သည် lockfile regeneration command ဖြစ်သည်။ နှစ်ခုလုံးသည် project directory အတွင်းတွင်သာ အလုပ်လုပ်ပြီး manifest နှင့် dependency ordering rules များကို မပြောင်းလဲစေပါ။

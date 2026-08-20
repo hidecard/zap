@@ -4780,6 +4780,70 @@ fn install_uses_registry_cache_and_supports_offline_reuse() {
 }
 
 #[test]
+fn install_reports_complete_transitive_resolved_graph() {
+    let root = std::env::temp_dir().join(format!(
+        "zap_install_transitive_report_{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"transitive-app\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\nappdep = \"1.0.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(root.join("appdep.pkg"), b"appdep package").unwrap();
+    std::fs::write(root.join("leaf.pkg"), b"leaf package").unwrap();
+    let checksum = |bytes: &[u8]| {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"appdep","version":"1.0.0","source":"file://appdep.pkg","checksum":"{}","dependencies":{{"leaf":"1.0.0"}}}},{{"name":"leaf","version":"1.0.0","source":"file://leaf.pkg","checksum":"{}"}}]}}"#,
+            checksum(b"appdep package"),
+            checksum(b"leaf package")
+        ),
+    )
+    .unwrap();
+    let cache = root.join("cache");
+    let update = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        update.status.success(),
+        "{}",
+        String::from_utf8_lossy(&update.stderr)
+    );
+    let install = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(
+        install.status.success(),
+        "{}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&install.stdout),
+        "installed 2 locked dependencies: appdep@1.0.0, leaf@1.0.0\n"
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn lockfile_records_resolved_registry_checksums() {
     let root =
         std::env::temp_dir().join(format!("zap_registry_lockfile_v2_{}", std::process::id()));
