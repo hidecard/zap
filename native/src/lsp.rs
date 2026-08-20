@@ -2,7 +2,7 @@ use serde_json::{json, Value};
 use std::{
     cell::RefCell,
     collections::BTreeMap,
-    io::{self, Read, Write},
+    io::{self, BufRead, BufReader, Write},
 };
 
 thread_local! {
@@ -10,19 +10,60 @@ thread_local! {
 }
 
 pub fn run_stdio() -> Result<(), String> {
-    let mut input = Vec::new();
-    io::stdin()
-        .read_to_end(&mut input)
-        .map_err(|e| format!("lsp read failed: {e}"))?;
+    let stdin = io::stdin();
+    let mut input = BufReader::new(stdin.lock());
     let mut output = io::BufWriter::new(io::stdout());
-    for message in decode_messages(&input)? {
+    while let Some(message) = read_message(&mut input)? {
         if let Some(response) = handle_message(&message) {
             encode_message(&mut output, &response)?;
+            output
+                .flush()
+                .map_err(|e| format!("lsp write failed: {e}"))?;
         }
     }
-    output.flush().map_err(|e| format!("lsp write failed: {e}"))
+    Ok(())
 }
 
+fn read_message<R: BufRead>(reader: &mut R) -> Result<Option<Value>, String> {
+    let mut content_length = None;
+    let mut line = String::new();
+    loop {
+        line.clear();
+        let bytes = reader
+            .read_line(&mut line)
+            .map_err(|e| format!("lsp header read failed: {e}"))?;
+        if bytes == 0 {
+            return if content_length.is_none() {
+                Ok(None)
+            } else {
+                Err("lsp message ended before the header terminator".to_string())
+            };
+        }
+        let trimmed = line.trim_end_matches(['\r', '\n']);
+        if trimmed.is_empty() {
+            break;
+        }
+        if let Some(value) = trimmed.strip_prefix("Content-Length:") {
+            content_length = Some(
+                value
+                    .trim()
+                    .parse::<usize>()
+                    .map_err(|_| "lsp Content-Length is invalid".to_string())?,
+            );
+        }
+    }
+    let length =
+        content_length.ok_or_else(|| "lsp message is missing Content-Length".to_string())?;
+    let mut body = vec![0_u8; length];
+    reader
+        .read_exact(&mut body)
+        .map_err(|e| format!("lsp body read failed: {e}"))?;
+    serde_json::from_slice(&body)
+        .map(Some)
+        .map_err(|e| format!("lsp JSON is invalid: {e}"))
+}
+
+#[cfg(test)]
 pub fn decode_messages(input: &[u8]) -> Result<Vec<Value>, String> {
     let mut messages = Vec::new();
     let mut cursor = 0;

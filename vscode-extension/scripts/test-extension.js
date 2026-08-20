@@ -6,6 +6,7 @@ const required = [
   'package.json',
   'language-configuration.json',
   'extension.js',
+  'lsp-client.js',
   'syntaxes/zap.tmLanguage.json',
   'snippets/zap.json'
 ];
@@ -17,6 +18,13 @@ for (const relative of ['package.json', 'language-configuration.json', 'syntaxes
   JSON.parse(fs.readFileSync(path.join(root, relative), 'utf8'));
 }
 const extensionSource = fs.readFileSync(path.join(root, 'extension.js'), 'utf8');
+const lspSource = fs.readFileSync(path.join(root, 'lsp-client.js'), 'utf8');
+if (!lspSource.includes('Content-Length') || !lspSource.includes("request(method")) {
+  throw new Error('LSP client framing or request transport is missing');
+}
+if (!extensionSource.includes('textDocument/definition') || !extensionSource.includes('textDocument/hover')) {
+  throw new Error('LSP definition or hover provider is missing');
+}
 if (!extensionSource.includes('zap.runFile') || !extensionSource.includes('zap.checkWorkspace')) {
   throw new Error('extension commands are not registered');
 }
