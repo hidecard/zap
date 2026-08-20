@@ -15,6 +15,8 @@
 
 - Added `file_metadata(path)`, returning portable `kind`, byte `size`, and `readonly` fields from symlink-safe metadata.
 - Added bounded `atomic_write(path, content)`, which writes and synchronizes a same-directory temporary file before committing it with rename semantics and cleans up failed temporary writes.
+- Added `from_json_typed(source, expected)` for deterministic runtime-category validation under the existing 8 MiB JSON limit.
+- Added Unicode-safe `char_at`, `substring`, and `codepoints` operations that index by Unicode scalar values rather than UTF-8 bytes, with stable bounds diagnostics.
 
 
 ## [2.0.4] — 2026-08-20

@@ -15,6 +15,8 @@
 
 - Symlink-safe metadata မှ portable `kind`၊ byte `size` နှင့် `readonly` fields များကို ပြန်ပေးသော `file_metadata(path)` ကို ထည့်သွင်းထားပါသည်။
 - Bounded `atomic_write(path, content)` ကို ထည့်သွင်းထားပြီး destination နှင့် directory တူ temporary file ကို ရေးသား၊ sync ပြုလုပ်ပြီး rename ဖြင့် commit လုပ်ကာ failure ဖြစ်ပါက temporary file ကို cleanup လုပ်ပါသည်။
+- လက်ရှိ 8 MiB JSON limit အောက်တွင် decoded runtime category ကို deterministic စစ်ဆေးပေးသော `from_json_typed(source, expected)` ကို ထည့်သွင်းထားပါသည်။
+- UTF-8 byte များအစား Unicode scalar value များဖြင့် index လုပ်သော Unicode-safe `char_at`၊ `substring` နှင့် `codepoints` APIs များကို stable bounds diagnostics နှင့်အတူ ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] — 2026-08-20

@@ -19,8 +19,11 @@
 | `replace` | `replace(value, from, to)` | `text` | Text တစ်ခု၏ occurrence အားလုံးကို အခြား text ဖြင့် အစားထိုးသည်။ |
 | `starts_with` | `starts_with(value, prefix)` | `bool` | Text သည် prefix ဖြင့် စ/မစ စစ်သည်။ |
 | `ends_with` | `ends_with(value, suffix)` | `bool` | Text သည် suffix ဖြင့် ဆုံး/မဆုံး စစ်သည်။ |
+| `char_at` | `char_at(value, index)` | `text` | သတ်မှတ်ထားသော zero-based Unicode character index မှ character တစ်လုံးကို ပြန်ပေးသည်။ |
+| `substring` | `substring(value, start, end)` | `text` | UTF-8 byte offset မဟုတ်ဘဲ character range `start <= index < end` ကို ပြန်ပေးသည်။ |
+| `codepoints` | `codepoints(value)` | `list<number>` | Unicode character တစ်လုံးချင်းစီ၏ numeric code point များကို ပြန်ပေးသည်။ |
 
-Text operations များသည် character အပေါ် အခြေခံသည့်နေရာတွင် Unicode ကို ထည့်သွင်းစဉ်းစားပါသည်။ `join` သည် list element အားလုံး `text` ဖြစ်ရန်လိုပြီး mixed value များကို အလိုအလျောက် text မပြောင်းပါ။
+Text operations များသည် character အပေါ် အခြေခံသည့်နေရာတွင် Unicode ကို ထည့်သွင်းစဉ်းစားပါသည်။ `char_at`၊ `substring`၊ `codepoints`၊ `len` နှင့် `reverse` တို့သည် UTF-8 byte offset မသုံးဘဲ Unicode scalar value များအပေါ် အလုပ်လုပ်ပါသည်။ Negative index နှင့် `char_at` range ကျော်ခြင်းကို reject လုပ်ပြီး `substring` ၏ end သည် text length ထက်ကျော်ပါက ရှိသမျှ suffix ကိုသာ ပြန်ပေးပါသည်။ `join` သည် list element အားလုံး `text` ဖြစ်ရန်လိုပြီး mixed value များကို အလိုအလျောက် text မပြောင်းပါ။
 
 ```zap
 let source: text = "  Zap Language  "
@@ -28,6 +31,9 @@ say trim(source)
 say upper(trim(source))
 say replace("zap language", "zap", "Zap")
 say starts_with("Zap", "Z")
+say char_at("က🙂ab", 1)
+say substring("က🙂ab", 1, 3)
+say codepoints("က🙂")
 say join(["web", "ai", "iot"], ", ")
 ```
 

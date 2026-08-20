@@ -4,11 +4,11 @@ Zap ၏ standard library ကို အများပြည်သူအသုံ
 
 | Public module | အသုံးပြုနိုင်သောအပိုင်း | အဓိက API များ |
 |---|---|---|
-| `text` | စာသားပြောင်းလဲခြင်းနှင့် စီမံခြင်း | `len`, `str`, `type`, `upper`, `lower`, `trim`, `split`, `join`, `contains`, `replace` |
+| `text` | စာသားပြောင်းလဲခြင်းနှင့် စီမံခြင်း | `len`, `str`, `type`, `upper`, `lower`, `trim`, `split`, `join`, `contains`, `replace`, `char_at`, `substring`, `codepoints` |
 | `math` | ကိန်းဂဏန်းလုပ်ဆောင်ချက်များ | `abs`, `min`, `max`, `pow`, `sqrt` |
 | `collections` | List နှင့် map များ | `sum`, `range`, `keys`, `count`, `reverse`, `get` |
-| `filesystem` | ကန့်သတ်ထားသော text နှင့် line I/O | `read_text`, `write_text`, `read_lines`, `write_lines`, `exists` |
-| `json` | JSON ပြောင်းလဲခြင်း | `json`, `from_json` |
+| `filesystem` | ကန့်သတ်ထားသော text နှင့် line I/O | `read_text`, `write_text`, `read_lines`, `write_lines`, `exists`, `file_metadata`, `atomic_write` |
+| `json` | JSON ပြောင်းလဲခြင်းနှင့် runtime category စစ်ဆေးခြင်း | `json`, `from_json`, `from_json_typed` |
 | `system` | Environment၊ configuration၊ path နှင့် အချိန် | `env`, `has_env`, `env_get`, `config_dir`, `config_path`, `path_join`, `basename`, `dirname`, `now`, `sleep` |
 | `network` | URL စီမံခြင်း၊ ကန့်သတ်ထားသော HTTP request နှင့် local server | `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, `http_serve_once` |
 | `process` | Shell မသုံးသော process execution | `process_run` |

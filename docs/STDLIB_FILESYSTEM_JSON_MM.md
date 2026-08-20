@@ -41,6 +41,7 @@ atomic_write(path, "updated atomically")
 |---|---|---|---|
 | `json` | `json(value)` | `text` | Zap value ကို JSON text အဖြစ် encode လုပ်သည်။ |
 | `from_json` | `from_json(source: text)` | `any` | JSON text ကို Zap value အဖြစ် parse လုပ်သည်။ |
+| `from_json_typed` | `from_json_typed(source: text, expected: text)` | `any` | JSON ကို parse လုပ်ပြီး ရရှိလာသော runtime category သည် `expected` (`none`, `bool`, `number`, `text`, `list`, `map`) နှင့် ကိုက်ညီမှုရှိ/မရှိ စစ်သည်။ |
 
 JSON conversion သည် deterministic ဖြစ်ပါသည်။ `none` သည် JSON `null` ဖြစ်ပြီး boolean၊ number၊ text၊ list နှင့် map များသည် သက်ဆိုင်ရာ JSON value များအဖြစ် ပြောင်းလဲပါသည်။ Zap ၏ `option` နှင့် `result` များသည် round trip ပြုလုပ်သည့်အခါ variant information မပျောက်စေရန် tagged object ပုံစံကို အသုံးပြုပါသည်။
 
@@ -49,11 +50,11 @@ let source: text = json([1, 2, 3])
 let values = from_json(source)
 say values[1]
 
-let record = from_json("{\"name\":\"Zap\",\"version\":1}")
+let record = from_json_typed("{\"name\":\"Zap\",\"version\":1}", "map")
 say record["name"]
 ```
 
-`json` သည် argument တစ်ခုတည်းသာ လက်ခံပါသည်။ `from_json` သည် text argument တစ်ခုတည်းသာ လက်ခံပါသည်။ JSON မမှန်ခြင်း၊ မထောက်ပံ့သော numeric value များ၊ မသိသော Zap variant tag များနှင့် Zap integer range ပြင်ပ number များသည် ရှင်းလင်းသော runtime error ဖြစ်စေပါသည်။ JSON input/output ကို **8 MiB** safety limit ဖြင့် ကန့်သတ်ထားပြီး limit ကျော်လွန်သော payload များကို မလုပ်ဆောင်ဘဲ reject လုပ်ပါသည်။
+`json` သည် argument တစ်ခုတည်းသာ လက်ခံပါသည်။ `from_json` သည် text argument တစ်ခုတည်းသာ လက်ခံပါသည်။ `from_json_typed` သည် text source နှင့် runtime-category name ကို လက်ခံပြီး type မကိုက်ညီပါက `from_json_typed failed: expected <expected>, got <actual>` ဟု ပြပါသည်။ JSON မမှန်ခြင်း၊ မထောက်ပံ့သော numeric value များ၊ မသိသော Zap variant tag များနှင့် Zap integer range ပြင်ပ number များသည် ရှင်းလင်းသော runtime error ဖြစ်စေပါသည်။ JSON input/output ကို **8 MiB** safety limit ဖြင့် ကန့်သတ်ထားပြီး limit ကျော်လွန်သော payload များကို မလုပ်ဆောင်ဘဲ reject လုပ်ပါသည်။
 
 ## Error examples
 

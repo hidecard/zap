@@ -121,6 +121,22 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "json",
     },
     PublicBuiltin {
+        name: "from_json_typed",
+        domain: "json",
+    },
+    PublicBuiltin {
+        name: "char_at",
+        domain: "text",
+    },
+    PublicBuiltin {
+        name: "substring",
+        domain: "text",
+    },
+    PublicBuiltin {
+        name: "codepoints",
+        domain: "text",
+    },
+    PublicBuiltin {
         name: "path_join",
         domain: "system",
     },

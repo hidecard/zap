@@ -41,6 +41,7 @@ atomic_write(path, "updated atomically")
 |---|---|---|---|
 | `json` | `json(value)` | `text` | Encodes a Zap value as JSON text. |
 | `from_json` | `from_json(source: text)` | `any` | Parses JSON text into a Zap value. |
+| `from_json_typed` | `from_json_typed(source: text, expected: text)` | `any` | Parses JSON and verifies that the resulting runtime category matches `expected` (`none`, `bool`, `number`, `text`, `list`, or `map`). |
 
 JSON conversion rules are deterministic. `none` becomes JSON `null`; booleans, numbers, text, lists, and maps become their corresponding JSON values. Zap `option` and `result` values use tagged objects so their variant information is preserved during a round trip.
 
@@ -49,11 +50,11 @@ let source: text = json([1, 2, 3])
 let values = from_json(source)
 say values[1]
 
-let record = from_json("{\"name\":\"Zap\",\"version\":1}")
+let record = from_json_typed("{\"name\":\"Zap\",\"version\":1}", "map")
 say record["name"]
 ```
 
-`json` accepts exactly one argument. `from_json` accepts exactly one text argument. Malformed JSON, unsupported numeric values, unknown Zap variant tags, and values outside Zap's integer range produce clear runtime errors. JSON input and output are bounded by an **8 MiB** safety limit; oversized payloads are rejected instead of being processed without bounds.
+`json` accepts exactly one argument. `from_json` accepts exactly one text argument. `from_json_typed` accepts a text source and a text runtime-category name; a mismatch produces `from_json_typed failed: expected <expected>, got <actual>`. Malformed JSON, unsupported numeric values, unknown Zap variant tags, and values outside Zap's integer range produce clear runtime errors. JSON input and output are bounded by an **8 MiB** safety limit; oversized payloads are rejected instead of being processed without bounds.
 
 ## Error examples
 

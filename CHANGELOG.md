@@ -12,6 +12,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။
+- လက်ရှိ JSON safety limit အောက်တွင် runtime category ကို စစ်ဆေးပေးသော `from_json_typed(source, expected)` နှင့် UTF-8 byte များအစား Unicode scalar value များဖြင့် အလုပ်လုပ်သော `char_at`၊ `substring`၊ `codepoints` APIs များကို ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] - 2026-08-20

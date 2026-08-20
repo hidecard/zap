@@ -268,6 +268,21 @@ pub(crate) fn expression(
     ExprParser::new(&tokens, vars, funcs).parse_complete()
 }
 
+pub(crate) fn value_type_name(value: &Value) -> &'static str {
+    match value {
+        Value::None => "none",
+        Value::Bool(_) => "bool",
+        Value::Number(_) => "number",
+        Value::Text(_) => "text",
+        Value::List(_) => "list",
+        Value::Map(_) => "map",
+        Value::Object { .. } => "object",
+        Value::ResultOk(_) | Value::ResultErr(_) => "result",
+        Value::OptionSome(_) | Value::OptionNone => "option",
+        Value::Future(_) => "future",
+    }
+}
+
 pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
     let expect = |count: usize| {
         if args.len() == count {
@@ -304,6 +319,72 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
             let parsed =
                 serde_json::from_str(text).map_err(|error| format!("from_json failed: {error}"))?;
             Ok(Some(json_to_value(parsed)?))
+        }
+        "from_json_typed" => {
+            expect(2)?;
+            let Value::Text(text) = &args[0] else {
+                return Err("from_json_typed expects text and type name".into());
+            };
+            let Value::Text(expected) = &args[1] else {
+                return Err("from_json_typed expects text and type name".into());
+            };
+            if text.len() > MAX_JSON_BYTES {
+                return Err(format!(
+                    "from_json_typed failed: input exceeds the {MAX_JSON_BYTES} byte limit"
+                ));
+            }
+            let parsed = serde_json::from_str(text)
+                .map_err(|error| format!("from_json_typed failed: {error}"))?;
+            let value = json_to_value(parsed)?;
+            let actual = value_type_name(&value);
+            if actual != expected {
+                return Err(format!(
+                    "from_json_typed failed: expected {expected}, got {actual}"
+                ));
+            }
+            Ok(Some(value))
+        }
+        "char_at" => {
+            expect(2)?;
+            let (Value::Text(value), Value::Number(index)) = (&args[0], &args[1]) else {
+                return Err("char_at expects text and non-negative index".into());
+            };
+            let index = usize::try_from(*index)
+                .map_err(|_| "char_at expects a non-negative index".to_string())?;
+            value
+                .chars()
+                .nth(index)
+                .map(|character| Some(Value::Text(character.to_string())))
+                .ok_or_else(|| "char_at index out of range".to_string())
+        }
+        "substring" => {
+            expect(3)?;
+            let (Value::Text(value), Value::Number(start), Value::Number(end)) =
+                (&args[0], &args[1], &args[2])
+            else {
+                return Err("substring expects text and non-negative start/end indices".into());
+            };
+            let start = usize::try_from(*start)
+                .map_err(|_| "substring expects non-negative indices".to_string())?;
+            let end = usize::try_from(*end)
+                .map_err(|_| "substring expects non-negative indices".to_string())?;
+            if start > end {
+                return Err("substring start must not exceed end".into());
+            }
+            let output: String = value.chars().skip(start).take(end - start).collect();
+            Ok(Some(Value::Text(output)))
+        }
+        "codepoints" => {
+            expect(1)?;
+            let Value::Text(value) = &args[0] else {
+                return Err("codepoints expects text".into());
+            };
+            Ok(Some(Value::List(
+                value
+                    .chars()
+                    .map(|character| Value::Number(i64::from(u32::from(character))))
+                    .collect(),
+            )))
         }
         "len" => {
             expect(1)?;
@@ -3289,9 +3370,9 @@ pub(crate) fn execute_lines(
 #[cfg(test)]
 mod tests {
     use super::{
-        configuration_path, direct_external_builtin, execute_ast_program, execute_lines,
-        http_serve_once, require_capability_for_mode, validate_network_destination_for_mode,
-        MAX_HTTP_REQUEST_BYTES,
+        configuration_path, direct_builtin, direct_external_builtin, execute_ast_program,
+        execute_lines, http_serve_once, require_capability_for_mode,
+        validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::{Function, Value};
@@ -3465,6 +3546,59 @@ mod tests {
             Err(error) => assert!(error.contains("from_json failed:")),
             Ok(_) => panic!("malformed JSON should fail at runtime"),
         }
+    }
+
+    #[test]
+    fn validates_typed_json_and_unicode_safe_text_builtins() {
+        let decoded = direct_builtin(
+            "from_json_typed",
+            vec![
+                Value::Text("{\"name\":\"Zap\"}".into()),
+                Value::Text("map".into()),
+            ],
+        )
+        .expect("typed JSON conversion should not error")
+        .expect("typed JSON conversion should return a value");
+        assert!(matches!(decoded, Value::Map(_)));
+
+        let mismatch = direct_builtin(
+            "from_json_typed",
+            vec![Value::Text("42".into()), Value::Text("text".into())],
+        )
+        .expect_err("typed JSON mismatch should fail");
+        assert_eq!(
+            mismatch,
+            "from_json_typed failed: expected text, got number"
+        );
+
+        assert_eq!(
+            direct_builtin(
+                "char_at",
+                vec![Value::Text("က🙂ab".into()), Value::Number(1)],
+            )
+            .expect("Unicode char_at should succeed"),
+            Some(Value::Text("🙂".into()))
+        );
+        assert_eq!(
+            direct_builtin(
+                "substring",
+                vec![
+                    Value::Text("က🙂ab".into()),
+                    Value::Number(1),
+                    Value::Number(3),
+                ],
+            )
+            .expect("Unicode substring should succeed"),
+            Some(Value::Text("🙂a".into()))
+        );
+        assert_eq!(
+            direct_builtin("codepoints", vec![Value::Text("က🙂".into())])
+                .expect("Unicode codepoints should succeed"),
+            Some(Value::List(vec![
+                Value::Number(4096),
+                Value::Number(128578)
+            ]))
+        );
     }
 
     #[test]

@@ -19,8 +19,11 @@ This reference documents the stabilized text, math, and collection helpers avail
 | `replace` | `replace(value, from, to)` | `text` | Replaces every occurrence of one text value with another. |
 | `starts_with` | `starts_with(value, prefix)` | `bool` | Checks whether text begins with a prefix. |
 | `ends_with` | `ends_with(value, suffix)` | `bool` | Checks whether text ends with a suffix. |
+| `char_at` | `char_at(value, index)` | `text` | Returns one Unicode scalar value at a zero-based character index. |
+| `substring` | `substring(value, start, end)` | `text` | Returns the half-open character range `start <= index < end`; it never slices UTF-8 bytes. |
+| `codepoints` | `codepoints(value)` | `list<number>` | Returns each Unicode scalar value as its numeric code point. |
 
-Text operations are Unicode-aware where the operation is character-based. `join` requires every list element to be text; it does not silently stringify mixed values.
+Text operations are Unicode-aware where the operation is character-based. `char_at`, `substring`, `codepoints`, `len`, and `reverse` operate on Unicode scalar values rather than UTF-8 byte offsets. Negative indices and out-of-range `char_at` indices are rejected, while an out-of-range `substring` end produces the available suffix. `join` requires every list element to be text; it does not silently stringify mixed values.
 
 ```zap
 let source: text = "  Zap Language  "
@@ -28,6 +31,9 @@ say trim(source)
 say upper(trim(source))
 say replace("zap language", "zap", "Zap")
 say starts_with("Zap", "Z")
+say char_at("က🙂ab", 1)
+say substring("က🙂ab", 1, 3)
+say codepoints("က🙂")
 say join(["web", "ai", "iot"], ", ")
 ```
 

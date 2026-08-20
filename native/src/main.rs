@@ -29,7 +29,8 @@ mod stdlib_catalog;
 use evaluator::{
     call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
     direct_builtin, direct_external_builtin, execute_ast_program, execute_lines,
-    initialize_object_fields, json_to_value, operate, validate_source_layout, value_to_json, Flow,
+    initialize_object_fields, json_to_value, operate, validate_source_layout, value_to_json,
+    value_type_name, Flow,
 };
 
 use std::{
@@ -579,6 +580,96 @@ impl<'a> ExprParser<'a> {
                     )?,
                     _ => return Err("from_json expects text".into()),
                 }
+            }
+            Token::Name(n) if n == "from_json_typed" && *self.peek() == Token::LParen => {
+                self.take();
+                let source = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err("expected comma in from_json_typed".into());
+                }
+                let expected = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after from_json_typed".into());
+                }
+                let (Value::Text(source), Value::Text(expected)) = (source, expected) else {
+                    return Err("from_json_typed expects text and type name".into());
+                };
+                let value = json_to_value(
+                    serde_json::from_str(&source)
+                        .map_err(|error| format!("from_json_typed failed: {error}"))?,
+                )?;
+                let actual = value_type_name(&value);
+                if actual != expected {
+                    return Err(format!(
+                        "from_json_typed failed: expected {expected}, got {actual}"
+                    ));
+                }
+                value
+            }
+            Token::Name(n) if n == "char_at" && *self.peek() == Token::LParen => {
+                self.take();
+                let value = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err("expected comma in char_at".into());
+                }
+                let index = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after char_at".into());
+                }
+                let (Value::Text(value), Value::Number(index)) = (value, index) else {
+                    return Err("char_at expects text and non-negative index".into());
+                };
+                let index = usize::try_from(index)
+                    .map_err(|_| "char_at expects a non-negative index".to_string())?;
+                value
+                    .chars()
+                    .nth(index)
+                    .map(|character| Value::Text(character.to_string()))
+                    .ok_or_else(|| "char_at index out of range".to_string())?
+            }
+            Token::Name(n) if n == "substring" && *self.peek() == Token::LParen => {
+                self.take();
+                let value = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err("expected first index in substring".into());
+                }
+                let start = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err("expected second index in substring".into());
+                }
+                let end = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after substring".into());
+                }
+                let (Value::Text(value), Value::Number(start), Value::Number(end)) =
+                    (value, start, end)
+                else {
+                    return Err("substring expects text and non-negative start/end indices".into());
+                };
+                let start = usize::try_from(start)
+                    .map_err(|_| "substring expects non-negative indices".to_string())?;
+                let end = usize::try_from(end)
+                    .map_err(|_| "substring expects non-negative indices".to_string())?;
+                if start > end {
+                    return Err("substring start must not exceed end".into());
+                }
+                Value::Text(value.chars().skip(start).take(end - start).collect())
+            }
+            Token::Name(n) if n == "codepoints" && *self.peek() == Token::LParen => {
+                self.take();
+                let value = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after codepoints".into());
+                }
+                let Value::Text(value) = value else {
+                    return Err("codepoints expects text".into());
+                };
+                Value::List(
+                    value
+                        .chars()
+                        .map(|character| Value::Number(i64::from(u32::from(character))))
+                        .collect(),
+                )
             }
             Token::Name(n) if n == "new" && *self.peek() == Token::LParen => {
                 self.take();
