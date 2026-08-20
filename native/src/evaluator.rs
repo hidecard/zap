@@ -472,6 +472,87 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
     }
 }
 
+fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    match name {
+        "now" => {
+            if !args.is_empty() {
+                return Err(format!("now expects 0 arguments, got {}", args.len()));
+            }
+            let seconds = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|_| "system clock is before Unix epoch".to_string())?
+                .as_secs() as i64;
+            Ok(Some(Value::Number(seconds)))
+        }
+        "sleep" => {
+            if args.len() != 1 {
+                return Err(format!("sleep expects 1 argument, got {}", args.len()));
+            }
+            let Value::Number(milliseconds) = args[0] else {
+                return Err("sleep expects a non-negative number of milliseconds".into());
+            };
+            if milliseconds < 0 {
+                return Err("sleep expects a non-negative number of milliseconds".into());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(milliseconds as u64));
+            Ok(Some(Value::None))
+        }
+        "env" | "has_env" => {
+            if args.len() != 1 {
+                return Err(format!("{name} expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(key) = &args[0] else {
+                return Err(format!("{name} expects a text key"));
+            };
+            if name == "env" {
+                Ok(Some(Value::Text(std::env::var(key).unwrap_or_default())))
+            } else {
+                Ok(Some(Value::Bool(std::env::var_os(key).is_some())))
+            }
+        }
+        "exists" => {
+            if args.len() != 1 {
+                return Err(format!("exists expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(path) = &args[0] else {
+                return Err("exists expects a text path".into());
+            };
+            Ok(Some(Value::Bool(Path::new(path).exists())))
+        }
+        "path_join" => {
+            let mut path = std::path::PathBuf::new();
+            for value in args {
+                let Value::Text(part) = value else {
+                    return Err("path_join expects text parts".into());
+                };
+                path.push(part);
+            }
+            Ok(Some(Value::Text(path.to_string_lossy().into())))
+        }
+        "basename" | "dirname" => {
+            if args.len() != 1 {
+                return Err(format!("{name} expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(path) = &args[0] else {
+                return Err(format!("{name} expects a text path"));
+            };
+            let value = if name == "basename" {
+                Path::new(path)
+                    .file_name()
+                    .and_then(|part| part.to_str())
+                    .unwrap_or("")
+            } else {
+                Path::new(path)
+                    .parent()
+                    .and_then(|part| part.to_str())
+                    .unwrap_or("")
+            };
+            Ok(Some(Value::Text(value.into())))
+        }
+        _ => Ok(None),
+    }
+}
+
 fn ast_expression(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
@@ -546,6 +627,8 @@ fn ast_expression(
                     } else if let Some(value) = direct_builtin(name, values.clone())? {
                         Ok(value)
                     } else if let Some(value) = direct_io_builtin(name, &values)? {
+                        Ok(value)
+                    } else if let Some(value) = direct_system_builtin(name, &values)? {
                         Ok(value)
                     } else {
                         expression(&ast_expr_source(node), vars, funcs)
@@ -1971,6 +2054,31 @@ mod tests {
             ]))
         );
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn evaluates_system_builtins_from_native_ast() {
+        let program = parse_program(
+            "let present: bool = has_env(\"PATH\")\nlet joined: text = path_join(\"tmp\", \"zap\", \"main.zp\")\nlet base: text = basename(joined)\nlet parent: text = dirname(joined)\nlet available: bool = exists(\".\")\nlet timestamp: number = now()\nsleep(0)\n",
+        )
+        .expect("valid system built-in AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("direct system built-ins should execute");
+        assert!(matches!(vars.get("present"), Some(Value::Bool(_))));
+        assert_eq!(
+            vars.get("joined"),
+            Some(&Value::Text(
+                std::path::Path::new("tmp/zap/main.zp")
+                    .to_string_lossy()
+                    .into()
+            ))
+        );
+        assert_eq!(vars.get("base"), Some(&Value::Text("main.zp".into())));
+        assert!(matches!(vars.get("parent"), Some(Value::Text(_))));
+        assert_eq!(vars.get("available"), Some(&Value::Bool(true)));
+        assert!(matches!(vars.get("timestamp"), Some(Value::Number(value)) if *value > 0));
     }
 
     #[test]
