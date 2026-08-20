@@ -4,7 +4,7 @@
 
 Zap P2 now includes a deterministic async language layer and an editor protocol foundation. The runtime remains single-threaded and stable-Rust compatible, while the language supports `async fn`, deferred `Future` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
 
-The implementation deliberately keeps scheduling deterministic. An async call currently evaluates its body to a completed `Future` value, and `await` unwraps that value during evaluation. `delay_ticks` provides poll-count-based deterministic delay, while `CancellationToken` and `Cancellable` provide cooperative cancellation without worker threads or wall-clock dependence. Multi-thread scheduling and richer suspension semantics remain later runtime milestones.
+The implementation deliberately keeps scheduling deterministic. An async call currently evaluates its body to a completed `Future` value, and `await` unwraps that value during evaluation. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken` and `Cancellable` provide cooperative cancellation without worker threads or wall-clock dependence. Multi-thread scheduling and external I/O remain outside this foundation.
 
 ## Async Runtime
 
@@ -17,8 +17,11 @@ The native runtime exposes three deterministic executor operations:
 | `run_until_idle()` | Poll tasks in spawn order until the current queue pass is idle. |
 | `block_on(future)` | Drive one future to completion synchronously. |
 | `delay_ticks(n)` | Return a deterministic poll-count delay future. |
+| `yield_now()` | Suspend once and resume on the next deterministic poll. |
+| `spawn_limited(future)` | Enforce the configured maximum task count. |
+| `run_with_budget(n)` | Poll at most `n` times and return a deterministic `RunReport`. |
 
-The executor avoids worker threads and external runtime dependencies. This provides a stable base for future suspension and I/O integrations without changing existing synchronous behavior. Cancellation is cooperative: a cancelled task completes without polling its inner future.
+The executor avoids worker threads and external runtime dependencies. `RuntimeLimits` bounds task count and polls per run, and `RunReport` exposes the number of polls and remaining tasks. This provides a stable base for future I/O integrations without changing existing synchronous behavior. Cancellation is cooperative: a cancelled task completes without polling its inner future.
 
 ## Async Language Syntax
 
@@ -66,7 +69,8 @@ The server communicates over standard input and output using JSON-RPC messages f
 | `textDocument/completion` | Filters deterministic keywords by the active source prefix and adds top-level `let` and function declarations from the document. |
 | `textDocument/hover` | Parses the stored document and reports parser-owned metadata for top-level functions, classes, and declarations. |
 | `textDocument/definition` | Resolves a referenced top-level declaration to its parser-span source range. |
-| `workspace/symbol` | Searches indexed in-memory documents for deterministic top-level declaration symbols. |
+| `workspace/symbol` | Searches all indexed in-memory documents for deterministic top-level declaration symbols. |
+| `textDocument/formatting` | Returns one deterministic full-document edit that normalizes line endings, tabs, trailing spaces, and the final newline. |
 
 A minimal initialize request is:
 
@@ -82,6 +86,6 @@ Diagnostics continue to reuse Zap’s existing lint implementation. This keeps c
 
 ## Remaining P2 Boundary
 
-The completed foundation does not yet claim a full workspace language server or a production asynchronous I/O runtime. Remaining work includes resource limits, richer suspension points, multi-thread scheduling, formatting, document symbols beyond top-level declarations, workspace-aware package/module indexing, and registry features such as signed indexes, garbage collection, and server-side persistence.
+The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, richer nested-symbol indexing, module-aware package indexing, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, and workspace symbols are implemented and tested.
 
 For the package workflow, see the [English package guide](PACKAGE_EN.md) and [P2 progress](P2_PROGRESS.md). For the Burmese version of this guide, see [ASYNC_LSP_MM.md](ASYNC_LSP_MM.md).

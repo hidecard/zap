@@ -78,7 +78,8 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
                     "hoverProvider": true,
                     "definitionProvider": true,
-                    "workspaceSymbolProvider": true
+                    "workspaceSymbolProvider": true,
+                    "documentFormattingProvider": true
                 },
                 "serverInfo": {"name": "zap", "version": "1.0.0"}
             }
@@ -91,6 +92,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
         "textDocument/completion" => Some(completion_response(message)),
         "textDocument/hover" => Some(hover_response(message)),
         "textDocument/definition" => Some(definition_response(message)),
+        "textDocument/formatting" => Some(formatting_response(message)),
         "workspace/symbol" => Some(workspace_symbol_response(message)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
@@ -243,6 +245,52 @@ fn definition_response(message: &Value) -> Value {
         Value::Array(locations)
     };
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
+}
+
+fn formatting_response(message: &Value) -> Value {
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let formatted = format_source(&source);
+    let end_line = source.lines().count().saturating_sub(1) as u64;
+    let end_character = source
+        .lines()
+        .last()
+        .map(|line| line.chars().count())
+        .unwrap_or(0) as u64;
+    let edits = if formatted == source {
+        Vec::new()
+    } else {
+        vec![json!({
+            "range": {
+                "start": {"line": 0, "character": 0},
+                "end": {"line": end_line, "character": end_character}
+            },
+            "newText": formatted
+        })]
+    };
+    json!({
+        "jsonrpc": "2.0",
+        "id": message.get("id").cloned().unwrap_or(Value::Null),
+        "result": edits
+    })
+}
+
+fn format_source(source: &str) -> String {
+    let mut formatted = source
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .lines()
+        .map(|line| line.trim_end().replace('\t', "    "))
+        .collect::<Vec<_>>()
+        .join("\n");
+    if !formatted.is_empty() && !formatted.ends_with('\n') {
+        formatted.push('\n');
+    }
+    formatted
 }
 
 fn workspace_symbol_response(message: &Value) -> Value {
@@ -444,6 +492,48 @@ mod tests {
         .unwrap();
         assert_eq!(response["result"].as_array().unwrap().len(), 1);
         assert_eq!(response["result"][0]["name"], "load");
+    }
+
+    #[test]
+    fn formatting_normalizes_newlines_tabs_and_trailing_spaces() {
+        let uri = "file:///format.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn main():  \r\n\treturn 1"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 13, "method": "textDocument/formatting",
+            "params": {"textDocument": {"uri": uri}, "options": {}}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["result"][0]["newText"],
+            "fn main():\n    return 1\n"
+        );
+    }
+
+    #[test]
+    fn workspace_symbols_include_multiple_documents() {
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": "file:///one.zp", "text": "fn first():\n    return 1\n"}}
+        }));
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": "file:///two.zp", "text": "fn second():\n    return 2\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 14, "method": "workspace/symbol",
+            "params": {"query": ""}
+        }))
+        .unwrap();
+        let symbols = response["result"].as_array().unwrap();
+        assert!(symbols
+            .iter()
+            .any(|item| item["name"] == "first" && item["location"]["uri"] == "file:///one.zp"));
+        assert!(symbols
+            .iter()
+            .any(|item| item["name"] == "second" && item["location"]["uri"] == "file:///two.zp"));
     }
 
     #[test]

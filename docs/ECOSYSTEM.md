@@ -48,7 +48,7 @@ zap async-check
 zap lsp
 ```
 
-အောက်ပါ commands များသည် roadmap ဖြစ်ပြီး လက်ရှိ release တွင် မပါဝင်သေးပါ။
+အောက်ပါ framework commands များသည် roadmap ဖြစ်ပြီး လက်ရှိ release တွင် မပါဝင်သေးပါ။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
 
 ```text
 zap new my-app
@@ -59,7 +59,7 @@ zap iot new sensor-node
 zap registry publish
 ```
 
-P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry-ready metadata validation၊ local/HTTPS registry transport၊ content-addressed cache၊ checksum enforcement၊ validated remote publishing၊ `async fn`/`await` language syntax၊ deterministic single-thread async runtime နှင့် stdio LSP/editor foundation ပါဝင်သည်။ Signed indexes၊ version-range solving၊ cache garbage collection၊ server-side registry persistence၊ upload authentication၊ timers၊ cancellation၊ formatting၊ go-to-definition နှင့် workspace indexing တို့မှာ ဆက်လက် roadmap ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
+P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry metadata validation၊ local/HTTPS registry transport၊ content-addressed cache၊ checksum enforcement၊ validated remote publishing၊ signed-index verification၊ deterministic cache pruning၊ authenticated local registry persistence၊ exact နှင့် version-range solving၊ `async fn`/`await` language syntax၊ deterministic single-thread async runtime၊ delay/cancellation၊ task limits၊ poll budgets၊ one-poll suspension နှင့် stdio LSP/editor features ဖြစ်သော hover၊ completion၊ definition၊ formatting နှင့် workspace symbols ပါဝင်သည်။ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များမှာ external registry-service deployment၊ external asynchronous I/O၊ multi-thread scheduling နှင့် richer nested/module-aware indexing ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
 
 ## Recommended implementation order
 

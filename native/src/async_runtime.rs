@@ -10,19 +10,51 @@ use std::task::{Context, Poll, Wake, Waker};
 /// It provides runtime semantics without changing the synchronous language surface.
 pub struct AsyncRuntime {
     tasks: Vec<Pin<Box<dyn Future<Output = ()>>>>,
+    limits: RuntimeLimits,
 }
 
 #[allow(dead_code)]
 impl AsyncRuntime {
     pub fn new() -> Self {
-        Self { tasks: Vec::new() }
+        Self {
+            tasks: Vec::new(),
+            limits: RuntimeLimits::default(),
+        }
+    }
+
+    pub fn with_limits(limits: RuntimeLimits) -> Self {
+        Self {
+            tasks: Vec::new(),
+            limits,
+        }
+    }
+
+    pub fn limits(&self) -> RuntimeLimits {
+        self.limits
+    }
+
+    pub fn set_limits(&mut self, limits: RuntimeLimits) {
+        self.limits = limits;
     }
 
     pub fn spawn<F>(&mut self, future: F)
     where
         F: Future<Output = ()> + 'static,
     {
+        let _ = self.spawn_limited(future);
+    }
+
+    pub fn spawn_limited<F>(&mut self, future: F) -> Result<(), SpawnError>
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        if self.tasks.len() >= self.limits.max_tasks {
+            return Err(SpawnError::TaskLimitReached {
+                limit: self.limits.max_tasks,
+            });
+        }
         self.tasks.push(Box::pin(future));
+        Ok(())
     }
 
     /// Spawn a task that completes with cancellation instead of polling its
@@ -40,10 +72,16 @@ impl AsyncRuntime {
     }
 
     pub fn run_until_idle(&mut self) {
+        let _ = self.run_with_budget(self.limits.max_polls_per_run);
+    }
+
+    pub fn run_with_budget(&mut self, budget: usize) -> RunReport {
         let waker = no_op_waker();
         let mut context = Context::from_waker(&waker);
         let mut index = 0;
-        while index < self.tasks.len() {
+        let mut polls = 0;
+        while index < self.tasks.len() && polls < budget {
+            polls += 1;
             let ready = matches!(
                 self.tasks[index].as_mut().poll(&mut context),
                 Poll::Ready(())
@@ -53,6 +91,11 @@ impl AsyncRuntime {
             } else {
                 index += 1;
             }
+        }
+        RunReport {
+            polls,
+            pending_tasks: self.tasks.len(),
+            budget_exhausted: polls >= budget && !self.tasks.is_empty(),
         }
     }
 
@@ -65,6 +108,36 @@ impl Default for AsyncRuntime {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RuntimeLimits {
+    pub max_tasks: usize,
+    pub max_polls_per_run: usize,
+}
+
+impl Default for RuntimeLimits {
+    fn default() -> Self {
+        Self {
+            max_tasks: usize::MAX,
+            max_polls_per_run: usize::MAX,
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SpawnError {
+    TaskLimitReached { limit: usize },
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RunReport {
+    pub polls: usize,
+    pub pending_tasks: usize,
+    pub budget_exhausted: bool,
 }
 
 #[allow(dead_code)]
@@ -88,6 +161,31 @@ where
 #[allow(dead_code)]
 pub fn delay_ticks(ticks: u64) -> Delay {
     Delay { remaining: ticks }
+}
+
+/// Suspend exactly once, then become ready on the next poll.
+#[allow(dead_code)]
+pub fn yield_now() -> YieldNow {
+    YieldNow { yielded: false }
+}
+
+#[allow(dead_code)]
+pub struct YieldNow {
+    yielded: bool,
+}
+
+impl Future for YieldNow {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.yielded {
+            Poll::Ready(())
+        } else {
+            self.yielded = true;
+            context.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -187,7 +285,10 @@ impl Wake for NoopWaker {
 
 #[cfg(test)]
 mod tests {
-    use super::{block_on, delay_ticks, AsyncRuntime, Cancellable, CancellationToken};
+    use super::{
+        block_on, delay_ticks, yield_now, AsyncRuntime, Cancellable, CancellationToken, RunReport,
+        RuntimeLimits, SpawnError,
+    };
     use std::future::ready;
 
     #[test]
@@ -225,6 +326,40 @@ mod tests {
         assert_eq!(runtime.pending_tasks(), 1);
         runtime.run_until_idle();
         assert_eq!(runtime.pending_tasks(), 0);
+    }
+
+    #[test]
+    fn resource_limits_reject_excess_tasks_and_report_budget() {
+        let mut runtime = AsyncRuntime::with_limits(RuntimeLimits {
+            max_tasks: 1,
+            max_polls_per_run: 1,
+        });
+        runtime.spawn(async { yield_now().await });
+        assert_eq!(
+            runtime.spawn_limited(async {}),
+            Err(SpawnError::TaskLimitReached { limit: 1 })
+        );
+        assert_eq!(
+            runtime.run_with_budget(1),
+            RunReport {
+                polls: 1,
+                pending_tasks: 1,
+                budget_exhausted: true,
+            }
+        );
+        runtime.set_limits(RuntimeLimits {
+            max_tasks: 1,
+            max_polls_per_run: 2,
+        });
+        assert_eq!(runtime.run_with_budget(2).pending_tasks, 0);
+    }
+
+    #[test]
+    fn yield_now_suspends_once_without_wall_clock_time() {
+        let mut runtime = AsyncRuntime::new();
+        runtime.spawn(async { yield_now().await });
+        assert_eq!(runtime.run_with_budget(1).pending_tasks, 1);
+        assert_eq!(runtime.run_with_budget(1).pending_tasks, 0);
     }
 
     #[test]
