@@ -194,8 +194,9 @@ jobs:
           foreach ($required in @('zap/bin/zap.exe', 'zap/README.md', 'zap/RELEASE.txt', 'zap/docs/SYNTAX_GUIDE_EN.md', 'zap/examples/hello.zp')) {
             if ($entries -notcontains $required) { throw "Missing archive entry: $required" }
           }
-          $releaseText = tar -xOf "$env:ARCHIVE" zap/RELEASE.txt
-          if ($releaseText -notmatch "Version: $($env:GITHUB_REF_NAME -replace '^v','')") { throw "Release version metadata mismatch" }
+          $releaseText = (tar -xOf "$env:ARCHIVE" zap/RELEASE.txt | Out-String)
+          $releaseVersion = $env:GITHUB_REF_NAME -replace '^v',''
+          if ($releaseText -notmatch "Version: $releaseVersion") { throw "Release version metadata mismatch" }
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
