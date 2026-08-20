@@ -1645,21 +1645,26 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
         })
 }
 
-fn register_ast_function(
-    name: &str,
-    params: &[(String, Option<String>, Option<String>)],
-    visibility: &str,
-    return_type: &Option<String>,
-    body: &Program,
+struct AstFunctionSpec<'a> {
+    name: &'a str,
+    params: &'a [(String, Option<String>, Option<String>)],
+    visibility: &'a str,
+    return_type: &'a Option<String>,
+    body: &'a Program,
     is_async: bool,
+}
+
+fn register_ast_function(
+    spec: AstFunctionSpec<'_>,
     vars: &HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
 ) {
     funcs.insert(
-        name.to_string(),
+        spec.name.to_string(),
         Rc::new(Function {
-            visibility: visibility.to_string(),
-            params: params
+            visibility: spec.visibility.to_string(),
+            params: spec
+                .params
                 .iter()
                 .map(|(name, annotation, default)| Param {
                     name: name.clone(),
@@ -1667,10 +1672,10 @@ fn register_ast_function(
                     default: default.clone(),
                 })
                 .collect(),
-            return_annotation: return_type.clone(),
-            is_async,
+            return_annotation: spec.return_type.clone(),
+            is_async: spec.is_async,
             body: Vec::new(),
-            ast_body: Some(body.clone()),
+            ast_body: Some(spec.body.clone()),
             closure: Rc::new(RefCell::new(vars.clone())),
         }),
     );
@@ -1958,12 +1963,14 @@ pub(crate) fn execute_ast_program(
                 is_async,
             } => {
                 register_ast_function(
-                    name,
-                    params,
-                    visibility,
-                    return_type,
-                    body,
-                    *is_async,
+                    AstFunctionSpec {
+                        name,
+                        params,
+                        visibility,
+                        return_type,
+                        body,
+                        is_async: *is_async,
+                    },
                     vars,
                     funcs,
                 );
