@@ -1014,3 +1014,13 @@ fn preserves_mutated_nested_closure_state() {
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n");
 }
+
+#[test]
+fn reports_function_argument_count_errors() {
+    let file = std::env::temp_dir().join("zap_function_arity_test.zp");
+    std::fs::write(&file, "fn add(a, b):\n    return a + b\nsay add(1)\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("function expects 2 arguments, got 1"));
+}
