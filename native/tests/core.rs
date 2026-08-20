@@ -5412,3 +5412,79 @@ fn lock_migrate_is_listed_in_help() {
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("zap lock-migrate [dir]"));
 }
+
+#[test]
+fn runs_language_level_async_task_facade_end_to_end() {
+    let file = std::env::temp_dir().join("zap_async_task_facade_integration_test.zp");
+    std::fs::write(
+        &file,
+        "async fn load() -> number:\n    return 7\nlet handle = spawn(load())\nsay task_is_ready(handle)\nsay task_join(handle)\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "true\n7\n");
+}
+
+#[test]
+fn rejects_invalid_language_level_async_task_inputs_end_to_end() {
+    let cases = [
+        ("spawn(1)\n", "spawn expects a future value"),
+        ("task_join(1)\n", "task_join expects a future value"),
+        ("task_is_ready(1)\n", "task_is_ready expects a future value"),
+    ];
+    for (index, (source, expected_error)) in cases.iter().enumerate() {
+        let file = std::env::temp_dir().join(format!(
+            "zap_async_task_facade_invalid_{}_{}.zp",
+            std::process::id(),
+            index
+        ));
+        std::fs::write(&file, source).unwrap();
+        let output = Command::new(binary()).arg(&file).output().unwrap();
+        let _ = std::fs::remove_file(&file);
+        assert!(!output.status.success(), "invalid task input should fail");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected_error),
+            "expected diagnostic {:?}, got {}",
+            expected_error,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[test]
+fn combines_async_await_with_language_level_task_join_end_to_end() {
+    let file = std::env::temp_dir().join("zap_async_task_await_integration_test.zp");
+    std::fs::write(
+        &file,
+        "async fn load() -> number:\n    return 6\nlet pending = load()\nlet first: number = await pending\nlet handle = spawn(load())\nlet second: number = task_join(handle)\nsay first + second\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "12\n");
+}
+
+#[test]
+fn language_level_task_facade_preserves_function_argument_validation() {
+    let file = std::env::temp_dir().join("zap_async_task_facade_arity_test.zp");
+    std::fs::write(
+        &file,
+        "async fn load():\n    return 1\nspawn(load(), load())\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("spawn expects 1 argument"));
+}
