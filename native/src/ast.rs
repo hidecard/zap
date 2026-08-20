@@ -103,6 +103,12 @@ pub(crate) enum Stmt {
         visibility: String,
     },
     Say(Spanned<Expr>),
+    Raise(Spanned<Expr>),
+    TryCatch {
+        body: Program,
+        binding: String,
+        catch_body: Program,
+    },
     Module {
         name: String,
     },
@@ -475,6 +481,19 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
     if let Some(rest) = trimmed.strip_prefix("say ") {
         return Ok(Spanned::new(
             Stmt::Say(parse_expression(rest.trim())?),
+            span(trimmed.len()),
+        ));
+    }
+    if trimmed == "raise" {
+        return Err("raise expects an expression".to_string());
+    }
+    if let Some(rest) = trimmed.strip_prefix("raise ") {
+        let value = rest.trim();
+        if value.is_empty() {
+            return Err("raise expects an expression".to_string());
+        }
+        return Ok(Spanned::new(
+            Stmt::Raise(parse_expression(value)?),
             span(trimmed.len()),
         ));
     }
@@ -901,10 +920,69 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
         }
         let line_number = line.number;
         let text = line.text.clone();
-        if text == "else:" {
+        if text == "else:" || text == "catch:" || text.starts_with("catch ") {
             break;
         }
-        if let Some(function) = parse_function_header(&text) {
+        if text == "try:" {
+            *cursor += 1;
+            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                return Err(format!(
+                    "try requires an indented block at line {line_number}"
+                ));
+            }
+            let body_indent = lines[*cursor].indent;
+            let body = parse_block(lines, cursor, body_indent)?;
+            if *cursor >= lines.len()
+                || lines[*cursor].indent != indent
+                || !lines[*cursor].text.starts_with("catch")
+            {
+                return Err(format!(
+                    "try requires a same-level catch clause at line {line_number}"
+                ));
+            }
+            let catch_line = &lines[*cursor];
+            let binding = catch_line
+                .text
+                .strip_prefix("catch")
+                .and_then(|rest| rest.strip_suffix(':'))
+                .map(str::trim)
+                .filter(|name| {
+                    !name.is_empty()
+                        && name.chars().enumerate().all(|(index, character)| {
+                            character == '_'
+                                || character.is_ascii_alphanumeric()
+                                    && (index > 0 || character.is_ascii_alphabetic())
+                        })
+                })
+                .ok_or_else(|| {
+                    format!(
+                        "catch expects an error binding at line {}",
+                        catch_line.number
+                    )
+                })?
+                .to_string();
+            *cursor += 1;
+            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                return Err(format!(
+                    "catch requires an indented block at line {}",
+                    catch_line.number
+                ));
+            }
+            let catch_indent = lines[*cursor].indent;
+            let catch_body = parse_block(lines, cursor, catch_indent)?;
+            program.statements.push(Spanned::new(
+                Stmt::TryCatch {
+                    body,
+                    binding,
+                    catch_body,
+                },
+                SourceSpan {
+                    line: line_number,
+                    column: indent * 4 + 1,
+                    length: text.len(),
+                },
+            ));
+        } else if let Some(function) = parse_function_header(&text) {
             *cursor += 1;
             let function = function?;
             if *cursor >= lines.len() || lines[*cursor].indent <= indent {
@@ -1206,6 +1284,14 @@ mod tests {
         assert!(
             matches!(program.statements[1].node, Stmt::Import { ref path, alias: Some(ref alias), explicit: true } if path == "app.core" && alias == "core")
         );
+    }
+
+    #[test]
+    fn parses_raise_statements_and_rejects_missing_values() {
+        let program = parse_program("raise \"boom\"\n").expect("valid raise statement");
+        assert!(matches!(program.statements[0].node, Stmt::Raise(_)));
+        assert!(parse_program("raise\n").is_err());
+        assert!(parse_program("raise \n").is_err());
     }
 
     #[test]

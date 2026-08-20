@@ -13,12 +13,18 @@ P2 တွင် native runtime၊ deterministic registry transport နှင့�
 | Milestone | အကြောင်းအရာ | အောင်မြင်မှုစံနှုန်း | အခြေအနေ |
 |---|---|---|---|
 | P3.1 | Module နှင့် workspace architecture | ရှင်းလင်းသော module/import syntax၊ deterministic search paths၊ duplicate/cycle diagnostics နှင့် cross-platform workspace tests | ပြီးစီး |
-| P3.2 | Structured error model | Native `error`/`try`/`catch` သို့မဟုတ် typed propagation၊ တည်ငြိမ်သော diagnostics နှင့် recoverable failure များအတွက် string-only control flow မသုံးခြင်း | စီစဉ်ထား |
+| P3.2 | Structured error model | Native `raise`/`try`/`catch` propagation၊ တည်ငြိမ်သော diagnostics၊ catch binding restoration၊ re-raise support နှင့် deterministic runtime behavior | ပြီးစီး |
 | P3.3 | Production standard library | HTTP client/server primitives၊ URL handling၊ process execution boundaries နှင့် လုံခြုံသော environment/configuration APIs | စီစဉ်ထား |
 | P3.4 | Async I/O integration | timers၊ sockets၊ files၊ cancellation၊ backpressure နှင့် resource budgets အတွက် deterministic runtime interfaces | စီစဉ်ထား |
 | P3.5 | Type-system productivity | Generic functions/collections၊ ပိုမိုကောင်းမွန်သော inference၊ pattern matching နှင့် exhaustiveness diagnostics | စီစဉ်ထား |
 | P3.6 | Tooling နှင့် language server | Full formatter၊ workspace indexing၊ rename/references၊ import assistance၊ semantic tokens နှင့် project-aware diagnostics | စီစဉ်ထား |
 | P3.7 | Quality နှင့် release engineering | Benchmarks၊ fuzz/property tests၊ security audit၊ reproducible artifacts နှင့် cross-platform install verification | စီစဉ်ထား |
+
+## P3.2 အကောင်အထည်ဖော်ပြီးစီးမှု
+
+P3.2 တွင် `raise <expression>` နှင့် same-level `try`/`catch <binding>:` syntax များကို AST runtime ထဲသို့ ထည့်သွင်းထားပါသည်။ Raised value များသည် function၊ loop၊ nested block နှင့် module execution များအတွင်းမှ catch မလုပ်မချင်း propagate ဖြစ်ပါသည်။ Catch ပြီးဆုံးပါက catch binding သည် မူလ variable value ကို ပြန်လည် restore လုပ်ပြီး catch အတွင်း re-raise လုပ်သည့်အခါတွင်လည်း ဤစည်းမျဉ်းကို ထိန်းသိမ်းထားပါသည်။ Bare `raise`၊ catch clause မရှိခြင်း၊ binding မမှန်ခြင်းနှင့် catch body မရှိခြင်းတို့အတွက် stable parser diagnostics များ ထုတ်ပေးပါသည်။ Uncaught value သည် process boundary တွင် `raised error: <value>` ဟူသော deterministic diagnostic အဖြစ် ရောက်ရှိပါသည်။ Rust 1.75 compatibility နှင့် AST/legacy execution parity ကိုလည်း ထိန်းသိမ်းထားပါသည်။
+
+Parser/evaluator focused coverage များတွင် expression လိုအပ်သော raise syntax၊ uncaught flow၊ nested catch shadow restoration၊ ပုံမှန်ပြီးဆုံးမှု၊ text မဟုတ်သော payload များနှင့် re-raise behavior တို့ကို စစ်ဆေးထားပါသည်။ နောက် release artifact မထုတ်မီ complete native suite နှင့် strict release checks များကို ဆက်လက်အောင်မြင်ရန် လိုအပ်ပါသည်။
 
 ## ပထမဆုံးအကောင်အထည်ဖော်မည့် P3.1
 

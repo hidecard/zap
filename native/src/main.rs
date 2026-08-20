@@ -984,6 +984,7 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
                 Flow::Break | Flow::LoopContinue => {
                     Err("break/continue must be inside a loop".into())
                 }
+                Flow::Raise(value) => Err(format!("raised error: {}", value.show())),
             };
         }
         Err(error) if contains_ast_only_syntax(source) => {
@@ -995,6 +996,7 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
     match execute_lines(&lines, &mut vars, &mut funcs, base)? {
         Flow::Continue | Flow::Return(_) => Ok(()),
         Flow::Break | Flow::LoopContinue => Err("break/continue must be inside a loop".into()),
+        Flow::Raise(value) => Err(format!("raised error: {}", value.show())),
     }
 }
 
@@ -1003,6 +1005,8 @@ fn contains_ast_only_syntax(source: &str) -> bool {
         let line = raw_line.trim_start();
         line.starts_with("async ")
             || line.starts_with("await ")
+            || line.starts_with("raise ")
+            || line == "raise"
             || line.starts_with("module ")
             || (line.starts_with("import ") && line.contains(" as "))
     })

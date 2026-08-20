@@ -239,6 +239,38 @@ fn use_value() -> Result:
     return ok(value)
 ```
 
+## Structured Errors: `raise`, `try`, and `catch`
+
+Zap also supports deterministic structured control flow for exceptional runtime paths. `raise <expression>` evaluates the expression and immediately propagates its value through the current function, loop, and module boundary until a matching `try`/`catch` handles it. A bare `raise` is rejected during parsing with `raise expects an expression`.
+
+```zap
+fn load_config():
+    raise "configuration unavailable"
+
+try:
+    load_config()
+catch error:
+    say "handled: " + error
+```
+
+A `try` block must be followed by a same-level `catch <binding>:` clause with an indented body. The raised value is bound to the catch name, which may shadow an existing variable only for the catch body; the previous value is restored afterward. If the catch body executes `raise` again, the new or original value continues outward.
+
+```zap
+let error = "outer"
+try:
+    try:
+        raise {"code": 503, "message": "offline"}
+    catch error:
+        say error["code"]
+        raise error
+catch error:
+    say error["message"]
+
+say error # outer
+```
+
+Catch blocks also preserve normal control flow. They do not execute when the try body completes normally, and `return`, `break`, and `continue` from a catch body retain their usual enclosing-function or enclosing-loop behavior. At the process boundary, an uncaught value is reported deterministically as `raised error: <value>`.
+
 ## Files, Paths, Time, and Environment
 
 ```zap

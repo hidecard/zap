@@ -13,12 +13,18 @@ P2 delivered the native runtime, deterministic registry transport and resolution
 | Milestone | Scope | Acceptance criteria | Status |
 |---|---|---|---|
 | P3.1 | Module and workspace architecture | Explicit module/import syntax, deterministic search paths, duplicate/cycle diagnostics, and cross-platform workspace tests | Complete |
-| P3.2 | Structured error model | Native `error`/`try`/`catch` or equivalent typed propagation, stable diagnostics, and no string-only control flow for recoverable failures | Planned |
+| P3.2 | Structured error model | Native `raise`/`try`/`catch` propagation, stable diagnostics, catch binding restoration, re-raise support, and deterministic runtime behavior | Complete |
 | P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | Planned |
 | P3.4 | Async I/O integration | Deterministic runtime interfaces for timers, sockets, files, cancellation, backpressure, and resource budgets | Planned |
 | P3.5 | Type-system productivity | Generic functions and collections, richer inference, pattern matching, and improved exhaustiveness diagnostics | Planned |
 | P3.6 | Tooling and language server | Full formatter, workspace indexing, rename/references, import assistance, semantic tokens, and project-aware diagnostics | Planned |
 | P3.7 | Quality and release engineering | Benchmarks, fuzz/property tests, security audit, reproducible artifacts, and cross-platform install verification | Planned |
+
+## Completed implementation: P3.2
+
+P3.2 adds `raise <expression>` and same-level `try`/`catch <binding>:` syntax to the AST runtime. Raised values propagate through functions, loops, nested blocks, and module execution until caught; catch bindings are restored after the catch body, including when the catch re-raises. Bare `raise`, missing catch clauses, malformed bindings, and missing catch bodies produce stable parser diagnostics. Uncaught values reach the process boundary as deterministic `raised error: <value>` diagnostics. The implementation preserves Rust 1.75 compatibility and AST/legacy execution parity where compatibility paths remain available.
+
+Focused parser/evaluator coverage verifies expression-required raise syntax, uncaught flow, nested catch shadow restoration, normal completion, non-text payloads, and re-raising. The complete native suite and strict release checks remain required before publishing the next release artifact.
 
 ## First implementation target: P3.1
 

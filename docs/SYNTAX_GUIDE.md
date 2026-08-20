@@ -338,7 +338,39 @@ say dog.speak()
 
 OOP boundary အနေဖြင့် v0.7.0 တွင် class registry validation၊ object၊ mutable properties၊ methods၊ constructor၊ parent constructor initialization၊ method override နှင့် single inheritance ကို support လုပ်သည်။ မရှိသော parent class ကို `extends` လုပ်ပါက class declaration အဆင့်တွင် error ပြန်ပေးသည်။ Interfaces၊ abstract classes၊ generics၊ private modifiers၊ explicit `super` method calls နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။
 
-## 15. Standard Utility Built-ins
+## 15. Structured Errors: `raise`, `try`, နှင့် `catch`
+
+Zap တွင် runtime error flow အတွက် deterministic structured control flow ကို အသုံးပြုနိုင်ပါသည်။ `raise <expression>` သည် expression ကို evaluate ပြုလုပ်ပြီး ၎င်း value ကို လက်ရှိ function၊ loop နှင့် module boundary များမှတစ်ဆင့် `try`/`catch` က handle မလုပ်မချင်း propagate လုပ်ပါသည်။ Expression မပါသော `raise` ကို parse အဆင့်တွင် `raise expects an expression` diagnostic ဖြင့် ပယ်ချပါသည်။
+
+```zp
+fn load_config():
+    raise "configuration unavailable"
+
+try:
+    load_config()
+catch error:
+    say "handled: " + error
+```
+
+`try` block ၏နောက်တွင် same-level `catch <binding>:` clause နှင့် indent လုပ်ထားသော body ရှိရမည်။ `raise` လုပ်ထားသော value ကို catch binding ထဲသို့ ထည့်ပေးပြီး catch body အတွင်းတွင်သာ ရှိပါသည်။ ရှိပြီးသား variable အမည်ကို shadow လုပ်ပါက catch ပြီးနောက် မူလ value ကို ပြန်လည် restore လုပ်ပါသည်။ Catch body အတွင်း `raise` ထပ်လုပ်ပါက value အသစ် သို့မဟုတ် မူလ value သည် အပြင်ဘက်သို့ ဆက်လက် propagate ဖြစ်ပါသည်။
+
+```zp
+let error = "outer"
+try:
+    try:
+        raise {"code": 503, "message": "offline"}
+    catch error:
+        say error["code"]
+        raise error
+catch error:
+    say error["message"]
+
+say error # outer
+```
+
+Try body သည် ပုံမှန်ပြီးဆုံးပါက catch body ကို မလုပ်ဆောင်ပါ။ Catch body အတွင်း `return`၊ `break` နှင့် `continue` များသည် မိမိတို့၏ enclosing function သို့မဟုတ် loop semantics အတိုင်း ဆက်လက်အလုပ်လုပ်ပါသည်။ Process boundary အထိ uncaught ဖြစ်နေသော value ကို `raised error: <value>` ဟု deterministic diagnostic ဖြင့် ဖော်ပြပါသည်။
+
+## 16. Standard Utility Built-ins
 
 Zap native runtime တွင် type စစ်ဆေးခြင်း၊ collection ရှာဖွေခြင်း၊ text ပြောင်းလဲခြင်းနှင့် numeric calculation အတွက် built-ins များ ပါဝင်သည်။
 

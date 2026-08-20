@@ -44,7 +44,14 @@ Zap P2 သည် native runtime၊ deterministic package registry၊ async found
 - Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 CI checks များ အောင်မြင်ပါသည်။
 - Release artifacts များကို tag-triggered GitHub Actions workflow မှ ထုတ်ပေးပါသည်။
 
-## [Unreleased]
+## [2.0.2] — 2026-08-20
+
+### P3.2 Structured Error Model
+
+- `raise <expression>` နှင့် same-level `try`/`catch <binding>:` syntax များကို ထည့်သွင်းပြီး bare `raise`၊ binding မမှန်ခြင်း၊ catch မရှိခြင်းနှင့် catch body မရှိခြင်းတို့အတွက် deterministic parser diagnostics များကို ထည့်သွင်းထားပါသည်။
+- Function၊ loop၊ nested block နှင့် module များအတွင်း structured raise propagation ကို catch binding restoration နှင့် re-raise behavior အပါအဝင် အကောင်အထည်ဖော်ထားပါသည်။
+- Catch မလုပ်နိုင်သော raised value များကို process boundary တွင် `raised error: <value>` ဟူသော stable diagnostic အဖြစ် ထုတ်ပေးထားပါသည်။
+- Rust 1.75 compatibility နှင့် deterministic AST/legacy behavior ကို ထိန်းသိမ်းကာ native suite **tests 229 ခု pass** ဖြစ်ကြောင်း စစ်ဆေးထားပါသည်။
 
 ### P2 Ecosystem တိုးတက်မှု
 

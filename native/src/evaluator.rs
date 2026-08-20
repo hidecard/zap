@@ -108,6 +108,7 @@ pub(crate) enum Flow {
     Break,
     LoopContinue,
     Return(Value),
+    Raise(Value),
 }
 pub(crate) enum EvalOutcome {
     Value(Value),
@@ -1128,6 +1129,7 @@ fn call_function_with_arguments(
         Flow::Break | Flow::LoopContinue => {
             return Err("break/continue cannot be used outside a loop".into())
         }
+        Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
     {
         let mut captured = f.closure.borrow_mut();
@@ -1247,6 +1249,7 @@ fn call_method_with_arguments(
         Flow::Break | Flow::LoopContinue => {
             return Err("break/continue cannot be used outside a loop".into())
         }
+        Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
     {
         let mut captured = f.closure.borrow_mut();
@@ -1522,6 +1525,17 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
             ast_expr_source(value)
         )),
         Stmt::Say(value) => out.push(format!("{prefix}say {}", ast_expr_source(value))),
+        Stmt::Raise(value) => out.push(format!("{prefix}raise {}", ast_expr_source(value))),
+        Stmt::TryCatch {
+            body,
+            binding,
+            catch_body,
+        } => {
+            out.push(format!("{prefix}try:"));
+            ast_program_lines(body, indent + 1, out);
+            out.push(format!("{prefix}catch {binding}:"));
+            ast_program_lines(catch_body, indent + 1, out);
+        }
         Stmt::Field {
             name,
             annotation,
@@ -1639,7 +1653,11 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
             Stmt::Function { .. }
             | Stmt::Class { .. }
             | Stmt::Module { .. }
-            | Stmt::Import { .. } => true,
+            | Stmt::Import { .. }
+            | Stmt::Raise(_) => true,
+            Stmt::TryCatch {
+                body, catch_body, ..
+            } => ast_program_compatible(body) && ast_program_compatible(catch_body),
             Stmt::If {
                 then_branch,
                 else_branch,
@@ -1897,6 +1915,27 @@ pub(crate) fn execute_ast_program(
                 println!("{}", ast_expression(value, vars, funcs)?.show());
                 Flow::Continue
             }
+            Stmt::Raise(value) => Flow::Raise(ast_expression(value, vars, funcs)?),
+            Stmt::TryCatch {
+                body,
+                binding,
+                catch_body,
+            } => match execute_ast_program(body, vars, funcs, base)? {
+                Flow::Raise(error) => {
+                    let previous = vars.insert(binding.clone(), error);
+                    let caught = execute_ast_program(catch_body, vars, funcs, base);
+                    match previous {
+                        Some(value) => {
+                            vars.insert(binding.clone(), value);
+                        }
+                        None => {
+                            vars.remove(binding);
+                        }
+                    }
+                    caught?
+                }
+                flow => flow,
+            },
             Stmt::Return(value) => {
                 Flow::Return(value.as_ref().map_or(Ok(Value::None), |value| {
                     expression(&ast_expr_source(value), vars, funcs)
@@ -1927,6 +1966,7 @@ pub(crate) fn execute_ast_program(
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break Flow::Continue,
                         flow @ Flow::Return(_) => break flow,
+                        flow @ Flow::Raise(_) => break flow,
                     }
                     iterations += 1;
                     if iterations >= MAX_LOOP_ITERATIONS {
@@ -1957,7 +1997,7 @@ pub(crate) fn execute_ast_program(
                     match execute_ast_program(body, vars, funcs, base)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
-                        flow @ Flow::Return(_) => {
+                        flow @ Flow::Return(_) | flow @ Flow::Raise(_) => {
                             outcome = flow;
                             break;
                         }
@@ -2379,6 +2419,7 @@ pub(crate) fn execute_lines(
                     Flow::Break => break,
                     Flow::LoopContinue => {}
                     Flow::Continue => {}
+                    Flow::Raise(value) => return Ok(Flow::Raise(value)),
                 }
                 guard += 1;
                 if guard >= MAX_LOOP_ITERATIONS {
@@ -2416,6 +2457,7 @@ pub(crate) fn execute_lines(
                             Flow::Break => break,
                             Flow::LoopContinue => continue,
                             Flow::Continue => {}
+                            Flow::Raise(value) => return Ok(Flow::Raise(value)),
                         }
                     }
                 }
@@ -2541,6 +2583,21 @@ mod tests {
     use crate::ast::parse_program;
     use crate::{Function, Value};
     use std::{collections::HashMap, path::Path, rc::Rc};
+
+    #[test]
+    fn propagates_uncaught_raise_as_runtime_flow() {
+        let program = parse_program("raise \"boom\"\n").expect("valid raise program");
+        let result = execute_ast_program(
+            &program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        );
+        assert!(matches!(
+            result,
+            Ok(super::Flow::Raise(Value::Text(value))) if value == "boom"
+        ));
+    }
 
     #[test]
     fn executes_ast_compatible_statements() {
