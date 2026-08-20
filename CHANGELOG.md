@@ -11,6 +11,10 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Transitive resolution၊ cache verification၊ stable install output၊ transitive artifact ပျောက်ဆုံးမှု၊ cached checksum မကိုက်ညီမှုနှင့် မပြည့်စုံသော v2 lockfile များအတွက် deterministic diagnostics ပါသော offline nested-registry integration fixtures များ ထည့်သွင်းထားပါသည်။
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
+### Async နှင့် tooling
+- Deterministic `AsyncRuntime::spawn_joinable(future)`၊ `JoinHandle<T>::is_ready()` နှင့် future အဖြစ် output join လုပ်နိုင်မှုတို့ကို ထည့်သွင်းထားပါသည်။
+- `SpawnError::TaskLimitReached` ကို propagate လုပ်ပြီး runtime task order၊ poll budget၊ Rust 1.75 compatibility နှင့် worker thread မဖန်တီးသော execution model ကို ထိန်းသိမ်းထားပါသည်။ Regression coverage နှင့် bilingual guide များကို `docs/ASYNC_RUNTIME_EN.md` နှင့် `docs/ASYNC_RUNTIME_MM.md` တွင် ထည့်သွင်းထားပါသည်။
+
 ### Standard library
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။
 - လက်ရှိ JSON safety limit အောက်တွင် runtime category ကို စစ်ဆေးပေးသော `from_json_typed(source, expected)` နှင့် UTF-8 byte များအစား Unicode scalar value များဖြင့် အလုပ်လုပ်သော `char_at`၊ `substring`၊ `codepoints` APIs များကို ထည့်သွင်းထားပါသည်။

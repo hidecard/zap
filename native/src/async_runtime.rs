@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker};
@@ -55,6 +57,26 @@ impl AsyncRuntime {
         }
         self.tasks.push(Box::pin(future));
         Ok(())
+    }
+
+    /// Spawn a task and return a handle that resolves to its output after the
+    /// task has completed. The handle is deterministic and does not create
+    /// worker threads; it is driven by this runtime's polling loop.
+    pub fn spawn_joinable<F, T>(&mut self, future: F) -> Result<JoinHandle<T>, SpawnError>
+    where
+        F: Future<Output = T> + 'static,
+        T: 'static,
+    {
+        let output = Rc::new(RefCell::new(None));
+        let task_output = output.clone();
+        self.spawn_limited(async move {
+            let value = future.await;
+            *task_output.borrow_mut() = Some(value);
+        })?;
+        Ok(JoinHandle {
+            output,
+            consumed: false,
+        })
     }
 
     /// Spawn a task that completes with cancellation instead of polling its
@@ -130,6 +152,43 @@ impl Default for RuntimeLimits {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SpawnError {
     TaskLimitReached { limit: usize },
+}
+
+#[allow(dead_code)]
+pub struct JoinHandle<T> {
+    output: Rc<RefCell<Option<T>>>,
+    consumed: bool,
+}
+
+#[allow(dead_code)]
+impl<T> JoinHandle<T> {
+    pub fn is_ready(&self) -> bool {
+        self.output.borrow().is_some()
+    }
+}
+
+impl<T> Future for JoinHandle<T> {
+    type Output = Result<T, JoinError>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        if this.consumed {
+            return Poll::Ready(Err(JoinError::AlreadyJoined));
+        }
+        if let Some(value) = this.output.borrow_mut().take() {
+            this.consumed = true;
+            Poll::Ready(Ok(value))
+        } else {
+            context.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum JoinError {
+    AlreadyJoined,
 }
 
 #[allow(dead_code)]
@@ -294,6 +353,30 @@ mod tests {
     #[test]
     fn block_on_returns_ready_value() {
         assert_eq!(block_on(ready(42_u8)), 42);
+    }
+
+    #[test]
+    fn joinable_task_returns_output_after_runtime_polling() {
+        let mut runtime = AsyncRuntime::new();
+        let handle = runtime
+            .spawn_joinable(async { 42_u8 })
+            .expect("task should fit within runtime limits");
+        assert!(!handle.is_ready());
+        runtime.run_until_idle();
+        assert!(handle.is_ready());
+        assert_eq!(block_on(handle), Ok(42_u8));
+    }
+
+    #[test]
+    fn joinable_task_propagates_spawn_limit_error() {
+        let mut runtime = AsyncRuntime::with_limits(RuntimeLimits {
+            max_tasks: 0,
+            max_polls_per_run: 1,
+        });
+        assert!(matches!(
+            runtime.spawn_joinable(async { 1_u8 }),
+            Err(SpawnError::TaskLimitReached { limit: 0 })
+        ));
     }
 
     #[test]

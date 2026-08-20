@@ -11,6 +11,12 @@
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
 
+### Async နှင့် tooling
+
+- Deterministic `AsyncRuntime::spawn_joinable(future)` task submission၊ `JoinHandle<T>::is_ready()` နှင့် future အဖြစ် output join လုပ်နိုင်မှုတို့ကို ထည့်သွင်းထားပါသည်။
+- Joinable task admission အချိန် `SpawnError::TaskLimitReached` ကို propagate လုပ်ပြီး runtime task order၊ poll budget၊ Rust 1.75 compatibility နှင့် worker thread မဖန်တီးသော execution model ကို ထိန်းသိမ်းထားပါသည်။
+- Joined output အောင်မြင်မှုနှင့် task-limit error များအတွက် regression coverage ထည့်သွင်းပြီး ပထမ async slice ကို `docs/ASYNC_RUNTIME_EN.md` နှင့် `docs/ASYNC_RUNTIME_MM.md` တွင် မှတ်တမ်းတင်ထားပါသည်။
+
 ### Standard library
 
 - Symlink-safe metadata မှ portable `kind`၊ byte `size` နှင့် `readonly` fields များကို ပြန်ပေးသော `file_metadata(path)` ကို ထည့်သွင်းထားပါသည်။

@@ -11,6 +11,12 @@
 - Added `zap registry gc [--dry-run] [dir]`, which derives keep entries from the canonical project lockfile, preserves referenced artifacts, reports stale and temporary candidates without mutation in dry-run mode, and deletes candidates in deterministic lexical order.
 - Added transport and registry-service failure coverage: insecure HTTP rejection, malformed remote-index diagnostics, and deterministic HTTP-status errors for non-2xx fetch and publish responses.
 
+### Async and tooling
+
+- Added deterministic `AsyncRuntime::spawn_joinable(future)` task submission with `JoinHandle<T>::is_ready()` and future-based output joining.
+- Propagated `SpawnError::TaskLimitReached` from joinable task admission, preserving runtime task order, poll budgets, Rust 1.75 compatibility, and the no-worker-thread execution model.
+- Added regression coverage for successful joined output and task-limit errors; documented the first async slice in `docs/ASYNC_RUNTIME_EN.md` and `docs/ASYNC_RUNTIME_MM.md`.
+
 ### Standard library
 
 - Added `file_metadata(path)`, returning portable `kind`, byte `size`, and `readonly` fields from symlink-safe metadata.
