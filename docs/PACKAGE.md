@@ -65,6 +65,24 @@ zap add web 0.3 path/to/project
 
 `zap add` သည် duplicate dependency name ကို reject လုပ်ပြီး dependency များကို alphabetic order ဖြင့် စီပေးသည်။ Manifest ပြောင်းလဲသွားသောကြောင့် ရှိပြီးသား `zap.lock` ကို ဖယ်ရှားပေးပြီး `zap lock` ဖြင့် canonical lockfile ကို ပြန်လည် generate လုပ်ရမည်။
 
+## `zap install` နှင့် `zap update`
+
+`zap install` သည် လက်ရှိ `zap.toml` နှင့် canonical `zap.lock` ကို ပြောင်းလဲခြင်းမရှိဘဲ စစ်ဆေးပေးသည်။ Dependency ရှိပြီး lockfile မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းများကို reject လုပ်သောကြောင့် CI နှင့် reproducible project validation အတွက် အသုံးပြုနိုင်သည်။
+
+```bash
+zap install
+zap install path/to/project
+```
+
+Manifest ကို ရည်ရွယ်ချက်ရှိရှိ ပြောင်းလဲပြီးနောက် lockfile ကို ပြန်လည် generate လုပ်ရန် `zap update` ကို အသုံးပြုသည်။ လက်ရှိ local package-manager foundation တွင် `zap update` သည် manifest မှ canonical `zap.lock` ကို deterministic အတိုင်း ပြန်ရေးပေးပြီး remote registry သို့ ချိတ်ဆက်ခြင်း သို့မဟုတ် package download ပြုလုပ်ခြင်း မရှိသေးပါ။
+
+```bash
+zap update
+zap update path/to/project
+```
+
+`zap install` သည် validation-only command ဖြစ်ပြီး `zap update` သည် lockfile regeneration command ဖြစ်သည်။ နှစ်ခုလုံးသည် project directory အတွင်းတွင်သာ အလုပ်လုပ်ပြီး manifest နှင့် dependency ordering rules များကို မပြောင်းလဲစေပါ။
+
 ## Commands
 
 ```bash
@@ -74,9 +92,13 @@ zap lock
 zap lock path/to/project
 zap add package-name 1.0
 zap add package-name 1.0 path/to/project
+zap install
+zap install path/to/project
+zap update
+zap update path/to/project
 zap build path/to/project
 zap main.zp
 zap fmt main.zp
 ```
 
-`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local manifest/lockfile validation နှင့် local module resolution အဆင့်တွင်ရှိပြီး remote registry download နှင့် publishing များမှာ နောက်ပိုင်း ecosystem milestone များ ဖြစ်သည်။
+`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local manifest/lockfile validation နှင့် local module resolution အဆင့်တွင်ရှိသည်။ `zap install` သည် lockfile ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်သည်။ Remote registry download၊ dependency graph solving နှင့် publishing များမှာ နောက်ပိုင်း ecosystem milestone များ ဖြစ်သည်။

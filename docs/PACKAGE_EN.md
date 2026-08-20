@@ -82,6 +82,24 @@ zap add web 0.3 path/to/project
 
 The command rejects duplicate names, keeps dependency entries in lexicographic order, and removes the existing `zap.lock` because the manifest has changed. Run `zap lock` after adding dependencies to regenerate the canonical lockfile.
 
+## Installing and updating dependencies
+
+Use `zap install` to verify the existing manifest and canonical lockfile without changing dependency requirements. It is the reproducible, CI-friendly command for checking that the project can be used exactly as locked. It rejects missing, stale, or non-canonical lockfiles when dependencies are declared.
+
+```bash
+zap install
+zap install path/to/project
+```
+
+Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. In the current local package-manager foundation, update deterministically rewrites `zap.lock` from the manifest; it does not contact a remote registry or download packages yet.
+
+```bash
+zap update
+zap update path/to/project
+```
+
+`zap install` is validation-only, while `zap update` is the lockfile regeneration command. Both operate on the project directory and preserve the manifest contents and dependency ordering rules.
+
 ## Project commands
 
 | Command | Purpose |
@@ -89,8 +107,10 @@ The command rejects duplicate names, keeps dependency entries in lexicographic o
 | `zap check` | Validate the manifest, lockfile, entry file, and static source checks |
 | `zap lock` | Generate or regenerate the canonical `zap.lock` |
 | `zap add <name> <version> [dir]` | Add a deterministic string-valued dependency and invalidate the lockfile |
+| `zap install [dir]` | Validate the existing manifest and lockfile without changing them |
+| `zap update [dir]` | Regenerate the canonical lockfile from the current manifest |
 | `zap build` | Validate and prepare a Zap project |
 | `zap test` | Run project test files |
 | `zap fmt main.zp` | Format a Zap source file |
 
-The final P1 release remains deferred until package resolution, cross-platform verification, and the remaining release gates are complete.
+Remote registry resolution, package downloads, dependency graph solving, and package publishing remain later ecosystem milestones. The current `install` and `update` commands intentionally provide deterministic local manifest/lockfile behavior without implicit network access.

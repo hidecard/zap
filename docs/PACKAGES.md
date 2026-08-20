@@ -1,6 +1,6 @@
 # Zap Packages and Module Tooling
 
-Zap package tooling သည် local project manifest၊ deterministic `zap.lock` validation နှင့် local module resolution အဆင့်တွင် ရှိပါသည်။ `zap add` နှင့် `zap lock` commands များကို native CLI တွင် အကောင်အထည်ဖော်ထားပြီး remote registry၊ dependency download နှင့် publish workflow များသည် future roadmap ဖြစ်သည်။
+Zap package tooling သည် local project manifest၊ deterministic `zap.lock` validation နှင့် local module resolution အဆင့်တွင် ရှိပါသည်။ `zap add`၊ `zap lock`၊ `zap install` နှင့် `zap update` commands များကို native CLI တွင် အကောင်အထည်ဖော်ထားပြီး remote registry၊ dependency download နှင့် publish workflow များသည် future roadmap ဖြစ်သည်။
 
 ## Current manifest
 
@@ -51,11 +51,13 @@ zap test
 zap fmt main.zp
 zap add package-name 1.0 [project-dir]
 zap lock [project-dir]
+zap install [project-dir]
+zap update [project-dir]
 zap --version
 zap --help
 ```
 
-`zap test` သည် `tests/` directory နှင့် ၎င်းအောက်ရှိ subdirectories များထဲမှ `*_test.zp` files အားလုံးကို path အလိုက် sort လုပ်ပြီး run လုပ်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။ `zap add` သည် manifest ထဲသို့ string-valued dependency ကို canonical order ဖြင့် ထည့်ပြီး ရှိပြီးသား lockfile ကို invalidate လုပ်သည်။ `zap lock` ဖြင့် lockfile ကို ပြန်လည် generate လုပ်နိုင်သည်။ `zap new`၊ `zap install`၊ `zap update`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။
+`zap test` သည် `tests/` directory နှင့် ၎င်းအောက်ရှိ subdirectories များထဲမှ `*_test.zp` files အားလုံးကို path အလိုက် sort လုပ်ပြီး run လုပ်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။ `zap add` သည် manifest ထဲသို့ string-valued dependency ကို canonical order ဖြင့် ထည့်ပြီး ရှိပြီးသား lockfile ကို invalidate လုပ်သည်။ `zap lock` ဖြင့် lockfile ကို ပြန်လည် generate လုပ်နိုင်သည်။ `zap install` သည် ရှိပြီးသား manifest နှင့် lockfile ကို ပြောင်းလဲခြင်းမရှိဘဲ validate လုပ်သည်။ `zap update` သည် current manifest မှ canonical `zap.lock` ကို deterministic အတိုင်း ပြန်လည် generate လုပ်သည်။ နှစ်ခုလုံးသည် remote registry သို့ ချိတ်ဆက်ခြင်း သို့မဟုတ် package download ပြုလုပ်ခြင်း မရှိသေးပါ။ `zap new`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။
 
 ## Future package manager
 

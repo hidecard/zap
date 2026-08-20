@@ -10,9 +10,19 @@ Zap P1 Language Core ကို `v1.0.0` အဖြစ် release ပြုလု�
 | Canonical lockfile | ပြီးစီး | `zap.lock` ကို package/dependency order တည်ငြိမ်စွာ generate လုပ်သည်။ |
 | `zap add` command | ပြီးစီး | String-valued dependency ထည့်ခြင်း၊ dependency section sort လုပ်ခြင်း၊ duplicate reject လုပ်ခြင်းနှင့် lockfile invalidate လုပ်ခြင်းတို့ ပါဝင်သည်။ |
 | Remote registry resolution | Roadmap | Package metadata၊ network policy၊ cache နှင့် integrity checks များ လိုအပ်သည်။ |
-| `zap install` / `zap update` | Roadmap | Registry နှင့် dependency graph contract များသတ်မှတ်ပြီးနောက် အကောင်အထည်ဖော်မည်။ |
+| `zap install` | ပြီးစီး | လက်ရှိ manifest နှင့် canonical lockfile ကို project files မပြောင်းလဲဘဲ validate လုပ်သည်။ Registry သို့ မချိတ်ဆက်ပါ။ |
+| `zap update` | ပြီးစီး | လက်ရှိ manifest မှ canonical lockfile ကို deterministic အတိုင်း ပြန်လည် generate လုပ်သည်။ Remote resolution မပါဝင်သေးပါ။ |
 | Async runtime | Roadmap | သီးခြား P2 track ဖြစ်သည်။ |
 | LSP/editor integration | Roadmap | Tooling track သီးခြားဖြစ်သည်။ |
+
+## Local install/update contract
+
+```bash
+zap install [project-dir]
+zap update [project-dir]
+```
+
+`zap install` သည် validation-only command ဖြစ်သည်။ Dependency ပါသော project များတွင် လက်ရှိဖြစ်ပြီး canonical ဖြစ်သော `zap.lock` ရှိရမည်။ Manifest သို့မဟုတ် lockfile ကို မပြောင်းလဲဘဲ network/registry access မပြုလုပ်ပါ။ `zap update` သည် `zap lock` နှင့်တူညီသော canonical ordering ကို အသုံးပြုပြီး current manifest မှ `zap.lock` ကို deterministic အတိုင်း ပြန်လည် generate လုပ်သည်။ Package download သို့မဟုတ် remote dependency graph solving မပြုလုပ်သေးပါ။
 
 ## `zap add` contract
 
@@ -24,6 +34,6 @@ Command သည် `zap.toml` ကို deterministic အတိုင်း updat
 
 ## Verification
 
-Native test suite တွင် dependency ထည့်ခြင်း၊ lexicographic ordering၊ duplicate rejection၊ lockfile invalidation နှင့် CLI help exposure များကို test coverage ထည့်ထားပါသည်။ နောက်ထပ် package-manager milestone သည် reproducibility မပျက်စေဘဲ local path packages နှင့် registry-ready metadata အတွက် dependency source model တည်ဆောက်ခြင်း ဖြစ်သည်။
+Native test suite တွင် dependency ထည့်ခြင်း၊ lexicographic ordering၊ duplicate rejection၊ lockfile invalidation၊ install validation၊ update regeneration၊ idempotence၊ stale-lock rejection နှင့် CLI help exposure များကို test coverage ထည့်ထားပါသည်။ နောက်ထပ် package-manager milestone သည် reproducibility မပျက်စေဘဲ local path packages နှင့် registry-ready metadata အတွက် dependency source model တည်ဆောက်ခြင်း ဖြစ်သည်။
 
 [English package guide](PACKAGE_EN.md)၊ [Burmese package guide](PACKAGE.md) နှင့် [ecosystem roadmap](ECOSYSTEM.md) ကို ဆက်လက်ဖတ်ရှုနိုင်ပါသည်။

@@ -1,4 +1,4 @@
-use super::project::{write_lockfile, TestOptions};
+use super::project::{install_dependencies, update_dependencies, write_lockfile, TestOptions};
 use super::*;
 use crate::project::add_dependency;
 
@@ -62,6 +62,8 @@ pub fn run_cli(args: &[String]) {
   zap lint <file.zp>   Check formatting and style warnings
   zap check --json     Validate a project with JSON diagnostics\n  zap lock [dir]       Generate the canonical dependency lockfile
   zap add <name> <ver> [dir] Add a manifest dependency and invalidate zap.lock
+  zap install [dir]    Validate and install dependencies from zap.lock
+  zap update [dir]     Regenerate zap.lock from zap.toml
   zap build [dir]      Validate and prepare a Zap project
 n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
         return;
@@ -169,6 +171,46 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
         }
         return;
     }
+    if args.len() == 2 && args[1] == "install" {
+        match install_dependencies(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap install error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "install" {
+        match install_dependencies(Path::new(&args[2])) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap install error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 2 && args[1] == "update" {
+        match update_dependencies(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap update error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "update" {
+        match update_dependencies(Path::new(&args[2])) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap update error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
             Ok(info) => println!("built Zap project: {info}"),
@@ -234,11 +276,18 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
     if args.len() != 2 {
         eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]
        zap add <name> <version> [dir]
+       zap install [dir]
+       zap update [dir]
        zap build [dir]
 n       zap init <dir>\n       zap --version");
         process::exit(EXIT_USAGE_ERROR);
     }
-    let source = read_limited_text(Path::new(&args[1]), "source read").unwrap_or_else(|e| {
+    let source_path = Path::new(&args[1]);
+    if !source_path.exists() && source_path.extension().is_none() {
+        eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]\n       zap add <name> <version> [dir]\n       zap install [dir]\n       zap update [dir]\n       zap build [dir]\n       zap init <dir>\n       zap --version");
+        process::exit(EXIT_USAGE_ERROR);
+    }
+    let source = read_limited_text(source_path, "source read").unwrap_or_else(|e| {
         eprintln!("{e}");
         process::exit(EXIT_PROGRAM_FAILURE);
     });
