@@ -103,9 +103,13 @@ pub(crate) enum Stmt {
         visibility: String,
     },
     Say(Spanned<Expr>),
+    Module {
+        name: String,
+    },
     Import {
         path: String,
         explicit: bool,
+        alias: Option<String>,
     },
     Return(Option<Spanned<Expr>>),
     If {
@@ -409,31 +413,59 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
             span(trimmed.len()),
         ));
     }
-    if let Some(rest) = trimmed.strip_prefix("import ") {
-        let path = rest.trim().trim_matches(';').trim().trim_matches('"');
-        if path.is_empty() {
-            return Err("import expects a module path".to_string());
+    if let Some(rest) = trimmed.strip_prefix("module ") {
+        let name = rest.trim().trim_end_matches(';').trim();
+        let valid = !name.is_empty()
+            && name.split('.').all(|part| {
+                !part.is_empty()
+                    && part.chars().enumerate().all(|(index, character)| {
+                        character == '_'
+                            || character.is_ascii_alphanumeric()
+                                && (index > 0 || character.is_ascii_alphabetic())
+                    })
+            });
+        if !valid {
+            return Err("module expects a dotted identifier path".to_string());
         }
         return Ok(Spanned::new(
-            Stmt::Import {
-                path: path.to_string(),
-                explicit: true,
+            Stmt::Module {
+                name: name.to_string(),
             },
             span(trimmed.len()),
         ));
     }
-    if let Some(rest) = trimmed.strip_prefix("use ") {
-        let path = rest.trim().trim_matches(';').trim().trim_matches('"');
-        if path.is_empty() {
-            return Err("use expects a module path".to_string());
+    for (keyword, explicit) in [("import ", true), ("use ", false)] {
+        if let Some(rest) = trimmed.strip_prefix(keyword) {
+            let clause = rest.trim().trim_end_matches(';').trim();
+            let (path_text, alias) = clause
+                .split_once(" as ")
+                .map_or((clause, None), |(path, alias)| {
+                    (path.trim(), Some(alias.trim()))
+                });
+            let path = path_text.trim_matches('"').trim();
+            if path.is_empty() {
+                return Err(format!("{}expects a module path", keyword.trim()));
+            }
+            if let Some(alias) = alias {
+                let valid_alias = !alias.is_empty()
+                    && alias.chars().enumerate().all(|(index, character)| {
+                        character == '_'
+                            || character.is_ascii_alphanumeric()
+                                && (index > 0 || character.is_ascii_alphabetic())
+                    });
+                if !valid_alias {
+                    return Err("import alias must be an identifier".to_string());
+                }
+            }
+            return Ok(Spanned::new(
+                Stmt::Import {
+                    path: path.to_string(),
+                    explicit,
+                    alias: alias.map(str::to_string),
+                },
+                span(trimmed.len()),
+            ));
         }
-        return Ok(Spanned::new(
-            Stmt::Import {
-                path: path.to_string(),
-                explicit: false,
-            },
-            span(trimmed.len()),
-        ));
     }
     if let Some(rest) = trimmed.strip_prefix("return") {
         if rest.is_empty() || rest.chars().next().is_some_and(char::is_whitespace) {
@@ -1036,10 +1068,22 @@ mod tests {
             matches!(program.statements[2].node, Stmt::Assignment { ref name, .. } if name == "obj.value")
         );
         assert!(
-            matches!(program.statements[3].node, Stmt::Import { ref path, explicit: true } if path == "math.zp")
+            matches!(program.statements[3].node, Stmt::Import { ref path, explicit: true, alias: None } if path == "math.zp")
         );
         assert!(
-            matches!(program.statements[4].node, Stmt::Import { ref path, explicit: false } if path == "helpers.zp")
+            matches!(program.statements[4].node, Stmt::Import { ref path, explicit: false, alias: None } if path == "helpers.zp")
+        );
+    }
+
+    #[test]
+    fn parses_explicit_module_declarations() {
+        let program = parse_program("module app.core\nimport app.core as core\n")
+            .expect("valid module syntax");
+        assert!(
+            matches!(program.statements[0].node, Stmt::Module { ref name } if name == "app.core")
+        );
+        assert!(
+            matches!(program.statements[1].node, Stmt::Import { ref path, alias: Some(ref alias), explicit: true } if path == "app.core" && alias == "core")
         );
     }
 

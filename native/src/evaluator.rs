@@ -1534,9 +1534,17 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
                 .map_or(String::new(), |ty| format!(": {ty}")),
             ast_expr_source(value)
         )),
-        Stmt::Import { path, explicit } => out.push(format!(
-            "{prefix}{} \"{path}\"",
-            if *explicit { "import" } else { "use" }
+        Stmt::Module { name } => out.push(format!("{prefix}module {name}")),
+        Stmt::Import {
+            path,
+            explicit,
+            alias,
+        } => out.push(format!(
+            "{prefix}{} \"{path}\"{}",
+            if *explicit { "import" } else { "use" },
+            alias
+                .as_ref()
+                .map_or(String::new(), |alias| format!(" as {alias}"))
         )),
         Stmt::Return(value) => out.push(format!(
             "{prefix}return{}",
@@ -1628,7 +1636,10 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
         .statements
         .iter()
         .all(|statement| match &statement.node {
-            Stmt::Function { .. } | Stmt::Class { .. } | Stmt::Import { .. } => true,
+            Stmt::Function { .. }
+            | Stmt::Class { .. }
+            | Stmt::Module { .. }
+            | Stmt::Import { .. } => true,
             Stmt::If {
                 then_branch,
                 else_branch,
@@ -1980,7 +1991,8 @@ pub(crate) fn execute_ast_program(
                 register_ast_class(name, base, body, vars, funcs)?;
                 Flow::Continue
             }
-            Stmt::Import { path, explicit } => load_module(path, vars, funcs, base, *explicit)?,
+            Stmt::Module { .. } => Flow::Continue,
+            Stmt::Import { path, explicit, .. } => load_module(path, vars, funcs, base, *explicit)?,
         };
         match flow {
             Flow::Continue => {}
