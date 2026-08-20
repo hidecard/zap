@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap P1 Language Core ကို အဆင့်လိုက် အကောင်အထည်ဖော်နေဆဲ ဖြစ်ပါသည်။ Planned milestone အားလုံး၊ documentation update များနှင့် cross-platform release gate များ အောင်မြင်ပြီးမှသာ final P1 release နှင့် tag ကို တင်မည်ဖြစ်သောကြောင့် ယခုအချိန်တွင် မတင်သေးပါ။
+Zap P1 Language Core သည် `v1.0.0` release အတွက် ပြီးစီးပါပြီ။ Source၊ local verification နှင့် GitHub Actions release gate များကို စစ်ဆေးပြီးနောက် release tag ကို တင်ထားပါသည်။
 
 ## စစ်ဆေးပြီးသော milestone များ
 
@@ -34,9 +34,9 @@ Zap P1 Language Core ကို အဆင့်လိုက် အကောင်
 
 ## လက်ရှိ verification baseline
 
-Native Rust test suite သည် လက်ရှိ **test 109 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 31 ခုနှင့် integration test 78 ခု ပါဝင်ပါသည်။ [`examples/default_parameters.zp`](../examples/default_parameters.zp) ကိုလည်း run စမ်းပြီး အောင်မြင်ပါသည်။ English/Burmese type-narrowing guides များနှင့် README learning links များကို လက်ရှိ feature များနှင့် ကိုက်ညီအောင် synchronize ပြုလုပ်ထားပါသည်။ Native CLI version output သည် documented `v0.9.3` development line နှင့် ကိုက်ညီပါသည်။ `cargo fmt --check` နှင့် `git diff --check` လည်း pass ဖြစ်ပါသည်။ Local sandbox တွင် Rust Clippy component မပါသောကြောင့် Clippy ကို local မှ verify မလုပ်နိုင်သေးပါ။ ထို့ကြောင့် Clippy ကို CI/environment release gate အဖြစ် ဆက်လက်ထားရှိပြီး local အောင်မြင်သည်ဟု မကြေညာထားပါ။
+Native Rust test suite သည် လက်ရှိ **test 109 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 31 ခုနှင့် integration test 78 ခု ပါဝင်ပါသည်။ [`examples/default_parameters.zp`](../examples/default_parameters.zp) ကိုလည်း run စမ်းပြီး အောင်မြင်ပါသည်။ Type-narrowing၊ package၊ standard-library နှင့် release guides များကို English/Burmese နှစ်ဘာသာဖြင့် synchronize ပြုလုပ်ထားပါသည်။ Native CLI version output သည် `v1.0.0` release line နှင့် ကိုက်ညီပါသည်။ `cargo fmt --check` နှင့် `git diff --check` လည်း pass ဖြစ်ပါသည်။ Stable Rust Clippy ကို GitHub Actions release workflow တွင် enforce လုပ်ထားပြီး local sandbox တွင် Clippy component မရှိသည့်အတွက် local result အဖြစ် မကြေညာထားပါ။
 
-## P1 ကျန်ရှိသော အလုပ်များကို ဦးစားပေးအစီအစဉ်ဖြင့်
+## P1 ပြီးစီးမှုနှင့် နောက်ထပ် roadmap
 
 | ဦးစားပေး | အလုပ် | လက်ရှိအခြေအနေ | ပြီးစီးရန် လက်ခံစံနှုန်း |
 |---:|---|---|---|
@@ -46,6 +46,6 @@ Native Rust test suite သည် လက်ရှိ **test 109 ခု** အာ�
 | 4 | OOP visibility နှင့် initialization rules | ပြီးစီး | Module-aware field coverage ပိုမိုတိုးချဲ့ခြင်းနှင့် constructor diagnostics refinement ကို ဆက်လက်လုပ်ဆောင်ရန်လိုသည် |
 | 5 | Standard-library extraction/stabilization | အခြေခံအဆင့် ပြီးစီး | API contract hardening နှင့် future namespace exposure ကို ဆက်လက်လုပ်ဆောင်ရန်ရှိသော်လည်း deterministic public domain catalog နှင့် ဘာသာနှစ်မျိုး index များ ပြီးစီးပြီ |
 | 6 | Package determinism နှင့် CLI tooling | အခြေခံအဆင့် ပြီးစီး | Canonical `zap.lock` generate လုပ်ခြင်း၊ sorted dependency entries၊ missing/stale lockfile rejection၊ stable diagnostics၊ project checks နှင့် version/help consistency |
-| 7 | Cross-platform နှင့် release gates | CI hardening ပြီးစီး၊ external verification စောင့်ဆိုင်းနေဆဲ | Linux၊ Windows နှင့် macOS matrix build များတွင် CLI version/help/example smoke checks ထည့်ပြီးပြီ။ နောက်ဆုံး P1 release အတွက် CI အောင်မြင်မှုနှင့် bilingual release documentation လိုအပ်သေးသည် |
+| 7 | Cross-platform နှင့် release gates | P1 release အတွက် ပြီးစီး | Linux၊ Windows နှင့် macOS matrix build များတွင် CLI version/help/example smoke checks ပါဝင်ပြီး bilingual release changelog နှင့် release workflow packaging ပြီးစီးပါပြီ |
 
-Direct-AST migration သည် **လုပ်ဆောင်နေဆဲ** ဖြစ်သော်လည်း nested-call audit coverage ထည့်ပြီးဖြစ်ပါသည်။ Standard-library public surface တွင် deterministic domain metadata နှင့် ဘာသာနှစ်မျိုး index များ ပါဝင်လာပါပြီ။ CI တွင် platform-specific CLI smoke checks များ ပါဝင်လာပါပြီ။ Package tooling တွင် deterministic local dependency declarations နှင့် canonical lockfile validation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Remote registry resolution နှင့် publishing များမှာ နောက်ပိုင်း ecosystem အလုပ်များ ဖြစ်ပါသည်။ လက်ရှိ runtime built-in set ကို လွှမ်းခြုံထားပါသည်။ Named arguments များကို user-defined functions၊ methods နှင့် closures များတွင် အသုံးပြုနိုင်ပါပြီ။ OOP တွင် method နှင့် field modifiers၊ protected inheritance access၊ field default initialization၊ field assignment checks နှင့် constructor visibility enforcement များကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Control-flow narrowing တွင် single guards၊ `and`/`or` guard combinations၊ aliases နှင့် `else` branch ပြီးနောက် မူလ option/result type ပြန်လည်ရရှိမှုကို support လုပ်ပြီးဖြစ်ပါသည်။ Module-aware field coverage နှင့် constructor diagnostics refinement များကို P1 hardening အဖြစ် ဆက်လက်လုပ်ဆောင်ရန်ရှိပါသည်။ P1 acceptance criteria များ မပြီးမချင်း async၊ LSP/editor integration နှင့် package registry ကဲ့သို့သော P2 အလုပ်များကို မစတင်သေးပါ။
+Direct-AST migration သည် လက်ရှိ runtime call set အတွက် ပြီးစီးပြီး nested-call audit coverage ပါဝင်ပါသည်။ Standard-library public surface တွင် deterministic domain metadata နှင့် ဘာသာနှစ်မျိုး index များ ပါဝင်ပါသည်။ CI တွင် platform-specific CLI smoke checks များ ပါဝင်ပါသည်။ Package tooling တွင် deterministic local dependency declarations နှင့် canonical lockfile validation ပါဝင်ပါသည်။ Remote registry resolution နှင့် publishing များမှာ နောက်ပိုင်း ecosystem အလုပ်များ ဖြစ်ပါသည်။ Named arguments၊ OOP visibility၊ protected inheritance၊ field initialization၊ module-aware access နှင့် constructor delegation rules များကို P1 တွင် ပြီးစီးထားပါသည်။ Control-flow narrowing တွင် single guards၊ `and`/`or` guard combinations၊ aliases နှင့် `else` branch ပြီးနောက် မူလ option/result type ပြန်လည်ရရှိမှုကို support လုပ်ပြီးဖြစ်ပါသည်။ P1 release documentation ကို English/Burmese နှစ်ဘာသာဖြင့် synchronize ပြုလုပ်ထားပါသည်။ ယခုမှစ၍ async၊ LSP/editor integration နှင့် full package registry ကဲ့သို့သော P2 အလုပ်များကို roadmap အတိုင်း စတင်နိုင်ပါပြီ။

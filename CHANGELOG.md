@@ -4,6 +4,16 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-20
+
+### P1 Language Core Release
+
+Zap P1 သည် standalone native runtime အတွက် Language Core milestone ကို ပြည့်စုံစွာ သတ်မှတ်ပေးသည်။ Direct AST execution၊ default parameters၊ named arguments၊ complex Option/Result type narrowing၊ OOP visibility နှင့် constructor rules၊ module-aware access၊ stabilized standard-library APIs၊ deterministic `zap.lock` package behavior နှင့် cross-platform CI smoke checks များကို ထည့်သွင်းထားသည်။
+
+### Verification
+
+Native tests 109 ခု၊ release build၊ formatting၊ whitespace၊ CLI version/help နှင့် runnable example checks များ အောင်မြင်သည်။ GitHub Actions release workflow သည် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 artifact များအတွက် quality gates နှင့် packaging ကို လုပ်ဆောင်သည်။ အသေးစိတ်ကို [English changelog](CHANGELOG_EN.md) နှင့် [Burmese changelog](CHANGELOG_MM.md) တွင် ကြည့်ရှုနိုင်သည်။
+
 ## [0.9.3] - 2026-08-19
 
 ### Fixed

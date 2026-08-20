@@ -10,7 +10,7 @@
 [![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Docs-0969da.svg)](https://github.com/hidecard/zap/tree/master/docs)
 
-**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md) · [Syntax Guide](docs/SYNTAX_GUIDE_EN.md) · [Type Narrowing EN](docs/TYPE_NARROWING_EN.md) · [Type Narrowing MM](docs/TYPE_NARROWING_MM.md) · [Default Parameters EN](docs/DEFAULT_PARAMETERS_EN.md) · [Default Parameters MM](docs/DEFAULT_PARAMETERS_MM.md) · [Package EN](docs/PACKAGE_EN.md) · [Package MM](docs/PACKAGE.md) · [Stdlib Index EN](docs/STDLIB_INDEX_EN.md) · [Stdlib Index MM](docs/STDLIB_INDEX_MM.md)
+**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md) · [Syntax Guide](docs/SYNTAX_GUIDE_EN.md) · [Type Narrowing EN](docs/TYPE_NARROWING_EN.md) · [Type Narrowing MM](docs/TYPE_NARROWING_MM.md) · [Default Parameters EN](docs/DEFAULT_PARAMETERS_EN.md) · [Default Parameters MM](docs/DEFAULT_PARAMETERS_MM.md) · [Package EN](docs/PACKAGE_EN.md) · [Package MM](docs/PACKAGE.md) · [Changelog EN](CHANGELOG_EN.md) · [Changelog MM](CHANGELOG_MM.md) · [Stdlib Index EN](docs/STDLIB_INDEX_EN.md) · [Stdlib Index MM](docs/STDLIB_INDEX_MM.md)
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The curre
 
 | Item | Current status |
 |---|---|
-| Current release line | `v0.9.3` |
+| Current release line | `v1.0.0` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -59,7 +59,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v0.9.3 GitHub Release](https://github.com/hidecard/zap/releases/tag/v0.9.3), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v1.0.0 GitHub Release](https://github.com/hidecard/zap/releases/tag/v1.0.0), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -78,7 +78,7 @@ The exact archive filename may change with each release. Select the asset whose 
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-0.9.3-linux-x86_64.tar.gz
+tar -xzf zap-1.0.0-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -94,11 +94,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v0.9.3 release](https://github.com/hidecard/zap/releases/tag/v0.9.3).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v1.0.0 release](https://github.com/hidecard/zap/releases/tag/v1.0.0).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-0.9.3-macos-arm64.tar.gz
+tar -xzf zap-1.0.0-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -120,7 +120,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v0.9.3 release](https://github.com/hidecard/zap/releases/tag/v0.9.3).
+1. Download the Windows x86_64 `.zip` archive from the [v1.0.0 release](https://github.com/hidecard/zap/releases/tag/v1.0.0).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

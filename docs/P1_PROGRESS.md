@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap P1 implementation is in progress. The final P1 release and tag are intentionally deferred until all planned milestones, documentation updates, and cross-platform release gates pass.
+Zap P1 Language Core is complete for release candidate `v1.0.0`. The release tag is created only after the documented source, local verification, and GitHub Actions release gates are satisfied.
 
 ## Verified milestones
 
@@ -34,9 +34,9 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 
 ## Current verification baseline
 
-The native Rust suite currently passes **109 tests**: 31 unit tests and 78 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp), synchronized English/Burmese type-narrowing guides, and README links for the current learning materials. The native CLI version output now matches the documented `v0.9.3` development line. `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **109 tests**: 31 unit tests and 78 integration tests. The repository includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp), synchronized English/Burmese type-narrowing, package, standard-library, and release guides, and README links for the current learning materials. The native CLI version output matches the `v1.0.0` release line. `cargo fmt --check` and `git diff --check` pass. Stable Rust Clippy remains enforced by the GitHub Actions release workflow; it is not claimed as locally verified when the local sandbox lacks the Clippy component.
 
-## Ordered remaining P1 work
+## P1 completion and next roadmap
 
 | Priority | Work item | Current state | Next acceptance criteria |
 |---:|---|---|---|
@@ -46,6 +46,6 @@ The native Rust suite currently passes **109 tests**: 31 unit tests and 78 integ
 | 4 | OOP visibility and initialization rules | Implemented | Continue broader module-aware field coverage and constructor diagnostic refinement |
 | 5 | Standard-library extraction and stabilization | Implemented (initial) | Continue API contract hardening and future namespace exposure; deterministic public domain catalog and bilingual indexes are complete |
 | 6 | Package determinism and CLI tooling | Implemented (initial) | Canonical `zap.lock` generation, sorted dependency entries, missing/stale lockfile rejection, stable diagnostics, project checks, and version/help consistency |
-| 7 | Cross-platform and release gates | CI hardened, external verification pending | Linux, Windows, and macOS matrix builds now run CLI version/help/example smoke checks; final P1 release still requires successful CI and bilingual release documentation |
+| 7 | Cross-platform and release gates | Completed for P1 release | Linux, Windows, and macOS matrix builds run CLI version/help/example smoke checks; bilingual release changelogs and release workflow packaging are complete |
 
-The direct-AST migration is **in progress** but covers the current runtime built-in set and now has nested-call audit coverage. The standard-library public surface now has deterministic domain metadata and bilingual indexes. CI now includes platform-specific CLI smoke checks. Package tooling now supports deterministic local dependency declarations and canonical lockfile validation; remote registry resolution and publishing remain later ecosystem work. Named arguments are available for user-defined functions, methods, and closures. OOP now covers method and field modifiers, protected inheritance access, field default initialization, field assignment checks, and constructor visibility enforcement. Control-flow narrowing now handles single guards, `and`/`or` guard combinations, aliases, and restoration of the original option/result type after an `else` branch. Additional module-aware field coverage and constructor diagnostic refinement remain P1 hardening work. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.
+The direct-AST migration is complete for the current runtime call set, with nested-call audit coverage. The standard-library public surface has deterministic domain metadata and bilingual indexes. CI includes platform-specific CLI smoke checks. Package tooling supports deterministic local dependency declarations and canonical lockfile validation; remote registry resolution and publishing remain later ecosystem work. Named arguments are available for user-defined functions, methods, and closures. OOP covers method and field modifiers, protected inheritance access, field default initialization, field assignment checks, module-aware visibility, and constructor delegation rules. Control-flow narrowing handles single guards, `and`/`or` guard combinations, aliases, and restoration of the original option/result type after an `else` branch. P1 release documentation is synchronized in English and Burmese. P2 work such as async execution, LSP/editor integration, and a full package registry is now the next roadmap phase.
