@@ -16,6 +16,9 @@ Zap's async runtime currently provides a deterministic, single-threaded executor
 | `SpawnError::TaskLimitReached` | Returned when `max_tasks` would be exceeded. |
 | `AsyncRuntime::spawn_joinable_cancellable(future)` | Returns `(JoinHandle<T>, CancellationToken)` and resolves cancellation as `JoinError::Cancelled`. |
 | `timeout_ticks(future, ticks)` | Returns `Ok(output)` when the inner future completes before the deterministic poll deadline, otherwise `Err(TimeoutError)`. |
+| `AsyncRuntime::spawn_joinable_result(future)` | Submits a `Future<Output = Result<T, E>>` and returns `TaskJoinHandle<T, E>`, preserving the task's typed failure. |
+| `TaskJoinHandle<T, E>` as a future | Resolves to `Ok(T)`, `Err(TaskJoinError::Failed(E))`, or `Err(TaskJoinError::AlreadyJoined)`. |
+| `AsyncRuntime::spawn_joinable_result_cancellable(future)` | Returns `(TaskJoinHandle<T, E>, CancellationToken)`; cancellation is checked before polling and therefore wins over a task result. |
 
 The runtime remains deterministic: tasks are stored in submission order and are polled by the existing budgeted executor. `spawn_joinable` propagates task-admission errors instead of silently discarding them. The implementation uses Rust 1.75-compatible standard-library primitives and does not create worker threads.
 
@@ -38,8 +41,12 @@ The runtime must be driven before joining. If a task is still pending, the handl
 
 `timeout_ticks(future, ticks)` measures deadlines in executor polls rather than wall-clock time. The inner future is polled first; each pending poll consumes one tick. If the inner future remains pending when no ticks remain, the wrapper resolves to `Err(TimeoutError)`. A completed inner future propagates as `Ok(value)`, and no threads or sleeping system calls are introduced.
 
+## Task error propagation
+
+`spawn_joinable_result(future)` accepts a future whose output is `Result<T, E>`. The runtime stores either the successful value or the exact typed error, and the caller receives `TaskJoinError::Failed(E)` without string conversion or panic-based propagation. The cancellable variant checks its token before polling the inner future; when cancellation is already requested, the handle resolves to `TaskJoinError::Cancelled` and the task error is not produced.
+
 ## Safety and remaining scope
 
-Runtime limits remain explicit through `RuntimeLimits::max_tasks` and `RuntimeLimits::max_polls_per_run`. Structured cancellation and poll-based timeout propagation are included in this slice; task error values beyond cancellation, language-level task builtins, and formatter/LSP/VS Code synchronization remain later v2.1-D work.
+Runtime limits remain explicit through `RuntimeLimits::max_tasks` and `RuntimeLimits::max_polls_per_run`. Structured cancellation, poll-based timeout propagation, and typed task error propagation are included in this slice; language-level task builtins and formatter/LSP/VS Code synchronization remain later v2.1-D work.
 
-Regression coverage verifies successful output joining, deterministic readiness, propagation of task-limit errors, cancellation before the inner future is polled, and both timeout and completion paths. Cross-platform behavior is limited to standard-library executor semantics and must still be covered by the release verification matrix.
+Regression coverage verifies successful output joining, deterministic readiness, propagation of task-limit errors and typed task failures, cancellation precedence before the inner future is polled, repeated joins, and both timeout and completion paths. Cross-platform behavior is limited to standard-library executor semantics and must still be covered by the release verification matrix.

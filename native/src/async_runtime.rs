@@ -79,6 +79,59 @@ impl AsyncRuntime {
         })
     }
 
+    /// Spawn a fallible task and preserve its typed error for the joining caller.
+    pub fn spawn_joinable_result<F, T, E>(
+        &mut self,
+        future: F,
+    ) -> Result<TaskJoinHandle<T, E>, SpawnError>
+    where
+        F: Future<Output = Result<T, E>> + 'static,
+        T: 'static,
+        E: 'static,
+    {
+        let output = Rc::new(RefCell::new(None));
+        let task_output = output.clone();
+        self.spawn_limited(async move {
+            *task_output.borrow_mut() = Some(future.await.map_err(TaskJoinError::Failed));
+        })?;
+        Ok(TaskJoinHandle {
+            output,
+            consumed: false,
+        })
+    }
+
+    /// Spawn a fallible joinable task controlled by a cancellation token.
+    /// Cancellation wins because it is checked before polling the inner future.
+    pub fn spawn_joinable_result_cancellable<F, T, E>(
+        &mut self,
+        future: F,
+    ) -> Result<(TaskJoinHandle<T, E>, CancellationToken), SpawnError>
+    where
+        F: Future<Output = Result<T, E>> + 'static,
+        T: 'static,
+        E: 'static,
+    {
+        let output = Rc::new(RefCell::new(None));
+        let task_output = output.clone();
+        let token = CancellationToken::new();
+        let task_token = token.clone();
+        self.spawn_limited(async move {
+            match Cancellable::new(future, task_token).await {
+                Ok(result) => {
+                    *task_output.borrow_mut() = Some(result.map_err(TaskJoinError::Failed));
+                }
+                Err(_) => *task_output.borrow_mut() = Some(Err(TaskJoinError::Cancelled)),
+            }
+        })?;
+        Ok((
+            TaskJoinHandle {
+                output,
+                consumed: false,
+            },
+            token,
+        ))
+    }
+
     /// Spawn a joinable task controlled by a cancellation token.
     pub fn spawn_joinable_cancellable<F, T>(
         &mut self,
@@ -218,6 +271,45 @@ impl<T> Future for JoinHandle<T> {
 pub enum JoinError {
     AlreadyJoined,
     Cancelled,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Eq, PartialEq)]
+pub enum TaskJoinError<E> {
+    AlreadyJoined,
+    Cancelled,
+    Failed(E),
+}
+
+#[allow(dead_code)]
+pub struct TaskJoinHandle<T, E> {
+    output: Rc<RefCell<Option<Result<T, TaskJoinError<E>>>>>,
+    consumed: bool,
+}
+
+#[allow(dead_code)]
+impl<T, E> TaskJoinHandle<T, E> {
+    pub fn is_ready(&self) -> bool {
+        self.output.borrow().is_some()
+    }
+}
+
+impl<T, E> Future for TaskJoinHandle<T, E> {
+    type Output = Result<T, TaskJoinError<E>>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        if this.consumed {
+            return Poll::Ready(Err(TaskJoinError::AlreadyJoined));
+        }
+        if let Some(value) = this.output.borrow_mut().take() {
+            this.consumed = true;
+            Poll::Ready(value)
+        } else {
+            context.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -420,7 +512,8 @@ impl Wake for NoopWaker {
 mod tests {
     use super::{
         block_on, delay_ticks, timeout_ticks, yield_now, AsyncRuntime, Cancellable,
-        CancellationToken, JoinError, RunReport, RuntimeLimits, SpawnError, TimeoutError,
+        CancellationToken, JoinError, RunReport, RuntimeLimits, SpawnError, TaskJoinError,
+        TimeoutError,
     };
     use std::future::ready;
 
@@ -439,6 +532,31 @@ mod tests {
         runtime.run_until_idle();
         assert!(handle.is_ready());
         assert_eq!(block_on(handle), Ok(42_u8));
+    }
+
+    #[test]
+    fn fallible_joinable_task_propagates_typed_error() {
+        let mut runtime = AsyncRuntime::new();
+        let mut handle = runtime
+            .spawn_joinable_result(async { Err::<u8, &'static str>("disk failure") })
+            .expect("task should fit within runtime limits");
+        runtime.run_until_idle();
+        assert_eq!(
+            block_on(&mut handle),
+            Err(TaskJoinError::Failed("disk failure"))
+        );
+        assert_eq!(block_on(&mut handle), Err(TaskJoinError::AlreadyJoined));
+    }
+
+    #[test]
+    fn fallible_cancellation_wins_before_task_error() {
+        let mut runtime = AsyncRuntime::new();
+        let (handle, token) = runtime
+            .spawn_joinable_result_cancellable(async { Err::<u8, &'static str>("task failure") })
+            .expect("task should fit within runtime limits");
+        token.cancel();
+        runtime.run_until_idle();
+        assert_eq!(block_on(handle), Err(TaskJoinError::Cancelled));
     }
 
     #[test]
