@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::collections::HashSet;
+
 use crate::lexer::SourceSpan;
 
 /// A source-aware expression node used by future parser and tooling phases.
@@ -475,6 +477,7 @@ fn parse_function_header(
     }
     let params_text = &signature[open + 1..close];
     let mut params = Vec::new();
+    let mut parameter_names = HashSet::new();
     if !params_text.trim().is_empty() {
         for parameter in params_text.split(',') {
             let parameter = parameter.trim();
@@ -498,6 +501,9 @@ fn parse_function_header(
                 return Some(Err(format!(
                     "invalid function parameter '{parameter_name}'"
                 )));
+            }
+            if !parameter_names.insert(parameter_name) {
+                return Some(Err(format!("duplicate parameter name: {parameter_name}")));
             }
             let annotation = annotation
                 .filter(|value| !value.is_empty())

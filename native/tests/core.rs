@@ -954,3 +954,17 @@ fn check_rejects_non_boolean_control_flow_conditions() {
         "{diagnostic}"
     );
 }
+
+#[test]
+fn rejects_duplicate_function_parameters() {
+    let file = std::env::temp_dir().join("zap_duplicate_params_test.zp");
+    std::fs::write(&file, "fn duplicate(value, value):\n    return value\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    let diagnostic = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        diagnostic.contains("duplicate parameter name: value"),
+        "{diagnostic}"
+    );
+}

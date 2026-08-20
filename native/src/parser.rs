@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::value::Param;
 
 pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>), String> {
@@ -27,6 +29,12 @@ pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>),
             }
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let mut names = HashSet::new();
+    for param in &params {
+        if !names.insert(param.name.clone()) {
+            return Err(format!("duplicate parameter name: {}", param.name));
+        }
+    }
     Ok((params, return_annotation))
 }
 
