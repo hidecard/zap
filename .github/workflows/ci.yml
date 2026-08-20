@@ -91,6 +91,9 @@ jobs:
       - name: Build native runtime
         run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
 
+      - name: Run target-native tests
+        run: cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }} --all-targets --all-features
+
       - name: Verify Linux/macOS binary
         if: runner.os != 'Windows'
         run: test -x native/target/${{ matrix.target }}/release/zap
@@ -104,9 +107,11 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          native/target/${{ matrix.target }}/release/zap --version
-          native/target/${{ matrix.target }}/release/zap --help >/dev/null
-          native/target/${{ matrix.target }}/release/zap examples/default_parameters.zp
+          zap="native/target/${{ matrix.target }}/release/zap"
+          "$zap" --version
+          "$zap" --help >/dev/null
+          "$zap" examples/default_parameters.zp
+          "$zap" scripts/p3_smoke.zp
 
       - name: Run Windows CLI smoke checks
         if: runner.os == 'Windows'
@@ -116,3 +121,19 @@ jobs:
           & $zap --version
           & $zap --help | Out-Null
           & $zap examples/default_parameters.zp
+          @'
+          let parsed = url_parse("https://example.com:8443/api?q=zap")
+          assert(parsed["scheme"] == "https", "URL scheme mismatch")
+          assert(parsed["port"] == 8443, "URL port mismatch")
+          let setting = env_get("ZAP_CI_MISSING_SETTING", "fallback")
+          assert(setting == "fallback", "environment default mismatch")
+          let root = config_dir()
+          let safe = config_path("zap-ci-smoke.conf")
+          assert(type(root) == "text", "configuration directory must be text")
+          assert(type(safe) == "text", "configuration path must be text")
+          let result = process_run("cmd", ["/C", "echo", "zap"])
+          assert(result["success"] == true, "process smoke failed")
+          assert(result["stdout"] == "zap\n", "process output mismatch")
+          '@ | Set-Content -Encoding utf8 p3_smoke.zp
+          & $zap p3_smoke.zp
+          if ($LASTEXITCODE -ne 0) { throw "P3.3 smoke test failed" }
