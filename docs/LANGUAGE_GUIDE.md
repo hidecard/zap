@@ -417,7 +417,7 @@ Project များတွင် indentation တစ်ဆင့်ကို spac
 
 ## 18. Error Handling နှင့် Debugging
 
-လက်ရှိ Zap runtime သည် error value object မဟုတ်ဘဲ descriptive runtime error message ဖြင့် program ကို ရပ်တန့်စေသည်။ အောက်ပါအမှားများကို အထူးစစ်ဆေးပါ။
+လက်ရှိ Zap runtime သည် recoverable failure များအတွက် typed `Result` value (`ok(...)` နှင့် `err(...)`) ကို အသုံးပြုနိုင်ပြီး၊ မကိုင်တွယ်ရသေးသော runtime failure များကို deterministic `Error` diagnostic အဖြစ် ပြသသည်။ အောက်ပါအမှားများကို အထူးစစ်ဆေးပါ။
 
 | Error အမျိုးအစား | ဖြစ်နိုင်သောအကြောင်းရင်း |
 |---|---|
@@ -428,6 +428,9 @@ Project များတွင် indentation တစ်ဆင့်ကို spac
 | `division by zero` | သုညဖြင့် စားခြင်း |
 | `invalid operation` | မကိုက်ညီသော value types များကို operator ဖြင့် ပေါင်းခြင်း |
 | `assertion failed` | သတ်မှတ်ထားသော invariant မမှန်ခြင်း |
+| `Error` | မကိုင်တွယ်ရသေးသော typed `Result` failure သို့မဟုတ် runtime failure |
+
+`zap check --json` ကိုအသုံးပြုပါက diagnostic တွင် `kind`, `message`, `file`, `line`, နှင့် `column` fields များကို deterministic ပုံစံဖြင့် ရရှိနိုင်သည်။
 
 Debug လုပ်ရာတွင် intermediate value များကို `say` ဖြင့်ထုတ်ပြီး `type`၊ `len` နှင့် `assert` ဖြင့် စစ်ဆေးပါ။
 

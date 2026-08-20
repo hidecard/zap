@@ -403,7 +403,7 @@ Zap is still evolving. If an example differs from the installed runtime, report 
 
 ## Lesson 19 — Structured ZapError Diagnostics
 
-Zap reports failures through a structured diagnostic boundary called `ZapError`. The current variants include `SyntaxError`, `NameError`, `TypeError`, `ValueError`, `IOError`, `FileNotFound`, `PermissionError`, `OverflowError`, and `ProjectError`. The runtime keeps the original message and, when available, the source file, line, and column.
+Zap reports failures through a structured diagnostic boundary called `ZapError`. The current variants include `SyntaxError`, `NameError`, `TypeError`, `ValueError`, `IOError`, `FileNotFound`, `PermissionError`, `OverflowError`, `Error`, and `ProjectError`. The `Error` category is reserved for stable runtime failures such as uncaught typed `Result` errors. The runtime keeps the original message and, when available, the source file, line, and column.
 
 For automation and editor integration, use JSON diagnostics:
 

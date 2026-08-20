@@ -50,6 +50,12 @@ pub(crate) enum ZapError {
         line: usize,
         column: usize,
     },
+    Runtime {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
     Project {
         message: String,
         file: String,
@@ -83,6 +89,11 @@ impl ZapError {
             "PermissionError"
         } else if message.contains("overflow") || message.contains("exceeded") {
             "OverflowError"
+        } else if message.starts_with("Error:")
+            || message.starts_with("uncaught error")
+            || message.starts_with("raised error")
+        {
+            "Error"
         } else if message.contains("cannot read")
             || message.contains("cannot write")
             || message.contains("I/O")
@@ -146,6 +157,12 @@ impl ZapError {
                 line,
                 column,
             },
+            "Error" => Self::Runtime {
+                message,
+                file,
+                line,
+                column,
+            },
             _ => Self::Project {
                 message,
                 file,
@@ -165,6 +182,7 @@ impl ZapError {
             Self::FileNotFound { .. } => "FileNotFound",
             Self::Permission { .. } => "PermissionError",
             Self::Overflow { .. } => "OverflowError",
+            Self::Runtime { .. } => "Error",
             Self::Project { .. } => "ProjectError",
         }
     }
@@ -226,6 +244,12 @@ impl ZapError {
                 column,
             }
             | Self::Overflow {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Runtime {
                 message,
                 file,
                 line,
@@ -334,6 +358,17 @@ fn diagnostic_location(error: &str) -> (String, usize, usize) {
 #[cfg(test)]
 mod tests {
     use super::ZapError;
+
+    #[test]
+    fn classifies_runtime_error_messages_stably() {
+        let error = ZapError::from_message("uncaught error: Err(invalid input)");
+        assert_eq!(error.kind(), "Error");
+        assert_eq!(error.message(), "uncaught error: Err(invalid input)");
+        assert_eq!(
+            error.to_string(),
+            "Error: uncaught error: Err(invalid input)"
+        );
+    }
 
     #[test]
     fn redacts_sensitive_key_value_messages() {
