@@ -558,10 +558,7 @@ pub(crate) fn validate_package_name(name: &str) -> Result<(), String> {
 }
 
 fn validate_package_version(version: &str) -> Result<(), String> {
-    let core = version
-        .split(|character| character == '-' || character == '+')
-        .next()
-        .unwrap_or(version);
+    let core = version.split(['-', '+']).next().unwrap_or(version);
     let parts = core.split('.').collect::<Vec<_>>();
     if parts.is_empty()
         || parts.len() > 3
