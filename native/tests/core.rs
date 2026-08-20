@@ -128,7 +128,7 @@ fn encodes_and_decodes_json() {
 fn reads_and_writes_text_files() {
     let file = std::env::temp_dir().join("zap_file_test.txt");
     let program = std::env::temp_dir().join("zap_file_builtins_test.zp");
-    let path = file.to_string_lossy().replace('\\', "\\");
+    let path = file.to_string_lossy();
     let source = format!(
         "write_text(\"{}\", \"hello\")\nsay read_text(\"{}\")\n",
         path, path
@@ -465,7 +465,7 @@ fn runs_oop_property_assignment() {
 fn runs_v070_collection_and_line_helpers() {
     let file = std::env::temp_dir().join("zap_v070_helpers_test.zp");
     let lines = std::env::temp_dir().join("zap_v070_lines.txt");
-    let path = lines.to_string_lossy().replace('\\', "\\");
+    let path = lines.to_string_lossy();
     let source = format!("let values = [4, 1, 8, 2]\nsay is_empty(values)\nsay sum(values)\nsay join(sort(values), \",\")\nwrite_lines(\"{}\", [\"one\", \"two\"])\nsay join(read_lines(\"{}\"), \"|\")\n", path, path);
     std::fs::write(&file, source).unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
@@ -1496,7 +1496,7 @@ fn audits_nested_direct_ast_standard_library_calls() {
     std::fs::create_dir_all(&root).unwrap();
     let data_path = root.join("data.txt");
     let program = root.join("main.zp");
-    let path = data_path.to_string_lossy().replace('\\', "\\");
+    let path = data_path.to_string_lossy();
     let source = format!(
         "write_text(\"{path}\", json({{\"name\": upper(\"zap\"), \"items\": range(pow(2, 2))}}))\nlet value = from_json(read_text(\"{path}\"))\nsay join(reverse(split(value[\"name\"], \"A\")), \"-\")\nsay sum(value[\"items\"])\nsay has_env(\"PATH\")\n"
     );
