@@ -13,6 +13,7 @@ use crate::{
 const MAX_EXECUTION_DEPTH: usize = 256;
 const MAX_SOURCE_LINES: usize = 100_000;
 const MAX_LOOP_ITERATIONS: usize = 100_000;
+const MAX_JSON_BYTES: usize = 8 * 1024 * 1024;
 
 #[derive(Clone, Debug)]
 pub(crate) struct CallArgument {
@@ -259,6 +260,31 @@ fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String>
         }
     };
     match name {
+        "json" => {
+            expect(1)?;
+            let encoded = serde_json::to_string(&value_to_json(&args[0]))
+                .map_err(|error| format!("json encode failed: {error}"))?;
+            if encoded.len() > MAX_JSON_BYTES {
+                return Err(format!(
+                    "json encode failed: output exceeds the {MAX_JSON_BYTES} byte limit"
+                ));
+            }
+            Ok(Some(Value::Text(encoded)))
+        }
+        "from_json" => {
+            expect(1)?;
+            let Value::Text(text) = &args[0] else {
+                return Err("from_json expects text".into());
+            };
+            if text.len() > MAX_JSON_BYTES {
+                return Err(format!(
+                    "from_json failed: input exceeds the {MAX_JSON_BYTES} byte limit"
+                ));
+            }
+            let parsed =
+                serde_json::from_str(text).map_err(|error| format!("from_json failed: {error}"))?;
+            Ok(Some(json_to_value(parsed)?))
+        }
         "len" => {
             expect(1)?;
             let length = match &args[0] {
@@ -2215,6 +2241,33 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn evaluates_json_builtins_from_native_ast() {
+        let program = parse_program(
+            "let encoded: text = json(range(1, 3))\nlet decoded = from_json(\"{\\\"name\\\":\\\"Zap\\\",\\\"version\\\":1}\")\nlet name: text = decoded[\"name\"]\n",
+        )
+        .expect("valid JSON built-in AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("direct JSON built-ins should execute");
+        assert_eq!(vars.get("encoded"), Some(&Value::Text("[1,2]".into())));
+        assert_eq!(vars.get("name"), Some(&Value::Text("Zap".into())));
+
+        let invalid = parse_program("let value = from_json(\"{invalid}\")\n")
+            .expect("invalid JSON remains syntactically valid Zap");
+        let result = execute_ast_program(
+            &invalid,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        );
+        match result {
+            Err(error) => assert!(error.contains("from_json failed:")),
+            Ok(_) => panic!("malformed JSON should fail at runtime"),
+        }
     }
 
     #[test]
