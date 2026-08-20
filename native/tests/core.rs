@@ -167,6 +167,38 @@ fn validates_zap_manifest_and_module_directory() {
 }
 
 #[test]
+fn validates_explicit_module_manifest_entries() {
+    let root = std::env::temp_dir().join("zap_explicit_module_manifest_test");
+    let modules = root.join("modules");
+    std::fs::create_dir_all(&modules).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[module]\nroot = \"modules\"\nentries = [\"math.zp\"]\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(modules.join("math.zp"), "say 2\n").unwrap();
+    let valid = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(valid.status.success());
+
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[module]\nroot = \"modules\"\nentries = [\"../escape.zp\"]\n",
+    )
+    .unwrap();
+    let invalid = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!invalid.status.success());
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("invalid module entry"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn imports_local_module() {
     let main = std::env::temp_dir().join("zap_import_test.zp");
     let module = main.with_file_name("zap_test_module.zp");

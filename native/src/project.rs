@@ -20,6 +20,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
     validate_package_metadata(&text, "zap.toml")?;
+    validate_module_manifest(dir, &text)?;
     let main = manifest_value(&text, "main").unwrap_or_else(|| "main.zp".into());
     let main_path = dir.join(&main);
     if !main_path.is_file() {
@@ -34,6 +35,100 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     validate_function_returns(&source, &main_path)?;
     validate_function_calls(&source, &main_path)?;
     Ok(format!("{name} {version} (main: {main})"))
+}
+
+fn validate_module_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
+    let mut in_module = false;
+    let mut root = None;
+    let mut entries = None;
+    for raw_line in manifest.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            in_module = line == "[module]";
+            continue;
+        }
+        if !in_module {
+            continue;
+        }
+        let Some((key, raw_value)) = line.split_once('=') else {
+            return Err(format!("zap.toml: invalid module entry `{line}`"));
+        };
+        let key = key.trim();
+        let value = raw_value.trim();
+        match key {
+            "root" => {
+                let value = value.trim_matches('"');
+                if value.is_empty() || value.contains(['\n', '\r']) {
+                    return Err("zap.toml: module root must be a non-empty path".into());
+                }
+                root = Some(value.to_string());
+            }
+            "entries" => {
+                let body = value
+                    .strip_prefix('[')
+                    .and_then(|value| value.strip_suffix(']'))
+                    .ok_or("zap.toml: module entries must be an array".to_string())?;
+                let mut parsed = Vec::new();
+                for item in body.split(',') {
+                    let item = item.trim();
+                    if item.is_empty() {
+                        continue;
+                    }
+                    let path = item.trim_matches('"');
+                    if path.is_empty() {
+                        return Err("zap.toml: module entries cannot contain empty paths".into());
+                    }
+                    parsed.push(path.to_string());
+                }
+                entries = Some(parsed);
+            }
+            _ => return Err(format!("zap.toml: unknown module field `{key}`")),
+        }
+    }
+    let Some(root) = root else {
+        return Ok(());
+    };
+    let root_path = Path::new(&root);
+    if root_path.is_absolute()
+        || root_path
+            .components()
+            .any(|component| component == std::path::Component::ParentDir)
+    {
+        return Err("zap.toml: module root must be a relative path without `..`".into());
+    }
+    let root_dir = dir.join(root_path);
+    if !root_dir.is_dir() {
+        return Err(format!(
+            "zap.toml: module root not found: {}",
+            root_dir.display()
+        ));
+    }
+    let mut seen = HashSet::new();
+    for entry in entries.unwrap_or_default() {
+        let entry_path = Path::new(&entry);
+        if entry_path.is_absolute()
+            || entry_path
+                .components()
+                .any(|component| component == std::path::Component::ParentDir)
+            || entry_path.extension().and_then(|value| value.to_str()) != Some("zp")
+        {
+            return Err(format!("zap.toml: invalid module entry `{entry}`"));
+        }
+        if !seen.insert(entry.clone()) {
+            return Err(format!("zap.toml: duplicate module entry `{entry}`"));
+        }
+        let path = root_dir.join(entry_path);
+        if !path.is_file() {
+            return Err(format!(
+                "zap.toml: module entry not found: {}",
+                path.display()
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

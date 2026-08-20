@@ -1,0 +1,35 @@
+# Zap P3 Roadmap — Production Language နှင့် Tooling
+
+## ရည်ရွယ်ချက်
+
+P3 သည် စစ်ဆေးအတည်ပြုပြီးသော `v2.0.0` P2 Ecosystem release နောက်ပိုင်း စတင်သော အဆင့်ဖြစ်ပါသည်။ ရည်ရွယ်ချက်မှာ Zap ကို web, AI, automation နှင့် systems-oriented project များအတွက် production-ready development platform တစ်ခုအဖြစ် တိုးချဲ့ရန် ဖြစ်ပြီး deterministic behavior နှင့် Rust 1.75 compatibility ကို မပျက်စေရန် ဖြစ်ပါသည်။
+
+## လက်ရှိအခြေခံအခြေအနေ
+
+P2 တွင် native runtime၊ deterministic registry transport နှင့် resolution၊ signed-index verification၊ cache lifecycle controls၊ async/Future foundation၊ cancellation နှင့် suspension primitives၊ diagnostics၊ hover၊ completion၊ formatting၊ definition နှင့် workspace symbols ပါသော LSP foundation တို့ ပြီးစီးထားပါသည်။
+
+## ဦးစားပေး milestone များ
+
+| Milestone | အကြောင်းအရာ | အောင်မြင်မှုစံနှုန်း | အခြေအနေ |
+|---|---|---|---|
+| P3.1 | Module နှင့် workspace architecture | ရှင်းလင်းသော module/import syntax၊ deterministic search paths၊ duplicate/cycle diagnostics နှင့် cross-platform workspace tests | လုပ်ဆောင်နေဆဲ — manifest boundary ပြီးစီး |
+| P3.2 | Structured error model | Native `error`/`try`/`catch` သို့မဟုတ် typed propagation၊ တည်ငြိမ်သော diagnostics နှင့် recoverable failure များအတွက် string-only control flow မသုံးခြင်း | စီစဉ်ထား |
+| P3.3 | Production standard library | HTTP client/server primitives၊ URL handling၊ process execution boundaries နှင့် လုံခြုံသော environment/configuration APIs | စီစဉ်ထား |
+| P3.4 | Async I/O integration | timers၊ sockets၊ files၊ cancellation၊ backpressure နှင့် resource budgets အတွက် deterministic runtime interfaces | စီစဉ်ထား |
+| P3.5 | Type-system productivity | Generic functions/collections၊ ပိုမိုကောင်းမွန်သော inference၊ pattern matching နှင့် exhaustiveness diagnostics | စီစဉ်ထား |
+| P3.6 | Tooling နှင့် language server | Full formatter၊ workspace indexing၊ rename/references၊ import assistance၊ semantic tokens နှင့် project-aware diagnostics | စီစဉ်ထား |
+| P3.7 | Quality နှင့် release engineering | Benchmarks၊ fuzz/property tests၊ security audit၊ reproducible artifacts နှင့် cross-platform install verification | စီစဉ်ထား |
+
+## ပထမဆုံးအကောင်အထည်ဖော်မည့် P3.1
+
+P3.1 ကို ပထမဦးစားပေးအဖြစ် ရွေးချယ်ထားခြင်းမှာ modules နှင့် workspaces များသည် reusable web, AI နှင့် standard-library packages များအတွက် အခြေခံလိုအပ်ချက်ဖြစ်သောကြောင့် ဖြစ်ပါသည်။ P2 တွင်ရှိပြီးသား parser-owned spans နှင့် project resolver ကို အသုံးပြုပြီး module model အသစ်နှစ်ခု မဖြစ်စေရန် တိုးချဲ့မည်ဖြစ်ပါသည်။
+
+ပထမ P3.1 increment တွင် optional `[module]` manifest section ကို သတ်မှတ်ပြီး relative `root` နှင့် explicit `.zp` `entries` များကို validate ပြုလုပ်ထားပါသည်။ Absolute path၊ traversal၊ မရှိသော file၊ duplicate entry နှင့် unknown module field များကို CLI stable diagnostics ဖြင့် ပယ်ချပါသည်။ Import graph validation နှင့် workspace cross-platform coverage များသည် P3.1 အတွင်း ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ P2 မှ local path dependencies နှင့် lockfile behavior များကို မပြောင်းလဲပါ။
+
+## Engineering စည်းမျဉ်းများ
+
+Zap P3 သည် stable Rust 1.75 နှင့် compatible ဖြစ်ရမည်၊ Edition 2024-only dependencies မသုံးရမည်၊ ordering နှင့် diagnostics များကို deterministic ဖြစ်အောင် ထိန်းသိမ်းရမည်၊ security-sensitive operations များကို explicit bounds ဖြင့် ကာကွယ်ရမည်။ Milestone တိုင်းတွင် focused regression tests၊ complete native tests၊ formatting၊ GitHub strict Clippy နှင့် Linux/Windows/macOS verification များ အောင်မြင်ရမည်ဖြစ်ပြီး English/Burmese documentation ကို update လုပ်ရမည်။
+
+## Release policy
+
+ရွေးချယ်ထားသော milestone အတွက် acceptance checklist၊ clean working tree၊ native tests၊ strict Clippy၊ Linux၊ Windows နှင့် macOS verification များ အားလုံး အောင်မြင်ပြီးမှသာ P3 release tag တင်မည်ဖြစ်ပါသည်။ ပထမ P3 release version ကို P3.1 scope အကောင်အထည်ဖော်ပြီး review ပြီးနောက် သတ်မှတ်မည်ဖြစ်ပါသည်။
