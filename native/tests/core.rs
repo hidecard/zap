@@ -1,4 +1,5 @@
-use std::process::Command;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 fn binary() -> String {
     env!("CARGO_BIN_EXE_zap").to_string()
@@ -4847,4 +4848,69 @@ fn reports_explicit_import_cycle_chain() {
     assert!(!output.status.success());
     assert!(stderr.contains("circular module dependency"));
     assert!(stderr.contains("a.zp") && stderr.contains("b.zp") && stderr.contains("c.zp"));
+}
+
+#[test]
+fn rejects_unknown_annotations_through_cli_check_json() {
+    let root = std::env::temp_dir().join("zap_annotation_e2e_project");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"annotation-e2e\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "fn load(value: unknown_type) -> number:\n    return 1\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("unknown type annotation"));
+    assert!(stdout.contains("\"kind\":\"TypeError\""));
+}
+
+#[test]
+fn canonical_help_is_identical_for_help_and_usage_error_paths() {
+    let help = Command::new(binary()).arg("--help").output().unwrap();
+    let invalid = Command::new(binary()).arg("--unexpected").output().unwrap();
+    assert!(help.status.success());
+    assert!(!invalid.status.success());
+    let help_text = String::from_utf8_lossy(&help.stdout);
+    let usage_text = String::from_utf8_lossy(&invalid.stderr);
+    assert!(help_text.contains("zap add <name> <ver> [dir]"));
+    assert!(
+        help_text.contains("zap install [dir]    Validate and install dependencies from zap.lock")
+    );
+    assert_eq!(help_text, usage_text);
+}
+
+#[test]
+fn lsp_unknown_method_returns_framed_json_rpc_error_end_to_end() {
+    let mut child = Command::new(binary())
+        .args(["lsp"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let request = r#"{"jsonrpc":"2.0","id":77,"method":"zap/unknown","params":{}}"#;
+    let frame = format!("Content-Length: {}\r\n\r\n{}", request.len(), request);
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(frame.as_bytes())
+        .unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"id\":77"));
+    assert!(stdout.contains("\"code\":-32601"));
+    assert!(stdout.contains("Method not found"));
 }
