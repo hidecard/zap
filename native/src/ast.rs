@@ -120,6 +120,7 @@ pub(crate) enum Stmt {
         params: Vec<(String, Option<String>, Option<String>)>,
         return_type: Option<String>,
         body: Program,
+        visibility: String,
     },
     Class {
         name: String,
@@ -507,14 +508,25 @@ fn parse_function_header(
             String,
             Vec<(String, Option<String>, Option<String>)>,
             Option<String>,
+            String,
         ),
         String,
     >,
 > {
     let header = text.strip_suffix(':')?;
-    let signature = header
-        .strip_prefix("fn ")
-        .or_else(|| header.strip_prefix("def "))?;
+    let (visibility, signature) = if let Some(rest) = header.strip_prefix("public fn ") {
+        ("public", rest)
+    } else if let Some(rest) = header.strip_prefix("private fn ") {
+        ("private", rest)
+    } else if let Some(rest) = header.strip_prefix("protected fn ") {
+        ("protected", rest)
+    } else if let Some(rest) = header.strip_prefix("fn ") {
+        ("public", rest)
+    } else if let Some(rest) = header.strip_prefix("def ") {
+        ("public", rest)
+    } else {
+        return None;
+    };
     let open = signature.find('(')?;
     let close = signature.rfind(')')?;
     if close < open {
@@ -590,7 +602,12 @@ fn parse_function_header(
     if !suffix.is_empty() && return_type.is_none() {
         return Some(Err("invalid function return annotation".to_string()));
     }
-    Some(Ok((name.to_string(), params, return_type)))
+    Some(Ok((
+        name.to_string(),
+        params,
+        return_type,
+        visibility.to_string(),
+    )))
 }
 
 fn parse_class_header(text: &str) -> Option<Result<(String, Option<String>), String>> {
@@ -687,13 +704,14 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
             }
             let body_indent = lines[*cursor].indent;
             let body = parse_block(lines, cursor, body_indent)?;
-            let (name, params, return_type) = function;
+            let (name, params, return_type, visibility) = function;
             program.statements.push(Spanned::new(
                 Stmt::Function {
                     name,
                     params,
                     return_type,
                     body,
+                    visibility,
                 },
                 SourceSpan {
                     line: line_number,

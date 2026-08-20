@@ -377,6 +377,50 @@ fn supports_named_method_arguments() {
 }
 
 #[test]
+fn enforces_oop_method_visibility() {
+    let allowed = std::env::temp_dir().join("zap_oop_visibility_allowed.zp");
+    std::fs::write(
+        &allowed,
+        "class Vault:\n    private fn secret(self):\n        return \"hidden\"\n    fn reveal(self):\n        return self.secret()\nlet vault = new(\"Vault\")\nsay vault.reveal()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&allowed).output().unwrap();
+    let _ = std::fs::remove_file(&allowed);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "hidden\n");
+
+    let denied = std::env::temp_dir().join("zap_oop_visibility_denied.zp");
+    std::fs::write(
+        &denied,
+        "class Vault:\n    private fn secret(self):\n        return \"hidden\"\nlet vault = new(\"Vault\")\nsay vault.secret()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&denied).output().unwrap();
+    let _ = std::fs::remove_file(&denied);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("private method is not accessible"));
+
+    let protected = std::env::temp_dir().join("zap_oop_visibility_protected.zp");
+    std::fs::write(
+        &protected,
+        "class Base:\n    protected fn token(self):\n        return \"base-token\"\nclass Child extends Base:\n    fn reveal(self):\n        return self.token()\nlet child = new(\"Child\")\nsay child.reveal()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&protected).output().unwrap();
+    let _ = std::fs::remove_file(&protected);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "base-token\n");
+}
+
+#[test]
 fn runs_oop_property_assignment() {
     let file = std::env::temp_dir().join("zap_oop_property_test.zp");
     std::fs::write(&file, "class Counter:\n    fn increment(self):\n        self.value = self.value + 1\n        return self.value\nlet counter = new(\"Counter\", {\"value\": 0})\nsay counter.increment()\nsay counter.value\n").unwrap();

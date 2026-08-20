@@ -559,6 +559,60 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
     }
 }
 
+fn is_same_or_subclass(current: &str, target: &str, funcs: &HashMap<String, Rc<Function>>) -> bool {
+    let mut class = current.to_string();
+    let mut visited = std::collections::HashSet::new();
+    loop {
+        if class == target {
+            return true;
+        }
+        if !visited.insert(class.clone()) {
+            return false;
+        }
+        let Some(parent) = funcs.get(&format!("{class}.__parent__")) else {
+            return false;
+        };
+        let Some(Value::Text(parent)) = parent.body.first().map(|value| Value::Text(value.clone()))
+        else {
+            return false;
+        };
+        class = parent;
+    }
+}
+
+fn check_method_visibility(
+    function: &Function,
+    dispatch_class: &str,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    if function.visibility == "public" {
+        return Ok(());
+    }
+    let caller = match vars.get("__zap_owner_class") {
+        Some(Value::Text(class)) => class.as_str(),
+        _ => {
+            return Err(format!(
+                "{} method is not accessible from this context",
+                function.visibility
+            ))
+        }
+    };
+    let allowed = if function.visibility == "private" {
+        caller == dispatch_class
+    } else {
+        is_same_or_subclass(caller, dispatch_class, funcs)
+    };
+    if allowed {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} method is not accessible from {caller}",
+            function.visibility
+        ))
+    }
+}
+
 fn ast_expression(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
@@ -688,6 +742,7 @@ fn ast_expression(
                         .get(&format!("{dispatch_class}.{}", member))
                         .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
+                    check_method_visibility(&function, &dispatch_class, vars, funcs)?;
                     call_method_with_arguments(&function, values, receiver, funcs)
                 }
                 _ => expression(&ast_expr_source(node), vars, funcs),
@@ -1242,6 +1297,7 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
             params,
             return_type,
             body,
+            ..
         } => {
             let params = params
                 .iter()
@@ -1308,6 +1364,7 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
 fn register_ast_function(
     name: &str,
     params: &[(String, Option<String>, Option<String>)],
+    visibility: &str,
     return_type: &Option<String>,
     body: &Program,
     vars: &HashMap<String, Value>,
@@ -1316,6 +1373,7 @@ fn register_ast_function(
     funcs.insert(
         name.to_string(),
         Rc::new(Function {
+            visibility: visibility.to_string(),
             params: params
                 .iter()
                 .map(|(name, annotation, default)| Param {
@@ -1342,6 +1400,7 @@ fn register_ast_class(
     funcs.insert(
         format!("{name}.__class__"),
         Rc::new(Function {
+            visibility: "public".into(),
             params: Vec::new(),
             return_annotation: None,
             body: Vec::new(),
@@ -1356,6 +1415,7 @@ fn register_ast_class(
         funcs.insert(
             format!("{name}.__parent__"),
             Rc::new(Function {
+                visibility: "public".into(),
                 params: Vec::new(),
                 return_annotation: None,
                 body: vec![parent.clone()],
@@ -1370,12 +1430,14 @@ fn register_ast_class(
             params,
             return_type,
             body,
+            visibility,
         } = &statement.node
         {
             if method == "init" {
                 funcs.insert(
                     format!("{name}.__own_init__"),
                     Rc::new(Function {
+                        visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
                         body: Vec::new(),
@@ -1407,6 +1469,7 @@ fn register_ast_class(
             funcs.insert(
                 format!("{name}.{method}"),
                 Rc::new(Function {
+                    visibility: visibility.clone(),
                     params: method_params,
                     return_annotation: return_type.clone(),
                     body: Vec::new(),
@@ -1565,8 +1628,9 @@ pub(crate) fn execute_ast_program(
                 params,
                 return_type,
                 body,
+                visibility,
             } => {
-                register_ast_function(name, params, return_type, body, vars, funcs);
+                register_ast_function(name, params, visibility, return_type, body, vars, funcs);
                 Flow::Continue
             }
             Stmt::Class { name, base, body } => {
@@ -1776,6 +1840,7 @@ pub(crate) fn execute_lines(
             funcs.insert(
                 format!("{class_name}.__class__"),
                 Rc::new(Function {
+                    visibility: "public".into(),
                     params: Vec::new(),
                     return_annotation: None,
                     body: Vec::new(),
@@ -1790,6 +1855,7 @@ pub(crate) fn execute_lines(
                 funcs.insert(
                     format!("{class_name}.__parent__"),
                     Rc::new(Function {
+                        visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
                         body: vec![parent_name],
@@ -1814,6 +1880,7 @@ pub(crate) fn execute_lines(
                         funcs.insert(
                             format!("{class_name}.__own_init__"),
                             Rc::new(Function {
+                                visibility: "public".into(),
                                 params: Vec::new(),
                                 return_annotation: None,
                                 body: Vec::new(),
@@ -1841,6 +1908,7 @@ pub(crate) fn execute_lines(
                     funcs.insert(
                         format!("{class_name}.{}", method_name.trim()),
                         Rc::new(Function {
+                            visibility: "public".into(),
                             params,
                             return_annotation,
                             body: method_body,
@@ -1887,6 +1955,7 @@ pub(crate) fn execute_lines(
             funcs.insert(
                 name.clone(),
                 Rc::new(Function {
+                    visibility: "public".into(),
                     params: args,
                     return_annotation,
                     body,
@@ -1898,6 +1967,7 @@ pub(crate) fn execute_lines(
                 funcs.insert(
                     format!("__zap_export_fn__:{name}"),
                     Rc::new(Function {
+                        visibility: "public".into(),
                         params: Vec::new(),
                         return_annotation: None,
                         body: Vec::new(),

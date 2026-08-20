@@ -13,6 +13,7 @@ pub(crate) struct StaticSignature {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Function {
+    pub(crate) visibility: String,
     pub(crate) params: Vec<Param>,
     pub(crate) return_annotation: Option<String>,
     /// Legacy source lines retained for compatibility with older declarations.

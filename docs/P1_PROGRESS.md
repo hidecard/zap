@@ -20,23 +20,25 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 | Function return-type validation | Implemented | Static and runtime return diagnostics |
 | Persistent mutable closure state | Implemented | Nested closure mutation regression test |
 | Positional default function parameters | Implemented | Parser, AST, runtime binding, static arity checking, and integration example |
+| Named arguments | Implemented | Structured AST parsing, deterministic binding, function/method/closure integration tests, and diagnostics |
 | Native AST function-body storage | Implemented | Native AST execution tests |
 | Control-flow Option/Result narrowing | Implemented | Guarded-branch static-check regression tests |
+| OOP method visibility | Implemented (initial) | Private same-class access and external-access rejection regression test |
 
 ## Current verification baseline
 
-The native Rust suite currently passes **90 tests**: 29 unit tests and 61 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **93 tests**: 29 unit tests and 64 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
 
 ## Ordered remaining P1 work
 
 | Priority | Work item | Current state | Next acceptance criteria |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | In progress | Native AST now directly evaluates literals, collections, operators, user-function calls, member access, object methods, list/map indexing, and pure built-ins such as `len`, `range`, `sum`, `split`, `join`, `ok`, `some`, and `unwrap`, plus `read_text`, `write_text`, `read_lines`, and `write_lines`, environment helpers `env` and `has_env`, path helpers `path_join`, `basename`, `dirname`, and `exists`, and time helpers `now` and `sleep`; direct built-in-call migration is complete for the current runtime set |
-| 2 | Named arguments | Not implemented | Parse `name = expression` only inside calls; reject unknown, duplicate, positional-after-named, and missing arguments; bind functions and methods consistently |
-| 3 | Control-flow type narrowing | Implemented (initial branch-local support) | `if is_some(value):`, `if is_ok(result):`, and `if is_err(result):` narrow payload types within indented guarded branches; else restoration and broader nested-flow analysis remain to be extended |
-| 4 | OOP visibility and initialization rules | Partial | Define and enforce public/private/protected members, constructor rules, and diagnostics across inheritance and modules |
+| 1 | Direct AST call evaluation | In progress | Native AST directly evaluates the current runtime call set, including functions, methods, closures, indexing, pure built-ins, filesystem I/O, environment, path, and time helpers; final edge-case audit remains |
+| 2 | Named arguments | Implemented | Continue advanced diagnostics and decide whether named arguments should be supported by selected built-ins |
+| 3 | Control-flow type narrowing | Implemented (initial branch-local support) | Extend else-specific negative narrowing, complex boolean guards, alias variables, and broader nested-flow analysis |
+| 4 | OOP visibility and initialization rules | Partial (method visibility implemented) | Complete protected inheritance behavior, field visibility, module-aware access, and constructor visibility rules |
 | 5 | Standard-library extraction and stabilization | Partial | Stabilize filesystem, JSON, path, time, environment, text, math, and collection APIs with documented error behavior |
 | 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, and project checks |
 | 7 | Cross-platform and release gates | Pending | Linux, Windows, and macOS verification; bilingual changelog/release documentation; final P1 release only after all gates pass |
 
-The direct-AST migration is **in progress** and is not yet the final call architecture. Named arguments are **not** available in the current release line. The documentation deliberately describes positional defaults only. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.
+The direct-AST migration is **in progress** but covers the current runtime built-in set. Named arguments are available for user-defined functions, methods, and closures. OOP visibility currently covers method modifiers and access checks; field visibility, module-aware access, and full constructor rules remain P1 gates. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.
