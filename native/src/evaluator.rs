@@ -2,7 +2,7 @@ use std::cell::{Cell, RefCell};
 use std::{
     collections::HashMap,
     io::{Read, Write},
-    net::TcpListener,
+    net::{IpAddr, TcpListener, ToSocketAddrs},
     path::Path,
     process::{Command, Stdio},
     rc::Rc,
@@ -533,7 +533,30 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
     }
 }
 
+fn untrusted_mode() -> bool {
+    std::env::var("ZAP_UNTRUSTED").as_deref() == Ok("1")
+}
+
+fn require_capability(capability: &str) -> Result<(), String> {
+    require_capability_for_mode(capability, untrusted_mode())
+}
+
+fn require_capability_for_mode(capability: &str, restricted: bool) -> Result<(), String> {
+    if restricted {
+        return Err(format!(
+            "{capability} is disabled in untrusted mode; grant the capability in a trusted host policy"
+        ));
+    }
+    Ok(())
+}
+
 fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    if matches!(
+        name,
+        "read_text" | "read_lines" | "write_text" | "write_lines"
+    ) {
+        require_capability("filesystem access")?;
+    }
     match name {
         "read_text" => {
             if args.len() != 1 {
@@ -602,6 +625,12 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
 }
 
 fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    if matches!(
+        name,
+        "env" | "has_env" | "env_get" | "config_dir" | "config_path"
+    ) {
+        require_capability("environment access")?;
+    }
     match name {
         "now" => {
             if !args.is_empty() {
@@ -958,6 +987,7 @@ fn parse_url(value: &str) -> Result<Value, String> {
 }
 
 fn process_run(args: &[Value]) -> Result<Value, String> {
+    require_capability("process execution")?;
     if args.len() != 2 {
         return Err(format!(
             "process_run expects 2 arguments, got {}",
@@ -977,42 +1007,140 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         };
         process.arg(argument);
     }
-    let started = Instant::now();
-    let output = process
+    let mut child = process
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .output()
+        .spawn()
         .map_err(|error| format!("process_run failed to start: {error}"))?;
-    if started.elapsed() > PROCESS_TIMEOUT {
-        return Err(format!(
-            "process_run exceeded the {} second limit",
-            PROCESS_TIMEOUT.as_secs()
-        ));
-    }
-    if output.stdout.len() > MAX_PROCESS_OUTPUT_BYTES
-        || output.stderr.len() > MAX_PROCESS_OUTPUT_BYTES
-    {
+    let stdout_pipe = child
+        .stdout
+        .take()
+        .ok_or_else(|| "process_run failed to capture stdout".to_string())?;
+    let stderr_pipe = child
+        .stderr
+        .take()
+        .ok_or_else(|| "process_run failed to capture stderr".to_string())?;
+    let stdout_reader = thread::spawn(|| read_process_output(stdout_pipe));
+    let stderr_reader = thread::spawn(|| read_process_output(stderr_pipe));
+    let deadline = Instant::now() + PROCESS_TIMEOUT;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err(format!(
+                    "process_run exceeded the {} second limit",
+                    PROCESS_TIMEOUT.as_secs()
+                ));
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(10)),
+            Err(error) => return Err(format!("process_run failed while waiting: {error}")),
+        }
+    };
+    let (stdout_bytes, stdout_exceeded) = stdout_reader
+        .join()
+        .map_err(|_| "process_run stdout reader failed".to_string())?
+        .map_err(|error| format!("process_run stdout read failed: {error}"))?;
+    let (stderr_bytes, stderr_exceeded) = stderr_reader
+        .join()
+        .map_err(|_| "process_run stderr reader failed".to_string())?
+        .map_err(|error| format!("process_run stderr read failed: {error}"))?;
+    if stdout_exceeded || stderr_exceeded {
         return Err(format!(
             "process_run output exceeds the {MAX_PROCESS_OUTPUT_BYTES} byte limit"
         ));
     }
-    let stdout = String::from_utf8(output.stdout)
+    let stdout = String::from_utf8(stdout_bytes)
         .map_err(|_| "process_run stdout is not UTF-8".to_string())?;
-    let stderr = String::from_utf8(output.stderr)
+    let stderr = String::from_utf8(stderr_bytes)
         .map_err(|_| "process_run stderr is not UTF-8".to_string())?;
     Ok(map_value([
         (
             "status".into(),
-            Value::Number(output.status.code().unwrap_or(-1) as i64),
+            Value::Number(status.code().unwrap_or(-1) as i64),
         ),
-        ("success".into(), Value::Bool(output.status.success())),
+        ("success".into(), Value::Bool(status.success())),
         ("stdout".into(), Value::Text(stdout)),
         ("stderr".into(), Value::Text(stderr)),
     ]))
 }
 
+fn read_process_output<R: Read>(mut reader: R) -> std::io::Result<(Vec<u8>, bool)> {
+    let mut output = Vec::new();
+    let mut buffer = [0u8; 8192];
+    let mut exceeded = false;
+    loop {
+        let count = reader.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        if output.len() < MAX_PROCESS_OUTPUT_BYTES {
+            let remaining = MAX_PROCESS_OUTPUT_BYTES - output.len();
+            let keep = count.min(remaining);
+            output.extend_from_slice(&buffer[..keep]);
+            if keep < count {
+                exceeded = true;
+            }
+        } else {
+            exceeded = true;
+        }
+    }
+    Ok((output, exceeded))
+}
+
+fn validate_network_destination(host: &str, port: u16) -> Result<(), String> {
+    validate_network_destination_for_mode(host, port, untrusted_mode())
+}
+
+fn validate_network_destination_for_mode(
+    host: &str,
+    port: u16,
+    restricted: bool,
+) -> Result<(), String> {
+    if !restricted {
+        return Ok(());
+    }
+    let normalized = host.trim_start_matches('[').trim_end_matches(']');
+    let addresses = (normalized, port)
+        .to_socket_addrs()
+        .map_err(|error| format!("network destination could not be resolved: {error}"))?
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err("network destination did not resolve to an address".into());
+    }
+    for address in addresses {
+        let ip = address.ip();
+        let blocked = match ip {
+            IpAddr::V4(value) => {
+                value.is_loopback()
+                    || value.is_private()
+                    || value.is_link_local()
+                    || value.is_unspecified()
+                    || value.is_broadcast()
+            }
+            IpAddr::V6(value) => {
+                let segments = value.segments();
+                value.is_loopback()
+                    || value.is_unspecified()
+                    || (segments[0] & 0xfe00) == 0xfc00
+                    || (segments[0] & 0xffc0) == 0xfe80
+            }
+        };
+        if blocked {
+            return Err(format!(
+                "network destination is blocked in untrusted mode: {ip}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn http_request(args: &[Value]) -> Result<Value, String> {
+    require_capability("network access")?;
     if args.len() != 2 && args.len() != 3 {
         return Err(format!(
             "http_request expects 2 or 3 arguments, got {}",
@@ -1027,7 +1155,14 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     };
     let body = match args.get(2) {
         None => None,
-        Some(Value::Text(body)) => Some(body.as_str()),
+        Some(Value::Text(body)) => {
+            if body.len() > MAX_HTTP_REQUEST_BYTES {
+                return Err(format!(
+                    "http_request body exceeds the {MAX_HTTP_REQUEST_BYTES} byte limit"
+                ));
+            }
+            Some(body.as_str())
+        }
         Some(_) => return Err("http_request expects a text body".into()),
     };
     let parsed = parse_url(url)?;
@@ -1041,7 +1176,26 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     if scheme != "http" && scheme != "https" {
         return Err("http_request supports only http and https URLs".into());
     }
+    let port = match parts.get("port") {
+        Some(Value::OptionSome(value)) => match value.as_ref() {
+            Value::Number(number) if (0..=u16::MAX as i64).contains(number) => *number as u16,
+            _ => return Err("http_request URL contains an invalid port".into()),
+        },
+        _ => {
+            if scheme == "https" {
+                443
+            } else {
+                80
+            }
+        }
+    };
+    let host = match parts.get("host") {
+        Some(Value::Text(value)) => value,
+        _ => unreachable!(),
+    };
+    validate_network_destination(host, port)?;
     let agent = ureq::AgentBuilder::new()
+        .redirects(0)
         .timeout_connect(Duration::from_secs(10))
         .timeout_read(Duration::from_secs(10))
         .timeout_write(Duration::from_secs(10))
@@ -1120,7 +1274,10 @@ pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Opti
             http_request(&[Value::Text("GET".into()), args[0].clone()]).map(Some)
         }
         "http_request" => Ok(Some(http_request(args)?)),
-        "http_serve_once" => Ok(Some(http_serve_once(args)?)),
+        "http_serve_once" => {
+            require_capability("network access")?;
+            Ok(Some(http_serve_once(args)?))
+        }
         _ => Ok(None),
     }
 }
@@ -3032,7 +3189,11 @@ pub(crate) fn execute_lines(
 
 #[cfg(test)]
 mod tests {
-    use super::{configuration_path, execute_ast_program, execute_lines, http_serve_once};
+    use super::{
+        configuration_path, direct_external_builtin, execute_ast_program, execute_lines,
+        http_serve_once, require_capability_for_mode, validate_network_destination_for_mode,
+        MAX_HTTP_REQUEST_BYTES,
+    };
     use crate::ast::parse_program;
     use crate::{Function, Value};
     use std::{collections::HashMap, path::Path, rc::Rc};
@@ -3226,6 +3387,34 @@ mod tests {
         assert!(matches!(vars.get("parent"), Some(Value::Text(_))));
         assert_eq!(vars.get("available"), Some(&Value::Bool(true)));
         assert!(matches!(vars.get("timestamp"), Some(Value::Number(value)) if *value > 0));
+    }
+
+    #[test]
+    fn denies_untrusted_capabilities_and_private_networks() {
+        assert!(require_capability_for_mode("filesystem access", true).is_err());
+        assert!(require_capability_for_mode("environment access", true).is_err());
+        assert!(require_capability_for_mode("process execution", true).is_err());
+        assert!(require_capability_for_mode("network access", true).is_err());
+        assert!(require_capability_for_mode("network access", false).is_ok());
+        assert!(validate_network_destination_for_mode("127.0.0.1", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("10.0.0.1", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("127.0.0.1", 80, false).is_ok());
+    }
+
+    #[test]
+    fn rejects_oversized_http_request_bodies_before_network_io() {
+        let body = Value::Text("x".repeat(MAX_HTTP_REQUEST_BYTES + 1));
+        let result = direct_external_builtin(
+            "http_request",
+            &[
+                Value::Text("POST".into()),
+                Value::Text("http://127.0.0.1/".into()),
+                body,
+            ],
+        );
+        assert!(result
+            .expect_err("oversized request body must be rejected")
+            .contains("body exceeds"));
     }
 
     #[test]

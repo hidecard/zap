@@ -608,7 +608,14 @@ pub fn persist_registry_package(
 }
 
 fn fetch_source(source: &str) -> Result<Vec<u8>, String> {
+    let untrusted = std::env::var("ZAP_UNTRUSTED").as_deref() == Ok("1");
     if let Some(path) = source.strip_prefix("file://") {
+        if untrusted {
+            return Err(
+                "local registry sources are disabled in untrusted mode; use an approved remote registry"
+                    .into(),
+            );
+        }
         return fs::read(path).map_err(|e| format!("registry source read failed: {e}"));
     }
     if source.starts_with("http://") || source.starts_with("https://") {
@@ -622,6 +629,12 @@ fn fetch_source(source: &str) -> Result<Vec<u8>, String> {
             .read_to_end(&mut bytes)
             .map_err(|e| format!("registry response read failed: {e}"))?;
         return Ok(bytes);
+    }
+    if untrusted {
+        return Err(
+            "bare local registry sources are disabled in untrusted mode; use an approved remote registry"
+                .into(),
+        );
     }
     fs::read(source).map_err(|e| format!("registry source read failed: {e}"))
 }

@@ -8,6 +8,13 @@
 - Made `zap lock` and `zap update` record resolved transitive packages, while `zap install` re-resolves and verifies the complete pinned graph.
 - Preserved compatibility with existing v1 lockfiles and added integration coverage for offline cache reuse and checksum-pinned installs.
 
+### Security audit remediation
+
+- Added `ZAP_UNTRUSTED=1` restricted mode that denies filesystem, environment, process, network, local HTTP serving, and local registry-source capabilities by default.
+- Added SSRF defenses for loopback, private, link-local, unspecified, broadcast, IPv6 unique-local, and IPv6 link-local destinations; automatic HTTP redirects are disabled in restricted mode.
+- Added bounded HTTP request bodies, hard child-process deadlines with termination, and regression tests for capability denial, private destinations, and oversized request bodies.
+- Documented the remaining requirement for OS-level sandboxing, least-privilege deployment, resource quotas, and network egress controls.
+
 ## [2.0.3] — 2026-08-20
 
 Zap 2.0.3 completes the P3.3 Production Standard Library milestone.

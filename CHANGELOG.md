@@ -9,6 +9,12 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - `zap lock` နှင့် `zap update` သည် resolved transitive packages များကို မှတ်တမ်းတင်ပြီး `zap install` သည် pinned graph တစ်ခုလုံးကို ပြန်လည် resolve/verify လုပ်ပါသည်။
 - ရှိပြီးသား v1 lockfile များနှင့် compatibility ထိန်းသိမ်းထားပြီး offline cache reuse နှင့် checksum-pinned install integration coverage ထည့်သွင်းထားပါသည်။
 
+### Security audit remediation
+- `ZAP_UNTRUSTED=1` restricted mode ဖြင့် filesystem၊ environment၊ process၊ network၊ local HTTP serving နှင့် local registry-source capability များကို default deny လုပ်ထားပါသည်။
+- Loopback၊ private၊ link-local၊ unspecified၊ broadcast နှင့် IPv6 local destination များကို SSRF ကာကွယ်မှုဖြင့် block လုပ်ပြီး automatic HTTP redirects များကို restricted mode တွင် ပိတ်ထားပါသည်။
+- HTTP request body limit၊ hard process deadline/kill behavior နှင့် capability/network regression tests များ ထည့်သွင်းထားပါသည်။
+- OS-level sandbox၊ least-privilege deployment၊ resource quotas နှင့် network egress controls များသည် production deployment အတွက် ဆက်လက်လိုအပ်ပါသည်။
+
 ## [2.0.3] - 2026-08-20
 
 Zap 2.0.3 သည် P3.3 Production Standard Library milestone ကို ပြီးစီးစေသော release ဖြစ်ပါသည်။
