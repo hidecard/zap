@@ -4,7 +4,10 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
-_လက်ရှိ မထုတ်ရသေးသော ပြောင်းလဲမှု မရှိပါ။_
+### Package reliability
+- Legacy lockfile များကို conservative အတိုင်း migrate လုပ်ရန် `zap lock-migrate [dir]` command အသစ် ထည့်သွင်းထားပါသည်။
+- v1 lockfile compatibility ကို ဆက်လက်ထိန်းသိမ်းထားပြီး verified registry metadata မရှိပါက registry version သို့မဟုတ် checksum များကို မခန့်မှန်းဘဲ migration ကို ရပ်တန့်ပါသည်။
+
 
 ## [2.0.4] - 2026-08-20
 
@@ -20,7 +23,7 @@ _လက်ရှိ မထုတ်ရသေးသော ပြောင်း�
 - OS-level sandbox၊ least-privilege deployment၊ resource quotas နှင့် network egress controls များသည် production deployment အတွက် ဆက်လက်လိုအပ်ပါသည်။
 
 ### Documentation နှင့် editor integration
-- Main README တွင် v2.0.3 installation links၊ current status၊ security-mode note နှင့် official VS Code Marketplace v0.5.0 installation လမ်းညွှန်များကို update လုပ်ထားပါသည်။
+- Main README တွင် v2.0.4 installation links၊ current status၊ security-mode note နှင့် official VS Code Marketplace v0.5.0 installation လမ်းညွှန်များကို update လုပ်ထားပါသည်။
 - Extension manifest နှင့် documentation များကို Marketplace publisher `ArkarYan` နှင့် synchronize လုပ်ပြီး `code --install-extension ArkarYan.zap-language-support` command ကို ထည့်သွင်းထားပါသည်။
 
 ## [2.0.3] - 2026-08-20

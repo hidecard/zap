@@ -810,6 +810,53 @@ pub(crate) fn write_lockfile(dir: &Path) -> Result<String, String> {
     ))
 }
 
+pub(crate) fn migrate_lockfile(dir: &Path) -> Result<String, String> {
+    let manifest_path = dir.join("zap.toml");
+    let manifest = read_limited_text(&manifest_path, "manifest read")?;
+    validate_package_metadata(&manifest, "zap.toml")?;
+    let name =
+        manifest_value(&manifest, "name").ok_or("zap.toml: missing package name".to_string())?;
+    let version = manifest_value(&manifest, "version")
+        .ok_or("zap.toml: missing package version".to_string())?;
+    let dependencies = parse_dependencies(&manifest)?;
+    validate_dependency_graph(dir, &dependencies)?;
+    let lock_path = dir.join("zap.lock");
+    let existing = fs::read_to_string(&lock_path)
+        .map_err(|_| "zap.lock: missing lockfile; run `zap lock` first".to_string())?;
+    let lockfile_version = existing
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("lockfile_version = "))
+        .and_then(|value| value.trim().parse::<u32>().ok())
+        .ok_or_else(|| "zap.lock: missing or invalid lockfile_version".to_string())?;
+    if lockfile_version >= 2 {
+        return Ok("zap.lock is already at lockfile version 2".to_string());
+    }
+    if lockfile_version != 1 {
+        return Err(format!(
+            "zap.lock: unsupported lockfile version {lockfile_version}; upgrade Zap"
+        ));
+    }
+    let has_registry_dependencies = dependencies
+        .values()
+        .any(|dependency| matches!(dependency, DependencySpec::Requirement(_)));
+    if !has_registry_dependencies {
+        return Ok("zap.lock does not require migration; it has no registry dependencies".into());
+    }
+    if std::env::var_os("ZAP_REGISTRY_INDEX").is_none() {
+        return Err(
+            "zap.lock: legacy registry lockfile requires migration; set ZAP_REGISTRY_INDEX and run `zap lock-migrate`".into(),
+        );
+    }
+    let resolved = resolve_registry_dependencies(dir, &dependencies, true, None)?;
+    let content = canonical_lockfile(&name, &version, &dependencies, &resolved);
+    fs::write(&lock_path, content)
+        .map_err(|e| format!("zap.lock: cannot write migrated lockfile: {e}"))?;
+    Ok(format!(
+        "migrated zap.lock from version 1 to version 2 with {} resolved registry packages",
+        resolved.len()
+    ))
+}
+
 pub(crate) fn install_dependencies(dir: &Path) -> Result<String, String> {
     let manifest_path = dir.join("zap.toml");
     let manifest = read_limited_text(&manifest_path, "manifest read")?;

@@ -74,7 +74,14 @@ web.source = "file://web.pkg"
 web.checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 ```
 
-`zap install` treats v2 resolved entries as exact pins. It re-resolves the configured registry index, compares the complete graph and checksums with the lockfile, and verifies every cached artifact. A changed source, version, dependency graph, or checksum requires `zap update`; an offline install succeeds only when every pinned artifact is already cached and still matches its checksum. Existing v1 lockfiles remain readable for compatibility, but registry-backed projects should regenerate them with `zap update` to obtain reproducible transitive pins.
+`zap install` treats v2 resolved entries as exact pins. It re-resolves the configured registry index, compares the complete graph and checksums with the lockfile, and verifies every cached artifact. A changed source, version, dependency graph, or checksum requires `zap update`; an offline install succeeds only when every pinned artifact is already cached and still matches its checksum. Existing v1 lockfiles remain readable for compatibility. For an explicit migration attempt, run `zap lock-migrate` from the project root or pass a project directory:
+
+```bash
+zap lock-migrate
+zap lock-migrate path/to/project
+```
+
+The command is intentionally conservative. An already-current lockfile exits successfully without rewriting it, a local-only legacy lockfile reports that no migration is required, and a legacy registry-backed lockfile requires a configured registry index and verified cache/source metadata before it is upgraded to v2. It never silently invents resolved versions or checksums. Use `zap update` when the manifest itself has intentionally changed.
 
 > Deterministic behavior means that the same manifest and registry index produce byte-for-byte identical lockfile content, independent of filesystem enumeration order.
 
@@ -177,6 +184,7 @@ zap update path/to/project
 |---|---|
 | `zap check` | Validate the manifest, lockfile, entry file, and static source checks |
 | `zap lock` | Generate or regenerate the canonical `zap.lock` |
+| `zap lock-migrate [dir]` | Explicitly migrate a legacy lockfile when registry metadata is available |
 | `zap add <name> <version> [dir]` | Add a deterministic version dependency and invalidate the lockfile |
 | `zap install [dir]` | Validate the existing manifest and lockfile without changing them |
 | `zap update [dir]` | Regenerate the canonical lockfile and validate the local dependency graph |

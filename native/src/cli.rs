@@ -1,4 +1,6 @@
-use super::project::{install_dependencies, update_dependencies, write_lockfile, TestOptions};
+use super::project::{
+    install_dependencies, migrate_lockfile, update_dependencies, write_lockfile, TestOptions,
+};
 use super::*;
 use crate::project::add_dependency;
 
@@ -16,6 +18,7 @@ Usage:
   zap check --json [dir]                Validate with JSON diagnostics
   zap test [dir]                        Run *_test.zp files
   zap lock [dir]                        Generate zap.lock
+  zap lock-migrate [dir]                Upgrade a legacy registry lockfile to v2
   zap add <name> <ver> [dir]            Add a manifest dependency and invalidate zap.lock
   zap install [dir]    Validate and install dependencies from zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
@@ -165,6 +168,26 @@ pub fn run_cli(args: &[String]) {
             Ok(info) => println!("{info}"),
             Err(e) => {
                 eprintln!("Zap lock error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 2 && args[1] == "lock-migrate" {
+        match migrate_lockfile(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap lock migration error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "lock-migrate" {
+        match migrate_lockfile(Path::new(&args[2])) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap lock migration error: {e}");
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
         }
@@ -405,6 +428,7 @@ mod tests {
             "zap check",
             "zap test",
             "zap lock",
+            "zap lock-migrate",
             "zap add",
             "zap install",
             "zap update",

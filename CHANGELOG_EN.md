@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Package reliability
+
+- Added the explicit `zap lock-migrate [dir]` command for conservative legacy lockfile migration.
+- Preserved v1 lockfile compatibility; migration refuses to invent registry versions or checksums and requires verified registry metadata for registry-backed projects.
+
 
 ## [2.0.4] — 2026-08-20
 
@@ -21,7 +25,7 @@ _No unreleased changes._
 
 ### Documentation and editor integration
 
-- Updated the main README with the v2.0.3 installation links, current project status, security-mode note, and the official VS Code Marketplace v0.5.0 installation path.
+- Updated the main README with the v2.0.4 installation links, current project status, security-mode note, and the official VS Code Marketplace v0.5.0 installation path.
 - Synchronized the extension manifest and documentation with Marketplace publisher `ArkarYan` and added `code --install-extension ArkarYan.zap-language-support`.
 
 ## [2.0.3] — 2026-08-20

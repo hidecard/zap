@@ -71,7 +71,14 @@ web.source = "file://web.pkg"
 web.checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 ```
 
-`zap install` သည် v2 resolved entries များကို exact pins အဖြစ် သတ်မှတ်သည်။ Registry index မှ graph နှင့် lockfile ထဲမှ package name၊ version၊ source၊ checksum များကို နှိုင်းယှဉ်ပြီး cache artifact တစ်ခုချင်းစီကို ပြန်လည် verify လုပ်သည်။ Source၊ version၊ dependency graph သို့မဟုတ် checksum ပြောင်းလဲပါက `zap update` ကို အသုံးပြုရမည်။ Offline install သည် pinned artifact အားလုံး cache ထဲတွင်ရှိပြီး checksum မှန်ကန်မှသာ အောင်မြင်မည်။ ရှိပြီးသား v1 lockfile များကို compatibility အတွက် ဖတ်နိုင်သေးသော်လည်း registry project များအတွက် transitive pin ရရှိရန် `zap update` ဖြင့် v2 သို့ ပြန်လည် generate လုပ်သင့်သည်။
+`zap install` သည် v2 resolved entries များကို exact pins အဖြစ် သတ်မှတ်သည်။ Registry index မှ graph နှင့် lockfile ထဲမှ package name၊ version၊ source၊ checksum များကို နှိုင်းယှဉ်ပြီး cache artifact တစ်ခုချင်းစီကို ပြန်လည် verify လုပ်သည်။ Source၊ version၊ dependency graph သို့မဟုတ် checksum ပြောင်းလဲပါက `zap update` ကို အသုံးပြုရမည်။ Offline install သည် pinned artifact အားလုံး cache ထဲတွင်ရှိပြီး checksum မှန်ကန်မှသာ အောင်မြင်မည်။ ရှိပြီးသား v1 lockfile များကို compatibility အတွက် ဖတ်နိုင်သေးသည်။ Legacy lockfile ကို explicit migrate လုပ်လိုပါက project root မှာ `zap lock-migrate` သို့မဟုတ် project directory ဖြင့် run လုပ်နိုင်သည်။
+
+```bash
+zap lock-migrate
+zap lock-migrate path/to/project
+```
+
+ဤ command သည် conservative behavior ကို အသုံးပြုသည်။ လက်ရှိ v2 lockfile ဖြစ်ပြီးသားဆိုပါက အောင်မြင်စွာ ပြန်ထွက်ပြီး file ကို မပြင်ပါ။ Local-only legacy lockfile ဖြစ်ပါက migration မလိုကြောင်း ပြောပြသည်။ Registry-backed legacy lockfile ဖြစ်ပါက registry index၊ cache/source metadata နှင့် checksum verification ရှိမှသာ v2 သို့ ပြောင်းပေးသည်။ Resolved version သို့မဟုတ် checksum များကို မခန့်မှန်းဘဲ silent rewrite မလုပ်ပါ။ Manifest ကို ရည်ရွယ်ချက်ရှိရှိ ပြောင်းထားပါက `zap update` ကို အသုံးပြုရမည်။
 
 ## Registry-ready package metadata
 
@@ -160,6 +167,8 @@ zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha
 zap check path/to/project
 zap lock
 zap lock path/to/project
+zap lock-migrate
+zap lock-migrate path/to/project
 zap add package-name 1.0
 zap add package-name 1.0 path/to/project
 zap install
