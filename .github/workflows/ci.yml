@@ -133,7 +133,7 @@ jobs:
           assert(type(safe) == "text", "configuration path must be text")
           let result = process_run("cmd", ["/C", "echo", "zap"])
           assert(result["success"] == true, "process smoke failed")
-          assert(result["stdout"] == "zap" or result["stdout"] == "zap\n" or result["stdout"] == "zap\r\n", "process output mismatch")
+          assert(trim(result["stdout"]) == "zap", "process output mismatch")
           '@ | Set-Content -Encoding utf8 p3_smoke.zp
           & $zap p3_smoke.zp
           if ($LASTEXITCODE -ne 0) { throw "P3.3 smoke test failed" }
