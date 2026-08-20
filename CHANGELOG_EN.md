@@ -1,5 +1,13 @@
 # Zap Changelog
 
+## [Unreleased]
+
+### Package reliability
+
+- Extended registry-backed lockfiles to version 2 with deterministic `[resolved]` entries for selected package versions, sources, and SHA-256 checksums.
+- Made `zap lock` and `zap update` record resolved transitive packages, while `zap install` re-resolves and verifies the complete pinned graph.
+- Preserved compatibility with existing v1 lockfiles and added integration coverage for offline cache reuse and checksum-pinned installs.
+
 ## [2.0.3] — 2026-08-20
 
 Zap 2.0.3 completes the P3.3 Production Standard Library milestone.

@@ -1,5 +1,13 @@
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
+## [Unreleased]
+
+### Package reliability
+
+- Registry-backed lockfile များကို version 2 သို့ တိုးချဲ့ပြီး ရွေးချယ်ထားသော package version၊ source နှင့် SHA-256 checksum များအတွက် deterministic `[resolved]` entries များ ထည့်သွင်းထားပါသည်။
+- `zap lock` နှင့် `zap update` သည် resolved transitive packages များကို lockfile တွင် မှတ်တမ်းတင်ပြီး `zap install` သည် pinned graph တစ်ခုလုံးကို ပြန်လည် resolve/verify လုပ်ပါသည်။
+- ရှိပြီးသား v1 lockfile များနှင့် compatibility ထိန်းသိမ်းထားပြီး offline cache reuse နှင့် checksum-pinned install integration test များ ထည့်သွင်းထားပါသည်။
+
 ## [2.0.3] — 2026-08-20
 
 Zap 2.0.3 သည် P3.3 Production Standard Library milestone ကို ပြီးစီးစေသော release ဖြစ်ပါသည်။

@@ -53,7 +53,25 @@ zap lock path/to/project
 
 `zap.lock` တွင် lockfile version၊ package identity နှင့် sorted dependencies များပါဝင်သည်။ Local path သည် သုံးစွဲသည့် project directory အပေါ်မူတည်၍ resolve လုပ်ပြီး ရည်ညွှန်းသော directory တွင် package `name` နှင့် `version` ပါသော `zap.toml` ရှိရမည်။ Local dependency များကို lexicographic depth-first order ဖြင့် recursively စစ်ဆေးသောကြောင့် nested local package များအားလုံး မှန်ကန်မှသာ command အောင်မြင်သည်။ Active traversal stack ထဲတွင် canonical package path ထပ်ပေါ်လာပါက `dependency cycle detected: left -> right -> left` ကဲ့သို့ deterministic error ပြန်ပေးသည်။ Lockfile တွင် `local-lib = { path = "../local-lib" }` ပုံစံဖြင့် direct path ကို canonical ရေးသားသည်။ Project နှင့်အတူ lockfile ကို commit တင်ထားသင့်သည်။ Dependency ထည့်/ဖယ်ခြင်း သို့မဟုတ် package version ပြောင်းခြင်း ပြုလုပ်ပြီးတိုင်း `zap lock` ဖြင့် regenerate လုပ်ပါ။
 
-`zap check` နှင့် `zap build` များသည် dependency ရှိသော project များတွင် `zap.lock` မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းကို error ပြန်ပေးသည်။
+`zap check` နှင့် `zap build` များသည် dependency ရှိသော project များတွင် `zap.lock` မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းကို error ပြန်ပေးသည်။ `ZAP_REGISTRY_INDEX` သတ်မှတ်ထားပြီး registry dependency ပါသော project များတွင် `zap lock` နှင့် `zap update` သည် lockfile version 2 ကို generate လုပ်သည်။ ထို file တွင် ရွေးချယ်ထားသော registry package တစ်ခုချင်းစီ၏ version၊ source နှင့် SHA-256 checksum များကို deterministic `[resolved]` section အတွင်း မှတ်တမ်းတင်သည်။
+
+```toml
+lockfile_version = 2
+
+[package]
+name = "hello-app"
+version = "0.1.0"
+
+[dependencies]
+web = "0.3"
+
+[resolved]
+web.version = "0.3.1"
+web.source = "file://web.pkg"
+web.checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+```
+
+`zap install` သည် v2 resolved entries များကို exact pins အဖြစ် သတ်မှတ်သည်။ Registry index မှ graph နှင့် lockfile ထဲမှ package name၊ version၊ source၊ checksum များကို နှိုင်းယှဉ်ပြီး cache artifact တစ်ခုချင်းစီကို ပြန်လည် verify လုပ်သည်။ Source၊ version၊ dependency graph သို့မဟုတ် checksum ပြောင်းလဲပါက `zap update` ကို အသုံးပြုရမည်။ Offline install သည် pinned artifact အားလုံး cache ထဲတွင်ရှိပြီး checksum မှန်ကန်မှသာ အောင်မြင်မည်။ ရှိပြီးသား v1 lockfile များကို compatibility အတွက် ဖတ်နိုင်သေးသော်လည်း registry project များအတွက် transitive pin ရရှိရန် `zap update` ဖြင့် v2 သို့ ပြန်လည် generate လုပ်သင့်သည်။
 
 ## Registry-ready package metadata
 

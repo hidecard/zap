@@ -4780,6 +4780,68 @@ fn install_uses_registry_cache_and_supports_offline_reuse() {
 }
 
 #[test]
+fn lockfile_records_resolved_registry_checksums() {
+    let root =
+        std::env::temp_dir().join(format!("zap_registry_lockfile_v2_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"locked-app\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\ndemo = \"1.0.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(root.join("demo.pkg"), b"locked registry package").unwrap();
+    let checksum = {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(b"locked registry package")
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{checksum}"}}]}}"#
+        ),
+    )
+    .unwrap();
+    let cache = root.join("cache");
+    let lock = Command::new(binary())
+        .args(["lock", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        lock.status.success(),
+        "{}",
+        String::from_utf8_lossy(&lock.stderr)
+    );
+    let lock_text = std::fs::read_to_string(root.join("zap.lock")).unwrap();
+    assert!(lock_text.contains("lockfile_version = 2"));
+    assert!(lock_text.contains("[resolved]"));
+    assert!(lock_text.contains("demo.version = \"1.0.0\""));
+    assert!(lock_text.contains("demo.source = \"file://demo.pkg\""));
+    assert!(lock_text.contains(&format!("demo.checksum = \"{checksum}\"")));
+
+    let install = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(
+        install.status.success(),
+        "{}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn validates_explicit_workspace_graph() {
     let root = std::env::temp_dir().join("zap_explicit_workspace_graph_test");
     let module_root = root.join("modules/app");

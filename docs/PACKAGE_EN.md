@@ -56,7 +56,27 @@ web = "0.3"
 
 `zap check`, `zap build`, and other project validation paths reject a project when a dependency lockfile is missing, stale, or not in canonical form. Regenerate it with `zap lock` after changing `zap.toml` dependencies or the package version.
 
-> Deterministic behavior means that the same manifest produces byte-for-byte identical lockfile content, independent of filesystem enumeration order.
+When `ZAP_REGISTRY_INDEX` is configured and the manifest contains registry dependencies, `zap lock` and `zap update` emit lockfile version 2. In addition to the manifest requirements, the v2 file contains a deterministic `[resolved]` section that pins each selected registry package by name, version, source, and SHA-256 checksum:
+
+```toml
+lockfile_version = 2
+
+[package]
+name = "hello-app"
+version = "0.1.0"
+
+[dependencies]
+web = "0.3"
+
+[resolved]
+web.version = "0.3.1"
+web.source = "file://web.pkg"
+web.checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+```
+
+`zap install` treats v2 resolved entries as exact pins. It re-resolves the configured registry index, compares the complete graph and checksums with the lockfile, and verifies every cached artifact. A changed source, version, dependency graph, or checksum requires `zap update`; an offline install succeeds only when every pinned artifact is already cached and still matches its checksum. Existing v1 lockfiles remain readable for compatibility, but registry-backed projects should regenerate them with `zap update` to obtain reproducible transitive pins.
+
+> Deterministic behavior means that the same manifest and registry index produce byte-for-byte identical lockfile content, independent of filesystem enumeration order.
 
 ## Recommended layout
 
