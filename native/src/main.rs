@@ -23,8 +23,9 @@ mod evaluator;
 mod stdlib;
 
 use evaluator::{
-    call_function, call_method, direct_builtin, execute_ast_program, execute_lines, json_to_value,
-    operate, validate_source_layout, value_to_json, Flow,
+    call_function, call_method, check_method_visibility, direct_builtin, execute_ast_program,
+    execute_lines, initialize_object_fields, json_to_value, operate, validate_source_layout,
+    value_to_json, Flow,
 };
 
 use std::{
@@ -563,10 +564,15 @@ impl<'a> ExprParser<'a> {
                         if !self.funcs.contains_key(&format!("{class_name}.__class__")) {
                             return Err(format!("unknown class: {class_name}"));
                         }
+                        let explicit_fields = fields;
                         let object = Value::Object {
                             class_name: class_name.clone(),
-                            fields: Rc::new(RefCell::new(fields)),
+                            fields: Rc::new(RefCell::new(HashMap::new())),
                         };
+                        initialize_object_fields(&class_name, &object, self.vars, self.funcs)?;
+                        if let Value::Object { fields, .. } = &object {
+                            fields.borrow_mut().extend(explicit_fields);
+                        }
                         if self
                             .funcs
                             .contains_key(&format!("{class_name}.__own_init__"))
@@ -578,6 +584,12 @@ impl<'a> ExprParser<'a> {
                                     if let Some(parent_init) =
                                         self.funcs.get(&format!("{parent_name}.init")).cloned()
                                     {
+                                        check_method_visibility(
+                                            &parent_init,
+                                            parent_name,
+                                            self.vars,
+                                            self.funcs,
+                                        )?;
                                         call_method(
                                             &parent_init,
                                             ctor_args.clone(),
@@ -589,6 +601,7 @@ impl<'a> ExprParser<'a> {
                             }
                         }
                         if let Some(init) = self.funcs.get(&format!("{class_name}.init")).cloned() {
+                            check_method_visibility(&init, &class_name, self.vars, self.funcs)?;
                             call_method(&init, ctor_args, object.clone(), self.funcs)?;
                         }
                         object

@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path, rc::Rc};
 
 use std::cell::{Cell, RefCell};
 
-use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Stmt, UnaryOp};
+use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
@@ -684,7 +684,106 @@ fn is_same_or_subclass(current: &str, target: &str, funcs: &HashMap<String, Rc<F
     }
 }
 
-fn check_method_visibility(
+fn class_parent(class_name: &str, funcs: &HashMap<String, Rc<Function>>) -> Option<String> {
+    funcs
+        .get(&format!("{class_name}.__parent__"))
+        .and_then(|parent| parent.body.first().cloned())
+}
+
+fn find_field_owner(
+    class_name: &str,
+    field: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Option<String> {
+    let mut current = class_name.to_string();
+    let mut visited = std::collections::HashSet::new();
+    loop {
+        if !visited.insert(current.clone()) {
+            return None;
+        }
+        if funcs.contains_key(&format!("{current}.__field__.{field}")) {
+            return Some(current);
+        }
+        current = class_parent(&current, funcs)?;
+    }
+}
+
+pub(crate) fn check_field_visibility(
+    object_class: &str,
+    field: &str,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    let Some(owner) = find_field_owner(object_class, field, funcs) else {
+        return Ok(());
+    };
+    let Some(metadata) = funcs.get(&format!("{owner}.__field__.{field}")) else {
+        return Ok(());
+    };
+    if metadata.visibility == "public" {
+        return Ok(());
+    }
+    let caller = vars.get("__zap_owner_class").and_then(|value| match value {
+        Value::Text(class) => Some(class.as_str()),
+        _ => None,
+    });
+    let allowed = match (metadata.visibility.as_str(), caller) {
+        ("private", Some(class)) => class == owner,
+        ("protected", Some(class)) => is_same_or_subclass(class, &owner, funcs),
+        _ => false,
+    };
+    if allowed {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} field is not accessible from this context",
+            metadata.visibility
+        ))
+    }
+}
+
+pub(crate) fn initialize_object_fields(
+    class_name: &str,
+    object: &Value,
+    caller_vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    if let Some(parent) = class_parent(class_name, funcs) {
+        initialize_object_fields(&parent, object, caller_vars, funcs)?;
+    }
+    let Value::Object { fields, .. } = object else {
+        return Err("field initialization expects an object".into());
+    };
+    let prefix = format!("{class_name}.__field__.");
+    let field_names = funcs
+        .keys()
+        .filter_map(|key| key.strip_prefix(&prefix).map(str::to_string))
+        .collect::<Vec<_>>();
+    for field in field_names {
+        let metadata = funcs
+            .get(&format!("{prefix}{field}"))
+            .ok_or_else(|| format!("missing field metadata: {field}"))?;
+        let Some(body) = &metadata.ast_body else {
+            continue;
+        };
+        let Some(Stmt::Return(Some(value))) =
+            body.statements.first().map(|statement| &statement.node)
+        else {
+            continue;
+        };
+        let mut local = caller_vars.clone();
+        local.insert("self".into(), object.clone());
+        local.insert(
+            "__zap_owner_class".into(),
+            Value::Text(class_name.to_string()),
+        );
+        let evaluated = ast_expression(value, &local, funcs)?;
+        fields.borrow_mut().insert(field, evaluated);
+    }
+    Ok(())
+}
+
+pub(crate) fn check_method_visibility(
     function: &Function,
     dispatch_class: &str,
     vars: &HashMap<String, Value>,
@@ -855,11 +954,14 @@ fn ast_expression(
         Expr::Member { target, member } => {
             let value = ast_expression(target, vars, funcs)?;
             match value {
-                Value::Object { fields, .. } => fields
-                    .borrow()
-                    .get(member)
-                    .cloned()
-                    .ok_or_else(|| format!("property not found: {member}")),
+                Value::Object { class_name, fields } => {
+                    check_field_visibility(&class_name, member, vars, funcs)?;
+                    fields
+                        .borrow()
+                        .get(member)
+                        .cloned()
+                        .ok_or_else(|| format!("property not found: {member}"))
+                }
                 Value::Map(values) => values
                     .get(member)
                     .cloned()
@@ -1356,6 +1458,18 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
             ast_expr_source(value)
         )),
         Stmt::Say(value) => out.push(format!("{prefix}say {}", ast_expr_source(value))),
+        Stmt::Field {
+            name,
+            annotation,
+            value,
+            visibility,
+        } => out.push(format!(
+            "{prefix}{visibility} let {name}{} = {}",
+            annotation
+                .as_ref()
+                .map_or(String::new(), |ty| format!(": {ty}")),
+            ast_expr_source(value)
+        )),
         Stmt::Import { path, explicit } => out.push(format!(
             "{prefix}{} \"{path}\"",
             if *explicit { "import" } else { "use" }
@@ -1529,7 +1643,31 @@ fn register_ast_class(
         );
     }
     for statement in &body.statements {
-        if let Stmt::Function {
+        if let Stmt::Field {
+            name: field,
+            annotation,
+            value,
+            visibility,
+        } = &statement.node
+        {
+            let default_body = Program {
+                statements: vec![Spanned::new(
+                    Stmt::Return(Some(value.clone())),
+                    value.span.clone(),
+                )],
+            };
+            funcs.insert(
+                format!("{name}.__field__.{field}"),
+                Rc::new(Function {
+                    visibility: visibility.clone(),
+                    params: Vec::new(),
+                    return_annotation: annotation.clone(),
+                    body: Vec::new(),
+                    ast_body: Some(default_body),
+                    closure: Rc::new(RefCell::new(vars.clone())),
+                }),
+            );
+        } else if let Stmt::Function {
             name: method,
             params,
             return_type,
@@ -1626,9 +1764,18 @@ pub(crate) fn execute_ast_program(
                 let _ = ast_expression(value, vars, funcs)?;
                 Flow::Continue
             }
+            Stmt::Field { .. } => {
+                return Err("field declarations are only allowed inside a class".into());
+            }
             Stmt::Assignment { name, value } => {
                 let evaluated = ast_expression(value, vars, funcs)?;
                 if let Some((object_name, field)) = name.split_once('.') {
+                    let class_name = match vars.get(object_name) {
+                        Some(Value::Object { class_name, .. }) => class_name.clone(),
+                        Some(_) => return Err("property assignment expects an object".into()),
+                        None => return Err(format!("undefined variable: {object_name}")),
+                    };
+                    check_field_visibility(&class_name, field, vars, funcs)?;
                     let object = vars
                         .get_mut(object_name)
                         .ok_or(format!("undefined variable: {object_name}"))?;

@@ -23,13 +23,15 @@ Zap P1 Language Core ကို အဆင့်လိုက် အကောင်
 | Named arguments | ပြီးစီး | Function၊ method နှင့် closure များအတွက် structured AST parsing၊ deterministic binding နှင့် diagnostics |
 | Native AST function-body storage | ပြီးစီး | Native AST execution tests |
 | Control-flow Option/Result narrowing | အခြေခံ branch-local support ပြီးစီး | Guarded branch static-check regression tests |
-| OOP method visibility | အခြေခံအဆင့် ပြီးစီး | Private method same-class access နှင့် external access rejection regression test |
+| OOP method visibility | ပြီးစီး | Private/protected method same-class နှင့် inheritance access checks၊ external access diagnostics |
+| OOP field visibility နှင့် initialization | အခြေခံအဆင့် ပြီးစီး | Public/private/protected fields၊ inherited protected access၊ default initialization၊ assignment checks နှင့် external access regression tests |
+| OOP constructor rules | အခြေခံအဆင့် ပြီးစီး | Constructor visibility enforcement နှင့် constructor မစမီ field initialization |
 | Filesystem နှင့် JSON standard-library APIs | အခြေခံ stabilization ပြီးစီး | Direct-AST JSON round trip၊ malformed-input diagnostics၊ 8 MiB bounded JSON payload နှင့် file I/O regression coverage |
 | Text၊ math နှင့် collection standard-library APIs | အခြေခံ stabilization ပြီးစီး | Direct-AST dispatch၊ explicit validation၊ checked integer behavior နှင့် integration regression coverage |
 
 ## လက်ရှိ verification baseline
 
-Native Rust test suite သည် လက်ရှိ **test 96 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 30 ခုနှင့် integration test 66 ခု ပါဝင်ပါသည်။ [`examples/default_parameters.zp`](../examples/default_parameters.zp) ကိုလည်း run စမ်းပြီး အောင်မြင်ပါသည်။ `cargo fmt --check` နှင့် `git diff --check` လည်း pass ဖြစ်ပါသည်။ Local sandbox တွင် Rust Clippy component မပါသောကြောင့် Clippy ကို local မှ verify မလုပ်နိုင်သေးပါ။ ထို့ကြောင့် Clippy ကို CI/environment release gate အဖြစ် ဆက်လက်ထားရှိပြီး local အောင်မြင်သည်ဟု မကြေညာထားပါ။
+Native Rust test suite သည် လက်ရှိ **test 99 ခု** အားလုံး pass ဖြစ်ပါသည်။ ၎င်းတွင် unit test 30 ခုနှင့် integration test 69 ခု ပါဝင်ပါသည်။ [`examples/default_parameters.zp`](../examples/default_parameters.zp) ကိုလည်း run စမ်းပြီး အောင်မြင်ပါသည်။ `cargo fmt --check` နှင့် `git diff --check` လည်း pass ဖြစ်ပါသည်။ Local sandbox တွင် Rust Clippy component မပါသောကြောင့် Clippy ကို local မှ verify မလုပ်နိုင်သေးပါ။ ထို့ကြောင့် Clippy ကို CI/environment release gate အဖြစ် ဆက်လက်ထားရှိပြီး local အောင်မြင်သည်ဟု မကြေညာထားပါ။
 
 ## P1 ကျန်ရှိသော အလုပ်များကို ဦးစားပေးအစီအစဉ်ဖြင့်
 
@@ -38,9 +40,9 @@ Native Rust test suite သည် လက်ရှိ **test 96 ခု** အား
 | 1 | Direct AST call evaluation | လုပ်ဆောင်နေဆဲ | လက်ရှိ runtime call set ဖြစ်သော functions၊ methods၊ closures၊ indexing၊ pure built-ins၊ filesystem၊ environment၊ path နှင့် time helpers များကို direct AST ဖြင့် evaluate လုပ်နိုင်ပြီ။ Edge-case audit ဆက်လုပ်ရန်လိုသည် |
 | 2 | Named arguments | ပြီးစီး | Function၊ method နှင့် closure များအတွက် `name = expression` parsing၊ deterministic binding နှင့် unknown/duplicate/positional-after-named/missing/excess/type mismatch diagnostics |
 | 3 | Control-flow type narrowing | အခြေခံ branch-local support ပြီးစီး | `if is_some(value):`၊ `if is_ok(result):` နှင့် `if is_err(result):` အတွင်း payload type ကို narrow လုပ်နိုင်ပြီ။ Else-specific negative narrowing၊ complex boolean guards နှင့် alias variables ကို ဆက်လက်တိုးချဲ့ရန်လိုသည် |
-| 4 | OOP visibility နှင့် initialization rules | တစ်စိတ်တစ်ပိုင်း၊ method visibility ပြီးစီး | Public/private/protected method modifiers နှင့် access diagnostics ရှိပြီ။ Protected inheritance behavior၊ field visibility၊ module-aware access နှင့် constructor visibility rules များ ကျန်ရှိသည် |
+| 4 | OOP visibility နှင့် initialization rules | အခြေခံအဆင့် ပြီးစီး | Module-aware access၊ constructor delegation diagnostics နှင့် inheritance edge cases များကို ဆက်လက် hardening လုပ်ရန်လိုသည် |
 | 5 | Standard-library extraction/stabilization | တစ်စိတ်တစ်ပိုင်း၊ filesystem/JSON/text/math/collection အခြေခံ stabilization ပြီးစီး | API contract၊ documentation၊ error behavior နှင့် edge-case coverage များကို ဆက်လက်တိုးချဲ့ပြီး public module organization ပြီးစီးရမည် |
 | 6 | Package determinism နှင့် CLI tooling | တစ်စိတ်တစ်ပိုင်း | Lockfile/deterministic dependency behavior၊ diagnostics၊ filtering၊ formatting နှင့် project checks များ တည်ငြိမ်ရမည် |
 | 7 | Cross-platform နှင့် release gates | မစစ်ဆေးရသေး | Linux၊ Windows၊ macOS verification၊ bilingual changelog/release documentation နှင့် နောက်ဆုံး P1 release စစ်ဆေးမှုများ ပြီးရမည် |
 
-Direct-AST migration သည် **လုပ်ဆောင်နေဆဲ** ဖြစ်သော်လည်း လက်ရှိ runtime built-in set ကို လွှမ်းခြုံထားပါသည်။ Named arguments များကို user-defined functions၊ methods နှင့် closures များတွင် အသုံးပြုနိုင်ပါပြီ။ OOP visibility သည် လက်ရှိ method modifiers နှင့် access checks ကို support လုပ်ထားပြီး field visibility၊ module-aware access နှင့် constructor rules များသည် P1 လက်ကျန် gate များ ဖြစ်ပါသည်။ P1 acceptance criteria များ မပြီးမချင်း async၊ LSP/editor integration နှင့် package registry ကဲ့သို့သော P2 အလုပ်များကို မစတင်သေးပါ။
+Direct-AST migration သည် **လုပ်ဆောင်နေဆဲ** ဖြစ်သော်လည်း လက်ရှိ runtime built-in set ကို လွှမ်းခြုံထားပါသည်။ Named arguments များကို user-defined functions၊ methods နှင့် closures များတွင် အသုံးပြုနိုင်ပါပြီ။ OOP တွင် method နှင့် field modifiers၊ protected inheritance access၊ field default initialization၊ field assignment checks နှင့် constructor visibility enforcement များကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Module-aware access နှင့် constructor delegation edge cases များကို P1 hardening အဖြစ် ဆက်လက်လုပ်ဆောင်ရန်ရှိပါသည်။ P1 acceptance criteria များ မပြီးမချင်း async၊ LSP/editor integration နှင့် package registry ကဲ့သို့သော P2 အလုပ်များကို မစတင်သေးပါ။

@@ -1210,3 +1210,87 @@ fn applies_default_function_parameters() {
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "World\nZap\n");
 }
+
+#[test]
+fn enforces_oop_field_visibility_and_inherited_defaults() {
+    let file = std::env::temp_dir().join("zap_oop_field_visibility_test.zp");
+    std::fs::write(
+        &file,
+        "class Base:\n    private let secret = \"base-secret\"\n    protected let token = \"base-token\"\n    public let label = \"base-label\"\n    fn reveal_secret(self):\n        return self.secret\nclass Child extends Base:\n    fn reveal_token(self):\n        self.token = \"child-token\"\n        return self.token\nlet child = new(\"Child\")\nsay child.label\nsay child.reveal_secret()\nsay child.reveal_token()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "base-label\nbase-secret\nchild-token\n"
+    );
+
+    let external = std::env::temp_dir().join("zap_oop_private_field_test.zp");
+    std::fs::write(
+        &external,
+        "class Base:\n    private let secret = \"hidden\"\n    protected let token = \"hidden-token\"\nlet item = new(\"Base\")\nsay item.secret\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&external).output().unwrap();
+    let _ = std::fs::remove_file(&external);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("private field is not accessible"));
+
+    let protected = std::env::temp_dir().join("zap_oop_protected_field_test.zp");
+    std::fs::write(
+        &protected,
+        "class Base:\n    protected let token = \"hidden-token\"\nlet item = new(\"Base\")\nsay item.token\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&protected).output().unwrap();
+    let _ = std::fs::remove_file(&protected);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("protected field is not accessible"));
+}
+
+#[test]
+fn rejects_non_public_constructors_from_external_code() {
+    for (visibility, expected) in [
+        ("private", "private method is not accessible"),
+        ("protected", "protected method is not accessible"),
+    ] {
+        let file = std::env::temp_dir().join(format!("zap_oop_{visibility}_constructor_test.zp"));
+        std::fs::write(
+            &file,
+            format!("class Locked:\n    {visibility} fn init(self):\n        self.ready = true\nlet item = new(\"Locked\")\n"),
+        )
+        .unwrap();
+        let output = Command::new(binary()).arg(&file).output().unwrap();
+        let _ = std::fs::remove_file(&file);
+        assert!(!output.status.success());
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[test]
+fn initializes_declared_fields_before_constructor_overrides() {
+    let file = std::env::temp_dir().join("zap_oop_field_default_override_test.zp");
+    std::fs::write(
+        &file,
+        "class Counter:\n    public let value = 1\n    fn init(self):\n        self.value = self.value + 1\nlet first = new(\"Counter\")\nlet second = new(\"Counter\")\nsecond.value = 10\nsay first.value\nsay second.value\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n10\n");
+}

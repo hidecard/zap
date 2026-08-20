@@ -23,13 +23,15 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 | Named arguments | Implemented | Structured AST parsing, deterministic binding, function/method/closure integration tests, and diagnostics |
 | Native AST function-body storage | Implemented | Native AST execution tests |
 | Control-flow Option/Result narrowing | Implemented | Guarded-branch static-check regression tests |
-| OOP method visibility | Implemented (initial) | Private same-class access and external-access rejection regression test |
+| OOP method visibility | Implemented | Private/protected same-class and inheritance access checks with external-access diagnostics |
+| OOP field visibility and initialization | Implemented (initial) | Public/private/protected fields, inherited protected access, default initialization, assignment checks, and external-access regression tests |
+| OOP constructor rules | Implemented (initial) | Constructor visibility enforcement and field initialization before constructor execution |
 | Filesystem and JSON standard-library APIs | Stabilized (initial) | Direct-AST JSON round trip, malformed-input diagnostics, bounded 8 MiB JSON payloads, and existing file I/O regression coverage |
 | Text, math, and collection standard-library APIs | Stabilized (initial) | Direct-AST dispatch, explicit validation, checked integer behavior, and integration regression coverage |
 
 ## Current verification baseline
 
-The native Rust suite currently passes **96 tests**: 30 unit tests and 66 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **99 tests**: 30 unit tests and 69 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
 
 ## Ordered remaining P1 work
 
@@ -38,9 +40,9 @@ The native Rust suite currently passes **96 tests**: 30 unit tests and 66 integr
 | 1 | Direct AST call evaluation | In progress | Native AST directly evaluates the current runtime call set, including functions, methods, closures, indexing, pure built-ins, filesystem I/O, environment, path, and time helpers; final edge-case audit remains |
 | 2 | Named arguments | Implemented | Continue advanced diagnostics and decide whether named arguments should be supported by selected built-ins |
 | 3 | Control-flow type narrowing | Implemented (initial branch-local support) | Extend else-specific negative narrowing, complex boolean guards, alias variables, and broader nested-flow analysis |
-| 4 | OOP visibility and initialization rules | Partial (method visibility implemented) | Complete protected inheritance behavior, field visibility, module-aware access, and constructor visibility rules |
+| 4 | OOP visibility and initialization rules | Implemented (initial) | Add module-aware access, constructor delegation diagnostics, and broader inheritance edge-case coverage |
 | 5 | Standard-library extraction and stabilization | Partial (filesystem/JSON/text/math/collection initial stabilization) | Complete API contracts, documented error behavior, broader edge-case coverage, and public module organization |
 | 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, and project checks |
 | 7 | Cross-platform and release gates | Pending | Linux, Windows, and macOS verification; bilingual changelog/release documentation; final P1 release only after all gates pass |
 
-The direct-AST migration is **in progress** but covers the current runtime built-in set. Named arguments are available for user-defined functions, methods, and closures. OOP visibility currently covers method modifiers and access checks; field visibility, module-aware access, and full constructor rules remain P1 gates. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.
+The direct-AST migration is **in progress** but covers the current runtime built-in set. Named arguments are available for user-defined functions, methods, and closures. OOP now covers method and field modifiers, protected inheritance access, field default initialization, field assignment checks, and constructor visibility enforcement. Module-aware access and additional constructor-delegation edge cases remain P1 hardening work. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.

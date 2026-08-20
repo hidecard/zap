@@ -95,6 +95,12 @@ pub(crate) enum Stmt {
         annotation: Option<String>,
         value: Spanned<Expr>,
     },
+    Field {
+        name: String,
+        annotation: Option<String>,
+        value: Spanned<Expr>,
+        visibility: String,
+    },
     Say(Spanned<Expr>),
     Import {
         path: String,
@@ -427,6 +433,36 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
                 Stmt::Return(Some(parse_expression(value)?))
             };
             return Ok(Spanned::new(statement, span(trimmed.len())));
+        }
+    }
+
+    for (visibility, prefix) in [
+        ("public", "public let "),
+        ("private", "private let "),
+        ("protected", "protected let "),
+    ] {
+        if let Some(rest) = trimmed.strip_prefix(prefix) {
+            let (target, value) = rest
+                .split_once('=')
+                .ok_or_else(|| "field declaration expects '='".to_string())?;
+            let (name, annotation) = target
+                .trim()
+                .split_once(':')
+                .map_or((target.trim(), None), |(name, ty)| {
+                    (name.trim(), Some(ty.trim().to_string()))
+                });
+            if name.is_empty() || value.trim().is_empty() {
+                return Err("field declaration requires a name and value".to_string());
+            }
+            return Ok(Spanned::new(
+                Stmt::Field {
+                    name: name.to_string(),
+                    annotation,
+                    value: parse_expression(value.trim())?,
+                    visibility: visibility.to_string(),
+                },
+                span(trimmed.len()),
+            ));
         }
     }
 
