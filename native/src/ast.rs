@@ -558,10 +558,9 @@ fn parse_function_header(
         ("protected", rest)
     } else if let Some(rest) = header.strip_prefix("fn ") {
         ("public", rest)
-    } else if let Some(rest) = header.strip_prefix("def ") {
-        ("public", rest)
     } else {
-        return None;
+        let rest = header.strip_prefix("def ")?;
+        ("public", rest)
     };
     let open = signature.find('(')?;
     let close = signature.rfind(')')?;

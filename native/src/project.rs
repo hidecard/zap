@@ -89,7 +89,7 @@ fn validate_lockfile(dir: &Path, manifest: &str) -> Result<(), String> {
     let version = manifest_value(manifest, "version").unwrap_or_default();
     let expected = canonical_lockfile(&name, &version, &dependencies);
     let actual = fs::read_to_string(&lock_path)
-        .map_err(|_| format!("zap.lock: missing lockfile; run `zap lock` to generate it"))?;
+        .map_err(|_| "zap.lock: missing lockfile; run `zap lock` to generate it".to_string())?;
     if actual != expected {
         return Err(
             "zap.lock: out of date or non-canonical; run `zap lock` to regenerate it".into(),
