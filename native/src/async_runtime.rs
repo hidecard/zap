@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{Context, Poll, Waker};
+use std::sync::Arc;
+use std::task::{Context, Poll, Wake, Waker};
 
 /// A small deterministic executor foundation for future Zap async syntax.
 ///
@@ -23,8 +24,8 @@ impl AsyncRuntime {
     }
 
     pub fn run_until_idle(&mut self) {
-        let waker = Waker::noop();
-        let mut context = Context::from_waker(waker);
+        let waker = no_op_waker();
+        let mut context = Context::from_waker(&waker);
         let mut index = 0;
         while index < self.tasks.len() {
             let ready = matches!(
@@ -54,7 +55,7 @@ pub fn block_on<F>(future: F) -> F::Output
 where
     F: Future,
 {
-    let waker = Waker::from(Arc::new(NoopWaker));
+    let waker = no_op_waker();
     let mut context = Context::from_waker(&waker);
     let mut future = Box::pin(future);
     loop {
@@ -62,6 +63,17 @@ where
             return value;
         }
     }
+}
+
+#[allow(clippy::manual_noop_waker)]
+fn no_op_waker() -> Waker {
+    Waker::from(Arc::new(NoopWaker))
+}
+
+struct NoopWaker;
+
+impl Wake for NoopWaker {
+    fn wake(self: Arc<Self>) {}
 }
 
 #[cfg(test)]

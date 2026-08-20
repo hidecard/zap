@@ -4577,7 +4577,8 @@ fn lsp_rejects_malformed_content_length() {
                 .stdin
                 .take()
                 .unwrap()
-                .write_all(b"Content-Length: bad\r\n\r\n{}").unwrap();
+                .write_all(b"Content-Length: bad\r\n\r\n{}")
+                .unwrap();
             child.wait_with_output()
         })
         .unwrap();

@@ -92,8 +92,10 @@ fn publish_diagnostics(uri: &str, source: &str) -> Value {
     let diagnostics = crate::lint_source(source)
         .into_iter()
         .map(|message| {
+            let line = diagnostic_line(&message).unwrap_or(1).saturating_sub(1);
+            let width = source.lines().nth(line).map(|value| value.chars().count()).unwrap_or(1).max(1);
             json!({
-                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 1}},
+                "range": {"start": {"line": line, "character": 0}, "end": {"line": line, "character": width}},
                 "severity": 2,
                 "source": "zap",
                 "message": message
@@ -105,6 +107,12 @@ fn publish_diagnostics(uri: &str, source: &str) -> Value {
         "method": "textDocument/publishDiagnostics",
         "params": {"uri": uri, "diagnostics": diagnostics}
     })
+}
+
+fn diagnostic_line(message: &str) -> Option<usize> {
+    let suffix = message.strip_prefix("line ")?;
+    let digits = suffix.split(':').next()?;
+    digits.parse().ok()
 }
 
 #[cfg(test)]
@@ -119,6 +127,20 @@ mod tests {
         framed.extend_from_slice(body);
         let messages = decode_messages(&framed).unwrap();
         assert_eq!(messages[0]["method"], "shutdown");
+    }
+
+    #[test]
+    fn line_diagnostic_uses_reported_source_line() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": "file:///main.zp", "text": "let x = 1\n\tlet y = 2"}}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["params"]["diagnostics"][0]["range"]["start"]["line"],
+            1
+        );
     }
 
     #[test]
