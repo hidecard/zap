@@ -30,7 +30,7 @@ Native Rust test suite သည် လက်ရှိ **test 85 ခု** အား
 
 | ဦးစားပေး | အလုပ် | လက်ရှိအခြေအနေ | ပြီးစီးရန် လက်ခံစံနှုန်း |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | လုပ်ဆောင်နေဆဲ | Native AST သည် literals၊ collections၊ operators၊ user-function calls၊ member access နှင့် object methods များကို တိုက်ရိုက် evaluate လုပ်နိုင်ပြီ။ legacy built-in/index fallback များကို ဆက်လက်ပြောင်းရန် ကျန်ရှိသည် |
+| 1 | Direct AST call evaluation | လုပ်ဆောင်နေဆဲ | Native AST သည် literals၊ collections၊ operators၊ user-function calls၊ member access၊ object methods နှင့် list/map indexing များကို တိုက်ရိုက် evaluate လုပ်နိုင်ပြီ။ legacy built-in-call fallback ကို ဆက်လက်ပြောင်းရန် ကျန်ရှိသည် |
 | 2 | Named arguments | မစတင်ရသေး | Call အတွင်း `name = expression` ကိုသာ parse လုပ်ပြီး unknown၊ duplicate၊ positional-after-named နှင့် missing arguments များကို reject လုပ်ရမည် |
 | 3 | Control-flow type narrowing | မစတင်ရသေး | `if is_some(value):` နှင့် `if is_ok(result):` အတွင်း branch-local payload type ကို သိရှိရမည်၊ `else` နှင့် nested branch များပါ အလုပ်လုပ်ရမည် |
 | 4 | OOP visibility နှင့် initialization rules | တစ်စိတ်တစ်ပိုင်း | public/private/protected member များ၊ constructor rules နှင့် inheritance/module diagnostics များ သတ်မှတ်ပြီး enforce လုပ်ရမည် |

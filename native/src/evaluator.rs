@@ -366,7 +366,21 @@ fn ast_expression(
                 _ => Err("property access expects an object or map".into()),
             }
         }
-        Expr::Index { .. } => expression(&ast_expr_source(node), vars, funcs),
+        Expr::Index { target, index } => {
+            let target = ast_expression(target, vars, funcs)?;
+            let index = ast_expression(index, vars, funcs)?;
+            match (target, index) {
+                (Value::List(values), Value::Number(index)) if index >= 0 => values
+                    .get(index as usize)
+                    .cloned()
+                    .ok_or_else(|| "index out of range".to_string()),
+                (Value::Map(values), Value::Text(key)) => values
+                    .get(&key)
+                    .cloned()
+                    .ok_or_else(|| "key not found".to_string()),
+                _ => Err("invalid index operation".into()),
+            }
+        }
     }
 }
 
@@ -1682,6 +1696,17 @@ mod tests {
             .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn evaluates_list_indexing_from_native_ast() {
+        let program = parse_program("let selected: number = range(0, 3)[1]\n")
+            .expect("valid indexed AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("native AST indexing should execute");
+        assert_eq!(vars.get("selected"), Some(&Value::Number(1)));
     }
 
     #[test]
