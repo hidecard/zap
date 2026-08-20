@@ -10,7 +10,7 @@
 [![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Docs-0969da.svg)](https://github.com/hidecard/zap/tree/master/docs)
 
-**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md)
+**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md) · [Default Parameters EN](docs/DEFAULT_PARAMETERS_EN.md) · [Default Parameters MM](docs/DEFAULT_PARAMETERS_MM.md)
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 

@@ -87,6 +87,30 @@ fn greet(name):
 
 Function annotations use the form `parameter: type` and `-> return_type`. Nested functions can capture values from their enclosing scope.
 
+### Default parameters
+
+Parameters may provide a default value with `=`. Zap currently binds arguments positionally: omitted parameters use their defaults, while supplied arguments override them.
+
+```zap
+fn greet(name: text = "World", punctuation: text = "!"):
+    return "Hello, " + name + punctuation
+
+say greet()
+say greet("Zap", ".")
+```
+
+A function may mix required and defaulted parameters, but every required parameter must be supplied:
+
+```zap
+fn create_user(username: text, role: text = "member"):
+    return username + " (" + role + ")"
+
+say create_user("may")
+say create_user("may", "admin")
+```
+
+Named arguments are not supported yet. See the complete [Default Function Parameters guide](DEFAULT_PARAMETERS_EN.md) for validation rules, method examples, and runnable samples.
+
 ## Classes
 
 ```zap

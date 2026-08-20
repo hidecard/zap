@@ -257,7 +257,7 @@ let message = greet("Developer")
 say message
 ```
 
-`return` မရေးထားသော function သည် `none` value ပြန်ပေးသည်။ Function တွင် parameter အရေအတွက် မကိုက်ညီပါက runtime error ပြမည်။
+`return` မရေးထားသော function သည် `none` value ပြန်ပေးသည်။ Function တွင် required parameter များ၏ အရေအတွက် မကိုက်ညီပါက runtime error ပြမည်။
 
 ```zp
 fn add(a, b):
@@ -265,6 +265,34 @@ fn add(a, b):
 
 say add(10, 20)
 ```
+
+### Default parameters
+
+Parameter တစ်ခုကို မပေးထားသည့်အခါ အသုံးပြုမည့် default value ကို `=` ဖြင့် သတ်မှတ်နိုင်သည်။ လက်ရှိ Zap တွင် argument များသည် positional binding ဖြစ်ပြီး မပေးထားသော parameter များသာ default value ကို အသုံးပြုသည်။
+
+```zp
+fn greet(name: text = "World", punctuation: text = "!"):
+    return "Hello, " + name + punctuation
+
+say greet()
+say greet("Zap", ".")
+```
+
+Required parameter နှင့် default parameter ကို function တစ်ခုတည်းတွင် ရောစပ်နိုင်သော်လည်း required parameter များကို မဖြစ်မနေ ပေးရမည်။
+
+```zp
+fn create_user(username: text, role: text = "member", active: bool = true):
+    return {
+        "username": username,
+        "role": role,
+        "active": active
+    }
+
+say create_user("may")
+say create_user("may", "admin", false)
+```
+
+Default value သည် parameter annotation နှင့် ကိုက်ညီရမည်။ ဥပမာ `number` parameter အတွက် text default ပေးထားခြင်းသည် မမှန်ကန်ပါ။ Named arguments များကို လက်ရှိ version တွင် မထောက်ပံ့သေးပါ။ အသေးစိတ် syntax၊ method/constructor examples နှင့် validation rules များအတွက် [`DEFAULT_PARAMETERS_MM.md`](DEFAULT_PARAMETERS_MM.md) ကိုဖတ်ပါ။
 
 ## 12. Closures နှင့် Scope
 
