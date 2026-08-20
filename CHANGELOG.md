@@ -214,7 +214,7 @@ Native tests 109 ခု၊ release build၊ formatting၊ whitespace၊ CLI vers
 ## [0.8.0]
 
 - Native Rust runtime၊ OOP၊ collection/file/path/time/environment helpers၊ `zap run`၊ `zap lint`၊ `zap check --json` နှင့် cross-platform release workflow ကို ထည့်သွင်းခဲ့သည်။
-- အသေးစိတ် project information ကို [မြန်မာ README](README_MM.md) နှင့် [English README](README.md) တွင် ဖတ်ရှုနိုင်သည်။
+- အသေးစိတ် release notes ကို [`docs/RELEASE_0.8.0.md`](docs/RELEASE_0.8.0.md) တွင် ဖတ်ရှုနိုင်သည်။
 
 ## [0.7.1]
 
@@ -228,10 +228,10 @@ Native tests 109 ခု၊ release build၊ formatting၊ whitespace၊ CLI vers
 
 - Standard library၊ modules၊ project manifest နှင့် CLI workflow များကို တိုးချဲ့ခဲ့သည်။
 
-[Unreleased]: README.md
-[0.9.1]: CHANGELOG.md
-[0.9.0]: CHANGELOG.md
-[0.8.0]: CHANGELOG.md
-[0.7.1]: CHANGELOG.md
-[0.7.0]: CHANGELOG.md
-[0.6.0]: CHANGELOG.md
+[Unreleased]: docs/P2_PROGRESS.md
+[0.9.1]: docs/RELEASE_0.9.1.md
+[0.9.0]: docs/RELEASE_0.9.0.md
+[0.8.0]: docs/RELEASE_0.8.0.md
+[0.7.1]: docs/RELEASE_0.7.1.md
+[0.7.0]: docs/RELEASE_0.7.0.md
+[0.6.0]: docs/RELEASE_0.6.0.md

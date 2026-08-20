@@ -33,6 +33,10 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
+## Learning Guide
+
+စတင်လေ့လာရန် [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) ကို ဖတ်ရှုပါ။ Syntax အသေးစိတ်အတွက် [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md) ကို အသုံးပြုနိုင်ပြီး English lessons အတွက် [English learning guide](docs/LEARN_ZAP_EN.md) နှင့် [English syntax guide](docs/SYNTAX_GUIDE_EN.md) ကို ဖတ်ရှုနိုင်ပါသည်။
+
 ## Why Zap?
 
 Zap သည် language core ကို သေးငယ်၊ ရှင်းလင်းပြီး လေ့လာရလွယ်ကူအောင် တည်ဆောက်ထားပါသည်။ `.zp` file များကို native executable ဖြင့် တိုက်ရိုက် run နိုင်ပြီး နောင်တွင် web၊ AI၊ mobile နှင့် IoT libraries များ တည်ဆောက်ရန် foundation အဖြစ် အသုံးပြုနိုင်ပါသည်။
@@ -98,4 +102,4 @@ code --install-extension ArkarYan.zap-language-support
 
 မေးခွန်းများ၊ အကြံပြုချက်များနှင့် Zap development ဆွေးနွေးမှုများအတွက် [Discord Community](https://discord.gg/j9DHdCtJE) သို့မဟုတ် [Telegram Group](https://t.me/+fySFCXwMt8U3Y2Y1) သို့ ဝင်ရောက်နိုင်ပါသည်။ Source code နှင့် issue များကို [GitHub repository](https://github.com/hidecard/zap) တွင် ကြည့်ရှုနိုင်ပါသည်။
 
-အသေးစိတ်လမ်းညွှန်များအစား အဓိက project information ကို ဤ README နှစ်ခုတွင်သာ ထိန်းသိမ်းထားပါသည်။ English version အတွက် [README.md](README.md) ကို ဖတ်ရှုပါ။
+အဓိက project information ကို ဤ README နှစ်ခုတွင် ထိန်းသိမ်းထားပြီး lesson အပြည့်အစုံကို အထက်ပါ learning guides များတွင် ဆက်လက်ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [README.md](README.md) ကို ဖတ်ရှုပါ။

@@ -34,6 +34,10 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Test status | Native test suite verified by GitHub Actions |
 | P3 status | P3.3 production standard library and cross-platform hardening complete; v2.1 package reliability work in progress |
 
+## Learning Guide
+
+Start with the [English learning guide](docs/LEARN_ZAP_EN.md), then use the [English syntax guide](docs/SYNTAX_GUIDE_EN.md) for detailed language reference. Burmese lessons are available in the [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) and [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md).
+
 ## Native Runtime Architecture
 
 The native runtime is maintained as focused Rust modules rather than a single implementation file.
