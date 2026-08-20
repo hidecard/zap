@@ -6,7 +6,7 @@ Zap ၏ standard library ကို အများပြည်သူအသုံ
 |---|---|---|
 | `text` | စာသားပြောင်းလဲခြင်းနှင့် စီမံခြင်း | `len`, `str`, `type`, `upper`, `lower`, `trim`, `split`, `join`, `contains`, `replace`, `char_at`, `substring`, `codepoints` |
 | `math` | ကိန်းဂဏန်းလုပ်ဆောင်ချက်များ | `abs`, `min`, `max`, `pow`, `sqrt` |
-| `collections` | List နှင့် map များ | `sum`, `range`, `keys`, `count`, `reverse`, `get` |
+| `collections` | List နှင့် map များ | `sum`, `range`, `keys`, `entries`, `enumerate`, `count`, `reverse`, `get` |
 | `filesystem` | ကန့်သတ်ထားသော text နှင့် line I/O | `read_text`, `write_text`, `read_lines`, `write_lines`, `exists`, `file_metadata`, `atomic_write` |
 | `json` | JSON ပြောင်းလဲခြင်းနှင့် runtime category စစ်ဆေးခြင်း | `json`, `from_json`, `from_json_typed` |
 | `system` | Environment၊ configuration၊ path နှင့် အချိန် | `env`, `has_env`, `env_get`, `config_dir`, `config_path`, `path_join`, `basename`, `dirname`, `now`, `sleep` |

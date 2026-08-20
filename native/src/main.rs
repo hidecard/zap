@@ -400,6 +400,55 @@ impl<'a> ExprParser<'a> {
                     _ => return Err("keys expects a map".into()),
                 }
             }
+            Token::Name(n) if n == "entries" && *self.peek() == Token::LParen => {
+                self.take();
+                let v = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after entries".into());
+                }
+                match v {
+                    Value::Map(m) => {
+                        let mut keys = m.keys().cloned().collect::<Vec<_>>();
+                        keys.sort();
+                        Value::List(
+                            keys.into_iter()
+                                .map(|key| {
+                                    let mut entry = HashMap::new();
+                                    entry.insert("key".into(), Value::Text(key.clone()));
+                                    entry.insert(
+                                        "value".into(),
+                                        m.get(&key).cloned().unwrap_or(Value::None),
+                                    );
+                                    Value::Map(entry)
+                                })
+                                .collect(),
+                        )
+                    }
+                    _ => return Err("entries expects a map".into()),
+                }
+            }
+            Token::Name(n) if n == "enumerate" && *self.peek() == Token::LParen => {
+                self.take();
+                let v = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err("expected ) after enumerate".into());
+                }
+                match v {
+                    Value::List(values) => Value::List(
+                        values
+                            .into_iter()
+                            .enumerate()
+                            .map(|(index, value)| {
+                                let mut entry = HashMap::new();
+                                entry.insert("index".into(), Value::Number(index as i64));
+                                entry.insert("value".into(), value);
+                                Value::Map(entry)
+                            })
+                            .collect(),
+                    ),
+                    _ => return Err("enumerate expects a list".into()),
+                }
+            }
             Token::Name(n) if n == "contains" && *self.peek() == Token::LParen => {
                 self.take();
                 let collection = self.parse(0)?;

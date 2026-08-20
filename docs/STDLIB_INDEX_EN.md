@@ -6,7 +6,7 @@ Zap's standard library is organized into stable public domains. The runtime disp
 |---|---|---|
 | `text` | Text conversion and manipulation | `len`, `str`, `type`, `upper`, `lower`, `trim`, `split`, `join`, `contains`, `replace`, `char_at`, `substring`, `codepoints` |
 | `math` | Numeric operations | `abs`, `min`, `max`, `pow`, `sqrt` |
-| `collections` | Lists and maps | `sum`, `range`, `keys`, `count`, `reverse`, `get` |
+| `collections` | Lists and maps | `sum`, `range`, `keys`, `entries`, `enumerate`, `count`, `reverse`, `get` |
 | `filesystem` | Bounded text and line I/O | `read_text`, `write_text`, `read_lines`, `write_lines`, `exists`, `file_metadata`, `atomic_write` |
 | `json` | JSON serialization and runtime-category validation | `json`, `from_json`, `from_json_typed` |
 | `system` | Environment, configuration, paths, and time | `env`, `has_env`, `env_get`, `config_dir`, `config_path`, `path_join`, `basename`, `dirname`, `now`, `sleep` |

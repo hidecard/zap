@@ -65,6 +65,8 @@ say range(2, 5)
 | Function | အသုံးပြုပုံ | Return | အလုပ်လုပ်ပုံ |
 |---|---|---|---|
 | `keys` | `keys(value)` | `list<text>` | Map ၏ text keys များကို ပြန်ပေးသည်။ |
+| `entries` | `entries(value)` | `list<map>` | `{key, value}` record များကို key အက္ခရာစဉ်အလိုက် ပြန်ပေးသည်။ |
+| `enumerate` | `enumerate(values)` | `list<map>` | List index ကို သုညမှ စတင်ပြီး `{index, value}` record များ ပြန်ပေးသည်။ |
 | `count` | `count(values, item)` | `number` | List ထဲတွင် `item` နှင့် တူသော value အရေအတွက်ကို ရေတွက်သည်။ |
 | `reverse` | `reverse(values)` | `list<T>` | မူလ list ကို မပြောင်းဘဲ ပြောင်းပြန်ထားသော copy ကို ပြန်ပေးသည်။ |
 | `contains` | `contains(values, item)` | `bool` | Zap value equality ဖြင့် list membership ကို စစ်သည်။ |
@@ -78,8 +80,12 @@ say reverse(values)
 
 let record = {"name": "Zap", "version": 1}
 say keys(record)
+say entries(record)
+say enumerate(["first", "second"])
 say is_empty({})
 ```
+
+`entries` နှင့် `enumerate` တို့သည် runtime iteration limit အတွင်း bounded ဖြစ်ပြီး input collection ကို မပြောင်းလဲပါ။ Map entry order သည် deterministic ဖြစ်သဖြင့် support လုပ်ထားသော platform များတွင် input တူပါက output တူညီပါသည်။
 
 ## Validation နှင့် Error များ
 

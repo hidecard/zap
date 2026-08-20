@@ -425,6 +425,51 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
                 _ => Err("keys expects a map".into()),
             }
         }
+        "entries" => {
+            expect(1)?;
+            let Value::Map(values) = &args[0] else {
+                return Err("entries expects a map".into());
+            };
+            if values.len() > MAX_LOOP_ITERATIONS {
+                return Err("entries output exceeds iteration limit".into());
+            }
+            let mut keys = values.keys().cloned().collect::<Vec<_>>();
+            keys.sort();
+            let entries = keys
+                .into_iter()
+                .map(|key| {
+                    let mut entry = HashMap::new();
+                    entry.insert("key".into(), Value::Text(key.clone()));
+                    entry.insert(
+                        "value".into(),
+                        values.get(&key).cloned().unwrap_or(Value::None),
+                    );
+                    Value::Map(entry)
+                })
+                .collect();
+            Ok(Some(Value::List(entries)))
+        }
+        "enumerate" => {
+            expect(1)?;
+            let Value::List(values) = &args[0] else {
+                return Err("enumerate expects a list".into());
+            };
+            if values.len() > MAX_LOOP_ITERATIONS {
+                return Err("enumerate output exceeds iteration limit".into());
+            }
+            Ok(Some(Value::List(
+                values
+                    .iter()
+                    .enumerate()
+                    .map(|(index, value)| {
+                        let mut entry = HashMap::new();
+                        entry.insert("index".into(), Value::Number(index as i64));
+                        entry.insert("value".into(), value.clone());
+                        Value::Map(entry)
+                    })
+                    .collect(),
+            )))
+        }
         "contains" => {
             expect(2)?;
             match (&args[0], &args[1]) {
@@ -3423,6 +3468,37 @@ mod tests {
             .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn collection_iteration_helpers_are_deterministic() {
+        let program = parse_program(
+            "let pairs = entries({b: 2, a: 1})\nlet indexed = enumerate([\"é\", \"zap\"])\n",
+        )
+        .expect("valid collection helper program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("collection helpers should execute");
+        let Value::List(pairs) = vars.get("pairs").expect("entries result") else {
+            panic!("entries should return a list");
+        };
+        assert_eq!(pairs.len(), 2);
+        assert!(matches!(
+            &pairs[0],
+            Value::Map(entry)
+                if entry.get("key") == Some(&Value::Text("a".into()))
+                    && entry.get("value") == Some(&Value::Number(1))
+        ));
+        let Value::List(indexed) = vars.get("indexed").expect("enumerate result") else {
+            panic!("enumerate should return a list");
+        };
+        assert!(matches!(
+            &indexed[1],
+            Value::Map(entry)
+                if entry.get("index") == Some(&Value::Number(1))
+                    && entry.get("value") == Some(&Value::Text("zap".into()))
+        ));
     }
 
     #[test]

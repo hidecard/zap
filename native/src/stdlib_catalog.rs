@@ -81,6 +81,14 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "collections",
     },
     PublicBuiltin {
+        name: "entries",
+        domain: "collections",
+    },
+    PublicBuiltin {
+        name: "enumerate",
+        domain: "collections",
+    },
+    PublicBuiltin {
         name: "count",
         domain: "collections",
     },

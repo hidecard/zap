@@ -65,6 +65,8 @@ say range(2, 5)
 | Function | Signature | Returns | Behavior |
 |---|---|---|---|
 | `keys` | `keys(value)` | `list<text>` | Returns the text keys of a map. |
+| `entries` | `entries(value)` | `list<map>` | Returns `{key, value}` records in lexicographic key order. |
+| `enumerate` | `enumerate(values)` | `list<map>` | Returns `{index, value}` records with zero-based list indexes. |
 | `count` | `count(values, item)` | `number` | Counts values equal to `item` in a list. |
 | `reverse` | `reverse(values)` | `list<T>` | Returns a reversed copy; the input list is not mutated. |
 | `contains` | `contains(values, item)` | `bool` | Checks list membership using Zap value equality. |
@@ -78,8 +80,12 @@ say reverse(values)
 
 let record = {"name": "Zap", "version": 1}
 say keys(record)
+say entries(record)
+say enumerate(["first", "second"])
 say is_empty({})
 ```
+
+`entries` and `enumerate` are bounded by the runtime iteration limit. They return new lists and do not mutate the input collection; map entry ordering is deterministic so the same input produces the same output across supported platforms.
 
 ## Validation and errors
 
