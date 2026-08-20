@@ -695,11 +695,16 @@ mod tests {
         let index_path = root.join("index.json");
         fs::write(&package_path, b"package").unwrap();
         let checksum = sha256_hex(b"package");
-        fs::write(
-            &index_path,
-            format!(r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://{}","checksum":"{}"}}]}}"#, package_path.display(), checksum),
-        )
-        .unwrap();
+        let source = format!("file://{}", package_path.display());
+        let index = serde_json::json!({
+            "packages": [{
+                "name": "demo",
+                "version": "1.0.0",
+                "source": source,
+                "checksum": checksum,
+            }]
+        });
+        fs::write(&index_path, serde_json::to_vec(&index).unwrap()).unwrap();
         let packages = read_index_source(&format!("file://{}", index_path.display())).unwrap();
         let cached =
             cache_package_source(&packages[0].source, &root.join("cache"), &packages[0]).unwrap();

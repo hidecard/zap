@@ -14,7 +14,7 @@ P2 delivered the native runtime, deterministic registry transport and resolution
 |---|---|---|---|
 | P3.1 | Module and workspace architecture | Explicit module/import syntax, deterministic search paths, duplicate/cycle diagnostics, and cross-platform workspace tests | Complete |
 | P3.2 | Structured error model | Native `raise`/`try`/`catch` propagation, stable diagnostics, catch binding restoration, re-raise support, and deterministic runtime behavior | Complete |
-| P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | In progress |
+| P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | Complete |
 | P3.4 | Async I/O integration | Deterministic runtime interfaces for timers, sockets, files, cancellation, backpressure, and resource budgets | Planned |
 | P3.5 | Type-system productivity | Generic functions and collections, richer inference, pattern matching, and improved exhaustiveness diagnostics | Planned |
 | P3.6 | Tooling and language server | Full formatter, workspace indexing, rename/references, import assistance, semantic tokens, and project-aware diagnostics | Planned |
@@ -28,7 +28,7 @@ Focused parser/evaluator coverage verifies expression-required raise syntax, unc
 
 ## First implementation target: P3.1
 
-The P3.3 implementation now includes bounded `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, and direct non-shell `process_run` builtins. The safe configuration slice includes `env_get`, `config_dir`, and `config_path`; it provides defaulted environment access, platform-aware configuration directories, and traversal-resistant single-file configuration paths. The local server slice adds `http_serve_once`, which binds to loopback, serves one request, and enforces request, response, and wait limits. All APIs are registered in the deterministic standard-library catalog and documented with their safety limits. The remaining P3.3 work is cross-platform network/process/configuration verification and final release hardening.
+The completed P3.3 implementation includes bounded `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, and direct non-shell `process_run` builtins. The safe configuration slice includes `env_get`, `config_dir`, and `config_path`; it provides defaulted environment access, platform-aware configuration directories, and traversal-resistant single-file configuration paths. The local server slice adds `http_serve_once`, which binds to loopback, serves one request, and enforces request, response, and wait limits. All APIs are registered in the deterministic standard-library catalog and documented with their safety limits. Cross-platform hardening now covers native path separators in evaluator expectations and JSON-escaped Windows file fixtures; the Linux suite passes 235 tests, while the GitHub Actions matrix remains the authoritative Windows and macOS verification gate.
 
 P3.1 is the first priority because modules and workspaces are prerequisites for reusable web, AI, and standard-library packages. The implementation will extend the existing parser-owned spans and project resolver rather than introducing a second module model.
 

@@ -3215,7 +3215,9 @@ mod tests {
         assert_eq!(
             vars.get("joined"),
             Some(&Value::Text(
-                std::path::Path::new("tmp/zap/main.zp")
+                std::path::Path::new("tmp")
+                    .join("zap")
+                    .join("main.zp")
                     .to_string_lossy()
                     .into()
             ))
