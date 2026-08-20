@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.0.0` |
+| Current release line | `v2.0.1` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -32,7 +32,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| P3 status | Roadmap defined; P3.1 module/workspace architecture is next |
+| P3 status | P3.1 module/workspace architecture complete; production work continues |
 
 ## Native Runtime Architecture
 
@@ -52,7 +52,7 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `async_runtime.rs` | Stable-Rust-compatible deterministic single-thread future executor foundation | Implemented foundation |
 | `lsp.rs` | Content-Length JSON-RPC server, diagnostics, hover, and context-aware completion | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; `zap async-check` verifies the internal async runtime foundation and `zap lsp` starts the editor protocol server over stdio. The current LSP surface supports initialize, shutdown, text synchronization, lint diagnostics with deterministic source-line ranges, parser-backed hover, context-aware completion, formatting, go-to-definition, and workspace symbols. P3 begins with module/workspace architecture and is tracked in the [English P3 roadmap](docs/P3_ROADMAP_EN.md) and [Burmese P3 roadmap](docs/P3_ROADMAP_MM.md).
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; `zap async-check` verifies the internal async runtime foundation and `zap lsp` starts the editor protocol server over stdio. The current LSP surface supports initialize, shutdown, text synchronization, lint diagnostics with deterministic source-line ranges, parser-backed hover, context-aware completion, formatting, go-to-definition, and workspace symbols. P3.1 module/workspace architecture is complete, including deterministic import resolution, cycle diagnostics, LSP indexing, and workspace integration coverage. The remaining P3 work is tracked in the [English P3 roadmap](docs/P3_ROADMAP_EN.md) and [Burmese P3 roadmap](docs/P3_ROADMAP_MM.md).
  See the [async/LSP English guide](docs/ASYNC_LSP_EN.md) or [Burmese guide](docs/ASYNC_LSP_MM.md), and the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum. The registry foundation validates local and HTTPS JSON indexes, selects exact or range-compatible versions deterministically, fetches and caches package artifacts, enforces SHA-256 integrity, supports offline reuse through `ZAP_OFFLINE=1`, and publishes checksum-verified archives over HTTPS; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?
@@ -63,7 +63,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.0.0 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.0.0), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.0.1 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.0.1), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -82,7 +82,7 @@ The exact archive filename may change with each release. Select the asset whose 
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.0.0-linux-x86_64.tar.gz
+tar -xzf zap-2.0.1-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -98,11 +98,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.0.0 release](https://github.com/hidecard/zap/releases/tag/v2.0.0).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.0.1 release](https://github.com/hidecard/zap/releases/tag/v2.0.1).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.0.0-macos-arm64.tar.gz
+tar -xzf zap-2.0.1-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -124,7 +124,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.0.0 release](https://github.com/hidecard/zap/releases/tag/v2.0.0).
+1. Download the Windows x86_64 `.zip` archive from the [v2.0.1 release](https://github.com/hidecard/zap/releases/tag/v2.0.1).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

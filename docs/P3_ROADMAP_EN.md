@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zap P3 begins after the verified `v2.0.0` P2 Ecosystem release. The objective is to move Zap from a stable language and ecosystem foundation toward a production-ready development platform for web, AI, automation, and systems-oriented projects while preserving deterministic behavior and Rust 1.75 compatibility.
+Zap P3 continues after the verified `v2.0.1` maintenance release, which includes the completed P3.1 module/workspace architecture slice. The objective is to move Zap from a stable language and ecosystem foundation toward a production-ready development platform for web, AI, automation, and systems-oriented projects while preserving deterministic behavior and Rust 1.75 compatibility.
 
 ## Baseline
 

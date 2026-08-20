@@ -1,5 +1,29 @@
 # Zap Changelog
 
+## [2.0.1] — 2026-08-20
+
+Zap v2.0.1 is a production-quality maintenance release following the P2 Ecosystem foundation. It completes the P3.1 module/workspace architecture slice and closes the remaining v2 audit findings.
+
+### Added and fixed
+
+- Explicit `module <name>` declarations and `import <path> as <alias>` syntax with deterministic manifest-backed resolution.
+- Recursive multi-module graph validation with traversal protection, missing-target diagnostics, repeated-import caching, and full circular-dependency chains.
+- LSP indexing for module declarations and import aliases across completion, hover, definitions, and workspace symbols.
+- Stable runtime `Error` and `KeyError` diagnostic categories with structured human-readable and JSON output.
+- Declaration-time annotation validation for supported scalar and generic forms.
+- Canonical CLI help and usage output for help, invalid arguments, and invalid paths.
+- JSON-RPC `-32601 Method not found` responses for unknown LSP requests while preserving notification behavior.
+- Collection literal parsing and AST/legacy parity for `join` and map-key `contains` behavior.
+- Cross-process integration and end-to-end tests for annotation errors, CLI help, and framed LSP requests.
+- Hardened cross-platform GitHub Actions release packaging for Linux x86_64, macOS ARM64, and Windows x86_64, including archive checksums and smoke tests.
+
+### Verification
+
+- Native unit and integration suite: **229 tests passed**.
+- Audit regression and end-to-end tests: **3 passed**.
+- Formatting, whitespace, release-build, CLI smoke, example execution, and package checksum checks passed.
+- GitHub Actions release workflow validates tag/Cargo version matching and publishes verified platform archives.
+
 ## [2.0.0] — 2026-08-20
 
 Zap P2 completes the Ecosystem milestone for the native runtime, deterministic package registry, async foundation, and editor integration.

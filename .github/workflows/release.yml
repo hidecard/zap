@@ -139,7 +139,7 @@ jobs:
           rm -rf package
           mkdir -p package/zap/bin package/zap/docs package/zap/examples
           cp "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          cp README.md package/zap/
+          cp README.md CHANGELOG.md CHANGELOG_EN.md CHANGELOG_MM.md install.sh package/zap/
           cp docs/USAGE.md docs/LANGUAGE_GUIDE.md docs/SYNTAX_GUIDE_EN.md package/zap/docs/
           cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
           printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
@@ -154,7 +154,7 @@ jobs:
           Remove-Item -Recurse -Force package -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force package/zap/bin, package/zap/docs, package/zap/examples | Out-Null
           Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          Copy-Item README.md package/zap/
+          Copy-Item README.md, CHANGELOG.md, CHANGELOG_EN.md, CHANGELOG_MM.md, install_windows.bat package/zap/
           Copy-Item docs/USAGE.md, docs/LANGUAGE_GUIDE.md, docs/SYNTAX_GUIDE_EN.md package/zap/docs/
           Copy-Item examples/default_parameters.zp, examples/hello.zp package/zap/examples/
           "Zap release artifact`nVersion: $($env:GITHUB_REF_NAME -replace '^v','')`nTarget: ${{ matrix.target }}" | Out-File -Encoding utf8 package/zap/RELEASE.txt

@@ -2,7 +2,7 @@
 
 ## ရည်ရွယ်ချက်
 
-P3 သည် စစ်ဆေးအတည်ပြုပြီးသော `v2.0.0` P2 Ecosystem release နောက်ပိုင်း စတင်သော အဆင့်ဖြစ်ပါသည်။ ရည်ရွယ်ချက်မှာ Zap ကို web, AI, automation နှင့် systems-oriented project များအတွက် production-ready development platform တစ်ခုအဖြစ် တိုးချဲ့ရန် ဖြစ်ပြီး deterministic behavior နှင့် Rust 1.75 compatibility ကို မပျက်စေရန် ဖြစ်ပါသည်။
+P3 သည် P3.1 module/workspace architecture ပါဝင်သော စစ်ဆေးအတည်ပြုပြီးသော `v2.0.1` maintenance release နောက်ပိုင်း ဆက်လက်လုပ်ဆောင်နေသော အဆင့်ဖြစ်ပါသည်။ ရည်ရွယ်ချက်မှာ Zap ကို web, AI, automation နှင့် systems-oriented project များအတွက် production-ready development platform တစ်ခုအဖြစ် တိုးချဲ့ရန် ဖြစ်ပြီး deterministic behavior နှင့် Rust 1.75 compatibility ကို မပျက်စေရန် ဖြစ်ပါသည်။
 
 ## လက်ရှိအခြေခံအခြေအနေ
 

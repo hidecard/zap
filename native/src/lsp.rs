@@ -81,7 +81,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "workspaceSymbolProvider": true,
                     "documentFormattingProvider": true
                 },
-                "serverInfo": {"name": "zap", "version": "2.0.0"}
+                "serverInfo": {"name": "zap", "version": env!("CARGO_PKG_VERSION")}
             }
         })),
         "shutdown" => Some(json!({

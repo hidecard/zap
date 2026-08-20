@@ -2,6 +2,17 @@
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
+## [2.0.1] - 2026-08-20
+### Bug fixes and release engineering
+Zap v2.0.1 သည် P3.1 module/workspace architecture၊ v2 bug-audit ပြင်ဆင်ချက်များနှင့် cross-platform release engineering ကို ပေါင်းစပ်ထားသော maintenance release ဖြစ်သည်။
+- Explicit module/import resolution၊ recursive cycle diagnostics နှင့် LSP module/import indexing။
+- Stable `Error`/`KeyError` diagnostics၊ annotation validation၊ canonical CLI help နှင့် JSON-RPC `-32601 Method not found` handling။
+- Async collection parsing၊ `join` နှင့် map-key `contains` parity ပြင်ဆင်ချက်များ။
+- Annotation၊ CLI နှင့် framed LSP end-to-end tests များ။
+- Linux၊ Windows နှင့် macOS release workflow တွင် smoke tests၊ versioned archives နှင့် SHA-256 verification။
+### Verification
+Native tests 229 ခု၊ end-to-end tests 3 ခု၊ formatting၊ whitespace၊ release build နှင့် package checksum checks များ အောင်မြင်သည်။
+
 ## [2.0.0] - 2026-08-20
 
 ### P2 Ecosystem Release

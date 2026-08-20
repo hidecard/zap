@@ -1,5 +1,29 @@
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
+## [2.0.1] — 2026-08-20
+
+Zap v2.0.1 သည် P2 Ecosystem foundation နောက်ပိုင်း production-quality maintenance release ဖြစ်ပြီး P3.1 module/workspace architecture အပိုင်းကို ပြီးစီးစေကာ v2 audit findings များကို ပြင်ဆင်ထားပါသည်။
+
+### ထည့်သွင်းပြီး ပြင်ဆင်ထားသော အချက်များ
+
+- `module <name>` declaration နှင့် `import <path> as <alias>` syntax များကို manifest-backed deterministic resolution ဖြင့် ထည့်သွင်းထားပါသည်။
+- Recursive multi-module graph validation၊ traversal protection၊ missing-target diagnostics၊ repeated-import caching နှင့် circular-dependency chain အပြည့်အစုံကို ထည့်သွင်းထားပါသည်။
+- Module declarations နှင့် import aliases များအတွက် LSP completion၊ hover၊ definition နှင့် workspace-symbol indexing ကို တိုးချဲ့ထားပါသည်။
+- Stable runtime `Error` နှင့် `KeyError` diagnostic categories နှင့် structured human-readable/JSON output ကို ထည့်သွင်းထားပါသည်။
+- Supported scalar နှင့် generic annotation များအတွက် declaration-time validation ကို ထည့်သွင်းထားပါသည်။
+- Help၊ invalid arguments နှင့် invalid paths များအတွက် canonical CLI help/usage output ကို တစ်မျိုးတည်းဖြစ်အောင် ပြင်ဆင်ထားပါသည်။
+- Unknown LSP request များအတွက် JSON-RPC `-32601 Method not found` response ကို ထည့်သွင်းပြီး notification behavior ကို မပြောင်းလဲဘဲ ထိန်းသိမ်းထားပါသည်။
+- Collection literal parsing နှင့် `join`/map-key `contains` AST နှင့် legacy behavior parity ကို ပြင်ဆင်ထားပါသည်။
+- Annotation၊ CLI help နှင့် framed LSP request များအတွက် cross-process integration/end-to-end tests များ ထည့်သွင်းထားပါသည်။
+- Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 အတွက် archive checksum နှင့် smoke tests ပါသော hardened GitHub Actions release packaging ကို ထည့်သွင်းထားပါသည်။
+
+### Verification
+
+- Native unit/integration suite: **tests 229 ခု pass** ဖြစ်ပါသည်။
+- Audit regression နှင့် end-to-end tests: **tests 3 ခု pass** ဖြစ်ပါသည်။
+- Formatting၊ whitespace၊ release build၊ CLI smoke၊ example execution နှင့် package checksum checks များ အောင်မြင်ပါသည်။
+- GitHub Actions release workflow သည် tag/Cargo version matching ကို စစ်ဆေးပြီး verified platform archives များကို publish လုပ်ပါသည်။
+
 ## [2.0.0] — 2026-08-20
 
 Zap P2 သည် native runtime၊ deterministic package registry၊ async foundation နှင့် editor integration များအတွက် Ecosystem milestone ကို ပြီးစီးစေပါသည်။
