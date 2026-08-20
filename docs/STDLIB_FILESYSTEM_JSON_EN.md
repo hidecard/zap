@@ -14,6 +14,12 @@ This guide documents the stabilized filesystem and JSON APIs available through Z
 | `path_join` | `path_join(first: text, second: text, ...)` | `text` | Joins path components using the host platform's path rules. |
 | `basename` | `basename(path: text)` | `text` | Returns the final path component. |
 | `dirname` | `dirname(path: text)` | `text` | Returns the parent path. |
+| `file_metadata` | `file_metadata(path: text)` | `map` | Returns `{kind, size, readonly}` from platform metadata. `kind` is one of `file`, `directory`, `symlink`, or `other`. |
+| `atomic_write` | `atomic_write(path: text, content: text)` | `none` | Writes through a same-directory temporary file, synchronizes it, and commits it with rename semantics. |
+
+`file_metadata` uses symlink metadata rather than following a link, so a symlink is reported as `kind = "symlink"`. The `size` field is the platform-reported byte length and `readonly` reflects the host permission flag. These fields are intentionally limited to portable metadata rather than exposing OS-specific mode bits.
+
+`atomic_write` is bounded by the same **8 MiB** content limit as other text writes. It leaves the destination unchanged if temporary creation, writing, synchronization, or commit fails, and removes its temporary file during error cleanup. The temporary file is created beside the destination so a successful rename remains on the same filesystem.
 
 All filesystem functions validate their argument count and types. Read and write operations return a runtime error when the path cannot be accessed or the content cannot be decoded or written. User source files and file reads are bounded by the runtime's configured safety limits; callers should process large data in smaller chunks.
 
@@ -23,6 +29,10 @@ write_lines(path, ["alice", "bob"])
 let users: list<text> = read_lines(path)
 if exists(path):
     say basename(path)
+
+let metadata = file_metadata(path)
+say metadata["kind"]
+atomic_write(path, "updated atomically")
 ```
 
 ## JSON APIs

@@ -1,11 +1,13 @@
 use std::cell::{Cell, RefCell};
 use std::{
     collections::HashMap,
+    fs::{self, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, TcpListener, ToSocketAddrs},
     path::Path,
     process::{Command, Stdio},
     rc::Rc,
+    sync::atomic::{AtomicU64, Ordering},
     thread,
     time::{Duration, Instant},
 };
@@ -15,7 +17,7 @@ use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
     parse_signature, read_limited_text, resolve_module, write_limited_text, Function, Param, Value,
-    MODULE_CACHE, MODULE_LOADING,
+    MAX_FILE_BYTES, MODULE_CACHE, MODULE_LOADING,
 };
 
 const MAX_EXECUTION_DEPTH: usize = 256;
@@ -550,14 +552,111 @@ fn require_capability_for_mode(capability: &str, restricted: bool) -> Result<(),
     Ok(())
 }
 
+static ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+fn file_metadata(path: &Path) -> Result<Value, String> {
+    let metadata =
+        fs::symlink_metadata(path).map_err(|error| format!("file_metadata failed: {error}"))?;
+    let file_type = metadata.file_type();
+    let kind = if file_type.is_symlink() {
+        "symlink"
+    } else if file_type.is_file() {
+        "file"
+    } else if file_type.is_dir() {
+        "directory"
+    } else {
+        "other"
+    };
+    Ok(map_value([
+        ("kind".into(), Value::Text(kind.into())),
+        ("size".into(), Value::Number(metadata.len() as i64)),
+        (
+            "readonly".into(),
+            Value::Bool(metadata.permissions().readonly()),
+        ),
+    ]))
+}
+
+fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
+    if content.len() as u64 > MAX_FILE_BYTES {
+        return Err(format!(
+            "atomic_write content exceeds the {MAX_FILE_BYTES} byte limit"
+        ));
+    }
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| "atomic_write expects a valid file path".to_string())?;
+    let counter = ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let temporary = parent.join(format!(
+        ".{file_name}.zap-tmp-{}-{counter}",
+        std::process::id()
+    ));
+    let result = (|| {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|error| format!("atomic_write temporary file failed: {error}"))?;
+        file.write_all(content.as_bytes())
+            .map_err(|error| format!("atomic_write failed: {error}"))?;
+        file.sync_all()
+            .map_err(|error| format!("atomic_write sync failed: {error}"))?;
+        drop(file);
+        #[cfg(windows)]
+        if path.exists() {
+            fs::remove_file(path)
+                .map_err(|error| format!("atomic_write replacement failed: {error}"))?;
+        }
+        fs::rename(&temporary, path)
+            .map_err(|error| format!("atomic_write commit failed: {error}"))?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
+}
+
 fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
     if matches!(
         name,
-        "read_text" | "read_lines" | "write_text" | "write_lines"
+        "read_text"
+            | "read_lines"
+            | "write_text"
+            | "write_lines"
+            | "file_metadata"
+            | "atomic_write"
     ) {
         require_capability("filesystem access")?;
     }
     match name {
+        "file_metadata" => {
+            if args.len() != 1 {
+                return Err(format!(
+                    "file_metadata expects 1 argument, got {}",
+                    args.len()
+                ));
+            }
+            let Value::Text(path) = &args[0] else {
+                return Err("file_metadata expects a text path".into());
+            };
+            Ok(Some(file_metadata(Path::new(path))?))
+        }
+        "atomic_write" => {
+            if args.len() != 2 {
+                return Err(format!(
+                    "atomic_write expects 2 arguments, got {}",
+                    args.len()
+                ));
+            }
+            let (Value::Text(path), Value::Text(content)) = (&args[0], &args[1]) else {
+                return Err("atomic_write expects text path and content".into());
+            };
+            atomic_write(Path::new(path), content)?;
+            Ok(Some(Value::None))
+        }
         "read_text" => {
             if args.len() != 1 {
                 return Err(format!("read_text expects 1 argument, got {}", args.len()));
@@ -3196,7 +3295,7 @@ mod tests {
     };
     use crate::ast::parse_program;
     use crate::{Function, Value};
-    use std::{collections::HashMap, path::Path, rc::Rc};
+    use std::{collections::HashMap, fs, path::Path, rc::Rc};
 
     #[test]
     fn propagates_uncaught_raise_as_runtime_flow() {
@@ -3278,6 +3377,35 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn filesystem_metadata_and_atomic_write_are_deterministic() {
+        let path = std::env::temp_dir().join(format!(
+            "zap-atomic-write-{}-{}.txt",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let _ = fs::remove_file(&path);
+        super::atomic_write(&path, "hello Zap").expect("atomic write should create a file");
+        let Value::Map(metadata) =
+            super::file_metadata(&path).expect("metadata should be readable")
+        else {
+            panic!("file_metadata must return a map");
+        };
+        assert_eq!(metadata.get("kind"), Some(&Value::Text("file".into())));
+        assert_eq!(metadata.get("size"), Some(&Value::Number(9)));
+        assert_eq!(metadata.get("readonly"), Some(&Value::Bool(false)));
+
+        super::atomic_write(&path, "updated").expect("atomic write should replace a file");
+        assert_eq!(fs::read_to_string(&path).expect("updated file"), "updated");
+        let parent = path.parent().expect("temporary directory parent");
+        let prefix = format!(".{}.zap-tmp-", path.file_name().unwrap().to_string_lossy());
+        assert!(!fs::read_dir(parent)
+            .expect("temporary directory listing")
+            .flatten()
+            .any(|entry| entry.file_name().to_string_lossy().starts_with(&prefix)));
+        let _ = fs::remove_file(path);
     }
 
     #[test]

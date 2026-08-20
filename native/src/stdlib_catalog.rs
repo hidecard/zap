@@ -105,6 +105,14 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "filesystem",
     },
     PublicBuiltin {
+        name: "file_metadata",
+        domain: "filesystem",
+    },
+    PublicBuiltin {
+        name: "atomic_write",
+        domain: "filesystem",
+    },
+    PublicBuiltin {
         name: "json",
         domain: "json",
     },

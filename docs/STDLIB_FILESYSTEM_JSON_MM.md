@@ -14,6 +14,12 @@
 | `path_join` | `path_join(first: text, second: text, ...)` | `text` | Host platform ၏ path rules ဖြင့် path အပိုင်းများကို ပေါင်းသည်။ |
 | `basename` | `basename(path: text)` | `text` | Path ၏ နောက်ဆုံးအပိုင်းကို ပြန်ပေးသည်။ |
 | `dirname` | `dirname(path: text)` | `text` | Parent path ကို ပြန်ပေးသည်။ |
+| `file_metadata` | `file_metadata(path: text)` | `map` | Platform metadata မှ `{kind, size, readonly}` ကို ပြန်ပေးသည်။ `kind` သည် `file`, `directory`, `symlink`, သို့မဟုတ် `other` ဖြစ်နိုင်သည်။ |
+| `atomic_write` | `atomic_write(path: text, content: text)` | `none` | File တည်နေရာတူ temporary file မှတစ်ဆင့် ရေးသား၊ sync ပြုလုပ်ပြီး rename ဖြင့် commit လုပ်သည်။ |
+
+`file_metadata` သည် symlink ကို follow မလုပ်ဘဲ symlink metadata ကို ဖတ်သောကြောင့် link ဖြစ်ပါက `kind = "symlink"` ဟု ပြပါသည်။ `size` သည် platform က ပြန်ပေးသော byte length ဖြစ်ပြီး `readonly` သည် host permission flag ကို ပြပါသည်။ OS-specific mode bits များ မထည့်ဘဲ platform အားလုံးတွင် အသုံးပြုနိုင်သော metadata များကိုသာ ထားရှိထားပါသည်။
+
+`atomic_write` သည် အခြား text write များကဲ့သို့ **8 MiB** content limit ရှိပါသည်။ Temporary file ဖန်တီးခြင်း၊ ရေးသားခြင်း၊ sync သို့မဟုတ် commit တစ်ခုခု မအောင်မြင်ပါက destination ကို မပြောင်းလဲဘဲ error cleanup အတွင်း temporary file ကို ဖယ်ရှားပါသည်။ Temporary file ကို destination နှင့် directory တူတွင် ဖန်တီးသောကြောင့် successful rename သည် filesystem တစ်ခုတည်းအတွင်း ဖြစ်ပါသည်။
 
 Filesystem function များအားလုံးသည် argument count နှင့် type များကို စစ်ဆေးပါသည်။ File ဖတ်/ရေးရာတွင် path မရနိုင်ခြင်း၊ content decode မရခြင်း သို့မဟုတ် write မအောင်မြင်ခြင်း ဖြစ်ပါက runtime error ပြန်ပေးပါသည်။ Source file နှင့် file read များတွင် runtime safety limit ရှိသောကြောင့် data အလွန်ကြီးလျှင် အပိုင်းငယ်များအဖြစ် စီမံသင့်ပါသည်။
 
@@ -23,6 +29,10 @@ write_lines(path, ["alice", "bob"])
 let users: list<text> = read_lines(path)
 if exists(path):
     say basename(path)
+
+let metadata = file_metadata(path)
+say metadata["kind"]
+atomic_write(path, "updated atomically")
 ```
 
 ## JSON APIs

@@ -11,6 +11,11 @@
 - Added `zap registry gc [--dry-run] [dir]`, which derives keep entries from the canonical project lockfile, preserves referenced artifacts, reports stale and temporary candidates without mutation in dry-run mode, and deletes candidates in deterministic lexical order.
 - Added transport and registry-service failure coverage: insecure HTTP rejection, malformed remote-index diagnostics, and deterministic HTTP-status errors for non-2xx fetch and publish responses.
 
+### Standard library
+
+- Added `file_metadata(path)`, returning portable `kind`, byte `size`, and `readonly` fields from symlink-safe metadata.
+- Added bounded `atomic_write(path, content)`, which writes and synchronizes a same-directory temporary file before committing it with rename semantics and cleans up failed temporary writes.
+
 
 ## [2.0.4] — 2026-08-20
 

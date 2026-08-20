@@ -11,6 +11,11 @@
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
 
+### Standard library
+
+- Symlink-safe metadata မှ portable `kind`၊ byte `size` နှင့် `readonly` fields များကို ပြန်ပေးသော `file_metadata(path)` ကို ထည့်သွင်းထားပါသည်။
+- Bounded `atomic_write(path, content)` ကို ထည့်သွင်းထားပြီး destination နှင့် directory တူ temporary file ကို ရေးသား၊ sync ပြုလုပ်ပြီး rename ဖြင့် commit လုပ်ကာ failure ဖြစ်ပါက temporary file ကို cleanup လုပ်ပါသည်။
+
 
 ## [2.0.4] — 2026-08-20
 
