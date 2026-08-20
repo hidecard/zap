@@ -165,6 +165,18 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "time",
     },
     PublicBuiltin {
+        name: "spawn",
+        domain: "async",
+    },
+    PublicBuiltin {
+        name: "task_join",
+        domain: "async",
+    },
+    PublicBuiltin {
+        name: "task_is_ready",
+        domain: "async",
+    },
+    PublicBuiltin {
         name: "log_record",
         domain: "logging",
     },

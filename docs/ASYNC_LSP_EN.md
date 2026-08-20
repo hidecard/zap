@@ -20,6 +20,9 @@ The native runtime exposes three deterministic executor operations:
 | `yield_now()` | Suspend once and resume on the next deterministic poll. |
 | `spawn_limited(future)` | Enforce the configured maximum task count. |
 | `run_with_budget(n)` | Poll at most `n` times and return a deterministic `RunReport`. |
+| `spawn(future)` | Language-level facade that returns the completed `Future` value for an async expression. |
+| `task_join(value)` | Validate and unwrap a language-level `Future` value. |
+| `task_is_ready(value)` | Check whether a language-level task value is ready without consuming it. |
 
 The executor avoids worker threads and external runtime dependencies. `RuntimeLimits` bounds task count and polls per run, and `RunReport` exposes the number of polls and remaining tasks. This provides a stable base for future I/O integrations without changing existing synchronous behavior. Cancellation is cooperative: a cancelled task completes without polling its inner future.
 
@@ -48,7 +51,17 @@ let value = await answer()
 say value + 1
 ```
 
-The current deterministic model has no background threads: a `Future` is a stable runtime value containing the completed result, and `await` unwraps it. Awaiting a non-Future value is rejected with a runtime error instead of silently changing the value.
+The current deterministic model has no background threads: a `Future` is a stable runtime value containing the completed result, and `await` unwraps it. The language-level task facade is intentionally eager in this slice: `spawn(async_call())` creates a task-shaped `Future` from the already evaluated async result, while `task_join` unwraps it and `task_is_ready` checks it without consuming it. Awaiting or joining a non-Future value is rejected with a runtime error instead of silently changing the value.
+
+```zap
+async fn answer() -> number:
+    return 42
+
+let task = spawn(answer())
+let ready = task_is_ready(task)
+let value = task_join(task)
+say value
+```
 
 ## LSP Server
 

@@ -299,6 +299,27 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
     };
     match name {
+        "spawn" => {
+            expect(1)?;
+            match &args[0] {
+                Value::Future(value) => Ok(Some(Value::Future(value.clone()))),
+                _ => Err("spawn expects a future value".into()),
+            }
+        }
+        "task_join" => {
+            expect(1)?;
+            match &args[0] {
+                Value::Future(value) => Ok(Some((**value).clone())),
+                _ => Err("task_join expects a future value".into()),
+            }
+        }
+        "task_is_ready" => {
+            expect(1)?;
+            match &args[0] {
+                Value::Future(_) => Ok(Some(Value::Bool(true))),
+                _ => Err("task_is_ready expects a future value".into()),
+            }
+        }
         "log_record" | "log_json" => {
             expect(3)?;
             let Value::Text(level) = &args[0] else {
@@ -3667,7 +3688,23 @@ mod tests {
         assert_eq!(vars.get("result"), Some(&Value::Number(7)));
         assert!(funcs.get("load").is_some_and(|function| function.is_async));
     }
+    #[test]
+    fn language_level_task_apis_spawn_join_and_report_readiness() {
+        let program = parse_program(
+            "async fn load() -> number:\n    return 7\nlet handle = spawn(load())\nlet ready: bool = task_is_ready(handle)\nlet result: number = task_join(handle)\n",
+        )
+        .expect("valid language-level task program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("task APIs should execute");
+        assert_eq!(vars.get("ready"), Some(&Value::Bool(true)));
+        assert_eq!(vars.get("result"), Some(&Value::Number(7)));
 
+        let error = direct_builtin("spawn", vec![Value::Number(1)])
+            .expect_err("spawn should reject non-future values");
+        assert_eq!(error, "spawn expects a future value");
+    }
     #[test]
     fn evaluates_pure_builtins_from_native_ast() {
         let program = parse_program(

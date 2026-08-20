@@ -197,6 +197,18 @@ impl<'a> ExprParser<'a> {
                 direct_builtin(n.as_str(), vec![level, message, fields])?
                     .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
+            Token::Name(n)
+                if (n == "spawn" || n == "task_join" || n == "task_is_ready")
+                    && *self.peek() == Token::LParen =>
+            {
+                self.take();
+                let value = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err(format!("expected ) after {n}"));
+                }
+                direct_builtin(n.as_str(), vec![value])?
+                    .ok_or_else(|| format!("unknown standard function: {n}"))?
+            }
             Token::Name(n) if n == "sleep" && *self.peek() == Token::LParen => {
                 self.take();
                 let v = self.parse(0)?;

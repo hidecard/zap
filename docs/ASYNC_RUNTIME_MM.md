@@ -19,10 +19,15 @@ Zap ၏ async runtime တွင် deterministic ဖြစ်သော single-th
 | `AsyncRuntime::spawn_joinable_result(future)` | `Future<Output = Result<T, E>>` ကို submit လုပ်ပြီး task ၏ typed failure ကို ထိန်းသိမ်းထားသော `TaskJoinHandle<T, E>` ပြန်ပေးသည်။ |
 | `TaskJoinHandle<T, E>` ကို future အဖြစ်အသုံးပြုခြင်း | `Ok(T)`၊ `Err(TaskJoinError::Failed(E))` သို့မဟုတ် `Err(TaskJoinError::AlreadyJoined)` အဖြစ် resolve လုပ်သည်။ |
 | `AsyncRuntime::spawn_joinable_result_cancellable(future)` | `(TaskJoinHandle<T, E>, CancellationToken)` ပြန်ပေးသည်။ Cancellation ကို inner future မ poll မီ စစ်ဆေးသဖြင့် task result ထက် cancellation ကို ဦးစားပေးသည်။ |
+| `spawn(future)` | Language-level facade အဖြစ် `Future` ကို လက်ခံပြီး task future တစ်ခု ပြန်ပေးသည်။ |
+| `task_is_ready(task)` | လက်ရှိ eager language-level future representation အတွက် `true` ပြန်ပေးပြီး future မဟုတ်သော value များကို ငြင်းပယ်သည်။ |
+| `task_join(task)` | Language-level task future ကို consume လုပ်ပြီး ပြီးမြောက်ထားသော value ကို ပြန်ပေးသည်။ Future မဟုတ်သော value များကို ငြင်းပယ်သည်။ |
 
 Runtime သည် deterministic အတိုင်း ဆက်လက်အလုပ်လုပ်သည်။ Task များကို submit လုပ်သည့်အစဉ်အတိုင်း သိမ်းဆည်းပြီး လက်ရှိ budget သတ်မှတ်ထားသော executor ဖြင့် poll လုပ်သည်။ `spawn_joinable` သည် task လက်ခံမည့်အချိန် error များကို တိတ်တဆိတ်ဖယ်ရှားခြင်းမပြုဘဲ caller ထံ ပြန်ပေးသည်။ Implementation သည် Rust 1.75 နှင့် ကိုက်ညီသော standard-library primitives များကို အသုံးပြုပြီး worker thread များ မဖန်တီးပါ။
 
-## ဥပမာ
+## ဥပမာများ
+
+Runtime-level join ကို ဆက်လက်အသုံးပြုနိုင်သည်။
 
 ```rust
 let mut runtime = AsyncRuntime::new();
@@ -31,7 +36,18 @@ runtime.run_until_idle();
 let value = block_on(handle).unwrap();
 ```
 
-Join မလုပ်မီ runtime ကို drive လုပ်ထားရမည်။ Task က pending ဖြစ်နေသေးလျှင် handle သည် pending အဖြစ် ဆက်ရှိပြီး သတ်မှတ်ထားသော poll budget ကို ဆက်လက်လိုက်နာသည်။
+ပထမဆုံး language-level facade ကို `.zp` program များတွင် အသုံးပြုနိုင်သည်။
+
+```zap
+async fn load() -> number:
+    return 42
+
+let task = spawn(load())
+let ready: bool = task_is_ready(task)
+let value: number = task_join(task)
+```
+
+လက်ရှိ evaluator သည် async function body များကို eager အဖြစ်တွက်ချက်ပြီး ရလဒ်ကို ရှိပြီးသား `Future` value ထဲတွင် သိမ်းသည်။ ထို့ကြောင့် `spawn` သည် language-level task contract ကို သတ်မှတ်ပေးပြီး `task_join` နှင့် `task_is_ready` သည် တည်ငြိမ်သော API surface ကို ပေးသည်။ Executor-backed scheduling ကို နောက်ထပ် integration slice အဖြစ် ဆက်လက်လုပ်ဆောင်မည်။ Runtime-level handle များကို join မလုပ်မီ drive လုပ်ထားရမည်။ Runtime task သည် pending ဖြစ်နေသေးပါက handle သည် pending အဖြစ် ဆက်ရှိပြီး poll budget ကို လိုက်နာသည်။
 
 ## Structured cancellation
 
@@ -47,6 +63,6 @@ Join မလုပ်မီ runtime ကို drive လုပ်ထားရမ�
 
 ## လုံခြုံရေးနှင့် ကျန်ရှိသော scope
 
-`RuntimeLimits::max_tasks` နှင့် `RuntimeLimits::max_polls_per_run` မှတစ်ဆင့် runtime limits များကို တိတိကျကျ သတ်မှတ်နိုင်သည်။ Structured cancellation၊ poll-based timeout propagation နှင့် typed task error propagation များသည် ဤ slice တွင် ပါဝင်ပြီးဖြစ်သည်။ Language-level task builtins နှင့် formatter/LSP/VS Code synchronization များသည် v2.1-D ၏ နောက်ပိုင်းအဆင့်များအဖြစ် ကျန်ရှိနေသည်။
+`RuntimeLimits::max_tasks` နှင့် `RuntimeLimits::max_polls_per_run` မှတစ်ဆင့် runtime limits များကို တိတိကျကျ သတ်မှတ်နိုင်သည်။ Structured cancellation၊ poll-based timeout propagation၊ typed task error propagation နှင့် ပထမဆုံး language-level task facade (`spawn`၊ `task_join` နှင့် `task_is_ready`) များသည် ဤ slice တွင် ပါဝင်ပြီးဖြစ်သည်။ Executor-backed language-level scheduling၊ language-level cancellation/timeout controls နှင့် formatter/LSP/VS Code synchronization များသည် v2.1-D ၏ နောက်ပိုင်းအဆင့်များအဖြစ် ကျန်ရှိနေသည်။
 
 Regression coverage သည် output join အောင်မြင်မှု၊ deterministic readiness၊ task-limit နှင့် typed task failure propagation၊ inner future ကို မ poll မလုပ်မီ cancellation precedence၊ repeated join နှင့် timeout/completion လမ်းကြောင်းနှစ်ခုလုံးကို စစ်ဆေးထားသည်။ Cross-platform behavior သည် standard-library executor semantics အတွင်းသာ လောလောဆယ် အကျုံးဝင်ပြီး release verification matrix ဖြင့် ဆက်လက်စစ်ဆေးရန် လိုအပ်သည်။

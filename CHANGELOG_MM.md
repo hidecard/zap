@@ -19,6 +19,7 @@
 - `AsyncRuntime::spawn_joinable_cancellable(future)` ကို ထည့်သွင်းထားပြီး `CancellationToken` ပြန်ပေးကာ cancellation ဖြစ်သော join များကို inner future ကို ဆက်မ poll လုပ်ဘဲ `JoinError::Cancelled` ဖြင့် resolve လုပ်ပါသည်။
 - `timeout_ticks(future, ticks)` ကို ထည့်သွင်းထားပြီး wall-clock time မဟုတ်ဘဲ executor poll အရေအတွက်အပေါ် အခြေခံ၍ `TimeoutError` ကို propagate လုပ်ပါသည်။ Cancellation၊ timeout failure နှင့် အချိန်မကုန်မီ completion လမ်းကြောင်းများအတွက် regression tests ထည့်သွင်းထားပါသည်။
 - `spawn_joinable_result(future)` နှင့် `spawn_joinable_result_cancellable(future)` တို့ကို ထည့်သွင်းပြီး `TaskJoinError::Failed(E)` ဖြင့် typed task failure များကို ထိန်းသိမ်း propagate လုပ်ပါသည်။ Inner future ကို မ poll မီ cancellation ကို စစ်ဆေးပြီး repeated join များကို `AlreadyJoined` ဖြင့် ပြတ်သားစွာ ပြန်ပေးပါသည်။ Typed failure၊ cancellation precedence နှင့် repeated join များအတွက် regression coverage နှင့် bilingual async runtime guide update များ ထည့်သွင်းထားပါသည်။
+- Evaluator နှင့် legacy expression path နှစ်ခုလုံးတွင် language-level task facade builtins `spawn`၊ `task_join` နှင့် `task_is_ready` များကို ထည့်သွင်းထားပါသည်။ Eager Future boundary၊ strict arity/type diagnostic၊ async spawn/readiness/join behavior နှင့် invalid-input regression များကို bilingual async runtime နှင့် async/LSP guides များတွင် မှတ်တမ်းတင်ထားပါသည်။
 
 ### Standard library
 

@@ -20,6 +20,9 @@ Native runtime တွင် deterministic executor operation သုံးမျ�
 | `yield_now()` | တစ်ကြိမ် suspend လုပ်ပြီး နောက် poll တွင် ပြန်လည်လုပ်ဆောင်သည်။ |
 | `spawn_limited(future)` | သတ်မှတ်ထားသော maximum task count ကို ကျော်လွန်မသွားအောင် ထိန်းသည်။ |
 | `run_with_budget(n)` | Poll အကြိမ်ရေ `n` အထိသာ လုပ်ပြီး deterministic `RunReport` ပြန်ပေးသည်။ |
+| `spawn(future)` | Language-level facade အဖြစ် async expression ၏ completed `Future` value ကို ပြန်ပေးသည်။ |
+| `task_join(value)` | Language-level `Future` value ကို စစ်ဆေးပြီး unwrap လုပ်သည်။ |
+| `task_is_ready(value)` | Language-level task value ကို မစားသုံးဘဲ ready ဖြစ်/မဖြစ် စစ်ဆေးသည်။ |
 
 Executor သည် worker thread နှင့် external runtime dependency များကို မသုံးပါ။ `RuntimeLimits` သည် task count နှင့် poll count ကို ကန့်သတ်ပြီး `RunReport` သည် poll အရေအတွက်နှင့် ကျန် task အရေအတွက်ကို ဖော်ပြသည်။ ထို့ကြောင့် လက်ရှိ synchronous behavior ကို မပြောင်းလဲဘဲ နောက်ပိုင်း I/O integration များအတွက် တည်ငြိမ်သောအခြေခံ ရရှိပါသည်။ Cancellation သည် cooperative ဖြစ်ပြီး cancelled task သည် ၎င်း၏ inner future ကို ဆက်လက်မ poll ဘဲ ပြီးဆုံးပါသည်။
 
@@ -48,7 +51,17 @@ let value = await answer()
 say value + 1
 ```
 
-လက်ရှိ deterministic model တွင် background thread မရှိပါ။ `Future` သည် completed result ကို ထိန်းသိမ်းထားသော stable runtime value ဖြစ်ပြီး `await` သည် ၎င်းကို unwrap လုပ်ပါသည်။ `Future` မဟုတ်သော value ကို await လုပ်ပါက value ကို တိတ်တဆိတ် ပြောင်းလဲမည့်အစား runtime error ပြန်ပေးပါသည်။
+လက်ရှိ deterministic model တွင် background thread မရှိပါ။ `Future` သည် completed result ကို ထိန်းသိမ်းထားသော stable runtime value ဖြစ်ပြီး `await` သည် ၎င်းကို unwrap လုပ်ပါသည်။ ဤ slice တွင် language-level task facade သည် eager ဖြစ်ပါသည်။ `spawn(async_call())` သည် အရင် evaluation လုပ်ပြီးသား async result မှ task ပုံစံ `Future` ကို ဖန်တီးပေးသည်။ `task_join` သည် ၎င်းကို unwrap လုပ်ပြီး `task_is_ready` သည် value ကို မစားသုံးဘဲ ready အခြေအနေကို စစ်ဆေးသည်။ `Future` မဟုတ်သော value ကို await သို့မဟုတ် join လုပ်ပါက value ကို တိတ်တဆိတ် ပြောင်းလဲမည့်အစား runtime error ပြန်ပေးပါသည်။
+
+```zap
+async fn answer() -> number:
+    return 42
+
+let task = spawn(answer())
+let ready = task_is_ready(task)
+let value = task_join(task)
+say value
+```
 
 ## LSP Server
 

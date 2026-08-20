@@ -17,6 +17,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - `AsyncRuntime::spawn_joinable_cancellable(future)` နှင့် `CancellationToken` ကို ထည့်သွင်းပြီး cancellation ဖြစ်သော join များကို inner future ကို ဆက်မ poll လုပ်ဘဲ `JoinError::Cancelled` ဖြင့် resolve လုပ်ပါသည်။
 - `timeout_ticks(future, ticks)` သည် wall-clock time မဟုတ်ဘဲ executor poll အရေအတွက်အပေါ် အခြေခံ၍ `TimeoutError` ကို deterministic အတိုင်း propagate လုပ်ပြီး cancellation၊ timeout failure နှင့် completion လမ်းကြောင်းများအတွက် regression tests ထည့်သွင်းထားပါသည်။
 - `spawn_joinable_result(future)` နှင့် `spawn_joinable_result_cancellable(future)` တို့ကို ထည့်သွင်းပြီး `TaskJoinError::Failed(E)` ဖြင့် typed task failure များကို propagate လုပ်ပါသည်။ Cancellation ကို inner future မ poll မီ စစ်ဆေးပြီး repeated join များကို `AlreadyJoined` ဖြင့် ပြတ်သားစွာ ပြန်ပေးပါသည်။ Typed failure၊ cancellation precedence နှင့် repeated join များအတွက် regression tests နှင့် bilingual async guide update များ ထည့်သွင်းထားပါသည်။
+- Evaluator နှင့် legacy expression path နှစ်ခုလုံးတွင် language-level task facade builtins `spawn`၊ `task_join` နှင့် `task_is_ready` များကို ထည့်သွင်းထားပါသည်။ Eager Future semantics၊ strict arity/type diagnostics၊ async spawn/readiness/join behavior နှင့် invalid-input regression coverage များကို async နှင့် async/LSP guides များတွင် မှတ်တမ်းတင်ထားပါသည်။
 
 ### Standard library
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။
