@@ -66,8 +66,10 @@ pub fn run_cli(args: &[String]) {
   zap update [dir]     Regenerate zap.lock from zap.toml
   zap lsp               Run the LSP server over stdio
   zap async-check       Validate the async runtime foundation
-  zap registry check <index.json> Validate a registry index
+  zap registry check <index.json> Validate a local registry index
+  zap registry fetch <index-url> Validate an HTTP(S) registry index
   zap registry cache <index.json> <source> <name> <ver> [cache] Cache a verified package
+  zap registry publish <url> <archive> <name> <ver> <sha256> Publish a verified package archive
   zap build [dir]      Validate and prepare a Zap project
 n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
         return;
@@ -225,6 +227,16 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
         }
         return;
     }
+    if args.len() == 4 && args[1] == "registry" && args[2] == "fetch" {
+        match crate::registry::read_index_source(&args[3]) {
+            Ok(packages) => println!("valid remote registry index: {} packages", packages.len()),
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
     if (args.len() == 7 || args.len() == 8) && args[1] == "registry" && args[2] == "cache" {
         let index = match crate::registry::read_index(Path::new(&args[3])) {
             Ok(index) => index,
@@ -244,10 +256,32 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
             .get(7)
             .map(PathBuf::from)
             .unwrap_or_else(|| PathBuf::from(".zap/cache"));
-        match crate::registry::cache_package(Path::new(&args[4]), &cache, &package) {
+        match crate::registry::cache_package_source(&args[4], &cache, &package) {
             Ok(path) => println!("cached package: {}", path.display()),
             Err(error) => {
                 eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 8 && args[1] == "registry" && args[2] == "publish" {
+        let package = crate::registry::RegistryPackage {
+            name: args[5].clone(),
+            version: args[6].clone(),
+            source: args[4].clone(),
+            checksum: args[7].to_ascii_lowercase(),
+        };
+        let token = std::env::var("ZAP_REGISTRY_TOKEN").ok();
+        match crate::registry::publish_package(
+            &args[3],
+            Path::new(&args[4]),
+            &package,
+            token.as_deref(),
+        ) {
+            Ok(()) => println!("published package: {} {}", package.name, package.version),
+            Err(error) => {
+                eprintln!("Zap registry publish error: {error}");
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
         }

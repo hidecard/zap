@@ -91,7 +91,15 @@ Zap တွင် deterministic JSON registry index နှင့် content-addre
 
 Index ကို `zap registry check path/to/index.json` ဖြင့် validate လုပ်နိုင်သည်။ Package ကို `name` နှင့် `version` တိတိကျကျကိုက်ညီမှသာ ရွေးချယ်ပြီး missing သို့မဟုတ် duplicate entry များကို reject လုပ်သည်။ `file://` source များကို index file ၏ directory အပေါ်မူတည်၍ resolve လုပ်ကာ cache ထဲသို့ copy ပြီး SHA-256 checksum ကိုစစ်ဆေးသည်။ Default cache layout သည် `.zap/cache/<name>/<version>/<checksum>.pkg` ဖြစ်ပြီး `ZAP_CACHE_DIR` ဖြင့် အခြား cache root သတ်မှတ်နိုင်သည်။
 
-Project dependency များအတွက် `ZAP_REGISTRY_INDEX` ကို index path ဖြင့် သတ်မှတ်ပါ။ `zap install` သည် cache entry ရှိ/မရှိနှင့် checksum မှန်/မမှန် စစ်ဆေးပြီး file-backed package မရှိသေးပါက cache ထဲသို့ ထည့်ပေးသည်။ `zap update` သည် registry validation ပြီးမှ canonical lockfile ကို ပြန်ရေးသည်။ `ZAP_OFFLINE=1` သတ်မှတ်ထားပါက download အသစ် မပြုလုပ်ဘဲ cache ထဲတွင်ရှိပြီး checksum မှန်သော package များဖြင့်သာ အောင်မြင်နိုင်သည်။ HTTP registry transport နှင့် publishing သည် နောက်ပိုင်း milestone ဖြစ်သည်။
+Project dependency များအတွက် `ZAP_REGISTRY_INDEX` ကို local path၊ `file://` URL သို့မဟုတ် HTTPS URL ဖြင့် သတ်မှတ်နိုင်သည်။ Remote index ကို project resolution မလုပ်မီ `zap registry fetch <index-url>` ဖြင့် validate လုပ်နိုင်သည်။ `zap install` သည် cache entry ရှိ/မရှိနှင့် checksum မှန်/မမှန် စစ်ဆေးပြီး local သို့မဟုတ် HTTPS source မှ artifact မရှိသေးပါက cache ထဲသို့ ထည့်ပေးသည်။ `zap update` သည် registry validation ပြီးမှ canonical lockfile ကို ပြန်ရေးသည်။ `ZAP_OFFLINE=1` သတ်မှတ်ထားပါက download အသစ် မပြုလုပ်ဘဲ cache ထဲတွင်ရှိပြီး checksum မှန်သော package များဖြင့်သာ အောင်မြင်နိုင်သည်။ Plain HTTP ကို ပုံမှန်အားဖြင့် ပိတ်ထားပြီး local fixture အတွက်သာ `ZAP_ALLOW_INSECURE_HTTP=1` ဖြင့် ခွင့်ပြုနိုင်သည်။
+
+Remote publishing အတွက် archive ကို အရင် SHA-256 စစ်ပြီး HTTPS endpoint သို့ `X-Zap-Package-*` headers များနှင့် ပို့ပေးသည်။ Bearer authentication အတွက် `ZAP_REGISTRY_TOKEN` ကို သတ်မှတ်နိုင်သည်။
+
+```bash
+zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
+```
+
+Checksum မကိုက်ညီပါက network request မလုပ်မီ publish ကို reject လုပ်သည်။ လက်ရှိ contract သည် package archive ကို opaque bytes အဖြစ် upload လုပ်ခြင်းဖြစ်ပြီး registry server-side persistence၊ signed index နှင့် authentication policy များသည် နောက်ထပ်အလုပ်များ ဖြစ်သည်။
 
 ## Dependency ထည့်ခြင်း
 
@@ -126,6 +134,8 @@ zap update path/to/project
 
 ```bash
 zap check
+zap registry fetch https://registry.example/index.json
+zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
 zap check path/to/project
 zap lock
 zap lock path/to/project
@@ -140,4 +150,4 @@ zap main.zp
 zap fmt main.zp
 ```
 
-`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local manifest/lockfile validation နှင့် local path package metadata စစ်ဆေးခြင်းအဆင့်တွင်ရှိသည်။ `zap install` သည် lockfile နှင့် local dependency graph ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ local graph ကို validate လုပ်သည်။ Local path graph များသည် cycle ရှိ/မရှိ စစ်ဆေးပြီး remote registry download၊ registry dependency solving နှင့် publishing များမှာ နောက်ပိုင်း ecosystem milestone များ ဖြစ်သည်။
+`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local/HTTPS registry index validation၊ content-addressed cache၊ SHA-256 integrity enforcement၊ offline reuse နှင့် checksum-verified archive publishing foundation များကို ထောက်ပံ့သည်။ `zap install` သည် lockfile၊ local dependency graph နှင့် configured registry cache ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ registry source များကို validate လုပ်သည်။ Signed index၊ version range solving၊ cache garbage collection နှင့် registry server-side persistence များမှာ ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။

@@ -71,7 +71,7 @@ hello-app/
     └── text.zp
 ```
 
-Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. Local dependencies are recursively traversed in lexicographic depth-first order, so nested local packages are validated before the command succeeds. If a canonical package path appears again on the active traversal stack, Zap rejects the graph with a deterministic diagnostic such as `dependency cycle detected: left -> right -> left`. The lockfile records the direct path as `local-lib = { path = "../local-lib" }` in canonical dependency order. Remote registry download and package publishing remain later ecosystem milestones.
+Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. Local dependencies are recursively traversed in lexicographic depth-first order, so nested local packages are validated before the command succeeds. If a canonical package path appears again on the active traversal stack, Zap rejects the graph with a deterministic diagnostic such as `dependency cycle detected: left -> right -> left`. The lockfile records the direct path as `local-lib = { path = "../local-lib" }` in canonical dependency order.
 
 ## Registry-ready package metadata
 
@@ -109,7 +109,15 @@ Zap now provides a dependency-free registry foundation through a JSON index and 
 
 Validate an index with `zap registry check path/to/index.json`. Package selection requires an exact `name` and `version` match; ambiguous or missing entries are rejected. A file-backed source is resolved relative to the index file, copied into the cache, and verified against the declared SHA-256 checksum before it is accepted. The cache layout is `.zap/cache/<name>/<version>/<checksum>.pkg`, unless `ZAP_CACHE_DIR` specifies another root.
 
-For project dependency resolution, set `ZAP_REGISTRY_INDEX` to the index path. `zap install` verifies existing cache entries and downloads missing file-backed packages. `zap update` performs the same registry validation before rewriting the canonical lockfile. Set `ZAP_OFFLINE=1` to prohibit new downloads; offline commands succeed only when every registry dependency is already cached and its checksum still matches. HTTP registry transport and publishing remain later milestones.
+For project dependency resolution, set `ZAP_REGISTRY_INDEX` to a local path, `file://` URL, or HTTPS URL. Use `zap registry fetch <index-url>` to validate a remote index before project resolution. `zap install` verifies existing cache entries and downloads missing artifacts from local or HTTPS sources. `zap update` performs the same registry validation before rewriting the canonical lockfile. Set `ZAP_OFFLINE=1` to prohibit new downloads; offline commands succeed only when every registry dependency is already cached and its checksum still matches. Plain HTTP is rejected unless `ZAP_ALLOW_INSECURE_HTTP=1` is explicitly set for local fixtures.
+
+Remote publishing sends a checksum-verified package archive to an HTTPS endpoint using stable `X-Zap-Package-*` headers. Set `ZAP_REGISTRY_TOKEN` for bearer authentication and run:
+
+```bash
+zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
+```
+
+The archive is hashed before any network request, so a checksum mismatch cannot publish. The current publishing contract uploads an opaque package archive; registry-side authentication, persistence, signed indexes, and server implementation remain deployment-specific follow-up work.
 
 ## Adding a dependency
 
@@ -152,7 +160,9 @@ zap update path/to/project
 | `zap build` | Validate and prepare a Zap project |
 | `zap test` | Run project test files |
 | `zap fmt main.zp` | Format a Zap source file |
-| `zap registry check <index.json>` | Validate a deterministic registry index |
-| `zap registry cache <index.json> <source> <name> <version> [cache]` | Cache a file-backed package after SHA-256 verification |
+| `zap registry check <index.json>` | Validate a local deterministic registry index |
+| `zap registry fetch <index-url>` | Validate a local, file-backed, or HTTPS registry index |
+| `zap registry cache <index.json> <source> <name> <version> [cache]` | Cache a local or HTTPS package source after SHA-256 verification |
+| `zap registry publish <url> <archive> <name> <version> <sha256>` | Publish a checksum-verified archive to an HTTPS endpoint |
 
-The current registry foundation supports deterministic JSON index validation, exact version selection, file-backed package caching, SHA-256 integrity enforcement, and offline reuse. HTTP transport, signed indexes, range-based dependency solving, cache garbage collection, and package publishing remain later ecosystem milestones. No network access occurs unless an explicit registry index and source are configured.
+The current registry foundation supports deterministic JSON index validation, exact version selection, local and HTTPS index/artifact transport, content-addressed caching, SHA-256 integrity enforcement, offline reuse, and checksum-verified archive publishing. Signed indexes, range-based dependency solving, cache garbage collection, registry authentication policy, and server-side publishing persistence remain later ecosystem milestones. No network access occurs unless an explicit registry index/source or publish command is configured.
