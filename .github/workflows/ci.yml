@@ -99,3 +99,20 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: if (-not (Test-Path "native/target/${{ matrix.target }}/release/zap.exe")) { throw "zap.exe was not produced" }
+
+      - name: Run Linux/macOS CLI smoke checks
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          native/target/${{ matrix.target }}/release/zap --version
+          native/target/${{ matrix.target }}/release/zap --help >/dev/null
+          native/target/${{ matrix.target }}/release/zap examples/default_parameters.zp
+
+      - name: Run Windows CLI smoke checks
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $zap = "native/target/${{ matrix.target }}/release/zap.exe"
+          & $zap --version
+          & $zap --help | Out-Null
+          & $zap examples/default_parameters.zp

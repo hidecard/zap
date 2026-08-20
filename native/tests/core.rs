@@ -1489,3 +1489,27 @@ fn lock_command_is_available_in_cli_help() {
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("zap lock [dir]"));
 }
+
+#[test]
+fn audits_nested_direct_ast_standard_library_calls() {
+    let root = std::env::temp_dir().join("zap_direct_ast_edge_audit");
+    std::fs::create_dir_all(&root).unwrap();
+    let data_path = root.join("data.txt");
+    let program = root.join("main.zp");
+    let path = data_path.to_string_lossy().replace('\\', "\\\\");
+    let source = format!(
+        "write_text(\"{path}\", json({{\"name\": upper(\"zap\"), \"items\": range(pow(2, 2))}}))\nlet value = from_json(read_text(\"{path}\"))\nsay join(reverse(split(value[\"name\"], \"A\")), \"-\")\nsay sum(value[\"items\"])\nsay has_env(\"PATH\")\n"
+    );
+    std::fs::write(&program, source).unwrap();
+    let output = Command::new(binary()).arg(&program).output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("P-Z\n") || stdout.contains("Z-P\n"));
+    assert!(stdout.contains("6\n"));
+    assert!(stdout.contains("true\n"));
+    let _ = std::fs::remove_dir_all(root);
+}

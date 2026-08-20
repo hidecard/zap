@@ -21,6 +21,7 @@ use parser::{
 mod cli;
 mod evaluator;
 mod stdlib;
+mod stdlib_catalog;
 
 use evaluator::{
     call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
@@ -993,6 +994,23 @@ fn format_source(source: &str) -> String {
     }
     out
 }
+#[cfg(test)]
+mod stdlib_catalog_tests {
+    use super::stdlib_catalog::{contains, PUBLIC_BUILTINS};
+
+    #[test]
+    fn public_builtin_catalog_is_unique_and_domain_grouped() {
+        for (index, builtin) in PUBLIC_BUILTINS.iter().enumerate() {
+            assert!(!builtin.name.is_empty());
+            assert!(!builtin.domain.is_empty());
+            assert!(!PUBLIC_BUILTINS[index + 1..]
+                .iter()
+                .any(|other| other.name == builtin.name));
+            assert!(contains(builtin.name));
+        }
+    }
+}
+
 fn manifest_value(text: &str, key: &str) -> Option<String> {
     for line in text.lines() {
         let line = line.trim();
