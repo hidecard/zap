@@ -4517,3 +4517,69 @@ fn rejects_non_sha256_package_checksum() {
     assert!(String::from_utf8_lossy(&result.stderr).contains("64-character hexadecimal SHA-256"));
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn async_runtime_foundation_is_available_from_cli() {
+    let output = Command::new(binary()).arg("async-check").output().unwrap();
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "async runtime foundation ready\n"
+    );
+}
+
+#[test]
+fn lsp_stdio_handles_initialize_and_shutdown() {
+    let initialize = br#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#;
+    let shutdown = br#"{"jsonrpc":"2.0","id":2,"method":"shutdown"}"#;
+    let mut input = Vec::new();
+    for body in [initialize.as_slice(), shutdown.as_slice()] {
+        input.extend_from_slice(format!("Content-Length: {}\r\n\r\n", body.len()).as_bytes());
+        input.extend_from_slice(body);
+    }
+    let output = Command::new(binary())
+        .arg("lsp")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            use std::io::Write;
+            child.stdin.take().unwrap().write_all(&input)?;
+            child.wait_with_output()
+        })
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("textDocumentSync"));
+    assert!(text.contains("Content-Length:"));
+    assert!(text.matches("\"jsonrpc\":\"2.0\"").count() >= 2);
+}
+
+#[test]
+fn help_lists_async_and_lsp_commands() {
+    let output = Command::new(binary()).arg("--help").output().unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("zap lsp"));
+    assert!(text.contains("zap async-check"));
+}
+
+#[test]
+fn lsp_rejects_malformed_content_length() {
+    let output = Command::new(binary())
+        .arg("lsp")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            use std::io::Write;
+            child
+                .stdin
+                .take()
+                .unwrap()
+                .write_all(b"Content-Length: bad\r\n\r\n{}");
+            child.wait_with_output()
+        })
+        .unwrap();
+    assert!(!output.status.success());
+}

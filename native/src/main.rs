@@ -1,6 +1,7 @@
 #![allow(clippy::missing_const_for_thread_local, clippy::type_complexity)]
 
 mod ast;
+mod async_runtime;
 mod diagnostics;
 mod lexer;
 
@@ -20,6 +21,7 @@ use parser::{
 };
 mod cli;
 mod evaluator;
+mod lsp;
 mod stdlib;
 mod stdlib_catalog;
 

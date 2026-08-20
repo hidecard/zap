@@ -10,7 +10,7 @@
 [![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](docs/SYNTAX_GUIDE_EN.md)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Docs-0969da.svg)](https://github.com/hidecard/zap/tree/master/docs)
 
-**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md) · [Syntax Guide](docs/SYNTAX_GUIDE_EN.md) · [Type Narrowing EN](docs/TYPE_NARROWING_EN.md) · [Type Narrowing MM](docs/TYPE_NARROWING_MM.md) · [Default Parameters EN](docs/DEFAULT_PARAMETERS_EN.md) · [Default Parameters MM](docs/DEFAULT_PARAMETERS_MM.md) · [Package EN](docs/PACKAGE_EN.md) · [Package MM](docs/PACKAGE.md) · [Changelog EN](CHANGELOG_EN.md) · [Changelog MM](CHANGELOG_MM.md) · [Stdlib Index EN](docs/STDLIB_INDEX_EN.md) · [Stdlib Index MM](docs/STDLIB_INDEX_MM.md)
+**Documentation:** [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) · [English Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_EN.md) · [မြန်မာ Guide](https://github.com/hidecard/zap/blob/master/docs/LEARN_ZAP_MM.md) · [Syntax Guide](docs/SYNTAX_GUIDE_EN.md) · [Type Narrowing EN](docs/TYPE_NARROWING_EN.md) · [Type Narrowing MM](docs/TYPE_NARROWING_MM.md) · [Default Parameters EN](docs/DEFAULT_PARAMETERS_EN.md) · [Default Parameters MM](docs/DEFAULT_PARAMETERS_MM.md) · [Package EN](docs/PACKAGE_EN.md) · [Package MM](docs/PACKAGE.md) · [Changelog EN](CHANGELOG_EN.md) · [Changelog MM](CHANGELOG_MM.md) · [Stdlib Index EN](docs/STDLIB_INDEX_EN.md) · [Stdlib Index MM](docs/STDLIB_INDEX_MM.md) · [Async/LSP EN](docs/ASYNC_LSP_EN.md) · [Async/LSP MM](docs/ASYNC_LSP_MM.md)
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
@@ -18,7 +18,7 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, and registry-ready package metadata validation.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic local package graph validation, nested dependency traversal, cycle diagnostics, registry-ready package metadata validation, a deterministic single-thread async runtime foundation, and an initial stdio LSP/editor foundation.
 
 | Item | Current status |
 |---|---|
@@ -31,7 +31,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
-| Test status | 31 native unit tests and 185 integration tests passing (216 total) |
+| Test status | 33 native unit tests and 187 integration tests passing (220 total) |
 
 ## Native Runtime Architecture
 
@@ -47,9 +47,11 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `stdlib.rs` | Text, math, collection, filesystem, JSON, environment, path, and time built-in operations | Stabilized initial API surface |
 | `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
 | `project.rs` | Project, manifest, lockfile, dependency graph, metadata, and module validation | Implemented |
-| `cli.rs` | CLI command orchestration and exit codes | Implemented |
+| `cli.rs` | CLI command orchestration, async-check, LSP entry point, and exit codes | Implemented |
+| `async_runtime.rs` | Deterministic single-thread future executor foundation | Implemented foundation |
+| `lsp.rs` | Content-Length JSON-RPC stdio server and lint diagnostics publication | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; see the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains; `zap async-check` verifies the internal async runtime foundation and `zap lsp` starts the editor protocol server over stdio. The current LSP surface supports initialize, shutdown, text synchronization, and lint diagnostics; completion, hover, formatting, and workspace indexing remain future work. See the [async/LSP English guide](docs/ASYNC_LSP_EN.md) or [Burmese guide](docs/ASYNC_LSP_MM.md), and the [English stdlib index](docs/STDLIB_INDEX_EN.md) or [Burmese stdlib index](docs/STDLIB_INDEX_MM.md). Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and optional registry metadata includes description, authors, license, repository, and a 64-character hexadecimal SHA-256 checksum; see the [English package guide](docs/PACKAGE_EN.md), [Burmese package guide](docs/PACKAGE.md), and [P2 progress](docs/P2_PROGRESS.md). The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?
 

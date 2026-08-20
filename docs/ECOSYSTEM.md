@@ -44,6 +44,8 @@ zap add package-name 1.0 [project-dir]
 zap lock [project-dir]
 zap --version
 zap --help
+zap async-check
+zap lsp
 ```
 
 အောက်ပါ commands များသည် roadmap ဖြစ်ပြီး လက်ရှိ release တွင် မပါဝင်သေးပါ။
@@ -57,7 +59,7 @@ zap iot new sensor-node
 zap publish
 ```
 
-P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection နှင့် registry-ready metadata validation ပါဝင်ပြီး remote registry၊ async runtime နှင့် LSP တို့မှာ ဆက်လက် roadmap ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
+P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry-ready metadata validation၊ deterministic single-thread async runtime foundation နှင့် stdio LSP/editor foundation ပါဝင်သည်။ Remote registry၊ full async language syntax၊ timers၊ completion၊ hover၊ formatting နှင့် workspace indexing တို့မှာ ဆက်လက် roadmap ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
 
 ## Recommended implementation order
 

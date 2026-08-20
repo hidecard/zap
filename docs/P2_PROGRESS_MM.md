@@ -13,8 +13,8 @@ Zap P1 Language Core ကို `v1.0.0` အဖြစ် release ပြုလု�
 | Remote registry resolution | Roadmap | Network policy၊ cache၊ index resolution၊ download နှင့် integrity enforcement များ လိုအပ်သည်။ |
 | `zap install` | ပြီးစီး | လက်ရှိ manifest နှင့် canonical lockfile ကို project files မပြောင်းလဲဘဲ validate လုပ်သည်။ Registry သို့ မချိတ်ဆက်ပါ။ |
 | `zap update` | ပြီးစီး | လက်ရှိ manifest မှ canonical lockfile ကို deterministic အတိုင်း ပြန်လည် generate လုပ်ပြီး local dependency graph အပြည့်အစုံကို validate လုပ်သည်။ |
-| Async runtime | Roadmap | သီးခြား P2 track ဖြစ်သည်။ |
-| LSP/editor integration | Roadmap | Tooling track သီးခြားဖြစ်သည်။ |
+| Async runtime foundation | ပြီးစီး | Deterministic single-thread executor၊ `spawn`၊ `run_until_idle` နှင့် `block_on` ကို internal အနေဖြင့် အသုံးပြုနိုင်သည်။ Async language syntax နှင့် timers များမှာ roadmap ဖြစ်သည်။ |
+| LSP/editor foundation | ပြီးစီး | `zap lsp` မှ stdio JSON-RPC framing၊ initialize/shutdown၊ text synchronization နှင့် lint diagnostics များကို ပေးသည်။ Completion၊ hover၊ formatting နှင့် workspace indexing များမှာ roadmap ဖြစ်သည်။ |
 
 ## Local install/update contract
 
@@ -35,6 +35,6 @@ Command သည် `zap.toml` ကို deterministic အတိုင်း updat
 
 ## Verification
 
-Native test suite တွင် dependency ထည့်ခြင်း၊ lexicographic ordering၊ duplicate rejection၊ lockfile invalidation၊ install validation၊ update regeneration၊ idempotence၊ stale-lock rejection၊ CLI help exposure၊ valid local package၊ missing local manifest၊ nested local package နှင့် deterministic cycle diagnostics များကို test coverage ထည့်ထားပါသည်။ `name = { path = "../local-lib" }` ပုံစံကို support လုပ်ပြီး path ကို သုံးစွဲသည့် project အပေါ်မူတည်၍ resolve လုပ်သည်။ Local package တွင် package name နှင့် version ပါသော `zap.toml` ရှိရမည်ဖြစ်ပြီး `zap.lock` တွင် canonical ပုံစံဖြင့် သိမ်းဆည်းသည်။ Local path dependency များကို sorted order ဖြင့် depth-first traverse လုပ်သည်။ Active traversal stack ထဲတွင် canonical path ထပ်ပေါ်လာပါက `dependency cycle detected: left -> right -> left` ကဲ့သို့ error ပြန်ပေးသည်။ Manifest metadata contract သည် registry-ready အဖြစ် ပြီးစီးပြီးဖြစ်သည်။ Remote fetching သည် နောက်ထပ် P2 milestone ဖြစ်နေဆဲဖြစ်သည်။ Lockfile generate/update မလုပ်မီ root နှင့် nested local package များအားလုံးတွင် metadata validation ပြုလုပ်သည်။
+Native test suite တွင် dependency ထည့်ခြင်း၊ lexicographic ordering၊ duplicate rejection၊ lockfile invalidation၊ install validation၊ update regeneration၊ idempotence၊ stale-lock rejection၊ CLI help exposure၊ valid local package၊ missing local manifest၊ nested local package နှင့် deterministic cycle diagnostics များကို test coverage ထည့်ထားပါသည်။ `name = { path = "../local-lib" }` ပုံစံကို support လုပ်ပြီး path ကို သုံးစွဲသည့် project အပေါ်မူတည်၍ resolve လုပ်သည်။ Local package တွင် package name နှင့် version ပါသော `zap.toml` ရှိရမည်ဖြစ်ပြီး `zap.lock` တွင် canonical ပုံစံဖြင့် သိမ်းဆည်းသည်။ Local path dependency များကို sorted order ဖြင့် depth-first traverse လုပ်သည်။ Active traversal stack ထဲတွင် canonical path ထပ်ပေါ်လာပါက `dependency cycle detected: left -> right -> left` ကဲ့သို့ error ပြန်ပေးသည်။ Manifest metadata contract သည် registry-ready အဖြစ် ပြီးစီးပြီးဖြစ်သည်။ Remote fetching သည် နောက်ထပ် P2 milestone ဖြစ်နေဆဲဖြစ်သည်။ Lockfile generate/update မလုပ်မီ root နှင့် nested local package များအားလုံးတွင် metadata validation ပြုလုပ်သည်။ Async foundation ကို single-threaded deterministic အဖြစ် တည်ဆောက်ထားသောကြောင့် လက်ရှိ synchronous execution မပြောင်းလဲပါ။ LSP foundation သည် stdio Content-Length JSON-RPC ကို အသုံးပြုပြီး Zap lint diagnostics ကို ပြန်လည်အသုံးပြုသည်။ Complete language server မဟုတ်သေးပါ။
 
 [English package guide](PACKAGE_EN.md)၊ [Burmese package guide](PACKAGE.md) နှင့် [ecosystem roadmap](ECOSYSTEM.md) ကို ဆက်လက်ဖတ်ရှုနိုင်ပါသည်။

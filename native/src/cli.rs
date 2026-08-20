@@ -64,6 +64,8 @@ pub fn run_cli(args: &[String]) {
   zap add <name> <ver> [dir] Add a manifest dependency and invalidate zap.lock
   zap install [dir]    Validate and install dependencies from zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
+  zap lsp               Run the LSP server over stdio
+  zap async-check       Validate the async runtime foundation
   zap build [dir]      Validate and prepare a Zap project
 n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
         return;
@@ -211,6 +213,20 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
         }
         return;
     }
+    if args.len() == 2 && args[1] == "lsp" {
+        if let Err(error) = crate::lsp::run_stdio() {
+            eprintln!("Zap LSP error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        return;
+    }
+    if args.len() == 2 && args[1] == "async-check" {
+        let mut runtime = crate::async_runtime::AsyncRuntime::new();
+        runtime.spawn(async {});
+        runtime.run_until_idle();
+        println!("async runtime foundation ready");
+        return;
+    }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
             Ok(info) => println!("built Zap project: {info}"),
@@ -278,6 +294,8 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
        zap add <name> <version> [dir]
        zap install [dir]
        zap update [dir]
+       zap lsp
+       zap async-check
        zap build [dir]
 n       zap init <dir>\n       zap --version");
         process::exit(EXIT_USAGE_ERROR);
