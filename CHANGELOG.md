@@ -12,7 +12,7 @@ Zap 2.0.3 သည် P3.3 Production Standard Library milestone ကို ပြ�
 - Windows native path separator expectation၊ JSON-escaped file fixture portability နှင့် Windows smoke gate ရှိ option-aware URL port assertion ပြဿနာများကို ပြင်ဆင်ထားပါသည်။
 
 ### Verification
-Native suite tests 235 ခု pass ဖြစ်ပြီး P3.3 smoke fixture အောင်မြင်ပါသည်။ Windows၊ macOS၊ strict Clippy နှင့် release packaging gates များကို GitHub Actions workflow တွင် enforce လုပ်ထားပါသည်။
+Native suite tests 235 ခု pass ဖြစ်ပြီး P3.3 smoke fixture အောင်မြင်ပါသည်။ Windows smoke gate တွင် option-aware URL port assertion နှင့် CRLF-safe process output normalization ကို ပြင်ဆင်ပြီးနောက် Linux၊ Windows၊ macOS နှင့် strict Clippy CI matrix အားလုံး အောင်မြင်ပါသည်။ Release packaging gates များကိုလည်း GitHub Actions workflow တွင် enforce လုပ်ထားပါသည်။
 
 ## [2.0.1] - 2026-08-20
 ### Bug fixes and release engineering
