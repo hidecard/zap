@@ -4320,3 +4320,65 @@ fn install_update_commands_are_ready_for_local_path_dependencies() {
     assert!(install.status.success());
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn local_path_dependency_is_validated_and_locked_canonically() {
+    let root = std::env::temp_dir().join("zap_local_path_dependency");
+    let local = root.join("local-lib");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&local).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"consumer\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\nlocal-lib = { path = \"local-lib\" }\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(
+        local.join("zap.toml"),
+        "[package]\nname = \"local-lib\"\nversion = \"0.2.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(local.join("main.zp"), "say 2\n").unwrap();
+
+    let update = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        update.status.success(),
+        "{}",
+        String::from_utf8_lossy(&update.stderr)
+    );
+    let lock = std::fs::read_to_string(root.join("zap.lock")).unwrap();
+    assert!(lock.contains("local-lib = { path = \"local-lib\" }"));
+
+    let install = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        install.status.success(),
+        "{}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn local_path_dependency_reports_missing_package_manifest() {
+    let root = std::env::temp_dir().join("zap_local_path_missing_manifest");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(root.join("local-lib")).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"consumer\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\nlocal-lib = { path = \"local-lib\" }\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("missing zap.toml"));
+    let _ = std::fs::remove_dir_all(&root);
+}

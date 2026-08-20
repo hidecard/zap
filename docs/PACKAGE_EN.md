@@ -15,7 +15,7 @@ If `main` is omitted, Zap uses `main.zp` as the default entry file.
 
 ## Declaring dependencies
 
-Dependencies are declared in a `[dependencies]` table. Each dependency currently has a deterministic string requirement. Dependency entries are sorted by package name when the lockfile is generated.
+Dependencies are declared in a `[dependencies]` table. A dependency may use a deterministic version requirement or a local path specification. Dependency entries are sorted by package name when the lockfile is generated.
 
 ```toml
 [package]
@@ -26,6 +26,7 @@ main = "main.zp"
 [dependencies]
 web = "0.3"
 json-tools = "1.2"
+local-lib = { path = "../local-lib" }
 ```
 
 ## Canonical lockfile
@@ -49,6 +50,7 @@ version = "0.1.0"
 
 [dependencies]
 json-tools = "1.2"
+local-lib = { path = "../local-lib" }
 web = "0.3"
 ```
 
@@ -69,7 +71,7 @@ hello-app/
     └── text.zp
 ```
 
-Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. The lockfile currently validates declared dependency requirements; remote registry download and package publishing remain later ecosystem milestones.
+Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. The lockfile records the path as `local-lib = { path = "../local-lib" }` in canonical dependency order. Remote registry download and package publishing remain later ecosystem milestones.
 
 ## Adding a dependency
 
@@ -106,7 +108,7 @@ zap update path/to/project
 |---|---|
 | `zap check` | Validate the manifest, lockfile, entry file, and static source checks |
 | `zap lock` | Generate or regenerate the canonical `zap.lock` |
-| `zap add <name> <version> [dir]` | Add a deterministic string-valued dependency and invalidate the lockfile |
+| `zap add <name> <version> [dir]` | Add a deterministic version dependency and invalidate the lockfile |
 | `zap install [dir]` | Validate the existing manifest and lockfile without changing them |
 | `zap update [dir]` | Regenerate the canonical lockfile from the current manifest |
 | `zap build` | Validate and prepare a Zap project |

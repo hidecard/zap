@@ -6,8 +6,8 @@ Zap P1 Language Core was released as `v1.0.0`. P2 has now started with a local p
 
 | Milestone | Status | Notes |
 |---|---|---|
-| Manifest dependency declarations | Implemented | `[dependencies]` entries are parsed and validated. |
-| Canonical lockfile | Implemented | `zap.lock` is generated in stable package/dependency order. |
+| Manifest dependency declarations | Implemented | `[dependencies]` entries are parsed and validated, including local path specifications. |
+| Canonical lockfile | Implemented | `zap.lock` is generated in stable package/dependency order and renders local paths canonically. |
 | `zap add` command | Implemented | Adds a string-valued dependency, sorts the dependency section, rejects duplicates, and invalidates the old lockfile. |
 | Remote registry resolution | Planned | Requires package metadata, network policy, caching, and integrity checks. |
 | `zap install` | Implemented | Validates the current manifest and canonical lockfile without changing project files or contacting a registry. |
@@ -34,6 +34,6 @@ The command updates `zap.toml` deterministically. It rejects empty or whitespace
 
 ## Verification
 
-The native test suite covers successful additions, lexicographic ordering, duplicate rejection, lockfile invalidation, install validation, update regeneration, idempotence, stale-lock rejection, and CLI help exposure. The next package-manager milestone is a dependency source model for local path packages and registry-ready metadata without compromising reproducibility.
+The native test suite covers successful additions, lexicographic ordering, duplicate rejection, lockfile invalidation, install validation, update regeneration, idempotence, stale-lock rejection, CLI help exposure, valid local packages, and missing local package manifests. A dependency may use `name = { path = "../local-lib" }`; the path is resolved relative to the consuming project, must contain a valid `zap.toml` with package name and version metadata, and is represented canonically in `zap.lock`. Nested dependency graph resolution, cycle detection, registry-ready metadata, and remote fetching remain later P2 milestones.
 
 See the [English package guide](PACKAGE_EN.md), [Burmese package guide](PACKAGE.md), and [ecosystem roadmap](ECOSYSTEM.md).
