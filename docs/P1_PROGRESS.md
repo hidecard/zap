@@ -25,10 +25,11 @@ Zap P1 implementation is in progress. The final P1 release and tag are intention
 | Control-flow Option/Result narrowing | Implemented | Guarded-branch static-check regression tests |
 | OOP method visibility | Implemented (initial) | Private same-class access and external-access rejection regression test |
 | Filesystem and JSON standard-library APIs | Stabilized (initial) | Direct-AST JSON round trip, malformed-input diagnostics, bounded 8 MiB JSON payloads, and existing file I/O regression coverage |
+| Text, math, and collection standard-library APIs | Stabilized (initial) | Direct-AST dispatch, explicit validation, checked integer behavior, and integration regression coverage |
 
 ## Current verification baseline
 
-The native Rust suite currently passes **94 tests**: 30 unit tests and 64 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
+The native Rust suite currently passes **96 tests**: 30 unit tests and 66 integration tests. The repository also includes the runnable example [`examples/default_parameters.zp`](../examples/default_parameters.zp). `cargo fmt --check` and `git diff --check` pass for verified changes. The local sandbox does not provide the Rust Clippy component, so Clippy remains a CI/environment release gate and is not claimed as locally verified.
 
 ## Ordered remaining P1 work
 
@@ -38,7 +39,7 @@ The native Rust suite currently passes **94 tests**: 30 unit tests and 64 integr
 | 2 | Named arguments | Implemented | Continue advanced diagnostics and decide whether named arguments should be supported by selected built-ins |
 | 3 | Control-flow type narrowing | Implemented (initial branch-local support) | Extend else-specific negative narrowing, complex boolean guards, alias variables, and broader nested-flow analysis |
 | 4 | OOP visibility and initialization rules | Partial (method visibility implemented) | Complete protected inheritance behavior, field visibility, module-aware access, and constructor visibility rules |
-| 5 | Standard-library extraction and stabilization | Partial (filesystem/JSON initial stabilization) | Complete filesystem, JSON, path, time, environment, text, math, and collection API contracts with documented error behavior and broader edge-case coverage |
+| 5 | Standard-library extraction and stabilization | Partial (filesystem/JSON/text/math/collection initial stabilization) | Complete API contracts, documented error behavior, broader edge-case coverage, and public module organization |
 | 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, and project checks |
 | 7 | Cross-platform and release gates | Pending | Linux, Windows, and macOS verification; bilingual changelog/release documentation; final P1 release only after all gates pass |
 

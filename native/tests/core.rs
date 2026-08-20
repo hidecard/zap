@@ -259,6 +259,33 @@ fn runs_text_and_numeric_helpers() {
 }
 
 #[test]
+fn runs_stabilized_text_math_and_collection_helpers() {
+    let file = std::env::temp_dir().join("zap_stabilized_stdlib_test.zp");
+    std::fs::write(
+        &file,
+        "say replace(\"zap language\", \"zap\", \"Zap\")\nsay starts_with(\"Zap\", \"Z\")\nsay ends_with(\"Zap\", \"p\")\nsay count([1, 2, 1, 3], 1)\nsay join([\"a\", \"b\"], \"-\")\nsay pow(2, 5)\nsay abs(-9)\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "Zap language\ntrue\ntrue\n2\na-b\n32\n9\n"
+    );
+}
+
+#[test]
+fn rejects_invalid_stabilized_stdlib_arguments() {
+    let file = std::env::temp_dir().join("zap_invalid_stabilized_stdlib_test.zp");
+    std::fs::write(&file, "say pow(2, -1)\n").unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("non-negative exponent"));
+}
+
+#[test]
 fn runs_v060_standard_library_helpers() {
     let file = std::env::temp_dir().join("zap_v060_stdlib_test.zp");
     std::fs::write(&file, "say basename(path_join(\"tmp\", \"zap\", \"main.zp\"))\nsay dirname(\"tmp/zap/main.zp\")\nsay pow(2, 4)\nsay sqrt(16)\nsay has_env(\"PATH\")\nsay type(now())\n").unwrap();

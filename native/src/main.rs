@@ -23,8 +23,8 @@ mod evaluator;
 mod stdlib;
 
 use evaluator::{
-    call_function, call_method, execute_ast_program, execute_lines, json_to_value, operate,
-    validate_source_layout, value_to_json, Flow,
+    call_function, call_method, direct_builtin, execute_ast_program, execute_lines, json_to_value,
+    operate, validate_source_layout, value_to_json, Flow,
 };
 
 use std::{
@@ -796,12 +796,16 @@ impl<'a> ExprParser<'a> {
                     }
                 }
                 self.take();
-                let f = self
-                    .funcs
-                    .get(&n)
-                    .ok_or(format!("undefined function: {n}"))?
-                    .clone();
-                call_function(&f, args, self.funcs)?
+                if let Some(value) = direct_builtin(&n, args.clone())? {
+                    value
+                } else {
+                    let f = self
+                        .funcs
+                        .get(&n)
+                        .ok_or(format!("undefined function: {n}"))?
+                        .clone();
+                    call_function(&f, args, self.funcs)?
+                }
             }
             Token::Name(n) => self
                 .vars

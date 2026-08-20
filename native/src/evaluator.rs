@@ -248,7 +248,7 @@ pub(crate) fn expression(
     ExprParser::new(&tokens, vars, funcs).parse_complete()
 }
 
-fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
+pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
     let expect = |count: usize| {
         if args.len() == count {
             Ok(())
@@ -371,6 +371,84 @@ fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String>
                 output.push_str(value);
             }
             Ok(Some(Value::Text(output)))
+        }
+        "trim" | "lower" | "upper" => {
+            expect(1)?;
+            let Value::Text(value) = &args[0] else {
+                return Err(format!("{name} expects text"));
+            };
+            let output = match name {
+                "trim" => value.trim().to_string(),
+                "lower" => value.to_lowercase(),
+                _ => value.to_uppercase(),
+            };
+            Ok(Some(Value::Text(output)))
+        }
+        "replace" => {
+            expect(3)?;
+            let (Value::Text(value), Value::Text(from), Value::Text(to)) =
+                (&args[0], &args[1], &args[2])
+            else {
+                return Err("replace expects text, text, and text".into());
+            };
+            Ok(Some(Value::Text(value.replace(from, to))))
+        }
+        "starts_with" | "ends_with" => {
+            expect(2)?;
+            let (Value::Text(value), Value::Text(part)) = (&args[0], &args[1]) else {
+                return Err(format!("{name} expects text and text"));
+            };
+            let matched = if name == "starts_with" {
+                value.starts_with(part)
+            } else {
+                value.ends_with(part)
+            };
+            Ok(Some(Value::Bool(matched)))
+        }
+        "abs" => {
+            expect(1)?;
+            let Value::Number(value) = args[0] else {
+                return Err("abs expects a number".into());
+            };
+            value
+                .checked_abs()
+                .map(Value::Number)
+                .map(Some)
+                .ok_or_else(|| "integer overflow".into())
+        }
+        "min" | "max" => {
+            expect(2)?;
+            let (Value::Number(left), Value::Number(right)) = (&args[0], &args[1]) else {
+                return Err(format!("{name} expects two numbers"));
+            };
+            Ok(Some(Value::Number(if name == "min" {
+                (*left).min(*right)
+            } else {
+                (*left).max(*right)
+            })))
+        }
+        "pow" => {
+            expect(2)?;
+            let (Value::Number(base), Value::Number(exponent)) = (&args[0], &args[1]) else {
+                return Err("pow expects two numbers".into());
+            };
+            if *exponent < 0 {
+                return Err("pow expects a non-negative exponent".into());
+            }
+            let mut result = 1_i64;
+            for _ in 0..(*exponent as u64) {
+                result = result.checked_mul(*base).ok_or("integer overflow")?;
+            }
+            Ok(Some(Value::Number(result)))
+        }
+        "count" => {
+            expect(2)?;
+            let (Value::List(values), item) = (&args[0], &args[1]) else {
+                return Err("count expects a list and a value".into());
+            };
+            Ok(Some(Value::Number(
+                values.iter().filter(|value| *value == item).count() as i64,
+            )))
         }
         "sum" => {
             expect(1)?;
