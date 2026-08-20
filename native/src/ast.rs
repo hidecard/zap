@@ -559,6 +559,9 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
                 .map_or((target.trim(), None), |(name, ty)| {
                     (name.trim(), Some(ty.trim().to_string()))
                 });
+            if let Some(annotation) = annotation.as_deref() {
+                validate_annotation_syntax(annotation)?;
+            }
             if name.is_empty() || value.trim().is_empty() {
                 return Err("field declaration requires a name and value".to_string());
             }
@@ -584,6 +587,9 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
             .map_or((target.trim(), None), |(name, ty)| {
                 (name.trim(), Some(ty.trim().to_string()))
             });
+        if let Some(annotation) = annotation.as_deref() {
+            validate_annotation_syntax(annotation)?;
+        }
         if name.is_empty() || value.trim().is_empty() {
             return Err("declaration requires a name and value".to_string());
         }
@@ -739,6 +745,13 @@ fn parse_function_header(
             let annotation = annotation
                 .filter(|value| !value.is_empty())
                 .map(str::to_string);
+            if let Some(annotation) = annotation.as_deref() {
+                if let Err(error) = validate_annotation_syntax(annotation) {
+                    return Some(Err(format!(
+                        "invalid annotation for parameter {parameter_name}: {error}"
+                    )));
+                }
+            }
             params.push((
                 parameter_name.to_string(),
                 annotation,
@@ -752,6 +765,11 @@ fn parse_function_header(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_string);
+    if let Some(annotation) = return_type.as_deref() {
+        if let Err(error) = validate_annotation_syntax(annotation) {
+            return Some(Err(format!("invalid return annotation: {error}")));
+        }
+    }
     if !suffix.is_empty() && return_type.is_none() {
         return Some(Err("invalid function return annotation".to_string()));
     }
@@ -762,6 +780,44 @@ fn parse_function_header(
         visibility.to_string(),
         is_async,
     )))
+}
+
+fn validate_annotation_syntax(annotation: &str) -> Result<(), String> {
+    let value = annotation.trim();
+    if value.is_empty() {
+        return Err("annotation cannot be empty".to_string());
+    }
+    let (base, args) = match value.split_once('<') {
+        Some((base, rest)) => {
+            if !rest.ends_with('>') {
+                return Err(format!("malformed type annotation '{value}'"));
+            }
+            (
+                base.trim().to_ascii_lowercase(),
+                Some(&rest[..rest.len() - 1]),
+            )
+        }
+        None => (value.to_ascii_lowercase(), None),
+    };
+    let known = [
+        "any", "text", "number", "bool", "list", "map", "object", "result", "option", "none",
+    ];
+    if !known.contains(&base.as_str()) {
+        return Err(format!("unknown type annotation '{value}'"));
+    }
+    match (base.as_str(), args) {
+        ("list" | "result" | "option", Some(args)) if args.split(',').count() == 1 => {
+            validate_annotation_syntax(args.trim())
+        }
+        ("map", Some(args)) if args.split(',').count() == 2 => {
+            for arg in args.split(',') {
+                validate_annotation_syntax(arg.trim())?;
+            }
+            Ok(())
+        }
+        (_, None) => Ok(()),
+        _ => Err(format!("invalid generic type annotation '{value}'")),
+    }
 }
 
 fn parse_class_header(text: &str) -> Option<Result<(String, Option<String>), String>> {
@@ -1150,6 +1206,29 @@ mod tests {
         assert!(
             matches!(program.statements[1].node, Stmt::Import { ref path, alias: Some(ref alias), explicit: true } if path == "app.core" && alias == "core")
         );
+    }
+
+    #[test]
+    fn rejects_unknown_annotations_at_parse_time() {
+        assert!(parse_program("let value: unknown_type = 1\n")
+            .unwrap_err()
+            .contains("unknown type annotation 'unknown_type'"));
+        assert!(
+            parse_program("fn load(value: unknown_type):\n    return value\n")
+                .unwrap_err()
+                .contains("unknown type annotation 'unknown_type'")
+        );
+        assert!(parse_program("fn load() -> unknown_type:\n    return 1\n")
+            .unwrap_err()
+            .contains("unknown type annotation 'unknown_type'"));
+    }
+
+    #[test]
+    fn accepts_supported_generic_annotations_at_parse_time() {
+        parse_program("let values: list<number> = [1, 2]\n")
+            .expect("supported generic annotations should parse");
+        parse_program("let record: map<text, number> = {\"count\": 1}\n")
+            .expect("supported map annotations should parse");
     }
 
     #[test]

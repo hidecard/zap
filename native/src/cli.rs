@@ -5,6 +5,27 @@ use crate::project::add_dependency;
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
 pub const EXIT_USAGE_ERROR: i32 = 2;
 
+pub const CLI_HELP: &str = r#"Zap native runtime
+
+Usage:
+  zap <file.zp>                         Run a Zap source file
+  zap run <file.zp>                     Run a source file explicitly
+  zap fmt <file.zp>                     Format a source file
+  zap lint <file.zp>                    Check formatting and style
+  zap check [dir]                       Validate a Zap project
+  zap check --json [dir]                Validate with JSON diagnostics
+  zap test [dir]                        Run *_test.zp files
+  zap lock [dir]                        Generate zap.lock
+  zap add <name> <ver> [dir]            Add a manifest dependency and invalidate zap.lock
+  zap install [dir]    Validate and install dependencies from zap.lock
+  zap update [dir]     Regenerate zap.lock from zap.toml
+  zap build [dir]                       Validate and prepare a project
+  zap init <dir>                        Create a new project
+  zap lsp                               Run the LSP server over stdio
+  zap async-check                       Validate the async runtime
+  zap --version                         Show the version
+  zap --help                            Show this help"#;
+
 fn parse_test_args(args: &[String]) -> Result<(PathBuf, TestOptions), String> {
     let mut options = TestOptions::default();
     let mut dir = PathBuf::from("tests");
@@ -58,20 +79,7 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
-        println!("Zap native runtime\n\nUsage:\n  zap <file.zp>       Run a Zap source file\n  zap run <file.zp>   Run a Zap source file explicitly\n  zap fmt <file.zp>   Format a Zap source file\n  zap check [dir]      Validate zap.toml and the project entry file\n  zap test [dir]       Run *_test.zp files in a tests directory
-  zap lint <file.zp>   Check formatting and style warnings
-  zap check --json     Validate a project with JSON diagnostics\n  zap lock [dir]       Generate the canonical dependency lockfile
-  zap add <name> <ver> [dir] Add a manifest dependency and invalidate zap.lock
-  zap install [dir]    Validate and install dependencies from zap.lock
-  zap update [dir]     Regenerate zap.lock from zap.toml
-  zap lsp               Run the LSP server over stdio
-  zap async-check       Validate the async runtime foundation
-  zap registry check <index.json> Validate a local registry index
-  zap registry fetch <index-url> Validate an HTTP(S) registry index
-  zap registry cache <index.json> <source> <name> <ver> [cache] Cache a verified package
-  zap registry publish <url> <archive> <name> <ver> <sha256> Publish a verified package archive
-  zap build [dir]      Validate and prepare a Zap project
-n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
+        println!("{CLI_HELP}");
         return;
     }
     if args.len() == 3 && args[1] == "init" {
@@ -364,19 +372,12 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
         return;
     }
     if args.len() != 2 {
-        eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]
-       zap add <name> <version> [dir]
-       zap install [dir]
-       zap update [dir]
-       zap lsp
-       zap async-check
-       zap build [dir]
-n       zap init <dir>\n       zap --version");
+        eprintln!("{CLI_HELP}");
         process::exit(EXIT_USAGE_ERROR);
     }
     let source_path = Path::new(&args[1]);
     if !source_path.exists() && source_path.extension().is_none() {
-        eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]\n       zap add <name> <version> [dir]\n       zap install [dir]\n       zap update [dir]\n       zap build [dir]\n       zap init <dir>\n       zap --version");
+        eprintln!("{CLI_HELP}");
         process::exit(EXIT_USAGE_ERROR);
     }
     let source = read_limited_text(source_path, "source read").unwrap_or_else(|e| {
@@ -387,5 +388,34 @@ n       zap init <dir>\n       zap --version");
     if let Err(e) = run_checked(&source, base) {
         eprintln!("Zap error: {e}");
         process::exit(EXIT_PROGRAM_FAILURE);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CLI_HELP;
+
+    #[test]
+    fn canonical_help_lists_supported_commands() {
+        for command in [
+            "zap run",
+            "zap fmt",
+            "zap lint",
+            "zap check",
+            "zap test",
+            "zap lock",
+            "zap add",
+            "zap install",
+            "zap update",
+            "zap build",
+            "zap init",
+            "zap lsp",
+            "zap async-check",
+            "zap --version",
+            "zap --help",
+        ] {
+            assert!(CLI_HELP.contains(command), "missing help entry: {command}");
+        }
+        assert!(!CLI_HELP.contains("\\n"));
     }
 }

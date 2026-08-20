@@ -106,7 +106,16 @@ pub fn handle_message(message: &Value) -> Option<Value> {
             });
             Some(publish_diagnostics(uri, text))
         }
-        _ => None,
+        _ => message.get("id").map(|id| {
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {
+                    "code": -32601,
+                    "message": "Method not found"
+                }
+            })
+        }),
     }
 }
 
@@ -581,6 +590,24 @@ mod tests {
         assert!(symbols
             .iter()
             .any(|item| item["name"] == "second" && item["location"]["uri"] == "file:///two.zp"));
+    }
+
+    #[test]
+    fn unknown_request_method_returns_json_rpc_error() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "id": 99,
+            "method": "zap/unknown",
+            "params": {}
+        }))
+        .expect("request errors must produce a response");
+        assert_eq!(response["error"]["code"], -32601);
+        assert_eq!(response["error"]["message"], "Method not found");
+        assert!(handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "zap/unknown"
+        }))
+        .is_none());
     }
 
     #[test]
