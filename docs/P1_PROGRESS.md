@@ -30,7 +30,7 @@ The native Rust suite currently passes **85 tests**: 25 unit tests and 60 integr
 
 | Priority | Work item | Current state | Next acceptance criteria |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | In progress | Native AST now directly evaluates literals, collections, operators, user-function calls, member access, object methods, and list/map indexing; legacy built-in-call fallback remains to be migrated |
+| 1 | Direct AST call evaluation | In progress | Native AST now directly evaluates literals, collections, operators, user-function calls, member access, object methods, list/map indexing, and pure built-ins such as `len`, `range`, `sum`, `split`, `join`, `ok`, `some`, and `unwrap`; filesystem/time-sensitive built-in fallback remains to be migrated |
 | 2 | Named arguments | Not implemented | Parse `name = expression` only inside calls; reject unknown, duplicate, positional-after-named, and missing arguments; bind functions and methods consistently |
 | 3 | Control-flow type narrowing | Not implemented | `if is_some(value):` and `if is_ok(result):` provide safe branch-local payload types, including `else` handling and nested branches |
 | 4 | OOP visibility and initialization rules | Partial | Define and enforce public/private/protected members, constructor rules, and diagnostics across inheritance and modules |

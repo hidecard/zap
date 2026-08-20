@@ -241,6 +241,169 @@ pub(crate) fn expression(
     ExprParser::new(&tokens, vars, funcs).parse_complete()
 }
 
+fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
+    let expect = |count: usize| {
+        if args.len() == count {
+            Ok(())
+        } else {
+            Err(format!(
+                "{name} expects {count} arguments, got {}",
+                args.len()
+            ))
+        }
+    };
+    match name {
+        "len" => {
+            expect(1)?;
+            let length = match &args[0] {
+                Value::Text(value) => value.chars().count(),
+                Value::List(value) => value.len(),
+                Value::Map(value) => value.len(),
+                _ => return Err("len expects text, list, or map".into()),
+            };
+            Ok(Some(Value::Number(length as i64)))
+        }
+        "str" => {
+            expect(1)?;
+            Ok(Some(Value::Text(args[0].show())))
+        }
+        "type" => {
+            expect(1)?;
+            let type_name = match args[0] {
+                Value::None => "none",
+                Value::Bool(_) => "bool",
+                Value::Number(_) => "number",
+                Value::Text(_) => "text",
+                Value::List(_) => "list",
+                Value::Map(_) => "map",
+                Value::Object { .. } => "object",
+                Value::ResultOk(_) | Value::ResultErr(_) => "result",
+                Value::OptionSome(_) | Value::OptionNone => "option",
+            };
+            Ok(Some(Value::Text(type_name.into())))
+        }
+        "keys" => {
+            expect(1)?;
+            match &args[0] {
+                Value::Map(values) => Ok(Some(Value::List(
+                    values.keys().cloned().map(Value::Text).collect(),
+                ))),
+                _ => Err("keys expects a map".into()),
+            }
+        }
+        "contains" => {
+            expect(2)?;
+            match (&args[0], &args[1]) {
+                (Value::Text(value), Value::Text(part)) => {
+                    Ok(Some(Value::Bool(value.contains(part))))
+                }
+                (Value::List(values), item) => Ok(Some(Value::Bool(values.contains(item)))),
+                _ => Err("contains expects text/text or list/value".into()),
+            }
+        }
+        "is_empty" => {
+            expect(1)?;
+            let empty = match &args[0] {
+                Value::Text(value) => value.is_empty(),
+                Value::List(value) => value.is_empty(),
+                Value::Map(value) => value.is_empty(),
+                _ => return Err("is_empty expects text, list, or map".into()),
+            };
+            Ok(Some(Value::Bool(empty)))
+        }
+        "split" => {
+            expect(2)?;
+            match (&args[0], &args[1]) {
+                (Value::Text(value), Value::Text(separator)) => Ok(Some(Value::List(
+                    value
+                        .split(separator)
+                        .map(|part| Value::Text(part.into()))
+                        .collect(),
+                ))),
+                _ => Err("split expects text and text separator".into()),
+            }
+        }
+        "join" => {
+            expect(2)?;
+            let (Value::List(values), Value::Text(separator)) = (&args[0], &args[1]) else {
+                return Err("join expects a list of text and a separator".into());
+            };
+            let mut output = String::new();
+            for (index, value) in values.iter().enumerate() {
+                let Value::Text(value) = value else {
+                    return Err("join expects a list of text and a separator".into());
+                };
+                if index > 0 {
+                    output.push_str(separator);
+                }
+                output.push_str(value);
+            }
+            Ok(Some(Value::Text(output)))
+        }
+        "sum" => {
+            expect(1)?;
+            let Value::List(values) = &args[0] else {
+                return Err("sum expects a list".into());
+            };
+            let mut total = 0_i64;
+            for value in values {
+                let Value::Number(value) = value else {
+                    return Err("sum expects a list of numbers".into());
+                };
+                total = total.checked_add(*value).ok_or("integer overflow")?;
+            }
+            Ok(Some(Value::Number(total)))
+        }
+        "reverse" => {
+            expect(1)?;
+            let Value::List(values) = &args[0] else {
+                return Err("reverse expects a list".into());
+            };
+            let mut values = values.clone();
+            values.reverse();
+            Ok(Some(Value::List(values)))
+        }
+        "range" => {
+            if args.len() != 1 && args.len() != 2 {
+                return Err(format!(
+                    "range expects one or two arguments, got {}",
+                    args.len()
+                ));
+            }
+            let (start, end) = match args.as_slice() {
+                [Value::Number(end)] => (0, *end),
+                [Value::Number(start), Value::Number(end)] => (*start, *end),
+                _ => return Err("range expects numeric arguments".into()),
+            };
+            Ok(Some(Value::List((start..end).map(Value::Number).collect())))
+        }
+        "ok" | "err" | "some" => {
+            expect(1)?;
+            Ok(Some(match name {
+                "ok" => Value::ResultOk(Box::new(args[0].clone())),
+                "err" => Value::ResultErr(Box::new(args[0].clone())),
+                _ => Value::OptionSome(Box::new(args[0].clone())),
+            }))
+        }
+        "option_none" => {
+            expect(0)?;
+            Ok(Some(Value::OptionNone))
+        }
+        "is_ok" | "is_err" | "is_some" | "is_option_none" => {
+            expect(1)?;
+            let value = &args[0];
+            let result = match name {
+                "is_ok" => matches!(value, Value::ResultOk(_)),
+                "is_err" => matches!(value, Value::ResultErr(_)),
+                "is_some" => matches!(value, Value::OptionSome(_)),
+                _ => matches!(value, Value::OptionNone),
+            };
+            Ok(Some(Value::Bool(result)))
+        }
+        _ => Ok(None),
+    }
+}
+
 fn ast_expression(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
@@ -312,6 +475,8 @@ fn ast_expression(
                 Expr::Name(name) => {
                     if let Some(function) = funcs.get(name) {
                         call_function(function, values, funcs)
+                    } else if let Some(value) = direct_builtin(name, values.clone())? {
+                        Ok(value)
                     } else {
                         expression(&ast_expr_source(node), vars, funcs)
                     }
@@ -1696,6 +1861,23 @@ mod tests {
             .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn evaluates_pure_builtins_from_native_ast() {
+        let program = parse_program(
+            "let count: number = len(range(0, 3))\nlet total: number = sum(range(1, 4))\nlet joined: text = join(split(\"a,b\", \",\"), \"-\")\nlet present: bool = is_some(some(1))\nlet value: number = unwrap(ok(7))\n",
+        )
+        .expect("valid built-in AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("direct built-in AST calls should execute");
+        assert_eq!(vars.get("count"), Some(&Value::Number(3)));
+        assert_eq!(vars.get("total"), Some(&Value::Number(6)));
+        assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
+        assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
+        assert_eq!(vars.get("value"), Some(&Value::Number(7)));
     }
 
     #[test]
