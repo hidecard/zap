@@ -18,6 +18,8 @@
 - Added `from_json_typed(source, expected)` for deterministic runtime-category validation under the existing 8 MiB JSON limit.
 - Added Unicode-safe `char_at`, `substring`, and `codepoints` operations that index by Unicode scalar values rather than UTF-8 bytes, with stable bounds diagnostics.
 - Added deterministic `entries(map)` and `enumerate(list)` collection helpers with bounded output and stable runtime errors.
+- Added UTC time APIs: `utc_now()` returns seconds and millisecond timestamps, while `duration_parts(milliseconds)` and `duration_between(end_millis, start_millis)` provide signed, checked decomposition with overflow diagnostics.
+- Added focused time regression tests covering UTC timestamp consistency, positive and negative durations, and invalid inputs; documented the APIs in `docs/STDLIB_TIME_EN.md` and `docs/STDLIB_TIME_MM.md`.
 
 
 ## [2.0.4] — 2026-08-20

@@ -9,7 +9,7 @@ use std::{
     rc::Rc,
     sync::atomic::{AtomicU64, Ordering},
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
@@ -385,6 +385,27 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
                     .map(|character| Value::Number(i64::from(u32::from(character))))
                     .collect(),
             )))
+        }
+        "utc_now" => {
+            expect(0)?;
+            Ok(Some(utc_now_value()?))
+        }
+        "duration_parts" => {
+            expect(1)?;
+            let Value::Number(milliseconds) = args[0] else {
+                return Err("duration_parts expects milliseconds as a number".into());
+            };
+            Ok(Some(duration_value(milliseconds)?))
+        }
+        "duration_between" => {
+            expect(2)?;
+            let (Value::Number(start), Value::Number(end)) = (&args[0], &args[1]) else {
+                return Err("duration_between expects two millisecond numbers".into());
+            };
+            let milliseconds = end
+                .checked_sub(*start)
+                .ok_or_else(|| "duration_between integer overflow".to_string())?;
+            Ok(Some(duration_value(milliseconds)?))
         }
         "len" => {
             expect(1)?;
@@ -1004,6 +1025,45 @@ fn configuration_path(name: &str) -> Result<String, String> {
         .join(name)
         .to_string_lossy()
         .into())
+}
+
+pub(crate) fn utc_now_value() -> Result<Value, String> {
+    let elapsed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| format!("utc_now failed: {error}"))?;
+    let unix_seconds = i64::try_from(elapsed.as_secs())
+        .map_err(|_| "utc_now timestamp exceeds integer range".to_string())?;
+    let unix_millis = i64::try_from(elapsed.as_millis())
+        .map_err(|_| "utc_now millisecond timestamp exceeds integer range".to_string())?;
+    Ok(map_value([
+        ("unix_seconds".into(), Value::Number(unix_seconds)),
+        ("unix_millis".into(), Value::Number(unix_millis)),
+        (
+            "nanosecond_fraction".into(),
+            Value::Number(i64::from(elapsed.subsec_nanos())),
+        ),
+    ]))
+}
+
+pub(crate) fn duration_value(milliseconds: i64) -> Result<Value, String> {
+    let absolute = milliseconds
+        .checked_abs()
+        .ok_or_else(|| "duration_parts integer overflow".to_string())?;
+    let sign = if milliseconds < 0 { -1 } else { 1 };
+    let days = absolute / 86_400_000;
+    let hours = (absolute / 3_600_000) % 24;
+    let minutes = (absolute / 60_000) % 60;
+    let seconds = (absolute / 1_000) % 60;
+    let millis = absolute % 1_000;
+    let signed = |value: i64| value * sign;
+    Ok(map_value([
+        ("milliseconds".into(), Value::Number(milliseconds)),
+        ("days".into(), Value::Number(signed(days))),
+        ("hours".into(), Value::Number(signed(hours))),
+        ("minutes".into(), Value::Number(signed(minutes))),
+        ("seconds".into(), Value::Number(signed(seconds))),
+        ("millis".into(), Value::Number(signed(millis))),
+    ]))
 }
 
 fn map_value(entries: impl IntoIterator<Item = (String, Value)>) -> Value {
@@ -3737,6 +3797,70 @@ mod tests {
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("10.0.0.1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, false).is_ok());
+    }
+
+    #[test]
+    fn returns_utc_epoch_fields_and_duration_parts() {
+        let utc = direct_builtin("utc_now", vec![])
+            .expect("utc_now should succeed")
+            .expect("utc_now should return a value");
+        let Value::Map(fields) = utc else {
+            panic!("utc_now should return a map");
+        };
+        let seconds = match fields.get("unix_seconds") {
+            Some(Value::Number(value)) => *value,
+            other => panic!("unexpected unix_seconds: {other:?}"),
+        };
+        let millis = match fields.get("unix_millis") {
+            Some(Value::Number(value)) => *value,
+            other => panic!("unexpected unix_millis: {other:?}"),
+        };
+        assert!(seconds > 0);
+        assert!(millis >= seconds * 1_000);
+        assert!(millis < (seconds + 1) * 1_000);
+
+        let duration = direct_builtin("duration_parts", vec![Value::Number(90_061_007)])
+            .expect("duration_parts should succeed")
+            .expect("duration_parts should return a value");
+        let Value::Map(parts) = duration else {
+            panic!("duration_parts should return a map");
+        };
+        assert_eq!(parts.get("days"), Some(&Value::Number(1)));
+        assert_eq!(parts.get("hours"), Some(&Value::Number(1)));
+        assert_eq!(parts.get("minutes"), Some(&Value::Number(1)));
+        assert_eq!(parts.get("seconds"), Some(&Value::Number(1)));
+        assert_eq!(parts.get("millis"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn duration_between_supports_signed_results_and_stable_errors() {
+        let duration = direct_builtin(
+            "duration_between",
+            vec![Value::Number(2_000), Value::Number(500)],
+        )
+        .expect("duration_between should succeed")
+        .expect("duration_between should return a value");
+        let Value::Map(parts) = duration else {
+            panic!("duration_between should return a map");
+        };
+        assert_eq!(parts.get("milliseconds"), Some(&Value::Number(-1_500)));
+        assert_eq!(parts.get("seconds"), Some(&Value::Number(-1)));
+        assert_eq!(parts.get("millis"), Some(&Value::Number(-500)));
+
+        let error = direct_builtin("duration_parts", vec![Value::Text("1s".into())])
+            .expect_err("invalid duration input should fail");
+        assert!(error.contains("duration_parts expects milliseconds as a number"));
+
+        let min_error = direct_builtin("duration_parts", vec![Value::Number(i64::MIN)])
+            .expect_err("minimum duration should reject abs overflow");
+        assert!(min_error.contains("duration_parts integer overflow"));
+
+        let between_error = direct_builtin(
+            "duration_between",
+            vec![Value::Number(i64::MAX), Value::Number(i64::MIN)],
+        )
+        .expect_err("duration subtraction overflow should fail");
+        assert!(between_error.contains("duration_between integer overflow"));
     }
 
     #[test]

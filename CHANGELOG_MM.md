@@ -18,6 +18,8 @@
 - လက်ရှိ 8 MiB JSON limit အောက်တွင် decoded runtime category ကို deterministic စစ်ဆေးပေးသော `from_json_typed(source, expected)` ကို ထည့်သွင်းထားပါသည်။
 - UTF-8 byte များအစား Unicode scalar value များဖြင့် index လုပ်သော Unicode-safe `char_at`၊ `substring` နှင့် `codepoints` APIs များကို stable bounds diagnostics နှင့်အတူ ထည့်သွင်းထားပါသည်။
 - Bounded output နှင့် stable runtime errors ပါသော deterministic collection helpers `entries(map)` နှင့် `enumerate(list)` များကို ထည့်သွင်းထားပါသည်။
+- UTC time API များကို ထည့်သွင်းထားပြီး `utc_now()` သည် seconds နှင့် millisecond timestamp များကို ပြန်ပေးကာ `duration_parts(milliseconds)` နှင့် `duration_between(end_millis, start_millis)` သည် sign ထိန်းသိမ်းထားသော checked decomposition နှင့် overflow diagnostic များကို ပေးပါသည်။
+- UTC timestamp consistency၊ positive/negative duration နှင့် invalid input များအတွက် focused time regression tests များ ထည့်သွင်းပြီး API documentation ကို `docs/STDLIB_TIME_EN.md` နှင့် `docs/STDLIB_TIME_MM.md` တွင် ရေးသားထားပါသည်။
 
 
 ## [2.0.4] — 2026-08-20

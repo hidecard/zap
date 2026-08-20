@@ -153,6 +153,18 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "system",
     },
     PublicBuiltin {
+        name: "utc_now",
+        domain: "time",
+    },
+    PublicBuiltin {
+        name: "duration_parts",
+        domain: "time",
+    },
+    PublicBuiltin {
+        name: "duration_between",
+        domain: "time",
+    },
+    PublicBuiltin {
         name: "env",
         domain: "system",
     },

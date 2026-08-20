@@ -28,9 +28,9 @@ mod stdlib_catalog;
 
 use evaluator::{
     call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
-    direct_builtin, direct_external_builtin, execute_ast_program, execute_lines,
-    initialize_object_fields, json_to_value, operate, validate_source_layout, value_to_json,
-    value_type_name, Flow,
+    direct_builtin, direct_external_builtin, duration_value, execute_ast_program, execute_lines,
+    initialize_object_fields, json_to_value, operate, utc_now_value, validate_source_layout,
+    value_to_json, value_type_name, Flow,
 };
 
 use std::{
@@ -366,6 +366,45 @@ impl<'a> ExprParser<'a> {
                     }
                     _ => return Err("split expects text and separator".into()),
                 }
+            }
+            Token::Name(n) if n == "utc_now" && *self.peek() == Token::LParen => {
+                self.take();
+                if self.take() != Token::RParen {
+                    return Err("utc_now expects no arguments".into());
+                }
+                utc_now_value()?
+            }
+            Token::Name(n) if n == "duration_parts" && *self.peek() == Token::LParen => {
+                self.take();
+                let milliseconds = match self.parse(0)? {
+                    Value::Number(value) => value,
+                    _ => return Err("duration_parts expects milliseconds as a number".into()),
+                };
+                if self.take() != Token::RParen {
+                    return Err("expected ) after duration_parts".into());
+                }
+                duration_value(milliseconds)?
+            }
+            Token::Name(n) if n == "duration_between" && *self.peek() == Token::LParen => {
+                self.take();
+                let start = match self.parse(0)? {
+                    Value::Number(value) => value,
+                    _ => return Err("duration_between expects two millisecond numbers".into()),
+                };
+                if self.take() != Token::Comma {
+                    return Err("expected comma in duration_between".into());
+                }
+                let end = match self.parse(0)? {
+                    Value::Number(value) => value,
+                    _ => return Err("duration_between expects two millisecond numbers".into()),
+                };
+                if self.take() != Token::RParen {
+                    return Err("expected ) after duration_between".into());
+                }
+                let milliseconds = end
+                    .checked_sub(start)
+                    .ok_or_else(|| "duration_between integer overflow".to_string())?;
+                duration_value(milliseconds)?
             }
             Token::Name(n) if n == "type" && *self.peek() == Token::LParen => {
                 self.take();

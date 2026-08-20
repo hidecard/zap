@@ -9,11 +9,12 @@ Zap's standard library is organized into stable public domains. The runtime disp
 | `collections` | Lists and maps | `sum`, `range`, `keys`, `entries`, `enumerate`, `count`, `reverse`, `get` |
 | `filesystem` | Bounded text and line I/O | `read_text`, `write_text`, `read_lines`, `write_lines`, `exists`, `file_metadata`, `atomic_write` |
 | `json` | JSON serialization and runtime-category validation | `json`, `from_json`, `from_json_typed` |
-| `system` | Environment, configuration, paths, and time | `env`, `has_env`, `env_get`, `config_dir`, `config_path`, `path_join`, `basename`, `dirname`, `now`, `sleep` |
+| `system` | Environment, configuration, and paths | `env`, `has_env`, `env_get`, `config_dir`, `config_path`, `path_join`, `basename`, `dirname`, `now`, `sleep` |
+| `time` | UTC timestamps and signed duration decomposition | `utc_now`, `duration_parts`, `duration_between` |
 | `network` | URL handling, bounded HTTP requests, and a local one-request server | `url_parse`, `url_encode`, `url_decode`, `http_get`, `http_request`, `http_serve_once` |
 | `process` | Non-shell process execution | `process_run` |
 
-All public builtins use explicit argument validation and return structured runtime errors rather than silently accepting invalid input. Filesystem, JSON, and HTTP response operations use documented 8 MiB safety limits. URL inputs are limited to 8 KiB. `process_run` invokes a program directly without shell interpretation, accepts only a text command and list of text arguments, captures UTF-8 stdout/stderr, and rejects output larger than 1 MiB. HTTP requests accept only `http` and `https` URLs and use bounded connect, read, and write timeouts. `http_serve_once` binds to `127.0.0.1`, serves exactly one HTTP request, and enforces a 64 KiB request limit, an 8 MiB response limit, and a 10-second wait limit. `env_get` provides a deterministic text fallback without mutating the process environment. `config_dir` resolves the platform configuration directory using XDG configuration rules on Unix-like systems, `Application Support` on macOS, and `APPDATA`/`LOCALAPPDATA` on Windows. `config_path` accepts only one relative file name and rejects path separators and traversal components.
+All public builtins use explicit argument validation and return structured runtime errors rather than silently accepting invalid input. Filesystem, JSON, and HTTP response operations use documented 8 MiB safety limits. URL inputs are limited to 8 KiB. `process_run` invokes a program directly without shell interpretation, accepts only a text command and list of text arguments, captures UTF-8 stdout/stderr, and rejects output larger than 1 MiB. HTTP requests accept only `http` and `https` URLs and use bounded connect, read, and write timeouts. `http_serve_once` binds to `127.0.0.1`, serves exactly one HTTP request, and enforces a 64 KiB request limit, an 8 MiB response limit, and a 10-second wait limit. `env_get` provides a deterministic text fallback without mutating the process environment. `config_dir` resolves the platform configuration directory using XDG configuration rules on Unix-like systems, `Application Support` on macOS, and `APPDATA`/`LOCALAPPDATA` on Windows. `config_path` accepts only one relative file name and rejects path separators and traversal components. The `time` APIs use UTC and integer millisecond precision: `utc_now()` returns `unix_seconds` and `unix_millis`; `duration_parts(milliseconds)` returns signed `days`, `hours`, `minutes`, `seconds`, `millis`, and `milliseconds`; and `duration_between(end_millis, start_millis)` decomposes the checked difference `end_millis - start_millis`. Overflow is reported as a runtime error rather than wrapping.
 
 The public catalog is deterministic: each builtin appears once and belongs to one domain. The native runtime includes a catalog used by tooling and tests so documentation and future module exports can remain synchronized with implementation.
 
@@ -28,6 +29,10 @@ say result["stdout"]
 
 let fallback = env_get("ZAP_OPTIONAL_SETTING", "default")
 let settings = config_path("settings.json")
+
+let current = utc_now()
+let elapsed = duration_between(current["unix_millis"], current["unix_millis"] - 1500)
+say elapsed["milliseconds"]
 
 # Bind to loopback, serve one request, then return request metadata.
 let served = http_serve_once(8080, "Hello from Zap")

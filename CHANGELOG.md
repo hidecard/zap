@@ -14,6 +14,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။
 - လက်ရှိ JSON safety limit အောက်တွင် runtime category ကို စစ်ဆေးပေးသော `from_json_typed(source, expected)` နှင့် UTF-8 byte များအစား Unicode scalar value များဖြင့် အလုပ်လုပ်သော `char_at`၊ `substring`၊ `codepoints` APIs များကို ထည့်သွင်းထားပါသည်။
 - Bounded output နှင့် stable runtime errors ပါသော deterministic collection helpers `entries(map)` နှင့် `enumerate(list)` များကို ထည့်သွင်းထားပါသည်။
+- UTC time API များကို ထည့်သွင်းထားပြီး `utc_now()` သည် seconds နှင့် millisecond timestamp များကို ပြန်ပေးကာ `duration_parts(milliseconds)` နှင့် `duration_between(end_millis, start_millis)` သည် sign ထိန်းသိမ်းထားသော checked decomposition နှင့် overflow diagnostic များကို ပေးပါသည်။
+- UTC timestamp consistency၊ positive/negative duration နှင့် invalid input များအတွက် regression tests များ၊ English/Burmese time guides များကို ထည့်သွင်းထားပါသည်။
 
 
 ## [2.0.4] - 2026-08-20
