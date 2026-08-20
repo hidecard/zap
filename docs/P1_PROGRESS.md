@@ -30,7 +30,7 @@ The native Rust suite currently passes **85 tests**: 25 unit tests and 60 integr
 
 | Priority | Work item | Current state | Next acceptance criteria |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | In progress / next architecture step | Function and method calls evaluate structured AST arguments without source reconstruction |
+| 1 | Direct AST call evaluation | In progress | Native AST now directly evaluates literals, collections, operators, user-function calls, member access, and object methods; legacy built-in/index fallback remains to be migrated |
 | 2 | Named arguments | Not implemented | Parse `name = expression` only inside calls; reject unknown, duplicate, positional-after-named, and missing arguments; bind functions and methods consistently |
 | 3 | Control-flow type narrowing | Not implemented | `if is_some(value):` and `if is_ok(result):` provide safe branch-local payload types, including `else` handling and nested branches |
 | 4 | OOP visibility and initialization rules | Partial | Define and enforce public/private/protected members, constructor rules, and diagnostics across inheritance and modules |
@@ -38,4 +38,4 @@ The native Rust suite currently passes **85 tests**: 25 unit tests and 60 integr
 | 6 | Package determinism and CLI tooling | Partial | Lockfile/deterministic dependency behavior plus stable diagnostics, filtering, formatting, and project checks |
 | 7 | Cross-platform and release gates | Pending | Linux, Windows, and macOS verification; bilingual changelog/release documentation; final P1 release only after all gates pass |
 
-Named arguments are **not** available in the current release line. The documentation deliberately describes positional defaults only. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.
+The direct-AST migration is **in progress** and is not yet the final call architecture. Named arguments are **not** available in the current release line. The documentation deliberately describes positional defaults only. P2 work such as async execution, LSP/editor integration, and a full package registry will begin only after the P1 acceptance criteria are verified.

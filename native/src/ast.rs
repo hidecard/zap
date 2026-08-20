@@ -67,6 +67,10 @@ pub(crate) enum Expr {
         callee: Box<Spanned<Expr>>,
         args: Vec<Spanned<Expr>>,
     },
+    Member {
+        target: Box<Spanned<Expr>>,
+        member: String,
+    },
     Index {
         target: Box<Spanned<Expr>>,
         index: Box<Spanned<Expr>>,
@@ -284,6 +288,24 @@ impl AstParser {
                     expression.node = Expr::Call {
                         callee: Box::new(callee),
                         args,
+                    };
+                }
+                crate::lexer::Token::Dot => {
+                    self.advance();
+                    let member = match self.advance().token {
+                        crate::lexer::Token::Name(name) => name,
+                        other => {
+                            return Err(format!("expected member name after '.', got {other:?}"))
+                        }
+                    };
+                    let target_span = expression.span.clone();
+                    let target = Spanned::new(
+                        std::mem::replace(&mut expression.node, Expr::Literal(Literal::None)),
+                        target_span,
+                    );
+                    expression.node = Expr::Member {
+                        target: Box::new(target),
+                        member,
                     };
                 }
                 crate::lexer::Token::LBracket => {

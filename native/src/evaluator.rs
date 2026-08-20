@@ -241,6 +241,135 @@ pub(crate) fn expression(
     ExprParser::new(&tokens, vars, funcs).parse_complete()
 }
 
+fn ast_expression(
+    node: &crate::ast::Spanned<Expr>,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<Value, String> {
+    match &node.node {
+        Expr::Literal(Literal::Number(value)) => Ok(Value::Number(*value)),
+        Expr::Literal(Literal::Text(value)) => Ok(Value::Text(value.clone())),
+        Expr::Literal(Literal::Bool(value)) => Ok(Value::Bool(*value)),
+        Expr::Literal(Literal::None) => Ok(Value::None),
+        Expr::Name(name) => vars
+            .get(name)
+            .cloned()
+            .or_else(|| funcs.get(name).map(|_| Value::None))
+            .ok_or_else(|| format!("undefined variable: {name}")),
+        Expr::List(items) => items
+            .iter()
+            .map(|item| ast_expression(item, vars, funcs))
+            .collect::<Result<Vec<_>, _>>()
+            .map(Value::List),
+        Expr::Map(items) => {
+            let mut map = HashMap::new();
+            for (key, value) in items {
+                let key = ast_expression(key, vars, funcs)?;
+                let Value::Text(key) = key else {
+                    return Err("map keys must be text".into());
+                };
+                map.insert(key, ast_expression(value, vars, funcs)?);
+            }
+            Ok(Value::Map(map))
+        }
+        Expr::Unary { op, value } => {
+            let value = ast_expression(value, vars, funcs)?;
+            match (op, value) {
+                (UnaryOp::Negate, Value::Number(value)) => value
+                    .checked_neg()
+                    .map(Value::Number)
+                    .ok_or_else(|| "integer overflow".into()),
+                (UnaryOp::Not, value) => Ok(Value::Bool(!value.truthy())),
+                (UnaryOp::Negate, _) => Err("unary '-' expects a number".into()),
+            }
+        }
+        Expr::Binary { left, op, right } => {
+            let left = ast_expression(left, vars, funcs)?;
+            let right = ast_expression(right, vars, funcs)?;
+            let token = match op {
+                BinaryOp::Add => Token::Plus,
+                BinaryOp::Subtract => Token::Minus,
+                BinaryOp::Multiply => Token::Star,
+                BinaryOp::Divide => Token::Slash,
+                BinaryOp::Remainder => Token::Percent,
+                BinaryOp::Equal => Token::EqEq,
+                BinaryOp::NotEqual => Token::NotEq,
+                BinaryOp::Less => Token::Less,
+                BinaryOp::Greater => Token::Greater,
+                BinaryOp::LessEqual => Token::LessEq,
+                BinaryOp::GreaterEqual => Token::GreaterEq,
+                BinaryOp::And => Token::And,
+                BinaryOp::Or => Token::Or,
+            };
+            operate(left, token, right)
+        }
+        Expr::Call { callee, args } => {
+            let values = args
+                .iter()
+                .map(|arg| ast_expression(arg, vars, funcs))
+                .collect::<Result<Vec<_>, _>>()?;
+            match &callee.node {
+                Expr::Name(name) => {
+                    if let Some(function) = funcs.get(name) {
+                        call_function(function, values, funcs)
+                    } else {
+                        expression(&ast_expr_source(node), vars, funcs)
+                    }
+                }
+                Expr::Member { target, member } => {
+                    let (dispatch_class, receiver) = if let Expr::Name(name) = &target.node {
+                        if name == "super" {
+                            let parent = match vars.get("super") {
+                                Some(Value::Text(parent)) => parent.clone(),
+                                _ => return Err("super is only available inside a method".into()),
+                            };
+                            let receiver = vars
+                                .get("self")
+                                .cloned()
+                                .ok_or_else(|| "super requires self".to_string())?;
+                            (parent, receiver)
+                        } else {
+                            let receiver = ast_expression(target, vars, funcs)?;
+                            let Value::Object { class_name, .. } = &receiver else {
+                                return Err("methods can only be called on objects".into());
+                            };
+                            (class_name.clone(), receiver)
+                        }
+                    } else {
+                        let receiver = ast_expression(target, vars, funcs)?;
+                        let Value::Object { class_name, .. } = &receiver else {
+                            return Err("methods can only be called on objects".into());
+                        };
+                        (class_name.clone(), receiver)
+                    };
+                    let function = funcs
+                        .get(&format!("{dispatch_class}.{}", member))
+                        .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
+                        .clone();
+                    call_method(&function, values, receiver, funcs)
+                }
+                _ => expression(&ast_expr_source(node), vars, funcs),
+            }
+        }
+        Expr::Member { target, member } => {
+            let value = ast_expression(target, vars, funcs)?;
+            match value {
+                Value::Object { fields, .. } => fields
+                    .borrow()
+                    .get(member)
+                    .cloned()
+                    .ok_or_else(|| format!("property not found: {member}")),
+                Value::Map(values) => values
+                    .get(member)
+                    .cloned()
+                    .ok_or_else(|| format!("key not found: {member}")),
+                _ => Err("property access expects an object or map".into()),
+            }
+        }
+        Expr::Index { .. } => expression(&ast_expr_source(node), vars, funcs),
+    }
+}
+
 pub(crate) fn call_function(
     f: &Function,
     args: Vec<Value>,
@@ -594,6 +723,9 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
                 .collect::<Vec<_>>()
                 .join(", ")
         ),
+        Expr::Member { target, member } => {
+            format!("{}.{}", ast_expr_source(target), member)
+        }
         Expr::Index { target, index } => {
             format!("{}[{}]", ast_expr_source(target), ast_expr_source(index))
         }
@@ -878,11 +1010,11 @@ pub(crate) fn execute_ast_program(
     for statement in &program.statements {
         let flow = match &statement.node {
             Stmt::Expression(value) => {
-                let _ = expression(&ast_expr_source(value), vars, funcs)?;
+                let _ = ast_expression(value, vars, funcs)?;
                 Flow::Continue
             }
             Stmt::Assignment { name, value } => {
-                let evaluated = expression(&ast_expr_source(value), vars, funcs)?;
+                let evaluated = ast_expression(value, vars, funcs)?;
                 if let Some((object_name, field)) = name.split_once('.') {
                     let object = vars
                         .get_mut(object_name)
@@ -903,7 +1035,7 @@ pub(crate) fn execute_ast_program(
                 annotation,
                 value,
             } => {
-                let evaluated = expression(&ast_expr_source(value), vars, funcs)?;
+                let evaluated = ast_expression(value, vars, funcs)?;
                 if let Some(annotation) = annotation {
                     check_annotation(name, annotation, &evaluated)?;
                 }
@@ -911,10 +1043,7 @@ pub(crate) fn execute_ast_program(
                 Flow::Continue
             }
             Stmt::Say(value) => {
-                println!(
-                    "{}",
-                    expression(&ast_expr_source(value), vars, funcs)?.show()
-                );
+                println!("{}", ast_expression(value, vars, funcs)?.show());
                 Flow::Continue
             }
             Stmt::Return(value) => {
@@ -929,7 +1058,7 @@ pub(crate) fn execute_ast_program(
                 then_branch,
                 else_branch,
             } => {
-                if expression(&ast_expr_source(condition), vars, funcs)?.truthy() {
+                if ast_expression(condition, vars, funcs)?.truthy() {
                     execute_ast_program(then_branch, vars, funcs, base)?
                 } else if let Some(branch) = else_branch {
                     execute_ast_program(branch, vars, funcs, base)?
@@ -940,7 +1069,7 @@ pub(crate) fn execute_ast_program(
             Stmt::While { condition, body } => {
                 let mut iterations = 0;
                 loop {
-                    if !expression(&ast_expr_source(condition), vars, funcs)?.truthy() {
+                    if !ast_expression(condition, vars, funcs)?.truthy() {
                         break Flow::Continue;
                     }
                     match execute_ast_program(body, vars, funcs, base)? {
@@ -961,7 +1090,7 @@ pub(crate) fn execute_ast_program(
                 iterable,
                 body,
             } => {
-                let value = expression(&ast_expr_source(iterable), vars, funcs)?;
+                let value = ast_expression(iterable, vars, funcs)?;
                 let items = match value {
                     Value::List(items) => items,
                     _ => return Err("for expects a list".into()),
@@ -1539,7 +1668,7 @@ mod tests {
     #[test]
     fn executes_function_and_method_bodies_from_native_ast() {
         let program = parse_program(
-            "fn add(a: number, b: number) -> number:\n    return a + b\nlet result: number = add(3, 3)\n",
+            "fn add(a: number, b: number) -> number:\n    return a + b\nfn twice(value: number) -> number:\n    return add(value, value)\nlet result: number = twice(3)\n",
         )
         .expect("valid declaration AST program");
         let mut vars = HashMap::<String, Value>::new();
@@ -1548,6 +1677,9 @@ mod tests {
             .expect("native AST declarations should execute");
         assert!(funcs
             .get("add")
+            .is_some_and(|function| function.ast_body.is_some()));
+        assert!(funcs
+            .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
     }

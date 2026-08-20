@@ -30,7 +30,7 @@ Native Rust test suite သည် လက်ရှိ **test 85 ခု** အား
 
 | ဦးစားပေး | အလုပ် | လက်ရှိအခြေအနေ | ပြီးစီးရန် လက်ခံစံနှုန်း |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | နောက်တစ်ဆင့် architecture အလုပ် | Function/method call များသည် source reconstruction မသုံးဘဲ structured AST arguments ကို တိုက်ရိုက် evaluate လုပ်နိုင်ရမည် |
+| 1 | Direct AST call evaluation | လုပ်ဆောင်နေဆဲ | Native AST သည် literals၊ collections၊ operators၊ user-function calls၊ member access နှင့် object methods များကို တိုက်ရိုက် evaluate လုပ်နိုင်ပြီ။ legacy built-in/index fallback များကို ဆက်လက်ပြောင်းရန် ကျန်ရှိသည် |
 | 2 | Named arguments | မစတင်ရသေး | Call အတွင်း `name = expression` ကိုသာ parse လုပ်ပြီး unknown၊ duplicate၊ positional-after-named နှင့် missing arguments များကို reject လုပ်ရမည် |
 | 3 | Control-flow type narrowing | မစတင်ရသေး | `if is_some(value):` နှင့် `if is_ok(result):` အတွင်း branch-local payload type ကို သိရှိရမည်၊ `else` နှင့် nested branch များပါ အလုပ်လုပ်ရမည် |
 | 4 | OOP visibility နှင့် initialization rules | တစ်စိတ်တစ်ပိုင်း | public/private/protected member များ၊ constructor rules နှင့် inheritance/module diagnostics များ သတ်မှတ်ပြီး enforce လုပ်ရမည် |
@@ -38,4 +38,4 @@ Native Rust test suite သည် လက်ရှိ **test 85 ခု** အား
 | 6 | Package determinism နှင့် CLI tooling | တစ်စိတ်တစ်ပိုင်း | Lockfile/deterministic dependency behavior၊ diagnostics၊ filtering၊ formatting နှင့် project checks များ တည်ငြိမ်ရမည် |
 | 7 | Cross-platform နှင့် release gates | မစစ်ဆေးရသေး | Linux၊ Windows၊ macOS verification၊ bilingual changelog/release documentation နှင့် နောက်ဆုံး P1 release စစ်ဆေးမှုများ ပြီးရမည် |
 
-လက်ရှိ release line တွင် named arguments မရသေးပါ။ ထို့ကြောင့် documentation တွင် positional defaults ကိုသာ support လုပ်ထားသည်ဟု ဖော်ပြထားပါသည်။ P1 acceptance criteria များ မပြီးမချင်း async၊ LSP/editor integration နှင့် package registry ကဲ့သို့သော P2 အလုပ်များကို မစတင်သေးပါ။
+Direct-AST migration သည် **လုပ်ဆောင်နေဆဲ** ဖြစ်ပြီး final call architecture မပြီးသေးပါ။ လက်ရှိ release line တွင် named arguments မရသေးပါ။ ထို့ကြောင့် documentation တွင် positional defaults ကိုသာ support လုပ်ထားသည်ဟု ဖော်ပြထားပါသည်။ P1 acceptance criteria များ မပြီးမချင်း async၊ LSP/editor integration နှင့် package registry ကဲ့သို့သော P2 အလုပ်များကို မစတင်သေးပါ။
