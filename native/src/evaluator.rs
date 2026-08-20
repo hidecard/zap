@@ -6,8 +6,8 @@ use crate::ast::{BinaryOp, Expr, Literal, Program, Stmt, UnaryOp};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
-    parse_signature, read_limited_text, resolve_module, Function, Param, Value, MODULE_CACHE,
-    MODULE_LOADING,
+    parse_signature, read_limited_text, resolve_module, write_limited_text, Function, Param, Value,
+    MODULE_CACHE, MODULE_LOADING,
 };
 
 const MAX_EXECUTION_DEPTH: usize = 256;
@@ -404,6 +404,74 @@ fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String>
     }
 }
 
+fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    match name {
+        "read_text" => {
+            if args.len() != 1 {
+                return Err(format!("read_text expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(path) = &args[0] else {
+                return Err("read_text expects a text path".into());
+            };
+            Ok(Some(Value::Text(read_limited_text(
+                Path::new(path),
+                "read_text",
+            )?)))
+        }
+        "write_text" => {
+            if args.len() != 2 {
+                return Err(format!(
+                    "write_text expects 2 arguments, got {}",
+                    args.len()
+                ));
+            }
+            let (Value::Text(path), Value::Text(content)) = (&args[0], &args[1]) else {
+                return Err("write_text expects text path and content".into());
+            };
+            write_limited_text(Path::new(path), content, "write_text")?;
+            Ok(Some(Value::None))
+        }
+        "read_lines" => {
+            if args.len() != 1 {
+                return Err(format!("read_lines expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(path) = &args[0] else {
+                return Err("read_lines expects a text path".into());
+            };
+            Ok(Some(Value::List(
+                read_limited_text(Path::new(path), "read_lines")?
+                    .lines()
+                    .map(|line| Value::Text(line.to_string()))
+                    .collect(),
+            )))
+        }
+        "write_lines" => {
+            if args.len() != 2 {
+                return Err(format!(
+                    "write_lines expects 2 arguments, got {}",
+                    args.len()
+                ));
+            }
+            let (Value::Text(path), Value::List(lines)) = (&args[0], &args[1]) else {
+                return Err("write_lines expects a text path and list".into());
+            };
+            let mut output = String::new();
+            for (index, value) in lines.iter().enumerate() {
+                let Value::Text(line) = value else {
+                    return Err("write_lines expects a list of text".into());
+                };
+                if index > 0 {
+                    output.push('\n');
+                }
+                output.push_str(line);
+            }
+            write_limited_text(Path::new(path), &output, "write_lines")?;
+            Ok(Some(Value::None))
+        }
+        _ => Ok(None),
+    }
+}
+
 fn ast_expression(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
@@ -476,6 +544,8 @@ fn ast_expression(
                     if let Some(function) = funcs.get(name) {
                         call_function(function, values, funcs)
                     } else if let Some(value) = direct_builtin(name, values.clone())? {
+                        Ok(value)
+                    } else if let Some(value) = direct_io_builtin(name, &values)? {
                         Ok(value)
                     } else {
                         expression(&ast_expr_source(node), vars, funcs)
@@ -1878,6 +1948,29 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn evaluates_file_builtins_from_native_ast() {
+        let path = std::env::temp_dir().join(format!("zap-direct-io-{}.txt", std::process::id()));
+        let path_text = path.to_string_lossy().replace('\\', "\\\\");
+        let source = format!(
+            "write_text(\"{path_text}\", \"hello\")\nlet content: text = read_text(\"{path_text}\")\nwrite_lines(\"{path_text}\", split(\"one,two\", \",\"))\nlet lines = read_lines(\"{path_text}\")\n",
+        );
+        let program = parse_program(&source).expect("valid file built-in AST program");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("direct file built-ins should execute");
+        assert_eq!(vars.get("content"), Some(&Value::Text("hello".into())));
+        assert_eq!(
+            vars.get("lines"),
+            Some(&Value::List(vec![
+                Value::Text("one".into()),
+                Value::Text("two".into())
+            ]))
+        );
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]
