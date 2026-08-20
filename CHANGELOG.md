@@ -14,6 +14,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 ### Async နှင့် tooling
 - Deterministic `AsyncRuntime::spawn_joinable(future)`၊ `JoinHandle<T>::is_ready()` နှင့် future အဖြစ် output join လုပ်နိုင်မှုတို့ကို ထည့်သွင်းထားပါသည်။
 - `SpawnError::TaskLimitReached` ကို propagate လုပ်ပြီး runtime task order၊ poll budget၊ Rust 1.75 compatibility နှင့် worker thread မဖန်တီးသော execution model ကို ထိန်းသိမ်းထားပါသည်။ Regression coverage နှင့် bilingual guide များကို `docs/ASYNC_RUNTIME_EN.md` နှင့် `docs/ASYNC_RUNTIME_MM.md` တွင် ထည့်သွင်းထားပါသည်။
+- `AsyncRuntime::spawn_joinable_cancellable(future)` နှင့် `CancellationToken` ကို ထည့်သွင်းပြီး cancellation ဖြစ်သော join များကို inner future ကို ဆက်မ poll လုပ်ဘဲ `JoinError::Cancelled` ဖြင့် resolve လုပ်ပါသည်။
+- `timeout_ticks(future, ticks)` သည် wall-clock time မဟုတ်ဘဲ executor poll အရေအတွက်အပေါ် အခြေခံ၍ `TimeoutError` ကို deterministic အတိုင်း propagate လုပ်ပြီး cancellation၊ timeout failure နှင့် completion လမ်းကြောင်းများအတွက် regression tests ထည့်သွင်းထားပါသည်။
 
 ### Standard library
 - Symlink-safe portable metadata အတွက် `file_metadata(path)` နှင့် bounded temporary-file/sync/rename workflow ပါသော `atomic_write(path, content)` standard-library APIs များကို ထည့်သွင်းထားပါသည်။

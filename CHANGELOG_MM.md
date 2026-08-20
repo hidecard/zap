@@ -16,6 +16,8 @@
 - Deterministic `AsyncRuntime::spawn_joinable(future)` task submission၊ `JoinHandle<T>::is_ready()` နှင့် future အဖြစ် output join လုပ်နိုင်မှုတို့ကို ထည့်သွင်းထားပါသည်။
 - Joinable task admission အချိန် `SpawnError::TaskLimitReached` ကို propagate လုပ်ပြီး runtime task order၊ poll budget၊ Rust 1.75 compatibility နှင့် worker thread မဖန်တီးသော execution model ကို ထိန်းသိမ်းထားပါသည်။
 - Joined output အောင်မြင်မှုနှင့် task-limit error များအတွက် regression coverage ထည့်သွင်းပြီး ပထမ async slice ကို `docs/ASYNC_RUNTIME_EN.md` နှင့် `docs/ASYNC_RUNTIME_MM.md` တွင် မှတ်တမ်းတင်ထားပါသည်။
+- `AsyncRuntime::spawn_joinable_cancellable(future)` ကို ထည့်သွင်းထားပြီး `CancellationToken` ပြန်ပေးကာ cancellation ဖြစ်သော join များကို inner future ကို ဆက်မ poll လုပ်ဘဲ `JoinError::Cancelled` ဖြင့် resolve လုပ်ပါသည်။
+- `timeout_ticks(future, ticks)` ကို ထည့်သွင်းထားပြီး wall-clock time မဟုတ်ဘဲ executor poll အရေအတွက်အပေါ် အခြေခံ၍ `TimeoutError` ကို propagate လုပ်ပါသည်။ Cancellation၊ timeout failure နှင့် အချိန်မကုန်မီ completion လမ်းကြောင်းများအတွက် regression tests ထည့်သွင်းထားပါသည်။
 
 ### Standard library
 

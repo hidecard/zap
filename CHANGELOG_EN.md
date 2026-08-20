@@ -16,6 +16,8 @@
 - Added deterministic `AsyncRuntime::spawn_joinable(future)` task submission with `JoinHandle<T>::is_ready()` and future-based output joining.
 - Propagated `SpawnError::TaskLimitReached` from joinable task admission, preserving runtime task order, poll budgets, Rust 1.75 compatibility, and the no-worker-thread execution model.
 - Added regression coverage for successful joined output and task-limit errors; documented the first async slice in `docs/ASYNC_RUNTIME_EN.md` and `docs/ASYNC_RUNTIME_MM.md`.
+- Added `AsyncRuntime::spawn_joinable_cancellable(future)`, which returns a `CancellationToken` and resolves cancelled joins as `JoinError::Cancelled` without polling the inner future after cancellation.
+- Added deterministic `timeout_ticks(future, ticks)`, which propagates `TimeoutError` based on executor polls rather than wall-clock time; regression tests cover cancellation, timeout failure, and successful completion paths.
 
 ### Standard library
 

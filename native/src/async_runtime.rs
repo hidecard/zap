@@ -71,12 +71,40 @@ impl AsyncRuntime {
         let task_output = output.clone();
         self.spawn_limited(async move {
             let value = future.await;
-            *task_output.borrow_mut() = Some(value);
+            *task_output.borrow_mut() = Some(Ok(value));
         })?;
         Ok(JoinHandle {
             output,
             consumed: false,
         })
+    }
+
+    /// Spawn a joinable task controlled by a cancellation token.
+    pub fn spawn_joinable_cancellable<F, T>(
+        &mut self,
+        future: F,
+    ) -> Result<(JoinHandle<T>, CancellationToken), SpawnError>
+    where
+        F: Future<Output = T> + 'static,
+        T: 'static,
+    {
+        let output = Rc::new(RefCell::new(None));
+        let task_output = output.clone();
+        let token = CancellationToken::new();
+        let task_token = token.clone();
+        self.spawn_limited(async move {
+            match Cancellable::new(future, task_token).await {
+                Ok(value) => *task_output.borrow_mut() = Some(Ok(value)),
+                Err(_) => *task_output.borrow_mut() = Some(Err(JoinError::Cancelled)),
+            }
+        })?;
+        Ok((
+            JoinHandle {
+                output,
+                consumed: false,
+            },
+            token,
+        ))
     }
 
     /// Spawn a task that completes with cancellation instead of polling its
@@ -156,7 +184,7 @@ pub enum SpawnError {
 
 #[allow(dead_code)]
 pub struct JoinHandle<T> {
-    output: Rc<RefCell<Option<T>>>,
+    output: Rc<RefCell<Option<Result<T, JoinError>>>>,
     consumed: bool,
 }
 
@@ -177,7 +205,7 @@ impl<T> Future for JoinHandle<T> {
         }
         if let Some(value) = this.output.borrow_mut().take() {
             this.consumed = true;
-            Poll::Ready(Ok(value))
+            Poll::Ready(value)
         } else {
             context.waker().wake_by_ref();
             Poll::Pending
@@ -189,6 +217,7 @@ impl<T> Future for JoinHandle<T> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum JoinError {
     AlreadyJoined,
+    Cancelled,
 }
 
 #[allow(dead_code)]
@@ -220,6 +249,51 @@ where
 #[allow(dead_code)]
 pub fn delay_ticks(ticks: u64) -> Delay {
     Delay { remaining: ticks }
+}
+
+/// Wrap a future with a deterministic poll-based timeout.
+///
+/// The inner future is polled first. A pending poll consumes one tick; when
+/// no ticks remain, the wrapper completes with `TimeoutError`.
+#[allow(dead_code)]
+pub fn timeout_ticks<F>(future: F, ticks: u64) -> Timeout<F>
+where
+    F: Future,
+{
+    Timeout {
+        future: Box::pin(future),
+        remaining: ticks,
+    }
+}
+
+#[allow(dead_code)]
+pub struct Timeout<F> {
+    future: Pin<Box<F>>,
+    remaining: u64,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TimeoutError;
+
+impl<F> Future for Timeout<F>
+where
+    F: Future,
+{
+    type Output = Result<F::Output, TimeoutError>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        match this.future.as_mut().poll(context) {
+            Poll::Ready(value) => Poll::Ready(Ok(value)),
+            Poll::Pending if this.remaining == 0 => Poll::Ready(Err(TimeoutError)),
+            Poll::Pending => {
+                this.remaining -= 1;
+                context.waker().wake_by_ref();
+                Poll::Pending
+            }
+        }
+    }
 }
 
 /// Suspend exactly once, then become ready on the next poll.
@@ -345,8 +419,8 @@ impl Wake for NoopWaker {
 #[cfg(test)]
 mod tests {
     use super::{
-        block_on, delay_ticks, yield_now, AsyncRuntime, Cancellable, CancellationToken, RunReport,
-        RuntimeLimits, SpawnError,
+        block_on, delay_ticks, timeout_ticks, yield_now, AsyncRuntime, Cancellable,
+        CancellationToken, JoinError, RunReport, RuntimeLimits, SpawnError, TimeoutError,
     };
     use std::future::ready;
 
@@ -365,6 +439,43 @@ mod tests {
         runtime.run_until_idle();
         assert!(handle.is_ready());
         assert_eq!(block_on(handle), Ok(42_u8));
+    }
+
+    #[test]
+    fn joinable_task_propagates_cancellation() {
+        let mut runtime = AsyncRuntime::new();
+        let (handle, token) = runtime
+            .spawn_joinable_cancellable(async {
+                panic!("cancelled task was polled");
+            })
+            .expect("task should fit within runtime limits");
+        token.cancel();
+        runtime.run_until_idle();
+        assert_eq!(block_on(handle), Err(JoinError::Cancelled));
+    }
+
+    #[test]
+    fn timeout_ticks_propagates_timeout_and_allows_completion() {
+        assert_eq!(
+            block_on(timeout_ticks(
+                async {
+                    delay_ticks(2).await;
+                    7_u8
+                },
+                1
+            )),
+            Err(TimeoutError)
+        );
+        assert_eq!(
+            block_on(timeout_ticks(
+                async {
+                    delay_ticks(1).await;
+                    9_u8
+                },
+                2
+            )),
+            Ok(9_u8)
+        );
     }
 
     #[test]
