@@ -9,6 +9,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: zap-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
 jobs:
   quality:
     name: Test and validate release source
@@ -16,99 +24,194 @@ jobs:
     steps:
       - name: Check out tagged source
         uses: actions/checkout@v4
+
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: native
+
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
+
       - name: Run Clippy
         run: cargo clippy --manifest-path native/Cargo.toml --all-targets --all-features -- -D warnings
+
       - name: Run Cargo check
         run: cargo check --manifest-path native/Cargo.toml --all-targets --all-features
+
       - name: Run native unit and integration tests
         run: cargo test --manifest-path native/Cargo.toml --all-targets --all-features
+
       - name: Check repository whitespace
         run: git diff --check
+
       - name: Verify release tag version
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
-          cargo_version="$(sed -n 's/^version = "\(.*\)"$/\1/p' native/Cargo.toml | head -n 1)"
+          cargo_version="$(sed -n 's/^version = \"\(.*\)\"$/\1/p' native/Cargo.toml | head -n 1)"
           test "$tag_version" = "$cargo_version" || {
             echo "Tag version $tag_version does not match Cargo version $cargo_version"
             exit 1
           }
 
   build:
-    name: Build ${{ matrix.target }}
+    name: Build ${{ matrix.name }}
     needs: quality
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - name: Linux x86_64
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            archive: zap-linux-x86_64.tar.gz
+            archive_suffix: linux-x86_64.tar.gz
             binary: zap
-          - os: macos-latest
+          - name: macOS ARM64
+            os: macos-latest
             target: aarch64-apple-darwin
-            archive: zap-macos-arm64.tar.gz
+            archive_suffix: macos-arm64.tar.gz
             binary: zap
-          - os: windows-latest
+          - name: Windows x86_64
+            os: windows-latest
             target: x86_64-pc-windows-msvc
-            archive: zap-windows-x86_64.zip
+            archive_suffix: windows-x86_64.zip
             binary: zap.exe
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
       - name: Build native binary
         run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
-      - name: Package Unix binary
+
+      - name: Smoke-test Unix binary
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p package/zap/bin
-          cp native/target/${{ matrix.target }}/release/${{ matrix.binary }} package/zap/bin/
-          cp install.sh README.md CHANGELOG.md CHANGELOG_EN.md CHANGELOG_MM.md package/zap/
-          cp -R docs examples package/zap/
-          chmod 0755 package/zap/bin/${{ matrix.binary }}
-          tar -czf "${{ matrix.archive }}" -C package zap
-          sha256sum "${{ matrix.archive }}" > "${{ matrix.archive }}.sha256"
-      - name: Package Windows binary
+          zap="native/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          test -x "$zap"
+          "$zap" --version
+          "$zap" --help >/dev/null
+          "$zap" examples/default_parameters.zp >/tmp/zap-example.out
+          grep -q "Hello, World!" /tmp/zap-example.out
+
+      - name: Smoke-test Windows binary
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force package/zap/bin | Out-Null
+          $zap = "native/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          if (-not (Test-Path $zap)) { throw "Binary was not produced: $zap" }
+          & $zap --version
+          & $zap --help | Out-Null
+          & $zap examples/default_parameters.zp | Select-String "Hello, World!" | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "Example smoke test failed" }
+
+      - name: Set versioned archive name
+        if: runner.os != 'Windows'
+        shell: bash
+        run: echo "ARCHIVE=zap-${GITHUB_REF_NAME#v}-${{ matrix.archive_suffix }}" >> "$GITHUB_ENV"
+
+      - name: Set versioned archive name
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          "ARCHIVE=zap-$version-${{ matrix.archive_suffix }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Package Unix release
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf package
+          mkdir -p package/zap/bin package/zap/docs package/zap/examples
+          cp "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
+          cp README.md package/zap/
+          cp docs/USAGE.md docs/LANGUAGE_GUIDE.md docs/SYNTAX_GUIDE_EN.md package/zap/docs/
+          cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
+          printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
+          chmod 0755 package/zap/bin/${{ matrix.binary }}
+          tar -czf "$ARCHIVE" -C package zap
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+      - name: Package Windows release
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force package -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force package/zap/bin, package/zap/docs, package/zap/examples | Out-Null
           Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          Copy-Item install_windows.bat, README.md, CHANGELOG.md, CHANGELOG_EN.md, CHANGELOG_MM.md package/zap/
-          Copy-Item -Recurse docs, examples package/zap/
-          Compress-Archive -Path package/zap/* -DestinationPath "${{ matrix.archive }}"
-          (Get-FileHash "${{ matrix.archive }}" -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.archive }}" | Out-File -Encoding ascii "${{ matrix.archive }}.sha256"
-      - uses: actions/upload-artifact@v4
+          Copy-Item README.md package/zap/
+          Copy-Item docs/USAGE.md, docs/LANGUAGE_GUIDE.md, docs/SYNTAX_GUIDE_EN.md package/zap/docs/
+          Copy-Item examples/default_parameters.zp, examples/hello.zp package/zap/examples/
+          "Zap release artifact`nVersion: $($env:GITHUB_REF_NAME -replace '^v','')`nTarget: ${{ matrix.target }}" | Out-File -Encoding utf8 package/zap/RELEASE.txt
+          Compress-Archive -Path package/zap -DestinationPath "$env:ARCHIVE"
+          $hash = (Get-FileHash "$env:ARCHIVE" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $env:ARCHIVE" | Out-File -Encoding ascii "$env:ARCHIVE.sha256"
+
+      - name: Verify packaged archive
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c "$ARCHIVE.sha256"
+          tar -tzf "$ARCHIVE" | grep -E 'zap/bin/zap|zap/README.md|zap/RELEASE.txt'
+
+      - name: Verify packaged archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $line = Get-Content "$env:ARCHIVE.sha256"
+          $expected = ($line -split '\s+')[0]
+          $actual = (Get-FileHash "$env:ARCHIVE" -Algorithm SHA256).Hash.ToLower()
+          if ($expected -ne $actual) { throw "Archive checksum mismatch" }
+          if (-not (Test-Path "$env:ARCHIVE")) { throw "Archive was not produced" }
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
           path: |
-            ${{ matrix.archive }}
-            ${{ matrix.archive }}.sha256
+            zap-*.tar.gz
+            zap-*.zip
+            zap-*.sha256
+          if-no-files-found: error
+          retention-days: 14
 
   release:
+    name: Publish GitHub Release
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download platform artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
+
+      - name: Verify all downloaded checksums
+        working-directory: artifacts
+        run: |
+          set -euo pipefail
+          for checksum in *.sha256; do sha256sum -c "$checksum"; done
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
           files: artifacts/*
