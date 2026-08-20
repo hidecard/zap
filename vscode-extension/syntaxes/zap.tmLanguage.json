@@ -61,7 +61,7 @@
     },
     "builtins": {
       "patterns": [
-        { "name": "support.function.zap", "match": "\\b(say|print|len|type|range|enumerate|zip|map|filter|reduce|now|sleep|url_parse|url_encode|url_decode|http_get|http_request|process_run|has_env|env|path_join|basename|dirname|json_parse|json_stringify)\\b(?=\\s*\\()" }
+        { "name": "support.function.zap", "match": "\\b(say|print|len|type|range|enumerate|zip|map|filter|reduce|now|sleep|url_parse|url_encode|url_decode|http_get|http_request|process_run|has_env|env|path_join|basename|dirname|json_parse|json_stringify|spawn|task_join|task_is_ready)\\b(?=\\s*\\()" }
       ]
     },
     "constants": {

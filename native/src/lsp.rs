@@ -188,6 +188,9 @@ fn completion_response(message: &Value) -> Value {
         ("return", "Return a value from a function"),
         ("async", "Declare an asynchronous function"),
         ("await", "Await a Future value"),
+        ("spawn", "Create a task from a Future"),
+        ("task_join", "Join a spawned task"),
+        ("task_is_ready", "Check task readiness"),
     ];
     for line in source.lines() {
         let declaration = line.trim();
@@ -562,7 +565,19 @@ mod tests {
         assert_eq!(response["id"], 8);
         assert_eq!(response["result"]["isIncomplete"], false);
         assert_eq!(response["result"]["items"][0]["label"], "let");
-        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 12);
+        let labels = response["result"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|item| item["label"].as_str())
+            .collect::<Vec<_>>();
+        for expected in ["spawn", "task_join", "task_is_ready"] {
+            assert!(
+                labels.contains(&expected),
+                "missing completion item: {expected}"
+            );
+        }
+        assert_eq!(labels.len(), 15);
     }
 
     #[test]

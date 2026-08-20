@@ -20,6 +20,7 @@
 - Added deterministic `timeout_ticks(future, ticks)`, which propagates `TimeoutError` based on executor polls rather than wall-clock time; regression tests cover cancellation, timeout failure, and successful completion paths.
 - Added `spawn_joinable_result(future)` and `spawn_joinable_result_cancellable(future)`, preserving typed task failures through `TaskJoinError::Failed(E)`. Cancellation is checked before inner polling, repeated joins return `AlreadyJoined`, and regression coverage verifies typed failure, cancellation precedence, and repeated joins. Updated the bilingual async runtime guides.
 - Added language-level task facade builtins `spawn`, `task_join`, and `task_is_ready` in both evaluator and legacy expression paths. The eager Future boundary, strict arity/type diagnostics, async spawn/readiness/join behavior, and invalid-input regressions are documented in the bilingual async runtime and async/LSP guides.
+- Synchronized formatter, LSP, and VS Code tooling with the finalized async task vocabulary. LSP completion now describes `spawn`, `task_join`, and `task_is_ready`; the TextMate grammar highlights them as builtins; and extension smoke validation rejects grammar drift.
 
 ### Standard library
 

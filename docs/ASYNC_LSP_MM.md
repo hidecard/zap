@@ -89,8 +89,12 @@ Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ con
 
 Diagnostics များကို Zap ၏ ရှိပြီးသား lint implementation မှ ထုတ်ယူပါသည်။ ထို့ကြောင့် CLI နှင့် editor diagnostics များ၏ rules များ တူညီနေပါသည်။ Lint message တွင် source line ပါရှိပါက server သည် ၎င်းကို zero-based LSP range အဖြစ် ပြောင်းပြီး line ၏ character width အတိုင်း သတ်မှတ်ပါသည်။ Line မဖတ်နိုင်သော diagnostic များအတွက် ပထမ line ကို deterministic fallback အဖြစ် အသုံးပြုပါသည်။
 
+## Tooling Synchronization
+
+Formatter နှင့် LSP တို့သည် finalized async vocabulary တစ်ခုတည်းကို အသုံးပြုပါသည်။ Completion တွင် `spawn`၊ `task_join` နှင့် `task_is_ready` ကို stable description များဖြင့် ပြသပြီး VS Code TextMate grammar တွင်လည်း ထို builtins များကို callable Zap function များအဖြစ် highlight လုပ်ပါသည်။ Extension validation script သည် grammar ကို parse လုပ်ပြီး async builtin တစ်ခုခုပျောက်ဆုံးပါက package ကို reject လုပ်သဖြင့် language facade နှင့် editor asset များကြား drift မဖြစ်စေရန် ကာကွယ်ပေးပါသည်။
+
 ## လက်ကျန် P2 နယ်ပယ်
 
-ယခု foundation သည် production asynchronous I/O runtime သို့မဟုတ် multi-thread scheduler မဟုတ်သေးပါ။ External I/O integration၊ nested symbol indexing၊ module-aware package indexing နှင့် network registry service deployment များမှာ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition နှင့် workspace symbols များကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
+ယခု foundation သည် production asynchronous I/O runtime သို့မဟုတ် multi-thread scheduler မဟုတ်သေးပါ။ External I/O integration၊ nested symbol indexing၊ module-aware package indexing နှင့် network registry service deployment များမှာ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
 
 Package workflow အတွက် [Burmese package guide](PACKAGE.md) နှင့် [P2 progress](P2_PROGRESS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [ASYNC_LSP_EN.md](ASYNC_LSP_EN.md) ကို ကြည့်ပါ။

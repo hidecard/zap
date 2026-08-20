@@ -97,8 +97,12 @@ Completion is context-aware rather than a fixed unfiltered list. For example, af
 
 Diagnostics continue to reuse Zap’s existing lint implementation. This keeps command-line and editor diagnostics aligned. When a lint message reports a source line, the server maps it to a zero-based LSP range spanning that line’s character width; diagnostics without a parsed line use the first line as a deterministic fallback.
 
+## Tooling Synchronization
+
+The formatter and LSP now share the finalized async vocabulary. Completion advertises `spawn`, `task_join`, and `task_is_ready` with stable descriptions, while the VS Code TextMate grammar highlights the same builtins as callable Zap functions. The extension validation script parses the grammar and rejects a package when any async builtin is missing, preventing drift between the language facade and editor assets.
+
 ## Remaining P2 Boundary
 
-The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, richer nested-symbol indexing, module-aware package indexing, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, and workspace symbols are implemented and tested.
+The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, richer nested-symbol indexing, module-aware package indexing, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, workspace symbols, and the VS Code grammar/tooling synchronization slice are implemented and tested.
 
 For the package workflow, see the [English package guide](PACKAGE_EN.md) and [P2 progress](P2_PROGRESS.md). For the Burmese version of this guide, see [ASYNC_LSP_MM.md](ASYNC_LSP_MM.md).

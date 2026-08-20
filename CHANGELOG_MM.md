@@ -20,6 +20,7 @@
 - `timeout_ticks(future, ticks)` ကို ထည့်သွင်းထားပြီး wall-clock time မဟုတ်ဘဲ executor poll အရေအတွက်အပေါ် အခြေခံ၍ `TimeoutError` ကို propagate လုပ်ပါသည်။ Cancellation၊ timeout failure နှင့် အချိန်မကုန်မီ completion လမ်းကြောင်းများအတွက် regression tests ထည့်သွင်းထားပါသည်။
 - `spawn_joinable_result(future)` နှင့် `spawn_joinable_result_cancellable(future)` တို့ကို ထည့်သွင်းပြီး `TaskJoinError::Failed(E)` ဖြင့် typed task failure များကို ထိန်းသိမ်း propagate လုပ်ပါသည်။ Inner future ကို မ poll မီ cancellation ကို စစ်ဆေးပြီး repeated join များကို `AlreadyJoined` ဖြင့် ပြတ်သားစွာ ပြန်ပေးပါသည်။ Typed failure၊ cancellation precedence နှင့် repeated join များအတွက် regression coverage နှင့် bilingual async runtime guide update များ ထည့်သွင်းထားပါသည်။
 - Evaluator နှင့် legacy expression path နှစ်ခုလုံးတွင် language-level task facade builtins `spawn`၊ `task_join` နှင့် `task_is_ready` များကို ထည့်သွင်းထားပါသည်။ Eager Future boundary၊ strict arity/type diagnostic၊ async spawn/readiness/join behavior နှင့် invalid-input regression များကို bilingual async runtime နှင့် async/LSP guides များတွင် မှတ်တမ်းတင်ထားပါသည်။
+- Formatter၊ LSP နှင့် VS Code tooling များကို finalized async task vocabulary နှင့် synchronize လုပ်ထားပါသည်။ LSP completion တွင် `spawn`၊ `task_join` နှင့် `task_is_ready` descriptions များ ပါဝင်ပြီး TextMate grammar တွင် builtins အဖြစ် highlight လုပ်ကာ extension smoke validation သည် grammar drift ဖြစ်ပါက reject လုပ်ပါသည်။
 
 ### Standard library
 
