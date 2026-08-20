@@ -968,3 +968,31 @@ fn rejects_duplicate_function_parameters() {
         "{diagnostic}"
     );
 }
+
+#[test]
+fn check_rejects_incompatible_function_return() {
+    let dir = std::env::temp_dir().join("zap_return_type_project");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        dir.join("zap.toml"),
+        "name = \"return-check\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("main.zp"),
+        "fn bad() -> number:\n    return \"wrong\"\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", dir.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(!output.status.success());
+    let diagnostic = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        diagnostic.contains("return from 'bad' expects number, got text"),
+        "{diagnostic}"
+    );
+}

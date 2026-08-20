@@ -1032,6 +1032,103 @@ fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String>
     }
     Ok(())
 }
+fn validate_function_returns(source: &str, file: &Path) -> Result<(), String> {
+    let mut signatures = HashMap::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed
+            .strip_prefix("fn ")
+            .or_else(|| trimmed.strip_prefix("def "))
+        {
+            let head = rest.trim_end_matches(':').trim();
+            let (name, args) = head.split_once('(').ok_or_else(|| {
+                format!(
+                    "SyntaxError at {}: function signature requires parentheses",
+                    file.display()
+                )
+            })?;
+            let (params, return_annotation) = parse_signature(args)
+                .map_err(|error| format!("SyntaxError at {}: {error}", file.display()))?;
+            signatures.insert(
+                name.trim().to_string(),
+                StaticSignature {
+                    params,
+                    return_annotation,
+                },
+            );
+        }
+    }
+    let mut active: Option<(usize, String, Option<String>, HashMap<String, String>)> = None;
+    for (line_index, line) in source.lines().enumerate() {
+        let trimmed = line.trim();
+        let indent = line
+            .chars()
+            .take_while(|character| *character == ' ')
+            .count();
+        if let Some(rest) = trimmed
+            .strip_prefix("fn ")
+            .or_else(|| trimmed.strip_prefix("def "))
+        {
+            let head = rest.trim_end_matches(':').trim();
+            let (name, args) = head.split_once('(').ok_or_else(|| {
+                format!(
+                    "SyntaxError at {}:{}: function signature requires parentheses",
+                    file.display(),
+                    line_index + 1
+                )
+            })?;
+            let (params, return_annotation) = parse_signature(args).map_err(|error| {
+                format!(
+                    "SyntaxError at {}:{}: {error}",
+                    file.display(),
+                    line_index + 1
+                )
+            })?;
+            let vars = params
+                .iter()
+                .filter_map(|param| {
+                    param
+                        .annotation
+                        .as_ref()
+                        .map(|annotation| (param.name.clone(), annotation.clone()))
+                })
+                .collect();
+            active = Some((indent, name.trim().to_string(), return_annotation, vars));
+            continue;
+        }
+        let Some((function_indent, function_name, return_annotation, vars)) = active.as_mut()
+        else {
+            continue;
+        };
+        if !trimmed.is_empty() && indent <= *function_indent {
+            active = None;
+            continue;
+        }
+        let Some(return_value) = trimmed.strip_prefix("return") else {
+            continue;
+        };
+        let Some(expected) = return_annotation.as_deref() else {
+            continue;
+        };
+        let expression = return_value.trim();
+        let actual = if expression.is_empty() {
+            "none".to_string()
+        } else {
+            static_expr_type(expression, vars, &signatures).unwrap_or_else(|| "any".into())
+        };
+        if !annotation_matches(expected, &actual) {
+            return Err(format!(
+                "TypeError at {}:{}: return from '{}' expects {}, got {}",
+                file.display(),
+                line_index + 1,
+                function_name,
+                expected,
+                actual
+            ));
+        }
+    }
+    Ok(())
+}
 fn static_expr_type(
     raw: &str,
     vars: &HashMap<String, String>,

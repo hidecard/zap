@@ -4,7 +4,8 @@ use std::{
 };
 
 use super::{
-    manifest_value, read_limited_text, run, validate_function_calls, validate_function_signatures,
+    manifest_value, read_limited_text, run, validate_function_calls, validate_function_returns,
+    validate_function_signatures,
 };
 
 pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
@@ -23,6 +24,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     }
     let source = read_limited_text(&main_path, "source read")?;
     validate_function_signatures(&source, &main_path)?;
+    validate_function_returns(&source, &main_path)?;
     validate_function_calls(&source, &main_path)?;
     Ok(format!("{name} {version} (main: {main})"))
 }
