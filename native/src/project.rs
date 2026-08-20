@@ -6,7 +6,7 @@ use std::{
 
 use crate::ast::{parse_program, Stmt};
 use crate::registry::{
-    cache_package, find_package_requirement, package_cache_path, read_index, validate_package_name,
+    cache_package, package_cache_path, read_index, resolve_dependency_graph, validate_package_name,
     verify_cached_package,
 };
 
@@ -676,11 +676,15 @@ fn resolve_registry_dependencies(
         .map(PathBuf::from)
         .unwrap_or_else(|| project_dir.join(".zap/cache"));
     let offline = std::env::var_os("ZAP_OFFLINE").is_some();
-    for (name, spec) in dependencies {
-        let DependencySpec::Requirement(version) = spec else {
-            continue;
-        };
-        let package = find_package_requirement(&index, name, version)?;
+    let roots = dependencies
+        .iter()
+        .filter_map(|(name, spec)| match spec {
+            DependencySpec::Requirement(requirement) => Some((name.clone(), requirement.clone())),
+            DependencySpec::LocalPath(_) => None,
+        })
+        .collect::<BTreeMap<_, _>>();
+    let resolved = resolve_dependency_graph(&index, &roots)?;
+    for package in resolved {
         let cached = package_cache_path(&cache_root, &package);
         if cached.is_file() {
             verify_cached_package(&cached, &package)?;
@@ -688,7 +692,8 @@ fn resolve_registry_dependencies(
         }
         if offline {
             return Err(format!(
-                "registry package is not cached in offline mode: {name} {version}"
+                "registry package is not cached in offline mode: {} {}",
+                package.name, package.version
             ));
         }
         let source = package

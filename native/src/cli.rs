@@ -279,6 +279,7 @@ pub fn run_cli(args: &[String]) {
             version: args[6].clone(),
             source: args[4].clone(),
             checksum: args[7].to_ascii_lowercase(),
+            dependencies: std::collections::BTreeMap::new(),
         };
         let token = std::env::var("ZAP_REGISTRY_TOKEN").ok();
         match crate::registry::publish_package(

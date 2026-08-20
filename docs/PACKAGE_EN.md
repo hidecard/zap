@@ -101,7 +101,10 @@ Zap now provides a dependency-free registry foundation through a JSON index and 
       "name": "demo",
       "version": "1.0.0",
       "source": "file://demo.pkg",
-      "checksum": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      "checksum": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "dependencies": {
+        "http-core": "^1.2.0"
+      }
     }
   ]
 }
@@ -109,7 +112,7 @@ Zap now provides a dependency-free registry foundation through a JSON index and 
 
 Validate an index with `zap registry check path/to/index.json`. Package selection requires an exact `name` and `version` match; ambiguous or missing entries are rejected. A file-backed source is resolved relative to the index file, copied into the cache, and verified against the declared SHA-256 checksum before it is accepted. The cache layout is `.zap/cache/<name>/<version>/<checksum>.pkg`, unless `ZAP_CACHE_DIR` specifies another root.
 
-For project dependency resolution, set `ZAP_REGISTRY_INDEX` to a local path, `file://` URL, or HTTPS URL. Use `zap registry fetch <index-url>` to validate a remote index before project resolution. `zap install` verifies existing cache entries and downloads missing artifacts from local or HTTPS sources. `zap update` performs the same registry validation before rewriting the canonical lockfile. Set `ZAP_OFFLINE=1` to prohibit new downloads; offline commands succeed only when every registry dependency is already cached and its checksum still matches. Plain HTTP is rejected unless `ZAP_ALLOW_INSECURE_HTTP=1` is explicitly set for local fixtures.
+For project dependency resolution, set `ZAP_REGISTRY_INDEX` to a local path, `file://` URL, or HTTPS URL. Use `zap registry fetch <index-url>` to validate a remote index before project resolution. `zap install` verifies existing cache entries and downloads missing artifacts from local or HTTPS sources. `zap update` performs the same registry validation before rewriting the canonical lockfile. Registry package records may include a `dependencies` object whose values are version requirements. Zap resolves direct and transitive registry dependencies in lexical order, selects the highest compatible version, and caches/verifies every selected package. Set `ZAP_OFFLINE=1` to prohibit new downloads; offline commands succeed only when every transitive registry dependency is already cached and its checksum still matches. Plain HTTP is rejected unless `ZAP_ALLOW_INSECURE_HTTP=1` is explicitly set for local fixtures.
 
 Remote publishing sends a checksum-verified package archive to an HTTPS endpoint using stable `X-Zap-Package-*` headers. Set `ZAP_REGISTRY_TOKEN` for bearer authentication and run:
 
@@ -139,7 +142,7 @@ zap install
 zap install path/to/project
 ```
 
-Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. It deterministically rewrites `zap.lock`, validates nested local path dependencies, and—when `ZAP_REGISTRY_INDEX` is configured—resolves exact registry versions and verifies cached/downloaded package checksums. Version requirements remain exact registry selections; dependency solving across ranges is not implemented yet.
+Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. It deterministically rewrites `zap.lock`, validates nested local path dependencies, and—when `ZAP_REGISTRY_INDEX` is configured—recursively resolves registry requirements and verifies cached/downloaded package checksums. A package name resolves to one version per graph; incompatible repeated requirements and dependency cycles are rejected with deterministic diagnostics.
 
 ```bash
 zap update
@@ -165,4 +168,4 @@ zap update path/to/project
 | `zap registry cache <index.json> <source> <name> <version> [cache]` | Cache a local or HTTPS package source after SHA-256 verification |
 | `zap registry publish <url> <archive> <name> <version> <sha256>` | Publish a checksum-verified archive to an HTTPS endpoint |
 
-The current registry foundation supports deterministic JSON index validation, exact version selection, local and HTTPS index/artifact transport, content-addressed caching, SHA-256 integrity enforcement, offline reuse, and checksum-verified archive publishing. Signed indexes, range-based dependency solving, cache garbage collection, registry authentication policy, and server-side publishing persistence remain later ecosystem milestones. No network access occurs unless an explicit registry index/source or publish command is configured.
+The current registry foundation supports deterministic JSON index validation, range-based direct and transitive dependency selection, local and HTTPS index/artifact transport, content-addressed caching, SHA-256 integrity enforcement, offline reuse, and checksum-verified archive publishing. Signed indexes, cache garbage collection, registry authentication policy, and server-side publishing persistence remain later ecosystem milestones. No network access occurs unless an explicit registry index/source or publish command is configured.

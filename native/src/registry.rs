@@ -1,5 +1,6 @@
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -10,6 +11,8 @@ pub struct RegistryPackage {
     pub version: String,
     pub source: String,
     pub checksum: String,
+    /// Registry dependency requirements keyed by package name.
+    pub dependencies: BTreeMap<String, String>,
 }
 
 pub fn read_index(path: &Path) -> Result<Vec<RegistryPackage>, String> {
@@ -130,6 +133,69 @@ pub fn find_package_requirement(
         .ok_or_else(|| {
             format!("registry package does not satisfy requirement: {name} {requirement}")
         })
+}
+
+/// Resolve registry dependency requirements recursively.
+///
+/// Dependencies are visited in lexical order, each requirement selects the
+/// highest compatible version, and a package name may resolve to only one
+/// version in the graph. Cycles and incompatible repeated requirements produce
+/// deterministic diagnostics.
+pub fn resolve_dependency_graph(
+    index: &[RegistryPackage],
+    roots: &BTreeMap<String, String>,
+) -> Result<Vec<RegistryPackage>, String> {
+    let mut selected = BTreeMap::new();
+    let mut active = Vec::new();
+    for (name, requirement) in roots {
+        resolve_dependency(index, name, requirement, &mut selected, &mut active)?;
+    }
+    Ok(selected.into_values().collect())
+}
+
+fn resolve_dependency(
+    index: &[RegistryPackage],
+    name: &str,
+    requirement: &str,
+    selected: &mut BTreeMap<String, RegistryPackage>,
+    active: &mut Vec<String>,
+) -> Result<(), String> {
+    let parsed_requirement = VersionRequirement::parse(requirement)?;
+    if let Some(position) = active.iter().position(|entry| entry == name) {
+        let mut cycle = active[position..].to_vec();
+        cycle.push(name.to_string());
+        return Err(format!(
+            "registry dependency cycle detected: {}",
+            cycle.join(" -> ")
+        ));
+    }
+    if let Some(package) = selected.get(name) {
+        let version = Version::parse(&package.version)?;
+        if parsed_requirement.matches(version) {
+            return Ok(());
+        }
+        return Err(format!(
+            "registry dependency version conflict for {name}: selected {} does not satisfy {requirement}",
+            package.version
+        ));
+    }
+    let package = find_package_requirement(index, name, requirement)?;
+    selected.insert(name.to_string(), package.clone());
+    active.push(name.to_string());
+    for (dependency_name, dependency_requirement) in &package.dependencies {
+        if let Err(error) = resolve_dependency(
+            index,
+            dependency_name,
+            dependency_requirement,
+            selected,
+            active,
+        ) {
+            active.pop();
+            return Err(error);
+        }
+    }
+    active.pop();
+    Ok(())
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -339,14 +405,52 @@ fn parse_package(value: &Value) -> Result<RegistryPackage, String> {
     if !is_sha256(&checksum) {
         return Err(format!("registry checksum is invalid for {name} {version}"));
     }
+    let dependencies = parse_registry_dependencies(value, &name, &version)?;
     let package = RegistryPackage {
         name,
         version,
         source,
         checksum,
+        dependencies,
     };
     validate_package_identity(&package)?;
     Ok(package)
+}
+
+fn parse_registry_dependencies(
+    value: &Value,
+    package_name: &str,
+    package_version: &str,
+) -> Result<BTreeMap<String, String>, String> {
+    let Some(raw_dependencies) = value.get("dependencies") else {
+        return Ok(BTreeMap::new());
+    };
+    let object = raw_dependencies.as_object().ok_or_else(|| {
+        format!("registry dependencies for {package_name} {package_version} must be an object")
+    })?;
+    let mut dependencies = BTreeMap::new();
+    for (name, requirement) in object {
+        validate_package_name(name).map_err(|error| {
+            format!("registry dependency in {package_name} {package_version}: {error}")
+        })?;
+        let requirement = requirement.as_str().ok_or_else(|| {
+            format!(
+                "registry dependency `{name}` in {package_name} {package_version} must be a string"
+            )
+        })?;
+        VersionRequirement::parse(requirement).map_err(|error| {
+            format!("registry dependency `{name}` in {package_name} {package_version}: {error}")
+        })?;
+        if dependencies
+            .insert(name.clone(), requirement.to_string())
+            .is_some()
+        {
+            return Err(format!(
+                "duplicate registry dependency `{name}` in {package_name} {package_version}"
+            ));
+        }
+    }
+    Ok(dependencies)
 }
 
 fn required_string(value: &Value, field: &str) -> Result<String, String> {
@@ -483,6 +587,7 @@ pub fn persist_registry_package(
                 "version": entry.version,
                 "source": entry.source,
                 "checksum": entry.checksum,
+                "dependencies": entry.dependencies,
             })
         })
         .collect::<Vec<_>>();
@@ -668,9 +773,10 @@ mod tests {
     use super::{
         cache_package, cache_package_source, find_package, hmac_sha256_hex,
         persist_registry_package, prune_cache, publish_package, read_index, read_index_source,
-        read_signed_index, sha256_hex, verify_cached_package, verify_signed_index_bytes,
-        RegistryPackage,
+        read_signed_index, resolve_dependency_graph, sha256_hex, verify_cached_package,
+        verify_signed_index_bytes, RegistryPackage,
     };
+    use std::collections::BTreeMap;
     use std::fs;
     use std::path::Path;
 
@@ -723,6 +829,7 @@ mod tests {
             version: "1.0.0".into(),
             source: archive.display().to_string(),
             checksum: "0".repeat(64),
+            dependencies: std::collections::BTreeMap::new(),
         };
         let error = publish_package("https://registry.invalid/publish", &archive, &package, None)
             .unwrap_err();
@@ -742,11 +849,131 @@ mod tests {
             version: "1.0.0".into(),
             source: "file://source.pkg".into(),
             checksum: checksum.clone(),
+            dependencies: std::collections::BTreeMap::new(),
         };
         let cached = cache_package(Path::new(&source), &root.join("cache"), &package).unwrap();
         verify_cached_package(&cached, &package).unwrap();
         assert!(cached.ends_with(format!("demo/1.0.0/{checksum}.pkg")));
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn recursive_resolution_is_sorted_and_selects_transitive_packages() {
+        let checksum = sha256_hex(b"package");
+        let mut a_dependencies = BTreeMap::new();
+        a_dependencies.insert("b".to_string(), "^1.0.0".to_string());
+        let mut b_dependencies = BTreeMap::new();
+        b_dependencies.insert("c".to_string(), "^1.0.0".to_string());
+        let index = vec![
+            RegistryPackage {
+                name: "c".into(),
+                version: "1.2.0".into(),
+                source: "c.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: BTreeMap::new(),
+            },
+            RegistryPackage {
+                name: "a".into(),
+                version: "1.0.0".into(),
+                source: "a.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: a_dependencies,
+            },
+            RegistryPackage {
+                name: "b".into(),
+                version: "1.0.0".into(),
+                source: "b.pkg".into(),
+                checksum,
+                dependencies: b_dependencies,
+            },
+        ];
+        let mut roots = BTreeMap::new();
+        roots.insert("a".to_string(), "^1.0.0".to_string());
+        let resolved = resolve_dependency_graph(&index, &roots).unwrap();
+        assert_eq!(
+            resolved
+                .iter()
+                .map(|package| package.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a", "b", "c"]
+        );
+        assert_eq!(resolved[2].version, "1.2.0");
+    }
+
+    #[test]
+    fn recursive_resolution_reports_cycles_and_conflicts() {
+        let checksum = sha256_hex(b"package");
+        let mut a_dependencies = BTreeMap::new();
+        a_dependencies.insert("b".to_string(), "^1.0.0".to_string());
+        let mut b_dependencies = BTreeMap::new();
+        b_dependencies.insert("a".to_string(), "^1.0.0".to_string());
+        let cycle_index = vec![
+            RegistryPackage {
+                name: "a".into(),
+                version: "1.0.0".into(),
+                source: "a.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: a_dependencies,
+            },
+            RegistryPackage {
+                name: "b".into(),
+                version: "1.0.0".into(),
+                source: "b.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: b_dependencies,
+            },
+        ];
+        let mut roots = BTreeMap::new();
+        roots.insert("a".to_string(), "^1.0.0".to_string());
+        let cycle_error = resolve_dependency_graph(&cycle_index, &roots).unwrap_err();
+        assert_eq!(
+            cycle_error,
+            "registry dependency cycle detected: a -> b -> a"
+        );
+
+        let mut left_dependencies = BTreeMap::new();
+        left_dependencies.insert("shared".to_string(), "^1.0.0".to_string());
+        let mut right_dependencies = BTreeMap::new();
+        right_dependencies.insert("shared".to_string(), "^2.0.0".to_string());
+        let conflict_index = vec![
+            RegistryPackage {
+                name: "left".into(),
+                version: "1.0.0".into(),
+                source: "left.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: left_dependencies,
+            },
+            RegistryPackage {
+                name: "right".into(),
+                version: "1.0.0".into(),
+                source: "right.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: right_dependencies,
+            },
+            RegistryPackage {
+                name: "shared".into(),
+                version: "1.5.0".into(),
+                source: "shared-1.pkg".into(),
+                checksum: checksum.clone(),
+                dependencies: BTreeMap::new(),
+            },
+            RegistryPackage {
+                name: "shared".into(),
+                version: "2.1.0".into(),
+                source: "shared-2.pkg".into(),
+                checksum,
+                dependencies: BTreeMap::new(),
+            },
+        ];
+        let mut conflict_roots = BTreeMap::new();
+        conflict_roots.insert("left".to_string(), "1.0.0".to_string());
+        conflict_roots.insert("right".to_string(), "1.0.0".to_string());
+        let conflict_error =
+            resolve_dependency_graph(&conflict_index, &conflict_roots).unwrap_err();
+        assert_eq!(
+            conflict_error,
+            "registry dependency version conflict for shared: selected 1.5.0 does not satisfy ^2.0.0"
+        );
     }
 
     #[test]
@@ -758,18 +985,21 @@ mod tests {
                 version: "1.2.0".into(),
                 source: "a".into(),
                 checksum: checksum.clone(),
+                dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
                 name: "demo".into(),
                 version: "1.4.2".into(),
                 source: "b".into(),
                 checksum: checksum.clone(),
+                dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
                 name: "demo".into(),
                 version: "2.0.0".into(),
                 source: "c".into(),
                 checksum,
+                dependencies: std::collections::BTreeMap::new(),
             },
         ];
         assert_eq!(
@@ -789,18 +1019,21 @@ mod tests {
                 version: "1.2.0".into(),
                 source: "a".into(),
                 checksum: checksum.clone(),
+                dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
                 name: "demo".into(),
                 version: "1.2.9".into(),
                 source: "b".into(),
                 checksum: checksum.clone(),
+                dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
                 name: "demo".into(),
                 version: "1.3.0".into(),
                 source: "c".into(),
                 checksum,
+                dependencies: std::collections::BTreeMap::new(),
             },
         ];
         assert_eq!(
@@ -853,12 +1086,14 @@ mod tests {
             version: "1.0.0".into(),
             source: "keep".into(),
             checksum: checksum.clone(),
+            dependencies: std::collections::BTreeMap::new(),
         };
         let stale = RegistryPackage {
             name: "demo".into(),
             version: "2.0.0".into(),
             source: "stale".into(),
             checksum,
+            dependencies: std::collections::BTreeMap::new(),
         };
         let cache = root.join("cache");
         fs::create_dir_all(cache.join("demo/1.0.0")).unwrap();
@@ -884,6 +1119,7 @@ mod tests {
             version: "1.0.0".into(),
             source: "demo.pkg".into(),
             checksum: sha256_hex(b"package"),
+            dependencies: std::collections::BTreeMap::new(),
         };
         let artifact = persist_registry_package(
             &root.join("registry"),
@@ -911,6 +1147,7 @@ mod tests {
             version: "1.0.0".into(),
             source: "a".into(),
             checksum: sha256_hex(b"package"),
+            dependencies: std::collections::BTreeMap::new(),
         }];
         let error = super::find_package_requirement(&index, "demo", "^2.0.0").unwrap_err();
         assert_eq!(
