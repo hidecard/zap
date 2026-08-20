@@ -413,7 +413,10 @@ pub fn persist_registry_package(
     token: Option<&str>,
     signing_secret: &[u8],
 ) -> Result<PathBuf, String> {
-    if token.map_or(true, |value| value.trim().is_empty()) {
+    if match token {
+        None => true,
+        Some(value) => value.trim().is_empty(),
+    } {
         return Err("registry persistence requires an authentication token".to_string());
     }
     if signing_secret.is_empty() {
@@ -806,7 +809,7 @@ mod tests {
         fs::write(super::package_cache_path(&cache, &keep), b"package").unwrap();
         fs::write(super::package_cache_path(&cache, &stale), b"package").unwrap();
         fs::write(cache.join("demo/1.0.0/temp.pkg.tmp"), b"partial").unwrap();
-        assert_eq!(prune_cache(&cache, &[keep.clone()]).unwrap(), 2);
+        assert_eq!(prune_cache(&cache, std::slice::from_ref(&keep)).unwrap(), 2);
         assert!(super::package_cache_path(&cache, &keep).exists());
         assert!(!super::package_cache_path(&cache, &stale).exists());
         fs::remove_dir_all(&root).unwrap();
