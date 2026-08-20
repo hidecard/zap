@@ -1197,6 +1197,16 @@ fn static_expr_type(
         }
         return Some(format!("map<text,{value_type}>"));
     }
+    for operator in ["and", "or"] {
+        let terms = split_boolean_terms(value, operator);
+        if terms.len() > 1
+            && terms
+                .iter()
+                .all(|term| static_expr_type(term, vars, signatures).as_deref() == Some("bool"))
+        {
+            return Some("bool".into());
+        }
+    }
     if let Some(kind) = static_literal_type(value) {
         return Some(kind.to_string());
     }
@@ -1318,11 +1328,55 @@ fn validate_static_call(
     Ok(())
 }
 
-fn narrowed_branch_type(
+fn split_boolean_terms(condition: &str, operator: &str) -> Vec<String> {
+    let mut terms = Vec::new();
+    let mut start = 0usize;
+    let mut depth = 0i32;
+    let mut quote = None;
+    let bytes = condition.as_bytes();
+    let token = format!(" {operator} ");
+    let mut index = 0usize;
+    while index < bytes.len() {
+        let ch = bytes[index] as char;
+        if let Some(q) = quote {
+            if ch == q {
+                quote = None;
+            }
+            index += 1;
+            continue;
+        }
+        if ch == '"' || ch == '\'' {
+            quote = Some(ch);
+            index += 1;
+            continue;
+        }
+        match ch {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            _ => {}
+        }
+        if depth == 0 && condition[index..].starts_with(&token) {
+            terms.push(condition[start..index].trim().to_string());
+            index += token.len();
+            start = index;
+        } else {
+            index += 1;
+        }
+    }
+    terms.push(condition[start..].trim().to_string());
+    terms
+}
+
+fn single_narrowed_type(
     condition: &str,
     vars: &HashMap<String, String>,
 ) -> Option<(String, String)> {
     let condition = condition.trim();
+    let condition = if condition.starts_with('(') && condition.ends_with(')') {
+        &condition[1..condition.len() - 1]
+    } else {
+        condition
+    };
     let (guard, argument) = ["is_some", "is_ok", "is_err"].iter().find_map(|guard| {
         let prefix = format!("{guard}(");
         let argument = condition.strip_prefix(&prefix)?.strip_suffix(')')?;
@@ -1339,6 +1393,35 @@ fn narrowed_branch_type(
     };
     let payload = kind.strip_prefix(prefix)?.strip_suffix('>')?;
     Some((argument.to_string(), payload.to_string()))
+}
+
+fn narrowed_branch_types(condition: &str, vars: &HashMap<String, String>) -> Vec<(String, String)> {
+    let condition = condition.trim();
+    let conjunction = split_boolean_terms(condition, "and");
+    if conjunction.len() > 1 {
+        return conjunction
+            .iter()
+            .filter_map(|term| single_narrowed_type(term, vars))
+            .collect();
+    }
+    if let Some(single) = single_narrowed_type(condition, vars) {
+        return vec![single];
+    }
+    let disjunction = split_boolean_terms(condition, "or");
+    if disjunction.len() > 1 {
+        let candidates = disjunction
+            .iter()
+            .filter_map(|term| single_narrowed_type(term, vars))
+            .collect::<Vec<_>>();
+        if !candidates.is_empty()
+            && candidates
+                .iter()
+                .all(|candidate| candidate == &candidates[0])
+        {
+            return candidates;
+        }
+    }
+    Vec::new()
 }
 
 fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
@@ -1399,9 +1482,12 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                 }
             }
             if trimmed.starts_with("if ") {
-                if let Some((name, narrowed)) = narrowed_branch_type(condition, &vars) {
+                let narrowed = narrowed_branch_types(condition, &vars);
+                if !narrowed.is_empty() {
                     let previous = vars.clone();
-                    vars.insert(name, narrowed);
+                    for (name, kind) in narrowed {
+                        vars.insert(name, kind);
+                    }
                     branch_scopes.push((indent, previous));
                 }
             }

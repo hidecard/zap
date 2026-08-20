@@ -1373,3 +1373,51 @@ fn rejects_private_constructor_from_another_module() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("private method is not accessible"));
 }
+
+#[test]
+fn narrows_complex_boolean_guards_and_aliases() {
+    let valid_root = std::env::temp_dir().join("zap_complex_narrowing_valid");
+    let _ = std::fs::remove_dir_all(&valid_root);
+    std::fs::create_dir_all(&valid_root).unwrap();
+    std::fs::write(
+        valid_root.join("zap.toml"),
+        "[package]\nname = \"complex-narrow-valid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        valid_root.join("main.zp"),
+        "fn need_number(value: number):\n    return value\nlet maybe: option<number> = some(7)\nlet outcome: result<number> = ok(9)\nlet maybe_alias = maybe\nlet outcome_alias = outcome\nif is_some(maybe_alias) and is_ok(outcome_alias):\n    let first: number = need_number(maybe_alias)\n    let second: number = need_number(outcome_alias)\nif is_some(maybe) or is_some(maybe):\n    let repeated: number = need_number(maybe)\nelse:\n    let still_option: option<number> = maybe\n",
+    )
+    .unwrap();
+    let valid = Command::new(binary())
+        .args(["check", valid_root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&valid_root);
+    assert!(
+        valid.status.success(),
+        "{}",
+        String::from_utf8_lossy(&valid.stderr)
+    );
+
+    let invalid_root = std::env::temp_dir().join("zap_complex_narrowing_invalid");
+    let _ = std::fs::remove_dir_all(&invalid_root);
+    std::fs::create_dir_all(&invalid_root).unwrap();
+    std::fs::write(
+        invalid_root.join("zap.toml"),
+        "[package]\nname = \"complex-narrow-invalid\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        invalid_root.join("main.zp"),
+        "let maybe: option<number> = some(7)\nif is_some(maybe) and is_some(maybe):\n    let inside: number = maybe\nlet outside: number = maybe\n",
+    )
+    .unwrap();
+    let invalid = Command::new(binary())
+        .args(["check", invalid_root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&invalid_root);
+    assert!(!invalid.status.success());
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("expects number, got option<number>"));
+}
