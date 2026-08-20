@@ -8,7 +8,7 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Legacy lockfile များကို conservative အတိုင်း migrate လုပ်ရန် `zap lock-migrate [dir]` command အသစ် ထည့်သွင်းထားပါသည်။
 - v1 lockfile compatibility ကို ဆက်လက်ထိန်းသိမ်းထားပြီး verified registry metadata မရှိပါက registry version သို့မဟုတ် checksum များကို မခန့်မှန်းဘဲ migration ကို ရပ်တန့်ပါသည်။
 - `zap install` သည် transitive package များအပါအဝင် resolved registry graph တစ်ခုလုံးကို deterministic `name@version` order ဖြင့် ပြသပြီး ရှိပြီးသား dependency-count prefix ကို ဆက်လက်ထိန်းသိမ်းထားပါသည်။
-- Transitive resolution၊ cache verification နှင့် stable install output အတွက် offline nested-registry integration fixture ထည့်သွင်းထားပါသည်။
+- Transitive resolution၊ cache verification၊ stable install output၊ transitive artifact ပျောက်ဆုံးမှု၊ cached checksum မကိုက်ညီမှုနှင့် မပြည့်စုံသော v2 lockfile များအတွက် deterministic diagnostics ပါသော offline nested-registry integration fixtures များ ထည့်သွင်းထားပါသည်။
 - Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 
 

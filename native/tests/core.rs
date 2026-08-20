@@ -4779,6 +4779,131 @@ fn install_uses_registry_cache_and_supports_offline_reuse() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+fn create_nested_offline_fixture(
+    label: &str,
+) -> (
+    std::path::PathBuf,
+    std::path::PathBuf,
+    std::path::PathBuf,
+    String,
+    String,
+) {
+    let root = std::env::temp_dir().join(format!(
+        "zap_offline_failure_{label}_{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"offline-app\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\nappdep = \"1.0.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(root.join("appdep.pkg"), b"appdep package").unwrap();
+    std::fs::write(root.join("leaf.pkg"), b"leaf package").unwrap();
+    let checksum = |bytes: &[u8]| {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let appdep_checksum = checksum(b"appdep package");
+    let leaf_checksum = checksum(b"leaf package");
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"appdep","version":"1.0.0","source":"file://appdep.pkg","checksum":"{appdep_checksum}","dependencies":{{"leaf":"1.0.0"}}}},{{"name":"leaf","version":"1.0.0","source":"file://leaf.pkg","checksum":"{leaf_checksum}"}}]}}"#
+        ),
+    )
+    .unwrap();
+    let cache = root.join("cache");
+    let update = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        update.status.success(),
+        "{}",
+        String::from_utf8_lossy(&update.stderr)
+    );
+    (root, index, cache, appdep_checksum, leaf_checksum)
+}
+
+#[test]
+fn offline_install_reports_missing_transitive_cache_artifact() {
+    let (root, index, cache, _, leaf_checksum) = create_nested_offline_fixture("missing");
+    std::fs::remove_file(
+        cache
+            .join("leaf/1.0.0")
+            .join(format!("{leaf_checksum}.pkg")),
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("registry package is not cached in offline mode: leaf 1.0.0"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn offline_install_rejects_cached_transitive_checksum_mismatch() {
+    let (root, index, cache, _, leaf_checksum) = create_nested_offline_fixture("checksum");
+    std::fs::write(
+        cache
+            .join("leaf/1.0.0")
+            .join(format!("{leaf_checksum}.pkg")),
+        b"tampered leaf package",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("cached package checksum mismatch for leaf 1.0.0"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn offline_install_rejects_incomplete_v2_lockfile_deterministically() {
+    let (root, index, cache, _, _) = create_nested_offline_fixture("lockfile");
+    let lock_path = root.join("zap.lock");
+    let lock = std::fs::read_to_string(&lock_path).unwrap();
+    let incomplete = lock
+        .lines()
+        .filter(|line| !line.starts_with("leaf.checksum = "))
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
+    std::fs::write(&lock_path, incomplete).unwrap();
+    let output = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("zap.lock: out of date or non-canonical; run `zap lock` to regenerate it"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
 #[test]
 fn install_reports_complete_transitive_resolved_graph() {
     let root = std::env::temp_dir().join(format!(
