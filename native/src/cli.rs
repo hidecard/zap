@@ -1,5 +1,6 @@
 use super::project::{write_lockfile, TestOptions};
 use super::*;
+use crate::project::add_dependency;
 
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
 pub const EXIT_USAGE_ERROR: i32 = 2;
@@ -59,7 +60,10 @@ pub fn run_cli(args: &[String]) {
     if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
         println!("Zap native runtime\n\nUsage:\n  zap <file.zp>       Run a Zap source file\n  zap run <file.zp>   Run a Zap source file explicitly\n  zap fmt <file.zp>   Format a Zap source file\n  zap check [dir]      Validate zap.toml and the project entry file\n  zap test [dir]       Run *_test.zp files in a tests directory
   zap lint <file.zp>   Check formatting and style warnings
-  zap check --json     Validate a project with JSON diagnostics\n  zap lock [dir]       Generate the canonical dependency lockfile\n  zap build [dir]      Validate and prepare a Zap project\n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
+  zap check --json     Validate a project with JSON diagnostics\n  zap lock [dir]       Generate the canonical dependency lockfile
+  zap add <name> <ver> [dir] Add a manifest dependency and invalidate zap.lock
+  zap build [dir]      Validate and prepare a Zap project
+n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
         return;
     }
     if args.len() == 3 && args[1] == "init" {
@@ -150,6 +154,21 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if (args.len() == 4 || args.len() == 5) && args[1] == "add" {
+        let dir = if args.len() == 5 {
+            Path::new(&args[4])
+        } else {
+            Path::new(".")
+        };
+        match add_dependency(dir, &args[2], &args[3]) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap add error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
             Ok(info) => println!("built Zap project: {info}"),
@@ -213,7 +232,10 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() != 2 {
-        eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]\n       zap build [dir]\n       zap init <dir>\n       zap --version");
+        eprintln!("Usage: zap <file.zp>\n       zap run <file.zp>\n       zap fmt <file.zp>\n       zap lint <file.zp>\n       zap check [dir]\n       zap check --json [dir]\n       zap test [dir]\n       zap lock [dir]
+       zap add <name> <version> [dir]
+       zap build [dir]
+n       zap init <dir>\n       zap --version");
         process::exit(EXIT_USAGE_ERROR);
     }
     let source = read_limited_text(Path::new(&args[1]), "source read").unwrap_or_else(|e| {

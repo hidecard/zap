@@ -71,12 +71,24 @@ hello-app/
 
 Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. The lockfile currently validates declared dependency requirements; remote registry download and package publishing remain later ecosystem milestones.
 
+## Adding a dependency
+
+Use `zap add` to update the manifest without hand-editing the dependency table:
+
+```bash
+zap add json-tools 1.2
+zap add web 0.3 path/to/project
+```
+
+The command rejects duplicate names, keeps dependency entries in lexicographic order, and removes the existing `zap.lock` because the manifest has changed. Run `zap lock` after adding dependencies to regenerate the canonical lockfile.
+
 ## Project commands
 
 | Command | Purpose |
 |---|---|
 | `zap check` | Validate the manifest, lockfile, entry file, and static source checks |
 | `zap lock` | Generate or regenerate the canonical `zap.lock` |
+| `zap add <name> <version> [dir]` | Add a deterministic string-valued dependency and invalidate the lockfile |
 | `zap build` | Validate and prepare a Zap project |
 | `zap test` | Run project test files |
 | `zap fmt main.zp` | Format a Zap source file |

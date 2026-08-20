@@ -54,6 +54,17 @@ zap lock path/to/project
 
 `zap check` နှင့် `zap build` များသည် dependency ရှိသော project များတွင် `zap.lock` မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းကို error ပြန်ပေးသည်။
 
+## Dependency ထည့်ခြင်း
+
+Manifest ကို တိုက်ရိုက်မပြင်ဘဲ dependency ထည့်ရန် `zap add` ကို အသုံးပြုနိုင်သည်။
+
+```bash
+zap add json-tools 1.2
+zap add web 0.3 path/to/project
+```
+
+`zap add` သည် duplicate dependency name ကို reject လုပ်ပြီး dependency များကို alphabetic order ဖြင့် စီပေးသည်။ Manifest ပြောင်းလဲသွားသောကြောင့် ရှိပြီးသား `zap.lock` ကို ဖယ်ရှားပေးပြီး `zap lock` ဖြင့် canonical lockfile ကို ပြန်လည် generate လုပ်ရမည်။
+
 ## Commands
 
 ```bash
@@ -61,6 +72,8 @@ zap check
 zap check path/to/project
 zap lock
 zap lock path/to/project
+zap add package-name 1.0
+zap add package-name 1.0 path/to/project
 zap build path/to/project
 zap main.zp
 zap fmt main.zp

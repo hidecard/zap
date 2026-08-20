@@ -1513,3 +1513,54 @@ fn audits_nested_direct_ast_standard_library_calls() {
     assert!(stdout.contains("true\n"));
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn adds_manifest_dependency_deterministically_and_invalidates_lockfile() {
+    let root = std::env::temp_dir().join("zap_add_dependency_project");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"add-demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say \"add\"\n").unwrap();
+    let generated = Command::new(binary())
+        .args(["lock", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(generated.status.success());
+    assert!(root.join("zap.lock").is_file());
+
+    let added = Command::new(binary())
+        .args(["add", "zeta", "2.0", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(added.status.success());
+    assert!(!root.join("zap.lock").exists());
+    let manifest = std::fs::read_to_string(root.join("zap.toml")).unwrap();
+    assert!(manifest.contains("[dependencies]\nzeta = \"2.0\""));
+
+    let added_second = Command::new(binary())
+        .args(["add", "alpha", "1.0", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(added_second.status.success());
+    let manifest = std::fs::read_to_string(root.join("zap.toml")).unwrap();
+    assert!(manifest.contains("[dependencies]\nalpha = \"1.0\"\nzeta = \"2.0\""));
+
+    let duplicate = Command::new(binary())
+        .args(["add", "alpha", "3.0", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!duplicate.status.success());
+    assert!(String::from_utf8_lossy(&duplicate.stderr).contains("dependency already exists"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn add_command_is_available_in_cli_help() {
+    let output = Command::new(binary()).arg("--help").output().unwrap();
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("zap add <name> <ver> [dir]"));
+}

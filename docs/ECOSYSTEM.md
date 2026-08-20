@@ -8,7 +8,7 @@ Zap သည် language core တစ်ခုအပေါ်တွင် domain-sp
 |---|---|---|
 | Zap Core | syntax၊ parser၊ values၊ functions၊ modules၊ runtime | လက်ရှိတည်ဆောက်နေသည် |
 | Standard Library | collections၊ JSON၊ file၊ time၊ networking၊ process နှင့် testing APIs | တစ်စိတ်တစ်ပိုင်းရှိသည် |
-| Package Tooling | `zap.toml`၊ local modules၊ dependencies၊ lockfile၊ registry | manifest နှင့် local search paths ရှိသည် |
+| Package Tooling | `zap.toml`၊ local modules၊ dependencies၊ lockfile၊ registry | manifest၊ deterministic lockfile နှင့် `zap add` ရှိသည်; registry roadmap |
 | Domain Frameworks | Web၊ Android/Mobile၊ AI နှင့် IoT APIs | Roadmap |
 | Platform Runtimes | native OS၊ browser/WASM၊ Android၊ GPU နှင့် microcontroller | Roadmap |
 
@@ -32,7 +32,7 @@ Zap IoT သည် GPIO၊ I2C၊ SPI၊ UART၊ sensors၊ actuators၊ MQTT၊ 
 
 ## Current commands versus roadmap
 
-လက်ရှိ native CLI တွင် အောက်ပါ commands များကို အသုံးပြုနိုင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files အားလုံးကို run လုပ်ပြီး `zap init` သည် starter smoke test ပါဝင်သော project ကို ဖန်တီးပေးသည်။
+လက်ရှိ native CLI တွင် အောက်ပါ commands များကို အသုံးပြုနိုင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files အားလုံးကို run လုပ်ပြီး `zap init` သည် starter smoke test ပါဝင်သော project ကို ဖန်တီးပေးသည်။ `zap add` သည် local manifest ထဲသို့ dependency ထည့်ပြီး lockfile ကို invalidate လုပ်သည်။ `zap lock` သည် canonical lockfile ကို ပြန်လည် generate လုပ်သည်။
 
 ```text
 zap main.zp
@@ -40,6 +40,8 @@ zap check
 zap test
 zap init my-app
 zap fmt main.zp
+zap add package-name 1.0 [project-dir]
+zap lock [project-dir]
 zap --version
 zap --help
 ```
@@ -55,7 +57,7 @@ zap iot new sensor-node
 zap publish
 ```
 
-Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
+P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
 
 ## Recommended implementation order
 

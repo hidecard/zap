@@ -1,6 +1,6 @@
 # Zap Packages and Module Tooling
 
-Zap package tooling သည် လက်ရှိတွင် local project manifest နှင့် local module resolution အဆင့်တွင် ရှိပါသည်။ Remote registry၊ lockfile၊ dependency download နှင့် publish workflow များသည် future roadmap ဖြစ်ပြီး လက်ရှိ native CLI တွင် မအကောင်အထည်ဖော်ရသေးပါ။
+Zap package tooling သည် local project manifest၊ deterministic `zap.lock` validation နှင့် local module resolution အဆင့်တွင် ရှိပါသည်။ `zap add` နှင့် `zap lock` commands များကို native CLI တွင် အကောင်အထည်ဖော်ထားပြီး remote registry၊ dependency download နှင့် publish workflow များသည် future roadmap ဖြစ်သည်။
 
 ## Current manifest
 
@@ -49,14 +49,16 @@ zap main.zp
 zap check
 zap test
 zap fmt main.zp
+zap add package-name 1.0 [project-dir]
+zap lock [project-dir]
 zap --version
 zap --help
 ```
 
-`zap test` သည် `tests/` directory နှင့် ၎င်းအောက်ရှိ subdirectories များထဲမှ `*_test.zp` files အားလုံးကို path အလိုက် sort လုပ်ပြီး run လုပ်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။ `zap new`၊ `zap add`၊ `zap install`၊ `zap update`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။ အဆိုပါ command များသည် manifest နှင့် local module system တည်ငြိမ်ပြီးနောက် ဆက်လက်တည်ဆောက်မည့် tooling roadmap ဖြစ်သည်။
+`zap test` သည် `tests/` directory နှင့် ၎င်းအောက်ရှိ subdirectories များထဲမှ `*_test.zp` files အားလုံးကို path အလိုက် sort လုပ်ပြီး run လုပ်သည်။ `zap init` သည် starter `tests/smoke_test.zp` ကိုလည်း ဖန်တီးပေးသည်။ `zap add` သည် manifest ထဲသို့ string-valued dependency ကို canonical order ဖြင့် ထည့်ပြီး ရှိပြီးသား lockfile ကို invalidate လုပ်သည်။ `zap lock` ဖြင့် lockfile ကို ပြန်လည် generate လုပ်နိုင်သည်။ `zap new`၊ `zap install`၊ `zap update`၊ `zap publish` နှင့် framework-specific commands များသည် လက်ရှိ release တွင် မပါဝင်သေးပါ။
 
 ## Future package manager
 
-နောက် version များတွင် `zap.lock` ဖြင့် dependency versions များကို lock လုပ်ခြင်း၊ local path packages၊ Git repositories နှင့် signed registry packages များကို support လုပ်ခြင်း၊ checksum verification နှင့် reproducible builds များကို ထည့်သွင်းမည်။
+နောက် version များတွင် local path packages၊ Git repositories နှင့် signed registry packages များကို support လုပ်ခြင်း၊ checksum verification၊ dependency graph resolution နှင့် reproducible builds များကို ထည့်သွင်းမည်။ လက်ရှိ `zap.lock` သည် manifest dependency requirements များကို deterministic အတိုင်း validate လုပ်ပေးနေပြီဖြစ်သည်။
 
 Framework packages ဖြစ်သော `zap-web`၊ `zap-mobile`၊ `zap-ai` နှင့် `zap-iot` များသည် Zap core တည်ငြိမ်ပြီးနောက် သီးခြား domain packages အဖြစ် တည်ဆောက်မည်။

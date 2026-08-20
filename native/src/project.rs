@@ -98,6 +98,64 @@ fn validate_lockfile(dir: &Path, manifest: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub(crate) fn add_dependency(dir: &Path, name: &str, requirement: &str) -> Result<String, String> {
+    if name.is_empty() || name.contains(char::is_whitespace) || name.contains('=') {
+        return Err(format!("invalid dependency name `{name}`"));
+    }
+    if requirement.is_empty() || requirement.contains('"') || requirement.contains('\n') {
+        return Err("dependency requirement must be a non-empty single-line value".to_string());
+    }
+    let manifest_path = dir.join("zap.toml");
+    let manifest = read_limited_text(&manifest_path, "manifest read")?;
+    let mut lines: Vec<String> = manifest.lines().map(str::to_string).collect();
+    let mut section_start = None;
+    let mut section_end = lines.len();
+    for (index, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if trimmed == "[dependencies]" {
+            section_start = Some(index);
+            continue;
+        }
+        if section_start.is_some() && trimmed.starts_with('[') {
+            section_end = index;
+            break;
+        }
+    }
+    let entry = format!("{name} = \"{requirement}\"");
+    match section_start {
+        Some(start) => {
+            let end = section_end;
+            let mut dependencies = parse_dependencies(&manifest)?;
+            if dependencies.contains_key(name) {
+                return Err(format!("dependency already exists: `{name}`"));
+            }
+            dependencies.insert(name.to_string(), requirement.to_string());
+            let mut replacement = vec!["[dependencies]".to_string()];
+            for (dependency, value) in dependencies {
+                replacement.push(format!("{dependency} = \"{value}\""));
+            }
+            lines.splice(start..end, replacement);
+        }
+        None => {
+            if !lines.is_empty() && lines.last().is_some_and(|line| !line.is_empty()) {
+                lines.push(String::new());
+            }
+            lines.push("[dependencies]".to_string());
+            lines.push(entry);
+        }
+    }
+    let mut updated = lines.join("\n");
+    updated.push('\n');
+    fs::write(&manifest_path, updated)
+        .map_err(|e| format!("zap.toml: cannot write manifest: {e}"))?;
+    let lock_path = dir.join("zap.lock");
+    if lock_path.exists() {
+        fs::remove_file(lock_path)
+            .map_err(|e| format!("zap.lock: cannot invalidate lockfile: {e}"))?;
+    }
+    Ok(format!("added dependency `{name}` = \"{requirement}\""))
+}
+
 pub(crate) fn write_lockfile(dir: &Path) -> Result<String, String> {
     let manifest_path = dir.join("zap.toml");
     let manifest = read_limited_text(&manifest_path, "manifest read")?;
