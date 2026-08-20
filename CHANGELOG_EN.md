@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [2.0.4] — 2026-08-20
+
 ### Package reliability
 
 - Extended registry-backed lockfiles to version 2 with deterministic `[resolved]` entries for selected package versions, sources, and SHA-256 checksums.
@@ -14,6 +18,11 @@
 - Added SSRF defenses for loopback, private, link-local, unspecified, broadcast, IPv6 unique-local, and IPv6 link-local destinations; automatic HTTP redirects are disabled in restricted mode.
 - Added bounded HTTP request bodies, hard child-process deadlines with termination, and regression tests for capability denial, private destinations, and oversized request bodies.
 - Documented the remaining requirement for OS-level sandboxing, least-privilege deployment, resource quotas, and network egress controls.
+
+### Documentation and editor integration
+
+- Updated the main README with the v2.0.3 installation links, current project status, security-mode note, and the official VS Code Marketplace v0.5.0 installation path.
+- Synchronized the extension manifest and documentation with Marketplace publisher `ArkarYan` and added `code --install-extension ArkarYan.zap-language-support`.
 
 ## [2.0.3] — 2026-08-20
 

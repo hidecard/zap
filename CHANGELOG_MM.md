@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+_လက်ရှိ မထုတ်ရသေးသော ပြောင်းလဲမှု မရှိပါ။_
+
+## [2.0.4] — 2026-08-20
+
 ### Package reliability
 
 - Registry-backed lockfile များကို version 2 သို့ တိုးချဲ့ပြီး ရွေးချယ်ထားသော package version၊ source နှင့် SHA-256 checksum များအတွက် deterministic `[resolved]` entries များ ထည့်သွင်းထားပါသည်။
@@ -14,6 +18,11 @@
 - Loopback၊ private၊ link-local၊ unspecified၊ broadcast၊ IPv6 unique-local နှင့် IPv6 link-local destination များအတွက် SSRF ကာကွယ်မှု ထည့်သွင်းပြီး automatic HTTP redirect များကို restricted mode တွင် ပိတ်ထားပါသည်။
 - HTTP request body limit၊ hard child-process deadline နှင့် timeout kill behavior များ ထည့်သွင်းပြီး capability denial၊ private destination နှင့် oversized request body regression tests များ ရေးသားထားပါသည်။
 - OS-level sandbox၊ least-privilege deployment၊ resource quota နှင့် network egress control များ လိုအပ်နေသေးကြောင်း documentation တွင် ရှင်းလင်းဖော်ပြထားပါသည်။
+
+### Documentation နှင့် editor integration
+
+- Main README တွင် v2.0.3 installation links၊ current project status၊ security-mode note နှင့် official VS Code Marketplace v0.5.0 installation လမ်းညွှန်များကို update လုပ်ထားပါသည်။
+- Extension manifest နှင့် documentation များကို Marketplace publisher `ArkarYan` နှင့် synchronize လုပ်ပြီး `code --install-extension ArkarYan.zap-language-support` command ကို ထည့်သွင်းထားပါသည်။
 
 ## [2.0.3] — 2026-08-20
 

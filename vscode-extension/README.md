@@ -19,6 +19,16 @@ This extension adds first-class `.zp` editing support for the Zap programming la
 | Run current file | Runs `zap run <file.zp>` in the integrated terminal or Output panel. |
 | Workspace check | Runs `zap check --json <workspace>` on demand. |
 
+## Marketplace installation
+
+The official **Zap Language Support v0.5.0** extension is available from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). Install it from a terminal with:
+
+```bash
+code --install-extension ArkarYan.zap-language-support
+```
+
+After installation, reload VS Code if prompted and ensure the Zap CLI is available on `PATH`.
+
 ## Installation from the repository
 
 Open this folder in VS Code and choose **Extensions: Install from VSIX...** after creating a package with the repository script. For development, use **Developer: Install Extension from Location...** and select the `vscode-extension` directory.

@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.0.1` |
+| Current release line | `v2.0.4` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -32,7 +32,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| P3 status | P3.1 module/workspace architecture complete; production work continues |
+| P3 status | P3.3 production standard library and cross-platform hardening complete; v2.1 package reliability work in progress |
 
 ## Native Runtime Architecture
 
@@ -63,7 +63,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.0.1 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.0.1), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.0.4 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.0.4), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -82,7 +82,7 @@ The exact archive filename may change with each release. Select the asset whose 
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.0.1-linux-x86_64.tar.gz
+tar -xzf zap-2.0.4-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -98,11 +98,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.0.1 release](https://github.com/hidecard/zap/releases/tag/v2.0.1).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.0.4 release](https://github.com/hidecard/zap/releases/tag/v2.0.4).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.0.1-macos-arm64.tar.gz
+tar -xzf zap-2.0.4-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -124,7 +124,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.0.1 release](https://github.com/hidecard/zap/releases/tag/v2.0.1).
+1. Download the Windows x86_64 `.zip` archive from the [v2.0.4 release](https://github.com/hidecard/zap/releases/tag/v2.0.4).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 
@@ -159,6 +159,18 @@ On Windows Command Prompt, the equivalent command is:
 ```bat
 zap.exe main.zp
 ```
+
+## VS Code Extension
+
+Zap has an official VS Code extension, **Zap Language Support v0.5.0**, published on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). It provides syntax highlighting, snippets, diagnostics, autocomplete, signature help, hover, go-to-definition, formatting, workspace symbols, and run support through the native Zap CLI/LSP.
+
+Install it from the command line:
+
+```bash
+code --install-extension ArkarYan.zap-language-support
+```
+
+Alternatively, open the [Zap Language Support Marketplace page](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support) in VS Code and choose **Install**. After installation, ensure the `zap` executable is available on `PATH`, or set `zap.executable` in VS Code settings. The extension supports `.zp` files and uses `zap lsp` for editor integration.
 
 ## Language Overview
 

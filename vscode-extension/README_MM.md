@@ -19,6 +19,16 @@
 | Run | လက်ရှိ `.zp` file ကို integrated terminal တွင် `zap run` ဖြင့် run ခြင်း |
 | Workspace check | Zap project တစ်ခုလုံးကို command palette မှ စစ်ဆေးခြင်း |
 
+## Marketplace မှ install ပြုလုပ်ခြင်း
+
+Official **Zap Language Support v0.5.0** ကို [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support) မှ ရယူနိုင်ပါသည်။ Terminal မှ install ပြုလုပ်ရန် အောက်ပါ command ကို အသုံးပြုပါ။
+
+```bash
+code --install-extension ArkarYan.zap-language-support
+```
+
+Install ပြီးပါက VS Code ကို reload ပြုလုပ်ပြီး Zap CLI သည် `PATH` ထဲတွင် ရှိ/မရှိ စစ်ဆေးပါ။
+
 ## အသုံးပြုရန်
 
 Zap CLI ကို `PATH` ထဲတွင် ထည့်ထားပါ သို့မဟုတ် VS Code Settings တွင် `zap.executable` ကို Zap executable လမ်းကြောင်းအဖြစ် သတ်မှတ်ပါ။ Extension သည် `zap lsp` ကို stdio JSON-RPC server အဖြစ် စတင်ပြီး ဖွင့်ထားသော `.zp` document များကို server နှင့် synchronize လုပ်ပါသည်။ ထို့နောက် `vscode-extension` folder ကို VS Code ဖြင့် ဖွင့်ပြီး **Developer: Install Extension from Location...** ကို ရွေးချယ်ပါ။

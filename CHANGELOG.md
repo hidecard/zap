@@ -4,6 +4,10 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+_လက်ရှိ မထုတ်ရသေးသော ပြောင်းလဲမှု မရှိပါ။_
+
+## [2.0.4] - 2026-08-20
+
 ### Package reliability
 - Registry-backed lockfile များကို version 2 သို့ တိုးချဲ့ပြီး resolved package version၊ source နှင့် SHA-256 checksum များကို deterministic `[resolved]` section ဖြင့် pin လုပ်ထားပါသည်။
 - `zap lock` နှင့် `zap update` သည် resolved transitive packages များကို မှတ်တမ်းတင်ပြီး `zap install` သည် pinned graph တစ်ခုလုံးကို ပြန်လည် resolve/verify လုပ်ပါသည်။
@@ -14,6 +18,10 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 - Loopback၊ private၊ link-local၊ unspecified၊ broadcast နှင့် IPv6 local destination များကို SSRF ကာကွယ်မှုဖြင့် block လုပ်ပြီး automatic HTTP redirects များကို restricted mode တွင် ပိတ်ထားပါသည်။
 - HTTP request body limit၊ hard process deadline/kill behavior နှင့် capability/network regression tests များ ထည့်သွင်းထားပါသည်။
 - OS-level sandbox၊ least-privilege deployment၊ resource quotas နှင့် network egress controls များသည် production deployment အတွက် ဆက်လက်လိုအပ်ပါသည်။
+
+### Documentation နှင့် editor integration
+- Main README တွင် v2.0.3 installation links၊ current status၊ security-mode note နှင့် official VS Code Marketplace v0.5.0 installation လမ်းညွှန်များကို update လုပ်ထားပါသည်။
+- Extension manifest နှင့် documentation များကို Marketplace publisher `ArkarYan` နှင့် synchronize လုပ်ပြီး `code --install-extension ArkarYan.zap-language-support` command ကို ထည့်သွင်းထားပါသည်။
 
 ## [2.0.3] - 2026-08-20
 
