@@ -1226,6 +1226,22 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
         if trimmed.starts_with("fn ") || trimmed.starts_with("def ") {
             continue;
         }
+        if let Some(condition) = trimmed
+            .strip_prefix("if ")
+            .or_else(|| trimmed.strip_prefix("while "))
+        {
+            let condition = condition.trim_end_matches(':').trim();
+            if let Some(kind) = static_expr_type(condition, &vars, &signatures) {
+                if kind != "bool" {
+                    return Err(format!(
+                        "TypeError at {}:{}:1: control-flow condition expects bool, got {}",
+                        file.display(),
+                        line_index + 1,
+                        kind
+                    ));
+                }
+            }
+        }
         if let Some(rest) = trimmed.strip_prefix("let ") {
             if let Some((left, right)) = rest.split_once('=') {
                 let (name, annotation) = left

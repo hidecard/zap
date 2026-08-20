@@ -930,3 +930,27 @@ fn check_unwraps_option_question_operator_types() {
         String::from_utf8_lossy(&output.stderr)
     );
 }
+
+#[test]
+fn check_rejects_non_boolean_control_flow_conditions() {
+    let root = std::env::temp_dir().join("zap_control_condition_check");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"condition-check\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "if 1:\n    say \"bad\"\n").unwrap();
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    let diagnostic = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        diagnostic.contains("control-flow condition expects bool"),
+        "{diagnostic}"
+    );
+}
