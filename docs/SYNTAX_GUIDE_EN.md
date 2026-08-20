@@ -178,27 +178,40 @@ say from_json("{\"ok\": true}")
 
 Collection helpers include `contains`, `get`, `is_empty`, `sum`, `reverse`, and `sort`.
 
-## Modules
+## Modules and Workspaces
 
-Use explicit exports in a module:
-
-```zap
-# modules/greeting.zp
-export fn greet(name):
-    return "Hello, " + name
-
-fn private_helper():
-    return "internal"
-```
-
-Import it from another source file:
+Zap supports explicit module declarations and deterministic imports. A module declaration records the logical name of a source file, while an import may provide a local alias:
 
 ```zap
-import "greeting.zp"
-say greet("Zap")
+# modules/app/core.zp
+module app.core
+
+fn version():
+    return "2.0"
 ```
 
-Only exported symbols are visible to importing files. Modules are resolved from the source directory and supported local module directories. Canonical-path caching prevents duplicate top-level execution; circular imports and absolute module paths are rejected.
+```zap
+# main.zp
+module app.main
+import app.core as core
+
+say core
+```
+
+The dotted import path maps to a `.zp` file below the module root. For example, `import app.core as core` resolves to `modules/app/core.zp` when the project manifest contains:
+
+```toml
+[package]
+name = "workspace-demo"
+version = "0.1.0"
+main = "main.zp"
+
+[module]
+root = "modules"
+entries = ["app/core.zp"]
+```
+
+Module roots and entries must be relative, entries must end in `.zp`, and each listed file must exist. Explicit imports reject absolute paths, separators, empty path components, and traversal. The resolver visits imported files in deterministic source order, caches completed nodes, and reports a stable `circular module dependency` diagnostic containing the complete cycle when a dependency loop is found. Legacy `use "file.zp"` imports remain available for compatibility; new workspace code should prefer `module` and `import ... as ...`.
 
 ## Result and Option
 

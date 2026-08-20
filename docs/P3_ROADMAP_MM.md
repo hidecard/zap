@@ -12,7 +12,7 @@ P2 တွင် native runtime၊ deterministic registry transport နှင့�
 
 | Milestone | အကြောင်းအရာ | အောင်မြင်မှုစံနှုန်း | အခြေအနေ |
 |---|---|---|---|
-| P3.1 | Module နှင့် workspace architecture | ရှင်းလင်းသော module/import syntax၊ deterministic search paths၊ duplicate/cycle diagnostics နှင့် cross-platform workspace tests | လုပ်ဆောင်နေဆဲ — manifest boundary ပြီးစီး |
+| P3.1 | Module နှင့် workspace architecture | ရှင်းလင်းသော module/import syntax၊ deterministic search paths၊ duplicate/cycle diagnostics နှင့် cross-platform workspace tests | လုပ်ဆောင်နေဆဲ — resolver၊ cycle diagnostics နှင့် LSP indexing ပြီးစီး |
 | P3.2 | Structured error model | Native `error`/`try`/`catch` သို့မဟုတ် typed propagation၊ တည်ငြိမ်သော diagnostics နှင့် recoverable failure များအတွက် string-only control flow မသုံးခြင်း | စီစဉ်ထား |
 | P3.3 | Production standard library | HTTP client/server primitives၊ URL handling၊ process execution boundaries နှင့် လုံခြုံသော environment/configuration APIs | စီစဉ်ထား |
 | P3.4 | Async I/O integration | timers၊ sockets၊ files၊ cancellation၊ backpressure နှင့် resource budgets အတွက် deterministic runtime interfaces | စီစဉ်ထား |
@@ -24,7 +24,7 @@ P2 တွင် native runtime၊ deterministic registry transport နှင့�
 
 P3.1 ကို ပထမဦးစားပေးအဖြစ် ရွေးချယ်ထားခြင်းမှာ modules နှင့် workspaces များသည် reusable web, AI နှင့် standard-library packages များအတွက် အခြေခံလိုအပ်ချက်ဖြစ်သောကြောင့် ဖြစ်ပါသည်။ P2 တွင်ရှိပြီးသား parser-owned spans နှင့် project resolver ကို အသုံးပြုပြီး module model အသစ်နှစ်ခု မဖြစ်စေရန် တိုးချဲ့မည်ဖြစ်ပါသည်။
 
-ပထမ P3.1 increment တွင် optional `[module]` manifest section ကို သတ်မှတ်ပြီး relative `root` နှင့် explicit `.zp` `entries` များကို validate ပြုလုပ်ထားပါသည်။ Absolute path၊ traversal၊ မရှိသော file၊ duplicate entry နှင့် unknown module field များကို CLI stable diagnostics ဖြင့် ပယ်ချပါသည်။ Import graph validation နှင့် workspace cross-platform coverage များသည် P3.1 အတွင်း ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ P2 မှ local path dependencies နှင့် lockfile behavior များကို မပြောင်းလဲပါ။
+P3.1 implementation တွင် optional `[module]` manifest section ကို သတ်မှတ်ပြီး relative `root` နှင့် explicit `.zp` `entries` များကို validate ပြုလုပ်ထားပါသည်။ Absolute path၊ traversal၊ မရှိသော file၊ duplicate entry နှင့် unknown module field များကို CLI stable diagnostics ဖြင့် ပယ်ချပါသည်။ Explicit `module` declaration နှင့် `import ... as ...` path များကို module root အောက်တွင် deterministic resolve လုပ်ပြီး imported files များကို source order အတိုင်း traverse ပြုလုပ်ပါသည်။ Circular dependency ဖြစ်ပါက cycle တစ်ခုလုံးကို diagnostic ထဲတွင် ဖော်ပြပါသည်။ LSP သည် module declaration နှင့် import alias များကို hover၊ definition၊ completion နှင့် workspace symbol အတွက် index လုပ်ပါသည်။ P3.1 acceptance အတွက် cross-platform workspace integration coverage သာ ကျန်ရှိပါသည်။ P2 မှ local path dependencies နှင့် lockfile behavior များကို မပြောင်းလဲပါ။
 
 ## Engineering စည်းမျဉ်းများ
 

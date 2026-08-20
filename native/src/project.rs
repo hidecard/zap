@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::ast::{parse_program, Stmt};
 use crate::registry::{
     cache_package, find_package_requirement, package_cache_path, read_index, verify_cached_package,
 };
@@ -31,10 +32,155 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     }
     validate_lockfile(dir, &text)?;
     let source = read_limited_text(&main_path, "source read")?;
+    validate_explicit_imports(dir, &text, &source, &main_path)?;
     validate_function_signatures(&source, &main_path)?;
     validate_function_returns(&source, &main_path)?;
     validate_function_calls(&source, &main_path)?;
     Ok(format!("{name} {version} (main: {main})"))
+}
+
+fn validate_explicit_imports(
+    dir: &Path,
+    manifest: &str,
+    source: &str,
+    source_path: &Path,
+) -> Result<(), String> {
+    let has_explicit_syntax = source.lines().any(|line| {
+        let line = line.trim_start();
+        line == "module"
+            || line.starts_with("module ")
+            || line == "import"
+            || line.starts_with("import ")
+    });
+    if !has_explicit_syntax {
+        return Ok(());
+    }
+    let root_dir = dir.join(module_root(manifest));
+    let mut states = BTreeMap::new();
+    let mut stack = Vec::new();
+    validate_module_graph(&root_dir, source_path, source, &mut states, &mut stack)
+}
+
+fn validate_module_graph(
+    root_dir: &Path,
+    source_path: &Path,
+    source: &str,
+    states: &mut BTreeMap<PathBuf, u8>,
+    stack: &mut Vec<PathBuf>,
+) -> Result<(), String> {
+    let key = source_path.to_path_buf();
+    match states.get(&key).copied() {
+        Some(2) => return Ok(()),
+        Some(1) => {
+            let start = stack.iter().position(|path| path == &key).unwrap_or(0);
+            let mut cycle = stack[start..]
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect::<Vec<_>>();
+            cycle.push(key.display().to_string());
+            return Err(format!(
+                "circular module dependency: {}",
+                cycle.join(" -> ")
+            ));
+        }
+        _ => {}
+    }
+    states.insert(key.clone(), 1);
+    stack.push(key.clone());
+
+    let result = (|| {
+        let program = parse_program(source).map_err(|error| {
+            format!(
+                "{}: explicit module/import syntax error: {error}",
+                source_path.display()
+            )
+        })?;
+        let mut module_name = None;
+        for statement in &program.statements {
+            match &statement.node {
+                Stmt::Module { name } => {
+                    if module_name.replace(name.clone()).is_some() {
+                        return Err(format!(
+                            "{}: duplicate module declaration",
+                            source_path.display()
+                        ));
+                    }
+                }
+                Stmt::Import {
+                    path,
+                    explicit: true,
+                    ..
+                } => {
+                    let relative = import_target_path(path)
+                        .map_err(|error| format!("{}: {error}", source_path.display()))?;
+                    let target = root_dir.join(relative);
+                    if !target.is_file() {
+                        return Err(format!(
+                            "{}: imported module not found: {}",
+                            source_path.display(),
+                            target.display()
+                        ));
+                    }
+                    let target_source = read_limited_text(&target, "module source read")?;
+                    let target_has_explicit_syntax = target_source.lines().any(|line| {
+                        let line = line.trim_start();
+                        line == "module"
+                            || line.starts_with("module ")
+                            || line == "import"
+                            || line.starts_with("import ")
+                    });
+                    if target_has_explicit_syntax {
+                        validate_module_graph(root_dir, &target, &target_source, states, stack)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    })();
+
+    stack.pop();
+    if result.is_ok() {
+        states.insert(key, 2);
+    }
+    result
+}
+
+fn module_root(manifest: &str) -> PathBuf {
+    for raw_line in manifest.lines() {
+        let line = raw_line.trim();
+        if let Some(value) = line.strip_prefix("root =") {
+            let value = value.trim().trim_matches('"');
+            if !value.is_empty() {
+                return PathBuf::from(value);
+            }
+        }
+    }
+    PathBuf::from(".")
+}
+
+fn import_target_path(path: &str) -> Result<PathBuf, String> {
+    let normalized = path.trim().trim_matches('"');
+    if normalized.is_empty() || normalized.starts_with('/') || normalized.contains('\\') {
+        return Err(format!("invalid explicit import path `{path}`"));
+    }
+    let mut relative = PathBuf::new();
+    for component in normalized.split('.') {
+        if component.is_empty() || component == ".." || component == "." {
+            return Err(format!("invalid explicit import path `{path}`"));
+        }
+        relative.push(component);
+    }
+    if relative.extension().is_none() {
+        relative.set_extension("zp");
+    }
+    if relative
+        .components()
+        .any(|component| component == std::path::Component::ParentDir)
+    {
+        return Err(format!("invalid explicit import path `{path}`"));
+    }
+    Ok(relative)
 }
 
 fn validate_module_manifest(dir: &Path, manifest: &str) -> Result<(), String> {

@@ -12,7 +12,7 @@ P2 delivered the native runtime, deterministic registry transport and resolution
 
 | Milestone | Scope | Acceptance criteria | Status |
 |---|---|---|---|
-| P3.1 | Module and workspace architecture | Explicit module/import syntax, deterministic search paths, duplicate/cycle diagnostics, and cross-platform workspace tests | In progress — manifest boundary implemented |
+| P3.1 | Module and workspace architecture | Explicit module/import syntax, deterministic search paths, duplicate/cycle diagnostics, and cross-platform workspace tests | In progress — resolver, cycle diagnostics, and LSP indexing implemented |
 | P3.2 | Structured error model | Native `error`/`try`/`catch` or equivalent typed propagation, stable diagnostics, and no string-only control flow for recoverable failures | Planned |
 | P3.3 | Production standard library | HTTP client/server primitives, URL handling, process execution boundaries, and safe environment/configuration APIs | Planned |
 | P3.4 | Async I/O integration | Deterministic runtime interfaces for timers, sockets, files, cancellation, backpressure, and resource budgets | Planned |
@@ -24,7 +24,7 @@ P2 delivered the native runtime, deterministic registry transport and resolution
 
 P3.1 is the first priority because modules and workspaces are prerequisites for reusable web, AI, and standard-library packages. The implementation will extend the existing parser-owned spans and project resolver rather than introducing a second module model.
 
-The initial P3.1 increment defines an optional deterministic `[module]` manifest section with a relative `root` and explicit `.zp` `entries`. It rejects absolute paths, traversal, missing files, duplicate entries, and unknown module fields through stable CLI diagnostics. Import-graph validation and workspace-wide cross-platform coverage remain next within P3.1. Local path dependencies and lockfile behavior from P2 remain unchanged.
+The P3.1 implementation defines an optional deterministic `[module]` manifest section with a relative `root` and explicit `.zp` `entries`. It rejects absolute paths, traversal, missing files, duplicate entries, and unknown module fields through stable CLI diagnostics. Explicit `module` declarations and `import ... as ...` paths are resolved below the module root, imported files are traversed in deterministic source order, and circular dependencies report their complete cycle. The LSP now indexes module declarations and explicit import aliases for hover, definitions, completion, and workspace symbols. Cross-platform workspace integration coverage remains the final P3.1 acceptance item. Local path dependencies and lockfile behavior from P2 remain unchanged.
 
 ## Engineering rules
 

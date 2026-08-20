@@ -131,6 +131,7 @@ fn completion_response(message: &Value) -> Value {
         ("for", "Start a loop"),
         ("while", "Start a loop"),
         ("class", "Declare a class"),
+        ("module", "Declare a module"),
         ("import", "Import a module"),
         ("return", "Return a value from a function"),
         ("async", "Declare an asynchronous function"),
@@ -193,6 +194,19 @@ fn hover_response(message: &Value) -> Value {
             .statements
             .iter()
             .find_map(|statement| match &statement.node {
+                crate::ast::Stmt::Module { name } if name == &word => {
+                    Some(format!("module `{name}`"))
+                }
+                crate::ast::Stmt::Import {
+                    path,
+                    explicit: true,
+                    alias,
+                } if alias.as_deref() == Some(word.as_str()) || path == &word => Some(format!(
+                    "import `{path}`{}",
+                    alias
+                        .as_ref()
+                        .map_or(String::new(), |value| format!(" as `{value}`"))
+                )),
                 crate::ast::Stmt::Function {
                     name,
                     return_type,
@@ -339,6 +353,12 @@ fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, Stri
                 ),
                 crate::ast::Stmt::Class { name, .. } => (name.clone(), 5, "class"),
                 crate::ast::Stmt::Declaration { name, .. } => (name.clone(), 13, "binding"),
+                crate::ast::Stmt::Module { name } => (name.clone(), 3, "module"),
+                crate::ast::Stmt::Import {
+                    path,
+                    explicit: true,
+                    alias,
+                } => (alias.clone().unwrap_or_else(|| path.clone()), 2, "import"),
                 _ => return None,
             };
             let line_index = statement.span.line.saturating_sub(1);
@@ -424,7 +444,7 @@ mod tests {
         assert_eq!(response["id"], 8);
         assert_eq!(response["result"]["isIncomplete"], false);
         assert_eq!(response["result"]["items"][0]["label"], "let");
-        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 11);
+        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 12);
     }
 
     #[test]
@@ -477,6 +497,33 @@ mod tests {
         assert_eq!(response["result"][0]["uri"], uri);
         assert_eq!(response["result"][0]["range"]["start"]["line"], 0);
         assert_eq!(response["result"][0]["range"]["start"]["character"], 3);
+    }
+
+    #[test]
+    fn hover_and_workspace_symbols_include_explicit_modules_and_imports() {
+        let uri = "file:///module-symbols.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "module app.core\nimport app.util as util\n"}}
+        }));
+        let hover = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 15, "method": "textDocument/hover",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 1, "character": 25}}
+        }))
+        .unwrap();
+        assert!(hover["result"]["contents"]["value"]
+            .as_str()
+            .unwrap()
+            .contains("import `app.util`"));
+
+        let symbols = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 16, "method": "workspace/symbol",
+            "params": {"query": ""}
+        }))
+        .unwrap();
+        let names = symbols["result"].as_array().unwrap();
+        assert!(names.iter().any(|item| item["name"] == "app.core"));
+        assert!(names.iter().any(|item| item["name"] == "util"));
     }
 
     #[test]

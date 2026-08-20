@@ -4776,3 +4776,75 @@ fn install_uses_registry_cache_and_supports_offline_reuse() {
     );
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn validates_explicit_workspace_graph() {
+    let root = std::env::temp_dir().join("zap_explicit_workspace_graph_test");
+    let module_root = root.join("modules/app");
+    std::fs::create_dir_all(&module_root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"workspace-demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[module]\nroot = \"modules\"\nentries = [\"app/core.zp\", \"app/util.zp\"]\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "module app.main\nimport app.core as core\nimport app.util as util\n",
+    )
+    .unwrap();
+    std::fs::write(
+        module_root.join("core.zp"),
+        "module app.core\nimport app.util as util\n",
+    )
+    .unwrap();
+    std::fs::write(module_root.join("util.zp"), "module app.util\n").unwrap();
+
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn reports_explicit_import_cycle_chain() {
+    let root = std::env::temp_dir().join("zap_explicit_import_cycle_test");
+    let module_root = root.join("modules/app");
+    std::fs::create_dir_all(&module_root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"cycle-demo\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[module]\nroot = \"modules\"\nentries = [\"app/a.zp\", \"app/b.zp\", \"app/c.zp\"]\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "module app.main\nimport app.a as a\n").unwrap();
+    std::fs::write(
+        module_root.join("a.zp"),
+        "module app.a\nimport app.b as b\n",
+    )
+    .unwrap();
+    std::fs::write(
+        module_root.join("b.zp"),
+        "module app.b\nimport app.c as c\n",
+    )
+    .unwrap();
+    std::fs::write(
+        module_root.join("c.zp"),
+        "module app.c\nimport app.a as a\n",
+    )
+    .unwrap();
+
+    let output = Command::new(binary())
+        .args(["check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!output.status.success());
+    assert!(stderr.contains("circular module dependency"));
+    assert!(stderr.contains("a.zp") && stderr.contains("b.zp") && stderr.contains("c.zp"));
+}

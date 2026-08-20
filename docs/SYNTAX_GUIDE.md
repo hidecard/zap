@@ -411,33 +411,50 @@ say join(items, "|")
 
 Relative path များသည် program run လုပ်သော current working directory ကို အခြေခံသည်။ File permission နှင့် path validation များကို production အသုံးပြုမှုမတိုင်မီ စစ်ဆေးသင့်သည်။
 
-## 18. Modules
+## 18. Modules နှင့် Workspaces
 
-အခြား `.zp` file ထဲရှိ function များကို `use` ဖြင့် load လုပ်နိုင်သည်။ ဥပမာ project structure—
+Zap တွင် source file ၏ logical name ကို သတ်မှတ်ရန် `module` နှင့် module ကို alias ဖြင့် import လုပ်ရန် `import ... as ...` ကို အသုံးပြုနိုင်သည်။
 
 ```text
 hello-app/
 ├── main.zp
 └── modules/
-    └── math.zp
+    └── app/
+        └── core.zp
 ```
 
-`modules/math.zp`—
+`modules/app/core.zp`—
 
 ```zp
-fn triple(value):
-    return value * 3
+module app.core
+
+fn version():
+    return "2.0"
 ```
 
 `main.zp`—
 
 ```zp
-use "math.zp"
+module app.main
+import app.core as core
 
-say triple(4)
+say core
 ```
 
-Runtime သည် main source file ရှိသော directory၊ `modules/` နှင့် `lib/` directories များအတွင်း module ကို ရှာဖွေသည်။ Project manifest ရှိလျှင် `zap check` ဖြင့် entry file နှင့် project structure ကို စစ်ဆေးနိုင်သည်။
+Dotted import path သည် module root အောက်ရှိ `.zp` file သို့ map လုပ်သည်။ ဥပမာ `import app.core as core` သည် `modules/app/core.zp` သို့ resolve ဖြစ်ရန် `zap.toml` တွင်—
+
+```toml
+[package]
+name = "workspace-demo"
+version = "0.1.0"
+main = "main.zp"
+
+[module]
+root = "modules"
+entries = ["app/core.zp"]
+```
+
+ဟု ရေးနိုင်သည်။ Module `root` နှင့် `entries` များသည် relative path ဖြစ်ရမည်၊ entry တိုင်းသည် `.zp` ဖြင့်ဆုံးရမည်၊ ဖိုင်တကယ်ရှိရမည်။ Explicit import များတွင် absolute path၊ separator၊ empty component နှင့် traversal များကို လက်မခံပါ။ Resolver သည် import များကို deterministic source order ဖြင့် လိုက်စစ်ပြီး ပြီးစီးပြီးသော node များကို cache လုပ်သည်။ Circular dependency ဖြစ်ပါက cycle တစ်ခုလုံးပါသော `circular module dependency` diagnostic ကို ထုတ်ပေးသည်။ Compatibility အတွက် `use "file.zp"` ကို ဆက်လက်အသုံးပြုနိုင်သော်လည်း workspace အသစ်များတွင် `module` နှင့် `import ... as ...` ကို ဦးစားပေးသင့်သည်။
 
 ## 19. Complete Example: CLI Counter
 
