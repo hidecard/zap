@@ -23,9 +23,9 @@ mod evaluator;
 mod stdlib;
 
 use evaluator::{
-    call_function, call_method, check_method_visibility, direct_builtin, execute_ast_program,
-    execute_lines, initialize_object_fields, json_to_value, operate, validate_source_layout,
-    value_to_json, Flow,
+    call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
+    direct_builtin, execute_ast_program, execute_lines, initialize_object_fields, json_to_value,
+    operate, validate_source_layout, value_to_json, Flow,
 };
 
 use std::{
@@ -575,7 +575,11 @@ impl<'a> ExprParser<'a> {
                         }
                         if self
                             .funcs
-                            .contains_key(&format!("{class_name}.__own_init__"))
+                            .get(&format!("{class_name}.init"))
+                            .is_some_and(|init| !constructor_delegates_to_parent(init))
+                            && self
+                                .funcs
+                                .contains_key(&format!("{class_name}.__own_init__"))
                         {
                             if let Some(parent_meta) =
                                 self.funcs.get(&format!("{class_name}.__parent__"))
@@ -965,6 +969,7 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
     MODULE_LOADING.with(|stack| stack.borrow_mut().clear());
     MODULE_CACHE.with(|cache| cache.borrow_mut().clear());
     let mut vars = HashMap::new();
+    vars.insert("__zap_module".into(), Value::Text("__main__".into()));
     let mut funcs = HashMap::new();
     validate_source_layout(source)?;
     if let Ok(program) = ast::parse_program(source) {

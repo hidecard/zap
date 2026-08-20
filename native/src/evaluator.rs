@@ -727,8 +727,21 @@ pub(crate) fn check_field_visibility(
         Value::Text(class) => Some(class.as_str()),
         _ => None,
     });
+    let caller_module = vars.get("__zap_module").and_then(|value| match value {
+        Value::Text(module) => Some(module.as_str()),
+        _ => None,
+    });
+    let owner_module =
+        metadata
+            .closure
+            .borrow()
+            .get("__zap_module")
+            .and_then(|value| match value {
+                Value::Text(module) => Some(module.clone()),
+                _ => None,
+            });
     let allowed = match (metadata.visibility.as_str(), caller) {
-        ("private", Some(class)) => class == owner,
+        ("private", Some(class)) => class == owner && caller_module == owner_module.as_deref(),
         ("protected", Some(class)) => is_same_or_subclass(class, &owner, funcs),
         _ => false,
     };
@@ -740,6 +753,33 @@ pub(crate) fn check_field_visibility(
             metadata.visibility
         ))
     }
+}
+
+fn ast_contains_super_init(program: &Program) -> bool {
+    program.statements.iter().any(|statement| match &statement.node {
+        Stmt::Expression(expression) => matches!(
+            &expression.node,
+            Expr::Call { callee, .. }
+                if matches!(&callee.node, Expr::Member { target, member } if member == "init" && matches!(&target.node, Expr::Name(name) if name == "super"))
+        ),
+        Stmt::If { then_branch, else_branch, .. } => {
+            ast_contains_super_init(then_branch)
+                || else_branch.as_ref().is_some_and(ast_contains_super_init)
+        }
+        Stmt::While { body, .. } | Stmt::For { body, .. } => ast_contains_super_init(body),
+        _ => false,
+    })
+}
+
+pub(crate) fn constructor_delegates_to_parent(function: &Function) -> bool {
+    function
+        .body
+        .iter()
+        .any(|line| line.contains("super.init("))
+        || function
+            .ast_body
+            .as_ref()
+            .is_some_and(ast_contains_super_init)
 }
 
 pub(crate) fn initialize_object_fields(
@@ -2003,6 +2043,10 @@ pub(crate) fn load_module(
     };
     let imported_lines = imported.lines().map(str::to_string).collect::<Vec<_>>();
     let mut module_vars = HashMap::new();
+    module_vars.insert(
+        "__zap_module".into(),
+        Value::Text(canonical.display().to_string()),
+    );
     let mut module_funcs = HashMap::new();
     let flow_result = execute_lines(
         &imported_lines,
@@ -2044,7 +2088,7 @@ pub(crate) fn load_module(
         }
     } else {
         for (key, value) in module_vars {
-            if !key.starts_with("__zap_export_var__:") {
+            if !key.starts_with("__zap_export_var__:") && key != "__zap_module" {
                 vars.insert(key, value);
             }
         }
@@ -2119,6 +2163,14 @@ pub(crate) fn execute_lines(
             let mut j = 0;
             while j < body.len() {
                 let method_line = body[j].trim();
+                let (visibility, method_line) = [
+                    ("public", method_line.strip_prefix("public ")),
+                    ("private", method_line.strip_prefix("private ")),
+                    ("protected", method_line.strip_prefix("protected ")),
+                ]
+                .into_iter()
+                .find_map(|(visibility, line)| line.map(|line| (visibility, line)))
+                .unwrap_or(("public", method_line));
                 if let Some(method_rest) = method_line
                     .strip_prefix("fn ")
                     .or_else(|| method_line.strip_prefix("def "))
@@ -2131,7 +2183,7 @@ pub(crate) fn execute_lines(
                         funcs.insert(
                             format!("{class_name}.__own_init__"),
                             Rc::new(Function {
-                                visibility: "public".into(),
+                                visibility: visibility.into(),
                                 params: Vec::new(),
                                 return_annotation: None,
                                 body: Vec::new(),
@@ -2159,7 +2211,7 @@ pub(crate) fn execute_lines(
                     funcs.insert(
                         format!("{class_name}.{}", method_name.trim()),
                         Rc::new(Function {
-                            visibility: "public".into(),
+                            visibility: visibility.into(),
                             params,
                             return_annotation,
                             body: method_body,

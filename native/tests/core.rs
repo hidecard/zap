@@ -1294,3 +1294,82 @@ fn initializes_declared_fields_before_constructor_overrides() {
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n10\n");
 }
+
+#[test]
+fn enforces_module_aware_private_method_visibility() {
+    let root = std::env::temp_dir().join("zap_module_visibility_test");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("vault.zp"),
+        "class Vault:\n    private fn secret(self):\n        return \"module-hidden\"\n    fn reveal(self):\n        return self.secret()\n",
+    )
+    .unwrap();
+    let main = root.join("main.zp");
+    std::fs::write(
+        &main,
+        "use \"vault.zp\"\nlet vault = new(\"Vault\")\nsay vault.reveal()\nsay vault.secret()\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&main).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "module-hidden\n");
+    assert!(String::from_utf8_lossy(&output.stderr).contains("private method is not accessible"));
+}
+
+#[test]
+fn avoids_double_parent_constructor_when_explicitly_delegated() {
+    let file = std::env::temp_dir().join("zap_constructor_delegation_edge_test.zp");
+    std::fs::write(
+        &file,
+        "class Base:\n    fn init(self):\n        self.count = 1\nclass Child extends Base:\n    fn init(self):\n        super.init()\n        self.count = self.count + 1\nlet child = new(\"Child\")\nsay child.count\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n");
+}
+
+#[test]
+fn implicitly_delegates_parent_constructor_once() {
+    let file = std::env::temp_dir().join("zap_constructor_implicit_delegation_test.zp");
+    std::fs::write(
+        &file,
+        "class Base:\n    fn init(self):\n        self.count = 1\nclass Child extends Base:\n    fn init(self):\n        self.count = self.count + 1\nlet child = new(\"Child\")\nsay child.count\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n");
+}
+
+#[test]
+fn rejects_private_constructor_from_another_module() {
+    let root = std::env::temp_dir().join("zap_module_constructor_visibility_test");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("private_ctor.zp"),
+        "class Secret:\n    private fn init(self):\n        self.ready = true\n",
+    )
+    .unwrap();
+    let main = root.join("main.zp");
+    std::fs::write(
+        &main,
+        "use \"private_ctor.zp\"\nlet value = new(\"Secret\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&main).output().unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("private method is not accessible"));
+}
