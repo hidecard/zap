@@ -277,6 +277,71 @@ impl AstParser {
                 }
                 self.parse_postfix(expression)
             }
+            crate::lexer::Token::LBracket => {
+                let mut items = Vec::new();
+                while !matches!(self.current().token, crate::lexer::Token::RBracket) {
+                    items.push(self.parse_expression(0)?);
+                    if !matches!(self.current().token, crate::lexer::Token::Comma) {
+                        break;
+                    }
+                    self.advance();
+                }
+                let close = self.advance();
+                if !matches!(close.token, crate::lexer::Token::RBracket) {
+                    return Err(format!(
+                        "expected ']' at {}:{}",
+                        close.span.line, close.span.column
+                    ));
+                }
+                self.parse_postfix(Spanned::new(
+                    Expr::List(items),
+                    SourceSpan {
+                        line: token.span.line,
+                        column: token.span.column,
+                        length: close.span.column + close.span.length - token.span.column,
+                    },
+                ))
+            }
+            crate::lexer::Token::LBrace => {
+                let mut items = Vec::new();
+                while !matches!(self.current().token, crate::lexer::Token::RBrace) {
+                    let key_token = self.advance();
+                    let key = match key_token.token {
+                        crate::lexer::Token::Text(value) => {
+                            Spanned::new(Expr::Literal(Literal::Text(value)), key_token.span)
+                        }
+                        crate::lexer::Token::Name(value) => {
+                            Spanned::new(Expr::Literal(Literal::Text(value)), key_token.span)
+                        }
+                        other => return Err(format!("invalid map key: {other:?}")),
+                    };
+                    if !matches!(self.current().token, crate::lexer::Token::Colon) {
+                        return Err("expected ':' after map key".into());
+                    }
+                    self.advance();
+                    let value = self.parse_expression(0)?;
+                    items.push((key, value));
+                    if !matches!(self.current().token, crate::lexer::Token::Comma) {
+                        break;
+                    }
+                    self.advance();
+                }
+                let close = self.advance();
+                if !matches!(close.token, crate::lexer::Token::RBrace) {
+                    return Err(format!(
+                        "expected '}}' at {}:{}",
+                        close.span.line, close.span.column
+                    ));
+                }
+                self.parse_postfix(Spanned::new(
+                    Expr::Map(items),
+                    SourceSpan {
+                        line: token.span.line,
+                        column: token.span.column,
+                        length: close.span.column + close.span.length - token.span.column,
+                    },
+                ))
+            }
             other => Err(format!(
                 "expected expression, got {other:?} at {}:{}",
                 token.span.line, token.span.column

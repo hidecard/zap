@@ -977,11 +977,19 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
     vars.insert("__zap_module".into(), Value::Text("__main__".into()));
     let mut funcs = HashMap::new();
     validate_source_layout(source)?;
-    if let Ok(program) = ast::parse_program(source) {
-        return match execute_ast_program(&program, &mut vars, &mut funcs, base)? {
-            Flow::Continue | Flow::Return(_) => Ok(()),
-            Flow::Break | Flow::LoopContinue => Err("break/continue must be inside a loop".into()),
-        };
+    match ast::parse_program(source) {
+        Ok(program) => {
+            return match execute_ast_program(&program, &mut vars, &mut funcs, base)? {
+                Flow::Continue | Flow::Return(_) => Ok(()),
+                Flow::Break | Flow::LoopContinue => {
+                    Err("break/continue must be inside a loop".into())
+                }
+            };
+        }
+        Err(error) if contains_ast_only_syntax(source) => {
+            return Err(format!("syntax error: {error}"));
+        }
+        Err(_) => {}
     }
     let lines = source.lines().map(str::to_string).collect::<Vec<_>>();
     match execute_lines(&lines, &mut vars, &mut funcs, base)? {
@@ -989,6 +997,17 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
         Flow::Break | Flow::LoopContinue => Err("break/continue must be inside a loop".into()),
     }
 }
+
+fn contains_ast_only_syntax(source: &str) -> bool {
+    source.lines().any(|raw_line| {
+        let line = raw_line.trim_start();
+        line.starts_with("async ")
+            || line.starts_with("await ")
+            || line.starts_with("module ")
+            || (line.starts_with("import ") && line.contains(" as "))
+    })
+}
+
 fn format_source(source: &str) -> String {
     let mut out = String::new();
     for line in source.lines() {

@@ -301,6 +301,7 @@ fn cache_bytes(
     cache_root: &Path,
     package: &RegistryPackage,
 ) -> Result<PathBuf, String> {
+    validate_package_identity(package)?;
     let actual = sha256_hex(bytes);
     if actual != package.checksum {
         return Err(format!(
@@ -338,12 +339,14 @@ fn parse_package(value: &Value) -> Result<RegistryPackage, String> {
     if !is_sha256(&checksum) {
         return Err(format!("registry checksum is invalid for {name} {version}"));
     }
-    Ok(RegistryPackage {
+    let package = RegistryPackage {
         name,
         version,
         source,
         checksum,
-    })
+    };
+    validate_package_identity(&package)?;
+    Ok(package)
 }
 
 fn required_string(value: &Value, field: &str) -> Result<String, String> {
@@ -537,6 +540,58 @@ pub fn package_cache_path(cache_root: &Path, package: &RegistryPackage) -> PathB
         .join(&package.name)
         .join(&package.version)
         .join(format!("{}.pkg", package.checksum))
+}
+
+pub(crate) fn validate_package_name(name: &str) -> Result<(), String> {
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return Err("package name must not be empty".to_string());
+    };
+    if !first.is_ascii_alphanumeric()
+        || !chars.all(|character| {
+            character.is_ascii_alphanumeric() || character == '-' || character == '_'
+        })
+    {
+        return Err(format!("invalid package name `{name}`"));
+    }
+    Ok(())
+}
+
+fn validate_package_version(version: &str) -> Result<(), String> {
+    let core = version
+        .split(|character| character == '-' || character == '+')
+        .next()
+        .unwrap_or(version);
+    let parts = core.split('.').collect::<Vec<_>>();
+    if parts.is_empty()
+        || parts.len() > 3
+        || parts.iter().any(|part| {
+            part.is_empty()
+                || (part.len() > 1 && part.starts_with('0'))
+                || !part.bytes().all(|byte| byte.is_ascii_digit())
+        })
+    {
+        return Err(format!("invalid registry version: {version}"));
+    }
+    if version
+        .chars()
+        .any(|character| character.is_control() || character == '/' || character == '\\')
+    {
+        return Err(format!("invalid registry version: {version}"));
+    }
+    Ok(())
+}
+
+fn validate_package_identity(package: &RegistryPackage) -> Result<(), String> {
+    validate_package_name(&package.name)?;
+    validate_package_version(&package.version)?;
+    if package.checksum.len() != 64 || !is_sha256(&package.checksum) {
+        return Err(format!(
+            "invalid package checksum for {} {}",
+            package.name, package.version
+        ));
+    }
+    Ok(())
 }
 
 /// Remove unreferenced package artifacts and temporary files from a cache.

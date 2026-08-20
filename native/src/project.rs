@@ -6,7 +6,8 @@ use std::{
 
 use crate::ast::{parse_program, Stmt};
 use crate::registry::{
-    cache_package, find_package_requirement, package_cache_path, read_index, verify_cached_package,
+    cache_package, find_package_requirement, package_cache_path, read_index, validate_package_name,
+    verify_cached_package,
 };
 
 use super::{
@@ -17,6 +18,7 @@ use super::{
 pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let manifest = dir.join("zap.toml");
     let text = read_limited_text(&manifest, "manifest read")?;
+    validate_manifest_syntax(&text)?;
     let name = manifest_value(&text, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
@@ -315,6 +317,7 @@ fn parse_dependencies(manifest: &str) -> Result<BTreeMap<String, DependencySpec>
         if name.is_empty() || raw_value.is_empty() || name.contains(char::is_whitespace) {
             return Err(format!("zap.toml: invalid dependency entry `{line}`"));
         }
+        validate_package_name(name).map_err(|error| format!("zap.toml: {error}"))?;
         let spec = if raw_value.starts_with('{') {
             let path = raw_value
                 .strip_prefix('{')
@@ -337,6 +340,50 @@ fn parse_dependencies(manifest: &str) -> Result<BTreeMap<String, DependencySpec>
         }
     }
     Ok(dependencies)
+}
+
+fn validate_manifest_syntax(manifest: &str) -> Result<(), String> {
+    let allowed_sections = ["package", "dependencies", "module"];
+    let mut section = "package";
+    let mut keys = HashSet::new();
+    for (index, raw_line) in manifest.lines().enumerate() {
+        let line_number = index + 1;
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            if !line.ends_with(']') {
+                return Err(format!(
+                    "zap.toml: unterminated section at line {line_number}"
+                ));
+            }
+            section = line.trim_start_matches('[').trim_end_matches(']');
+            if !allowed_sections.contains(&section) {
+                return Err(format!("zap.toml: unknown section `[{section}]`"));
+            }
+            keys.clear();
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            return Err(format!("zap.toml: invalid entry at line {line_number}"));
+        };
+        let key = key.trim();
+        let value = value.trim();
+        if key.is_empty() {
+            return Err(format!("zap.toml: invalid entry at line {line_number}"));
+        }
+        if !keys.insert(key.to_string()) {
+            return Err(format!("zap.toml: duplicate key `{key}` in [{section}]"));
+        }
+        let quote_count = value.chars().filter(|character| *character == '"').count();
+        if quote_count % 2 != 0 {
+            return Err(format!(
+                "zap.toml: unterminated quote at line {line_number}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn validate_package_metadata(manifest: &str, context: &str) -> Result<(), String> {
@@ -435,9 +482,7 @@ fn validate_lockfile(dir: &Path, manifest: &str) -> Result<(), String> {
 }
 
 pub(crate) fn add_dependency(dir: &Path, name: &str, requirement: &str) -> Result<String, String> {
-    if name.is_empty() || name.contains(char::is_whitespace) || name.contains('=') {
-        return Err(format!("invalid dependency name `{name}`"));
-    }
+    validate_package_name(name).map_err(|_| format!("invalid dependency name `{name}`"))?;
     if requirement.is_empty() || requirement.contains('"') || requirement.contains('\n') {
         return Err("dependency requirement must be a non-empty single-line value".to_string());
     }

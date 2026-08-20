@@ -340,7 +340,10 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
                     Ok(Some(Value::Bool(value.contains(part))))
                 }
                 (Value::List(values), item) => Ok(Some(Value::Bool(values.contains(item)))),
-                _ => Err("contains expects text/text or list/value".into()),
+                (Value::Map(values), Value::Text(key)) => {
+                    Ok(Some(Value::Bool(values.contains_key(key))))
+                }
+                _ => Err("contains expects text/text, list/value, or map/key".into()),
             }
         }
         "is_empty" => {
@@ -368,17 +371,14 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         "join" => {
             expect(2)?;
             let (Value::List(values), Value::Text(separator)) = (&args[0], &args[1]) else {
-                return Err("join expects a list of text and a separator".into());
+                return Err("join expects a list and a separator".into());
             };
             let mut output = String::new();
             for (index, value) in values.iter().enumerate() {
-                let Value::Text(value) = value else {
-                    return Err("join expects a list of text and a separator".into());
-                };
                 if index > 0 {
                     output.push_str(separator);
                 }
-                output.push_str(value);
+                output.push_str(&value.show());
             }
             Ok(Some(Value::Text(output)))
         }

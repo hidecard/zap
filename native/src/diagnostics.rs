@@ -38,6 +38,12 @@ pub(crate) enum ZapError {
         line: usize,
         column: usize,
     },
+    Key {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
     Permission {
         message: String,
         file: String,
@@ -83,6 +89,8 @@ impl ZapError {
             || message.contains("expected ")
         {
             "TypeError"
+        } else if message.contains("key not found") || message.contains("property not found") {
+            "KeyError"
         } else if message.contains("not found") || message.contains("No such file") {
             "FileNotFound"
         } else if message.contains("permission denied") || message.contains("Permission denied") {
@@ -145,6 +153,12 @@ impl ZapError {
                 line,
                 column,
             },
+            "KeyError" => Self::Key {
+                message,
+                file,
+                line,
+                column,
+            },
             "PermissionError" => Self::Permission {
                 message,
                 file,
@@ -180,6 +194,7 @@ impl ZapError {
             Self::Value { .. } => "ValueError",
             Self::Io { .. } => "IOError",
             Self::FileNotFound { .. } => "FileNotFound",
+            Self::Key { .. } => "KeyError",
             Self::Permission { .. } => "PermissionError",
             Self::Overflow { .. } => "OverflowError",
             Self::Runtime { .. } => "Error",
@@ -232,6 +247,12 @@ impl ZapError {
                 column,
             }
             | Self::FileNotFound {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Key {
                 message,
                 file,
                 line,
