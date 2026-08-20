@@ -20,7 +20,7 @@ Zap 2.0.3 သည် P3.3 Production Standard Library milestone ကို ပြ�
 
 - Native suite: **tests 235 ခု pass** ဖြစ်ပါသည်။
 - P3.3 URL၊ process၊ HTTP validation၊ configuration၊ local-server argument နှင့် compatibility regression များ အောင်မြင်ပါသည်။
-- Evaluator native path separator expectation နှင့် Windows JSON file fixture escaping များအတွက် cross-platform test hardening ပြီးစီးပါသည်။
+- Evaluator native path separator expectation၊ Windows JSON file fixture escaping နှင့် Windows smoke gate ရှိ option-aware URL port assertion များအတွက် cross-platform test hardening ပြီးစီးပါသည်။
 - Linux native suite tests **235 ခု pass** ဖြစ်ပြီး Windows/macOS target-native tests၊ strict Clippy နှင့် release packaging များကို GitHub Actions တွင် ဆက်လက် enforce လုပ်ထားပါသည်။
 
 ## [2.0.1] — 2026-08-20

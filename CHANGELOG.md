@@ -9,7 +9,7 @@ Zap 2.0.3 သည် P3.3 Production Standard Library milestone ကို ပြ�
 ### P3.3 နှင့် cross-platform hardening
 - Bounded URL၊ HTTP client/server၊ direct non-shell process၊ environment/configuration APIs များကို ထည့်သွင်းထားပါသည်။
 - VS Code extension နှင့် LSP signature help/formatting integration ကို ထည့်သွင်းထားပါသည်။
-- Windows native path separator expectation နှင့် JSON-escaped file fixture portability ပြဿနာများကို ပြင်ဆင်ထားပါသည်။
+- Windows native path separator expectation၊ JSON-escaped file fixture portability နှင့် Windows smoke gate ရှိ option-aware URL port assertion ပြဿနာများကို ပြင်ဆင်ထားပါသည်။
 
 ### Verification
 Native suite tests 235 ခု pass ဖြစ်ပြီး P3.3 smoke fixture အောင်မြင်ပါသည်။ Windows၊ macOS၊ strict Clippy နှင့် release packaging gates များကို GitHub Actions workflow တွင် enforce လုပ်ထားပါသည်။

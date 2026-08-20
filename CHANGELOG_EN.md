@@ -20,7 +20,7 @@ Zap 2.0.3 completes the P3.3 Production Standard Library milestone.
 
 - Native suite: **235 tests passed**.
 - Focused P3.3 URL, process, HTTP validation, configuration, local-server argument, and compatibility regressions passed.
-- Cross-platform test hardening covers native path separators in evaluator expectations and JSON-escaped Windows file fixtures.
+- Cross-platform test hardening covers native path separators in evaluator expectations, JSON-escaped Windows file fixtures, and option-aware URL-port assertions in the Windows smoke gate.
 - The Linux native suite passed **235 tests**; Windows and macOS target-native tests, strict Clippy, and release packaging remain enforced by GitHub Actions.
 
 ## [2.0.1] — 2026-08-20

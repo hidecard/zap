@@ -124,7 +124,7 @@ jobs:
           @'
           let parsed = url_parse("https://example.com:8443/api?q=zap")
           assert(parsed["scheme"] == "https", "URL scheme mismatch")
-          assert(parsed["port"] == 8443, "URL port mismatch")
+          assert(parsed["port"] == some(8443), "URL port mismatch")
           let setting = env_get("ZAP_CI_MISSING_SETTING", "fallback")
           assert(setting == "fallback", "environment default mismatch")
           let root = config_dir()
