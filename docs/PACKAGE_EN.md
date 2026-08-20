@@ -88,7 +88,28 @@ repository = "https://github.com/hidecard/zap"
 checksum = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 ```
 
-`description`, `license`, and `repository` must be non-empty quoted strings. `authors` may be a non-empty quoted string or array. When present, `checksum` must be exactly 64 hexadecimal characters representing a SHA-256 digest. These fields are metadata validation only at this stage; remote registry lookup, publishing, and downloads are not performed.
+`description`, `license`, and `repository` must be non-empty quoted strings. `authors` may be a non-empty quoted string or array. When present, `checksum` must be exactly 64 hexadecimal characters representing a SHA-256 digest.
+
+## Registry index and package cache
+
+Zap now provides a dependency-free registry foundation through a JSON index and a content-addressed cache. The index is intentionally explicit and deterministic:
+
+```json
+{
+  "packages": [
+    {
+      "name": "demo",
+      "version": "1.0.0",
+      "source": "file://demo.pkg",
+      "checksum": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ]
+}
+```
+
+Validate an index with `zap registry check path/to/index.json`. Package selection requires an exact `name` and `version` match; ambiguous or missing entries are rejected. A file-backed source is resolved relative to the index file, copied into the cache, and verified against the declared SHA-256 checksum before it is accepted. The cache layout is `.zap/cache/<name>/<version>/<checksum>.pkg`, unless `ZAP_CACHE_DIR` specifies another root.
+
+For project dependency resolution, set `ZAP_REGISTRY_INDEX` to the index path. `zap install` verifies existing cache entries and downloads missing file-backed packages. `zap update` performs the same registry validation before rewriting the canonical lockfile. Set `ZAP_OFFLINE=1` to prohibit new downloads; offline commands succeed only when every registry dependency is already cached and its checksum still matches. HTTP registry transport and publishing remain later milestones.
 
 ## Adding a dependency
 
@@ -103,14 +124,14 @@ The command rejects duplicate names, keeps dependency entries in lexicographic o
 
 ## Installing and updating dependencies
 
-Use `zap install` to verify the existing manifest and canonical lockfile without changing dependency requirements. It is the reproducible, CI-friendly command for checking that the project can be used exactly as locked. It rejects missing, stale, or non-canonical lockfiles when dependencies are declared.
+Use `zap install` to verify the existing manifest, canonical lockfile, and—when `ZAP_REGISTRY_INDEX` is configured—the registry cache without changing dependency requirements. It is the reproducible, CI-friendly command for checking that the project can be used exactly as locked. It rejects missing, stale, or non-canonical lockfiles, missing registry entries, and checksum mismatches.
 
 ```bash
 zap install
 zap install path/to/project
 ```
 
-Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. In the current local package-manager foundation, update deterministically rewrites `zap.lock` from the manifest and validates all nested local path dependencies; it does not contact a remote registry or download packages yet. Version requirements remain registry-ready leaves until remote resolution is implemented.
+Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. It deterministically rewrites `zap.lock`, validates nested local path dependencies, and—when `ZAP_REGISTRY_INDEX` is configured—resolves exact registry versions and verifies cached/downloaded package checksums. Version requirements remain exact registry selections; dependency solving across ranges is not implemented yet.
 
 ```bash
 zap update
@@ -131,5 +152,7 @@ zap update path/to/project
 | `zap build` | Validate and prepare a Zap project |
 | `zap test` | Run project test files |
 | `zap fmt main.zp` | Format a Zap source file |
+| `zap registry check <index.json>` | Validate a deterministic registry index |
+| `zap registry cache <index.json> <source> <name> <version> [cache]` | Cache a file-backed package after SHA-256 verification |
 
-Remote registry resolution, package downloads, registry dependency solving, and package publishing remain later ecosystem milestones. The current `install` and `update` commands intentionally provide deterministic local manifest/lockfile behavior without implicit network access, while local path graphs are fully traversed and checked for cycles.
+The current registry foundation supports deterministic JSON index validation, exact version selection, file-backed package caching, SHA-256 integrity enforcement, and offline reuse. HTTP transport, signed indexes, range-based dependency solving, cache garbage collection, and package publishing remain later ecosystem milestones. No network access occurs unless an explicit registry index and source are configured.

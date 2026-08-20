@@ -11,6 +11,7 @@ mod value;
 
 use value::{Function, Param, StaticSignature, Value};
 mod project;
+mod registry;
 
 use project::{resolve_module, run_zap_tests, validate_project};
 mod parser;

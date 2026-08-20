@@ -66,6 +66,8 @@ pub fn run_cli(args: &[String]) {
   zap update [dir]     Regenerate zap.lock from zap.toml
   zap lsp               Run the LSP server over stdio
   zap async-check       Validate the async runtime foundation
+  zap registry check <index.json> Validate a registry index
+  zap registry cache <index.json> <source> <name> <ver> [cache] Cache a verified package
   zap build [dir]      Validate and prepare a Zap project
 n  zap init <dir>       Create a new Zap project\n  zap --version        Show the version\n  zap --help           Show this help");
         return;
@@ -208,6 +210,44 @@ n  zap init <dir>       Create a new Zap project\n  zap --version        Show th
             Ok(info) => println!("{info}"),
             Err(e) => {
                 eprintln!("Zap update error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 4 && args[1] == "registry" && args[2] == "check" {
+        match crate::registry::read_index(Path::new(&args[3])) {
+            Ok(packages) => println!("valid registry index: {} packages", packages.len()),
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if (args.len() == 7 || args.len() == 8) && args[1] == "registry" && args[2] == "cache" {
+        let index = match crate::registry::read_index(Path::new(&args[3])) {
+            Ok(index) => index,
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        let package = match crate::registry::find_package(&index, &args[5], &args[6]) {
+            Ok(package) => package,
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        let cache = args
+            .get(7)
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(".zap/cache"));
+        match crate::registry::cache_package(Path::new(&args[4]), &cache, &package) {
+            Ok(path) => println!("cached package: {}", path.display()),
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
         }

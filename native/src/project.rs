@@ -4,6 +4,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::registry::{
+    cache_package, find_package, package_cache_path, read_index, verify_cached_package,
+};
+
 use super::{
     manifest_value, read_limited_text, run, validate_function_calls, validate_function_returns,
     validate_function_signatures,
@@ -345,6 +349,7 @@ pub(crate) fn install_dependencies(dir: &Path) -> Result<String, String> {
     manifest_value(&manifest, "version").ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
     validate_lockfile(dir, &manifest)?;
+    resolve_registry_dependencies(dir, &dependencies, false)?;
     Ok(format!(
         "installed {} locked dependencies",
         dependencies.len()
@@ -361,6 +366,7 @@ pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {
         .ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
     validate_dependency_graph(dir, &dependencies)?;
+    resolve_registry_dependencies(dir, &dependencies, true)?;
     let content = canonical_lockfile(&name, &version, &dependencies);
     fs::write(dir.join("zap.lock"), content)
         .map_err(|e| format!("zap.lock: cannot write lockfile: {e}"))?;
@@ -368,6 +374,56 @@ pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {
         "updated zap.lock with {} dependencies",
         dependencies.len()
     ))
+}
+
+fn resolve_registry_dependencies(
+    project_dir: &Path,
+    dependencies: &BTreeMap<String, DependencySpec>,
+    update: bool,
+) -> Result<(), String> {
+    let Some(index_path) = std::env::var_os("ZAP_REGISTRY_INDEX") else {
+        return Ok(());
+    };
+    let index_path = PathBuf::from(index_path);
+    let index = read_index(&index_path)?;
+    let cache_root = std::env::var_os("ZAP_CACHE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| project_dir.join(".zap/cache"));
+    let offline = std::env::var_os("ZAP_OFFLINE").is_some();
+    for (name, spec) in dependencies {
+        let DependencySpec::Requirement(version) = spec else {
+            continue;
+        };
+        let package = find_package(&index, name, version)?;
+        let cached = package_cache_path(&cache_root, &package);
+        if cached.is_file() {
+            verify_cached_package(&cached, &package)?;
+            continue;
+        }
+        if offline {
+            return Err(format!(
+                "registry package is not cached in offline mode: {name} {version}"
+            ));
+        }
+        let source = package
+            .source
+            .strip_prefix("file://")
+            .unwrap_or(&package.source);
+        let source_path = Path::new(source);
+        let source_path = if source_path.is_absolute() {
+            source_path.to_path_buf()
+        } else {
+            index_path
+                .parent()
+                .unwrap_or(Path::new("."))
+                .join(source_path)
+        };
+        cache_package(&source_path, &cache_root, &package)?;
+        if update && !cached.is_file() {
+            verify_cached_package(&cached, &package)?;
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn resolve_module(base: &Path, raw: &str) -> Option<PathBuf> {

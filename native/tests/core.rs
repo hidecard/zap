@@ -4584,3 +4584,163 @@ fn lsp_rejects_malformed_content_length() {
         .unwrap();
     assert!(!output.status.success());
 }
+
+#[test]
+fn validates_registry_index_and_caches_verified_package() {
+    let root = std::env::temp_dir().join(format!("zap_registry_cli_{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("demo.pkg");
+    std::fs::write(&source, b"demo package bytes").unwrap();
+    let checksum = {
+        use sha2::{Digest, Sha256};
+        let digest = Sha256::digest(b"demo package bytes");
+        digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{checksum}"}}]}}"#
+        ),
+    )
+    .unwrap();
+    let check = Command::new(binary())
+        .args(["registry", "check", index.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&check.stdout),
+        "valid registry index: 1 packages\n"
+    );
+    let cache = root.join("cache");
+    let cached = Command::new(binary())
+        .args([
+            "registry",
+            "cache",
+            index.to_str().unwrap(),
+            source.to_str().unwrap(),
+            "demo",
+            "1.0.0",
+            cache.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        cached.status.success(),
+        "{}",
+        String::from_utf8_lossy(&cached.stderr)
+    );
+    assert!(cache
+        .join("demo")
+        .join("1.0.0")
+        .join(format!("{checksum}.pkg"))
+        .exists());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn rejects_registry_cache_checksum_mismatch() {
+    let root = std::env::temp_dir().join(format!("zap_registry_bad_{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("bad.pkg");
+    std::fs::write(&source, b"actual bytes").unwrap();
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        r#"{"packages":[{"name":"demo","version":"1.0.0","source":"file://bad.pkg","checksum":"0000000000000000000000000000000000000000000000000000000000000000"}]}"#,
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args([
+            "registry",
+            "cache",
+            index.to_str().unwrap(),
+            source.to_str().unwrap(),
+            "demo",
+            "1.0.0",
+            root.join("cache").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("checksum mismatch"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn install_uses_registry_cache_and_supports_offline_reuse() {
+    let root = std::env::temp_dir().join(format!("zap_registry_install_{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"app\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\ndemo = \"1.0.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    let lock = Command::new(binary())
+        .args(["lock", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        lock.status.success(),
+        "{}",
+        String::from_utf8_lossy(&lock.stderr)
+    );
+
+    let source = root.join("demo.pkg");
+    std::fs::write(&source, b"registry package").unwrap();
+    let checksum = {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(b"registry package")
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{checksum}"}}]}}"#
+        ),
+    )
+    .unwrap();
+    let cache = root.join("cache");
+    let install = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        install.status.success(),
+        "{}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+    assert!(cache
+        .join("demo")
+        .join("1.0.0")
+        .join(format!("{checksum}.pkg"))
+        .is_file());
+
+    let offline = Command::new(binary())
+        .args(["install", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .env("ZAP_OFFLINE", "1")
+        .output()
+        .unwrap();
+    assert!(
+        offline.status.success(),
+        "{}",
+        String::from_utf8_lossy(&offline.stderr)
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
