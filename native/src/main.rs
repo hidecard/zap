@@ -1256,13 +1256,18 @@ fn validate_static_call(
     line: usize,
     column: usize,
 ) -> Result<(), String> {
-    if args.len() != params.len() {
+    let required = params
+        .iter()
+        .filter(|param| param.default.is_none())
+        .count();
+    if args.len() < required || args.len() > params.len() {
         return Err(format!(
-            "TypeError at {}:{}:{}: function '{}' expects {} arguments, got {}",
+            "TypeError at {}:{}:{}: function '{}' expects {} to {} arguments, got {}",
             file.display(),
             line,
             column,
             name,
+            required,
             params.len(),
             args.len()
         ));

@@ -107,7 +107,7 @@ pub(crate) enum Stmt {
     },
     Function {
         name: String,
-        params: Vec<(String, Option<String>)>,
+        params: Vec<(String, Option<String>, Option<String>)>,
         return_type: Option<String>,
         body: Program,
     },
@@ -454,7 +454,16 @@ struct SourceLine {
 
 fn parse_function_header(
     text: &str,
-) -> Option<Result<(String, Vec<(String, Option<String>)>, Option<String>), String>> {
+) -> Option<
+    Result<
+        (
+            String,
+            Vec<(String, Option<String>, Option<String>)>,
+            Option<String>,
+        ),
+        String,
+    >,
+> {
     let header = text.strip_suffix(':')?;
     let signature = header
         .strip_prefix("fn ")
@@ -481,6 +490,16 @@ fn parse_function_header(
     if !params_text.trim().is_empty() {
         for parameter in params_text.split(',') {
             let parameter = parameter.trim();
+            let (parameter, default) = parameter
+                .split_once('=')
+                .map_or((parameter, None), |(left, right)| {
+                    (left.trim(), Some(right.trim()))
+                });
+            if default.is_some_and(str::is_empty) {
+                return Some(Err(
+                    "parameter default expression cannot be empty".to_string()
+                ));
+            }
             let (parameter_name, annotation) = parameter
                 .split_once(':')
                 .map_or((parameter, None), |(name, annotation)| {
@@ -508,7 +527,11 @@ fn parse_function_header(
             let annotation = annotation
                 .filter(|value| !value.is_empty())
                 .map(str::to_string);
-            params.push((parameter_name.to_string(), annotation));
+            params.push((
+                parameter_name.to_string(),
+                annotation,
+                default.map(str::to_string),
+            ));
         }
     }
     let suffix = signature[close + 1..].trim();

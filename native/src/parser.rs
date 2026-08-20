@@ -18,14 +18,30 @@ pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>),
         .filter(|x| !x.trim().is_empty())
         .map(|item| {
             let item = item.trim();
+            let (item, default) = item
+                .split_once('=')
+                .map(|(left, right)| {
+                    let value = right.trim();
+                    (left.trim(), (!value.is_empty()).then(|| value.to_string()))
+                })
+                .unwrap_or((item, None));
+            if item.contains('=') && default.is_none() {
+                return Err("parameter default expression cannot be empty".to_string());
+            }
             let (name, annotation) = item
                 .split_once(':')
                 .map(|(n, a)| (n.trim().to_string(), Some(a.trim().to_string())))
                 .unwrap_or((item.to_string(), None));
             if name.is_empty() {
                 Err("parameter name cannot be empty".to_string())
+            } else if annotation.as_deref() == Some("") {
+                Err(format!("parameter '{}' annotation cannot be empty", name))
             } else {
-                Ok(Param { name, annotation })
+                Ok(Param {
+                    name,
+                    annotation,
+                    default,
+                })
             }
         })
         .collect::<Result<Vec<_>, _>>()?;

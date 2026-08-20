@@ -4,6 +4,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 pub(crate) struct Param {
     pub(crate) name: String,
     pub(crate) annotation: Option<String>,
+    pub(crate) default: Option<String>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct StaticSignature {

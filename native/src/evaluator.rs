@@ -246,16 +246,30 @@ pub(crate) fn call_function(
     args: Vec<Value>,
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<Value, String> {
-    if args.len() != f.params.len() {
+    let required = f
+        .params
+        .iter()
+        .filter(|param| param.default.is_none())
+        .count();
+    if args.len() < required || args.len() > f.params.len() {
         return Err(format!(
-            "function expects {} arguments, got {}",
+            "function expects {} to {} arguments, got {}",
+            required,
             f.params.len(),
             args.len()
         ));
     }
     let mut local = f.closure.borrow().clone();
     let captured_keys = local.keys().cloned().collect::<Vec<_>>();
-    for (param, v) in f.params.iter().zip(args) {
+    let mut provided = args.into_iter();
+    for param in &f.params {
+        let v = if let Some(value) = provided.next() {
+            value
+        } else if let Some(default) = &param.default {
+            expression(default, &local, funcs)?
+        } else {
+            return Err(format!("missing required argument: {}", param.name));
+        };
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
         }
@@ -292,10 +306,16 @@ pub(crate) fn call_method(
     self_value: Value,
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<Value, String> {
-    if args.len() + 1 != f.params.len() {
+    let callable_params = f.params.iter().skip(1).collect::<Vec<_>>();
+    let required = callable_params
+        .iter()
+        .filter(|param| param.default.is_none())
+        .count();
+    if args.len() < required || args.len() > callable_params.len() {
         return Err(format!(
-            "method expects {} arguments after self, got {}",
-            f.params.len().saturating_sub(1),
+            "method expects {} to {} arguments after self, got {}",
+            required,
+            callable_params.len(),
             args.len()
         ));
     }
@@ -312,7 +332,15 @@ pub(crate) fn call_method(
             local.insert("super".into(), Value::Text(parent_class));
         }
     }
-    for (param, v) in f.params.iter().skip(1).zip(args) {
+    let mut provided = args.into_iter();
+    for param in callable_params {
+        let v = if let Some(value) = provided.next() {
+            value
+        } else if let Some(default) = &param.default {
+            expression(default, &local, funcs)?
+        } else {
+            return Err(format!("missing required argument: {}", param.name));
+        };
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
         }
@@ -639,12 +667,15 @@ fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mu
         } => {
             let params = params
                 .iter()
-                .map(|(name, annotation)| {
+                .map(|(name, annotation, default)| {
                     format!(
-                        "{name}{}",
+                        "{name}{}{}",
                         annotation
                             .as_ref()
-                            .map_or(String::new(), |ty| format!(": {ty}"))
+                            .map_or(String::new(), |ty| format!(": {ty}")),
+                        default
+                            .as_ref()
+                            .map_or(String::new(), |value| format!(" = {value}"))
                     )
                 })
                 .collect::<Vec<_>>()
@@ -698,7 +729,7 @@ pub(crate) fn ast_program_compatible(program: &Program) -> bool {
 
 fn register_ast_function(
     name: &str,
-    params: &[(String, Option<String>)],
+    params: &[(String, Option<String>, Option<String>)],
     return_type: &Option<String>,
     body: &Program,
     vars: &HashMap<String, Value>,
@@ -709,9 +740,10 @@ fn register_ast_function(
         Rc::new(Function {
             params: params
                 .iter()
-                .map(|(name, annotation)| Param {
+                .map(|(name, annotation, default)| Param {
                     name: name.clone(),
                     annotation: annotation.clone(),
+                    default: default.clone(),
                 })
                 .collect(),
             return_annotation: return_type.clone(),
@@ -776,9 +808,10 @@ fn register_ast_class(
             }
             let mut method_params = params
                 .iter()
-                .map(|(name, annotation)| Param {
+                .map(|(name, annotation, default)| Param {
                     name: name.clone(),
                     annotation: annotation.clone(),
+                    default: default.clone(),
                 })
                 .collect::<Vec<_>>();
             if method_params.first().map(|param| param.name.as_str()) != Some("self") {
@@ -787,6 +820,7 @@ fn register_ast_class(
                     Param {
                         name: "self".into(),
                         annotation: None,
+                        default: None,
                     },
                 );
             }
@@ -1221,6 +1255,7 @@ pub(crate) fn execute_lines(
                             Param {
                                 name: "self".into(),
                                 annotation: None,
+                                default: None,
                             },
                         );
                     }

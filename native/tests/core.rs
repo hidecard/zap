@@ -1022,5 +1022,24 @@ fn reports_function_argument_count_errors() {
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("function expects 2 arguments, got 1"));
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("function expects 2 to 2 arguments, got 1"));
+}
+
+#[test]
+fn applies_default_function_parameters() {
+    let file = std::env::temp_dir().join("zap_default_parameter_test.zp");
+    std::fs::write(
+        &file,
+        "fn greet(name: text = \"World\"):\n    say name\ngreet()\ngreet(\"Zap\")\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "World\nZap\n");
 }
