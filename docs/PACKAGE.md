@@ -181,9 +181,11 @@ zap install
 zap install path/to/project
 zap update
 zap update path/to/project
+zap registry gc --dry-run path/to/project
+zap registry gc path/to/project
 zap build path/to/project
 zap main.zp
 zap fmt main.zp
 ```
 
-`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local/HTTPS registry index validation၊ direct/transitive version range resolution၊ content-addressed cache၊ SHA-256 integrity enforcement၊ offline reuse နှင့် checksum-verified archive publishing foundation များကို ထောက်ပံ့သည်။ `zap install` သည် lockfile၊ local dependency graph နှင့် configured registry cache ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ registry source များကို validate လုပ်သည်။ Cache garbage collection၊ registry authentication policy နှင့် server-side persistence များမှာ ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။
+`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local/HTTPS registry index validation၊ direct/transitive version range resolution၊ content-addressed cache၊ SHA-256 integrity enforcement၊ offline reuse၊ checksum-verified archive publishing နှင့် lockfile-aware cache garbage collection foundation များကို ထောက်ပံ့သည်။ `zap install` သည် lockfile၊ local dependency graph နှင့် configured registry cache ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ registry source များကို validate လုပ်သည်။ `zap registry gc --dry-run [dir]` သည် ဖယ်ရှားမည့် stale artifact နှင့် temporary file များကိုသာ lexical order ဖြင့် ပြသပြီး cache ကို မပြောင်းလဲပါ။ `--dry-run` မပါဘဲ run လုပ်ပါက အတူတူသော candidate များကို ဖယ်ရှားသည်။ Valid canonical lockfile ထဲရှိ package များကို မဖယ်ရှားဘဲ project-scoped အတိုင်းလုပ်ဆောင်သောကြောင့် `ZAP_CACHE_DIR` shared cache အသုံးပြုလျှင် project တစ်ခုချင်းစီအတွက် သီးခြား run လုပ်ရမည်။ Registry authentication policy နှင့် server-side persistence များမှာ ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။

@@ -8,6 +8,7 @@
 - v1 lockfile compatibility ကို ဆက်လက်ထိန်းသိမ်းထားပြီး registry version သို့မဟုတ် checksum များကို မခန့်မှန်းပါ။ Registry-backed project များအတွက် verified registry metadata ရှိမှသာ migration လုပ်ပါသည်။
 - `zap install` သည် transitive package များအပါအဝင် resolved registry graph တစ်ခုလုံးကို deterministic `name@version` order ဖြင့် ပြသပြီး ရှိပြီးသား dependency-count prefix ကို ဆက်လက်ထိန်းသိမ်းထားပါသည်။
 - Transitive resolution၊ cache verification နှင့် stable install output အတွက် offline nested-registry integration fixture ထည့်သွင်းထားပါသည်။
+- Canonical project lockfile မှ keep entries များကို ရယူသော `zap registry gc [--dry-run] [dir]` ကို ထည့်သွင်းထားပါသည်။ Dry-run တွင် cache မပြောင်းဘဲ stale နှင့် temporary candidate များကို ပြသပြီး ပုံမှန် run တွင် candidate များကို deterministic lexical order ဖြင့် ဖယ်ရှားပါသည်။
 
 
 ## [2.0.4] — 2026-08-20

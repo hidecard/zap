@@ -4844,6 +4844,87 @@ fn install_reports_complete_transitive_resolved_graph() {
 }
 
 #[test]
+fn registry_gc_dry_run_is_safe_and_deletion_is_deterministic() {
+    let root = std::env::temp_dir().join(format!("zap_registry_gc_cli_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"gc-app\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[dependencies]\ndemo = \"1.0.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
+    std::fs::write(root.join("demo.pkg"), b"kept package").unwrap();
+    let checksum = {
+        use sha2::{Digest, Sha256};
+        Sha256::digest(b"kept package")
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let index = root.join("index.json");
+    std::fs::write(
+        &index,
+        format!(
+            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{}"}}]}}"#,
+            checksum
+        ),
+    )
+    .unwrap();
+    let cache = root.join("cache");
+    let update = Command::new(binary())
+        .args(["update", root.to_str().unwrap()])
+        .env("ZAP_REGISTRY_INDEX", &index)
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        update.status.success(),
+        "{}",
+        String::from_utf8_lossy(&update.stderr)
+    );
+    let stale_z = cache.join("zeta/1.0.0/stale.pkg");
+    let stale_a = cache.join("alpha/1.0.0/stale.pkg");
+    let partial = cache.join("demo/1.0.0/partial.tmp");
+    std::fs::create_dir_all(stale_z.parent().unwrap()).unwrap();
+    std::fs::create_dir_all(stale_a.parent().unwrap()).unwrap();
+    std::fs::write(&stale_z, b"stale").unwrap();
+    std::fs::write(&stale_a, b"stale").unwrap();
+    std::fs::write(&partial, b"partial").unwrap();
+    let dry_run = Command::new(binary())
+        .args(["registry", "gc", "--dry-run", root.to_str().unwrap()])
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        dry_run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&dry_run.stderr)
+    );
+    let dry_stdout = String::from_utf8_lossy(&dry_run.stdout);
+    assert!(dry_stdout.contains("registry cache gc: 3 candidate(s)"));
+    let alpha_line = format!("would remove: {}", stale_a.display());
+    let demo_line = format!("would remove: {}", partial.display());
+    let zeta_line = format!("would remove: {}", stale_z.display());
+    assert!(dry_stdout.find(&alpha_line).unwrap() < dry_stdout.find(&demo_line).unwrap());
+    assert!(dry_stdout.find(&demo_line).unwrap() < dry_stdout.find(&zeta_line).unwrap());
+    assert!(stale_a.exists() && stale_z.exists() && partial.exists());
+    let run = Command::new(binary())
+        .args(["registry", "gc", root.to_str().unwrap()])
+        .env("ZAP_CACHE_DIR", &cache)
+        .output()
+        .unwrap();
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    assert!(!stale_a.exists() && !stale_z.exists() && !partial.exists());
+    assert!(cache.join(format!("demo/1.0.0/{checksum}.pkg")).exists());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn lockfile_records_resolved_registry_checksums() {
     let root =
         std::env::temp_dir().join(format!("zap_registry_lockfile_v2_{}", std::process::id()));

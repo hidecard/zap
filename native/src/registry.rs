@@ -709,12 +709,27 @@ fn validate_package_identity(package: &RegistryPackage) -> Result<(), String> {
     Ok(())
 }
 
-/// Remove unreferenced package artifacts and temporary files from a cache.
-/// Paths are traversed in sorted order and the return value is deterministic.
-#[allow(dead_code)]
-pub fn prune_cache(cache_root: &Path, referenced: &[RegistryPackage]) -> Result<usize, String> {
+/// A deterministic cache-GC plan and its execution result.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CacheGcReport {
+    pub candidates: Vec<PathBuf>,
+    pub removed: usize,
+    pub dry_run: bool,
+}
+
+/// Plan and optionally remove unreferenced package artifacts and temporary files.
+/// Candidate paths are traversed and returned in lexical order.
+pub fn gc_cache(
+    cache_root: &Path,
+    referenced: &[RegistryPackage],
+    dry_run: bool,
+) -> Result<CacheGcReport, String> {
     if !cache_root.exists() {
-        return Ok(0);
+        return Ok(CacheGcReport {
+            candidates: Vec::new(),
+            removed: 0,
+            dry_run,
+        });
     }
     let keep = referenced
         .iter()
@@ -723,15 +738,29 @@ pub fn prune_cache(cache_root: &Path, referenced: &[RegistryPackage]) -> Result<
     let mut files = Vec::new();
     collect_cache_files(cache_root, &mut files)?;
     files.sort();
-    let mut removed = 0;
+    let mut candidates = Vec::new();
     for path in files {
         if path.extension().and_then(|value| value.to_str()) == Some("tmp") || !keep.contains(&path)
         {
-            fs::remove_file(&path).map_err(|e| format!("package cache cleanup failed: {e}"))?;
-            removed += 1;
+            candidates.push(path);
         }
     }
-    Ok(removed)
+    if !dry_run {
+        for path in &candidates {
+            fs::remove_file(path).map_err(|e| format!("package cache cleanup failed: {e}"))?;
+        }
+    }
+    Ok(CacheGcReport {
+        removed: if dry_run { 0 } else { candidates.len() },
+        candidates,
+        dry_run,
+    })
+}
+
+/// Remove unreferenced package artifacts and temporary files from a cache.
+#[allow(dead_code)]
+pub fn prune_cache(cache_root: &Path, referenced: &[RegistryPackage]) -> Result<usize, String> {
+    Ok(gc_cache(cache_root, referenced, false)?.removed)
 }
 
 fn collect_cache_files(root: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
@@ -1117,6 +1146,31 @@ mod tests {
         assert_eq!(prune_cache(&cache, std::slice::from_ref(&keep)).unwrap(), 2);
         assert!(super::package_cache_path(&cache, &keep).exists());
         assert!(!super::package_cache_path(&cache, &stale).exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn cache_gc_dry_run_is_sorted_and_non_destructive() {
+        let root =
+            std::env::temp_dir().join(format!("zap-cache-gc-dry-run-{}", std::process::id()));
+        let cache = root.join("cache");
+        fs::create_dir_all(cache.join("zeta/1.0.0")).unwrap();
+        fs::create_dir_all(cache.join("alpha/1.0.0")).unwrap();
+        fs::write(cache.join("zeta/1.0.0/stale.pkg"), b"stale").unwrap();
+        fs::write(cache.join("alpha/1.0.0/partial.tmp"), b"partial").unwrap();
+        let report = super::gc_cache(&cache, &[], true).unwrap();
+        assert_eq!(report.removed, 0);
+        assert!(report.dry_run);
+        assert_eq!(report.candidates, {
+            let mut expected = vec![
+                cache.join("alpha/1.0.0/partial.tmp"),
+                cache.join("zeta/1.0.0/stale.pkg"),
+            ];
+            expected.sort();
+            expected
+        });
+        assert!(cache.join("zeta/1.0.0/stale.pkg").exists());
+        assert!(cache.join("alpha/1.0.0/partial.tmp").exists());
         fs::remove_dir_all(&root).unwrap();
     }
 

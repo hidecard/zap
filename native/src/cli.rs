@@ -2,7 +2,7 @@ use super::project::{
     install_dependencies, migrate_lockfile, update_dependencies, write_lockfile, TestOptions,
 };
 use super::*;
-use crate::project::add_dependency;
+use crate::project::{add_dependency, registry_packages_from_lockfile};
 
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
 pub const EXIT_USAGE_ERROR: i32 = 2;
@@ -22,6 +22,7 @@ Usage:
   zap add <name> <ver> [dir]            Add a manifest dependency and invalidate zap.lock
   zap install [dir]    Validate and install dependencies from zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
+  zap registry gc [--dry-run] [dir]     Remove unreferenced registry cache files
   zap build [dir]                       Validate and prepare a project
   zap init <dir>                        Create a new project
   zap lsp                               Run the LSP server over stdio
@@ -261,6 +262,55 @@ pub fn run_cli(args: &[String]) {
     if args.len() == 4 && args[1] == "registry" && args[2] == "fetch" {
         match crate::registry::read_index_source(&args[3]) {
             Ok(packages) => println!("valid remote registry index: {} packages", packages.len()),
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() >= 3 && args.len() <= 5 && args[1] == "registry" && args[2] == "gc" {
+        let mut dry_run = false;
+        let mut dir = PathBuf::from(".");
+        for argument in &args[3..] {
+            if argument == "--dry-run" {
+                if dry_run {
+                    eprintln!("Zap registry error: duplicate --dry-run");
+                    process::exit(EXIT_USAGE_ERROR);
+                }
+                dry_run = true;
+            } else if dir != Path::new(".") {
+                eprintln!("Zap registry error: gc accepts one project directory");
+                process::exit(EXIT_USAGE_ERROR);
+            } else {
+                dir = PathBuf::from(argument);
+            }
+        }
+        let cache = std::env::var_os("ZAP_CACHE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| dir.join(".zap/cache"));
+        let referenced = match registry_packages_from_lockfile(&dir) {
+            Ok(packages) => packages,
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        match crate::registry::gc_cache(&cache, &referenced, dry_run) {
+            Ok(report) => {
+                let action = if report.dry_run {
+                    "would remove"
+                } else {
+                    "removed"
+                };
+                println!(
+                    "registry cache gc: {} candidate(s)",
+                    report.candidates.len()
+                );
+                for path in report.candidates {
+                    println!("{action}: {}", path.display());
+                }
+            }
             Err(error) => {
                 eprintln!("Zap registry error: {error}");
                 process::exit(EXIT_PROGRAM_FAILURE);

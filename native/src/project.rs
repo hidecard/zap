@@ -662,6 +662,17 @@ fn validate_lockfile(dir: &Path, manifest: &str) -> Result<Vec<LockedRegistryPac
     Ok(resolved)
 }
 
+pub(crate) fn registry_packages_from_lockfile(dir: &Path) -> Result<Vec<RegistryPackage>, String> {
+    let manifest = fs::read_to_string(dir.join("zap.toml"))
+        .map_err(|_| "zap.toml: missing manifest".to_string())?;
+    validate_lockfile(dir, &manifest).map(|packages| {
+        packages
+            .into_iter()
+            .map(LockedRegistryPackage::into_registry)
+            .collect()
+    })
+}
+
 pub(crate) fn add_dependency(dir: &Path, name: &str, requirement: &str) -> Result<String, String> {
     validate_package_name(name).map_err(|_| format!("invalid dependency name `{name}`"))?;
     if requirement.is_empty() || requirement.contains('"') || requirement.contains('\n') {
