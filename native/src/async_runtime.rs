@@ -11,6 +11,7 @@ pub struct AsyncRuntime {
     tasks: Vec<Pin<Box<dyn Future<Output = ()>>>>,
 }
 
+#[allow(dead_code)]
 impl AsyncRuntime {
     pub fn new() -> Self {
         Self { tasks: Vec::new() }
@@ -33,7 +34,7 @@ impl AsyncRuntime {
                 Poll::Ready(())
             );
             if ready {
-                let _ = self.tasks.remove(index);
+                std::mem::drop(self.tasks.remove(index));
             } else {
                 index += 1;
             }
@@ -51,6 +52,7 @@ impl Default for AsyncRuntime {
     }
 }
 
+#[allow(dead_code)]
 pub fn block_on<F>(future: F) -> F::Output
 where
     F: Future,
@@ -65,13 +67,13 @@ where
     }
 }
 
-#[allow(clippy::manual_noop_waker)]
 fn no_op_waker() -> Waker {
     Waker::from(Arc::new(NoopWaker))
 }
 
 struct NoopWaker;
 
+#[allow(clippy::manual_noop_waker)]
 impl Wake for NoopWaker {
     fn wake(self: Arc<Self>) {}
 }
