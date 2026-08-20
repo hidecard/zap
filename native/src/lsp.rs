@@ -67,6 +67,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                 "capabilities": {
                     "textDocumentSync": 1,
                     "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
+                    "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
                     "hoverProvider": false
                 },
                 "serverInfo": {"name": "zap", "version": "1.0.0"}
@@ -77,6 +78,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
             "id": message.get("id").cloned().unwrap_or(Value::Null),
             "result": null
         })),
+        "textDocument/completion" => Some(completion_response(message)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
@@ -86,6 +88,28 @@ pub fn handle_message(message: &Value) -> Option<Value> {
         }
         _ => None,
     }
+}
+
+fn completion_response(message: &Value) -> Value {
+    let items = [
+        ("let", "Declare a local binding"),
+        ("fn", "Declare a function"),
+        ("if", "Start a conditional expression"),
+        ("else", "Start the alternative branch"),
+        ("for", "Start a loop"),
+        ("while", "Start a loop"),
+        ("class", "Declare a class"),
+        ("import", "Import a module"),
+        ("return", "Return a value from a function"),
+    ]
+    .into_iter()
+    .map(|(label, detail)| json!({"label": label, "kind": 14, "detail": detail}))
+    .collect::<Vec<_>>();
+    json!({
+        "jsonrpc": "2.0",
+        "id": message.get("id").cloned().unwrap_or(Value::Null),
+        "result": {"isIncomplete": false, "items": items}
+    })
 }
 
 fn publish_diagnostics(uri: &str, source: &str) -> Value {
@@ -141,6 +165,20 @@ mod tests {
             response["params"]["diagnostics"][0]["range"]["start"]["line"],
             1
         );
+    }
+
+    #[test]
+    fn completion_returns_deterministic_keyword_items() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "textDocument/completion",
+            "params": {"textDocument": {"uri": "file:///main.zp"}, "position": {"line": 0, "character": 0}}
+        })).unwrap();
+        assert_eq!(response["id"], 8);
+        assert_eq!(response["result"]["isIncomplete"], false);
+        assert_eq!(response["result"]["items"][0]["label"], "let");
+        assert_eq!(response["result"]["items"].as_array().unwrap().len(), 9);
     }
 
     #[test]

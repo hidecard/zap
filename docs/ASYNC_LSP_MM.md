@@ -46,6 +46,7 @@ Server သည် standard input/output မှတစ်ဆင့် `Content-Leng
 | `shutdown` | အောင်မြင်သော null result ကို ပြန်ပေးသည်။ |
 | `textDocument/didOpen` | ဖွင့်ထားသော source text အတွက် diagnostics ထုတ်ပေးသည်။ |
 | `textDocument/didChange` | ပြောင်းလဲထားသော source text အတွက် diagnostics ထုတ်ပေးသည်။ |
+| `textDocument/completion` | Zap keyword completion item များကို deterministic starter list အဖြစ် ပြန်ပေးသည်။ |
 
 Diagnostics များကို Zap ၏ လက်ရှိ lint implementation မှ ထုတ်ယူပါသည်။ ထို့ကြောင့် CLI နှင့် editor diagnostics များသည် rule နှစ်မျိုးခွဲမသွားဘဲ တူညီနေပါသည်။ Lint message တွင် source line ပါရှိပါက server သည် ၎င်းကို zero-based LSP line range အဖြစ် ပြောင်းပြီး ထို line ၏ character width အတိုင်း range သတ်မှတ်ပါသည်။ Line မဖတ်နိုင်သော diagnostic များအတွက် ပထမ line ကို deterministic fallback အဖြစ် အသုံးပြုပါသည်။
 
@@ -53,4 +54,4 @@ Editor client များသည် standard LSP transport framing ကို အ
 
 ## နောက်ထပ် Roadmap
 
-လက်ရှိ executor သည် stable Rust နှင့် ကိုက်ညီသော no-op waker ကို အသုံးပြုပြီး single-thread၊ deterministic အဖြစ် ဆက်လက်လုပ်ဆောင်ပါသည်။ Async ပိုင်းတွင် language-level `async`/`await` semantics၊ suspension points၊ error propagation၊ timers၊ cancellation နှင့် resource limits များကို သတ်မှတ်ရမည်ဖြစ်ပါသည်။ LSP ပိုင်းတွင် parser source ranges၊ တိကျသော diagnostic severity၊ document synchronization အသေးစိတ်၊ formatting၊ hover၊ completion၊ go-to-definition နှင့် workspace-aware package/module indexing များကို ဆက်လက်ထည့်သွင်းရမည်ဖြစ်ပါသည်။
+လက်ရှိ executor သည် stable Rust နှင့် ကိုက်ညီသော no-op waker ကို အသုံးပြုပြီး single-thread၊ deterministic အဖြစ် ဆက်လက်လုပ်ဆောင်ပါသည်။ Async ပိုင်းတွင် language-level `async`/`await` semantics၊ suspension points၊ error propagation၊ timers၊ cancellation နှင့် resource limits များကို သတ်မှတ်ရမည်ဖြစ်ပါသည်။ LSP ပိုင်းတွင် parser ပိုင် source spans၊ တိကျသော diagnostic severity၊ document synchronization အသေးစိတ်၊ formatting၊ hover၊ go-to-definition၊ context-aware completion နှင့် workspace-aware package/module indexing များကို ဆက်လက်ထည့်သွင်းရမည်ဖြစ်ပါသည်။
