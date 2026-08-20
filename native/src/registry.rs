@@ -150,6 +150,84 @@ fn sha256_hex(bytes: &[u8]) -> String {
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
+/// Publish a verified package archive to a registry endpoint.
+/// The endpoint receives the archive as the request body and package identity
+/// as stable headers; authentication is supplied through `ZAP_REGISTRY_TOKEN`.
+pub fn publish_package(
+    registry_url: &str,
+    archive: &Path,
+    package: &RegistryPackage,
+    token: Option<&str>,
+) -> Result<(), String> {
+    require_secure_transport(registry_url)?;
+    let bytes = fs::read(archive).map_err(|e| format!("package archive read failed: {e}"))?;
+    let actual = sha256_hex(&bytes);
+    if actual != package.checksum {
+        return Err(format!(
+            "publish checksum mismatch for {} {}: expected {}, got {}",
+            package.name, package.version, package.checksum, actual
+        ));
+    }
+    let mut request = ureq::post(registry_url)
+        .set("Content-Type", "application/octet-stream")
+        .set("X-Zap-Package-Name", &package.name)
+        .set("X-Zap-Package-Version", &package.version)
+        .set("X-Zap-Package-Checksum", &package.checksum);
+    if let Some(token) = token {
+        request = request.set("Authorization", &format!("Bearer {token}"));
+    }
+    let response = request
+        .send_bytes(&bytes)
+        .map_err(|e| format!("registry publish failed: {e}"))?;
+    if !(200..300).contains(&response.status()) {
+        return Err(format!(
+            "registry publish failed with HTTP {}",
+            response.status()
+        ));
+    }
+    Ok(())
+}
+
+fn fetch_source(source: &str) -> Result<Vec<u8>, String> {
+    if let Some(path) = source.strip_prefix("file://") {
+        return fs::read(path).map_err(|e| format!("registry source read failed: {e}"));
+    }
+    if source.starts_with("http://") || source.starts_with("https://") {
+        require_secure_transport(source)?;
+        let response = ureq::get(source)
+            .call()
+            .map_err(|e| format!("registry HTTP fetch failed: {e}"))?;
+        let mut bytes = Vec::new();
+        response
+            .into_reader()
+            .read_to_end(&mut bytes)
+            .map_err(|e| format!("registry response read failed: {e}"))?;
+        return Ok(bytes);
+    }
+    fs::read(source).map_err(|e| format!("registry source read failed: {e}"))
+}
+
+fn require_secure_transport(source: &str) -> Result<(), String> {
+    if source.starts_with("http://")
+        && std::env::var("ZAP_ALLOW_INSECURE_HTTP").as_deref() != Ok("1")
+    {
+        return Err("insecure HTTP registry transport is disabled; use HTTPS or set ZAP_ALLOW_INSECURE_HTTP=1 for local fixtures".to_string());
+    }
+    if !(source.starts_with("http://") || source.starts_with("https://")) {
+        return Err(format!(
+            "registry publish requires an HTTP(S) URL: {source}"
+        ));
+    }
+    Ok(())
+}
+
+pub fn package_cache_path(cache_root: &Path, package: &RegistryPackage) -> PathBuf {
+    cache_root
+        .join(&package.name)
+        .join(&package.version)
+        .join(format!("{}.pkg", package.checksum))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -228,85 +306,4 @@ mod tests {
         assert!(cached.ends_with(format!("demo/1.0.0/{checksum}.pkg")));
         fs::remove_dir_all(&root).unwrap();
     }
-}
-
-/// Publish a verified package archive to a registry endpoint.
-/// The endpoint receives the archive as the request body and package identity
-/// as stable headers; authentication is supplied through `ZAP_REGISTRY_TOKEN`.
-pub fn publish_package(
-    registry_url: &str,
-    archive: &Path,
-    package: &RegistryPackage,
-    token: Option<&str>,
-) -> Result<(), String> {
-    require_secure_transport(registry_url)?;
-    let bytes = fs::read(archive).map_err(|e| format!("package archive read failed: {e}"))?;
-    let actual = sha256_hex(&bytes);
-    if actual != package.checksum {
-        return Err(format!(
-            "publish checksum mismatch for {} {}: expected {}, got {}",
-            package.name, package.version, package.checksum, actual
-        ));
-    }
-    let mut request = ureq::post(registry_url)
-        .set("Content-Type", "application/octet-stream")
-        .set("X-Zap-Package-Name", &package.name)
-        .set("X-Zap-Package-Version", &package.version)
-        .set("X-Zap-Package-Checksum", &package.checksum);
-    if let Some(token) = token {
-        request = request.set("Authorization", &format!("Bearer {token}"));
-    }
-    let response = request
-        .send_bytes(&bytes)
-        .map_err(|e| format!("registry publish failed: {e}"))?;
-    if !(200..300).contains(&response.status()) {
-        return Err(format!(
-            "registry publish failed with HTTP {}",
-            response.status()
-        ));
-    }
-    Ok(())
-}
-
-fn fetch_source(source: &str) -> Result<Vec<u8>, String> {
-    if let Some(path) = source.strip_prefix("file://") {
-        return fs::read(path).map_err(|e| format!("registry source read failed: {e}"));
-    }
-    if source.starts_with("http://") || source.starts_with("https://") {
-        require_secure_transport(source)?;
-        let response = ureq::get(source)
-            .call()
-            .map_err(|e| format!("registry HTTP fetch failed: {e}"))?;
-        let mut bytes = Vec::new();
-        response
-            .into_reader()
-            .read_to_end(&mut bytes)
-            .map_err(|e| format!("registry response read failed: {e}"))?;
-        return Ok(bytes);
-    }
-    fs::read(source).map_err(|e| format!("registry source read failed: {e}"))
-}
-
-fn require_secure_transport(source: &str) -> Result<(), String> {
-    if source.starts_with("http://")
-        && std::env::var("ZAP_ALLOW_INSECURE_HTTP").as_deref() != Ok("1")
-    {
-        return Err("insecure HTTP registry transport is disabled; use HTTPS or set ZAP_ALLOW_INSECURE_HTTP=1 for local fixtures".to_string());
-    }
-    if !(source.starts_with("http://") || source.starts_with("https://")) {
-        return Err(format!(
-            "registry publish requires an HTTP(S) URL: {source}"
-        ));
-    }
-    Ok(())
-}
-
-pub fn sha256_for_bytes(bytes: &[u8]) -> String {
-    sha256_hex(bytes)
-}
-pub fn package_cache_path(cache_root: &Path, package: &RegistryPackage) -> PathBuf {
-    cache_root
-        .join(&package.name)
-        .join(&package.version)
-        .join(format!("{}.pkg", package.checksum))
 }
