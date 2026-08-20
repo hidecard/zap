@@ -33,6 +33,8 @@ class ZapLspClient {
           completion: { completionItem: { snippetSupport: false } },
           hover: {},
           definition: {},
+          signatureHelp: {},
+          formatting: {},
           publishDiagnostics: {}
         },
         workspace: { symbol: {} }

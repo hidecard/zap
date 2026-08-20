@@ -9,6 +9,8 @@
 - Shell မသုံးသော `process_run`၊ text argument များ၊ UTF-8 stdout/stderr capture၊ status report နှင့် output limit များ။
 - API အသစ်များအတွက် deterministic standard-library catalog နှင့် English/Burmese documentation update များ။
 - `.zp` registration၊ TextMate syntax highlighting၊ snippets၊ autocomplete၊ CLI-backed diagnostics၊ workspace check နှင့် current-file run command များပါသော `vscode-extension` folder အသစ်။
+- Zap function call များအတွက် native နှင့် VS Code LSP signature help၊ `(` နှင့် `,` နောက် active parameter tracking ပါဝင်ခြင်း။
+- Line ending normalize၊ space လေးခု indentation နှင့် trailing whitespace cleanup ပါဝင်သော LSP document formatting။
 
 ### စစ်ဆေးမှု
 

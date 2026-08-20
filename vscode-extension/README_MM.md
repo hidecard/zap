@@ -9,6 +9,8 @@
 | `.zp` support | `.zp` file များကို Zap language အဖြစ် အလိုအလျောက်သိရှိခြင်း |
 | Syntax highlighting | keyword၊ function၊ type၊ string၊ number၊ comment နှင့် builtin များကို highlight ပြခြင်း |
 | Autocomplete | Zap LSP မှ workspace-aware symbols များနှင့် keyword၊ type၊ builtin များကို အကြံပြုခြင်း |
+| Signature help | Function call ရေးနေစဉ် parameter label နှင့် လက်ရှိ active argument ကို ပြခြင်း |
+| Formatting | LSP မှတစ်ဆင့် newline ကို normalize လုပ်ခြင်း၊ tab ကို space လေးခုအဖြစ် ပြောင်းခြင်းနှင့် trailing whitespace ဖြုတ်ခြင်း |
 | Hover | function၊ class၊ module၊ import နှင့် binding အချက်အလက်များကို mouse hover ဖြင့် ပြခြင်း |
 | Go to definition | Zap LSP မှ top-level declaration များသို့ သွားရောက်နိုင်ခြင်း |
 | Workspace symbols | VS Code symbol search မှ Zap declaration များကို ရှာဖွေနိုင်ခြင်း |
@@ -37,4 +39,4 @@ Command Palette မှ **Zap: Run Current File**၊ **Zap: Check Workspace** န
 }
 ```
 
-LSP client သည် `Content-Length` JSON-RPC framing ကို အသုံးပြုပြီး initialize၊ document open/change/close၊ completion၊ hover၊ definition၊ workspace symbols နှင့် publish-diagnostics notification များကို ထောက်ပံ့ပါသည်။ Extension သည် Zap parser ကို သီးခြားပြန်ရေးမထားဘဲ native LSP နှင့် CLI diagnostic boundary များကို အသုံးပြုသောကြောင့် command line နှင့် editor diagnostics များ တူညီစွာ အလုပ်လုပ်ပါသည်။
+LSP client သည် `Content-Length` JSON-RPC framing ကို အသုံးပြုပြီး initialize၊ document open/change/close၊ completion၊ signature help၊ hover၊ definition၊ document formatting၊ workspace symbols နှင့် publish-diagnostics notification များကို ထောက်ပံ့ပါသည်။ Signature help သည် `(` နှင့် `,` ရိုက်ပြီးနောက် အလုပ်လုပ်ပြီး document formatting ကို VS Code ၏ **Format Document** မှ အသုံးပြုနိုင်ပါသည်။ Extension သည် Zap parser ကို သီးခြားပြန်ရေးမထားဘဲ native LSP နှင့် CLI diagnostic boundary များကို အသုံးပြုသောကြောင့် command line နှင့် editor diagnostics များ တူညီစွာ အလုပ်လုပ်ပါသည်။

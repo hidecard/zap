@@ -117,6 +117,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "textDocumentSync": 1,
                     "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
                     "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
+                    "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
                     "hoverProvider": true,
                     "definitionProvider": true,
                     "workspaceSymbolProvider": true,
@@ -131,6 +132,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
             "result": null
         })),
         "textDocument/completion" => Some(completion_response(message)),
+        "textDocument/signatureHelp" => Some(signature_help_response(message)),
         "textDocument/hover" => Some(hover_response(message)),
         "textDocument/definition" => Some(definition_response(message)),
         "textDocument/formatting" => Some(formatting_response(message)),
@@ -224,6 +226,72 @@ fn source_prefix(source: &str, line: usize, character: usize) -> String {
         .next()
         .unwrap_or("")
         .to_string()
+}
+
+fn signature_help_response(message: &Value) -> Value {
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
+    let character = message["params"]["position"]["character"]
+        .as_u64()
+        .unwrap_or(0) as usize;
+    let line_prefix = source
+        .lines()
+        .nth(line)
+        .unwrap_or("")
+        .chars()
+        .take(character)
+        .collect::<String>();
+    let Some(open) = line_prefix.rfind('(') else {
+        return json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": null});
+    };
+    let callee = line_prefix[..open]
+        .rsplit(|value: char| !value.is_ascii_alphanumeric() && value != '_')
+        .next()
+        .unwrap_or("");
+    if callee.is_empty() {
+        return json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": null});
+    }
+    let active_parameter = line_prefix[open + 1..]
+        .chars()
+        .filter(|value| *value == ',')
+        .count();
+    let signature = source.lines().find_map(|line| {
+        let trimmed = line.trim();
+        let declaration = trimmed
+            .strip_prefix("fn ")
+            .or_else(|| trimmed.strip_prefix("async fn "))?;
+        let name_end = declaration.find('(')?;
+        if declaration[..name_end].trim() != callee {
+            return None;
+        }
+        let close = declaration[name_end + 1..].find(')')? + name_end + 1;
+        let parameters = declaration[name_end + 1..close]
+            .split(',')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| json!({"label": value}))
+            .collect::<Vec<_>>();
+        let label = trimmed.trim_end_matches(':').to_string();
+        Some(json!({
+            "label": label,
+            "documentation": format!("Zap function `{callee}`"),
+            "parameters": parameters
+        }))
+    });
+    let result = signature.map(|signature| {
+        let parameter_count = signature["parameters"].as_array().map_or(0, Vec::len);
+        json!({
+            "signatures": [signature],
+            "activeSignature": 0,
+            "activeParameter": active_parameter.min(parameter_count.saturating_sub(1))
+        })
+    });
+    json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result.unwrap_or(Value::Null)})
 }
 
 fn hover_response(message: &Value) -> Value {
@@ -589,6 +657,41 @@ mod tests {
         .unwrap();
         assert_eq!(response["result"].as_array().unwrap().len(), 1);
         assert_eq!(response["result"][0]["name"], "load");
+    }
+
+    #[test]
+    fn signature_help_returns_function_parameters_and_active_parameter() {
+        let uri = "file:///signature.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn greet(name: text, punctuation: text = \"!\"):\n    return name\ngreet(\"Zap\", "}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 17, "method": "textDocument/signatureHelp",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 15}}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["result"]["signatures"][0]["label"],
+            "fn greet(name: text, punctuation: text = \"!\")"
+        );
+        assert_eq!(response["result"]["activeParameter"], 1);
+    }
+
+    #[test]
+    fn initialize_advertises_signature_help_and_formatting() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 18, "method": "initialize", "params": {}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["result"]["capabilities"]["documentFormattingProvider"],
+            true
+        );
+        assert_eq!(
+            response["result"]["capabilities"]["signatureHelpProvider"]["triggerCharacters"][0],
+            "("
+        );
     }
 
     #[test]

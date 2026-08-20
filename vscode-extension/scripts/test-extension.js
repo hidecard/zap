@@ -25,6 +25,12 @@ if (!lspSource.includes('Content-Length') || !lspSource.includes("request(method
 if (!extensionSource.includes('textDocument/definition') || !extensionSource.includes('textDocument/hover')) {
   throw new Error('LSP definition or hover provider is missing');
 }
+if (!extensionSource.includes('textDocument/signatureHelp') || !extensionSource.includes('registerSignatureHelpProvider')) {
+  throw new Error('LSP signature-help provider is missing');
+}
+if (!extensionSource.includes('textDocument/formatting') || !extensionSource.includes('registerDocumentFormattingEditProvider')) {
+  throw new Error('LSP formatting provider is missing');
+}
 if (!extensionSource.includes('zap.runFile') || !extensionSource.includes('zap.checkWorkspace')) {
   throw new Error('extension commands are not registered');
 }

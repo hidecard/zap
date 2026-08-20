@@ -1,8 +1,8 @@
 {
   "name": "zap-language-support",
   "displayName": "Zap Language Support",
-  "description": "Syntax highlighting, LSP completion, hover, definitions, diagnostics, and run support for the Zap programming language.",
-  "version": "0.2.0",
+  "description": "Syntax highlighting, LSP completion, signature help, hover, definitions, formatting, diagnostics, and run support for the Zap programming language.",
+  "version": "0.3.0",
   "publisher": "zap-language",
   "license": "MIT",
   "engines": {
@@ -94,7 +94,7 @@
         "zap.enableLsp": {
           "type": "boolean",
           "default": true,
-          "description": "Launch the Zap stdio language server for hover, definitions, completion, symbols, and diagnostics."
+          "description": "Launch the Zap stdio language server for completion, signature help, hover, definitions, formatting, symbols, and diagnostics."
         },
         "zap.enableDiagnostics": {
           "type": "boolean",

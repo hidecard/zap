@@ -9,6 +9,8 @@ This extension adds first-class `.zp` editing support for the Zap programming la
 | Language registration | Recognizes `.zp` files as Zap source files. |
 | Syntax highlighting | Highlights declarations, keywords, types, literals, comments, operators, and standard-library calls. |
 | Completion | Uses the Zap LSP for workspace-aware symbols and falls back to built-in keywords, types, and functions. |
+| Signature help | Shows function parameter labels and the active argument while typing a call. |
+| Formatting | Formats a Zap document through the LSP using normalized newlines, four-space indentation, and trimmed trailing whitespace. |
 | Hover | Shows LSP documentation for functions, classes, modules, imports, and bindings. |
 | Go to definition | Resolves top-level Zap declarations through the LSP definition provider. |
 | Workspace symbols | Makes Zap declarations searchable through VS Code symbol search. |
@@ -39,7 +41,7 @@ The Command Palette provides **Zap: Run Current File**, **Zap: Check Workspace**
 }
 ```
 
-The LSP client uses standard `Content-Length` JSON-RPC framing and supports initialize, document open/change/close, completion, hover, definition, workspace symbols, and publish-diagnostics notifications. Diagnostics are intentionally bounded by the native LSP and CLI and are refreshed after edits with a short debounce. The extension does not reimplement the Zap parser; it consumes the CLI's stable JSON diagnostic boundary, which keeps editor behavior aligned with command-line behavior.
+The LSP client uses standard `Content-Length` JSON-RPC framing and supports initialize, document open/change/close, completion, signature help, hover, definition, document formatting, workspace symbols, and publish-diagnostics notifications. Signature help is triggered after `(` and `,`; document formatting is available through **Format Document** and **Format Selection** where supported by VS Code. Diagnostics are intentionally bounded by the native LSP and CLI and are refreshed after edits with a short debounce. The extension does not reimplement the Zap parser; it consumes the CLI's stable JSON diagnostic boundary, which keeps editor behavior aligned with command-line behavior.
 
 ## Development
 

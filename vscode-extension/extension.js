@@ -187,6 +187,46 @@ function activate(context) {
       return localCompletions();
     }
   }, '.', ':'));
+  context.subscriptions.push(vscode.languages.registerSignatureHelpProvider('zap', {
+    provideSignatureHelp(document, position) {
+      if (!lspClient || !lspClient.started) return undefined;
+      return lspClient.request('textDocument/signatureHelp', {
+        textDocument: { uri: document.uri.toString() },
+        position: { line: position.line, character: position.character }
+      }).then(result => {
+        if (!result || !Array.isArray(result.signatures)) return undefined;
+        const help = new vscode.SignatureHelp();
+        help.activeSignature = result.activeSignature || 0;
+        help.activeParameter = result.activeParameter || 0;
+        help.signatures = result.signatures.map(signature => {
+          const item = new vscode.SignatureInformation(signature.label || '');
+          item.documentation = signature.documentation || '';
+          item.parameters = (signature.parameters || []).map(parameter =>
+            new vscode.ParameterInformation(parameter.label || String(parameter))
+          );
+          return item;
+        });
+        return help;
+      }).catch(() => undefined);
+    }
+  }, '(', ','));
+  context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider('zap', {
+    provideDocumentFormattingEdits(document) {
+      if (!lspClient || !lspClient.started) return [];
+      return lspClient.request('textDocument/formatting', {
+        textDocument: { uri: document.uri.toString() },
+        options: { tabSize: 4, insertSpaces: true }
+      }).then(edits => (edits || []).map(edit => new vscode.TextEdit(
+        new vscode.Range(
+          edit.range.start.line,
+          edit.range.start.character,
+          edit.range.end.line,
+          edit.range.end.character
+        ),
+        edit.newText || ''
+      ))).catch(() => []);
+    }
+  }));
   context.subscriptions.push(vscode.languages.registerHoverProvider('zap', {
     provideHover(document, position) {
       if (!lspClient || !lspClient.started) return undefined;

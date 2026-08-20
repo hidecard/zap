@@ -9,6 +9,8 @@
 - Direct non-shell `process_run` with text arguments, UTF-8 stdout/stderr capture, status reporting, and output limits.
 - Deterministic standard-library catalog entries and bilingual documentation for the new APIs.
 - Initial `vscode-extension` folder with `.zp` registration, TextMate syntax highlighting, snippets, completion, CLI-backed diagnostics, workspace checking, and run-current-file commands.
+- Native and VS Code LSP signature help for Zap function calls, including active-parameter tracking after `(` and `,`.
+- LSP-backed document formatting with normalized line endings, four-space indentation, and trailing-whitespace cleanup.
 
 ### Verification
 
