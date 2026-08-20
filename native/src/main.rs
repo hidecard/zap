@@ -1296,6 +1296,29 @@ fn validate_static_call(
     Ok(())
 }
 
+fn narrowed_branch_type(
+    condition: &str,
+    vars: &HashMap<String, String>,
+) -> Option<(String, String)> {
+    let condition = condition.trim();
+    let (guard, argument) = ["is_some", "is_ok", "is_err"].iter().find_map(|guard| {
+        let prefix = format!("{guard}(");
+        let argument = condition.strip_prefix(&prefix)?.strip_suffix(')')?;
+        Some((*guard, argument.trim()))
+    })?;
+    if argument.is_empty() || argument.contains('(') || argument.contains(' ') {
+        return None;
+    }
+    let kind = vars.get(argument)?;
+    let prefix = if guard == "is_some" {
+        "option<"
+    } else {
+        "result<"
+    };
+    let payload = kind.strip_prefix(prefix)?.strip_suffix('>')?;
+    Some((argument.to_string(), payload.to_string()))
+}
+
 fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
     let mut signatures: HashMap<String, StaticSignature> = HashMap::new();
     for line in source.lines() {
@@ -1323,7 +1346,17 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
         }
     }
     let mut vars: HashMap<String, String> = HashMap::new();
+    let mut branch_scopes: Vec<(usize, HashMap<String, String>)> = Vec::new();
     for (line_index, line) in source.lines().enumerate() {
+        let indent = line.chars().take_while(|ch| *ch == ' ').count();
+        while branch_scopes
+            .last()
+            .is_some_and(|(scope_indent, _)| indent <= *scope_indent)
+        {
+            if let Some((_, previous)) = branch_scopes.pop() {
+                vars = previous;
+            }
+        }
         let trimmed = line.trim();
         if trimmed.starts_with("fn ") || trimmed.starts_with("def ") {
             continue;
@@ -1341,6 +1374,13 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                         line_index + 1,
                         kind
                     ));
+                }
+            }
+            if trimmed.starts_with("if ") {
+                if let Some((name, narrowed)) = narrowed_branch_type(condition, &vars) {
+                    let previous = vars.clone();
+                    vars.insert(name, narrowed);
+                    branch_scopes.push((indent, previous));
                 }
             }
         }
