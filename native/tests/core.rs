@@ -4382,3 +4382,78 @@ fn local_path_dependency_reports_missing_package_manifest() {
     assert!(String::from_utf8_lossy(&result.stderr).contains("missing zap.toml"));
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn resolves_nested_local_path_dependencies() {
+    let root = std::env::temp_dir().join("zap_nested_local_dependencies");
+    let _ = std::fs::remove_dir_all(&root);
+    let app = root.join("app");
+    let mid = root.join("mid");
+    let leaf = root.join("leaf");
+    for dir in [&app, &mid, &leaf] {
+        std::fs::create_dir_all(dir).unwrap();
+    }
+    std::fs::write(
+        app.join("zap.toml"),
+        "[package]\nname = \"app\"\nversion = \"0.1.0\"\n\n[dependencies]\nmid = { path = \"../mid\" }\n",
+    )
+    .unwrap();
+    std::fs::write(
+        mid.join("zap.toml"),
+        "[package]\nname = \"mid\"\nversion = \"0.1.0\"\n\n[dependencies]\nleaf = { path = \"../leaf\" }\n",
+    )
+    .unwrap();
+    std::fs::write(
+        leaf.join("zap.toml"),
+        "[package]\nname = \"leaf\"\nversion = \"0.1.0\"\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", app.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn rejects_nested_local_dependency_cycles_deterministically() {
+    let root = std::env::temp_dir().join("zap_nested_local_cycle");
+    let _ = std::fs::remove_dir_all(&root);
+    let app = root.join("app");
+    let left = root.join("left");
+    let right = root.join("right");
+    for dir in [&app, &left, &right] {
+        std::fs::create_dir_all(dir).unwrap();
+    }
+    std::fs::write(
+        app.join("zap.toml"),
+        "[package]\nname = \"app\"\nversion = \"0.1.0\"\n\n[dependencies]\nleft = { path = \"../left\" }\n",
+    )
+    .unwrap();
+    std::fs::write(
+        left.join("zap.toml"),
+        "[package]\nname = \"left\"\nversion = \"0.1.0\"\n\n[dependencies]\nright = { path = \"../right\" }\n",
+    )
+    .unwrap();
+    std::fs::write(
+        right.join("zap.toml"),
+        "[package]\nname = \"right\"\nversion = \"0.1.0\"\n\n[dependencies]\nleft = { path = \"../left\" }\n",
+    )
+    .unwrap();
+    let result = Command::new(binary())
+        .args(["update", app.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let error = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        error.contains("dependency cycle detected: left -> right -> left"),
+        "{error}"
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}

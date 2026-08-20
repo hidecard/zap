@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -110,7 +110,7 @@ fn canonical_lockfile(
 
 fn validate_lockfile(dir: &Path, manifest: &str) -> Result<(), String> {
     let dependencies = parse_dependencies(manifest)?;
-    validate_local_paths(dir, &dependencies)?;
+    validate_dependency_graph(dir, &dependencies)?;
     let lock_path = dir.join("zap.lock");
     if dependencies.is_empty() && !lock_path.exists() {
         return Ok(());
@@ -189,35 +189,71 @@ pub(crate) fn add_dependency(dir: &Path, name: &str, requirement: &str) -> Resul
     Ok(format!("added dependency `{name}` = \"{requirement}\""))
 }
 
-fn validate_local_paths(
-    dir: &Path,
+fn validate_dependency_graph(
+    root: &Path,
     dependencies: &BTreeMap<String, DependencySpec>,
 ) -> Result<(), String> {
+    let mut active = Vec::new();
+    let mut completed = HashSet::new();
     for (name, spec) in dependencies {
-        if let DependencySpec::LocalPath(raw_path) = spec {
-            let dependency_dir = dir.join(raw_path);
-            if !dependency_dir.is_dir() {
-                return Err(format!(
-                    "dependency `{name}`: local path does not exist: {}",
-                    dependency_dir.display()
-                ));
-            }
-            let manifest = dependency_dir.join("zap.toml");
-            if !manifest.is_file() {
-                return Err(format!(
-                    "dependency `{name}`: missing zap.toml at {}",
-                    dependency_dir.display()
-                ));
-            }
-            let text = read_limited_text(&manifest, "local dependency manifest read")?;
-            manifest_value(&text, "name").ok_or_else(|| {
-                format!("dependency `{name}`: local zap.toml is missing package name")
-            })?;
-            manifest_value(&text, "version").ok_or_else(|| {
-                format!("dependency `{name}`: local zap.toml is missing package version")
-            })?;
-        }
+        visit_dependency(root, name, spec, &mut active, &mut completed)?;
     }
+    Ok(())
+}
+
+fn visit_dependency(
+    parent: &Path,
+    name: &str,
+    spec: &DependencySpec,
+    active: &mut Vec<(String, PathBuf)>,
+    completed: &mut HashSet<PathBuf>,
+) -> Result<(), String> {
+    let DependencySpec::LocalPath(raw_path) = spec else {
+        return Ok(());
+    };
+    let dependency_dir = parent.join(raw_path);
+    if !dependency_dir.is_dir() {
+        return Err(format!(
+            "dependency `{name}`: local path does not exist: {}",
+            dependency_dir.display()
+        ));
+    }
+    let identity = fs::canonicalize(&dependency_dir).map_err(|e| {
+        format!(
+            "dependency `{name}`: cannot canonicalize local path {}: {e}",
+            dependency_dir.display()
+        )
+    })?;
+    if let Some(position) = active.iter().position(|(_, path)| path == &identity) {
+        let mut cycle = active[position..]
+            .iter()
+            .map(|(package, _)| package.clone())
+            .collect::<Vec<_>>();
+        cycle.push(name.to_string());
+        return Err(format!("dependency cycle detected: {}", cycle.join(" -> ")));
+    }
+    if completed.contains(&identity) {
+        return Ok(());
+    }
+    let manifest_path = dependency_dir.join("zap.toml");
+    if !manifest_path.is_file() {
+        return Err(format!(
+            "dependency `{name}`: missing zap.toml at {}",
+            dependency_dir.display()
+        ));
+    }
+    let text = read_limited_text(&manifest_path, "local dependency manifest read")?;
+    let package_name = manifest_value(&text, "name")
+        .ok_or_else(|| format!("dependency `{name}`: local zap.toml is missing package name"))?;
+    manifest_value(&text, "version")
+        .ok_or_else(|| format!("dependency `{name}`: local zap.toml is missing package version"))?;
+    let nested = parse_dependencies(&text)?;
+    active.push((package_name, identity.clone()));
+    for (nested_name, nested_spec) in &nested {
+        visit_dependency(&dependency_dir, nested_name, nested_spec, active, completed)?;
+    }
+    active.pop();
+    completed.insert(identity);
     Ok(())
 }
 
@@ -229,7 +265,7 @@ pub(crate) fn write_lockfile(dir: &Path) -> Result<String, String> {
     let version = manifest_value(&manifest, "version")
         .ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
-    validate_local_paths(dir, &dependencies)?;
+    validate_dependency_graph(dir, &dependencies)?;
     let content = canonical_lockfile(&name, &version, &dependencies);
     fs::write(dir.join("zap.lock"), content)
         .map_err(|e| format!("zap.lock: cannot write lockfile: {e}"))?;
@@ -260,7 +296,7 @@ pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {
     let version = manifest_value(&manifest, "version")
         .ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
-    validate_local_paths(dir, &dependencies)?;
+    validate_dependency_graph(dir, &dependencies)?;
     let content = canonical_lockfile(&name, &version, &dependencies);
     fs::write(dir.join("zap.lock"), content)
         .map_err(|e| format!("zap.lock: cannot write lockfile: {e}"))?;

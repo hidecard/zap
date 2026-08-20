@@ -71,7 +71,7 @@ hello-app/
     └── text.zp
 ```
 
-Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. The lockfile records the path as `local-lib = { path = "../local-lib" }` in canonical dependency order. Remote registry download and package publishing remain later ecosystem milestones.
+Local `use "math"` or `use "math.zp"` imports are searched relative to the main file, then `modules/`, and then `lib/`. A local path is resolved relative to the consuming project. The referenced directory must exist and contain a `zap.toml` with package `name` and `version` metadata. Local dependencies are recursively traversed in lexicographic depth-first order, so nested local packages are validated before the command succeeds. If a canonical package path appears again on the active traversal stack, Zap rejects the graph with a deterministic diagnostic such as `dependency cycle detected: left -> right -> left`. The lockfile records the direct path as `local-lib = { path = "../local-lib" }` in canonical dependency order. Remote registry download and package publishing remain later ecosystem milestones.
 
 ## Adding a dependency
 
@@ -93,7 +93,7 @@ zap install
 zap install path/to/project
 ```
 
-Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. In the current local package-manager foundation, update deterministically rewrites `zap.lock` from the manifest; it does not contact a remote registry or download packages yet.
+Use `zap update` when the manifest is intentionally changed and the canonical lockfile must be regenerated. In the current local package-manager foundation, update deterministically rewrites `zap.lock` from the manifest and validates all nested local path dependencies; it does not contact a remote registry or download packages yet. Version requirements remain registry-ready leaves until remote resolution is implemented.
 
 ```bash
 zap update
@@ -110,9 +110,9 @@ zap update path/to/project
 | `zap lock` | Generate or regenerate the canonical `zap.lock` |
 | `zap add <name> <version> [dir]` | Add a deterministic version dependency and invalidate the lockfile |
 | `zap install [dir]` | Validate the existing manifest and lockfile without changing them |
-| `zap update [dir]` | Regenerate the canonical lockfile from the current manifest |
+| `zap update [dir]` | Regenerate the canonical lockfile and validate the local dependency graph |
 | `zap build` | Validate and prepare a Zap project |
 | `zap test` | Run project test files |
 | `zap fmt main.zp` | Format a Zap source file |
 
-Remote registry resolution, package downloads, dependency graph solving, and package publishing remain later ecosystem milestones. The current `install` and `update` commands intentionally provide deterministic local manifest/lockfile behavior without implicit network access.
+Remote registry resolution, package downloads, registry dependency solving, and package publishing remain later ecosystem milestones. The current `install` and `update` commands intentionally provide deterministic local manifest/lockfile behavior without implicit network access, while local path graphs are fully traversed and checked for cycles.

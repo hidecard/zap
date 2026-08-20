@@ -51,7 +51,7 @@ zap lock
 zap lock path/to/project
 ```
 
-`zap.lock` တွင် lockfile version၊ package identity နှင့် sorted dependencies များပါဝင်သည်။ Local path သည် သုံးစွဲသည့် project directory အပေါ်မူတည်၍ resolve လုပ်ပြီး ရည်ညွှန်းသော directory တွင် package `name` နှင့် `version` ပါသော `zap.toml` ရှိရမည်။ Lockfile တွင် `local-lib = { path = "../local-lib" }` ပုံစံဖြင့် canonical ရေးသားသည်။ Project နှင့်အတူ lockfile ကို commit တင်ထားသင့်သည်။ Dependency ထည့်/ဖယ်ခြင်း သို့မဟုတ် package version ပြောင်းခြင်း ပြုလုပ်ပြီးတိုင်း `zap lock` ဖြင့် regenerate လုပ်ပါ။
+`zap.lock` တွင် lockfile version၊ package identity နှင့် sorted dependencies များပါဝင်သည်။ Local path သည် သုံးစွဲသည့် project directory အပေါ်မူတည်၍ resolve လုပ်ပြီး ရည်ညွှန်းသော directory တွင် package `name` နှင့် `version` ပါသော `zap.toml` ရှိရမည်။ Local dependency များကို lexicographic depth-first order ဖြင့် recursively စစ်ဆေးသောကြောင့် nested local package များအားလုံး မှန်ကန်မှသာ command အောင်မြင်သည်။ Active traversal stack ထဲတွင် canonical package path ထပ်ပေါ်လာပါက `dependency cycle detected: left -> right -> left` ကဲ့သို့ deterministic error ပြန်ပေးသည်။ Lockfile တွင် `local-lib = { path = "../local-lib" }` ပုံစံဖြင့် direct path ကို canonical ရေးသားသည်။ Project နှင့်အတူ lockfile ကို commit တင်ထားသင့်သည်။ Dependency ထည့်/ဖယ်ခြင်း သို့မဟုတ် package version ပြောင်းခြင်း ပြုလုပ်ပြီးတိုင်း `zap lock` ဖြင့် regenerate လုပ်ပါ။
 
 `zap check` နှင့် `zap build` များသည် dependency ရှိသော project များတွင် `zap.lock` မရှိခြင်း၊ stale ဖြစ်ခြင်း သို့မဟုတ် canonical format မဟုတ်ခြင်းကို error ပြန်ပေးသည်။
 
@@ -75,7 +75,7 @@ zap install
 zap install path/to/project
 ```
 
-Manifest ကို ရည်ရွယ်ချက်ရှိရှိ ပြောင်းလဲပြီးနောက် lockfile ကို ပြန်လည် generate လုပ်ရန် `zap update` ကို အသုံးပြုသည်။ လက်ရှိ local package-manager foundation တွင် `zap update` သည် manifest မှ canonical `zap.lock` ကို deterministic အတိုင်း ပြန်ရေးပေးပြီး remote registry သို့ ချိတ်ဆက်ခြင်း သို့မဟုတ် package download ပြုလုပ်ခြင်း မရှိသေးပါ။
+Manifest ကို ရည်ရွယ်ချက်ရှိရှိ ပြောင်းလဲပြီးနောက် lockfile ကို ပြန်လည် generate လုပ်ရန် `zap update` ကို အသုံးပြုသည်။ လက်ရှိ local package-manager foundation တွင် `zap update` သည် manifest မှ canonical `zap.lock` ကို deterministic အတိုင်း ပြန်ရေးပေးပြီး nested local path dependency graph ကိုလည်း စစ်ဆေးသည်။ Remote registry သို့ ချိတ်ဆက်ခြင်း သို့မဟုတ် package download ပြုလုပ်ခြင်း မရှိသေးပါ။ Version requirements များသည် remote resolution မတည်ဆောက်ရသေးသည့်အချိန်အထိ registry-ready leaf များအဖြစ်သာ ရှိနေသည်။
 
 ```bash
 zap update
@@ -102,4 +102,4 @@ zap main.zp
 zap fmt main.zp
 ```
 
-`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local manifest/lockfile validation နှင့် local path package metadata စစ်ဆေးခြင်းအဆင့်တွင်ရှိသည်။ `zap install` သည် lockfile ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်သည်။ Remote registry download၊ dependency graph solving နှင့် publishing များမှာ နောက်ပိုင်း ecosystem milestone များ ဖြစ်သည်။
+`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local manifest/lockfile validation နှင့် local path package metadata စစ်ဆေးခြင်းအဆင့်တွင်ရှိသည်။ `zap install` သည် lockfile နှင့် local dependency graph ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ local graph ကို validate လုပ်သည်။ Local path graph များသည် cycle ရှိ/မရှိ စစ်ဆေးပြီး remote registry download၊ registry dependency solving နှင့် publishing များမှာ နောက်ပိုင်း ecosystem milestone များ ဖြစ်သည်။
