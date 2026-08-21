@@ -26,6 +26,7 @@ pub(crate) enum Token {
     Colon,
     Comma,
     Dot,
+    Question,
     End,
 }
 
@@ -189,6 +190,7 @@ pub(crate) fn tokenize_with_spans(source: &str) -> Result<Vec<SpannedToken>, Str
             '<' => (Token::Less, 1),
             '>' => (Token::Greater, 1),
             '.' => (Token::Dot, 1),
+            '?' => (Token::Question, 1),
             _ => {
                 return Err(format!(
                     "unexpected character at {start_line}:{start_column}: {c}"

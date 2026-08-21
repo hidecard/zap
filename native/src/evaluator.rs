@@ -2056,6 +2056,25 @@ pub(crate) fn check_method_visibility(
     }
 }
 
+fn ast_expression_with_propagation_context(
+    node: &crate::ast::Spanned<Expr>,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<EvalOutcome, String> {
+    if let Expr::Propagate(value) = &node.node {
+        return match ast_expression_with_context(value, vars, funcs, context)? {
+            Value::ResultOk(value) | Value::OptionSome(value) => Ok(EvalOutcome::Value(*value)),
+            Value::ResultErr(error) => Ok(EvalOutcome::Propagate(Value::ResultErr(error))),
+            Value::OptionNone => Ok(EvalOutcome::Propagate(Value::OptionNone)),
+            _ => Err("? expects a Result or Option value".into()),
+        };
+    }
+    Ok(EvalOutcome::Value(ast_expression_with_context(
+        node, vars, funcs, context,
+    )?))
+}
+
 fn ast_expression_with_context(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
@@ -2137,6 +2156,9 @@ fn ast_expression_with_context(
             Value::Future(value) => Ok(*value),
             _ => Err("await expects a future value".into()),
         },
+        Expr::Propagate(_) => {
+            Err("? propagation must be used as a complete statement expression".into())
+        }
         Expr::Call { callee, args } => {
             let values = args
                 .iter()
@@ -2750,175 +2772,18 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
             format!("{}[{}]", ast_expr_source(target), ast_expr_source(index))
         }
         Expr::Await(value) => format!("await {}", ast_expr_source(value)),
+        Expr::Propagate(value) => format!("{}?", ast_expr_source(value)),
     }
 }
 
-fn ast_stmt_lines(statement: &crate::ast::Spanned<Stmt>, indent: usize, out: &mut Vec<String>) {
-    let prefix = "    ".repeat(indent);
-    match &statement.node {
-        Stmt::Expression(value) => out.push(format!("{prefix}{}", ast_expr_source(value))),
-        Stmt::Assignment { name, value } => {
-            out.push(format!("{prefix}{name} = {}", ast_expr_source(value)))
-        }
-        Stmt::Declaration {
-            name,
-            annotation,
-            value,
-        } => out.push(format!(
-            "{prefix}let {name}{} = {}",
-            annotation
-                .as_ref()
-                .map_or(String::new(), |ty| format!(": {ty}")),
-            ast_expr_source(value)
-        )),
-        Stmt::Say(value) => out.push(format!("{prefix}say {}", ast_expr_source(value))),
-        Stmt::Raise(value) => out.push(format!("{prefix}raise {}", ast_expr_source(value))),
-        Stmt::TryCatch {
-            body,
-            binding,
-            catch_body,
-        } => {
-            out.push(format!("{prefix}try:"));
-            ast_program_lines(body, indent + 1, out);
-            out.push(format!("{prefix}catch {binding}:"));
-            ast_program_lines(catch_body, indent + 1, out);
-        }
-        Stmt::Field {
-            name,
-            annotation,
-            value,
-            visibility,
-        } => out.push(format!(
-            "{prefix}{visibility} let {name}{} = {}",
-            annotation
-                .as_ref()
-                .map_or(String::new(), |ty| format!(": {ty}")),
-            ast_expr_source(value)
-        )),
-        Stmt::Module { name } => out.push(format!("{prefix}module {name}")),
-        Stmt::Import {
-            path,
-            explicit,
-            alias,
-        } => out.push(format!(
-            "{prefix}{} \"{path}\"{}",
-            if *explicit { "import" } else { "use" },
-            alias
-                .as_ref()
-                .map_or(String::new(), |alias| format!(" as {alias}"))
-        )),
-        Stmt::Return(value) => out.push(format!(
-            "{prefix}return{}",
-            value.as_ref().map_or(String::new(), |value| format!(
-                " {}",
-                ast_expr_source(value)
-            ))
-        )),
-        Stmt::Break => out.push(format!("{prefix}break")),
-        Stmt::Continue => out.push(format!("{prefix}continue")),
-        Stmt::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => {
-            out.push(format!("{prefix}if {}:", ast_expr_source(condition)));
-            ast_program_lines(then_branch, indent + 1, out);
-            if let Some(branch) = else_branch {
-                out.push(format!("{prefix}else:"));
-                ast_program_lines(branch, indent + 1, out);
-            }
-        }
-        Stmt::While { condition, body } => {
-            out.push(format!("{prefix}while {}:", ast_expr_source(condition)));
-            ast_program_lines(body, indent + 1, out);
-        }
-        Stmt::For {
-            binding,
-            iterable,
-            body,
-        } => {
-            out.push(format!(
-                "{prefix}for {binding} in {}:",
-                ast_expr_source(iterable)
-            ));
-            ast_program_lines(body, indent + 1, out);
-        }
-        Stmt::Function {
-            name,
-            params,
-            return_type,
-            body,
-            is_async,
-            ..
-        } => {
-            let params = params
-                .iter()
-                .map(|(name, annotation, default)| {
-                    format!(
-                        "{name}{}{}",
-                        annotation
-                            .as_ref()
-                            .map_or(String::new(), |ty| format!(": {ty}")),
-                        default
-                            .as_ref()
-                            .map_or(String::new(), |value| format!(" = {value}"))
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join(", ");
-            out.push(format!(
-                "{prefix}{}fn {name}({params}){}:",
-                if *is_async { "async " } else { "" },
-                return_type
-                    .as_ref()
-                    .map_or(String::new(), |ty| format!(" -> {ty}"))
-            ));
-            ast_program_lines(body, indent + 1, out);
-        }
-        Stmt::Class { name, base, body } => {
-            out.push(format!(
-                "{prefix}class {name}{}:",
-                base.as_ref()
-                    .map_or(String::new(), |base| format!(" extends {base}"))
-            ));
-            ast_program_lines(body, indent + 1, out);
-        }
-    }
-}
-
-fn ast_program_lines(program: &Program, indent: usize, out: &mut Vec<String>) {
-    for statement in &program.statements {
-        ast_stmt_lines(statement, indent, out);
-    }
-}
-
-pub(crate) fn ast_program_compatible(program: &Program) -> bool {
-    program
-        .statements
-        .iter()
-        .all(|statement| match &statement.node {
-            Stmt::Function { .. }
-            | Stmt::Class { .. }
-            | Stmt::Module { .. }
-            | Stmt::Import { .. }
-            | Stmt::Raise(_) => true,
-            Stmt::TryCatch {
-                body, catch_body, ..
-            } => ast_program_compatible(body) && ast_program_compatible(catch_body),
-            Stmt::If {
-                then_branch,
-                else_branch,
-                ..
-            } => {
-                ast_program_compatible(then_branch)
-                    && match else_branch.as_ref() {
-                        Some(branch) => ast_program_compatible(branch),
-                        None => true,
-                    }
-            }
-            Stmt::While { body, .. } | Stmt::For { body, .. } => ast_program_compatible(body),
-            _ => true,
-        })
+/// Reports whether a parsed program can use the canonical AST executor.
+///
+/// Every statement and expression currently produced by `ast::parse_program`
+/// has a native execution branch. The legacy line interpreter remains only for
+/// compatibility with older function records created outside the AST parser;
+/// it is not a normal-program fallback.
+pub(crate) fn ast_program_compatible(_program: &Program) -> bool {
+    true
 }
 
 struct AstFunctionSpec<'a> {
@@ -2928,6 +2793,7 @@ struct AstFunctionSpec<'a> {
     return_type: &'a Option<String>,
     body: &'a Program,
     is_async: bool,
+    exported: bool,
 }
 
 fn register_ast_function(
@@ -2935,26 +2801,27 @@ fn register_ast_function(
     vars: &HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
 ) {
-    funcs.insert(
-        spec.name.to_string(),
-        Rc::new(Function {
-            visibility: spec.visibility.to_string(),
-            params: spec
-                .params
-                .iter()
-                .map(|(name, annotation, default)| Param {
-                    name: name.clone(),
-                    annotation: annotation.clone(),
-                    default: default.clone(),
-                })
-                .collect(),
-            return_annotation: spec.return_type.clone(),
-            is_async: spec.is_async,
-            body: Vec::new(),
-            ast_body: Some(spec.body.clone()),
-            closure: Rc::new(RefCell::new(vars.clone())),
-        }),
-    );
+    let function = Rc::new(Function {
+        visibility: spec.visibility.to_string(),
+        params: spec
+            .params
+            .iter()
+            .map(|(name, annotation, default)| Param {
+                name: name.clone(),
+                annotation: annotation.clone(),
+                default: default.clone(),
+            })
+            .collect(),
+        return_annotation: spec.return_type.clone(),
+        is_async: spec.is_async,
+        body: Vec::new(),
+        ast_body: Some(spec.body.clone()),
+        closure: Rc::new(RefCell::new(vars.clone())),
+    });
+    funcs.insert(spec.name.to_string(), function.clone());
+    if spec.exported {
+        funcs.insert(format!("__zap_export_fn__:{}", spec.name), function);
+    }
 }
 
 fn register_ast_class(
@@ -3027,6 +2894,7 @@ fn register_ast_class(
             body,
             visibility,
             is_async,
+            ..
         } = &statement.node
         {
             if method == "init" {
@@ -3090,7 +2958,9 @@ fn register_ast_class(
             })
             .collect::<Vec<_>>();
         for (method, function) in inherited {
-            funcs.entry(format!("{name}.{method}")).or_insert(function);
+            if !method.starts_with("__field__.") {
+                funcs.entry(format!("{name}.{method}")).or_insert(function);
+            }
         }
     }
     Ok(())
@@ -3115,11 +2985,7 @@ pub(crate) fn execute_ast_program_with_context(
     base: &Path,
 ) -> Result<Flow, String> {
     let _workspace = enter_workspace(base)?;
-    if !ast_program_compatible(program) {
-        let mut lines = Vec::new();
-        ast_program_lines(program, 0, &mut lines);
-        return execute_lines_with_context(&lines, vars, funcs, context, base);
-    }
+    debug_assert!(ast_program_compatible(program));
     let _guard = enter_execution(
         &program
             .statements
@@ -3138,7 +3004,11 @@ pub(crate) fn execute_ast_program_with_context(
                 return Err("field declarations are only allowed inside a class".into());
             }
             Stmt::Assignment { name, value } => {
-                let evaluated = ast_expression_with_context(value, vars, funcs, context)?;
+                let evaluated =
+                    match ast_expression_with_propagation_context(value, vars, funcs, context)? {
+                        EvalOutcome::Value(value) => value,
+                        EvalOutcome::Propagate(value) => return Ok(Flow::Return(value)),
+                    };
                 if let Some((object_name, field)) = name.split_once('.') {
                     let class_name = match vars.get(object_name) {
                         Some(Value::Object { class_name, .. }) => class_name.clone(),
@@ -3164,12 +3034,20 @@ pub(crate) fn execute_ast_program_with_context(
                 name,
                 annotation,
                 value,
+                exported,
             } => {
-                let evaluated = ast_expression_with_context(value, vars, funcs, context)?;
+                let evaluated =
+                    match ast_expression_with_propagation_context(value, vars, funcs, context)? {
+                        EvalOutcome::Value(value) => value,
+                        EvalOutcome::Propagate(value) => return Ok(Flow::Return(value)),
+                    };
                 if let Some(annotation) = annotation {
                     check_annotation(name, annotation, &evaluated)?;
                 }
                 vars.insert(name.clone(), evaluated);
+                if *exported {
+                    vars.insert(format!("__zap_export_var__:{name}"), Value::None);
+                }
                 Flow::Continue
             }
             Stmt::Say(value) => {
@@ -3203,11 +3081,16 @@ pub(crate) fn execute_ast_program_with_context(
                 }
                 flow => flow,
             },
-            Stmt::Return(value) => {
-                Flow::Return(value.as_ref().map_or(Ok(Value::None), |value| {
-                    expression_with_context(&ast_expr_source(value), vars, funcs, context)
-                })?)
-            }
+            Stmt::Return(value) => match value.as_ref() {
+                Some(value) => {
+                    match ast_expression_with_propagation_context(value, vars, funcs, context)? {
+                        EvalOutcome::Value(value) | EvalOutcome::Propagate(value) => {
+                            Flow::Return(value)
+                        }
+                    }
+                }
+                None => Flow::Return(Value::None),
+            },
             Stmt::Break => Flow::Break,
             Stmt::Continue => Flow::LoopContinue,
             Stmt::If {
@@ -3279,6 +3162,7 @@ pub(crate) fn execute_ast_program_with_context(
                 body,
                 visibility,
                 is_async,
+                exported,
             } => {
                 register_ast_function(
                     AstFunctionSpec {
@@ -3288,6 +3172,7 @@ pub(crate) fn execute_ast_program_with_context(
                         return_type,
                         body,
                         is_async: *is_async,
+                        exported: *exported,
                     },
                     vars,
                     funcs,
@@ -3414,15 +3299,24 @@ fn load_module_with_context(
             return Err(error);
         }
     };
-    let imported_lines = imported.lines().map(str::to_string).collect::<Vec<_>>();
+    let program = match crate::ast::parse_program(&imported) {
+        Ok(program) => program,
+        Err(error) => {
+            context.state_mut().module_loading_mut().pop();
+            return Err(format!(
+                "cannot parse module {}: {error}",
+                canonical.display()
+            ));
+        }
+    };
     let mut module_vars = HashMap::new();
     module_vars.insert(
         "__zap_module".into(),
         Value::Text(canonical.display().to_string()),
     );
     let mut module_funcs = HashMap::new();
-    let flow_result = execute_lines_with_context(
-        &imported_lines,
+    let flow_result = execute_ast_program_with_context(
+        &program,
         &mut module_vars,
         &mut module_funcs,
         context,
@@ -3481,6 +3375,11 @@ pub(crate) fn execute_lines(
     execute_lines_with_context(lines, vars, funcs, &mut context, base)
 }
 
+/// Executes a legacy line-bodied function record.
+///
+/// This is a compatibility-only boundary for pre-AST `Function` values and
+/// test fixtures. Parser-owned source must enter through `parse_program` and
+/// `execute_ast_program_with_context`; no new syntax should be added here.
 pub(crate) fn execute_lines_with_context(
     lines: &[String],
     vars: &mut HashMap<String, Value>,
@@ -3877,6 +3776,7 @@ mod tests {
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
         rc::Rc,
+        sync::atomic::Ordering,
     };
 
     #[test]
@@ -3905,6 +3805,42 @@ mod tests {
             .expect("AST execution should succeed");
         assert!(matches!(flow, super::Flow::Continue));
         assert_eq!(vars.get("total"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn every_parser_owned_program_is_canonical_ast_compatible() {
+        let program = parse_program(
+            "module app.core\nexport let answer: number = 41\nexport fn greet(name):\n    return name + \"!\"\ntry:\n    answer = answer + 1\ncatch error:\n    say error\nif answer > 0:\n    while answer > 0:\n        break\nfor item in [1, 2]:\n    say item\n",
+        )
+        .expect("all current syntax should parse through the AST");
+        assert!(super::ast_program_compatible(&program));
+    }
+
+    #[test]
+    fn imports_modules_through_the_canonical_ast_executor() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-ast-module-{}-{}",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).expect("temporary module workspace should be created");
+        fs::write(
+            root.join("library.zp"),
+            "export let suffix = \"!\"\nexport fn greet(name):\n    return name + suffix\n",
+        )
+        .expect("module fixture should be written");
+        let program = parse_program("import \"library.zp\"\nlet result = greet(\"Zap\")\n")
+            .expect("import program should parse through the AST");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, &root)
+            .expect("module import should use the AST executor");
+        assert_eq!(vars.get("result"), Some(&Value::Text("Zap!".into())));
+        assert!(!vars.contains_key("__zap_export_var__:suffix"));
+        assert!(funcs
+            .get("greet")
+            .is_some_and(|function| function.ast_body.is_some()));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

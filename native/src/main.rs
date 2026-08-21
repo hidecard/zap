@@ -32,9 +32,8 @@ mod stdlib_catalog;
 use evaluator::{
     call_function_with_context, call_method_with_context, check_method_visibility,
     constructor_delegates_to_parent, direct_builtin, direct_external_builtin, duration_value,
-    execute_ast_program_with_context, execute_lines_with_context, initialize_object_fields,
-    json_to_value, operate, utc_now_value, validate_source_layout, value_to_json, value_type_name,
-    Flow,
+    execute_ast_program_with_context, initialize_object_fields, json_to_value, operate,
+    utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
 };
 
 use runtime_state::ExecutionContext;
@@ -1239,45 +1238,12 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
     vars.insert("__zap_module".into(), Value::Text("__main__".into()));
     let mut funcs = HashMap::new();
     validate_source_layout(source)?;
-    match ast::parse_program(source) {
-        Ok(program) => {
-            return match execute_ast_program_with_context(
-                &program,
-                &mut vars,
-                &mut funcs,
-                &mut context,
-                base,
-            )? {
-                Flow::Continue | Flow::Return(_) => Ok(()),
-                Flow::Break | Flow::LoopContinue => {
-                    Err("break/continue must be inside a loop".into())
-                }
-                Flow::Raise(value) => Err(format!("raised error: {}", value.show())),
-            };
-        }
-        Err(error) if contains_ast_only_syntax(source) => {
-            return Err(format!("syntax error: {error}"));
-        }
-        Err(_) => {}
-    }
-    let lines = source.lines().map(str::to_string).collect::<Vec<_>>();
-    match execute_lines_with_context(&lines, &mut vars, &mut funcs, &mut context, base)? {
+    let program = ast::parse_program(source).map_err(|error| format!("syntax error: {error}"))?;
+    match execute_ast_program_with_context(&program, &mut vars, &mut funcs, &mut context, base)? {
         Flow::Continue | Flow::Return(_) => Ok(()),
         Flow::Break | Flow::LoopContinue => Err("break/continue must be inside a loop".into()),
         Flow::Raise(value) => Err(format!("raised error: {}", value.show())),
     }
-}
-
-fn contains_ast_only_syntax(source: &str) -> bool {
-    source.lines().any(|raw_line| {
-        let line = raw_line.trim_start();
-        line.starts_with("async ")
-            || line.starts_with("await ")
-            || line.starts_with("raise ")
-            || line == "raise"
-            || line.starts_with("module ")
-            || (line.starts_with("import ") && line.contains(" as "))
-    })
 }
 
 fn format_source(source: &str) -> String {
@@ -2107,6 +2073,13 @@ mod zap_error_tests {
         let _ = std::fs::remove_file(&path);
         let error = result.expect_err("oversized files must be rejected");
         assert!(error.contains("file exceeds"));
+    }
+
+    #[test]
+    fn normal_programs_do_not_fallback_to_legacy_line_execution() {
+        let error = run_checked("use core", Path::new("."))
+            .expect_err("AST import semantics should reject an unresolved module");
+        assert!(error.message().contains("module not found: core"));
     }
 
     #[test]

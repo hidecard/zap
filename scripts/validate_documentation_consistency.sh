@@ -43,6 +43,7 @@ pairs=(
   'docs/BENCHMARK_HARNESS_EN.md:docs/BENCHMARK_HARNESS_MM.md'
   'docs/TYPECHECK_GENERIC_DESIGN_EN.md:docs/TYPECHECK_GENERIC_DESIGN_MM.md'
   'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
+  'docs/P0_FOUNDATION_STATUS_EN.md:docs/P0_FOUNDATION_STATUS_MM.md'
   'docs/P2_PROGRESS.md:docs/P2_PROGRESS_MM.md'
   'docs/RELEASE_2.1.11_EN.md:docs/RELEASE_2.1.11_MM.md'
 )
@@ -79,6 +80,7 @@ for file in \
   docs/TYPECHECK_GENERIC_DESIGN_EN.md docs/TYPECHECK_GENERIC_DESIGN_MM.md \
   docs/P2_PROGRESS.md docs/P2_PROGRESS_MM.md \
   docs/RUNTIME_STATE_EN.md docs/RUNTIME_STATE_MM.md \
+  docs/P0_FOUNDATION_STATUS_EN.md docs/P0_FOUNDATION_STATUS_MM.md \
   docs/RELEASE_2.1.11_EN.md docs/RELEASE_2.1.11_MM.md; do
   require_text "$file" "v$VERSION"
   if grep -Eq 'v2\.1\.(0|6|7|8)([^0-9]|$)' "$file"; then

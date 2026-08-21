@@ -79,6 +79,7 @@ pub(crate) enum Expr {
         args: Vec<CallArg>,
     },
     Await(Box<Spanned<Expr>>),
+    Propagate(Box<Spanned<Expr>>),
     Member {
         target: Box<Spanned<Expr>>,
         member: String,
@@ -100,6 +101,7 @@ pub(crate) enum Stmt {
         name: String,
         annotation: Option<String>,
         value: Spanned<Expr>,
+        exported: bool,
     },
     Field {
         name: String,
@@ -144,6 +146,7 @@ pub(crate) enum Stmt {
         body: Program,
         visibility: String,
         is_async: bool,
+        exported: bool,
     },
     Class {
         name: String,
@@ -250,14 +253,24 @@ impl AstParser {
                     span,
                 ))
             }
-            crate::lexer::Token::Name(name) if name == "await" => {
+            crate::lexer::Token::Name(name) if name == "await" || name == "not" => {
                 let value = self.parse_expression(7)?;
                 let span = SourceSpan {
                     line: token.span.line,
                     column: token.span.column,
                     length: value.span.column + value.span.length - token.span.column,
                 };
-                Ok(Spanned::new(Expr::Await(Box::new(value)), span))
+                if name == "await" {
+                    Ok(Spanned::new(Expr::Await(Box::new(value)), span))
+                } else {
+                    Ok(Spanned::new(
+                        Expr::Unary {
+                            op: UnaryOp::Not,
+                            value: Box::new(value),
+                        },
+                        span,
+                    ))
+                }
             }
             crate::lexer::Token::Name(name) if name == "if" => {
                 let condition = self.parse_expression(0)?;
@@ -465,6 +478,16 @@ impl AstParser {
                         member,
                     };
                 }
+                crate::lexer::Token::Question => {
+                    self.advance();
+                    let value_span = expression.span.clone();
+                    let value = Spanned::new(
+                        std::mem::replace(&mut expression.node, Expr::Literal(Literal::None)),
+                        value_span.clone(),
+                    );
+                    expression.span.length = expression.span.length.saturating_add(1);
+                    expression.node = Expr::Propagate(Box::new(value));
+                }
                 crate::lexer::Token::LBracket => {
                     self.advance();
                     let index = self.parse_expression(0)?;
@@ -500,10 +523,16 @@ pub(crate) fn parse_expression(source: &str) -> Result<Spanned<Expr>, String> {
 }
 
 pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
-    let trimmed = source.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') {
+    let original = source.trim();
+    if original.is_empty() || original.starts_with('#') {
         return Err("empty or comment-only statement".to_string());
     }
+    let exported = original.starts_with("export ");
+    let trimmed = if exported {
+        original.strip_prefix("export ").unwrap_or(original).trim()
+    } else {
+        original
+    };
     let leading = source.len() - source.trim_start().len();
     let span = |length: usize| SourceSpan {
         line: 1,
@@ -656,6 +685,7 @@ pub(crate) fn parse_statement(source: &str) -> Result<Spanned<Stmt>, String> {
                 name: name.to_string(),
                 annotation,
                 value: parse_expression(value.trim())?,
+                exported,
             },
             span(trimmed.len()),
         ));
@@ -718,11 +748,17 @@ fn parse_function_header(
             Option<String>,
             String,
             bool,
+            bool,
         ),
         String,
     >,
 > {
     let header = text.strip_suffix(':')?;
+    let (exported, header) = if let Some(rest) = header.strip_prefix("export ") {
+        (true, rest)
+    } else {
+        (false, header)
+    };
     let (visibility, signature, is_async) =
         if let Some(rest) = header.strip_prefix("public async fn ") {
             ("public", rest, true)
@@ -837,6 +873,7 @@ fn parse_function_header(
         return_type,
         visibility.to_string(),
         is_async,
+        exported,
     )))
 }
 
@@ -1031,7 +1068,7 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
             }
             let body_indent = lines[*cursor].indent;
             let body = parse_block(lines, cursor, body_indent)?;
-            let (name, params, return_type, visibility, is_async) = function;
+            let (name, params, return_type, visibility, is_async, exported) = function;
             program.statements.push(Spanned::new(
                 Stmt::Function {
                     name,
@@ -1040,6 +1077,7 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
                     body,
                     visibility,
                     is_async,
+                    exported,
                 },
                 SourceSpan {
                     line: line_number,
@@ -1050,13 +1088,12 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
         } else if let Some(class) = parse_class_header(&text) {
             *cursor += 1;
             let class = class?;
-            if *cursor >= lines.len() || lines[*cursor].indent <= indent {
-                return Err(format!(
-                    "class requires an indented block at line {line_number}"
-                ));
-            }
-            let body_indent = lines[*cursor].indent;
-            let body = parse_block(lines, cursor, body_indent)?;
+            let body = if *cursor >= lines.len() || lines[*cursor].indent <= indent {
+                Program::default()
+            } else {
+                let body_indent = lines[*cursor].indent;
+                parse_block(lines, cursor, body_indent)?
+            };
             let (name, base) = class;
             program.statements.push(Spanned::new(
                 Stmt::Class { name, base, body },
@@ -1279,6 +1316,22 @@ mod tests {
     }
 
     #[test]
+    fn parses_native_propagation_and_boolean_prefix_expressions() {
+        let propagation = parse_expression("some(1)?").expect("valid propagation expression");
+        assert!(
+            matches!(propagation.node, Expr::Propagate(value) if matches!(value.node, Expr::Call { .. }))
+        );
+        let negation = parse_expression("not ready").expect("valid boolean prefix expression");
+        assert!(matches!(
+            negation.node,
+            Expr::Unary {
+                op: UnaryOp::Not,
+                ..
+            }
+        ));
+    }
+
+    #[test]
     fn parses_async_function_and_await_expression() {
         let expression = parse_expression("await load() ").expect("valid await expression");
         assert!(
@@ -1311,6 +1364,31 @@ mod tests {
         assert!(
             matches!(program.statements[4].node, Stmt::Import { ref path, explicit: false, alias: None } if path == "helpers.zp")
         );
+    }
+
+    #[test]
+    fn parses_exported_bindings_and_functions() {
+        let binding = parse_statement("export let answer: number = 42")
+            .expect("exported binding should parse");
+        assert!(matches!(
+            binding.node,
+            Stmt::Declaration {
+                ref name,
+                exported: true,
+                ..
+            } if name == "answer"
+        ));
+
+        let program = parse_program("export fn greet(name):\n    return name\n")
+            .expect("exported function should parse");
+        assert!(matches!(
+            program.statements[0].node,
+            Stmt::Function {
+                ref name,
+                exported: true,
+                ..
+            } if name == "greet"
+        ));
     }
 
     #[test]
