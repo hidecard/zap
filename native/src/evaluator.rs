@@ -1080,13 +1080,10 @@ fn direct_io_builtin_with_context(
                 return Err("read_lines expects a text path".into());
             };
             Ok(Some(Value::List(
-                read_limited_text(
-                    &confined_path(Path::new(path), "read_lines", context)?,
-                    "read_lines",
-                )?
-                .lines()
-                .map(|line| Value::Text(line.to_string()))
-                .collect(),
+                read_limited_text(Path::new(path), "read_lines")?
+                    .lines()
+                    .map(|line| Value::Text(line.to_string()))
+                    .collect(),
             )))
         }
         "write_lines" => {
@@ -1109,11 +1106,7 @@ fn direct_io_builtin_with_context(
                 }
                 output.push_str(line);
             }
-            write_limited_text(
-                &confined_path(Path::new(path), "write_lines", context)?,
-                &output,
-                "write_lines",
-            )?;
+            write_limited_text(Path::new(path), &output, "write_lines")?;
             Ok(Some(Value::None))
         }
         _ => Ok(None),
