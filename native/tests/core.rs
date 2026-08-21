@@ -129,7 +129,7 @@ fn encodes_and_decodes_json() {
 fn reads_and_writes_text_files() {
     let file = std::env::temp_dir().join("zap_file_test.txt");
     let program = std::env::temp_dir().join("zap_file_builtins_test.zp");
-    let path = file.to_string_lossy();
+    let path = file.to_string_lossy().replace('\\', "/");
     let source = format!(
         "write_text(\"{}\", \"hello\")\nsay read_text(\"{}\")\n",
         path, path
@@ -1529,7 +1529,7 @@ fn audits_nested_direct_ast_standard_library_calls() {
     std::fs::create_dir_all(&root).unwrap();
     let data_path = root.join("data.txt");
     let program = root.join("main.zp");
-    let path = data_path.to_string_lossy();
+    let path = data_path.to_string_lossy().replace('\\', "/");
     let source = format!(
         "write_text(\"{path}\", json({{\"name\": upper(\"zap\"), \"items\": range(pow(2, 2))}}))\nlet value = from_json(read_text(\"{path}\"))\nsay join(reverse(split(value[\"name\"], \"A\")), \"-\")\nsay sum(value[\"items\"])\nsay has_env(\"PATH\")\n"
     );
