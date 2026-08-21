@@ -1456,6 +1456,73 @@ fn narrows_complex_boolean_guards_and_aliases() {
 }
 
 #[test]
+fn typecheck_p0_conformance_matrix_tc001_to_tc005() {
+    let cases = [
+        (
+            "tc001-branch-local",
+            "fn need_number(value: number):\n    return value\nlet maybe: option<number> = some(7)\nif is_some(maybe):\n    let inside: number = need_number(maybe)\n",
+            true,
+            "",
+        ),
+        (
+            "tc002-combined-guards",
+            "fn need_number(value: number):\n    return value\nlet maybe: option<number> = some(7)\nlet outcome: result<number> = ok(9)\nif is_some(maybe) and is_ok(outcome):\n    let first: number = need_number(maybe)\n    let second: number = need_number(outcome)\n",
+            true,
+            "",
+        ),
+        (
+            "tc003-repeated-facts",
+            "fn need_number(value: number):\n    return value\nlet maybe: option<number> = some(7)\nif is_some(maybe) and is_some(maybe):\n    let inside: number = need_number(maybe)\n",
+            true,
+            "",
+        ),
+        (
+            "tc004-disjunctive-safety",
+            "fn need_number(value: number):\n    return value\nlet first: option<number> = some(1)\nlet second: option<number> = some(2)\nif is_some(first) or is_some(second):\n    let inside: number = need_number(first)\n",
+            false,
+            "expects number, got option<number>",
+        ),
+        (
+            "tc005-reassignment-invalidation",
+            "let maybe: option<number> = some(3)\nif is_some(maybe):\n    maybe = option_none()\n    let after: number = maybe\n",
+            false,
+            "expects number, got option<any>",
+        ),
+    ];
+
+    for (name, source, should_pass, expected_error) in cases {
+        let root = std::env::temp_dir().join(format!("zap_{name}_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("zap.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n"),
+        )
+        .unwrap();
+        std::fs::write(root.join("main.zp"), source).unwrap();
+
+        let output = Command::new(binary())
+            .args(["check", "--json", root.to_str().unwrap()])
+            .output()
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&root);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(
+            output.status.success(),
+            should_pass,
+            "{name}: {stdout}{stderr}"
+        );
+        if !should_pass {
+            assert!(
+                stdout.contains(expected_error) || stderr.contains(expected_error),
+                "{name}: expected {expected_error:?}, got stdout={stdout:?}, stderr={stderr:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn generates_canonical_dependency_lockfile() {
     let root = std::env::temp_dir().join("zap_lockfile_generation_project");
     std::fs::create_dir_all(&root).unwrap();
