@@ -4,7 +4,22 @@
 
 **Purpose:** Define the next implementation sequence after the stable diagnostic contract. This plan turns the remaining TODO register into executable milestones without treating already-completed release work as unfinished.
 
-**Current progress:** The first P0-04 slice is now implemented: tracked object allocation/deallocation statistics, the bounded `memory_stats()` builtin, cycle-safe value validation, deterministic text/list/map/value-graph limits, regression tests, and bilingual memory-contract documentation. Public weak references, closure-level/process-wide telemetry, automatic arbitrary-cycle reclamation, and tracing collection remain deferred.
+**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. The first P0-05-A slice is also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, runtime/AST tests, and synchronized async/stdlib documentation. P0-05 resource-limit preflight, cross-platform matrix coverage, executor-backed language scheduling, and language-level cancellation/timeout controls remain deferred.
+
+## Next P0/P1 execution queue
+
+After the first P0-04 slice, the next work is ordered by runtime risk rather than feature size:
+
+| Order | Work package | Implementation slice | Acceptance evidence |
+|---|---|---|---|
+| P0-05-A | Async boundary capability contract | Add a deterministic `async_capabilities()` report, document executor/worker/network/process/cancellation boundaries, and make unsupported language-level cancellation/timeout explicit | Stable capability map, bilingual contract, AST/runtime tests, and no claim that eager futures are executor-backed |
+| P0-05-B | Async resource-limit validation | Validate worker/task/read/socket/process limits before admission and keep deadline/output/cancellation behavior fail-closed | Invalid-limit tests, deterministic errors, and bounded process cleanup |
+| P0-05-C | Cross-platform async matrix | Exercise path, process, socket, deadline, cancellation, and output-limit behavior on Linux, Windows, and macOS targets | Target-native CI evidence or a versioned documented limitation |
+| P1-05-A | Replayable verification layers | Add fixed-seed property/fuzz corpus replay and durable failure fixtures for parser, JSON, lockfile, registry, memory, and async boundaries | CI artifact contains the seed/input and repeat runs are deterministic |
+| P0-01-A | Native/legacy parity report | Classify legacy fixtures and gate unapproved semantic drift | Versioned parity matrix and executable CI report |
+| P0-02-A | Specification ownership index | Map public syntax, typing, runtime, limit, and error rules to canonical bilingual sections and fixtures | No unowned normative rule and every rule has fixture ownership |
+
+P2-02 standard-library stability, P2-03 LSP/VS Code parity, and P2-04 documentation navigation follow after the P0/P1 safety gates. P2-01 traits/composition remains an RFC-only milestone until the conformance and specification contracts are complete.
 
 ## Planning principles
 
@@ -133,7 +148,7 @@ No parser or runtime implementation should begin until the RFC has bilingual ter
 
 ## Immediate next task
 
-The next implementation slice should continue **M1.1 / P0-04 Memory and reference-cycle contract** by deciding whether weak references and closure/process-wide telemetry belong in a future runtime boundary, and by extending platform-specific memory-limit and closure-capture fixtures. Do not begin traits implementation or broad async syntax until M1 and M2 reliability gates are complete.
+The next implementation slice should be **P0-05-A Async boundary capability contract**. Add the capability report and boundary table first; then implement P0-05-B resource-limit validation and P0-05-C cross-platform coverage. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
 
 ## Related records
 

@@ -23,7 +23,7 @@
 | P0-02 | ပေါင်းစည်းထားသော language specification | Partial | `LANGUAGE_SPEC_MM.md` သည် syntax၊ precedence၊ typing၊ runtime behavior၊ compatibility နှင့် version ownership အတွက် canonical semantic index ဖြစ်လာပြီ။ Fragmented rule များကို အပြည့်အဝ ရွှေ့ပြောင်းခြင်းနှင့် complete conformance fixture များသာ ကျန်ရှိသည်။ |
 | P0-03 | Structured diagnostics | Done | CLI JSON နှင့် LSP diagnostic များတွင် stable `ZAP-*` code၊ kind၊ severity၊ normalized message၊ source span၊ deterministic notes/help နှင့် deterministic snapshot/regression coverage ပါဝင်သည်။ |
 | P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ tracked `Value::object`၊ `clear_object_fields`၊ `object_field_count`၊ bounded `memory_stats()`၊ object allocation/deallocation counters၊ cycle-safe value validation နှင့် deterministic memory-limit tests များကို ထည့်သွင်းပြီးဖြစ်သည်။ Public weak references၊ closure-level/process-wide telemetry၊ arbitrary cycle အလိုအလျောက် reclaim လုပ်ခြင်းနှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
-| P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor ကို သီးခြားရှင်းပြပြီး production I/O၊ blocking call၊ cancellation နှင့် scheduling boundary များ သတ်မှတ်ရမည်။ |
+| P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor၊ fixed-worker၊ bounded network/process adapter များ၊ cancellation behavior နှင့် descriptive `async_capabilities()` report ကို document/expose လုပ်ပြီးဖြစ်သည်။ Resource-limit preflight validation၊ executor-backed language-level scheduling၊ language-level cancellation/timeout controls၊ cross-platform async matrix coverage နှင့် tooling synchronization တို့သာ ကျန်ရှိသည်။ |
 
 ## P1 — Production readiness
 

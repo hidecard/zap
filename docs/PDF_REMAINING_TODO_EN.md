@@ -23,7 +23,7 @@
 | P0-02 | Consolidated language specification | Partial | `LANGUAGE_SPEC_EN.md` is now the canonical semantic index for syntax, precedence, typing, runtime behavior, compatibility, and version ownership. Full migration of fragmented rules and complete conformance fixtures remain. |
 | P0-03 | Structured diagnostics | Done | CLI JSON and LSP diagnostics expose stable `ZAP-*` code, kind, severity, normalized message, source span, deterministic notes/help, and deterministic snapshot/regression coverage. |
 | P0-04 | Memory and reference-cycle contract | Partial | `Rc<RefCell>` ownership policy, explicit non-thread-safe boundary, tracked `Value::object`, `clear_object_fields`, `object_field_count`, bounded `memory_stats()`, object allocation/deallocation counters, cycle-safe value validation, and deterministic memory-limit tests are implemented. Public weak references, closure-level/process-wide telemetry, automatic arbitrary-cycle reclamation, and tracing collection remain future work. |
-| P0-05 | Deterministic versus production async boundary | Partial | Deterministic executor is documented separately; production I/O, blocking-call, cancellation, and scheduling boundaries are explicit. |
+| P0-05 | Deterministic versus production async boundary | Partial | The deterministic executor, fixed-worker, bounded network/process adapters, cancellation behavior, and descriptive `async_capabilities()` report are documented and exposed. Resource-limit preflight validation, executor-backed language-level scheduling, language-level cancellation/timeout controls, cross-platform async matrix coverage, and tooling synchronization remain. |
 
 ## P1 — Production readiness
 

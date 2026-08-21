@@ -181,6 +181,10 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "async",
     },
     PublicBuiltin {
+        name: "async_capabilities",
+        domain: "async",
+    },
+    PublicBuiltin {
         name: "log_record",
         domain: "logging",
     },

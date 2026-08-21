@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Async boundary hardening
+- Single-threaded executor၊ fixed-worker adapter၊ bounded network/process adapter များ၊ cancellation behavior၊ default limits၊ deferred language-level scheduling/cancellation/timeout နှင့် arbitrary foreign blocking call interrupt မထောက်ပံ့ခြင်းတို့ကို ဖော်ပြသော deterministic `async_capabilities()` builtin နှင့် catalog entry ကို ထည့်သွင်းထားပါသည်။
+- Runtime နှင့် AST regression coverage များကို ထည့်သွင်းပြီး English/Burmese async runtime နှင့် standard-library documentation များကို synchronize လုပ်ထားပါသည်။
+
 ### Memory contract hardening
 - Live object၊ allocation၊ deallocation နှင့် runtime-limit fields များပါသော bounded `memory_stats()` diagnostic ကို ထည့်သွင်းထားပါသည်။
 - Public builtin boundary များတွင် text၊ list၊ map၊ object၊ Result/Option နှင့် Future value များအတွက် cycle-safe validation နှင့် deterministic memory-limit error များကို ထည့်သွင်းထားပါသည်။

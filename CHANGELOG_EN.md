@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Async boundary hardening
+- Added the deterministic `async_capabilities()` builtin and catalog entry describing the single-threaded executor, fixed-worker adapter, bounded network/process adapters, cancellation behavior, default limits, deferred language-level scheduling/cancellation/timeout, and unsupported interruption of arbitrary foreign blocking calls.
+- Added runtime and AST regression coverage and synchronized the English/Burmese async runtime and standard-library documentation.
+
 ### Memory contract hardening
 - Added bounded `memory_stats()` diagnostics with live-object, allocation, deallocation, and runtime-limit fields.
 - Added cycle-safe validation for text, list, map, object, Result/Option, and Future values at public builtin boundaries, with deterministic memory-limit errors.

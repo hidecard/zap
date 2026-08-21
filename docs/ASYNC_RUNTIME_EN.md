@@ -22,6 +22,7 @@ Zap's async runtime currently provides a deterministic, single-threaded executor
 | `spawn(future)` | Language-level facade that accepts a `Future` and returns a task future. |
 | `task_is_ready(task)` | Returns `true` for the current eager language-level future representation; rejects non-future values. |
 | `task_join(task)` | Consumes a language-level task future and returns its completed value; rejects non-future values. |
+| `async_capabilities()` | Returns a stable map describing deterministic executor, worker, network, process, cancellation, limit, and deferred language-level boundaries. |
 
 The runtime remains deterministic: tasks are stored in submission order and are polled by the existing budgeted executor. `spawn_joinable` propagates task-admission errors instead of silently discarding them. The implementation uses Rust 1.75-compatible standard-library primitives and does not create worker threads.
 
@@ -61,8 +62,14 @@ The current evaluator computes async function bodies eagerly and stores their re
 
 `spawn_joinable_result(future)` accepts a future whose output is `Result<T, E>`. The runtime stores either the successful value or the exact typed error, and the caller receives `TaskJoinError::Failed(E)` without string conversion or panic-based propagation. The cancellable variant checks its token before polling the inner future; when cancellation is already requested, the handle resolves to `TaskJoinError::Cancelled` and the task error is not produced.
 
+## Boundary capability report
+
+The zero-argument `async_capabilities()` builtin makes the runtime boundary observable without claiming that every adapter is part of the language-level scheduler. Its stable fields distinguish the single-threaded poll-budget executor, fixed worker adapter, bounded non-blocking TCP adapter, bounded process adapter, terminate-then-drain process cancellation, eager language-level futures, deferred language-level scheduling/cancellation/timeout, and unsupported interruption of arbitrary foreign blocking calls. It also reports the current default worker, read, socket, process-output, and timeout limits.
+
+The report is intentionally descriptive and deterministic. It does not start workers, open sockets, spawn processes, or change task scheduling. Applications must still choose the appropriate adapter and enforce their own deployment policy at the operating-system boundary.
+
 ## Safety and remaining scope
 
-Runtime limits remain explicit through `RuntimeLimits::max_tasks` and `RuntimeLimits::max_polls_per_run`. Structured cancellation, poll-based timeout propagation, typed task error propagation, and the first language-level task facade (`spawn`, `task_join`, and `task_is_ready`) are included in this slice. Executor-backed language-level scheduling, language-level cancellation/timeout controls, and formatter/LSP/VS Code synchronization remain later v2.1-D work.
+Runtime limits remain explicit through `RuntimeLimits::max_tasks` and `RuntimeLimits::max_polls_per_run`. Structured cancellation, poll-based timeout propagation, typed task error propagation, the first language-level task facade (`spawn`, `task_join`, and `task_is_ready`), and the descriptive `async_capabilities()` report are included in this slice. Resource-limit preflight validation, executor-backed language-level scheduling, language-level cancellation/timeout controls, cross-platform async matrix coverage, and formatter/LSP/VS Code synchronization remain later v2.1-D work.
 
 Regression coverage verifies successful output joining, deterministic readiness, propagation of task-limit errors and typed task failures, cancellation precedence before the inner future is polled, repeated joins, and both timeout and completion paths. Cross-platform behavior is limited to standard-library executor semantics and must still be covered by the release verification matrix.

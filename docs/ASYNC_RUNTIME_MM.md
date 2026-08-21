@@ -22,6 +22,7 @@ Zap ၏ async runtime တွင် deterministic ဖြစ်သော single-th
 | `spawn(future)` | Language-level facade အဖြစ် `Future` ကို လက်ခံပြီး task future တစ်ခု ပြန်ပေးသည်။ |
 | `task_is_ready(task)` | လက်ရှိ eager language-level future representation အတွက် `true` ပြန်ပေးပြီး future မဟုတ်သော value များကို ငြင်းပယ်သည်။ |
 | `task_join(task)` | Language-level task future ကို consume လုပ်ပြီး ပြီးမြောက်ထားသော value ကို ပြန်ပေးသည်။ Future မဟုတ်သော value များကို ငြင်းပယ်သည်။ |
+| `async_capabilities()` | Deterministic executor၊ worker၊ network၊ process၊ cancellation၊ limit နှင့် deferred language-level boundary များကို ဖော်ပြသော stable map ကို ပြန်ပေးသည်။ |
 
 Runtime သည် deterministic အတိုင်း ဆက်လက်အလုပ်လုပ်သည်။ Task များကို submit လုပ်သည့်အစဉ်အတိုင်း သိမ်းဆည်းပြီး လက်ရှိ budget သတ်မှတ်ထားသော executor ဖြင့် poll လုပ်သည်။ `spawn_joinable` သည် task လက်ခံမည့်အချိန် error များကို တိတ်တဆိတ်ဖယ်ရှားခြင်းမပြုဘဲ caller ထံ ပြန်ပေးသည်။ Implementation သည် Rust 1.75 နှင့် ကိုက်ညီသော standard-library primitives များကို အသုံးပြုပြီး worker thread များ မဖန်တီးပါ။
 
@@ -61,8 +62,14 @@ let value: number = task_join(task)
 
 `spawn_joinable_result(future)` သည် output အဖြစ် `Result<T, E>` ပြန်ပေးသော future ကို လက်ခံသည်။ Runtime သည် အောင်မြင်သော value သို့မဟုတ် typed error အတိအကျကို သိမ်းဆည်းပြီး string ပြောင်းခြင်း သို့မဟုတ် panic အသုံးပြုခြင်းမရှိဘဲ caller ထံ `TaskJoinError::Failed(E)` ဖြင့် ပြန်ပေးသည်။ Cancellable variant သည် inner future ကို poll မလုပ်မီ token ကို စစ်ဆေးသည်။ Cancellation ကို ကြိုတင်တောင်းဆိုထားပါက handle သည် `TaskJoinError::Cancelled` ဖြင့် resolve လုပ်ပြီး task error ကို မထုတ်ပေးပါ။
 
+## Boundary capability report
+
+Argument မလိုသော `async_capabilities()` builtin သည် adapter တိုင်းကို language-level scheduler ၏ အစိတ်အပိုင်းဟု မဆိုဘဲ runtime boundary ကို observable ဖြစ်စေသည်။ Stable fields များသည် single-threaded poll-budget executor၊ fixed worker adapter၊ bounded non-blocking TCP adapter၊ bounded process adapter၊ terminate-then-drain process cancellation၊ eager language-level future များ၊ deferred language-level scheduling/cancellation/timeout နှင့် arbitrary foreign blocking call များကို interrupt မလုပ်နိုင်ခြင်းတို့ကို ခွဲခြားဖော်ပြသည်။ လက်ရှိ default worker၊ read၊ socket၊ process-output နှင့် timeout limits များကိုလည်း ဖော်ပြသည်။
+
+ဤ report သည် descriptive နှင့် deterministic သာ ဖြစ်သည်။ Worker မစတင်ပါ၊ socket/process မဖန်တီးပါ၊ task scheduling ကိုလည်း မပြောင်းလဲပါ။ Application သည် သင့်လျော်သော adapter ကို ကိုယ်တိုင်ရွေးချယ်ပြီး operating-system boundary တွင် deployment policy ကို သတ်မှတ်ရမည်။
+
 ## လုံခြုံရေးနှင့် ကျန်ရှိသော scope
 
-`RuntimeLimits::max_tasks` နှင့် `RuntimeLimits::max_polls_per_run` မှတစ်ဆင့် runtime limits များကို တိတိကျကျ သတ်မှတ်နိုင်သည်။ Structured cancellation၊ poll-based timeout propagation၊ typed task error propagation နှင့် ပထမဆုံး language-level task facade (`spawn`၊ `task_join` နှင့် `task_is_ready`) များသည် ဤ slice တွင် ပါဝင်ပြီးဖြစ်သည်။ Executor-backed language-level scheduling၊ language-level cancellation/timeout controls နှင့် formatter/LSP/VS Code synchronization များသည် v2.1-D ၏ နောက်ပိုင်းအဆင့်များအဖြစ် ကျန်ရှိနေသည်။
+`RuntimeLimits::max_tasks` နှင့် `RuntimeLimits::max_polls_per_run` မှတစ်ဆင့် runtime limits များကို တိတိကျကျ သတ်မှတ်နိုင်သည်။ Structured cancellation၊ poll-based timeout propagation၊ typed task error propagation၊ ပထမဆုံး language-level task facade (`spawn`၊ `task_join` နှင့် `task_is_ready`) နှင့် descriptive `async_capabilities()` report များသည် ဤ slice တွင် ပါဝင်ပြီးဖြစ်သည်။ Resource-limit preflight validation၊ executor-backed language-level scheduling၊ language-level cancellation/timeout controls၊ cross-platform async matrix coverage နှင့် formatter/LSP/VS Code synchronization များသည် v2.1-D ၏ နောက်ပိုင်းအဆင့်များအဖြစ် ကျန်ရှိနေသည်။
 
 Regression coverage သည် output join အောင်မြင်မှု၊ deterministic readiness၊ task-limit နှင့် typed task failure propagation၊ inner future ကို မ poll မလုပ်မီ cancellation precedence၊ repeated join နှင့် timeout/completion လမ်းကြောင်းနှစ်ခုလုံးကို စစ်ဆေးထားသည်။ Cross-platform behavior သည် standard-library executor semantics အတွင်းသာ လောလောဆယ် အကျုံးဝင်ပြီး release verification matrix ဖြင့် ဆက်လက်စစ်ဆေးရန် လိုအပ်သည်။

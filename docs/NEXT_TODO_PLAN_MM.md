@@ -4,7 +4,22 @@
 
 **ရည်ရွယ်ချက်:** Stable diagnostic contract ပြီးစီးပြီးနောက် ဆက်လက်အကောင်အထည်ဖော်ရမည့် အစီအစဉ်ကို သတ်မှတ်ရန် ဖြစ်သည်။ ပြီးစီးပြီးသား release အလုပ်များကို ထပ်မတွက်ဘဲ ကျန်ရှိနေသော TODO register ကို executable milestone များအဖြစ် ခွဲထားသည်။
 
-**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` builtin၊ cycle-safe value validation၊ deterministic text/list/map/value-graph limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ Public weak references၊ closure-level/process-wide telemetry၊ arbitrary cycle အလိုအလျောက် reclaim လုပ်ခြင်းနှင့် tracing collection တို့ကို deferred ထားသည်။
+**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` diagnostics၊ cycle-safe value validation၊ deterministic value limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-A ၏ ပထမ slice လည်း ပြီးစီးထားသည်။ Descriptive deterministic `async_capabilities()` builtin၊ catalog entry၊ runtime/AST tests နှင့် async/stdlib documentation synchronization များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05 resource-limit preflight၊ cross-platform matrix coverage၊ executor-backed language scheduling နှင့် language-level cancellation/timeout controls တို့သာ ကျန်ရှိသည်။
+
+## နောက်ထပ် P0/P1 execution queue
+
+P0-04 ၏ ပထမ slice ပြီးစီးပြီးနောက် နောက်အလုပ်များကို feature အရွယ်အစားအစား runtime risk အလိုက် အောက်ပါအတိုင်း စီစဉ်ထားသည်။
+
+| အစီအစဉ် | Work package | Implementation slice | Acceptance evidence |
+|---|---|---|---|
+| P0-05-A | Async boundary capability contract | Deterministic `async_capabilities()` report ထည့်ရန်၊ executor/worker/network/process/cancellation boundary များကို document လုပ်ရန်၊ language-level cancellation/timeout မထောက်ပံ့သေးကြောင်း explicit ပြရန် | Stable capability map၊ bilingual contract၊ AST/runtime tests နှင့် eager future များကို executor-backed ဟု မဆိုခြင်း |
+| P0-05-B | Async resource-limit validation | Worker/task/read/socket/process limits များကို admission မတိုင်မီ စစ်ရန်၊ deadline/output/cancellation behavior ကို fail-closed ထိန်းရန် | Invalid-limit tests၊ deterministic errors နှင့် bounded process cleanup |
+| P0-05-C | Cross-platform async matrix | Linux၊ Windows နှင့် macOS target များတွင် path၊ process၊ socket၊ deadline၊ cancellation နှင့် output-limit behavior များ စစ်ရန် | Target-native CI evidence သို့မဟုတ် versioned documented limitation |
+| P1-05-A | Replayable verification layers | Parser၊ JSON၊ lockfile၊ registry၊ memory နှင့် async boundary များအတွက် fixed-seed property/fuzz replay နှင့် durable failure fixtures ထည့်ရန် | CI artifact တွင် seed/input ပါပြီး repeated run များ deterministic ဖြစ်ခြင်း |
+| P0-01-A | Native/legacy parity report | Legacy fixture များကို ခွဲခြားပြီး ခွင့်မပြုထားသော semantic drift ကို gate လုပ်ရန် | Versioned parity matrix နှင့် executable CI report |
+| P0-02-A | Specification ownership index | Public syntax၊ typing၊ runtime၊ limit နှင့် error rule များကို canonical bilingual sections/fixtures များနှင့် map လုပ်ရန် | Normative rule တစ်ခုမျှ owner မရှိဘဲ မကျန်ခြင်းနှင့် rule တိုင်း fixture owner ရှိခြင်း |
+
+P0/P1 safety gates များပြီးနောက် P2-02 standard-library stability၊ P2-03 LSP/VS Code parity နှင့် P2-04 documentation navigation ကို ဆက်လုပ်မည်။ P2-01 traits/composition သည် conformance/specification contract များ မပြီးမချင်း RFC-only milestone အဖြစ် ဆက်ရှိမည်။
 
 ## အစီအစဉ်ရေးဆွဲမှု မူဝါဒ
 
@@ -133,7 +148,7 @@ RFC တွင် ဘာသာနှစ်မျိုး terminology၊ examples
 
 ## ချက်ချင်းဆက်လုပ်ရမည့်အလုပ်
 
-နောက်ထပ် implementation slice သည် **M1.1 / P0-04 Memory နှင့် reference-cycle contract** ကို ဆက်လက်ပြီး weak-reference နှင့် closure/process-wide telemetry များကို future runtime boundary ထဲ ထည့်သင့်/မထည့်သင့် ဆုံးဖြတ်ခြင်း၊ platform-specific memory-limit fixtures နှင့် closure-capture fixtures များ တိုးချဲ့ခြင်း ဖြစ်ရမည်။ M1 နှင့် M2 reliability gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
+နောက်ထပ် implementation slice သည် **P0-05-A Async boundary capability contract** ဖြစ်ရမည်။ Capability report နှင့် boundary table ကို အရင်ထည့်ပြီးနောက် P0-05-B resource-limit validation နှင့် P0-05-C cross-platform coverage ကို ဆက်လုပ်ရမည်။ P0/P1 safety gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
 
 ## ဆက်စပ်မှတ်တမ်းများ
 

@@ -13,6 +13,7 @@ use std::{
 };
 
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
+use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
@@ -340,6 +341,89 @@ pub(crate) fn value_type_name(value: &Value) -> &'static str {
     }
 }
 
+fn async_capabilities_value() -> Value {
+    let workers = ThreadRuntimeLimits::default();
+    let adapters = AdapterLimits::default();
+    let mut values = HashMap::new();
+    values.insert(
+        "deterministic_executor".into(),
+        Value::Text("single_threaded_poll_budget".into()),
+    );
+    values.insert(
+        "worker_adapter".into(),
+        Value::Text("fixed_worker_set".into()),
+    );
+    values.insert(
+        "network_adapter".into(),
+        Value::Text("bounded_nonblocking_tcp".into()),
+    );
+    values.insert(
+        "process_adapter".into(),
+        Value::Text("bounded_deadline_output".into()),
+    );
+    values.insert(
+        "process_cancellation".into(),
+        Value::Text("terminate_then_drain".into()),
+    );
+    values.insert(
+        "language_task_surface".into(),
+        Value::Text("eager_future_facade".into()),
+    );
+    values.insert(
+        "language_level_scheduling".into(),
+        Value::Text("deferred".into()),
+    );
+    values.insert(
+        "language_level_cancellation".into(),
+        Value::Text("deferred".into()),
+    );
+    values.insert(
+        "language_level_timeout".into(),
+        Value::Text("deferred".into()),
+    );
+    values.insert(
+        "foreign_blocking_interrupt".into(),
+        Value::Text("unsupported".into()),
+    );
+    values.insert(
+        "deterministic_max_tasks".into(),
+        Value::Text("unbounded_by_default".into()),
+    );
+    values.insert(
+        "deterministic_max_polls_per_run".into(),
+        Value::Text("unbounded_by_default".into()),
+    );
+    values.insert(
+        "worker_max_workers".into(),
+        Value::Number(workers.max_workers as i64),
+    );
+    values.insert(
+        "worker_max_tasks".into(),
+        Value::Number(workers.max_tasks as i64),
+    );
+    values.insert(
+        "max_read_bytes".into(),
+        Value::Number(workers.max_read_bytes as i64),
+    );
+    values.insert(
+        "max_socket_bytes".into(),
+        Value::Number(adapters.max_socket_bytes as i64),
+    );
+    values.insert(
+        "socket_timeout_ms".into(),
+        Value::Number(adapters.socket_timeout.as_millis() as i64),
+    );
+    values.insert(
+        "max_process_output_bytes".into(),
+        Value::Number(adapters.max_process_output_bytes as i64),
+    );
+    values.insert(
+        "process_timeout_ms".into(),
+        Value::Number(adapters.process_timeout.as_millis() as i64),
+    );
+    Value::Map(values)
+}
+
 pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
     if name != "memory_stats" {
         for value in &args {
@@ -357,6 +441,10 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
     };
     match name {
+        "async_capabilities" => {
+            expect(0)?;
+            Ok(Some(async_capabilities_value()))
+        }
         "memory_stats" => {
             expect(0)?;
             Ok(Some(Value::memory_stats_value()))
@@ -3807,6 +3895,58 @@ mod tests {
             .expect_err("spawn should reject non-future values");
         assert_eq!(error, "spawn expects a future value");
     }
+    #[test]
+    fn async_capabilities_builtin_reports_explicit_boundaries() {
+        let Value::Map(capabilities) = direct_builtin("async_capabilities", vec![])
+            .expect("async_capabilities should succeed")
+            .expect("async_capabilities should return a value")
+        else {
+            panic!("async_capabilities should return a map");
+        };
+        assert_eq!(
+            capabilities.get("deterministic_executor"),
+            Some(&Value::Text("single_threaded_poll_budget".into()))
+        );
+        assert_eq!(
+            capabilities.get("language_task_surface"),
+            Some(&Value::Text("eager_future_facade".into()))
+        );
+        assert_eq!(
+            capabilities.get("language_level_cancellation"),
+            Some(&Value::Text("deferred".into()))
+        );
+        assert_eq!(
+            capabilities.get("foreign_blocking_interrupt"),
+            Some(&Value::Text("unsupported".into()))
+        );
+        assert!(matches!(
+            capabilities.get("worker_max_workers"),
+            Some(Value::Number(value)) if *value > 0
+        ));
+        assert_eq!(
+            direct_builtin("async_capabilities", vec![Value::None])
+                .expect_err("async_capabilities must reject arguments"),
+            "async_capabilities expects 0 arguments, got 1"
+        );
+    }
+
+    #[test]
+    fn evaluates_async_capabilities_from_native_ast() {
+        let program = parse_program("let boundary = async_capabilities()\n")
+            .expect("async_capabilities program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("async_capabilities should execute from Zap source");
+        let Value::Map(boundary) = vars.get("boundary").expect("capability result") else {
+            panic!("async_capabilities should return a map");
+        };
+        assert_eq!(
+            boundary.get("process_cancellation"),
+            Some(&Value::Text("terminate_then_drain".into()))
+        );
+    }
+
     #[test]
     fn memory_stats_builtin_reports_bounded_contract() {
         let Value::Map(stats) = direct_builtin("memory_stats", vec![])
