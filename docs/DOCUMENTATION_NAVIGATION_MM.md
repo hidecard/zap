@@ -22,7 +22,8 @@
 | Language semantics | [Language specification](LANGUAGE_SPEC_MM.md) | [Specification ownership index](SPEC_OWNERSHIP_INDEX.tsv) |
 | Diagnostics | [Diagnostic model](DIAGNOSTIC_MODEL_MM.md) | Native diagnostic tests |
 | Memory and borrowing | [Memory model](MEMORY_MODEL_MM.md) | Borrow နှင့် memory-limit regressions |
-| Runtime state | [Runtime state and execution context](RUNTIME_STATE_MM.md) | Runtime-state isolation နှင့် reset regressions |
+| Runtime state | [Runtime state and execution context](RUNTIME_STATE_MM.md) | Runtime-state isolation၊ workspace နှင့် reset regressions |
+| AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_MM.md) | Canonical AST၊ export နှင့် compatibility-boundary regressions |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_MM.md) | Async runtime နှင့် adapter tests |
 | Standard library | [Stdlib index](STDLIB_INDEX_MM.md) | Builtin catalog နှင့် security corpus |
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_MM.md) | `scripts/test_p001_parity.sh` |

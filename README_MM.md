@@ -16,7 +16,7 @@
 
 > **Zap** သည် `.zp` source file များကို အသုံးပြုသည့် ဖတ်ရလွယ်ကူပြီး standalone native runtime ပါဝင်သော general-purpose programming language ဖြစ်သည်။
 
-Zap ကို စတင်လေ့လာသူများအတွက် ရိုးရှင်းပြီး နားလည်ရလွယ်ကူစေရန် ရည်ရွယ်ထားပါသည်။ Indentation-based blocks၊ variables၊ functions၊ collections၊ conditions၊ loops၊ classes၊ modules၊ type annotations နှင့် Result/Option values များကို language core ထဲတွင် ထည့်သွင်းထားပါသည်။ Native source run တစ်ကြိမ်စီတွင် module cache၊ import cycle နှင့် execution depth မရောနှောစေရန် explicit `ExecutionContext` တစ်ခုကို အသုံးပြုပါသည်။ Normal source program နှင့် local module များသည် canonical AST boundary မှတစ်ဆင့်သာ execute လုပ်ပြီး line interpreter ကို older line-bodied function record များအတွက် compatibility boundary အဖြစ်သာ ထားရှိပါသည်။
+Zap ကို စတင်လေ့လာသူများအတွက် ရိုးရှင်းပြီး နားလည်ရလွယ်ကူစေရန် ရည်ရွယ်ထားပါသည်။ Indentation-based blocks၊ variables၊ functions၊ collections၊ conditions၊ loops၊ classes၊ modules၊ type annotations နှင့် Result/Option values များကို language core ထဲတွင် ထည့်သွင်းထားပါသည်။ Native source run တစ်ကြိမ်စီတွင် module cache၊ import cycle၊ execution depth နှင့် workspace confinement မရောနှောစေရန် explicit `ExecutionContext` တစ်ခုကို အသုံးပြုပါသည်။ LSP server သည် open document များကို per-session `LspState` ထဲတွင် ပိုင်ဆိုင်ပါသည်။ Normal source program နှင့် local module များသည် canonical AST boundary မှတစ်ဆင့်သာ execute လုပ်ပြီး line interpreter ကို older line-bodied function record များအတွက် compatibility boundary အဖြစ်သာ ထားရှိပါသည်။
 
 ## Project Status
 
@@ -33,7 +33,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Documentation hub | [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) · [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) |
 | Runtime-state contract | [မြန်မာ](docs/RUNTIME_STATE_MM.md) · [English](docs/RUNTIME_STATE_EN.md) |
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
-| Runtime architecture | `runtime_state.rs` တွင် per-run `RuntimeState`၊ module-cache isolation၊ import-cycle tracking နှင့် execution-depth accounting ကို ပထမအဆင့် အကောင်အထည်ဖော်ထားပါသည် |
+| Runtime architecture | `runtime_state.rs` တွင် per-run `RuntimeState`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking နှင့် execution-depth accounting ကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -45,7 +45,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 ## Why Zap?
 
-Zap သည် language core ကို သေးငယ်၊ ရှင်းလင်းပြီး လေ့လာရလွယ်ကူအောင် တည်ဆောက်ထားပါသည်။ `.zp` file များကို native executable ဖြင့် တိုက်ရိုက် run နိုင်ပြီး parser ပိုင် source များကို canonical AST ဖြင့် execute လုပ်ပါသည်။ Per-run module/execution state ကို explicit runtime context ဖြင့် ခွဲခြားထားပြီး legacy line execution ကို compatibility-only boundary အဖြစ် ကန့်သတ်ထားပါသည်။ နောင်တွင် web၊ AI၊ mobile နှင့် IoT libraries များ တည်ဆောက်ရန် foundation အဖြစ် အသုံးပြုနိုင်ပါသည်။
+Zap သည် language core ကို သေးငယ်၊ ရှင်းလင်းပြီး လေ့လာရလွယ်ကူအောင် တည်ဆောက်ထားပါသည်။ `.zp` file များကို native executable ဖြင့် တိုက်ရိုက် run နိုင်ပြီး parser ပိုင် source များကို canonical AST ဖြင့် execute လုပ်ပါသည်။ Per-run workspace/module/execution state ကို explicit runtime context ဖြင့် ခွဲခြားထားပြီး LSP document state ကို per-session `LspState` ဖြင့် ပိုင်ဆိုင်ထားပါသည်။ Legacy line execution ကို compatibility-only boundary အဖြစ် ကန့်သတ်ထားပါသည်။ နောင်တွင် web၊ AI၊ mobile နှင့် IoT libraries များ တည်ဆောက်ရန် foundation အဖြစ် အသုံးပြုနိုင်ပါသည်။
 
 ## Installation
 

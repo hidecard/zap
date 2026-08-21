@@ -14,7 +14,7 @@
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
-Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow. Each native source run now receives an explicit `ExecutionContext` for module-cache, import-cycle, and execution-depth isolation. Normal source programs and local modules execute through the canonical AST boundary; the line interpreter remains only as a compatibility boundary for older line-bodied function records.
+Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow. Each native source run now receives an explicit `ExecutionContext` for module-cache, import-cycle, execution-depth, and workspace-confinement isolation. The LSP server owns open documents in an explicit per-session `LspState`. Normal source programs and local modules execute through the canonical AST boundary; the line interpreter remains only as a compatibility boundary for older line-bodied function records.
 
 ## Project Status
 
@@ -53,15 +53,15 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `ast.rs` | Source-span AST, canonical source dispatch, exports, and native module execution | Implemented |
 | `value.rs` | Runtime values, functions, classes, and object model | Implemented |
 | `evaluator.rs` | Evaluation, functions, methods, modules, and control flow | Implemented |
-| `runtime_state.rs` | Per-run `RuntimeState`, module-cache isolation, import-cycle tracking, and execution-depth accounting | Implemented first slice |
+| `runtime_state.rs` | Per-run `RuntimeState`, workspace-root ownership, module-cache isolation, import-cycle tracking, and execution-depth accounting | Implemented migration slice |
 | `stdlib.rs` | Text, math, collection, filesystem, JSON, environment, path, and time built-in operations | Stabilized initial API surface |
 | `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
 | `project.rs` | Project, manifest, lockfile, dependency graph, metadata, and module validation | Implemented |
 | `cli.rs` | CLI command orchestration, async-check, LSP entry point, and exit codes | Implemented |
 | `async_runtime.rs` | Stable-Rust-compatible deterministic single-thread future executor foundation | Implemented foundation |
-| `lsp.rs` | Content-Length JSON-RPC server, diagnostics, hover, and context-aware completion | Implemented foundation |
+| `lsp.rs` | Content-Length JSON-RPC server, per-session `LspState`, diagnostics, hover, and context-aware completion | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains. The native runtime includes async foundations, stdio LSP/editor integration, an explicit first-slice runtime-state boundary for per-run module and execution state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains. The native runtime includes async foundations, stdio LSP/editor integration, explicit runtime-state ownership for per-run workspace/module/execution state, per-session LSP document state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
 Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and registry artifacts are checksum-verified with offline reuse through `ZAP_OFFLINE=1`. The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?

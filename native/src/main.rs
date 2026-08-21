@@ -31,7 +31,7 @@ mod stdlib_catalog;
 
 use evaluator::{
     call_function_with_context, call_method_with_context, check_method_visibility,
-    constructor_delegates_to_parent, direct_builtin, direct_external_builtin, duration_value,
+    constructor_delegates_to_parent, direct_builtin, duration_value,
     execute_ast_program_with_context, initialize_object_fields, json_to_value, operate,
     utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
 };
@@ -1079,7 +1079,9 @@ impl<'a> ExprParser<'a> {
                 self.take();
                 if let Some(value) = direct_builtin(&n, args.clone())? {
                     value
-                } else if let Some(value) = direct_external_builtin(&n, &args)? {
+                } else if let Some(value) =
+                    evaluator::direct_external_builtin_with_context(&n, &args, Some(self.context))?
+                {
                     value
                 } else {
                     let f = self

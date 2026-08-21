@@ -1,4 +1,9 @@
-use std::{cell::Cell, collections::HashMap, path::PathBuf, rc::Rc};
+use std::{
+    cell::Cell,
+    collections::HashMap,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
 use crate::{Function, Value};
 
@@ -10,6 +15,7 @@ pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<F
 /// tracking, and execution-depth accounting instead of process-global state.
 #[derive(Debug, Default)]
 pub(crate) struct RuntimeState {
+    workspace_root: Option<PathBuf>,
     module_loading: Vec<PathBuf>,
     module_cache: HashMap<PathBuf, ModuleCacheEntry>,
     execution_depth: Rc<Cell<usize>>,
@@ -18,6 +24,7 @@ pub(crate) struct RuntimeState {
 impl RuntimeState {
     pub(crate) fn new() -> Self {
         Self {
+            workspace_root: None,
             module_loading: Vec::new(),
             module_cache: HashMap::new(),
             execution_depth: Rc::new(Cell::new(0)),
@@ -25,9 +32,18 @@ impl RuntimeState {
     }
 
     pub(crate) fn reset_for_run(&mut self) {
+        self.workspace_root = None;
         self.module_loading.clear();
         self.module_cache.clear();
         self.execution_depth.set(0);
+    }
+
+    pub(crate) fn workspace_root(&self) -> Option<&Path> {
+        self.workspace_root.as_deref()
+    }
+
+    pub(crate) fn set_workspace_root(&mut self, root: PathBuf) {
+        self.workspace_root = Some(root);
     }
 
     pub(crate) fn module_loading(&self) -> &[PathBuf] {
@@ -90,6 +106,7 @@ impl ExecutionContext {
 #[cfg(test)]
 mod tests {
     use super::ExecutionContext;
+    use std::path::Path;
 
     #[test]
     fn independent_contexts_do_not_share_runtime_state() {
@@ -103,6 +120,7 @@ mod tests {
         first.state_mut().increment_execution_depth();
 
         assert!(second.state().module_loading().is_empty());
+        assert!(second.state().workspace_root().is_none());
         assert_eq!(second.state().execution_depth(), 0);
         assert_eq!(first.state().execution_depth(), 1);
     }
@@ -112,11 +130,15 @@ mod tests {
         let mut context = ExecutionContext::new();
         context
             .state_mut()
+            .set_workspace_root(Path::new("/workspace").into());
+        context
+            .state_mut()
             .module_loading_mut()
             .push("module.zp".into());
         context.state_mut().increment_execution_depth();
         context.reset_for_run();
 
+        assert!(context.state().workspace_root().is_none());
         assert!(context.state().module_loading().is_empty());
         assert!(context.state().module_cache().is_empty());
         assert_eq!(context.state().execution_depth(), 0);

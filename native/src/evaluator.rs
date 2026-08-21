@@ -36,65 +36,55 @@ pub(crate) struct CallArgument {
     pub(crate) value: Value,
 }
 
-thread_local! {
-    static WORKSPACE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
-}
-
 struct ExecutionGuard {
     depth: Rc<Cell<usize>>,
 }
 
-struct WorkspaceGuard {
-    previous: Option<PathBuf>,
-}
-
-impl Drop for WorkspaceGuard {
-    fn drop(&mut self) {
-        let previous = self.previous.take();
-        WORKSPACE_ROOT.with(|root| *root.borrow_mut() = previous);
+fn enter_workspace(context: &mut ExecutionContext, base: &Path) -> Result<(), String> {
+    if context.state().workspace_root().is_some() {
+        return Ok(());
     }
-}
-
-fn enter_workspace(base: &Path) -> Result<WorkspaceGuard, String> {
     let root = fs::canonicalize(base)
         .map_err(|error| format!("workspace root is not accessible: {error}"))?;
     if !root.is_dir() {
         return Err("workspace root must be a directory".into());
     }
-    let previous = WORKSPACE_ROOT.with(|current| current.borrow_mut().replace(root));
-    Ok(WorkspaceGuard { previous })
+    context.state_mut().set_workspace_root(root);
+    Ok(())
 }
 
-fn confined_path(path: &Path, operation: &str) -> Result<PathBuf, String> {
-    WORKSPACE_ROOT.with(|root| {
-        let Some(workspace) = root.borrow().as_ref().cloned() else {
-            return Ok(path.to_path_buf());
-        };
-        let candidate = if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            workspace.join(path)
-        };
-        let resolved = if fs::symlink_metadata(&candidate).is_ok() {
-            fs::canonicalize(&candidate).map_err(|error| {
-                format!("{operation} failed: path cannot be safely resolved: {error}")
-            })?
-        } else {
-            let parent = candidate.parent().unwrap_or_else(|| Path::new("."));
-            let canonical_parent = fs::canonicalize(parent).map_err(|error| {
-                format!("{operation} failed: parent cannot be safely resolved: {error}")
-            })?;
-            canonical_parent.join(
-                candidate
-                    .file_name()
-                    .ok_or_else(|| format!("{operation} failed: expects a valid file path"))?,
-            )
-        };
-        if !resolved.starts_with(&workspace) {
-            return Err(format!("{operation} failed: path escapes the workspace"));
-        }
-        Ok(resolved)
-    })
+fn confined_path(
+    path: &Path,
+    operation: &str,
+    context: Option<&ExecutionContext>,
+) -> Result<PathBuf, String> {
+    let Some(workspace) = context.and_then(|context| context.state().workspace_root()) else {
+        return Ok(path.to_path_buf());
+    };
+    let candidate = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        workspace.join(path)
+    };
+    let resolved = if fs::symlink_metadata(&candidate).is_ok() {
+        fs::canonicalize(&candidate).map_err(|error| {
+            format!("{operation} failed: path cannot be safely resolved: {error}")
+        })?
+    } else {
+        let parent = candidate.parent().unwrap_or_else(|| Path::new("."));
+        let canonical_parent = fs::canonicalize(parent).map_err(|error| {
+            format!("{operation} failed: parent cannot be safely resolved: {error}")
+        })?;
+        canonical_parent.join(
+            candidate
+                .file_name()
+                .ok_or_else(|| format!("{operation} failed: expects a valid file path"))?,
+        )
+    };
+    if !resolved.starts_with(workspace) {
+        return Err(format!("{operation} failed: path escapes the workspace"));
+    }
+    Ok(resolved)
 }
 
 impl Drop for ExecutionGuard {
@@ -922,8 +912,11 @@ fn require_capability_for_mode(capability: &str, restricted: bool) -> Result<(),
 
 static ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
-fn file_metadata(path: &Path) -> Result<Value, String> {
-    let path = confined_path(path, "file_metadata")?;
+fn file_metadata_with_context(
+    path: &Path,
+    context: Option<&ExecutionContext>,
+) -> Result<Value, String> {
+    let path = confined_path(path, "file_metadata", context)?;
     let metadata =
         fs::symlink_metadata(path).map_err(|error| format!("file_metadata failed: {error}"))?;
     let file_type = metadata.file_type();
@@ -946,8 +939,17 @@ fn file_metadata(path: &Path) -> Result<Value, String> {
     ]))
 }
 
-fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
-    let path = confined_path(path, "atomic_write")?;
+#[cfg(test)]
+fn file_metadata(path: &Path) -> Result<Value, String> {
+    file_metadata_with_context(path, None)
+}
+
+fn atomic_write_with_context(
+    path: &Path,
+    content: &str,
+    context: Option<&ExecutionContext>,
+) -> Result<(), String> {
+    let path = confined_path(path, "atomic_write", context)?;
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(format!(
             "atomic_write content exceeds the {MAX_FILE_BYTES} byte limit"
@@ -989,7 +991,21 @@ fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
     result
 }
 
+#[cfg(test)]
+fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
+    atomic_write_with_context(path, content, None)
+}
+
+#[cfg(test)]
 fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    direct_io_builtin_with_context(name, args, None)
+}
+
+fn direct_io_builtin_with_context(
+    name: &str,
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Option<Value>, String> {
     if matches!(
         name,
         "read_text"
@@ -1012,7 +1028,7 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
             let Value::Text(path) = &args[0] else {
                 return Err("file_metadata expects a text path".into());
             };
-            Ok(Some(file_metadata(Path::new(path))?))
+            Ok(Some(file_metadata_with_context(Path::new(path), context)?))
         }
         "atomic_write" => {
             if args.len() != 2 {
@@ -1024,7 +1040,7 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
             let (Value::Text(path), Value::Text(content)) = (&args[0], &args[1]) else {
                 return Err("atomic_write expects text path and content".into());
             };
-            atomic_write(Path::new(path), content)?;
+            atomic_write_with_context(Path::new(path), content, context)?;
             Ok(Some(Value::None))
         }
         "read_text" => {
@@ -1035,7 +1051,7 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
                 return Err("read_text expects a text path".into());
             };
             Ok(Some(Value::Text(read_limited_text(
-                &confined_path(Path::new(path), "read_text")?,
+                &confined_path(Path::new(path), "read_text", context)?,
                 "read_text",
             )?)))
         }
@@ -1050,7 +1066,7 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
                 return Err("write_text expects text path and content".into());
             };
             write_limited_text(
-                &confined_path(Path::new(path), "write_text")?,
+                &confined_path(Path::new(path), "write_text", context)?,
                 content,
                 "write_text",
             )?;
@@ -1064,10 +1080,13 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
                 return Err("read_lines expects a text path".into());
             };
             Ok(Some(Value::List(
-                read_limited_text(Path::new(path), "read_lines")?
-                    .lines()
-                    .map(|line| Value::Text(line.to_string()))
-                    .collect(),
+                read_limited_text(
+                    &confined_path(Path::new(path), "read_lines", context)?,
+                    "read_lines",
+                )?
+                .lines()
+                .map(|line| Value::Text(line.to_string()))
+                .collect(),
             )))
         }
         "write_lines" => {
@@ -1090,14 +1109,22 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
                 }
                 output.push_str(line);
             }
-            write_limited_text(Path::new(path), &output, "write_lines")?;
+            write_limited_text(
+                &confined_path(Path::new(path), "write_lines", context)?,
+                &output,
+                "write_lines",
+            )?;
             Ok(Some(Value::None))
         }
         _ => Ok(None),
     }
 }
 
-fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+fn direct_system_builtin_with_context(
+    name: &str,
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Option<Value>, String> {
     if matches!(
         name,
         "env" | "has_env" | "env_get" | "config_dir" | "config_path"
@@ -1181,7 +1208,7 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
                 return Err("exists expects a text path".into());
             };
             Ok(Some(Value::Bool(
-                confined_path(Path::new(path), "exists").is_ok_and(|path| path.exists()),
+                confined_path(Path::new(path), "exists", context).is_ok_and(|path| path.exists()),
             )))
         }
         "path_join" => {
@@ -1811,11 +1838,15 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     ]))
 }
 
-pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
-    if let Some(value) = direct_io_builtin(name, args)? {
+pub(crate) fn direct_external_builtin_with_context(
+    name: &str,
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Option<Value>, String> {
+    if let Some(value) = direct_io_builtin_with_context(name, args, context)? {
         return Ok(Some(value));
     }
-    if let Some(value) = direct_system_builtin(name, args)? {
+    if let Some(value) = direct_system_builtin_with_context(name, args, context)? {
         return Ok(Some(value));
     }
     match name {
@@ -1860,6 +1891,11 @@ pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Opti
         }
         _ => Ok(None),
     }
+}
+
+#[cfg(test)]
+pub(crate) fn direct_external_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String> {
+    direct_external_builtin_with_context(name, args, None)
 }
 
 fn is_same_or_subclass(current: &str, target: &str, funcs: &HashMap<String, Rc<Function>>) -> bool {
@@ -2188,11 +2224,17 @@ fn ast_expression_with_context(
                         .collect::<Vec<_>>();
                     if let Some(value) = direct_builtin(name, positional.clone())? {
                         Ok(value)
-                    } else if let Some(value) = direct_io_builtin(name, &positional)? {
+                    } else if let Some(value) =
+                        direct_io_builtin_with_context(name, &positional, Some(context))?
+                    {
                         Ok(value)
-                    } else if let Some(value) = direct_system_builtin(name, &positional)? {
+                    } else if let Some(value) =
+                        direct_system_builtin_with_context(name, &positional, Some(context))?
+                    {
                         Ok(value)
-                    } else if let Some(value) = direct_external_builtin(name, &positional)? {
+                    } else if let Some(value) =
+                        direct_external_builtin_with_context(name, &positional, Some(context))?
+                    {
                         Ok(value)
                     } else {
                         expression_with_context(&ast_expr_source(node), vars, funcs, context)
@@ -2984,7 +3026,7 @@ pub(crate) fn execute_ast_program_with_context(
     context: &mut ExecutionContext,
     base: &Path,
 ) -> Result<Flow, String> {
-    let _workspace = enter_workspace(base)?;
+    enter_workspace(context, base)?;
     debug_assert!(ast_program_compatible(program));
     let _guard = enter_execution(
         &program
@@ -3769,7 +3811,7 @@ mod tests {
     };
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
-    use crate::{Function, Value};
+    use crate::{ExecutionContext, Function, Value};
     use std::{
         collections::HashMap,
         fs,
@@ -4266,6 +4308,39 @@ mod tests {
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_dir_all(workspace);
+    }
+
+    #[test]
+    fn workspace_confinement_is_owned_by_execution_context() {
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let first_root = std::env::temp_dir().join(format!("zap-workspace-first-{suffix}"));
+        let second_root = std::env::temp_dir().join(format!("zap-workspace-second-{suffix}"));
+        fs::create_dir_all(&first_root).expect("first workspace");
+        fs::create_dir_all(&second_root).expect("second workspace");
+        fs::write(first_root.join("marker.txt"), "first").expect("first marker");
+        fs::write(second_root.join("marker.txt"), "second").expect("second marker");
+
+        let mut first = ExecutionContext::new();
+        let mut second = ExecutionContext::new();
+        super::enter_workspace(&mut first, &first_root).expect("first root should be accepted");
+        super::enter_workspace(&mut second, &second_root).expect("second root should be accepted");
+        let args = [Value::Text("marker.txt".into())];
+        assert_eq!(
+            super::direct_io_builtin_with_context("read_text", &args, Some(&first))
+                .expect("first read"),
+            Some(Value::Text("first".into()))
+        );
+        assert_eq!(
+            super::direct_io_builtin_with_context("read_text", &args, Some(&second))
+                .expect("second read"),
+            Some(Value::Text("second".into()))
+        );
+
+        let _ = fs::remove_dir_all(first_root);
+        let _ = fs::remove_dir_all(second_root);
     }
 
     #[test]

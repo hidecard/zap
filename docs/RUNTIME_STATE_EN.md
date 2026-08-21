@@ -15,28 +15,29 @@ Each source execution receives its own `ExecutionContext`. The context owns muta
 | Module cache | `RuntimeState` | Cached module values and functions live only for the current execution context. |
 | Import-cycle stack | `RuntimeState` | The active module chain is tracked explicitly and is cleared when a run is reset. |
 | Execution depth | `RuntimeState` | Nested AST and legacy execution share one bounded counter for the context. |
-| Source workspace confinement | Existing evaluator boundary | Path confinement remains a separate compatibility boundary in this slice. |
+| Source workspace confinement | `RuntimeState` | The canonical workspace root is fixed for the context, inherited by nested module/function calls, and cleared on run reset. |
+| LSP open documents | `LspState` | Each LSP server session owns its document map; independent server states do not share open-document contents. |
 | Heap statistics and object ownership | Existing value boundary | Memory accounting remains governed by the existing bounded memory contract. |
 
 ## ExecutionContext flow
 
-The native entrypoint creates an `ExecutionContext` at the beginning of a run and resets it before evaluating source. The context is passed through the expression parser, AST evaluator, legacy evaluator, function and method calls, object-field initialization, and module loading. Imported modules therefore use the caller's context rather than a process-global cache.
+The native entrypoint creates an `ExecutionContext` at the beginning of a run and resets it before evaluating source. The context is passed through the expression parser, AST evaluator, legacy evaluator, function and method calls, object-field initialization, and module loading. Imported modules therefore use the caller's context rather than a process-global cache. The first AST execution that establishes a workspace records its canonical root in `RuntimeState`; nested execution retains that root instead of replacing it with the process working directory. Filesystem built-ins receive the same context-aware boundary.
 
 A context can be created independently of another context. Mutating one context's module stack or execution-depth counter does not mutate another context. Resetting a context clears its module cache, import stack, and depth counter before it is reused.
 
 ## Safety boundaries
 
-The migrated state is intentionally single-threaded and owned by an execution instance. The implementation does not add `Send`/`Sync` claims, worker sharing, tracing garbage collection, weak references, cumulative byte accounting, or a language-level task scheduler. The current execution-depth limit remains bounded, and the existing AST/legacy compatibility path remains explicit until canonicalization is complete.
+The migrated state is intentionally single-threaded and owned by an execution instance or LSP server session. The implementation does not add `Send`/`Sync` claims, worker sharing, tracing garbage collection, weak references, cumulative byte accounting, or a language-level task scheduler. The current execution-depth limit remains bounded. Parser-owned source uses canonical AST execution; the line interpreter remains explicit and compatibility-only for older line-bodied function records.
 
 ## Regression evidence
 
-The runtime-state module includes isolation and reset regressions. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, and bounded execution depth through the context-aware call graph.
+The runtime-state module includes workspace, isolation, and reset regressions. The LSP module includes independent-server document isolation coverage. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, filesystem confinement, and bounded execution depth through the context-aware call graph.
 
-The acceptance criterion for this first slice is that module and depth state are instance-owned and do not leak across contexts while existing language behavior remains unchanged. Later slices may move workspace, capability, diagnostics, memory, and cancellation state into the same explicit runtime boundary.
+The acceptance criterion for this migration slice is that module, depth, and workspace state are instance-owned and do not leak across execution contexts, while LSP document maps are session-owned and do not leak across server states. Existing language and editor behavior must remain unchanged. Later slices may move capability, diagnostics, memory, and cancellation state into additional explicit boundaries.
 
 ## Deferred roadmap
 
-The following work remains separate: complete `RuntimeState`/`ExecutionContext` migration for all hidden state, AST-only canonicalization, first-class function values and `EnvFrame`, object-store and weak-reference policy, per-run memory budgets, typed source-span propagation, and full language-level async task semantics.
+The following work remains separate: complete `RuntimeState`/`ExecutionContext` migration for all remaining hidden state, first-class function values and `EnvFrame`, object-store and weak-reference policy, per-run memory budgets, typed source-span propagation, and full language-level async task semantics.
 
 See the [English documentation navigation hub](DOCUMENTATION_NAVIGATION_EN.md), the [next-step plan](NEXT_TODO_PLAN_EN.md), and the [language specification](LANGUAGE_SPEC_EN.md) for the maintained contracts.
 

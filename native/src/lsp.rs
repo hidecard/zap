@@ -1,22 +1,31 @@
 use serde_json::{json, Value};
+#[cfg(test)]
+use std::cell::RefCell;
 use std::{
-    cell::RefCell,
     collections::BTreeMap,
     fs,
     io::{self, BufRead, BufReader, Write},
     path::{Path, PathBuf},
 };
 
-thread_local! {
-    static DOCUMENTS: RefCell<BTreeMap<String, String>> = const { RefCell::new(BTreeMap::new()) };
+#[derive(Debug, Default)]
+pub struct LspState {
+    documents: BTreeMap<String, String>,
+}
+
+impl LspState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 pub fn run_stdio() -> Result<(), String> {
     let stdin = io::stdin();
     let mut input = BufReader::new(stdin.lock());
     let mut output = io::BufWriter::new(io::stdout());
+    let mut state = LspState::new();
     while let Some(message) = read_message(&mut input)? {
-        if let Some(response) = handle_message(&message) {
+        if let Some(response) = handle_message_with_state(&message, &mut state) {
             encode_message(&mut output, &response)?;
             output
                 .flush()
@@ -108,7 +117,7 @@ pub fn encode_message<W: Write>(writer: &mut W, value: &Value) -> Result<(), Str
         .map_err(|e| format!("lsp body write failed: {e}"))
 }
 
-pub fn handle_message(message: &Value) -> Option<Value> {
+pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Option<Value> {
     let method = message.get("method")?.as_str()?;
     match method {
         "initialize" => Some(json!({
@@ -134,23 +143,19 @@ pub fn handle_message(message: &Value) -> Option<Value> {
             "id": message.get("id").cloned().unwrap_or(Value::Null),
             "result": null
         })),
-        "textDocument/completion" => Some(completion_response(message)),
-        "textDocument/signatureHelp" => Some(signature_help_response(message)),
-        "textDocument/hover" => Some(hover_response(message)),
-        "textDocument/definition" => Some(definition_response(message)),
-        "textDocument/formatting" => Some(formatting_response(message)),
-        "workspace/symbol" => Some(workspace_symbol_response(message)),
-        "textDocument/documentSymbol" => Some(document_symbol_response(message)),
+        "textDocument/completion" => Some(completion_response(message, state)),
+        "textDocument/signatureHelp" => Some(signature_help_response(message, state)),
+        "textDocument/hover" => Some(hover_response(message, state)),
+        "textDocument/definition" => Some(definition_response(message, state)),
+        "textDocument/formatting" => Some(formatting_response(message, state)),
+        "workspace/symbol" => Some(workspace_symbol_response(message, state)),
+        "textDocument/documentSymbol" => Some(document_symbol_response(message, state)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
             let uri = document.get("uri")?.as_str()?;
             let text = document.get("text").and_then(Value::as_str).unwrap_or("");
-            DOCUMENTS.with(|documents| {
-                documents
-                    .borrow_mut()
-                    .insert(uri.to_string(), text.to_string());
-            });
+            state.documents.insert(uri.to_string(), text.to_string());
             Some(publish_diagnostics(uri, text))
         }
         _ => message.get("id").map(|id| {
@@ -166,13 +171,21 @@ pub fn handle_message(message: &Value) -> Option<Value> {
     }
 }
 
-fn completion_response(message: &Value) -> Value {
+#[cfg(test)]
+thread_local! {
+    static TEST_STATE: RefCell<LspState> = RefCell::new(LspState::new());
+}
+
+#[cfg(test)]
+pub fn handle_message(message: &Value) -> Option<Value> {
+    TEST_STATE.with(|state| handle_message_with_state(message, &mut state.borrow_mut()))
+}
+
+fn completion_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let position = &message["params"]["position"];
     let prefix = source_prefix(
         &source,
@@ -235,13 +248,11 @@ fn source_prefix(source: &str, line: usize, character: usize) -> String {
         .to_string()
 }
 
-fn signature_help_response(message: &Value) -> Value {
+fn signature_help_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
     let character = message["params"]["position"]["character"]
         .as_u64()
@@ -301,13 +312,11 @@ fn signature_help_response(message: &Value) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result.unwrap_or(Value::Null)})
 }
 
-fn hover_response(message: &Value) -> Value {
+fn hover_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
     let character = message["params"]["position"]["character"]
         .as_u64()
@@ -360,13 +369,11 @@ fn hover_response(message: &Value) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
 }
 
-fn definition_response(message: &Value) -> Value {
+fn definition_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let position = &message["params"]["position"];
     let word = source_prefix(
         &source,
@@ -386,13 +393,11 @@ fn definition_response(message: &Value) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
 }
 
-fn formatting_response(message: &Value) -> Value {
+fn formatting_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let formatted = format_source(&source);
     let end_line = source.lines().count().saturating_sub(1) as u64;
     let end_character = source
@@ -432,9 +437,9 @@ fn format_source(source: &str) -> String {
     formatted
 }
 
-fn workspace_symbol_response(message: &Value) -> Value {
+fn workspace_symbol_response(message: &Value, state: &LspState) -> Value {
     let query = message["params"]["query"].as_str().unwrap_or("");
-    let documents = workspace_documents();
+    let documents = workspace_documents(state);
     let symbols = documents
         .iter()
         .flat_map(|(uri, source)| {
@@ -451,15 +456,9 @@ fn workspace_symbol_response(message: &Value) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": symbols})
 }
 
-fn workspace_documents() -> Vec<(String, String)> {
+fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
     const MAX_MODULE_BYTES: u64 = 8 * 1024 * 1024;
-    let mut documents = DOCUMENTS.with(|documents| {
-        documents
-            .borrow()
-            .iter()
-            .map(|(uri, source)| (uri.clone(), source.clone()))
-            .collect::<BTreeMap<_, _>>()
-    });
+    let mut documents = state.documents.clone();
     let mut pending = documents.keys().cloned().collect::<Vec<_>>();
     let mut cursor = 0;
     while cursor < pending.len() {
@@ -596,13 +595,11 @@ fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, Stri
         .collect()
 }
 
-fn document_symbol_response(message: &Value) -> Value {
+fn document_symbol_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = DOCUMENTS
-        .with(|documents| documents.borrow().get(uri).cloned())
-        .unwrap_or_default();
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
     let symbols = crate::ast::parse_program(&source)
         .map(|program| document_symbols_for_program(uri, &source, &program))
         .unwrap_or_default();
@@ -737,7 +734,7 @@ fn diagnostic_line(message: &str) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_messages, handle_message};
+    use super::{decode_messages, handle_message, handle_message_with_state, LspState};
     use serde_json::json;
 
     #[test]
@@ -1068,6 +1065,32 @@ mod tests {
             .unwrap();
         assert_eq!(function["children"][0]["name"], "inner");
         assert_eq!(function["children"][0]["range"]["start"]["line"], 5);
+    }
+
+    #[test]
+    fn independent_lsp_states_do_not_share_documents() {
+        let mut first = LspState::new();
+        let mut second = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": "file:///first.zp", "text": "fn first():\n    return 1\n"}}
+            }),
+            &mut first,
+        );
+        let first_symbols = handle_message_with_state(
+            &json!({"jsonrpc": "2.0", "id": 30, "method": "workspace/symbol", "params": {"query": ""}}),
+            &mut first,
+        )
+        .expect("first state should respond");
+        let second_symbols = handle_message_with_state(
+            &json!({"jsonrpc": "2.0", "id": 31, "method": "workspace/symbol", "params": {"query": ""}}),
+            &mut second,
+        )
+        .expect("second state should respond");
+        assert!(!first_symbols["result"].as_array().unwrap().is_empty());
+        assert!(second_symbols["result"].as_array().unwrap().is_empty());
     }
 
     #[test]
