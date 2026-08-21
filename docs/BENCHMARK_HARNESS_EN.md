@@ -33,3 +33,22 @@ This harness does not claim to be a statistically rigorous microbenchmark framew
 ## Verification
 
 The harness and aggregator are exercised with one repetition per suite. The current seven suites complete successfully, emit seven raw CSV observations, and produce deterministic summary output. Native formatter, full native tests, and `git diff --check` remain required before committing benchmark changes.
+
+## P1-05 deterministic test-layer runner
+
+`scripts/test_p105_layers.sh` is the dependency-free CI-visible runner for the broader conformance and property layer. It executes deterministic parser and lexer corpora, malformed-program and JSON security corpora, malformed-lockfile cases, standard-library security inputs, registry provenance/property mutations, collection/filesystem regressions, and async cancellation/scheduler determinism cases. Each invocation uses a single stable Cargo test filter and fails immediately on a non-zero result.
+
+The quality job runs this Linux corpus gate, while the build matrix independently compiles and tests Linux, Windows, and macOS targets. This separation keeps corpus diagnostics deterministic without weakening cross-platform compilation and test coverage. The remaining P1-05 gaps are dedicated fuzz targets, allocator/heap-level regression counters, and additional platform-specific input cases.
+
+For the current validation command:
+
+```sh
+scripts/test_p105_layers.sh
+```
+
+The runner is a deterministic regression gate, not a timing benchmark and not a substitute for long-running fuzz campaigns.
+
+## References
+
+[1]: ../scripts/test_p105_layers.sh "P1-05 deterministic test-layer runner"
+[2]: ../.github/workflows/ci.yml "Zap CI quality and cross-platform build matrix"

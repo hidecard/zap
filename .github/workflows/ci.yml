@@ -115,6 +115,9 @@ jobs:
           cargo test --manifest-path native/Cargo.toml malformed_lockfile_corpus --all-features
           cargo test --manifest-path native/Cargo.toml lockfile_quoted_values --all-features
 
+      - name: Run P1-05 deterministic layer validation
+        run: scripts/test_p105_layers.sh
+
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
 

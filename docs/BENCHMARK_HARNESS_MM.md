@@ -33,3 +33,22 @@ Binary၊ compiler profile၊ operating system၊ CPU condition၊ repetition co
 ## Verification
 
 Harness နှင့် aggregator ကို suite တစ်ခုချင်းစီ repetition တစ်ကြိမ်ဖြင့် စမ်းသပ်ထားပါသည်။ လက်ရှိ suite ခုနစ်ခုလုံး အောင်မြင်ကာ raw CSV observation ခုနစ်ခုနှင့် deterministic summary output ထွက်ရှိပါသည်။ Benchmark ပြောင်းလဲမှုများကို commit မလုပ်မီ native formatter၊ full native tests နှင့် `git diff --check` တို့ကို မဖြစ်မနေ အောင်မြင်စေရမည်။
+
+## P1-05 deterministic test-layer runner
+
+ပိုမိုကျယ်ပြန့်သော conformance နှင့် property layer အတွက် dependency-free CI-visible runner သည် `scripts/test_p105_layers.sh` ဖြစ်ပါသည်။ ၎င်းသည် deterministic parser နှင့် lexer corpus၊ malformed-program နှင့် JSON security corpus၊ malformed-lockfile case များ၊ standard-library security input များ၊ registry provenance/property mutation များ၊ collection/filesystem regression များနှင့် async cancellation/scheduler determinism case များကို run လုပ်ပါသည်။ Invocation တစ်ခုချင်းစီသည် တည်ငြိမ်သော Cargo test filter တစ်ခုကို အသုံးပြုပြီး non-zero result ဖြစ်ပါက ချက်ချင်း fail လုပ်ပါသည်။
+
+Quality job သည် Linux corpus gate ကို run လုပ်ပြီး build matrix သည် Linux၊ Windows နှင့် macOS target များကို သီးခြား compile/test လုပ်ပါသည်။ ထိုခွဲခြားမှုကြောင့် corpus diagnostic များ deterministic ဖြစ်နေစေပြီး cross-platform compilation နှင့် test coverage ကို မလျော့စေပါ။ P1-05 ၏ ကျန်ရှိသော gap များမှာ dedicated fuzz target များ၊ allocator/heap-level regression counter များနှင့် platform-specific input case များ ဖြစ်ပါသည်။
+
+လက်ရှိ validation command သည်:
+
+```sh
+scripts/test_p105_layers.sh
+```
+
+ဤ runner သည် deterministic regression gate ဖြစ်ပြီး timing benchmark မဟုတ်သကဲ့သို့ ရေရှည် fuzz campaign များကို အစားထိုးရန်လည်း မဟုတ်ပါ။
+
+## References
+
+[1]: ../scripts/test_p105_layers.sh "P1-05 deterministic test-layer runner"
+[2]: ../.github/workflows/ci.yml "Zap CI quality နှင့် cross-platform build matrix"
