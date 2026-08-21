@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Memory contract hardening
+- Added bounded `memory_stats()` diagnostics with live-object, allocation, deallocation, and runtime-limit fields.
+- Added cycle-safe validation for text, list, map, object, Result/Option, and Future values at public builtin boundaries, with deterministic memory-limit errors.
+- Kept public weak references and tracing collection explicitly unsupported/deferred and documented the single-threaded ownership boundary.
+
 ### Structured diagnostics hardening
 - Added a stable structured diagnostic contract shared by CLI JSON and LSP output, including stable `ZAP-*` codes, severity, deterministic notes, optional help, source locations, and regression assertions for TypeError parity.
 - Added bilingual `docs/DIAGNOSTIC_MODEL_EN.md` and `docs/DIAGNOSTIC_MODEL_MM.md` documentation for diagnostic fields and compatibility rules.

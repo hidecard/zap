@@ -815,10 +815,7 @@ impl<'a> ExprParser<'a> {
                             return Err(format!("unknown class: {class_name}"));
                         }
                         let explicit_fields = fields;
-                        let object = Value::Object {
-                            class_name: class_name.clone(),
-                            fields: Rc::new(RefCell::new(HashMap::new())),
-                        };
+                        let object = Value::object(class_name.clone());
                         initialize_object_fields(&class_name, &object, self.vars, self.funcs)?;
                         if let Value::Object { fields, .. } = &object {
                             fields.borrow_mut().extend(explicit_fields);

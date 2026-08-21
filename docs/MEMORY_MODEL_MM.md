@@ -12,10 +12,14 @@ Cyclic object graph များကို reference counting တစ်ခုတ�
 
 လက်ရှိ interpreter သည် mutable object access အတွက် single-threaded ဖြစ်သည်။ ဤ API သည် thread-safe ownership သို့မဟုတ် tracing garbage collector ရှိသည်ဟု မဆိုလိုပါ။ အနာဂတ် multi-threaded runtime သည် ဤ handle များကို thread များကြား တိုက်ရိုက်မျှဝေမည့်အစား synchronization သို့မဟုတ် tracing collector design အသစ်တစ်ခု လိုအပ်မည်။
 
+Runtime တွင် argument မလိုသော `memory_stats()` builtin ကို bounded diagnostic record အဖြစ် ထည့်သွင်းထားသည်။ Stable map fields များမှာ `live_objects`၊ `object_allocations`၊ `object_deallocations`၊ `max_text_bytes`၊ `max_collection_items` နှင့် `max_value_nodes` တို့ ဖြစ်သည်။ Public weak reference များကို `unsupported_public_api`၊ tracing collection ကို `not_implemented` ဟု explicit ပြထားသည်။ ဤတန်ဖိုးများသည် capability information ဖြစ်ပြီး cycle များကို အလိုအလျောက် collect လုပ်မည်ဟု ကတိပြုခြင်း မဟုတ်ပါ။
+
+Public builtin boundary များတွင် runtime value များကို cyclic object graph ထဲတွင် recursion မဆုံးနိုင်အောင် bounded validation ဖြင့် စစ်ဆေးသည်။ Text value တစ်ခုလျှင် 8 MiB၊ list သို့မဟုတ် map တစ်ခုလျှင် entry 100,000 နှင့် traverse လုပ်သော value graph တစ်ခုလျှင် node 100,000 အထိ ကန့်သတ်ထားသည်။ Limit ကျော်ပါက deterministic memory-limit error ပြန်ပေးသည်။ ဤစစ်ဆေးမှုသည် bounded validation ဖြစ်ပြီး internal allocation အားလုံးကို global accounting လုပ်ထားသည်ဟု မဆိုလိုပါ။
+
 ## Regression guarantee
 
 Native test `cyclic_object_graph_can_be_explicitly_broken` သည် self-referential object တစ်ခု ဖန်တီးပြီး cycle ရှိကြောင်း စစ်ဆေးသည်။ ထို့နောက် field များကို ရှင်းလင်းကာ field allocation ပြန်လွှတ်နိုင်ကြောင်း စစ်ဆေးသည်။ ဤ test သည် memory contract ကို အတည်ပြုခြင်းဖြစ်ပြီး arbitrary cycle များကို အလိုအလျောက် garbage collect လုပ်သည်ဟု ဆိုလိုခြင်းမဟုတ်ပါ။
 
 ## နောက်ပိုင်းလုပ်ရန်
 
-Heap statistics၊ allocation counters၊ cycle diagnostics၊ weak references နှင့် tracing collector တို့သည် နောက် milestone များတွင် သီးခြား design ပြုလုပ်ရမည့်အချက်များ ဖြစ်သည်။ ၎င်းတို့ကို လက်ရှိ `Rc<RefCell>` contract နှင့် ရောနှောမထားသင့်ပါ။
+Weak-reference support နှင့် tracing collector သည် နောက်ပိုင်း milestone များ ဖြစ်နေသေးသည်။ Closure-level allocation accounting၊ process-wide heap telemetry နှင့် arbitrary cycle များကို အလိုအလျောက် reclaim လုပ်ခြင်းတို့ကို လက်ရှိ contract တွင် ရည်ရွယ်ချက်ရှိရှိ မထည့်သေးပါ။ ထိုအရာများကို လက်ရှိ single-threaded `Rc<RefCell>` boundary နှင့် သီးခြား design လုပ်ရမည်။

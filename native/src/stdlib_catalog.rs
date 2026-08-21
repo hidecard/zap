@@ -25,6 +25,10 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "text",
     },
     PublicBuiltin {
+        name: "memory_stats",
+        domain: "runtime",
+    },
+    PublicBuiltin {
         name: "upper",
         domain: "text",
     },

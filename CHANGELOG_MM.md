@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Memory contract hardening
+- Live object၊ allocation၊ deallocation နှင့် runtime-limit fields များပါသော bounded `memory_stats()` diagnostic ကို ထည့်သွင်းထားပါသည်။
+- Public builtin boundary များတွင် text၊ list၊ map၊ object၊ Result/Option နှင့် Future value များအတွက် cycle-safe validation နှင့် deterministic memory-limit error များကို ထည့်သွင်းထားပါသည်။
+- Public weak reference နှင့် tracing collection များကို လက်ရှိတွင် unsupported/deferred အဖြစ် ထိန်းသိမ်းပြီး single-threaded ownership boundary ကို documentation တွင် ရှင်းလင်းထားပါသည်။
+
 ### Structured diagnostics hardening
 - CLI JSON နှင့် LSP output နှစ်ခုလုံးတွင် stable `ZAP-*` codes၊ severity၊ deterministic notes၊ ရွေးချယ်နိုင်သော help၊ source locations နှင့် TypeError parity regression assertions ပါဝင်သည့် တည်ငြိမ်သော structured diagnostic contract ကို ထည့်သွင်းထားပါသည်။
 - Diagnostic fields နှင့် compatibility rules များအတွက် bilingual `docs/DIAGNOSTIC_MODEL_EN.md` နှင့် `docs/DIAGNOSTIC_MODEL_MM.md` documentation များကို ထည့်သွင်းထားပါသည်။

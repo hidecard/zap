@@ -4,6 +4,8 @@
 **ရင်းမြစ်:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **ရည်ရွယ်ချက်:** ပြီးစီးပြီးသား release အလုပ်များကို မပြီးသေးဟု မတွက်ဘဲ PDF အကြံပြုချက်များထဲမှ အမှန်တကယ်ကျန်ရှိသောအချက်အားလုံးကို စောင့်ကြည့်ရန်။
 
+**အသေးစိတ်လုပ်ဆောင်မှုအစီအစဉ်:** [`NEXT_TODO_PLAN_MM.md`](NEXT_TODO_PLAN_MM.md) တွင် ကျန်ရှိသောအလုပ်များ၏ milestone အစီအစဉ်၊ implementation tasks၊ acceptance evidence နှင့် release gates များကို အသေးစိတ်ဖော်ပြထားသည်။
+
 ## Status အဓိပ္ပါယ်
 
 | Status | အဓိပ္ပါယ် |
@@ -20,7 +22,7 @@
 | P0-01 | Native/legacy conformance စာချုပ် | Partial | Native behavior ကို canonical သတ်မှတ်ပြီး legacy fixture parity report၊ migration policy နှင့် CI conformance command ရှိရမည်။ |
 | P0-02 | ပေါင်းစည်းထားသော language specification | Partial | `LANGUAGE_SPEC_MM.md` သည် syntax၊ precedence၊ typing၊ runtime behavior၊ compatibility နှင့် version ownership အတွက် canonical semantic index ဖြစ်လာပြီ။ Fragmented rule များကို အပြည့်အဝ ရွှေ့ပြောင်းခြင်းနှင့် complete conformance fixture များသာ ကျန်ရှိသည်။ |
 | P0-03 | Structured diagnostics | Done | CLI JSON နှင့် LSP diagnostic များတွင် stable `ZAP-*` code၊ kind၊ severity၊ normalized message၊ source span၊ deterministic notes/help နှင့် deterministic snapshot/regression coverage ပါဝင်သည်။ |
-| P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ `Value::object`၊ `clear_object_fields`၊ `object_field_count` နှင့် cycle-breaking regression test ကို docs/code တွင် ထည့်ပြီးဖြစ်သည်။ Heap statistics၊ allocation counters၊ weak references နှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
+| P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ tracked `Value::object`၊ `clear_object_fields`၊ `object_field_count`၊ bounded `memory_stats()`၊ object allocation/deallocation counters၊ cycle-safe value validation နှင့် deterministic memory-limit tests များကို ထည့်သွင်းပြီးဖြစ်သည်။ Public weak references၊ closure-level/process-wide telemetry၊ arbitrary cycle အလိုအလျောက် reclaim လုပ်ခြင်းနှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
 | P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor ကို သီးခြားရှင်းပြပြီး production I/O၊ blocking call၊ cancellation နှင့် scheduling boundary များ သတ်မှတ်ရမည်။ |
 
 ## P1 — Production readiness

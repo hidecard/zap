@@ -341,6 +341,11 @@ pub(crate) fn value_type_name(value: &Value) -> &'static str {
 }
 
 pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
+    if name != "memory_stats" {
+        for value in &args {
+            value.validate_memory_limits()?;
+        }
+    }
     let expect = |count: usize| {
         if args.len() == count {
             Ok(())
@@ -352,6 +357,10 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
     };
     match name {
+        "memory_stats" => {
+            expect(0)?;
+            Ok(Some(Value::memory_stats_value()))
+        }
         "spawn" => {
             expect(1)?;
             match &args[0] {
@@ -415,7 +424,9 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
             }
             let parsed =
                 serde_json::from_str(text).map_err(|error| format!("from_json failed: {error}"))?;
-            Ok(Some(json_to_value(parsed)?))
+            let value = json_to_value(parsed)?;
+            value.validate_memory_limits()?;
+            Ok(Some(value))
         }
         "from_json_typed" => {
             expect(2)?;
@@ -433,6 +444,7 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
             let parsed = serde_json::from_str(text)
                 .map_err(|error| format!("from_json_typed failed: {error}"))?;
             let value = json_to_value(parsed)?;
+            value.validate_memory_limits()?;
             let actual = value_type_name(&value);
             if actual != expected {
                 return Err(format!(
@@ -3673,6 +3685,7 @@ mod tests {
         require_capability_for_mode, validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
+    use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
     use crate::{Function, Value};
     use std::{
         collections::HashMap,
@@ -3794,6 +3807,56 @@ mod tests {
             .expect_err("spawn should reject non-future values");
         assert_eq!(error, "spawn expects a future value");
     }
+    #[test]
+    fn memory_stats_builtin_reports_bounded_contract() {
+        let Value::Map(stats) = direct_builtin("memory_stats", vec![])
+            .expect("memory_stats should succeed")
+            .expect("memory_stats should return a value")
+        else {
+            panic!("memory_stats should return a map");
+        };
+        assert!(matches!(stats.get("live_objects"), Some(Value::Number(_))));
+        assert_eq!(
+            stats.get("max_text_bytes"),
+            Some(&Value::Number(MAX_RUNTIME_TEXT_BYTES as i64))
+        );
+        assert_eq!(
+            stats.get("max_collection_items"),
+            Some(&Value::Number(MAX_RUNTIME_COLLECTION_ITEMS as i64))
+        );
+        assert_eq!(
+            stats.get("weak_references"),
+            Some(&Value::Text("unsupported_public_api".into()))
+        );
+        assert_eq!(
+            direct_builtin("memory_stats", vec![Value::None])
+                .expect_err("memory_stats must reject arguments"),
+            "memory_stats expects 0 arguments, got 1"
+        );
+    }
+
+    #[test]
+    fn evaluates_memory_stats_from_native_ast() {
+        let program = parse_program("let stats = memory_stats()\n")
+            .expect("memory_stats program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("memory_stats should execute from Zap source");
+        let Value::Map(stats) = vars.get("stats").expect("memory_stats result") else {
+            panic!("memory_stats should return a map");
+        };
+        assert!(matches!(stats.get("live_objects"), Some(Value::Number(_))));
+    }
+
+    #[test]
+    fn public_builtin_boundary_rejects_oversized_values() {
+        let oversized = Value::Text("x".repeat(MAX_RUNTIME_TEXT_BYTES + 1));
+        let error = direct_builtin("str", vec![oversized])
+            .expect_err("oversized values must be rejected at builtin boundaries");
+        assert!(error.contains("text value exceeds"));
+    }
+
     #[test]
     fn evaluates_pure_builtins_from_native_ast() {
         let program = parse_program(
