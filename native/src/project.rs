@@ -8,7 +8,7 @@ use crate::ast::{parse_program, Stmt};
 use crate::registry::{
     cache_package, cache_package_source_with_credentials, load_registry_credentials,
     package_cache_path, read_index, read_index_source_with_credentials, resolve_dependency_graph,
-    validate_package_name, verify_cached_package, RegistryPackage,
+    validate_package_name, verify_cached_package, version_satisfies_requirement, RegistryPackage,
 };
 
 use super::{
@@ -916,6 +916,56 @@ pub(crate) fn update_dependencies(dir: &Path) -> Result<String, String> {
     ))
 }
 
+fn validate_locked_registry_set(
+    dependencies: &BTreeMap<String, DependencySpec>,
+    locked: &[LockedRegistryPackage],
+) -> Result<(), String> {
+    let roots = dependencies
+        .iter()
+        .filter_map(|(name, spec)| match spec {
+            DependencySpec::Requirement(requirement) => Some((name, requirement)),
+            DependencySpec::LocalPath(_) => None,
+        })
+        .collect::<BTreeMap<_, _>>();
+    if roots.is_empty() {
+        if locked.is_empty() {
+            return Ok(());
+        }
+        return Err(
+            "zap.lock: resolved registry packages exist but manifest has no registry dependencies"
+                .into(),
+        );
+    }
+    for (name, requirement) in roots {
+        let package = locked
+            .iter()
+            .find(|package| package.name == *name)
+            .ok_or_else(|| format!("zap.lock: locked package `{name}` is missing"))?;
+        if !version_satisfies_requirement(&package.version, requirement)? {
+            return Err(format!(
+                "zap.lock: locked package `{name}` version {} does not satisfy `{requirement}`",
+                package.version
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_locked_cache(
+    cache_root: &Path,
+    locked: &[LockedRegistryPackage],
+) -> Result<bool, String> {
+    for package in locked {
+        let registry_package = package.clone().into_registry();
+        let cached = package_cache_path(cache_root, &registry_package);
+        if !cached.is_file() {
+            return Ok(false);
+        }
+        verify_cached_package(&cached, &registry_package)?;
+    }
+    Ok(true)
+}
+
 fn resolve_registry_dependencies(
     project_dir: &Path,
     dependencies: &BTreeMap<String, DependencySpec>,
@@ -928,20 +978,20 @@ fn resolve_registry_dependencies(
     let Some(index_path) = std::env::var_os("ZAP_REGISTRY_INDEX") else {
         let locked = locked.unwrap_or_default();
         if !update {
-            for package in locked {
-                let registry_package = package.clone().into_registry();
-                let cached = package_cache_path(&cache_root, &registry_package);
-                if !cached.is_file() {
-                    return Err(format!(
-                        "registry package is not cached without a registry index: {} {}",
-                        package.name, package.version
-                    ));
-                }
-                verify_cached_package(&cached, &registry_package)?;
+            validate_locked_registry_set(dependencies, locked)?;
+            if !validate_locked_cache(&cache_root, locked)? {
+                return Err("registry package is not cached without a registry index".into());
             }
         }
         return Ok(locked.to_vec());
     };
+    if !update {
+        let locked = locked.unwrap_or_default();
+        validate_locked_registry_set(dependencies, locked)?;
+        if validate_locked_cache(&cache_root, locked)? {
+            return Ok(locked.to_vec());
+        }
+    }
     let index_source = index_path.to_string_lossy().into_owned();
     let credentials = load_registry_credentials()?;
     let index = if Path::new(&index_source).is_file() {
@@ -1176,7 +1226,12 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
 
 #[cfg(test)]
 mod lockfile_security_tests {
-    use super::{parse_lockfile_quoted, parse_resolved_lockfile};
+    use super::{
+        package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile, validate_locked_cache,
+        validate_locked_registry_set, DependencySpec, LockedRegistryPackage,
+    };
+    use crate::registry::sha256_hex;
+    use std::{collections::BTreeMap, fs};
 
     #[test]
     fn malformed_lockfile_corpus_is_deterministic_and_panic_free() {
@@ -1208,6 +1263,35 @@ mod lockfile_security_tests {
                     .map(Vec::len)
             );
         }
+    }
+
+    #[test]
+    fn locked_cache_is_authoritative_for_yanked_release_but_not_tampering() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-locked-cache-e2e-{}-{}",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("test")
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let cache = root.join("cache");
+        let bytes = b"cached yanked release";
+        let checksum = sha256_hex(bytes);
+        let locked = [LockedRegistryPackage {
+            name: "demo".into(),
+            version: "1.2.3".into(),
+            source: "file://demo.pkg".into(),
+            checksum: checksum.clone(),
+        }];
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert("demo".into(), DependencySpec::Requirement("1.2.3".into()));
+        validate_locked_registry_set(&dependencies, &locked).expect("locked requirement matches");
+        let cache_path = package_cache_path(&cache, &locked[0].clone().into_registry());
+        fs::create_dir_all(cache_path.parent().expect("cache parent")).unwrap();
+        fs::write(&cache_path, bytes).unwrap();
+        assert!(validate_locked_cache(&cache, &locked).expect("valid cached release"));
+        fs::write(&cache_path, b"tampered release").unwrap();
+        assert!(validate_locked_cache(&cache, &locked).is_err());
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

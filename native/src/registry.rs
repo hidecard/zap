@@ -643,6 +643,14 @@ pub fn find_package(
     Err(format!("registry package not found: {name} {version}"))
 }
 
+/// Check whether a concrete version satisfies a requirement without applying
+/// yanked-release selection policy. Locked installs use this semantic check
+/// while allowing an already-cached yanked artifact.
+pub fn version_satisfies_requirement(version: &str, requirement: &str) -> Result<bool, String> {
+    let version = Version::parse(version)?;
+    Ok(VersionRequirement::parse(requirement)?.matches(version))
+}
+
 /// Select the highest registry version satisfying a deterministic requirement.
 /// Supported forms are exact versions, partial versions (`1` or `1.2`),
 /// caret/tilde requirements, and comma-separated comparison clauses.
@@ -1043,7 +1051,7 @@ fn is_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
     let digest = Sha256::digest(bytes);
     let mut output = String::with_capacity(digest.len() * 2);
     for byte in digest {

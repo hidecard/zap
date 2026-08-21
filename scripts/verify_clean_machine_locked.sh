@@ -8,6 +8,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 cargo build --manifest-path "$NATIVE_DIR/Cargo.toml" --release --locked >/dev/null
 cargo test --manifest-path "$NATIVE_DIR/Cargo.toml" cache_write_and_verification_use_checksum_path --locked >/dev/null
+cargo test --manifest-path "$NATIVE_DIR/Cargo.toml" --bin zap lockfile_security_tests --locked >/dev/null
 ZAP="$NATIVE_DIR/target/release/zap"
 PROJECT="$WORK/project"
 CLEAN="$WORK/clean"
