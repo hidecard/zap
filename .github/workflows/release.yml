@@ -154,7 +154,8 @@ jobs:
           cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
           printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
           chmod 0755 package/zap/bin/${{ matrix.binary }}
-          tar -czf "$ARCHIVE" -C package zap
+          export SOURCE_DATE_EPOCH=0
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C package zap | gzip -n > "$ARCHIVE"
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
       - name: Package Windows release
@@ -178,6 +179,10 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum -c "$ARCHIVE.sha256"
+          export SOURCE_DATE_EPOCH=0
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C package zap | gzip -n > "$ARCHIVE.repro"
+          cmp -s "$ARCHIVE" "$ARCHIVE.repro" || { echo "Archive is not reproducible"; exit 1; }
+          rm -f "$ARCHIVE.repro"
           tar -tzf "$ARCHIVE" | grep -E 'zap/bin/zap|zap/README.md|zap/RELEASE.txt|zap/docs/SYNTAX_GUIDE_EN.md|zap/examples/hello.zp'
           tar -xOf "$ARCHIVE" zap/RELEASE.txt | grep -F "Version: ${GITHUB_REF_NAME#v}"
 

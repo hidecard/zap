@@ -23,6 +23,7 @@
 - Added JSON conversion security coverage for malformed tagged variants, oversized integers, recursive malformed input, deterministic conversion, and panic-free rejection.
 - Added lockfile security coverage for unsupported versions, incomplete or duplicate fields, invalid escapes, traversal-like package names, strict quoted values, deterministic rejection, and panic-free parsing.
 - Added an explicit `parser JSON lockfile corpus` CI gate running `adversarial_corpus`, `malformed_program_corpus`, `json_security_corpus`, `malformed_lockfile_corpus`, and `lockfile_quoted_values` independently of the complete native suite.
+- Hardened Unix release packaging for reproducibility by normalizing archive order, timestamps, ownership, numeric ownership, and gzip metadata; CI rebuilds each Unix archive and requires byte-for-byte equality before upload. Windows archives continue to receive content and SHA-256 verification.
 
 ### Async and tooling
 
