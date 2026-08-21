@@ -23,7 +23,7 @@
 | P0-02 | Consolidated language specification | Partial | `LANGUAGE_SPEC_EN.md` is now the canonical semantic index for syntax, precedence, typing, runtime behavior, compatibility, and version ownership. Full migration of fragmented rules and complete conformance fixtures remain. |
 | P0-03 | Structured diagnostics | Done | CLI JSON and LSP diagnostics expose stable `ZAP-*` code, kind, severity, normalized message, source span, deterministic notes/help, and deterministic snapshot/regression coverage. |
 | P0-04 | Memory and reference-cycle contract | Partial | `Rc<RefCell>` ownership policy, explicit non-thread-safe boundary, tracked `Value::object`, `clear_object_fields`, `object_field_count`, bounded `memory_stats()`, object allocation/deallocation counters, cycle-safe value validation, and deterministic memory-limit tests are implemented. Public weak references, closure-level/process-wide telemetry, automatic arbitrary-cycle reclamation, and tracing collection remain future work. |
-| P0-05 | Deterministic versus production async boundary | Partial | The deterministic executor, fixed-worker, bounded network/process adapters, cancellation behavior, and descriptive `async_capabilities()` report are documented and exposed. Resource-limit preflight validation, executor-backed language-level scheduling, language-level cancellation/timeout controls, cross-platform async matrix coverage, and tooling synchronization remain. |
+| P0-05 | Deterministic versus production async boundary | Partial | The deterministic executor, fixed-worker, bounded network/process adapters, cancellation behavior, descriptive `async_capabilities()` report, typed resource-limit preflight validation, and TCP request-size admission check are documented and exposed. Executor-backed language-level scheduling, language-level cancellation/timeout controls, cross-platform async matrix coverage, and tooling synchronization remain. |
 
 ## P1 — Production readiness
 
@@ -46,12 +46,12 @@
 
 ## Execution order
 
-1. **P0-04:** Extend the implemented memory contract with heap statistics, allocation counters, weak-reference diagnostics, and closure-cycle coverage.
-2. **P0-05:** Document deterministic async limitations and production boundaries.
-3. **P1-05:** Expand parser golden, property, fuzz, memory, security, and platform-specific test layers.
-4. **P1-02:** Add the benchmark/profiling harness before making performance claims.
+1. **P0-05-C:** Add the Linux, Windows, and macOS async path/process/socket/deadline/cancellation/output-limit matrix, using target-native CI evidence or versioned limitations.
+2. **P1-05-A:** Add fixed-seed property/fuzz replay and durable parser, JSON, lockfile, registry, memory, and async failure corpora.
+3. **P0-01-A:** Finish the executable native/legacy parity matrix and semantic-drift gate.
+4. **P0-02-A:** Finish the canonical specification ownership index and fixture mapping.
 5. **P1-03:** Completed. Registry redaction, fail-closed, traversal, provenance, key-rotation, yanked-release, and end-to-end locked-cache tests enforce signed tag, commit, workflow, HTTPS source, checksum, full signing-fingerprint, explicit trusted-fingerprint allowlist, adversarial signed-provenance mutation rejection, yanked-candidate skipping, malformed-yanked rejection, stable exact/range all-yanked diagnostics, manifest requirement matching, offline cache reuse, and tampered lock/cache rejection.
-6. **P1-05:** Add parser golden, property, fuzz, memory, and security test layers.
+6. **P0-04:** Continue only the remaining weak-reference, closure/process-wide telemetry, arbitrary-cycle reclamation, and tracing-collector design work.
 7. **P1-01/P1-04:** Completed. The bilingual gradual-typing baseline is documented and the clean-machine locked-install/build verifier is executable and deterministic.
 8. **P2-02/P2-03/P2-04:** Finish stdlib policy, tooling parity, and documentation navigation.
 9. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.

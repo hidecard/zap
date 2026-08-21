@@ -386,6 +386,14 @@ fn async_capabilities_value() -> Value {
         Value::Text("unsupported".into()),
     );
     values.insert(
+        "resource_limit_preflight".into(),
+        Value::Text("enforced".into()),
+    );
+    values.insert(
+        "invalid_limit_errors".into(),
+        Value::Text("typed_deterministic".into()),
+    );
+    values.insert(
         "deterministic_max_tasks".into(),
         Value::Text("unbounded_by_default".into()),
     );
@@ -3918,6 +3926,14 @@ mod tests {
         assert_eq!(
             capabilities.get("foreign_blocking_interrupt"),
             Some(&Value::Text("unsupported".into()))
+        );
+        assert_eq!(
+            capabilities.get("resource_limit_preflight"),
+            Some(&Value::Text("enforced".into()))
+        );
+        assert_eq!(
+            capabilities.get("invalid_limit_errors"),
+            Some(&Value::Text("typed_deterministic".into()))
         );
         assert!(matches!(
             capabilities.get("worker_max_workers"),

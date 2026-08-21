@@ -23,7 +23,7 @@
 | P0-02 | ပေါင်းစည်းထားသော language specification | Partial | `LANGUAGE_SPEC_MM.md` သည် syntax၊ precedence၊ typing၊ runtime behavior၊ compatibility နှင့် version ownership အတွက် canonical semantic index ဖြစ်လာပြီ။ Fragmented rule များကို အပြည့်အဝ ရွှေ့ပြောင်းခြင်းနှင့် complete conformance fixture များသာ ကျန်ရှိသည်။ |
 | P0-03 | Structured diagnostics | Done | CLI JSON နှင့် LSP diagnostic များတွင် stable `ZAP-*` code၊ kind၊ severity၊ normalized message၊ source span၊ deterministic notes/help နှင့် deterministic snapshot/regression coverage ပါဝင်သည်။ |
 | P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ tracked `Value::object`၊ `clear_object_fields`၊ `object_field_count`၊ bounded `memory_stats()`၊ object allocation/deallocation counters၊ cycle-safe value validation နှင့် deterministic memory-limit tests များကို ထည့်သွင်းပြီးဖြစ်သည်။ Public weak references၊ closure-level/process-wide telemetry၊ arbitrary cycle အလိုအလျောက် reclaim လုပ်ခြင်းနှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
-| P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor၊ fixed-worker၊ bounded network/process adapter များ၊ cancellation behavior နှင့် descriptive `async_capabilities()` report ကို document/expose လုပ်ပြီးဖြစ်သည်။ Resource-limit preflight validation၊ executor-backed language-level scheduling၊ language-level cancellation/timeout controls၊ cross-platform async matrix coverage နှင့် tooling synchronization တို့သာ ကျန်ရှိသည်။ |
+| P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor၊ fixed-worker၊ bounded network/process adapter များ၊ cancellation behavior၊ descriptive `async_capabilities()` report၊ typed resource-limit preflight validation နှင့် TCP request-size admission check များကို document/expose လုပ်ပြီးဖြစ်သည်။ Executor-backed language-level scheduling၊ language-level cancellation/timeout controls၊ cross-platform async matrix coverage နှင့် tooling synchronization တို့သာ ကျန်ရှိသည်။ |
 
 ## P1 — Production readiness
 
@@ -46,12 +46,12 @@
 
 ## လုပ်ဆောင်မည့်အစီအစဉ်
 
-၁။ **P0-04:** အကောင်အထည်ဖော်ပြီးသော memory contract ကို heap statistics၊ allocation counters၊ weak-reference diagnostics နှင့် closure-cycle coverage ဖြင့် ဆက်လက်တိုးချဲ့ရန်။
-၂။ **P0-05:** Deterministic async limitations နှင့် production boundaries ကို documentation တွင် ပြတ်သားစွာ သတ်မှတ်ရန်။
-၃။ **P1-05:** Parser golden၊ property၊ fuzz၊ memory၊ security နှင့် platform-specific test layers များကို တိုးချဲ့ရန်။
-၄။ **P1-02:** Performance claim မပြုမီ benchmark/profiling harness တည်ဆောက်ရန်။  
+၁။ **P0-05-C:** Linux၊ Windows နှင့် macOS async path/process/socket/deadline/cancellation/output-limit matrix ကို target-native CI evidence သို့မဟုတ် versioned limitation ဖြင့် ထည့်ရန်။
+၂။ **P1-05-A:** Fixed-seed property/fuzz replay နှင့် parser၊ JSON၊ lockfile၊ registry၊ memory၊ async failure corpus များကို ထည့်ရန်။
+၃။ **P0-01-A:** Executable native/legacy parity matrix နှင့် semantic-drift gate ကို ပြီးစီးရန်။
+၄။ **P0-02-A:** Canonical specification ownership index နှင့် fixture mapping ကို ပြီးစီးရန်။
 ၅။ **P1-03:** ပြီးစီးပြီး။ Registry redaction၊ fail-closed၊ traversal၊ provenance၊ key-rotation၊ yanked-release နှင့် end-to-end locked-cache tests များသည် signed tag၊ commit၊ workflow၊ HTTPS source၊ checksum၊ signing fingerprint အပြည့်အစုံ၊ trusted-fingerprint allowlist၊ adversarial signed-provenance mutation rejection၊ yanked candidate skip၊ malformed-yanked rejection၊ stable exact/range all-yanked diagnostics၊ manifest requirement ကိုက်ညီမှု၊ offline cache reuse နှင့် tampered lock/cache rejection တို့ကို enforce လုပ်ထားသည်။
-၆။ **P1-05:** Parser golden၊ property၊ fuzz၊ memory နှင့် security test layers တိုးချဲ့ရန်။  
+၆။ **P0-04:** Weak-reference၊ closure/process-wide telemetry၊ arbitrary-cycle reclamation နှင့် tracing-collector design ကျန်ရှိမှုများကိုသာ ဆက်လုပ်ရန်။
 ၇။ **P1-01/P1-04:** ပြီးစီးပြီး။ ဘာသာနှစ်မျိုး gradual-typing baseline ကို မှတ်တမ်းတင်ပြီး clean-machine locked install/build verifier ကို executable နှင့် deterministic အဖြစ် ပြီးစီးထားသည်။
 ၈။ **P2-02/P2-03/P2-04:** Stdlib policy၊ tooling parity နှင့် documentation navigation ပြီးစီးရန်။  
 ၉။ **P2-01:** Parser/runtime မပြောင်းမီ traits/composition RFC ကို ရေးသားပြီး review လုပ်ရန်။

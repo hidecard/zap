@@ -526,6 +526,11 @@ impl Default for ThreadRuntimeLimits {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ThreadSpawnError {
     InvalidWorkerLimit,
+    InvalidTaskLimit,
+    InvalidReadLimit,
+    InvalidReadLimitTooLarge,
+    InvalidAdapterLimit(AdapterLimitError),
+    InputLimitExceeded { limit: usize },
     TaskLimitReached { limit: usize },
     QueueClosed,
 }
@@ -550,14 +555,40 @@ pub struct ThreadedRuntime {
     sender: mpsc::SyncSender<Box<dyn FnOnce() + Send + 'static>>,
     active: Arc<std::sync::atomic::AtomicUsize>,
     limits: ThreadRuntimeLimits,
+    adapter_limits: AdapterLimits,
 }
 
 #[allow(dead_code)]
 impl ThreadedRuntime {
     pub fn new(limits: ThreadRuntimeLimits) -> Result<Self, ThreadSpawnError> {
-        if limits.max_workers == 0 || limits.max_tasks == 0 {
+        let max_adapter_bytes = usize::try_from(limits.max_read_bytes)
+            .map_err(|_| ThreadSpawnError::InvalidReadLimitTooLarge)?;
+        Self::with_adapter_limits(
+            limits,
+            AdapterLimits {
+                max_socket_bytes: max_adapter_bytes,
+                max_process_output_bytes: max_adapter_bytes,
+                ..AdapterLimits::default()
+            },
+        )
+    }
+
+    pub fn with_adapter_limits(
+        limits: ThreadRuntimeLimits,
+        adapter_limits: AdapterLimits,
+    ) -> Result<Self, ThreadSpawnError> {
+        if limits.max_workers == 0 {
             return Err(ThreadSpawnError::InvalidWorkerLimit);
         }
+        if limits.max_tasks == 0 {
+            return Err(ThreadSpawnError::InvalidTaskLimit);
+        }
+        if limits.max_read_bytes == 0 {
+            return Err(ThreadSpawnError::InvalidReadLimit);
+        }
+        adapter_limits
+            .validate()
+            .map_err(ThreadSpawnError::InvalidAdapterLimit)?;
         let (sender, receiver) =
             mpsc::sync_channel::<Box<dyn FnOnce() + Send + 'static>>(limits.max_tasks);
         let receiver = Arc::new(Mutex::new(receiver));
@@ -578,11 +609,16 @@ impl ThreadedRuntime {
             sender,
             active: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             limits,
+            adapter_limits,
         })
     }
 
     pub fn limits(&self) -> ThreadRuntimeLimits {
         self.limits
+    }
+
+    pub fn adapter_limits(&self) -> AdapterLimits {
+        self.adapter_limits
     }
 
     pub fn spawn_blocking<F, T>(&self, task: F) -> Result<ThreadJoinHandle<T>, ThreadSpawnError>
@@ -705,6 +741,33 @@ pub struct AdapterLimits {
     pub process_timeout: Duration,
 }
 
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum AdapterLimitError {
+    SocketBytes,
+    SocketTimeout,
+    ProcessOutputBytes,
+    ProcessTimeout,
+}
+
+impl AdapterLimits {
+    pub fn validate(self) -> Result<(), AdapterLimitError> {
+        if self.max_socket_bytes == 0 {
+            return Err(AdapterLimitError::SocketBytes);
+        }
+        if self.socket_timeout.is_zero() {
+            return Err(AdapterLimitError::SocketTimeout);
+        }
+        if self.max_process_output_bytes == 0 {
+            return Err(AdapterLimitError::ProcessOutputBytes);
+        }
+        if self.process_timeout.is_zero() {
+            return Err(AdapterLimitError::ProcessTimeout);
+        }
+        Ok(())
+    }
+}
+
 impl Default for AdapterLimits {
     fn default() -> Self {
         Self {
@@ -726,10 +789,12 @@ impl ThreadedRuntime {
         address: String,
         request: Vec<u8>,
     ) -> Result<ThreadJoinHandle<Result<Vec<u8>, String>>, ThreadSpawnError> {
-        let limits = AdapterLimits {
-            max_socket_bytes: self.limits.max_read_bytes as usize,
-            ..AdapterLimits::default()
-        };
+        if request.len() > self.adapter_limits.max_socket_bytes {
+            return Err(ThreadSpawnError::InputLimitExceeded {
+                limit: self.adapter_limits.max_socket_bytes,
+            });
+        }
+        let limits = self.adapter_limits;
         self.spawn_blocking(move || nonblocking_tcp_exchange(&address, &request, limits))
     }
 
@@ -740,11 +805,7 @@ impl ThreadedRuntime {
         command: String,
         arguments: Vec<String>,
     ) -> Result<ThreadJoinHandle<Result<ProcessOutput, String>>, ThreadSpawnError> {
-        let limits = AdapterLimits {
-            max_process_output_bytes: self.limits.max_read_bytes as usize,
-            process_timeout: Duration::from_secs(10),
-            ..AdapterLimits::default()
-        };
+        let limits = self.adapter_limits;
         self.spawn_blocking(move || run_process_bounded(&command, &arguments, limits))
     }
 
@@ -762,11 +823,7 @@ impl ThreadedRuntime {
         ),
         ThreadSpawnError,
     > {
-        let limits = AdapterLimits {
-            max_process_output_bytes: self.limits.max_read_bytes as usize,
-            process_timeout: Duration::from_secs(10),
-            ..AdapterLimits::default()
-        };
+        let limits = self.adapter_limits;
         let token = CancellationToken::new();
         let task_token = token.clone();
         let handle = self.spawn_blocking(move || {
@@ -943,9 +1000,10 @@ impl Wake for NoopWaker {
 #[cfg(test)]
 mod tests {
     use super::{
-        block_on, delay_ticks, timeout_ticks, yield_now, AsyncRuntime, Cancellable,
-        CancellationToken, JoinError, RunReport, RuntimeLimits, SpawnError, TaskJoinError,
-        ThreadJoinError, ThreadRuntimeLimits, ThreadSpawnError, ThreadedRuntime, TimeoutError,
+        block_on, delay_ticks, timeout_ticks, yield_now, AdapterLimitError, AdapterLimits,
+        AsyncRuntime, Cancellable, CancellationToken, JoinError, RunReport, RuntimeLimits,
+        SpawnError, TaskJoinError, ThreadJoinError, ThreadRuntimeLimits, ThreadSpawnError,
+        ThreadedRuntime, TimeoutError,
     };
     use std::future::ready;
 
@@ -1130,6 +1188,78 @@ mod tests {
         token.cancel();
         runtime.run_until_idle();
         assert_eq!(runtime.pending_tasks(), 0);
+    }
+
+    #[test]
+    fn threaded_runtime_rejects_invalid_limits_before_starting_workers() {
+        assert!(matches!(
+            ThreadedRuntime::new(ThreadRuntimeLimits {
+                max_workers: 0,
+                max_tasks: 1,
+                max_read_bytes: 1,
+            }),
+            Err(ThreadSpawnError::InvalidWorkerLimit)
+        ));
+        assert!(matches!(
+            ThreadedRuntime::new(ThreadRuntimeLimits {
+                max_workers: 1,
+                max_tasks: 0,
+                max_read_bytes: 1,
+            }),
+            Err(ThreadSpawnError::InvalidTaskLimit)
+        ));
+        assert!(matches!(
+            ThreadedRuntime::new(ThreadRuntimeLimits {
+                max_workers: 1,
+                max_tasks: 1,
+                max_read_bytes: 0,
+            }),
+            Err(ThreadSpawnError::InvalidReadLimit)
+        ));
+        assert!(matches!(
+            ThreadedRuntime::with_adapter_limits(
+                ThreadRuntimeLimits {
+                    max_workers: 1,
+                    max_tasks: 1,
+                    max_read_bytes: 1,
+                },
+                AdapterLimits {
+                    max_socket_bytes: 0,
+                    ..AdapterLimits::default()
+                },
+            ),
+            Err(ThreadSpawnError::InvalidAdapterLimit(
+                AdapterLimitError::SocketBytes
+            ))
+        ));
+        assert_eq!(
+            AdapterLimits {
+                max_process_output_bytes: 0,
+                ..AdapterLimits::default()
+            }
+            .validate(),
+            Err(AdapterLimitError::ProcessOutputBytes)
+        );
+    }
+
+    #[test]
+    fn tcp_exchange_rejects_oversized_request_before_admission() {
+        let runtime = ThreadedRuntime::with_adapter_limits(
+            ThreadRuntimeLimits {
+                max_workers: 1,
+                max_tasks: 1,
+                max_read_bytes: 16,
+            },
+            AdapterLimits {
+                max_socket_bytes: 4,
+                ..AdapterLimits::default()
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            runtime.tcp_exchange("127.0.0.1:1".to_owned(), b"12345".to_vec()),
+            Err(ThreadSpawnError::InputLimitExceeded { limit: 4 })
+        ));
     }
 
     #[test]

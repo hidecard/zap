@@ -4,7 +4,7 @@
 
 **Purpose:** Define the next implementation sequence after the stable diagnostic contract. This plan turns the remaining TODO register into executable milestones without treating already-completed release work as unfinished.
 
-**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. The first P0-05-A slice is also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, runtime/AST tests, and synchronized async/stdlib documentation. P0-05 resource-limit preflight, cross-platform matrix coverage, executor-backed language scheduling, and language-level cancellation/timeout controls remain deferred.
+**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. P0-05-A and P0-05-B are also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, runtime/AST tests, typed resource-limit preflight validation, and TCP request-size admission checks. P0-05-C cross-platform matrix coverage, executor-backed language scheduling, and language-level cancellation/timeout controls remain deferred.
 
 ## Next P0/P1 execution queue
 
@@ -148,7 +148,7 @@ No parser or runtime implementation should begin until the RFC has bilingual ter
 
 ## Immediate next task
 
-The next implementation slice should be **P0-05-A Async boundary capability contract**. Add the capability report and boundary table first; then implement P0-05-B resource-limit validation and P0-05-C cross-platform coverage. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
+The next implementation slice should be **P0-05-C Cross-platform async matrix**. Add target-native or reproducible limitation evidence for path, process, socket, deadline, cancellation, and output-limit behavior. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
 
 ## Related records
 

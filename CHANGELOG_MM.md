@@ -4,6 +4,7 @@
 
 ### Async boundary hardening
 - Single-threaded executor၊ fixed-worker adapter၊ bounded network/process adapter များ၊ cancellation behavior၊ default limits၊ deferred language-level scheduling/cancellation/timeout နှင့် arbitrary foreign blocking call interrupt မထောက်ပံ့ခြင်းတို့ကို ဖော်ပြသော deterministic `async_capabilities()` builtin နှင့် catalog entry ကို ထည့်သွင်းထားပါသည်။
+- Zero/oversized worker၊ task၊ read၊ socket နှင့် process limit များအတွက် typed preflight validation နှင့် queue admission မတိုင်မီ TCP request-size rejection ကို ထည့်သွင်းထားပါသည်။
 - Runtime နှင့် AST regression coverage များကို ထည့်သွင်းပြီး English/Burmese async runtime နှင့် standard-library documentation များကို synchronize လုပ်ထားပါသည်။
 
 ### Memory contract hardening
