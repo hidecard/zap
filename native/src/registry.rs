@@ -1343,6 +1343,12 @@ fn handle_registry_connection(
     token: &str,
     signing_secret: &[u8],
 ) -> Result<(), String> {
+    // The listener is intentionally non-blocking for its accept loop. Some
+    // Unix targets can propagate that mode to accepted sockets, so normalize
+    // each connection before the request parser performs blocking reads.
+    stream
+        .set_nonblocking(false)
+        .map_err(|error| format!("registry connection blocking-mode setup failed: {error}"))?;
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| format!("registry connection timeout failed: {error}"))?;
