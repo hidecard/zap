@@ -52,6 +52,9 @@ jobs:
       - name: Run integration tests
         run: cargo test --manifest-path native/Cargo.toml --all-targets --all-features
 
+      - name: Run security property corpus
+        run: cargo test --manifest-path native/Cargo.toml security_property --all-features
+
       - name: Check repository whitespace
         run: git diff --check
 

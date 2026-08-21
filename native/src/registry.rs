@@ -1599,6 +1599,150 @@ mod tests {
     }
 
     #[test]
+    fn security_property_origin_normalization_is_idempotent_for_adversarial_corpus() {
+        let valid_sources = [
+            "https://EXAMPLE.test",
+            "https://example.test:443/api///",
+            "http://registry.test:8080/team/./packages",
+            "file:///var/lib/zap/registry///",
+            "file://relative/path",
+            "https://[::1]:443/api",
+        ];
+        for source in valid_sources {
+            let first = normalize_registry_origin(source).unwrap();
+            let canonical = first.as_url();
+            let second = normalize_registry_origin(&canonical).unwrap();
+            assert_eq!(
+                first, second,
+                "normalization changed {source} -> {canonical}"
+            );
+        }
+
+        let invalid_sources = [
+            "",
+            "example.test/index",
+            "ftp://example.test/index",
+            "https://user:secret@example.test/index",
+            "https://example.test/index?token=secret",
+            "https://example.test/index#fragment",
+            "https://example.test/a/../b",
+            "https://example.test:65536/index",
+            "https://example.test\\index",
+            "https://example.test/with whitespace",
+        ];
+        for source in invalid_sources {
+            assert!(
+                normalize_registry_origin(source).is_err(),
+                "accepted {source}"
+            );
+        }
+    }
+
+    #[test]
+    fn security_property_trust_and_credential_scopes_do_not_cross_boundaries() {
+        let mut policy = TrustedRegistryPolicy::new();
+        assert!(policy.add("https://example.test/team").unwrap());
+        assert!(policy.is_trusted("https://example.test/team/pkg").unwrap());
+        assert!(!policy
+            .is_trusted("https://example.test/teammate/pkg")
+            .unwrap());
+        assert!(!policy.is_trusted("http://example.test/team/pkg").unwrap());
+        assert!(!policy.is_trusted("https://other.test/team/pkg").unwrap());
+
+        let mut credentials = RegistryCredentialStore::new();
+        credentials
+            .insert("https://example.test", "root-token")
+            .unwrap();
+        credentials
+            .insert("https://example.test/team", "team-token")
+            .unwrap();
+        assert_eq!(
+            credentials
+                .resolve("https://example.test/team/pkg")
+                .unwrap(),
+            Some("team-token")
+        );
+        assert_eq!(
+            credentials
+                .resolve("https://example.test/teammate/pkg")
+                .unwrap(),
+            Some("root-token")
+        );
+        assert_eq!(
+            credentials.resolve("http://example.test/team/pkg").unwrap(),
+            None
+        );
+        assert!(credentials
+            .insert("https://example.test", "token with spaces")
+            .is_err());
+    }
+
+    #[test]
+    fn security_property_trusted_registry_allowlist_is_bounded_and_deterministic() {
+        let mut policy = TrustedRegistryPolicy::new();
+        for index in 0..64 {
+            assert!(policy
+                .add(&format!("https://registry-{index}.example.test"))
+                .unwrap());
+        }
+        assert_eq!(policy.origins().count(), 64);
+        assert!(policy.add("https://overflow.example.test").is_err());
+        assert!(!policy.add("https://registry-63.example.test/").unwrap());
+        let origins = policy
+            .origins()
+            .map(|origin| origin.as_url())
+            .collect::<Vec<_>>();
+        let mut sorted = origins.clone();
+        sorted.sort();
+        assert_eq!(origins, sorted);
+    }
+
+    #[test]
+    fn security_property_signed_index_mutations_never_panic_or_accept_tampering() {
+        let package = serde_json::json!([{
+            "name": "demo",
+            "version": "1.0.0",
+            "source": "demo.pkg",
+            "checksum": sha256_hex(b"package")
+        }]);
+        let canonical = serde_json::to_vec(&package).unwrap();
+        let signature = hmac_sha256_hex(b"test-secret", &canonical);
+        let valid = serde_json::to_vec(&serde_json::json!({
+            "signature": signature,
+            "packages": package
+        }))
+        .unwrap();
+        assert!(verify_signed_index_bytes(&valid, b"test-secret").is_ok());
+
+        let mut corpus = vec![Vec::new(), b"null".to_vec(), b"[]".to_vec(), valid.clone()];
+        corpus.extend((0..valid.len()).map(|index| {
+            let mut mutated = valid.clone();
+            mutated[index] ^= 0x01;
+            mutated
+        }));
+        for bytes in corpus {
+            let result =
+                std::panic::catch_unwind(|| verify_signed_index_bytes(&bytes, b"test-secret"));
+            assert!(
+                result.is_ok(),
+                "signed-index parser panicked for corpus input"
+            );
+            if bytes != valid {
+                assert!(result.unwrap().is_err(), "accepted mutated signed index");
+            }
+        }
+    }
+
+    #[test]
+    fn security_property_secret_redaction_removes_all_token_occurrences() {
+        let token = "s3cr3t-token-123";
+        let message = format!("token={token}; retry token={token}; bearer {token}");
+        let redacted = redact_registry_secret(&message, Some(token));
+        assert!(!redacted.contains(token));
+        assert_eq!(redacted.matches("<redacted>").count(), 3);
+    }
+
+    #[test]
     fn canonical_origin_normalizes_scheme_host_port_and_path() {
         let origin = normalize_registry_origin(" HTTPS://Registry.Example:443/api/// ").unwrap();
         assert_eq!(origin.scheme, RegistryScheme::Https);

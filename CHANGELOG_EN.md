@@ -10,7 +10,13 @@
 - Added offline nested-registry integration fixtures covering transitive resolution, cache verification, stable install output, missing transitive artifacts, cached checksum mismatches, and incomplete v2 lockfiles with deterministic diagnostics.
 - Added `zap registry gc [--dry-run] [dir]`, which derives keep entries from the canonical project lockfile, preserves referenced artifacts, reports stale and temporary candidates without mutation in dry-run mode, and deletes candidates in deterministic lexical order.
 - Added transport and registry-service failure coverage: insecure HTTP rejection, malformed remote-index diagnostics, and deterministic HTTP-status errors for non-2xx fetch and publish responses.
-- Completed the v2.1-B trusted-registry enforcement slice with canonical origin normalization, a bounded deterministic allowlist, persistent `zap registry trust list|add|remove` commands, origin-scoped bearer credentials, bounded `zap registry credential list|set|remove` management, token validation/redaction, stable `ZAP-REG-AUTH-001`/`002`/`003` diagnostics, credential-aware remote index loading, effective-policy checks across dependency resolution and registry fetch/cache/publish paths, and a Rust 1.75-compatible local TLS fixture covering successful authenticated HTTPS fetch/publish. Remaining acceptance work covers final release integration.
+- Completed the v2.1-B trusted-registry enforcement slice with canonical origin normalization, a bounded deterministic allowlist, persistent `zap registry trust list|add|remove` commands, origin-scoped bearer credentials, bounded `zap registry credential list|set|remove` management, token validation/redaction, stable `ZAP-REG-AUTH-001`/`002`/`003` diagnostics, credential-aware remote index loading, effective-policy checks across dependency resolution and registry fetch/cache/publish paths, and a Rust 1.75-compatible local TLS fixture covering successful authenticated HTTPS fetch/publish. Final v2.1.0 release integration is complete.
+
+### Security and release hardening
+
+- Added deterministic security-property corpus tests for canonical registry URL normalization, adversarial URL rejection, trusted-registry and credential scope boundaries, bounded allowlist behavior, longest-prefix token selection, token validation, and secret redaction.
+- Added signed registry-index mutation coverage that feeds malformed and byte-mutated inputs through `catch_unwind`, requiring deterministic errors rather than parser panics or acceptance of tampered indexes.
+- Added an explicit `security_property` CI step alongside the complete native test suite. Formatting, Cargo check, 248 native tests, strict Clippy in CI, cross-platform builds, and the v2.1.0 release checksum gates remain enforced.
 
 ### Async and tooling
 
