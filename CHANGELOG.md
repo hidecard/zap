@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.5] - 2026-08-21
+
+### Release summary
+- Signed release publication and cross-platform reproducible packaging hardening.
+
 ## [2.1.4] - 2026-08-21
 
 ### Release summary

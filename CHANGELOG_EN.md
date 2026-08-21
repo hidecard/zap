@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.5] — 2026-08-21
+
+### Release engineering
+- Hardened signed release publication, provenance verification, and cross-platform reproducible packaging.
+
 ## [2.1.4] — 2026-08-21
 
 ### Release engineering

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.5] — 2026-08-21
+
+### Release engineering
+- Signed release publication၊ provenance verification နှင့် platform အစုံ reproducible packaging hardening များကို ခိုင်မာစေပါသည်။
+
 ## [2.1.4] — 2026-08-21
 
 ### Release engineering
