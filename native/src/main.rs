@@ -2003,18 +2003,37 @@ fn print_project_json(dir: &Path) {
             let (_, file, line, column) = diagnostic.parts();
             let message = diagnostic.message();
             println!(
-                "{{\"ok\":false,\"kind\":\"{}\",\"file\":\"{}\",\"line\":{},\"column\":{},\"message\":\"{}\",\"error\":\"{}\"}}",
+                "{{\"ok\":false,\"kind\":\"{}\",\"severity\":\"{}\",\"file\":\"{}\",\"line\":{},\"column\":{},\"message\":\"{}\",\"notes\":{},\"help\":{},\"error\":\"{}\"}}",
                 diagnostic.kind(),
+                diagnostic.severity(),
                 json_escape(file),
                 line,
                 column,
                 json_escape(message),
+                diagnostic_notes_json(&diagnostic),
+                diagnostic_help_json(&diagnostic),
                 json_escape(&diagnostic.to_string())
             );
             process::exit(1);
         }
     }
 }
+fn diagnostic_notes_json(diagnostic: &ZapError) -> String {
+    let notes = diagnostic
+        .notes()
+        .into_iter()
+        .map(|note| format!("\"{}\"", json_escape(&note)))
+        .collect::<Vec<_>>();
+    format!("[{}]", notes.join(","))
+}
+
+fn diagnostic_help_json(diagnostic: &ZapError) -> String {
+    diagnostic.help().map_or_else(
+        || "null".to_string(),
+        |help| format!("\"{}\"", json_escape(help)),
+    )
+}
+
 fn legacy_configuration_directory() -> String {
     #[cfg(target_os = "windows")]
     {

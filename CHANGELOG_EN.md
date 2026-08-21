@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Structured diagnostics hardening
+- Added a stable structured diagnostic contract shared by CLI JSON and LSP output, including severity, deterministic notes, optional help, and regression assertions for TypeError parity.
+- Added bilingual `docs/DIAGNOSTIC_MODEL_EN.md` and `docs/DIAGNOSTIC_MODEL_MM.md` documentation for diagnostic fields and compatibility rules.
+
 ## [2.1.6] — 2026-08-21
 
 ### Release engineering

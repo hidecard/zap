@@ -711,7 +711,12 @@ fn publish_diagnostics(uri: &str, source: &str) -> Value {
                 "severity": 1,
                 "source": "zap",
                 "code": diagnostic.kind(),
-                "message": diagnostic.message()
+                "message": diagnostic.message(),
+                "data": {
+                    "severity": diagnostic.severity(),
+                    "notes": diagnostic.notes(),
+                    "help": diagnostic.help()
+                }
             })
         })
         .collect::<Vec<_>>();
@@ -767,6 +772,16 @@ mod tests {
         .unwrap();
         let diagnostic = &response["params"]["diagnostics"][0];
         assert_eq!(diagnostic["code"], "TypeError");
+        assert_eq!(diagnostic["severity"], 1);
+        assert_eq!(diagnostic["data"]["severity"], "error");
+        assert_eq!(
+            diagnostic["data"]["notes"][0],
+            "Check the expression type and the expected annotation."
+        );
+        assert_eq!(
+            diagnostic["data"]["help"],
+            "Use a compatible value or update the type annotation."
+        );
         assert_eq!(diagnostic["range"]["start"]["line"], 0);
         assert_eq!(diagnostic["range"]["start"]["character"], 0);
         assert!(diagnostic["message"]

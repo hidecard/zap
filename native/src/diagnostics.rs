@@ -186,6 +186,32 @@ impl ZapError {
         }
     }
 
+    pub(crate) fn severity(&self) -> &'static str {
+        "error"
+    }
+
+    pub(crate) fn notes(&self) -> Vec<String> {
+        match self {
+            Self::Type { .. } => {
+                vec!["Check the expression type and the expected annotation.".to_string()]
+            }
+            Self::Syntax { .. } => vec!["Check the surrounding syntax and delimiters.".to_string()],
+            Self::Name { .. } => {
+                vec!["Check that the name is declared in the current scope.".to_string()]
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    pub(crate) fn help(&self) -> Option<&'static str> {
+        match self {
+            Self::Type { .. } => Some("Use a compatible value or update the type annotation."),
+            Self::Syntax { .. } => Some("Review the Zap syntax guide for the expected form."),
+            Self::Name { .. } => Some("Declare the name before using it, or correct its spelling."),
+            _ => None,
+        }
+    }
+
     pub(crate) fn kind(&self) -> &'static str {
         match self {
             Self::Syntax { .. } => "SyntaxError",
@@ -388,6 +414,21 @@ mod tests {
         assert_eq!(
             error.to_string(),
             "Error: uncaught error: Err(invalid input)"
+        );
+    }
+
+    #[test]
+    fn structured_metadata_is_stable_for_type_errors() {
+        let error = ZapError::from_message("TypeError at main.zp:4:12: expected number, got text");
+        assert_eq!(error.severity(), "error");
+        assert_eq!(error.kind(), "TypeError");
+        assert_eq!(
+            error.notes(),
+            vec!["Check the expression type and the expected annotation."]
+        );
+        assert_eq!(
+            error.help(),
+            Some("Use a compatible value or update the type annotation.")
         );
     }
 

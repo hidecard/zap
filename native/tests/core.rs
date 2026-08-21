@@ -367,6 +367,11 @@ fn check_json_reports_structured_type_diagnostics() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("\"ok\":false"));
     assert!(stdout.contains("\"kind\":\"TypeError\""));
+    assert!(stdout.contains("\"severity\":\"error\""));
+    assert!(
+        stdout.contains("\"notes\":[\"Check the expression type and the expected annotation.\"]")
+    );
+    assert!(stdout.contains("\"help\":\"Use a compatible value or update the type annotation.\""));
     assert!(stdout.contains("unknown type annotation"));
 }
 
