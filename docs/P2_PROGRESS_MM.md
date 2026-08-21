@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ verified baseline သည် v2.1.11 ဖြစ်ပါသည်။ P2 package၊ async၊ registry နှင့် editor အလုပ်များကို production-boundary limitation များကို explicit ဖော်ပြထားသော deterministic foundation များအဖြစ် track လုပ်ထားပါသည်။
+Zap ၏ လက်ရှိ verified baseline သည် v2.1.12 ဖြစ်ပါသည်။ P2 package၊ async၊ registry နှင့် editor အလုပ်များကို production-boundary limitation များကို explicit ဖော်ပြထားသော deterministic foundation များအဖြစ် track လုပ်ထားပါသည်။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|

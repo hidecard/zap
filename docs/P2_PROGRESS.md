@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current verified baseline is v2.1.11. P2 package, async, registry, and editor work is tracked as deterministic foundations with explicit production-boundary limitations.
+Zap's current verified baseline is v2.1.12. P2 package, async, registry, and editor work is tracked as deterministic foundations with explicit production-boundary limitations.
 
 | Milestone | Status | Notes |
 |---|---|---|

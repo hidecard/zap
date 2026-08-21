@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.12] — 2026-08-22
+
+### Release engineering
+- Canonical AST execution now owns normal programs and local modules; legacy line execution is compatibility-only.
+
 ## [2.1.11] — 2026-08-21
 
 ### Release engineering

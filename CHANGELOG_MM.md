@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.12] — 2026-08-22
+
+### Release engineering
+- Normal program နှင့် local module များကို canonical AST execution ဖြင့် run လုပ်ပြီး legacy line execution ကို compatibility-only boundary အဖြစ် သတ်မှတ်ထားပါသည်။
+
 ## [2.1.11] — 2026-08-21
 
 ### Release engineering
