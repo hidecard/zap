@@ -5,6 +5,7 @@
 ### Release version consistency
 - Cargo ကို authoritative source အဖြစ် အသုံးပြုသော version validator၊ dynamic CLI/lockfile/tag check၊ bilingual README archive check၊ security-link check နှင့် hard-coded release-template detection များကို ထည့်သွင်းထားပါသည်။
 - Deterministic TSV evidence၊ positive/negative version-drift regression test နှင့် CI/release-preflight enforcement များကို ထည့်သွင်းထားပါသည်။
+- `master` ကဲ့သို့ CI branch ref များကို release tag ဟု မှားယွင်းယူဆခြင်းကို ပြင်ဆင်ထားပါသည်။ Implicit tag validation သည် semver ပုံစံရှိသော `v<version>` ref များတွင်သာ အလုပ်လုပ်ပြီး explicit `RELEASE_TAG` တန်ဖိုးများကို ဆက်လက် enforce လုပ်ပါသည်။
 
 ## [2.1.7] — 2026-08-21
 

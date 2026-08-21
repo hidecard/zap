@@ -24,6 +24,15 @@ EXPECTED_VERSION="$CURRENT_VERSION" \
 grep -Fq "$(printf 'release tag\t%s\t%s\tPASS' "$CURRENT_VERSION" "$CURRENT_VERSION")" "$WORK_DIR/pass.tsv"
 grep -Fq 'version validation passed:' "$WORK_DIR/pass.log"
 
+GITHUB_REF_NAME=master \
+  EXPECTED_VERSION="$CURRENT_VERSION" \
+  ZAP_VERSION_REPORT="$WORK_DIR/branch-ref.tsv" \
+  scripts/validate_release_version.sh "$CURRENT_VERSION" > "$WORK_DIR/branch-ref.log"
+if grep -Fq $'release tag\t' "$WORK_DIR/branch-ref.tsv"; then
+  printf '%s\n' 'version validator regression: branch ref was treated as a release tag' >&2
+  exit 1
+fi
+
 if EXPECTED_VERSION="$DRIFT_VERSION" \
   ZAP_VERSION_REPORT="$WORK_DIR/version-drift.tsv" \
   scripts/validate_release_version.sh "$DRIFT_VERSION" > "$WORK_DIR/version-drift.log" 2>&1; then

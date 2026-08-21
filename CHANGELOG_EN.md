@@ -5,6 +5,7 @@
 ### Release version consistency
 - Added the Cargo-authoritative version validator, dynamic CLI/lockfile/tag checks, bilingual README archive checks, security-link checks, and hard-coded release-template detection.
 - Added deterministic TSV evidence, positive/negative version-drift regression tests, and CI/release-preflight enforcement.
+- Fixed CI branch refs such as `master` being mistaken for release tags; implicit tag validation now activates only for semver-shaped `v<version>` refs, while explicit `RELEASE_TAG` values remain enforced.
 
 ## [2.1.7] — 2026-08-21
 

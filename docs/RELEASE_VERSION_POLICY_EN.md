@@ -31,7 +31,7 @@ scripts/validate_release_version.sh 2.1.7
 scripts/test_validate_release_version.sh
 ```
 
-The validator emits deterministic TSV evidence and fails closed on package/lockfile drift, CLI drift, stale onboarding links or archive names, stale security links, missing bilingual release notes, a hard-coded release template version, or a mismatched tag. The GitHub Actions quality job uploads the report and runs the positive and negative regression harness. `scripts/release_preflight.sh` runs the same validator before its other P0/P1 contract and deployment gates.
+The validator emits deterministic TSV evidence and fails closed on package/lockfile drift, CLI drift, stale onboarding links or archive names, stale security links, missing bilingual release notes, a hard-coded release template version, or a mismatched tag. Plain branch refs such as `master` are not treated as release tags; implicit tag validation activates only for semver-shaped `v<VERSION>` refs, while an explicitly supplied `RELEASE_TAG` is always enforced. The GitHub Actions quality job uploads the report and runs the positive and negative regression harness. `scripts/release_preflight.sh` runs the same validator before its other P0/P1 contract and deployment gates.
 
 ## Release workflow
 

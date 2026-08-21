@@ -14,7 +14,10 @@ fi
 cd "$ROOT_DIR"
 
 EXPECTED_VERSION="${1:-${EXPECTED_VERSION:-}}"
-RELEASE_TAG="${RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
+RELEASE_TAG="${RELEASE_TAG:-}"
+if [[ -z "$RELEASE_TAG" && "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+  RELEASE_TAG="$GITHUB_REF_NAME"
+fi
 REPORT="${ZAP_VERSION_REPORT:-$ROOT_DIR/target/version-consistency.tsv}"
 mkdir -p "$(dirname "$REPORT")"
 

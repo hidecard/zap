@@ -31,7 +31,7 @@ scripts/validate_release_version.sh 2.1.7
 scripts/test_validate_release_version.sh
 ```
 
-Validator သည် deterministic TSV evidence ထုတ်ပေးပြီး package/lockfile drift၊ CLI drift၊ stale onboarding link သို့မဟုတ် archive name၊ stale security link၊ bilingual release note မရှိခြင်း၊ hard-coded release template version သို့မဟုတ် tag mismatch များကို fail-closed ပြုလုပ်ပါသည်။ GitHub Actions quality job သည် report ကို upload လုပ်ပြီး positive/negative regression harness ကို run လုပ်ပါသည်။ `scripts/release_preflight.sh` သည် အခြား P0/P1 contract နှင့် deployment gate များမတိုင်မီ ထို validator ကို run လုပ်ပါသည်။
+Validator သည် deterministic TSV evidence ထုတ်ပေးပြီး package/lockfile drift၊ CLI drift၊ stale onboarding link သို့မဟုတ် archive name၊ stale security link၊ bilingual release note မရှိခြင်း၊ hard-coded release template version သို့မဟုတ် tag mismatch များကို fail-closed ပြုလုပ်ပါသည်။ `master` ကဲ့သို့ ရိုးရိုး branch ref များကို release tag ဟု မယူဆပါ။ Implicit tag validation သည် semver ပုံစံရှိသော `v<VERSION>` ref များတွင်သာ အလုပ်လုပ်ပြီး explicit `RELEASE_TAG` ပေးထားပါက အမြဲ enforce လုပ်ပါသည်။ GitHub Actions quality job သည် report ကို upload လုပ်ပြီး positive/negative regression harness ကို run လုပ်ပါသည်။ `scripts/release_preflight.sh` သည် အခြား P0/P1 contract နှင့် deployment gate များမတိုင်မီ ထို validator ကို run လုပ်ပါသည်။
 
 ## Release workflow
 
