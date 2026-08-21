@@ -50,7 +50,7 @@ Object field များသည် documented single-threaded `Rc<RefCell>` owne
 
 User-facing diagnostic တိုင်းတွင် severity၊ stable code၊ message၊ ရရှိနိုင်ပါက source location၊ notes နှင့် help တို့ကို ထိန်းသိမ်းရမည်။ CLI နှင့် LSP consumer များသည် semantic diagnostic field တစ်စုံတစ်ရာတည်းကို မျှဝေရမည်။ Compatibility behavior ကို **normative**၊ **compatibility**၊ **deprecated** သို့မဟုတ် **rejected** အဖြစ် အမည်တပ်ရမည်။ Fixture အဟောင်းတစ်ခုက လက်ခံသောကြောင့်သာ behavior တစ်ခုကို normative မသတ်မှတ်ရ။
 
-လက်ရှိ release line သည် v2.1.x ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။
+လက်ရှိ release line သည် v2.1.x ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
 
 ## ၈။ Conformance ownership
 
@@ -58,7 +58,7 @@ Parser သည် syntax နှင့် AST construction ကို ပိုင�
 
 ## Specification ownership index
 
-Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) ဖြစ်ပြီး field နှင့် migration contract ကို [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) နှင့် [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md) တွင် မှတ်တမ်းတင်ထားသည်။ CI သည် index ထဲရှိ English section၊ Burmese section နှင့် fixture owner တစ်ခုချင်းစီ ရှိကြောင်း စစ်ဆေးသည်။
+Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) ဖြစ်ပြီး field နှင့် migration contract ကို [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) နှင့် [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md) တွင် မှတ်တမ်းတင်ထားသည်။ CI သည် index ထဲရှိ English section၊ Burmese section နှင့် fixture owner တစ်ခုချင်းစီ ရှိကြောင်း စစ်ဆေးပြီး unique rule ID နှင့် required domain coverage ကိုလည်း enforce လုပ်သည်။
 
 ## ဆက်စပ် normative contract များ
 

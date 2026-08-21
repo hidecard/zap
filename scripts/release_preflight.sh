@@ -157,12 +157,26 @@ check_release_files() {
     "docs/RELEASE_${EXPECTED_VERSION}_MM.md"
     scripts/verify_release_artifacts.sh
     scripts/verify_installer_unix.sh
+    scripts/test_p001_parity.sh
+    scripts/test_p105_layers.sh
+    scripts/test_p105_replay.sh
+    scripts/test_p005c_async_matrix.sh
+    scripts/validate_spec_ownership.sh
     scripts/verify_installer_windows.ps1
     scripts/validate_registry_deployment.sh
     deploy/registry-deployment-policy.toml
     deploy/registry.env.example
     deploy/zap-registry.service
     deploy/zap-registry.nginx.conf
+    docs/SPEC_OWNERSHIP_INDEX.tsv
+    docs/SPEC_OWNERSHIP_EN.md
+    docs/SPEC_OWNERSHIP_MM.md
+    docs/COMPATIBILITY_CHANGE_TEMPLATE_EN.md
+    docs/COMPATIBILITY_CHANGE_TEMPLATE_MM.md
+    docs/P001_PARITY_MATRIX_EN.md
+    docs/P001_PARITY_MATRIX_MM.md
+    docs/P105_REPLAY_EN.md
+    docs/P105_REPLAY_MM.md
   )
   local path
   for path in "${required_files[@]}"; do
@@ -264,6 +278,29 @@ run_optional_cargo_checks() {
   pass "native test suite passed"
 }
 
+run_contract_validation() {
+  local report_dir="${RELEASE_CONTRACT_REPORT_DIR:-$ROOT_DIR/target/release-contract-reports}"
+  local seed="${ZAP_CORPUS_SEED:-20260821}"
+  mkdir -p "$report_dir"
+
+  ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/spec-ownership.tsv" \
+    bash scripts/validate_spec_ownership.sh
+  pass "specification ownership validation passed"
+
+  ZAP_PARITY_REPORT="$report_dir/native-legacy-parity.tsv" \
+    bash scripts/test_p001_parity.sh
+  pass "native/legacy parity validation passed"
+
+  ZAP_CORPUS_SEED="$seed" \
+    ZAP_CORPUS_REPLAY_LOG="$report_dir/p105-replay.log" \
+    bash scripts/test_p105_replay.sh
+  pass "fixed-seed replay validation passed with seed $seed"
+
+  ZAP_ASYNC_LOG="$report_dir/p005c-async.log" \
+    bash scripts/test_p005c_async_matrix.sh
+  pass "focused async boundary matrix passed"
+}
+
 run_deployment_validation() {
   if [[ "$SKIP_DEPLOYMENT_VALIDATION" == "1" ]]; then
     warn "SKIP_DEPLOYMENT_VALIDATION=1; deployment-policy validation was skipped"
@@ -294,6 +331,8 @@ printf '%s\n' '--- bilingual documentation'
 check_documentation_pairs
 printf '%s\n' '--- target matrix'
 check_targets
+printf '%s\n' '--- P0/P1 contract validation'
+run_contract_validation
 printf '%s\n' '--- deployment policy'
 run_deployment_validation
 printf '%s\n' '--- optional Rust gates'

@@ -7,9 +7,10 @@
 - Normalized accepted registry-service sockets back to blocking mode before request reads, preventing macOS targets from intermittently observing an empty response after a non-blocking listener accept.
 
 ### Specification ownership hardening
-- Added `docs/SPEC_OWNERSHIP_INDEX.tsv` with 15 stable rule IDs mapping bilingual canonical sections to implementation/conformance owners, status, and compatibility class.
-- Added `scripts/validate_spec_ownership.sh` and a CI TSV artifact gate that rejects missing sections, missing fixture owners, duplicate IDs, and invalid policy values.
-- Added bilingual `docs/SPEC_OWNERSHIP_EN.md` and `docs/SPEC_OWNERSHIP_MM.md` guidance and linked the index from both canonical language specifications.
+- Expanded `docs/SPEC_OWNERSHIP_INDEX.tsv` to 27 stable rule IDs covering source execution, precedence, typing, functions, modules, memory, deterministic/production async boundaries, diagnostics, registry, lockfiles, JSON/filesystem limits, standard-library catalog, CLI JSON, compatibility policy, and CI enforcement.
+- Strengthened `scripts/validate_spec_ownership.sh` to reject missing sections, missing fixture owners, duplicate IDs, invalid policy values, and missing required semantic domains.
+- Added bilingual `COMPATIBILITY_CHANGE_TEMPLATE_EN.md` and `COMPATIBILITY_CHANGE_TEMPLATE_MM.md` records for future normative, compatibility, deprecation, and rejection decisions.
+- Extended `scripts/release_preflight.sh` to run ownership, native/legacy parity, fixed-seed replay, and focused async contract gates before deployment validation.
 
 ### Native/legacy parity hardening
 - Added a versioned six-case native/legacy matrix with `common`, `native-only`, and `rejected` policy classes.

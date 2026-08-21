@@ -50,7 +50,7 @@ The current async executor is deterministic and poll-budgeted. It provides joina
 
 Every user-facing diagnostic must preserve severity, stable code, message, source location where available, notes, and help. CLI and LSP consumers share the same semantic diagnostic fields. Compatibility behavior must be labeled as one of: **normative**, **compatibility**, **deprecated**, or **rejected**. A behavior cannot become normative solely because an old fixture happens to accept it.
 
-The current release line is v2.1.x. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates.
+The current release line is v2.1.x. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
 
 ## 8. Conformance ownership
 
@@ -58,7 +58,7 @@ The parser owns syntax and AST construction. The evaluator owns runtime expressi
 
 ## Specification ownership index
 
-The machine-readable rule-to-section-to-fixture map is [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv), with the field and migration contract documented in [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) and [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md). CI validates that every indexed English section, Burmese section, and fixture owner exists.
+The machine-readable rule-to-section-to-fixture map is [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv), with the field and migration contract documented in [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) and [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md). CI validates that every indexed English section, Burmese section, and fixture owner exists; the validator also enforces unique rule IDs and required domain coverage.
 
 ## Related normative contracts
 

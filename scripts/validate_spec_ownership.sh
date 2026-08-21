@@ -57,7 +57,8 @@ check_fixture() {
 
 failures=0
 rows=0
-previous_id=""
+declare -A seen_ids=()
+declare -A seen_domains=()
 while IFS=$'\t' read -r rule_id domain canonical_en canonical_mm fixture_owner status compatibility || [[ -n "$rule_id" ]]; do
   [[ "$rule_id" == "rule_id" ]] && continue
   if [[ -z "$rule_id" ]]; then
@@ -65,11 +66,12 @@ while IFS=$'\t' read -r rule_id domain canonical_en canonical_mm fixture_owner s
   fi
   rows=$((rows + 1))
   decision=PASS
-  if [[ "$rule_id" == "$previous_id" ]]; then
+  if [[ "${seen_ids[$rule_id]-}" == "1" ]]; then
     decision=FAIL
     printf 'spec ownership: duplicate rule id: %s\n' "$rule_id" >&2
   fi
-  previous_id="$rule_id"
+  seen_ids["$rule_id"]=1
+  seen_domains["$domain"]=1
   if [[ -z "$domain" || -z "$canonical_en" || -z "$canonical_mm" || -z "$fixture_owner" ]]; then
     decision=FAIL
   fi
@@ -95,10 +97,24 @@ while IFS=$'\t' read -r rule_id domain canonical_en canonical_mm fixture_owner s
   fi
 done < "$INDEX"
 
-if (( rows < 10 )); then
-  printf 'spec ownership: index must contain at least 10 rule rows, found %s\n' "$rows" >&2
+required_domains=(
+  source-execution expressions-precedence values-typing functions-closures
+  control-flow-modules memory-ownership async-deterministic async-production-boundary
+  diagnostics registry-security lockfile json-standard-library filesystem-limits
+  compatibility-policy ci-gates diagnostic-fields evaluator-propagation memory-stats
+  async-capability async-budget package-validation lockfile-generation registry-index
+  stdlib-catalog cli-project-json compatibility-template ownership-validator
+)
+if (( rows < 20 )); then
+  printf 'spec ownership: index must contain at least 20 rule rows, found %s\n' "$rows" >&2
   failures=$((failures + 1))
 fi
+for required_domain in "${required_domains[@]}"; do
+  if [[ "${seen_domains[$required_domain]-}" != "1" ]]; then
+    printf 'spec ownership: required domain is unowned: %s\n' "$required_domain" >&2
+    failures=$((failures + 1))
+  fi
+done
 if (( failures > 0 )); then
   printf 'spec ownership validation failed: %s issue(s); report=%s\n' "$failures" "$REPORT" >&2
   exit 1

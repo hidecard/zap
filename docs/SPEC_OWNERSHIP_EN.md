@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the first executable ownership slice for the canonical Zap specification. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
+The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the executable ownership index for the canonical Zap specification. Its current 27 rows cover source execution, precedence, typing, functions, modules, memory, deterministic and production async boundaries, diagnostics, registry, lockfiles, JSON/filesystem limits, standard-library catalog, CLI JSON, compatibility policy, and CI enforcement. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
 
 ## Required row fields
 
@@ -16,13 +16,13 @@ The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is t
 | `status` | `implemented` or `deferred` |
 | `compatibility` | One of `normative`, `compatibility`, `deprecated`, or `rejected` |
 
-The validator checks that both bilingual documents and referenced sections exist, that every fixture owner exists and contains its named fragment, that policy values are valid, and that the index contains a meaningful number of rows. Its report is deterministic TSV output with a per-row `PASS` or `FAIL` decision.
+The validator checks that both bilingual documents and referenced sections exist, that every fixture owner exists and contains its named fragment, that policy values are valid, that rule IDs are unique, and that all required semantic domains are represented. Its report is deterministic TSV output with a per-row `PASS` or `FAIL` decision.
 
 ## Ownership rules
 
 The canonical specification owns semantics. Implementation modules own executable behavior within that semantic boundary: the AST/parser owns syntax construction, the evaluator owns runtime expression and statement behavior, diagnostics owns structured error fields, the registry owns package transport and integrity, and CI owns enforcement. A cross-cutting rule must still have one canonical bilingual section and may reference multiple implementation tests through a stable fixture owner policy.
 
-A new public rule is incomplete until it has an index row, a bilingual section or an explicit cross-link to a normative subcontract, and a passing or intentionally failing fixture. A deferred rule must remain labeled `deferred` rather than being described as implemented in release documentation. Compatibility behavior must be classified explicitly; legacy acceptance alone cannot promote it to `normative` status.
+A new public rule is incomplete until it has an index row, a bilingual section or an explicit cross-link to a normative subcontract, and a passing or intentionally failing fixture. A deferred rule must remain labeled `deferred` rather than being described as implemented in release documentation. Compatibility behavior must be classified explicitly; legacy acceptance alone cannot promote it to `normative` status. Future behavior changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
 
 ## Validation command and CI artifact
 
@@ -32,4 +32,4 @@ Run the ownership gate locally with:
 ZAP_SPEC_OWNERSHIP_REPORT=target/spec-ownership-report.tsv scripts/validate_spec_ownership.sh
 ```
 
-GitHub Actions runs the same command in the Rust quality job and uploads `target/spec-ownership-report.tsv` as a commit-named artifact. The next specification slice may expand the index to every fragmented rule, but it must preserve the stable IDs and bilingual ownership fields introduced here.
+GitHub Actions runs the same command in the Rust quality job and uploads `target/spec-ownership-report.tsv` as a commit-named artifact. The index may continue to expand to every fragmented rule, but it must preserve the stable IDs, required-domain coverage, and bilingual ownership fields introduced here.

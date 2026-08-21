@@ -7,9 +7,10 @@
 - Registry service ၏ non-blocking listener မှ accept လုပ်ပြီးသော socket များကို request read မတိုင်မီ blocking mode သို့ ပြန်လည်သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် macOS target တွင် တစ်ခါတစ်ရံ empty response မြင်ရသော ပြဿနာကို ကာကွယ်ထားပါသည်။
 
 ### Specification ownership hardening
-- `SPEC_OWNERSHIP_INDEX.tsv` တွင် stable rule ID ၁၅ ခု၊ bilingual canonical section၊ implementation/conformance owner၊ status နှင့် compatibility class များကို mapping လုပ်ထားပါသည်။
-- Missing section၊ missing fixture owner၊ duplicate ID နှင့် invalid policy value များကို reject လုပ်သော `scripts/validate_spec_ownership.sh` နှင့် CI TSV artifact gate ကို ထည့်သွင်းထားပါသည်။
-- Bilingual `docs/SPEC_OWNERSHIP_EN.md` နှင့် `docs/SPEC_OWNERSHIP_MM.md` guidance များကို ထည့်သွင်းပြီး canonical language specification နှစ်ခုလုံးမှ index သို့ link ချိတ်ထားပါသည်။
+- `SPEC_OWNERSHIP_INDEX.tsv` ကို stable rule ID ၂၇ ခုအထိ ချဲ့ထွင်ပြီး source execution၊ precedence၊ typing၊ functions၊ modules၊ memory၊ deterministic/production async boundary၊ diagnostics၊ registry၊ lockfile၊ JSON/filesystem limits၊ standard-library catalog၊ CLI JSON၊ compatibility policy နှင့် CI enforcement များကို လွှမ်းခြုံထားပါသည်။
+- `scripts/validate_spec_ownership.sh` ကို ခိုင်မာစေပြီး missing section၊ missing fixture owner၊ duplicate ID၊ invalid policy value နှင့် လိုအပ်သော semantic domain များ မရှိခြင်းကို reject လုပ်ထားပါသည်။
+- အနာဂတ် normative၊ compatibility၊ deprecation နှင့် rejection decision များအတွက် bilingual `COMPATIBILITY_CHANGE_TEMPLATE_EN.md` နှင့် `COMPATIBILITY_CHANGE_TEMPLATE_MM.md` records များကို ထည့်သွင်းထားပါသည်။
+- `scripts/release_preflight.sh` ကို deployment validation မတိုင်မီ ownership၊ native/legacy parity၊ fixed-seed replay နှင့် focused async contract gate များ run လုပ်အောင် ချဲ့ထွင်ထားပါသည်။
 
 ### Native/legacy parity hardening
 - `common`၊ `native-only` နှင့် `rejected` policy class များပါသော versioned six-case native/legacy matrix ကို ထည့်သွင်းထားပါသည်။
