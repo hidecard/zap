@@ -281,7 +281,7 @@ fn validate_module_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct LockedRegistryPackage {
+pub(crate) struct LockedRegistryPackage {
     name: String,
     version: String,
     source: String,
@@ -550,7 +550,7 @@ fn parse_lockfile_quoted(value: &str, context: &str) -> Result<String, String> {
     Ok(output)
 }
 
-fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPackage>, String> {
+pub(crate) fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPackage>, String> {
     let version = text
         .lines()
         .find_map(|line| line.trim().strip_prefix("lockfile_version = "))

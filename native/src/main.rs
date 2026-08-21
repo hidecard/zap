@@ -2,6 +2,8 @@
 
 mod ast;
 mod async_runtime;
+#[cfg(test)]
+mod corpus;
 mod diagnostics;
 mod lexer;
 

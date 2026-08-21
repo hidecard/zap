@@ -1,0 +1,4 @@
+lockfile_version = 2
+[resolved]
+demo.version = "1.0.0"
+demo.source = "file://demo.pkg"

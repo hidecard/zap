@@ -590,7 +590,7 @@ pub fn read_index_source_with_credentials(
     parse_index_bytes(&fetch_source_with_credentials(source, credentials)?)
 }
 
-fn parse_index_bytes(bytes: &[u8]) -> Result<Vec<RegistryPackage>, String> {
+pub(crate) fn parse_index_bytes(bytes: &[u8]) -> Result<Vec<RegistryPackage>, String> {
     let root: Value = serde_json::from_slice(bytes)
         .map_err(|e| format!("registry index JSON is invalid: {e}"))?;
     let entries = root

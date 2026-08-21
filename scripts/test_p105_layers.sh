@@ -40,6 +40,7 @@ for filter in delay_ticks_is_deterministic_and_non_blocking cancellation_stops_i
   run_test 'async determinism and cancellation' "$filter"
 done
 
+"$ROOT_DIR/scripts/test_p105_replay.sh"
 "$ROOT_DIR/scripts/test_p105_fuzz_corpus.sh"
 
 printf 'p1-05 deterministic layer validation passed\n'

@@ -6,6 +6,11 @@
 - Temporary directory name များတွင် test-thread label ထည့်ရာ၌ Windows အတွက် မမှန်ကန်သော `::` path separator မဖြစ်စေရန် sanitize လုပ်ထားပြီး Windows native test matrix regression ကို ပြင်ဆင်ထားပါသည်။
 - Registry service ၏ non-blocking listener မှ accept လုပ်ပြီးသော socket များကို request read မတိုင်မီ blocking mode သို့ ပြန်လည်သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် macOS target တွင် တစ်ခါတစ်ရံ empty response မြင်ရသော ပြဿနာကို ကာကွယ်ထားပါသည်။
 
+### Replayable verification hardening
+- Parser၊ JSON၊ lockfile၊ registry၊ memory နှင့် async boundary များအတွက် fixed-seed `ZAP_CORPUS_SEED` replay ကို ထည့်သွင်းထားပါသည်။
+- Durable failure fixture ၂၁ ခု၊ deterministic replay ordering၊ `target/p105-replay.log` ထဲတွင် SHA-256/base64 input evidence နှင့် `scripts/test_p105_layers.sh` မှတစ်ဆင့် CI artifact gate ကို ထည့်သွင်းထားပါသည်။
+- Seed၊ fixture ownership၊ replay evidence နှင့် deferred fuzz scope များကို သတ်မှတ်သော bilingual `docs/P105_REPLAY_EN.md` နှင့် `docs/P105_REPLAY_MM.md` documentation များကို ထည့်သွင်းထားပါသည်။
+
 ### Async boundary hardening
 - Single-threaded executor၊ fixed-worker adapter၊ bounded network/process adapter များ၊ cancellation behavior၊ default limits၊ deferred language-level scheduling/cancellation/timeout နှင့် arbitrary foreign blocking call interrupt မထောက်ပံ့ခြင်းတို့ကို ဖော်ပြသော deterministic `async_capabilities()` builtin နှင့် catalog entry ကို ထည့်သွင်းထားပါသည်။
 - Zero/oversized worker၊ task၊ read၊ socket နှင့် process limit များအတွက် typed preflight validation နှင့် queue admission မတိုင်မီ TCP request-size rejection ကို ထည့်သွင်းထားပါသည်။

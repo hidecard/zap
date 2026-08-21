@@ -1,0 +1,5 @@
+lockfile_version = 2
+[resolved]
+../escape.version = "1.0.0"
+../escape.source = "file://escape.pkg"
+../escape.checksum = "0000000000000000000000000000000000000000000000000000000000000000"

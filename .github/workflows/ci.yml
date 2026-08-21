@@ -115,8 +115,19 @@ jobs:
           cargo test --manifest-path native/Cargo.toml malformed_lockfile_corpus --all-features
           cargo test --manifest-path native/Cargo.toml lockfile_quoted_values --all-features
 
-      - name: Run P1-05 deterministic layer validation
+      - name: Run P1-05 deterministic and replayable layer validation
+        env:
+          ZAP_CORPUS_SEED: 20260821
+          ZAP_CORPUS_REPLAY_LOG: target/p105-replay.log
         run: scripts/test_p105_layers.sh
+
+      - name: Upload P1-05 replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-p105-replay-${{ github.sha }}
+          path: target/p105-replay.log
+          if-no-files-found: error
 
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh

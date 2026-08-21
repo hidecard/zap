@@ -6,6 +6,11 @@
 - Sanitized test-thread labels before using them in temporary directory names so the Windows native test matrix no longer receives invalid `::` path separators.
 - Normalized accepted registry-service sockets back to blocking mode before request reads, preventing macOS targets from intermittently observing an empty response after a non-blocking listener accept.
 
+### Replayable verification hardening
+- Added fixed-seed `ZAP_CORPUS_SEED` replay for parser, JSON, lockfile, registry, memory, and async boundaries.
+- Added 21 durable failure fixtures, deterministic replay ordering, SHA-256/base64 input evidence in `target/p105-replay.log`, and a CI artifact gate through `scripts/test_p105_layers.sh`.
+- Added bilingual `docs/P105_REPLAY_EN.md` and `docs/P105_REPLAY_MM.md` documentation defining seed, fixture ownership, replay evidence, and deferred fuzz scope.
+
 ### Async boundary hardening
 - Added the deterministic `async_capabilities()` builtin and catalog entry describing the single-threaded executor, fixed-worker adapter, bounded network/process adapters, cancellation behavior, default limits, deferred language-level scheduling/cancellation/timeout, and unsupported interruption of arbitrary foreign blocking calls.
 - Added typed preflight validation for zero/oversized worker, task, read, socket, and process limits, plus TCP request-size rejection before queue admission.
