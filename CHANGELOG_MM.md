@@ -30,6 +30,7 @@
 
 ### Async နှင့် tooling
 
+- LSP တွင် `textDocument/documentSymbol` support ထည့်သွင်းပြီး function နှင့် class body များအတွင်း nested-symbol indexing ကို recursive အနေဖြင့် ထည့်သွင်းထားသည်။ Symbol များတွင် deterministic range၊ selection range၊ detail နှင့် child declaration များ ပါဝင်ပြီး class scope နှင့် function scope နှစ်ခုလုံးအတွက် regression coverage ရှိသည်။
 - Deterministic `AsyncRuntime::spawn_joinable(future)` task submission၊ `JoinHandle<T>::is_ready()` နှင့် future အဖြစ် output join လုပ်နိုင်မှုတို့ကို ထည့်သွင်းထားပါသည်။
 - Joinable task admission အချိန် `SpawnError::TaskLimitReached` ကို propagate လုပ်ပြီး runtime task order၊ poll budget၊ Rust 1.75 compatibility နှင့် worker thread မဖန်တီးသော execution model ကို ထိန်းသိမ်းထားပါသည်။
 - Joined output အောင်မြင်မှုနှင့် task-limit error များအတွက် regression coverage ထည့်သွင်းပြီး ပထမ async slice ကို `docs/ASYNC_RUNTIME_EN.md` နှင့် `docs/ASYNC_RUNTIME_MM.md` တွင် မှတ်တမ်းတင်ထားပါသည်။

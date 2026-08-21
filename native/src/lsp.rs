@@ -121,6 +121,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
                     "hoverProvider": true,
                     "definitionProvider": true,
                     "workspaceSymbolProvider": true,
+                    "documentSymbolProvider": true,
                     "documentFormattingProvider": true
                 },
                 "serverInfo": {"name": "zap", "version": env!("CARGO_PKG_VERSION")}
@@ -137,6 +138,7 @@ pub fn handle_message(message: &Value) -> Option<Value> {
         "textDocument/definition" => Some(definition_response(message)),
         "textDocument/formatting" => Some(formatting_response(message)),
         "workspace/symbol" => Some(workspace_symbol_response(message)),
+        "textDocument/documentSymbol" => Some(document_symbol_response(message)),
         "textDocument/didOpen" | "textDocument/didChange" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
@@ -499,6 +501,95 @@ fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, Stri
         .collect()
 }
 
+fn document_symbol_response(message: &Value) -> Value {
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let source = DOCUMENTS
+        .with(|documents| documents.borrow().get(uri).cloned())
+        .unwrap_or_default();
+    let symbols = crate::ast::parse_program(&source)
+        .map(|program| document_symbols_for_program(uri, &source, &program))
+        .unwrap_or_default();
+    json!({
+        "jsonrpc": "2.0",
+        "id": message.get("id").cloned().unwrap_or(Value::Null),
+        "result": symbols
+    })
+}
+
+fn document_symbols_for_program(
+    uri: &str,
+    source: &str,
+    program: &crate::ast::Program,
+) -> Vec<Value> {
+    program
+        .statements
+        .iter()
+        .filter_map(|statement| document_symbol_for_statement(uri, source, statement))
+        .collect()
+}
+
+fn document_symbol_for_statement(
+    uri: &str,
+    source: &str,
+    statement: &crate::ast::Spanned<crate::ast::Stmt>,
+) -> Option<Value> {
+    let (name, kind, detail) = match &statement.node {
+        crate::ast::Stmt::Function { name, is_async, .. } => (
+            name.clone(),
+            12,
+            if *is_async {
+                "async function"
+            } else {
+                "function"
+            },
+        ),
+        crate::ast::Stmt::Class { name, .. } => (name.clone(), 5, "class"),
+        crate::ast::Stmt::Declaration { name, .. } => (name.clone(), 13, "binding"),
+        crate::ast::Stmt::Module { name } => (name.clone(), 2, "module"),
+        crate::ast::Stmt::Import {
+            path,
+            explicit: true,
+            alias,
+        } => (alias.clone().unwrap_or_else(|| path.clone()), 9, "import"),
+        _ => return None,
+    };
+    let range = symbol_range(source, &statement.span, &name);
+    let children = match &statement.node {
+        crate::ast::Stmt::Function { body, .. } | crate::ast::Stmt::Class { body, .. } => {
+            document_symbols_for_program(uri, source, body)
+        }
+        _ => Vec::new(),
+    };
+    let mut symbol = json!({
+        "name": name,
+        "kind": kind,
+        "detail": format!("{detail} in {uri}"),
+        "range": range,
+        "selectionRange": range
+    });
+    if !children.is_empty() {
+        symbol["children"] = Value::Array(children);
+    }
+    Some(symbol)
+}
+
+fn symbol_range(source: &str, span: &crate::lexer::SourceSpan, name: &str) -> Value {
+    let line_index = span.line.saturating_sub(1);
+    let line = source.lines().nth(line_index).unwrap_or("");
+    let column = line.find(name).unwrap_or(span.column.saturating_sub(1));
+    let start = json!({
+        "line": line_index as u64,
+        "character": column as u64
+    });
+    let end = json!({
+        "line": line_index as u64,
+        "character": (column + name.chars().count()) as u64
+    });
+    json!({"start": start, "end": end})
+}
+
 fn publish_diagnostics(uri: &str, source: &str) -> Value {
     let diagnostics = crate::lint_source(source)
         .into_iter()
@@ -749,6 +840,46 @@ mod tests {
         assert!(symbols
             .iter()
             .any(|item| item["name"] == "second" && item["location"]["uri"] == "file:///two.zp"));
+    }
+
+    #[test]
+    fn document_symbols_include_nested_declarations() {
+        let uri = "file:///nested-symbols.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "class Box:\n    fn build():\n        let value = 1\n        return value\nfn outer():\n    fn inner():\n        return 2\n    return inner()\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 19, "method": "textDocument/documentSymbol",
+            "params": {"textDocument": {"uri": uri}}
+        }))
+        .unwrap();
+        let symbols = response["result"].as_array().unwrap();
+        assert_eq!(
+            symbols
+                .iter()
+                .filter(|symbol| symbol["name"] == "Box")
+                .count(),
+            1
+        );
+        assert_eq!(
+            symbols
+                .iter()
+                .filter(|symbol| symbol["name"] == "outer")
+                .count(),
+            1
+        );
+        let class = symbols
+            .iter()
+            .find(|symbol| symbol["name"] == "Box")
+            .unwrap();
+        assert_eq!(class["children"][0]["name"], "build");
+        let function = symbols
+            .iter()
+            .find(|symbol| symbol["name"] == "outer")
+            .unwrap();
+        assert_eq!(function["children"][0]["name"], "inner");
+        assert_eq!(function["children"][0]["range"]["start"]["line"], 5);
     }
 
     #[test]
