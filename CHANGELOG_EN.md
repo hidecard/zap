@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.1] — 2026-08-21
+
+### Release engineering
+- Hardened TC-006 through TC-012 conformance coverage, stabilized structured diagnostics, and aligned CLI and LSP TypeError locations.
+
 ### Package reliability
 
 - Added the explicit `zap lock-migrate [dir]` command for conservative legacy lockfile migration.

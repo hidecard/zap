@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.1] — 2026-08-21
+
+### Release engineering
+- TC-006 မှ TC-012 အထိ conformance coverage၊ structured diagnostic stability နှင့် CLI/LSP TypeError location parity ကို ခိုင်မာအောင် ပြင်ဆင်ထားပါသည်။
+
 ### Package reliability
 
 - Legacy lockfile များကို conservative အတိုင်း migrate လုပ်ရန် `zap lock-migrate [dir]` command အသစ် ထည့်သွင်းထားပါသည်။

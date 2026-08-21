@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-08-21
+
+### Release summary
+- Type-checking conformance and cross-tool diagnostic hardening.
+
 ### Package reliability
 - Legacy lockfile များကို conservative အတိုင်း migrate လုပ်ရန် `zap lock-migrate [dir]` command အသစ် ထည့်သွင်းထားပါသည်။
 - v1 lockfile compatibility ကို ဆက်လက်ထိန်းသိမ်းထားပြီး verified registry metadata မရှိပါက registry version သို့မဟုတ် checksum များကို မခန့်မှန်းဘဲ migration ကို ရပ်တန့်ပါသည်။
