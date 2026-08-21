@@ -524,7 +524,12 @@ fn file_uri_path(uri: &str) -> Option<PathBuf> {
 }
 
 fn path_to_file_uri(path: &Path) -> String {
-    format!("file://{}", path.display())
+    let rendered = path.to_string_lossy().replace('\\', "/");
+    if rendered.starts_with('/') {
+        format!("file://{rendered}")
+    } else {
+        format!("file:///{rendered}")
+    }
 }
 
 fn module_import_path(path: &str) -> Result<PathBuf, String> {
