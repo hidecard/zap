@@ -41,6 +41,22 @@ jobs:
         with:
           workspaces: native
 
+      - name: Validate release version consistency
+        env:
+          ZAP_VERSION_REPORT: target/version-consistency.tsv
+        run: scripts/validate_release_version.sh
+
+      - name: Upload version consistency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-version-consistency-${{ github.sha }}
+          path: target/version-consistency.tsv
+          if-no-files-found: error
+
+      - name: Run version consistency regression
+        run: scripts/test_validate_release_version.sh
+
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
 

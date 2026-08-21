@@ -24,12 +24,13 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.0.4` |
+| လက်ရှိ release line | `v2.1.7` |
 | Runtime | Native Rust runtime |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
 | CLI | `zap` |
 | Platforms | Linux၊ Windows၊ macOS ARM64 |
+| Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
@@ -43,7 +44,9 @@ Zap သည် language core ကို သေးငယ်၊ ရှင်းလ�
 
 ## Installation
 
-Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [GitHub Releases](https://github.com/hidecard/zap/releases) မှ download လုပ်ပြီး extract လုပ်ပါ။
+Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ v2.1.7 အတွက် မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.1.7 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.1.7) မှ download လုပ်ပြီး checksum ကို verify လုပ်ကာ extract လုပ်ပါ။
+
+v2.1.7 official archive များမှာ `zap-2.1.7-linux-x86_64.tar.gz`၊ `zap-2.1.7-macos-arm64.tar.gz` နှင့် `zap-2.1.7-windows-x86_64.zip` ဖြစ်ပါသည်။
 
 | Platform | Architecture | လုပ်ဆောင်ရန် |
 |---|---|---|

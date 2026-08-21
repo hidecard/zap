@@ -1,6 +1,6 @@
 # Zap Remaining Engineering To-do Register
 
-**Baseline:** Zap v2.1.6 verified release  
+**Baseline:** Zap v2.1.7 verified release
 **Source:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **Purpose:** Track every recommendation that is not fully complete, without treating already-verified release work as unfinished.
 
@@ -24,6 +24,7 @@
 | P0-03 | Structured diagnostics | Done | CLI JSON and LSP diagnostics expose stable `ZAP-*` code, kind, severity, normalized message, source span, deterministic notes/help, and deterministic snapshot/regression coverage. |
 | P0-04 | Memory and reference-cycle contract | Partial | `Rc<RefCell>` ownership policy, explicit non-thread-safe boundary, tracked `Value::object`, `clear_object_fields`, `object_field_count`, bounded `memory_stats()`, object allocation/deallocation counters, cycle-safe value validation, and deterministic memory-limit tests are implemented. Public weak references, closure-level/process-wide telemetry, automatic arbitrary-cycle reclamation, and tracing collection remain future work. |
 | P0-05 | Deterministic versus production async boundary | Partial | The deterministic executor, fixed-worker, bounded network/process adapters, cancellation behavior, descriptive `async_capabilities()` report, typed resource-limit preflight validation, TCP request-size admission check, and reproducible Linux/Windows/macOS focused matrix with target-named CI artifacts are documented and exposed. Executor-backed language-level scheduling, language-level cancellation/timeout controls, and tooling synchronization remain. |
+| P0-06 | Release version single-source-of-truth gate | Completed — P0 release slice | `native/Cargo.toml` is the authoritative version source. The validator checks Cargo, Cargo.lock, CLI output, optional release tags, changelogs, bilingual README release links/archive names, `SECURITY.md`, conformance metadata, bilingual release notes, the release template, and installer metadata. Deterministic TSV evidence, a positive/negative regression harness, CI artifact upload, release-preflight enforcement, and bilingual policy documentation are in place. |
 
 ## P1 — Production readiness
 
@@ -46,14 +47,15 @@
 
 ## Execution order
 
-1. **P1-05-A:** Completed. Fixed-seed property/fuzz replay, durable parser/JSON/lockfile/registry/memory/async failure corpora, replay evidence, and a CI artifact gate are implemented. The broader P1-05 fuzz and platform extensions remain separately tracked.
-2. **P0-01-A:** Completed as the first executable parity slice. The six-case native/legacy policy matrix, normalized report, migration guidance, and CI artifact gate are implemented; broader legacy inventory remains separately tracked.
-3. **P0-02-A:** Ownership expansion slice implemented. The bilingual machine-readable index now covers 27 stable rule IDs, unique-ID/domain validation, fixture/test ownership, compatibility/deprecation templates, and a release-preflight contract gate. Expansion to every remaining fragmented rule remains.
-4. **P1-03:** Completed. Registry redaction, fail-closed, traversal, provenance, key-rotation, yanked-release, and end-to-end locked-cache tests enforce signed tag, commit, workflow, HTTPS source, checksum, full signing-fingerprint, explicit trusted-fingerprint allowlist, adversarial signed-provenance mutation rejection, yanked-candidate skipping, malformed-yanked rejection, stable exact/range all-yanked diagnostics, manifest requirement matching, offline cache reuse, and tampered lock/cache rejection.
-5. **P0-04:** Continue only the remaining weak-reference, closure/process-wide telemetry, arbitrary-cycle reclamation, and tracing-collector design work.
-6. **P1-01/P1-04:** Completed. The bilingual gradual-typing baseline is documented and the clean-machine locked-install/build verifier is executable and deterministic.
-7. **P2-02/P2-03/P2-04:** Finish stdlib policy, tooling parity, and documentation navigation.
-8. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.
+1. **P0-06:** Completed. The Cargo-authoritative version validator, deterministic evidence, negative drift regression harness, bilingual policy documentation, CI gate, and release-preflight enforcement are implemented.
+2. **P1-05-A:** Completed. Fixed-seed property/fuzz replay, durable parser/JSON/lockfile/registry/memory/async failure corpora, replay evidence, and a CI artifact gate are implemented. The broader P1-05 fuzz and platform extensions remain separately tracked.
+3. **P0-01-A:** Completed as the first executable parity slice. The six-case native/legacy policy matrix, normalized report, migration guidance, and CI artifact gate are implemented; broader legacy inventory remains separately tracked.
+4. **P0-02-A:** Ownership expansion slice implemented. The bilingual machine-readable index now covers 27 stable rule IDs, unique-ID/domain validation, fixture/test ownership, compatibility/deprecation templates, and a release-preflight contract gate. Expansion to every remaining fragmented rule remains.
+5. **P1-03:** Completed. Registry redaction, fail-closed, traversal, provenance, key-rotation, yanked-release, and end-to-end locked-cache tests enforce signed tag, commit, workflow, HTTPS source, checksum, full signing-fingerprint, explicit trusted-fingerprint allowlist, adversarial signed-provenance mutation rejection, yanked-candidate skipping, malformed-yanked rejection, stable exact/range all-yanked diagnostics, manifest requirement matching, offline cache reuse, and tampered lock/cache rejection.
+6. **P0-04:** Continue only the remaining weak-reference, closure/process-wide telemetry, arbitrary-cycle reclamation, and tracing-collector design work.
+7. **P1-01/P1-04:** Completed. The bilingual gradual-typing baseline is documented and the clean-machine locked-install/build verifier is executable and deterministic.
+8. **P2-02/P2-03/P2-04:** Finish stdlib policy, tooling parity, and documentation navigation.
+9. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.
 
 ## Release policy
 

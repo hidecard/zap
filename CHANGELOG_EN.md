@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Release version consistency
+- Added the Cargo-authoritative version validator, dynamic CLI/lockfile/tag checks, bilingual README archive checks, security-link checks, and hard-coded release-template detection.
+- Added deterministic TSV evidence, positive/negative version-drift regression tests, and CI/release-preflight enforcement.
+
 ## [2.1.7] — 2026-08-21
 
 ### Release engineering

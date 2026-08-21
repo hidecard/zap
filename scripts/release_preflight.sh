@@ -86,6 +86,17 @@ is_semver() {
 
 check_version() {
   local cargo_version
+  if [[ -x scripts/validate_release_version.sh ]]; then
+    if EXPECTED_VERSION="$EXPECTED_VERSION" RELEASE_TAG="$RELEASE_TAG" \
+      ZAP_VERSION_REPORT="${RELEASE_VERSION_REPORT:-$ROOT_DIR/target/version-consistency.tsv}" \
+      scripts/validate_release_version.sh "$EXPECTED_VERSION"; then
+      pass "single-source release version validation passed"
+    else
+      fail "single-source release version validation failed"
+    fi
+  else
+    fail "missing executable scripts/validate_release_version.sh"
+  fi
   cargo_version="$(read_cargo_version)"
   if [[ -z "$cargo_version" ]]; then
     fail "could not read native Cargo package version"
@@ -162,6 +173,8 @@ check_release_files() {
     scripts/test_p105_replay.sh
     scripts/test_p005c_async_matrix.sh
     scripts/validate_spec_ownership.sh
+    scripts/validate_release_version.sh
+    scripts/test_validate_release_version.sh
     scripts/verify_installer_windows.ps1
     scripts/validate_registry_deployment.sh
     deploy/registry-deployment-policy.toml
@@ -173,6 +186,8 @@ check_release_files() {
     docs/SPEC_OWNERSHIP_MM.md
     docs/COMPATIBILITY_CHANGE_TEMPLATE_EN.md
     docs/COMPATIBILITY_CHANGE_TEMPLATE_MM.md
+    docs/RELEASE_VERSION_POLICY_EN.md
+    docs/RELEASE_VERSION_POLICY_MM.md
     docs/P001_PARITY_MATRIX_EN.md
     docs/P001_PARITY_MATRIX_MM.md
     docs/P105_REPLAY_EN.md

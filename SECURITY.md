@@ -6,7 +6,7 @@ Security fixes are applied to the latest version published in the [GitHub Releas
 
 | Version | Supported |
 |---|---|
-| Latest `v2.0.x` | Yes |
+| Latest `v2.1.x` | Yes |
 | Older versions | Best effort only |
 
 ## Reporting a Vulnerability
@@ -25,4 +25,4 @@ Zap is experimental software. Do not execute untrusted Zap programs with access 
 
 ## Release Integrity
 
-Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.0.0 release](https://github.com/hidecard/zap/releases/tag/v2.0.0) or a later official release when distributing Zap.
+Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.1.7 release](https://github.com/hidecard/zap/releases/tag/v2.1.7) or a later official release when distributing Zap.

@@ -1,26 +1,22 @@
-# Zap v2.1.0
+# Zap v<VERSION>
 
 ## Release summary
 
-Zap v2.1.0 is the first protected v2.1 release prepared with the v2.1-E release-engineering pipeline. It includes the production async/runtime, tooling, registry, bounded I/O, deterministic artifact, signing, provenance, and post-publish verification work completed for this release line.
+Zap v<VERSION> is a protected release prepared with the repository release-engineering pipeline. Replace the placeholders in this template from the authoritative Cargo package version and the tag-triggered workflow metadata; do not manually copy a version from an older release.
 
 ## Release metadata
 
-- Tag: `v2.1.0`
+- Tag: `v<VERSION>`
 - Source commit: `<COMMIT_SHA>`
 - GitHub Actions release run: `<WORKFLOW_RUN_URL>`
-- Release date: `2026-08-21`
+- Release date: `<RELEASE_DATE>`
 - Previous stable release: `<PREVIOUS_VERSION>`
 
 ## Highlights
 
-- Structured async runtime with joinable tasks, deterministic timeout behavior, cancellation propagation, and language-level task builtins.
-- Threaded runtime and bounded non-blocking file, TCP, and process adapters.
-- Forced cancellation and deadline-aware child-process execution with output limits.
-- Formatter, LSP, document-symbol indexing, package indexing, and VS Code vocabulary synchronization.
-- Authenticated loopback registry service with signed-index persistence and safe path handling.
-- Deployment reference artifacts for systemd, Nginx, and machine-readable registry policy.
-- Deterministic release preflight, version/changelog automation, artifact manifest, aggregate checksums, GPG signatures, provenance, and post-publish verification.
+- <Summarize the verified implementation and documentation changes.>
+- <List compatibility or migration notes, or write `None`.>
+- <List cross-platform, replay, parity, ownership, and release-gate evidence when applicable.>
 
 ## Breaking changes and migration
 
@@ -30,11 +26,11 @@ None known at release preparation time.
 
 ## Verification instructions
 
-Download the release assets together with `zap-2.1.0-release-signing-key.asc`, import the public key into an isolated verification keyring, and run:
+Download the release assets together with `zap-<VERSION>-release-signing-key.asc`, import the public key into an isolated verification keyring, and run:
 
 ```bash
 GNUPGHOME=/secure/verification/gnupg \
-  bash scripts/verify_published_release.sh 2.1.0 ./published-release
+  bash scripts/verify_published_release.sh <VERSION> ./published-release
 ```
 
 The verifier must report `published release verification: PASSED`. Do not install or distribute assets when a checksum, signature, manifest, provenance, or archive-content check fails.
@@ -43,19 +39,19 @@ The verifier must report `published release verification: PASSED`. Do not instal
 
 | Target | Artifact |
 |---|---|
-| Linux x86_64 | `zap-2.1.0-linux-x86_64.tar.gz` |
-| macOS ARM64 | `zap-2.1.0-macos-arm64.tar.gz` |
-| Windows x86_64 | `zap-2.1.0-windows-x86_64.zip` |
+| Linux x86_64 | `zap-<VERSION>-linux-x86_64.tar.gz` |
+| macOS ARM64 | `zap-<VERSION>-macos-arm64.tar.gz` |
+| Windows x86_64 | `zap-<VERSION>-windows-x86_64.zip` |
 
 ## Release assets checklist
 
 - [ ] All three platform archives are attached.
 - [ ] Per-artifact `.sha256` sidecars are attached.
-- [ ] `zap-2.1.0-checksums.sha256` is attached.
-- [ ] `zap-2.1.0-manifest.json` is attached.
-- [ ] `zap-2.1.0-provenance.json` is attached.
+- [ ] `zap-<VERSION>-checksums.sha256` is attached.
+- [ ] `zap-<VERSION>-manifest.json` is attached.
+- [ ] `zap-<VERSION>-provenance.json` is attached.
 - [ ] Detached `.asc` signatures are attached for every archive and metadata file.
-- [ ] `zap-2.1.0-release-signing-key.asc` is attached.
+- [ ] `zap-<VERSION>-release-signing-key.asc` is attached.
 - [ ] Post-publish verification completed successfully.
 
 ## Approval and rollback
@@ -69,8 +65,8 @@ The verifier must report `published release verification: PASSED`. Do not instal
 
 ## Documentation
 
-- English release notes: `docs/RELEASE_2.1.0_EN.md`
-- Burmese release notes: `docs/RELEASE_2.1.0_MM.md`
+- English release notes: `docs/RELEASE_<VERSION>_EN.md`
+- Burmese release notes: `docs/RELEASE_<VERSION>_MM.md`
 - Signing guide: `docs/RELEASE_SIGNING_EN.md` / `docs/RELEASE_SIGNING_MM.md`
 - Deployment guide: `docs/DEPLOYMENT_EN.md` / `docs/DEPLOYMENT_MM.md`
 
