@@ -17,8 +17,8 @@ use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
-    parse_signature, read_limited_text, resolve_module, write_limited_text, Function, Param, Value,
-    MAX_FILE_BYTES, MODULE_CACHE, MODULE_LOADING,
+    parse_signature, read_limited_text, resolve_module, write_limited_text, ExecutionContext,
+    Function, Param, Value, MAX_FILE_BYTES,
 };
 
 const MAX_EXECUTION_DEPTH: usize = 256;
@@ -37,11 +37,12 @@ pub(crate) struct CallArgument {
 }
 
 thread_local! {
-    static EXECUTION_DEPTH: Cell<usize> = const { Cell::new(0) };
     static WORKSPACE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
-struct ExecutionGuard;
+struct ExecutionGuard {
+    depth: Rc<Cell<usize>>,
+}
 
 struct WorkspaceGuard {
     previous: Option<PathBuf>,
@@ -98,7 +99,7 @@ fn confined_path(path: &Path, operation: &str) -> Result<PathBuf, String> {
 
 impl Drop for ExecutionGuard {
     fn drop(&mut self) {
-        EXECUTION_DEPTH.with(|depth| depth.set(depth.get().saturating_sub(1)));
+        self.depth.set(self.depth.get().saturating_sub(1));
     }
 }
 
@@ -152,23 +153,22 @@ pub(crate) fn validate_source_layout(source: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn enter_execution(lines: &[String]) -> Result<ExecutionGuard, String> {
+fn enter_execution(lines: &[String], context: &ExecutionContext) -> Result<ExecutionGuard, String> {
     validate_indentation(lines)?;
     if lines.len() > MAX_SOURCE_LINES {
         return Err(format!(
             "source line limit exceeded: maximum is {MAX_SOURCE_LINES}"
         ));
     }
-    EXECUTION_DEPTH.with(|depth| {
-        if depth.get() >= MAX_EXECUTION_DEPTH {
-            Err(format!(
-                "execution depth limit exceeded: maximum is {MAX_EXECUTION_DEPTH}"
-            ))
-        } else {
-            depth.set(depth.get() + 1);
-            Ok(ExecutionGuard)
-        }
-    })
+    let depth = context.state().execution_depth_handle();
+    if depth.get() >= MAX_EXECUTION_DEPTH {
+        Err(format!(
+            "execution depth limit exceeded: maximum is {MAX_EXECUTION_DEPTH}"
+        ))
+    } else {
+        depth.set(depth.get() + 1);
+        Ok(ExecutionGuard { depth })
+    }
 }
 
 pub(crate) enum Flow {
@@ -182,14 +182,15 @@ pub(crate) enum EvalOutcome {
     Value(Value),
     Propagate(Value),
 }
-pub(crate) fn evaluate_with_propagation(
+fn evaluate_with_propagation_with_context(
     raw: &str,
     vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<EvalOutcome, String> {
     let trimmed = raw.trim();
     if let Some(inner) = trimmed.strip_suffix('?') {
-        let value = expression(inner.trim(), vars, funcs)?;
+        let value = expression_with_context(inner.trim(), vars, funcs, context)?;
         match value {
             Value::ResultOk(value) | Value::OptionSome(value) => Ok(EvalOutcome::Value(*value)),
             Value::ResultErr(error) => Ok(EvalOutcome::Propagate(Value::ResultErr(error))),
@@ -197,7 +198,9 @@ pub(crate) fn evaluate_with_propagation(
             _ => Err("? expects a Result or Option value".into()),
         }
     } else {
-        Ok(EvalOutcome::Value(expression(trimmed, vars, funcs)?))
+        Ok(EvalOutcome::Value(expression_with_context(
+            trimmed, vars, funcs, context,
+        )?))
     }
 }
 
@@ -329,13 +332,14 @@ pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
     }
 }
 
-pub(crate) fn expression(
+fn expression_with_context(
     raw: &str,
     vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     let tokens = tokenize(raw)?;
-    ExprParser::new(&tokens, vars, funcs).parse_complete()
+    ExprParser::new(&tokens, vars, funcs, context).parse_complete()
 }
 
 pub(crate) fn value_type_name(value: &Value) -> &'static str {
@@ -1982,9 +1986,10 @@ pub(crate) fn initialize_object_fields(
     object: &Value,
     caller_vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<(), String> {
     if let Some(parent) = class_parent(class_name, funcs) {
-        initialize_object_fields(&parent, object, caller_vars, funcs)?;
+        initialize_object_fields(&parent, object, caller_vars, funcs, context)?;
     }
     let Value::Object { fields, .. } = object else {
         return Err("field initialization expects an object".into());
@@ -2012,7 +2017,7 @@ pub(crate) fn initialize_object_fields(
             "__zap_owner_class".into(),
             Value::Text(class_name.to_string()),
         );
-        let evaluated = ast_expression(value, &local, funcs)?;
+        let evaluated = ast_expression_with_context(value, &local, funcs, context)?;
         fields.try_borrow_mut()?.insert(field, evaluated);
     }
     Ok(())
@@ -2051,10 +2056,11 @@ pub(crate) fn check_method_visibility(
     }
 }
 
-fn ast_expression(
+fn ast_expression_with_context(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     match &node.node {
         Expr::Literal(Literal::Number(value)) => Ok(Value::Number(*value)),
@@ -2068,22 +2074,25 @@ fn ast_expression(
             .ok_or_else(|| format!("undefined variable: {name}")),
         Expr::List(items) => items
             .iter()
-            .map(|item| ast_expression(item, vars, funcs))
+            .map(|item| ast_expression_with_context(item, vars, funcs, context))
             .collect::<Result<Vec<_>, _>>()
             .map(Value::List),
         Expr::Map(items) => {
             let mut map = HashMap::new();
             for (key, value) in items {
-                let key = ast_expression(key, vars, funcs)?;
+                let key = ast_expression_with_context(key, vars, funcs, context)?;
                 let Value::Text(key) = key else {
                     return Err("map keys must be text".into());
                 };
-                map.insert(key, ast_expression(value, vars, funcs)?);
+                map.insert(
+                    key,
+                    ast_expression_with_context(value, vars, funcs, context)?,
+                );
             }
             Ok(Value::Map(map))
         }
         Expr::Unary { op, value } => {
-            let value = ast_expression(value, vars, funcs)?;
+            let value = ast_expression_with_context(value, vars, funcs, context)?;
             match (op, value) {
                 (UnaryOp::Negate, Value::Number(value)) => value
                     .checked_neg()
@@ -2094,8 +2103,8 @@ fn ast_expression(
             }
         }
         Expr::Binary { left, op, right } => {
-            let left = ast_expression(left, vars, funcs)?;
-            let right = ast_expression(right, vars, funcs)?;
+            let left = ast_expression_with_context(left, vars, funcs, context)?;
+            let right = ast_expression_with_context(right, vars, funcs, context)?;
             let token = match op {
                 BinaryOp::Add => Token::Plus,
                 BinaryOp::Subtract => Token::Minus,
@@ -2118,13 +2127,13 @@ fn ast_expression(
             then_branch,
             else_branch,
         } => {
-            if ast_expression(condition, vars, funcs)?.truthy() {
-                ast_expression(then_branch, vars, funcs)
+            if ast_expression_with_context(condition, vars, funcs, context)?.truthy() {
+                ast_expression_with_context(then_branch, vars, funcs, context)
             } else {
-                ast_expression(else_branch, vars, funcs)
+                ast_expression_with_context(else_branch, vars, funcs, context)
             }
         }
-        Expr::Await(value) => match ast_expression(value, vars, funcs)? {
+        Expr::Await(value) => match ast_expression_with_context(value, vars, funcs, context)? {
             Value::Future(value) => Ok(*value),
             _ => Err("await expects a future value".into()),
         },
@@ -2134,18 +2143,18 @@ fn ast_expression(
                 .map(|arg| match arg {
                     CallArg::Positional(value) => Ok(CallArgument {
                         name: None,
-                        value: ast_expression(value, vars, funcs)?,
+                        value: ast_expression_with_context(value, vars, funcs, context)?,
                     }),
                     CallArg::Named { name, value } => Ok(CallArgument {
                         name: Some(name.clone()),
-                        value: ast_expression(value, vars, funcs)?,
+                        value: ast_expression_with_context(value, vars, funcs, context)?,
                     }),
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             match &callee.node {
                 Expr::Name(name) => {
                     if let Some(function) = funcs.get(name) {
-                        return call_function_with_arguments(function, values, funcs);
+                        return call_function_with_arguments(function, values, funcs, context);
                     } else if values.iter().any(|argument| argument.name.is_some()) {
                         return Err(format!(
                             "named arguments are not supported for built-in function: {name}"
@@ -2164,7 +2173,7 @@ fn ast_expression(
                     } else if let Some(value) = direct_external_builtin(name, &positional)? {
                         Ok(value)
                     } else {
-                        expression(&ast_expr_source(node), vars, funcs)
+                        expression_with_context(&ast_expr_source(node), vars, funcs, context)
                     }
                 }
                 Expr::Member { target, member } => {
@@ -2180,14 +2189,15 @@ fn ast_expression(
                                 .ok_or_else(|| "super requires self".to_string())?;
                             (parent, receiver)
                         } else {
-                            let receiver = ast_expression(target, vars, funcs)?;
+                            let receiver =
+                                ast_expression_with_context(target, vars, funcs, context)?;
                             let Value::Object { class_name, .. } = &receiver else {
                                 return Err("methods can only be called on objects".into());
                             };
                             (class_name.clone(), receiver)
                         }
                     } else {
-                        let receiver = ast_expression(target, vars, funcs)?;
+                        let receiver = ast_expression_with_context(target, vars, funcs, context)?;
                         let Value::Object { class_name, .. } = &receiver else {
                             return Err("methods can only be called on objects".into());
                         };
@@ -2198,13 +2208,13 @@ fn ast_expression(
                         .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
                     check_method_visibility(&function, &dispatch_class, vars, funcs)?;
-                    call_method_with_arguments(&function, values, receiver, funcs)
+                    call_method_with_arguments(&function, values, receiver, funcs, context)
                 }
-                _ => expression(&ast_expr_source(node), vars, funcs),
+                _ => expression_with_context(&ast_expr_source(node), vars, funcs, context),
             }
         }
         Expr::Member { target, member } => {
-            let value = ast_expression(target, vars, funcs)?;
+            let value = ast_expression_with_context(target, vars, funcs, context)?;
             match value {
                 Value::Object { class_name, fields } => {
                     check_field_visibility(&class_name, member, vars, funcs)?;
@@ -2222,8 +2232,8 @@ fn ast_expression(
             }
         }
         Expr::Index { target, index } => {
-            let target = ast_expression(target, vars, funcs)?;
-            let index = ast_expression(index, vars, funcs)?;
+            let target = ast_expression_with_context(target, vars, funcs, context)?;
+            let index = ast_expression_with_context(index, vars, funcs, context)?;
             match (target, index) {
                 (Value::List(values), Value::Number(index)) if index >= 0 => values
                     .get(index as usize)
@@ -2239,10 +2249,11 @@ fn ast_expression(
     }
 }
 
-pub(crate) fn call_function(
+pub(crate) fn call_function_with_context(
     f: &Function,
     args: Vec<Value>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     call_function_with_arguments(
         f,
@@ -2250,6 +2261,7 @@ pub(crate) fn call_function(
             .map(|value| CallArgument { name: None, value })
             .collect(),
         funcs,
+        context,
     )
 }
 
@@ -2257,6 +2269,7 @@ fn call_function_with_arguments(
     f: &Function,
     args: Vec<CallArgument>,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     let required = f
         .params
@@ -2306,7 +2319,7 @@ fn call_function_with_arguments(
         let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
-            expression(default, &local, funcs)?
+            expression_with_context(default, &local, funcs, context)?
         } else {
             return Err(format!("missing required argument: {}", param.name));
         };
@@ -2317,9 +2330,21 @@ fn call_function_with_arguments(
     }
     let mut local_funcs = funcs.clone();
     let value = match if let Some(body) = &f.ast_body {
-        execute_ast_program(body, &mut local, &mut local_funcs, Path::new("."))
+        execute_ast_program_with_context(
+            body,
+            &mut local,
+            &mut local_funcs,
+            context,
+            Path::new("."),
+        )
     } else {
-        execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))
+        execute_lines_with_context(
+            &f.body,
+            &mut local,
+            &mut local_funcs,
+            context,
+            Path::new("."),
+        )
     }? {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
@@ -2345,11 +2370,12 @@ fn call_function_with_arguments(
         Ok(value)
     }
 }
-pub(crate) fn call_method(
+pub(crate) fn call_method_with_context(
     f: &Function,
     args: Vec<Value>,
     self_value: Value,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     call_method_with_arguments(
         f,
@@ -2358,6 +2384,7 @@ pub(crate) fn call_method(
             .collect(),
         self_value,
         funcs,
+        context,
     )
 }
 
@@ -2366,6 +2393,7 @@ fn call_method_with_arguments(
     args: Vec<CallArgument>,
     self_value: Value,
     funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<Value, String> {
     let callable_params = f.params.iter().skip(1).collect::<Vec<_>>();
     let required = callable_params
@@ -2426,7 +2454,7 @@ fn call_method_with_arguments(
         let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
-            expression(default, &local, funcs)?
+            expression_with_context(default, &local, funcs, context)?
         } else {
             return Err(format!("missing required argument: {}", param.name));
         };
@@ -2437,9 +2465,21 @@ fn call_method_with_arguments(
     }
     let mut local_funcs = funcs.clone();
     let value = match if let Some(body) = &f.ast_body {
-        execute_ast_program(body, &mut local, &mut local_funcs, Path::new("."))
+        execute_ast_program_with_context(
+            body,
+            &mut local,
+            &mut local_funcs,
+            context,
+            Path::new("."),
+        )
     } else {
-        execute_lines(&f.body, &mut local, &mut local_funcs, Path::new("."))
+        execute_lines_with_context(
+            &f.body,
+            &mut local,
+            &mut local_funcs,
+            context,
+            Path::new("."),
+        )
     }? {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
@@ -3056,17 +3096,29 @@ fn register_ast_class(
     Ok(())
 }
 
+#[cfg(test)]
 pub(crate) fn execute_ast_program(
     program: &Program,
     vars: &mut HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
     base: &Path,
 ) -> Result<Flow, String> {
+    let mut context = ExecutionContext::new();
+    execute_ast_program_with_context(program, vars, funcs, &mut context, base)
+}
+
+pub(crate) fn execute_ast_program_with_context(
+    program: &Program,
+    vars: &mut HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+    base: &Path,
+) -> Result<Flow, String> {
     let _workspace = enter_workspace(base)?;
     if !ast_program_compatible(program) {
         let mut lines = Vec::new();
         ast_program_lines(program, 0, &mut lines);
-        return execute_lines(&lines, vars, funcs, base);
+        return execute_lines_with_context(&lines, vars, funcs, context, base);
     }
     let _guard = enter_execution(
         &program
@@ -3074,18 +3126,19 @@ pub(crate) fn execute_ast_program(
             .iter()
             .map(|_| String::new())
             .collect::<Vec<_>>(),
+        context,
     )?;
     for statement in &program.statements {
         let flow = match &statement.node {
             Stmt::Expression(value) => {
-                let _ = ast_expression(value, vars, funcs)?;
+                let _ = ast_expression_with_context(value, vars, funcs, context)?;
                 Flow::Continue
             }
             Stmt::Field { .. } => {
                 return Err("field declarations are only allowed inside a class".into());
             }
             Stmt::Assignment { name, value } => {
-                let evaluated = ast_expression(value, vars, funcs)?;
+                let evaluated = ast_expression_with_context(value, vars, funcs, context)?;
                 if let Some((object_name, field)) = name.split_once('.') {
                     let class_name = match vars.get(object_name) {
                         Some(Value::Object { class_name, .. }) => class_name.clone(),
@@ -3112,7 +3165,7 @@ pub(crate) fn execute_ast_program(
                 annotation,
                 value,
             } => {
-                let evaluated = ast_expression(value, vars, funcs)?;
+                let evaluated = ast_expression_with_context(value, vars, funcs, context)?;
                 if let Some(annotation) = annotation {
                     check_annotation(name, annotation, &evaluated)?;
                 }
@@ -3120,18 +3173,24 @@ pub(crate) fn execute_ast_program(
                 Flow::Continue
             }
             Stmt::Say(value) => {
-                println!("{}", ast_expression(value, vars, funcs)?.show());
+                println!(
+                    "{}",
+                    ast_expression_with_context(value, vars, funcs, context)?.show()
+                );
                 Flow::Continue
             }
-            Stmt::Raise(value) => Flow::Raise(ast_expression(value, vars, funcs)?),
+            Stmt::Raise(value) => {
+                Flow::Raise(ast_expression_with_context(value, vars, funcs, context)?)
+            }
             Stmt::TryCatch {
                 body,
                 binding,
                 catch_body,
-            } => match execute_ast_program(body, vars, funcs, base)? {
+            } => match execute_ast_program_with_context(body, vars, funcs, context, base)? {
                 Flow::Raise(error) => {
                     let previous = vars.insert(binding.clone(), error);
-                    let caught = execute_ast_program(catch_body, vars, funcs, base);
+                    let caught =
+                        execute_ast_program_with_context(catch_body, vars, funcs, context, base);
                     match previous {
                         Some(value) => {
                             vars.insert(binding.clone(), value);
@@ -3146,7 +3205,7 @@ pub(crate) fn execute_ast_program(
             },
             Stmt::Return(value) => {
                 Flow::Return(value.as_ref().map_or(Ok(Value::None), |value| {
-                    expression(&ast_expr_source(value), vars, funcs)
+                    expression_with_context(&ast_expr_source(value), vars, funcs, context)
                 })?)
             }
             Stmt::Break => Flow::Break,
@@ -3156,10 +3215,10 @@ pub(crate) fn execute_ast_program(
                 then_branch,
                 else_branch,
             } => {
-                if ast_expression(condition, vars, funcs)?.truthy() {
-                    execute_ast_program(then_branch, vars, funcs, base)?
+                if ast_expression_with_context(condition, vars, funcs, context)?.truthy() {
+                    execute_ast_program_with_context(then_branch, vars, funcs, context, base)?
                 } else if let Some(branch) = else_branch {
-                    execute_ast_program(branch, vars, funcs, base)?
+                    execute_ast_program_with_context(branch, vars, funcs, context, base)?
                 } else {
                     Flow::Continue
                 }
@@ -3167,10 +3226,10 @@ pub(crate) fn execute_ast_program(
             Stmt::While { condition, body } => {
                 let mut iterations = 0;
                 loop {
-                    if !ast_expression(condition, vars, funcs)?.truthy() {
+                    if !ast_expression_with_context(condition, vars, funcs, context)?.truthy() {
                         break Flow::Continue;
                     }
-                    match execute_ast_program(body, vars, funcs, base)? {
+                    match execute_ast_program_with_context(body, vars, funcs, context, base)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break Flow::Continue,
                         flow @ Flow::Return(_) => break flow,
@@ -3189,7 +3248,7 @@ pub(crate) fn execute_ast_program(
                 iterable,
                 body,
             } => {
-                let value = ast_expression(iterable, vars, funcs)?;
+                let value = ast_expression_with_context(iterable, vars, funcs, context)?;
                 let items = match value {
                     Value::List(items) => items,
                     _ => return Err("for expects a list".into()),
@@ -3202,7 +3261,7 @@ pub(crate) fn execute_ast_program(
                 let mut outcome = Flow::Continue;
                 for item in items {
                     vars.insert(binding.clone(), item);
-                    match execute_ast_program(body, vars, funcs, base)? {
+                    match execute_ast_program_with_context(body, vars, funcs, context, base)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
                         flow @ Flow::Return(_) | flow @ Flow::Raise(_) => {
@@ -3240,7 +3299,9 @@ pub(crate) fn execute_ast_program(
                 Flow::Continue
             }
             Stmt::Module { .. } => Flow::Continue,
-            Stmt::Import { path, explicit, .. } => load_module(path, vars, funcs, base, *explicit)?,
+            Stmt::Import { path, explicit, .. } => {
+                load_module_with_context(path, vars, funcs, context, base, *explicit)?
+            }
         };
         match flow {
             Flow::Continue => {}
@@ -3250,10 +3311,11 @@ pub(crate) fn execute_ast_program(
     Ok(Flow::Continue)
 }
 
-pub(crate) fn load_module(
+fn load_module_with_context(
     raw: &str,
     vars: &mut HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
     base: &Path,
     explicit: bool,
 ) -> Result<Flow, String> {
@@ -3291,7 +3353,7 @@ pub(crate) fn load_module(
     if !canonical.is_file() {
         return Err(format!("module is not a file: {}", canonical.display()));
     }
-    let cached = MODULE_CACHE.with(|cache| cache.borrow().get(&canonical).cloned());
+    let cached = context.state().module_cache().get(&canonical).cloned();
     if let Some((module_vars, module_funcs)) = cached {
         if explicit {
             let exported_vars = module_vars
@@ -3326,30 +3388,29 @@ pub(crate) fn load_module(
         }
         return Ok(Flow::Continue);
     }
-    let cycle = MODULE_LOADING.with(|stack| {
-        let stack = stack.borrow();
-        stack.iter().position(|item| item == &canonical)
-    });
+    let cycle = context
+        .state()
+        .module_loading()
+        .iter()
+        .position(|item| item == &canonical);
     if let Some(start) = cycle {
-        let chain = MODULE_LOADING.with(|stack| {
-            let stack = stack.borrow();
-            stack[start..]
-                .iter()
-                .chain(std::iter::once(&canonical))
-                .map(|item| item.display().to_string())
-                .collect::<Vec<_>>()
-                .join(" -> ")
-        });
+        let chain = context.state().module_loading()[start..]
+            .iter()
+            .chain(std::iter::once(&canonical))
+            .map(|item| item.display().to_string())
+            .collect::<Vec<_>>()
+            .join(" -> ");
         return Err(format!("circular import detected: {chain}"));
     }
-    MODULE_LOADING.with(|stack| stack.borrow_mut().push(canonical.clone()));
+    context
+        .state_mut()
+        .module_loading_mut()
+        .push(canonical.clone());
     let imported_result = read_limited_text(&canonical, "module import");
     let imported = match imported_result {
         Ok(value) => value,
         Err(error) => {
-            MODULE_LOADING.with(|stack| {
-                stack.borrow_mut().pop();
-            });
+            context.state_mut().module_loading_mut().pop();
             return Err(error);
         }
     };
@@ -3360,25 +3421,22 @@ pub(crate) fn load_module(
         Value::Text(canonical.display().to_string()),
     );
     let mut module_funcs = HashMap::new();
-    let flow_result = execute_lines(
+    let flow_result = execute_lines_with_context(
         &imported_lines,
         &mut module_vars,
         &mut module_funcs,
+        context,
         canonical.parent().unwrap_or(base),
     );
-    MODULE_LOADING.with(|stack| {
-        stack.borrow_mut().pop();
-    });
+    context.state_mut().module_loading_mut().pop();
     let flow = flow_result?;
     if !matches!(flow, Flow::Continue) {
         return Ok(flow);
     }
-    MODULE_CACHE.with(|cache| {
-        cache.borrow_mut().insert(
-            canonical.clone(),
-            (module_vars.clone(), module_funcs.clone()),
-        );
-    });
+    context.state_mut().module_cache_mut().insert(
+        canonical.clone(),
+        (module_vars.clone(), module_funcs.clone()),
+    );
     if explicit {
         let exported_vars = module_vars
             .keys()
@@ -3412,13 +3470,25 @@ pub(crate) fn load_module(
     }
     Ok(Flow::Continue)
 }
+#[cfg(test)]
 pub(crate) fn execute_lines(
     lines: &[String],
     vars: &mut HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,
     base: &Path,
 ) -> Result<Flow, String> {
-    let _execution_guard = enter_execution(lines)?;
+    let mut context = ExecutionContext::new();
+    execute_lines_with_context(lines, vars, funcs, &mut context, base)
+}
+
+pub(crate) fn execute_lines_with_context(
+    lines: &[String],
+    vars: &mut HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+    base: &Path,
+) -> Result<Flow, String> {
+    let _execution_guard = enter_execution(lines, context)?;
     let mut i = 0;
     while i < lines.len() {
         let raw_line = lines[i].trim();
@@ -3605,7 +3675,7 @@ pub(crate) fn execute_lines(
             let outcome = if rest.trim().is_empty() {
                 EvalOutcome::Value(Value::None)
             } else {
-                evaluate_with_propagation(rest.trim(), vars, funcs)?
+                evaluate_with_propagation_with_context(rest.trim(), vars, funcs, context)?
             };
             return Ok(Flow::Return(match outcome {
                 EvalOutcome::Value(value) | EvalOutcome::Propagate(value) => value,
@@ -3621,8 +3691,8 @@ pub(crate) fn execute_lines(
             let condition = c.trim_end_matches(':').trim();
             let (body, end) = indented(lines, i + 1);
             let mut guard = 0;
-            while expression(condition, vars, funcs)?.truthy() {
-                match execute_lines(&body, vars, funcs, base)? {
+            while expression_with_context(condition, vars, funcs, context)?.truthy() {
+                match execute_lines_with_context(&body, vars, funcs, context, base)? {
                     Flow::Return(v) => return Ok(Flow::Return(v)),
                     Flow::Break => break,
                     Flow::LoopContinue => {}
@@ -3644,7 +3714,7 @@ pub(crate) fn execute_lines(
                 .trim_end_matches(':')
                 .split_once(" in ")
                 .ok_or("for syntax: for item in list:".to_string())?;
-            let value = expression(src.trim(), vars, funcs)?;
+            let value = expression_with_context(src.trim(), vars, funcs, context)?;
             let (body, end) = indented(lines, i + 1);
             match value {
                 Value::List(items) => {
@@ -3660,7 +3730,7 @@ pub(crate) fn execute_lines(
                             ));
                         }
                         vars.insert(name.trim().into(), item);
-                        match execute_lines(&body, vars, funcs, base)? {
+                        match execute_lines_with_context(&body, vars, funcs, context, base)? {
                             Flow::Return(v) => return Ok(Flow::Return(v)),
                             Flow::Break => break,
                             Flow::LoopContinue => continue,
@@ -3675,10 +3745,12 @@ pub(crate) fn execute_lines(
             continue;
         }
         if let Some(c) = line.strip_prefix("if ") {
-            let take = expression(c.trim_end_matches(':').trim(), vars, funcs)?.truthy();
+            let take =
+                expression_with_context(c.trim_end_matches(':').trim(), vars, funcs, context)?
+                    .truthy();
             let (body, mut end) = indented(lines, i + 1);
             if take {
-                match execute_lines(&body, vars, funcs, base)? {
+                match execute_lines_with_context(&body, vars, funcs, context, base)? {
                     Flow::Continue => {}
                     flow => return Ok(flow),
                 }
@@ -3686,7 +3758,7 @@ pub(crate) fn execute_lines(
             if end < lines.len() && lines[end].trim() == "else:" {
                 let (else_body, e) = indented(lines, end + 1);
                 if !take {
-                    match execute_lines(&else_body, vars, funcs, base)? {
+                    match execute_lines_with_context(&else_body, vars, funcs, context, base)? {
                         Flow::Continue => {}
                         flow => return Ok(flow),
                     }
@@ -3697,12 +3769,15 @@ pub(crate) fn execute_lines(
             continue;
         }
         if let Some(x) = line.strip_prefix("say ") {
-            println!("{}", expression(x, vars, funcs)?.show());
+            println!(
+                "{}",
+                expression_with_context(x, vars, funcs, context)?.show()
+            );
             i += 1;
             continue;
         }
         if let Some(x) = line.strip_prefix("import ") {
-            match load_module(x, vars, funcs, base, true)? {
+            match load_module_with_context(x, vars, funcs, context, base, true)? {
                 Flow::Continue => {}
                 Flow::Return(_) => return Err("return is not allowed at module top level".into()),
                 flow => return Ok(flow),
@@ -3713,7 +3788,7 @@ pub(crate) fn execute_lines(
         if let Some(x) = line.strip_prefix("use ") {
             let spec = x.trim();
             if spec.starts_with('"') || spec.contains('/') || spec.ends_with(".zp") {
-                match load_module(spec, vars, funcs, base, false)? {
+                match load_module_with_context(spec, vars, funcs, context, base, false)? {
                     Flow::Continue => {}
                     Flow::Return(_) => {
                         return Err("return is not allowed at module top level".into())
@@ -3735,7 +3810,7 @@ pub(crate) fn execute_lines(
                 .split_once(':')
                 .map(|(name, ty)| (name.trim(), Some(ty.trim())))
                 .unwrap_or((n.trim(), None));
-            let value = match evaluate_with_propagation(v, vars, funcs)? {
+            let value = match evaluate_with_propagation_with_context(v, vars, funcs, context)? {
                 EvalOutcome::Value(value) => value,
                 EvalOutcome::Propagate(value) => return Ok(Flow::Return(value)),
             };
@@ -3757,7 +3832,7 @@ pub(crate) fn execute_lines(
         {
             if let Some((n, v)) = line.split_once('=') {
                 let target = n.trim();
-                let value = match evaluate_with_propagation(v, vars, funcs)? {
+                let value = match evaluate_with_propagation_with_context(v, vars, funcs, context)? {
                     EvalOutcome::Value(value) => value,
                     EvalOutcome::Propagate(value) => return Ok(Flow::Return(value)),
                 };
@@ -3778,7 +3853,7 @@ pub(crate) fn execute_lines(
                 continue;
             }
         }
-        let _ = expression(line, vars, funcs)?;
+        let _ = expression_with_context(line, vars, funcs, context)?;
         i += 1;
         continue;
     }

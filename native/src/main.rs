@@ -25,18 +25,21 @@ use parser::{
 mod cli;
 mod evaluator;
 mod lsp;
+mod runtime_state;
 mod stdlib;
 mod stdlib_catalog;
 
 use evaluator::{
-    call_function, call_method, check_method_visibility, constructor_delegates_to_parent,
-    direct_builtin, direct_external_builtin, duration_value, execute_ast_program, execute_lines,
-    initialize_object_fields, json_to_value, operate, utc_now_value, validate_source_layout,
-    value_to_json, value_type_name, Flow,
+    call_function_with_context, call_method_with_context, check_method_visibility,
+    constructor_delegates_to_parent, direct_builtin, direct_external_builtin, duration_value,
+    execute_ast_program_with_context, execute_lines_with_context, initialize_object_fields,
+    json_to_value, operate, utc_now_value, validate_source_layout, value_to_json, value_type_name,
+    Flow,
 };
 
+use runtime_state::ExecutionContext;
+
 use std::{
-    cell::RefCell,
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
@@ -45,9 +48,6 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-thread_local! { static MODULE_LOADING: RefCell<Vec<PathBuf>> = const { RefCell::new(Vec::new()) }; }
-thread_local! { static MODULE_CACHE: RefCell<HashMap<PathBuf, (HashMap<String,Value>, HashMap<String,Rc<Function>>)>> = RefCell::new(HashMap::new()); }
-
 pub(crate) const MAX_FILE_BYTES: u64 = 8 * 1024 * 1024;
 pub(crate) type ZapResult<T> = Result<T, ZapError>;
 
@@ -85,18 +85,21 @@ struct ExprParser<'a> {
     pos: usize,
     vars: &'a HashMap<String, Value>,
     funcs: &'a HashMap<String, Rc<Function>>,
+    context: &'a mut ExecutionContext,
 }
 impl<'a> ExprParser<'a> {
     fn new(
         t: &'a [Token],
         v: &'a HashMap<String, Value>,
         f: &'a HashMap<String, Rc<Function>>,
+        context: &'a mut ExecutionContext,
     ) -> Self {
         Self {
             tokens: t,
             pos: 0,
             vars: v,
             funcs: f,
+            context,
         }
     }
     fn call_args(&mut self) -> Result<Vec<Value>, String> {
@@ -818,7 +821,13 @@ impl<'a> ExprParser<'a> {
                         }
                         let explicit_fields = fields;
                         let object = Value::object(class_name.clone());
-                        initialize_object_fields(&class_name, &object, self.vars, self.funcs)?;
+                        initialize_object_fields(
+                            &class_name,
+                            &object,
+                            self.vars,
+                            self.funcs,
+                            self.context,
+                        )?;
                         if let Value::Object { fields, .. } = &object {
                             fields.try_borrow_mut()?.extend(explicit_fields);
                         }
@@ -843,11 +852,12 @@ impl<'a> ExprParser<'a> {
                                             self.vars,
                                             self.funcs,
                                         )?;
-                                        call_method(
+                                        call_method_with_context(
                                             &parent_init,
                                             ctor_args.clone(),
                                             object.clone(),
                                             self.funcs,
+                                            self.context,
                                         )?;
                                     }
                                 }
@@ -855,7 +865,13 @@ impl<'a> ExprParser<'a> {
                         }
                         if let Some(init) = self.funcs.get(&format!("{class_name}.init")).cloned() {
                             check_method_visibility(&init, &class_name, self.vars, self.funcs)?;
-                            call_method(&init, ctor_args, object.clone(), self.funcs)?;
+                            call_method_with_context(
+                                &init,
+                                ctor_args,
+                                object.clone(),
+                                self.funcs,
+                                self.context,
+                            )?;
                         }
                         object
                     }
@@ -1072,7 +1088,7 @@ impl<'a> ExprParser<'a> {
                         .get(&n)
                         .ok_or(format!("undefined function: {n}"))?
                         .clone();
-                    call_function(&f, args, self.funcs)?
+                    call_function_with_context(&f, args, self.funcs, self.context)?
                 }
             }
             Token::Name(n) => self
@@ -1158,7 +1174,7 @@ impl<'a> ExprParser<'a> {
                         .get(&format!("{dispatch_class}.{member}"))
                         .ok_or(format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
-                    left = call_method(&f, args, receiver, self.funcs)?;
+                    left = call_method_with_context(&f, args, receiver, self.funcs, self.context)?;
                 } else {
                     left = match left {
                         Value::Object { fields, .. } => fields
@@ -1217,15 +1233,21 @@ impl<'a> ExprParser<'a> {
     }
 }
 fn run(source: &str, base: &Path) -> Result<(), String> {
-    MODULE_LOADING.with(|stack| stack.borrow_mut().clear());
-    MODULE_CACHE.with(|cache| cache.borrow_mut().clear());
+    let mut context = ExecutionContext::new();
+    context.reset_for_run();
     let mut vars = HashMap::new();
     vars.insert("__zap_module".into(), Value::Text("__main__".into()));
     let mut funcs = HashMap::new();
     validate_source_layout(source)?;
     match ast::parse_program(source) {
         Ok(program) => {
-            return match execute_ast_program(&program, &mut vars, &mut funcs, base)? {
+            return match execute_ast_program_with_context(
+                &program,
+                &mut vars,
+                &mut funcs,
+                &mut context,
+                base,
+            )? {
                 Flow::Continue | Flow::Return(_) => Ok(()),
                 Flow::Break | Flow::LoopContinue => {
                     Err("break/continue must be inside a loop".into())
@@ -1239,7 +1261,7 @@ fn run(source: &str, base: &Path) -> Result<(), String> {
         Err(_) => {}
     }
     let lines = source.lines().map(str::to_string).collect::<Vec<_>>();
-    match execute_lines(&lines, &mut vars, &mut funcs, base)? {
+    match execute_lines_with_context(&lines, &mut vars, &mut funcs, &mut context, base)? {
         Flow::Continue | Flow::Return(_) => Ok(()),
         Flow::Break | Flow::LoopContinue => Err("break/continue must be inside a loop".into()),
         Flow::Raise(value) => Err(format!("raised error: {}", value.show())),
