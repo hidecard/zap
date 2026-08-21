@@ -23,6 +23,13 @@ Usage:
   zap install [dir]    Validate and install dependencies from zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
   zap registry gc [--dry-run] [dir]     Remove unreferenced registry cache files
+  zap registry trust list              List trusted registry origins
+  zap registry trust add <url>         Add a trusted registry origin
+  zap registry trust remove <url>      Remove a trusted registry origin
+  zap registry credential list         List configured credential origins
+  zap registry credential set <url> --token-env <name>
+                                      Store a token read from an environment variable
+  zap registry credential remove <url> Remove a configured credential
   zap build [dir]                       Validate and prepare a project
   zap init <dir>                        Create a new project
   zap lsp                               Run the LSP server over stdio
@@ -249,6 +256,108 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if args.len() >= 4 && args.len() <= 5 && args[1] == "registry" && args[2] == "trust" {
+        let action = args[3].as_str();
+        let mut policy = match crate::registry::load_trusted_registry_policy() {
+            Ok(policy) => policy,
+            Err(error) => {
+                eprintln!("Zap registry trust error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        match action {
+            "list" if args.len() == 4 => {
+                for origin in policy.origins() {
+                    println!("{}", origin.as_url());
+                }
+            }
+            "add" | "remove" if args.len() == 5 => {
+                let changed = if action == "add" {
+                    policy.add(&args[4])
+                } else {
+                    policy.remove(&args[4])
+                };
+                let changed = match changed {
+                    Ok(changed) => changed,
+                    Err(error) => {
+                        eprintln!("Zap registry trust error: {error}");
+                        process::exit(EXIT_USAGE_ERROR);
+                    }
+                };
+                if let Err(error) = crate::registry::save_trusted_registry_policy(&policy) {
+                    eprintln!("Zap registry trust error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+                let verb = if action == "add" {
+                    "trusted"
+                } else {
+                    "removed"
+                };
+                let suffix = if changed { "" } else { " (unchanged)" };
+                println!("{verb} registry origin: {}{suffix}", args[4]);
+            }
+            _ => {
+                eprintln!("Zap registry trust usage: list | add <url> | remove <url>");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        }
+        return;
+    }
+    if args[1..].starts_with(&["registry".to_string(), "credential".to_string()]) {
+        let action = args.get(3).map(String::as_str).unwrap_or_default();
+        let mut credentials = match crate::registry::load_registry_credentials() {
+            Ok(credentials) => credentials,
+            Err(error) => {
+                eprintln!("Zap registry credential error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        match action {
+            "list" if args.len() == 4 => {
+                for origin in credentials.origins() {
+                    println!("{}", origin.as_url());
+                }
+            }
+            "set" if args.len() == 7 && args[5] == "--token-env" => {
+                let token = match std::env::var(&args[6]) {
+                    Ok(token) => token,
+                    Err(_) => {
+                        eprintln!("Zap registry credential error: environment variable is missing or invalid");
+                        process::exit(EXIT_USAGE_ERROR);
+                    }
+                };
+                if let Err(error) = credentials.insert(&args[4], &token) {
+                    eprintln!("Zap registry credential error: {error}");
+                    process::exit(EXIT_USAGE_ERROR);
+                }
+                if let Err(error) = crate::registry::save_registry_credentials(&credentials) {
+                    eprintln!("Zap registry credential error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+                println!("configured registry credential: {}", args[4]);
+            }
+            "remove" if args.len() == 5 => {
+                let changed = match credentials.remove(&args[4]) {
+                    Ok(changed) => changed,
+                    Err(error) => {
+                        eprintln!("Zap registry credential error: {error}");
+                        process::exit(EXIT_USAGE_ERROR);
+                    }
+                };
+                if let Err(error) = crate::registry::save_registry_credentials(&credentials) {
+                    eprintln!("Zap registry credential error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+                let suffix = if changed { "" } else { " (unchanged)" };
+                println!("removed registry credential: {}{suffix}", args[4]);
+            }
+            _ => {
+                eprintln!("Zap registry credential usage: list | set <url> --token-env <name> | remove <url>");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        }
+        return;
+    }
     if args.len() == 4 && args[1] == "registry" && args[2] == "check" {
         match crate::registry::read_index(Path::new(&args[3])) {
             Ok(packages) => println!("valid registry index: {} packages", packages.len()),
@@ -260,6 +369,17 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() == 4 && args[1] == "registry" && args[2] == "fetch" {
+        let policy = match crate::registry::load_effective_trusted_registry_policy() {
+            Ok(policy) => policy,
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        if let Err(error) = policy.require_trusted(&args[3]) {
+            eprintln!("Zap registry error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
         match crate::registry::read_index_source(&args[3]) {
             Ok(packages) => println!("valid remote registry index: {} packages", packages.len()),
             Err(error) => {
@@ -337,6 +457,17 @@ pub fn run_cli(args: &[String]) {
             .get(7)
             .map(PathBuf::from)
             .unwrap_or_else(|| PathBuf::from(".zap/cache"));
+        let policy = match crate::registry::load_effective_trusted_registry_policy() {
+            Ok(policy) => policy,
+            Err(error) => {
+                eprintln!("Zap registry error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        if let Err(error) = policy.require_trusted(&args[4]) {
+            eprintln!("Zap registry error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
         match crate::registry::cache_package_source(&args[4], &cache, &package) {
             Ok(path) => println!("cached package: {}", path.display()),
             Err(error) => {
@@ -354,6 +485,17 @@ pub fn run_cli(args: &[String]) {
             checksum: args[7].to_ascii_lowercase(),
             dependencies: std::collections::BTreeMap::new(),
         };
+        let policy = match crate::registry::load_effective_trusted_registry_policy() {
+            Ok(policy) => policy,
+            Err(error) => {
+                eprintln!("Zap registry publish error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        };
+        if let Err(error) = policy.require_trusted(&args[3]) {
+            eprintln!("Zap registry publish error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
         let token = std::env::var("ZAP_REGISTRY_TOKEN").ok();
         match crate::registry::publish_package(
             &args[3],

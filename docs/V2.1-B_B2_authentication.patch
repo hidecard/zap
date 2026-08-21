@@ -1,0 +1,586 @@
+[1mdiff --git a/native/src/registry.rs b/native/src/registry.rs[m
+[1mindex 8e8f62c..a70beb9 100644[m
+[1m--- a/native/src/registry.rs[m
+[1m+++ b/native/src/registry.rs[m
+[36m@@ -1,6 +1,6 @@[m
+ use serde_json::Value;[m
+ use sha2::{Digest, Sha256};[m
+[31m-use std::collections::BTreeMap;[m
+[32m+[m[32muse std::collections::{BTreeMap, BTreeSet};[m
+ use std::fs;[m
+ use std::io::Read;[m
+ use std::path::{Path, PathBuf};[m
+[36m@@ -53,6 +53,308 @@[m [mpub fn verify_signed_index_bytes([m
+     parse_packages(packages)[m
+ }[m
+ [m
+[32m+[m[32m/// Canonical registry transport schemes supported by the B1 policy layer.[m
+[32m+[m[32m#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)][m
+[32m+[m[32mpub enum RegistryScheme {[m
+[32m+[m[32m    Http,[m
+[32m+[m[32m    Https,[m
+[32m+[m[32m    File,[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/// Canonical identity for a registry endpoint.[m
+[32m+[m[32m#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)][m
+[32m+[m[32mpub struct RegistryOrigin {[m
+[32m+[m[32m    pub scheme: RegistryScheme,[m
+[32m+[m[32m    pub host: Option<String>,[m
+[32m+[m[32m    pub port: Option<u16>,[m
+[32m+[m[32m    pub path_prefix: String,[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m#[allow(dead_code)][m
+[32m+[m[32mimpl RegistryOrigin {[m
+[32m+[m[32m    pub fn is_secure(&self) -> bool {[m
+[32m+[m[32m        matches!(self.scheme, RegistryScheme::Https | RegistryScheme::File)[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn matches_source(&self, source: &str) -> Result<bool, String> {[m
+[32m+[m[32m        let candidate = normalize_registry_origin(source)?;[m
+[32m+[m[32m        if self.scheme != candidate.scheme[m
+[32m+[m[32m            || self.host != candidate.host[m
+[32m+[m[32m            || self.port != candidate.port[m
+[32m+[m[32m        {[m
+[32m+[m[32m            return Ok(false);[m
+[32m+[m[32m        }[m
+[32m+[m[32m        if self.path_prefix == "/" {[m
+[32m+[m[32m            return Ok(true);[m
+[32m+[m[32m        }[m
+[32m+[m[32m        Ok(candidate.path_prefix == self.path_prefix[m
+[32m+[m[32m            || candidate[m
+[32m+[m[32m                .path_prefix[m
+[32m+[m[32m                .strip_prefix(&self.path_prefix)[m
+[32m+[m[32m                .is_some_and(|suffix| suffix.starts_with('/')))[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m#[allow(dead_code)][m
+[32m+[m[32mconst MAX_TRUSTED_REGISTRIES: usize = 64;[m
+[32m+[m
+[32m+[m[32m/// Deterministic bounded allowlist for registry origins.[m
+[32m+[m[32m#[derive(Clone, Debug, Default, PartialEq, Eq)][m
+[32m+[m[32mpub struct TrustedRegistryPolicy {[m
+[32m+[m[32m    origins: BTreeSet<RegistryOrigin>,[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m#[allow(dead_code)][m
+[32m+[m[32mimpl TrustedRegistryPolicy {[m
+[32m+[m[32m    pub fn new() -> Self {[m
+[32m+[m[32m        Self::default()[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn add(&mut self, source: &str) -> Result<bool, String> {[m
+[32m+[m[32m        let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m        if self.origins.len() >= MAX_TRUSTED_REGISTRIES && !self.origins.contains(&origin) {[m
+[32m+[m[32m            return Err(format!([m
+[32m+[m[32m                "trusted registry policy exceeds {} origins",[m
+[32m+[m[32m                MAX_TRUSTED_REGISTRIES[m
+[32m+[m[32m            ));[m
+[32m+[m[32m        }[m
+[32m+[m[32m        Ok(self.origins.insert(origin))[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn remove(&mut self, source: &str) -> Result<bool, String> {[m
+[32m+[m[32m        let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m        Ok(self.origins.remove(&origin))[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn is_trusted(&self, source: &str) -> Result<bool, String> {[m
+[32m+[m[32m        self.origins.iter().try_fold(false, |trusted, origin| {[m
+[32m+[m[32m            if trusted {[m
+[32m+[m[32m                Ok(true)[m
+[32m+[m[32m            } else {[m
+[32m+[m[32m                origin.matches_source(source)[m
+[32m+[m[32m            }[m
+[32m+[m[32m        })[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn origins(&self) -> impl Iterator<Item = &RegistryOrigin> {[m
+[32m+[m[32m        self.origins.iter()[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/// Origin-scoped bearer credential store.[m
+[32m+[m[32m///[m
+[32m+[m[32m/// Tokens are never included in `Debug` output or error messages. Entries are[m
+[32m+[m[32m/// keyed by canonical origins and resolution prefers the longest matching path[m
+[32m+[m[32m/// prefix, which keeps credential selection deterministic.[m
+[32m+[m[32m#[derive(Clone, Default, PartialEq, Eq)][m
+[32m+[m[32mpub struct RegistryCredentialStore {[m
+[32m+[m[32m    entries: BTreeMap<RegistryOrigin, String>,[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m#[allow(dead_code)][m
+[32m+[m[32mimpl RegistryCredentialStore {[m
+[32m+[m[32m    pub fn new() -> Self {[m
+[32m+[m[32m        Self::default()[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn insert(&mut self, source: &str, token: &str) -> Result<bool, String> {[m
+[32m+[m[32m        let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m        if !origin.is_secure() {[m
+[32m+[m[32m            return Err("registry credentials require HTTPS or a local file origin".to_string());[m
+[32m+[m[32m        }[m
+[32m+[m[32m        validate_registry_token(token)?;[m
+[32m+[m[32m        Ok(self.entries.insert(origin, token.to_string()).is_none())[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn remove(&mut self, source: &str) -> Result<bool, String> {[m
+[32m+[m[32m        let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m        Ok(self.entries.remove(&origin).is_some())[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    pub fn resolve(&self, source: &str) -> Result<Option<&str>, String> {[m
+[32m+[m[32m        let candidate = normalize_registry_origin(source)?;[m
+[32m+[m[32m        if candidate.scheme == RegistryScheme::Http {[m
+[32m+[m[32m            return Ok(None);[m
+[32m+[m[32m        }[m
+[32m+[m[32m        self.entries[m
+[32m+[m[32m            .iter()[m
+[32m+[m[32m            .filter(|(origin, _)| origin.matches_source(source).unwrap_or(false))[m
+[32m+[m[32m            .max_by_key(|(origin, _)| origin.path_prefix.len())[m
+[32m+[m[32m            .map(|(_, token)| token.as_str())[m
+[32m+[m[32m            .map(Some)[m
+[32m+[m[32m            .ok_or_else(|| {[m
+[32m+[m[32m                if candidate.is_secure() {[m
+[32m+[m[32m                    "registry credential is not configured".to_string()[m
+[32m+[m[32m                } else {[m
+[32m+[m[32m                    "registry credentials require HTTPS or a local file origin".to_string()[m
+[32m+[m[32m                }[m
+[32m+[m[32m            })[m
+[32m+[m[32m            .or_else(|error| {[m
+[32m+[m[32m                if error == "registry credential is not configured" {[m
+[32m+[m[32m                    Ok(None)[m
+[32m+[m[32m                } else {[m
+[32m+[m[32m                    Err(error)[m
+[32m+[m[32m                }[m
+[32m+[m[32m            })[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfn validate_registry_token(token: &str) -> Result<(), String> {[m
+[32m+[m[32m    if token.is_empty()[m
+[32m+[m[32m        || token.len() > 4096[m
+[32m+[m[32m        || token.chars().any(|c| c.is_control() || c.is_whitespace())[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return Err("registry authentication token is invalid".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    Ok(())[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/// Resolve a token with deterministic precedence: explicit argument, scoped[m
+[32m+[m[32m/// credential store, then `ZAP_REGISTRY_TOKEN` for HTTPS requests.[m
+[32m+[m[32mpub fn resolve_registry_token([m
+[32m+[m[32m    source: &str,[m
+[32m+[m[32m    explicit: Option<&str>,[m
+[32m+[m[32m    credentials: &RegistryCredentialStore,[m
+[32m+[m[32m) -> Result<Option<String>, String> {[m
+[32m+[m[32m    let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m    if let Some(token) = explicit {[m
+[32m+[m[32m        validate_registry_token(token)?;[m
+[32m+[m[32m        if !origin.is_secure() {[m
+[32m+[m[32m            return Err("registry credentials require HTTPS or a local file origin".to_string());[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return Ok(Some(token.to_string()));[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if let Some(token) = credentials.resolve(source)? {[m
+[32m+[m[32m        return Ok(Some(token.to_string()));[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let Some(token) = std::env::var_os("ZAP_REGISTRY_TOKEN") else {[m
+[32m+[m[32m        return Ok(None);[m
+[32m+[m[32m    };[m
+[32m+[m[32m    let token = token[m
+[32m+[m[32m        .to_str()[m
+[32m+[m[32m        .ok_or_else(|| "registry authentication token is not valid UTF-8".to_string())?;[m
+[32m+[m[32m    validate_registry_token(token)?;[m
+[32m+[m[32m    if !origin.is_secure() {[m
+[32m+[m[32m        return Err("registry credentials require HTTPS or a local file origin".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    Ok(Some(token.to_string()))[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/// Redact a secret from a diagnostic before it is shown to a user or written[m
+[32m+[m[32m/// to a log. This is intentionally simple and deterministic for all text.[m
+[32m+[m[32mpub fn redact_registry_secret(message: &str, secret: Option<&str>) -> String {[m
+[32m+[m[32m    match secret.filter(|value| !value.is_empty()) {[m
+[32m+[m[32m        Some(value) => message.replace(value, "<redacted>"),[m
+[32m+[m[32m        None => message.to_string(),[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/// Normalize a registry URL into a deterministic origin.[m
+[32m+[m[32m///[m
+[32m+[m[32m/// This B1 primitive accepts only explicit `http://`, `https://`, and[m
+[32m+[m[32m/// `file://` URLs. Userinfo, query strings, fragments, control characters,[m
+[32m+[m[32m/// traversal segments, and malformed ports are rejected.[m
+[32m+[m[32mpub fn normalize_registry_origin(source: &str) -> Result<RegistryOrigin, String> {[m
+[32m+[m[32m    let source = source.trim();[m
+[32m+[m[32m    if source.is_empty() || source.chars().any(|character| character.is_control()) {[m
+[32m+[m[32m        return Err("registry URL is invalid".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let (scheme, remainder) = source[m
+[32m+[m[32m        .split_once("://")[m
+[32m+[m[32m        .ok_or_else(|| "registry URL must include an explicit scheme".to_string())?;[m
+[32m+[m[32m    let scheme = match scheme.to_ascii_lowercase().as_str() {[m
+[32m+[m[32m        "http" => RegistryScheme::Http,[m
+[32m+[m[32m        "https" => RegistryScheme::Https,[m
+[32m+[m[32m        "file" => RegistryScheme::File,[m
+[32m+[m[32m        _ => return Err("registry URL scheme is unsupported".to_string()),[m
+[32m+[m[32m    };[m
+[32m+[m[32m    if remainder.contains('?') || remainder.contains('#') || remainder.contains('\\') {[m
+[32m+[m[32m        return Err("registry URL contains unsupported query, fragment, or separator".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if matches!(scheme, RegistryScheme::File) {[m
+[32m+[m[32m        if remainder.starts_with('@') {[m
+[32m+[m[32m            return Err("registry file URL must not contain credentials".to_string());[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return Ok(RegistryOrigin {[m
+[32m+[m[32m            scheme,[m
+[32m+[m[32m            host: None,[m
+[32m+[m[32m            port: None,[m
+[32m+[m[32m            path_prefix: normalize_registry_path(remainder)?,[m
+[32m+[m[32m        });[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let (authority, path) = remainder.split_once('/').unwrap_or((remainder, ""));[m
+[32m+[m[32m    if authority.is_empty() || authority.contains('@') {[m
+[32m+[m[32m        return Err("registry URL authority is invalid".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let (host, port) = parse_registry_authority(authority)?;[m
+[32m+[m[32m    let port = match (scheme, port) {[m
+[32m+[m[32m        (RegistryScheme::Http, Some(80)) | (RegistryScheme::Https, Some(443)) => None,[m
+[32m+[m[32m        (_, value) => value,[m
+[32m+[m[32m    };[m
+[32m+[m[32m    Ok(RegistryOrigin {[m
+[32m+[m[32m        scheme,[m
+[32m+[m[32m        host: Some(host),[m
+[32m+[m[32m        port,[m
+[32m+[m[32m        path_prefix: normalize_registry_path(path)?,[m
+[32m+[m[32m    })[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfn parse_registry_authority(authority: &str) -> Result<(String, Option<u16>), String> {[m
+[32m+[m[32m    if authority.starts_with('[') {[m
+[32m+[m[32m        let end = authority[m
+[32m+[m[32m            .find(']')[m
+[32m+[m[32m            .ok_or_else(|| "registry URL host is invalid".to_string())?;[m
+[32m+[m[32m        let host = authority[1..end].to_ascii_lowercase();[m
+[32m+[m[32m        if host.is_empty() {[m
+[32m+[m[32m            return Err("registry URL host is invalid".to_string());[m
+[32m+[m[32m        }[m
+[32m+[m[32m        let port = if end + 1 == authority.len() {[m
+[32m+[m[32m            None[m
+[32m+[m[32m        } else {[m
+[32m+[m[32m            let suffix = authority[end + 1..][m
+[32m+[m[32m                .strip_prefix(':')[m
+[32m+[m[32m                .ok_or_else(|| "registry URL port is invalid".to_string())?;[m
+[32m+[m[32m            Some(parse_registry_port(suffix)?)[m
+[32m+[m[32m        };[m
+[32m+[m[32m        return Ok((format!("[{host}]"), port));[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let mut parts = authority.split(':');[m
+[32m+[m[32m    let host = parts.next().unwrap_or_default();[m
+[32m+[m[32m    if host.is_empty() || parts.clone().count() > 1 {[m
+[32m+[m[32m        return Err("registry URL host is invalid".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let port = parts.next().map(parse_registry_port).transpose()?;[m
+[32m+[m[32m    Ok((host.to_ascii_lowercase(), port))[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfn parse_registry_port(value: &str) -> Result<u16, String> {[m
+[32m+[m[32m    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {[m
+[32m+[m[32m        return Err("registry URL port is invalid".to_string());[m
+[32m+[m[32m    }[m
+[32m+[m[32m    value[m
+[32m+[m[32m        .parse::<u16>()[m
+[32m+[m[32m        .map_err(|_| "registry URL port is invalid".to_string())[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfn normalize_registry_path(path: &str) -> Result<String, String> {[m
+[32m+[m[32m    let mut segments = Vec::new();[m
+[32m+[m[32m    for segment in path.split('/') {[m
+[32m+[m[32m        match segment {[m
+[32m+[m[32m            "" | "." => {}[m
+[32m+[m[32m            ".." => return Err("registry URL path traversal is invalid".to_string()),[m
+[32m+[m[32m            value if value.chars().any(char::is_whitespace) => {[m
+[32m+[m[32m                return Err("registry URL path contains whitespace".to_string())[m
+[32m+[m[32m            }[m
+[32m+[m[32m            value => segments.push(value),[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if segments.is_empty() {[m
+[32m+[m[32m        Ok("/".to_string())[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m        Ok(format!("/{}", segments.join("/")))[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[32m+[m
+ /// Read a registry index from a local file, `file://` URL, or HTTP(S) URL.[m
+ /// Remote access is deterministic at the response-byte level and is restricted[m
+ /// to HTTPS unless `ZAP_ALLOW_INSECURE_HTTP=1` is explicitly set for fixtures.[m
+[36m@@ -359,7 +661,25 @@[m [mpub fn cache_package_source([m
+     cache_root: &Path,[m
+     package: &RegistryPackage,[m
+ ) -> Result<PathBuf, String> {[m
+[31m-    cache_bytes(&fetch_source(source)?, cache_root, package)[m
+[32m+[m[32m    cache_package_source_with_credentials([m
+[32m+[m[32m        source,[m
+[32m+[m[32m        cache_root,[m
+[32m+[m[32m        package,[m
+[32m+[m[32m        &RegistryCredentialStore::new(),[m
+[32m+[m[32m    )[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mpub fn cache_package_source_with_credentials([m
+[32m+[m[32m    source: &str,[m
+[32m+[m[32m    cache_root: &Path,[m
+[32m+[m[32m    package: &RegistryPackage,[m
+[32m+[m[32m    credentials: &RegistryCredentialStore,[m
+[32m+[m[32m) -> Result<PathBuf, String> {[m
+[32m+[m[32m    cache_bytes([m
+[32m+[m[32m        &fetch_source_with_credentials(source, credentials)?,[m
+[32m+[m[32m        cache_root,[m
+[32m+[m[32m        package,[m
+[32m+[m[32m    )[m
+ }[m
+ [m
+ fn cache_bytes([m
+[36m@@ -481,6 +801,7 @@[m [mpub fn publish_package([m
+     token: Option<&str>,[m
+ ) -> Result<(), String> {[m
+     require_secure_transport(registry_url)?;[m
+[32m+[m[32m    let token = resolve_registry_token(registry_url, token, &RegistryCredentialStore::new())?;[m
+     let bytes = fs::read(archive).map_err(|e| format!("package archive read failed: {e}"))?;[m
+     let actual = sha256_hex(&bytes);[m
+     if actual != package.checksum {[m
+[36m@@ -494,12 +815,15 @@[m [mpub fn publish_package([m
+         .set("X-Zap-Package-Name", &package.name)[m
+         .set("X-Zap-Package-Version", &package.version)[m
+         .set("X-Zap-Package-Checksum", &package.checksum);[m
+[31m-    if let Some(token) = token {[m
+[32m+[m[32m    if let Some(token) = token.as_deref() {[m
+         request = request.set("Authorization", &format!("Bearer {token}"));[m
+     }[m
+[31m-    let response = request.send_bytes(&bytes).map_err(|error| match error {[m
+[31m-        ureq::Error::Status(status, _) => format!("registry publish failed with HTTP {status}"),[m
+[31m-        other => format!("registry publish failed: {other}"),[m
+[32m+[m[32m    let response = request.send_bytes(&bytes).map_err(|error| {[m
+[32m+[m[32m        let message = match error {[m
+[32m+[m[32m            ureq::Error::Status(status, _) => format!("registry publish failed with HTTP {status}"),[m
+[32m+[m[32m            other => format!("registry publish failed: {other}"),[m
+[32m+[m[32m        };[m
+[32m+[m[32m        redact_registry_secret(&message, token.as_deref())[m
+     })?;[m
+     if !(200..300).contains(&response.status()) {[m
+         return Err(format!([m
+[36m@@ -609,6 +933,13 @@[m [mpub fn persist_registry_package([m
+ }[m
+ [m
+ fn fetch_source(source: &str) -> Result<Vec<u8>, String> {[m
+[32m+[m[32m    fetch_source_with_credentials(source, &RegistryCredentialStore::new())[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfn fetch_source_with_credentials([m
+[32m+[m[32m    source: &str,[m
+[32m+[m[32m    credentials: &RegistryCredentialStore,[m
+[32m+[m[32m) -> Result<Vec<u8>, String> {[m
+     let untrusted = std::env::var("ZAP_UNTRUSTED").as_deref() == Ok("1");[m
+     if let Some(path) = source.strip_prefix("file://") {[m
+         if untrusted {[m
+[36m@@ -621,11 +952,19 @@[m [mfn fetch_source(source: &str) -> Result<Vec<u8>, String> {[m
+     }[m
+     if source.starts_with("http://") || source.starts_with("https://") {[m
+         require_secure_transport(source)?;[m
+[31m-        let response = ureq::get(source).call().map_err(|error| match error {[m
+[31m-            ureq::Error::Status(status, _) => {[m
+[31m-                format!("registry HTTP fetch failed with HTTP {status}")[m
+[31m-            }[m
+[31m-            other => format!("registry HTTP fetch failed: {other}"),[m
+[32m+[m[32m        let token = resolve_registry_token(source, None, credentials)?;[m
+[32m+[m[32m        let mut request = ureq::get(source);[m
+[32m+[m[32m        if let Some(token) = token.as_deref() {[m
+[32m+[m[32m            request = request.set("Authorization", &format!("Bearer {token}"));[m
+[32m+[m[32m        }[m
+[32m+[m[32m        let response = request.call().map_err(|error| {[m
+[32m+[m[32m            let message = match error {[m
+[32m+[m[32m                ureq::Error::Status(status, _) => {[m
+[32m+[m[32m                    format!("registry HTTP fetch failed with HTTP {status}")[m
+[32m+[m[32m                }[m
+[32m+[m[32m                other => format!("registry HTTP fetch failed: {other}"),[m
+[32m+[m[32m            };[m
+[32m+[m[32m            redact_registry_secret(&message, token.as_deref())[m
+         })?;[m
+         let mut bytes = Vec::new();[m
+         response[m
+[36m@@ -644,12 +983,13 @@[m [mfn fetch_source(source: &str) -> Result<Vec<u8>, String> {[m
+ }[m
+ [m
+ fn require_secure_transport(source: &str) -> Result<(), String> {[m
+[31m-    if source.starts_with("http://")[m
+[32m+[m[32m    let origin = normalize_registry_origin(source)?;[m
+[32m+[m[32m    if origin.scheme == RegistryScheme::Http[m
+         && std::env::var("ZAP_ALLOW_INSECURE_HTTP").as_deref() != Ok("1")[m
+     {[m
+         return Err("insecure HTTP registry transport is disabled; use HTTPS or set ZAP_ALLOW_INSECURE_HTTP=1 for local fixtures".to_string());[m
+     }[m
+[31m-    if !(source.starts_with("http://") || source.starts_with("https://")) {[m
+[32m+[m[32m    if !matches!(origin.scheme, RegistryScheme::Http | RegistryScheme::Https) {[m
+         return Err(format!([m
+             "registry publish requires an HTTP(S) URL: {source}"[m
+         ));[m
+[36m@@ -818,9 +1158,11 @@[m [mfn constant_time_equal(left: &[u8], right: &[u8]) -> bool {[m
+ mod tests {[m
+     use super::{[m
+         cache_package, cache_package_source, find_package, hmac_sha256_hex,[m
+[31m-        persist_registry_package, prune_cache, publish_package, read_index, read_index_source,[m
+[31m-        read_signed_index, resolve_dependency_graph, sha256_hex, verify_cached_package,[m
+[31m-        verify_signed_index_bytes, RegistryPackage,[m
+[32m+[m[32m        normalize_registry_origin, persist_registry_package, prune_cache, publish_package,[m
+[32m+[m[32m        read_index, read_index_source, read_signed_index, redact_registry_secret,[m
+[32m+[m[32m        resolve_dependency_graph, resolve_registry_token, sha256_hex, verify_cached_package,[m
+[32m+[m[32m        verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage, RegistryScheme,[m
+[32m+[m[32m        TrustedRegistryPolicy,[m
+     };[m
+     use std::collections::BTreeMap;[m
+     use std::fs;[m
+[36m@@ -829,6 +1171,139 @@[m [mmod tests {[m
+     use std::path::Path;[m
+     use std::sync::{Mutex, OnceLock};[m
+ [m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn credential_store_prefers_the_longest_matching_origin_path() {[m
+[32m+[m[32m        let mut credentials = RegistryCredentialStore::new();[m
+[32m+[m[32m        assert!(credentials[m
+[32m+[m[32m            .insert("https://example.test", "root-token")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m        assert!(credentials[m
+[32m+[m[32m            .insert("https://example.test/team", "team-token")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            credentials[m
+[32m+[m[32m                .resolve("https://example.test/team/package.pkg")[m
+[32m+[m[32m                .unwrap(),[m
+[32m+[m[32m            Some("team-token")[m
+[32m+[m[32m        );[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            credentials[m
+[32m+[m[32m                .resolve("https://example.test/other/package.pkg")[m
+[32m+[m[32m                .unwrap(),[m
+[32m+[m[32m            Some("root-token")[m
+[32m+[m[32m        );[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            credentials[m
+[32m+[m[32m                .resolve("https://other.test/package.pkg")[m
+[32m+[m[32m                .unwrap(),[m
+[32m+[m[32m            None[m
+[32m+[m[32m        );[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn credential_store_rejects_insecure_and_invalid_tokens() {[m
+[32m+[m[32m        let mut credentials = RegistryCredentialStore::new();[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            credentials[m
+[32m+[m[32m                .insert("http://example.test", "token")[m
+[32m+[m[32m                .unwrap_err(),[m
+[32m+[m[32m            "registry credentials require HTTPS or a local file origin"[m
+[32m+[m[32m        );[m
+[32m+[m[32m        for token in ["", "contains whitespace", "contains\nnewline"] {[m
+[32m+[m[32m            assert_eq!([m
+[32m+[m[32m                credentials[m
+[32m+[m[32m                    .insert("https://example.test", token)[m
+[32m+[m[32m                    .unwrap_err(),[m
+[32m+[m[32m                "registry authentication token is invalid"[m
+[32m+[m[32m            );[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn explicit_token_and_redaction_are_deterministic() {[m
+[32m+[m[32m        let credentials = RegistryCredentialStore::new();[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            resolve_registry_token("https://example.test", Some("explicit-token"), &credentials)[m
+[32m+[m[32m                .unwrap(),[m
+[32m+[m[32m            Some("explicit-token".to_string())[m
+[32m+[m[32m        );[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            redact_registry_secret([m
+[32m+[m[32m                "registry request failed with token explicit-token",[m
+[32m+[m[32m                Some("explicit-token")[m
+[32m+[m[32m            ),[m
+[32m+[m[32m            "registry request failed with token <redacted>"[m
+[32m+[m[32m        );[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn canonical_origin_normalizes_scheme_host_port_and_path() {[m
+[32m+[m[32m        let origin = normalize_registry_origin(" HTTPS://Registry.Example:443/api/// ").unwrap();[m
+[32m+[m[32m        assert_eq!(origin.scheme, RegistryScheme::Https);[m
+[32m+[m[32m        assert_eq!(origin.host.as_deref(), Some("registry.example"));[m
+[32m+[m[32m        assert_eq!(origin.port, None);[m
+[32m+[m[32m        assert_eq!(origin.path_prefix, "/api");[m
+[32m+[m[32m        assert!(origin.is_secure());[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn canonical_origin_rejects_credentials_queries_fragments_and_traversal() {[m
+[32m+[m[32m        for source in [[m
+[32m+[m[32m            "https://user:secret@example.test/index",[m
+[32m+[m[32m            "https://example.test/index?token=secret",[m
+[32m+[m[32m            "https://example.test/index#fragment",[m
+[32m+[m[32m            "https://example.test/a/../b",[m
+[32m+[m[32m            "https://example.test:bad/index",[m
+[32m+[m[32m            "example.test/index",[m
+[32m+[m[32m        ] {[m
+[32m+[m[32m            assert!([m
+[32m+[m[32m                normalize_registry_origin(source).is_err(),[m
+[32m+[m[32m                "accepted {source}"[m
+[32m+[m[32m            );[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn trusted_policy_is_deterministic_idempotent_and_path_scoped() {[m
+[32m+[m[32m        let mut policy = TrustedRegistryPolicy::new();[m
+[32m+[m[32m        assert!(policy.add("https://EXAMPLE.test/api/").unwrap());[m
+[32m+[m[32m        assert!(!policy.add("https://example.test:443/api").unwrap());[m
+[32m+[m[32m        assert!(policy[m
+[32m+[m[32m            .is_trusted("https://example.test/api/packages")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m        assert!(!policy[m
+[32m+[m[32m            .is_trusted("https://example.test/apix/packages")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m        assert!(!policy[m
+[32m+[m[32m            .is_trusted("https://other.test/api/packages")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m        assert_eq!([m
+[32m+[m[32m            policy[m
+[32m+[m[32m                .origins()[m
+[32m+[m[32m                .map(|origin| origin.path_prefix.as_str())[m
+[32m+[m[32m                .collect::<Vec<_>>(),[m
+[32m+[m[32m            vec!["/api"][m
+[32m+[m[32m        );[m
+[32m+[m[32m        assert!(policy.remove("https://example.test/api").unwrap());[m
+[32m+[m[32m        assert!(!policy[m
+[32m+[m[32m            .is_trusted("https://example.test/api/packages")[m
+[32m+[m[32m            .unwrap());[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    #[test][m
+[32m+[m[32m    fn trusted_policy_has_a_bounded_origin_count() {[m
+[32m+[m[32m        let mut policy = TrustedRegistryPolicy::new();[m
+[32m+[m[32m        for index in 0..64 {[m
+[32m+[m[32m            assert!(policy[m
+[32m+[m[32m                .add(&format!("https://registry-{index}.example.test"))[m
+[32m+[m[32m                .unwrap());[m
+[32m+[m[32m        }[m
+[32m+[m[32m        let error = policy[m
+[32m+[m[32m            .add("https://registry-overflow.example.test")[m
+[32m+[m[32m            .unwrap_err();[m
+[32m+[m[32m        assert_eq!(error, "trusted registry policy exceeds 64 origins");[m
+[32m+[m[32m    }[m
+[32m+[m
+     #[test][m
+     fn index_is_sorted_and_exact_lookup_is_deterministic() {[m
+         let root = std::env::temp_dir().join(format!("zap-registry-{}", std::process::id()));[m

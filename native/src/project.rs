@@ -6,8 +6,9 @@ use std::{
 
 use crate::ast::{parse_program, Stmt};
 use crate::registry::{
-    cache_package, package_cache_path, read_index, resolve_dependency_graph, validate_package_name,
-    verify_cached_package, RegistryPackage,
+    cache_package, cache_package_source_with_credentials, load_registry_credentials,
+    package_cache_path, read_index, read_index_source_with_credentials, resolve_dependency_graph,
+    validate_package_name, verify_cached_package, RegistryPackage,
 };
 
 use super::{
@@ -940,9 +941,16 @@ fn resolve_registry_dependencies(
         }
         return Ok(locked.to_vec());
     };
-    let index_path = PathBuf::from(index_path);
-    let index = read_index(&index_path)?;
+    let index_source = index_path.to_string_lossy().into_owned();
+    let credentials = load_registry_credentials()?;
+    let index = if Path::new(&index_source).is_file() {
+        read_index(Path::new(&index_source))?
+    } else {
+        read_index_source_with_credentials(&index_source, &credentials)?
+    };
+    let index_path = PathBuf::from(&index_source);
     let offline = std::env::var_os("ZAP_OFFLINE").is_some();
+    let trusted_policy = crate::registry::load_effective_trusted_registry_policy()?;
     let roots = dependencies
         .iter()
         .filter_map(|(name, spec)| match spec {
@@ -979,20 +987,30 @@ fn resolve_registry_dependencies(
                 package.name, package.version
             ));
         }
-        let source = package
-            .source
-            .strip_prefix("file://")
-            .unwrap_or(&package.source);
-        let source_path = Path::new(source);
-        let source_path = if source_path.is_absolute() {
-            source_path.to_path_buf()
+        if package.source.starts_with("http://") || package.source.starts_with("https://") {
+            trusted_policy.require_trusted(&package.source)?;
+            cache_package_source_with_credentials(
+                &package.source,
+                &cache_root,
+                &package,
+                &credentials,
+            )?;
         } else {
-            index_path
-                .parent()
-                .unwrap_or(Path::new("."))
-                .join(source_path)
-        };
-        cache_package(&source_path, &cache_root, &package)?;
+            let source = package
+                .source
+                .strip_prefix("file://")
+                .unwrap_or(&package.source);
+            let source_path = Path::new(source);
+            let source_path = if source_path.is_absolute() {
+                source_path.to_path_buf()
+            } else {
+                index_path
+                    .parent()
+                    .unwrap_or(Path::new("."))
+                    .join(source_path)
+            };
+            cache_package(&source_path, &cache_root, &package)?;
+        }
         if update && !cached.is_file() {
             verify_cached_package(&cached, &package)?;
         }
