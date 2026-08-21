@@ -43,6 +43,7 @@ pairs=(
   'docs/BENCHMARK_HARNESS_EN.md:docs/BENCHMARK_HARNESS_MM.md'
   'docs/TYPECHECK_GENERIC_DESIGN_EN.md:docs/TYPECHECK_GENERIC_DESIGN_MM.md'
   'docs/P2_PROGRESS.md:docs/P2_PROGRESS_MM.md'
+  'docs/RELEASE_2.1.10_EN.md:docs/RELEASE_2.1.10_MM.md'
 )
 
 for pair in "${pairs[@]}"; do
@@ -75,7 +76,8 @@ for file in \
   docs/ASYNC_BOUNDARIES_EN.md docs/ASYNC_BOUNDARIES_MM.md \
   docs/BENCHMARK_HARNESS_EN.md docs/BENCHMARK_HARNESS_MM.md \
   docs/TYPECHECK_GENERIC_DESIGN_EN.md docs/TYPECHECK_GENERIC_DESIGN_MM.md \
-  docs/P2_PROGRESS.md docs/P2_PROGRESS_MM.md; do
+  docs/P2_PROGRESS.md docs/P2_PROGRESS_MM.md \
+  docs/RELEASE_2.1.10_EN.md docs/RELEASE_2.1.10_MM.md; do
   require_text "$file" "v$VERSION"
   if grep -Eq 'v2\.1\.(0|6|7|8)([^0-9]|$)' "$file"; then
     record FAIL "stale-version:$file"

@@ -2,7 +2,7 @@
 
 Zap is a small, readable, general-purpose programming language using `.zp` source files. This guide is designed for a first-time learner. It moves from running a program to values, control flow, functions, modules, error handling, testing, and small projects.
 
-> **Language choice:** If you prefer Burmese, use [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md). The two guides cover the same learning path.
+> **Language choice:** If you prefer Burmese, use [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md). The Burmese guide follows this same core learning path and includes additional localized advanced lessons for OOP, tooling, diagnostics, and typed Result/Option payloads.
 
 ## Before You Begin
 
@@ -307,10 +307,10 @@ say unwrap_or(missing, "unknown")
 The `?` operator unwraps a successful Result and returns an error Result from the current function when the value is an error.
 
 ```zap
-fn load_user() -> Result:
+fn load_user() -> result<any>:
     return err("user not found")
 
-fn profile() -> Result:
+fn profile() -> result<any>:
     let user = load_user()?
     return ok(user)
 

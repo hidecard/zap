@@ -20,7 +20,7 @@ Zap v2.1.10 သည် release-engineering နှင့် documentation-quality 
 
 ## Verification
 
-Native Rust quality gate များဖြစ်သော rustfmt၊ `-D warnings` ပါ strict Clippy၊ all-target/all-feature test များ (unit test ၁၆၀ ခုနှင့် core integration test ၂၅၄ ခု) နှင့် `git diff --check` တို့ကို local တွင် အောင်မြင်စွာ run လုပ်ထားပါသည်။ GitHub Actions run `32512452677` တွင် documentation နှင့် benchmark quality job အပြင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 build/test job များ အားလုံး အောင်မြင်ပါသည်။
+Native Rust quality gate များဖြစ်သော rustfmt၊ `-D warnings` ပါ strict Clippy၊ all-target/all-feature test များ (unit test ၁၆၀ ခုနှင့် core integration test ၂၅၄ ခု) နှင့် `git diff --check` တို့ကို local တွင် အောင်မြင်စွာ run လုပ်ထားပါသည်။ GitHub Actions run `32513512535` တွင် documentation နှင့် benchmark quality job အပြင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 build/test job များ အားလုံး အောင်မြင်ပါသည်။ Release workflow run `32513839968` သည် v2.1.10 artifacts များကို validate၊ sign နှင့် publish အောင်မြင်စွာ ပြုလုပ်ထားပါသည်။
 
 ထိန်းသိမ်းထားသော contract များအတွက် [documentation navigation hub](DOCUMENTATION_NAVIGATION_MM.md)၊ [benchmark harness contract](BENCHMARK_HARNESS_MM.md)၊ [release version policy](RELEASE_VERSION_POLICY_MM.md) နှင့် [Burmese language specification](LANGUAGE_SPEC_MM.md) ကို ကြည့်ရှုနိုင်ပါသည်။
 

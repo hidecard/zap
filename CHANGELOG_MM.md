@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Documentation maintenance
+- Burmese learner guide ထဲရှိ v0.x historical reference များနှင့် outdated feature-status claim များကို ပြင်ဆင်ပြီး v2.1.10 contract နှင့် deferred scope များနှင့် ကိုက်ညီအောင် ညှိထားပါသည်။
+- English Result propagation example များကို supported `result<any>` annotation အသုံးပြုအောင် ပြင်ဆင်ပြီး v2.1.10 English/Burmese release-note pair ကို documentation consistency gate ထဲ ထည့်သွင်းထားပါသည်။
+- Release-note verification reference များကို final CI နှင့် release workflow run များသို့ update လုပ်ထားပါသည်။
+
 ## [2.1.10] — 2026-08-21
 
 ### Release engineering

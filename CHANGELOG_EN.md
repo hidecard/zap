@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Documentation maintenance
+- Corrected the Burmese learner guide's historical v0.x references and outdated feature-status claims, and aligned its current boundary with v2.1.10 contracts and deferred scope.
+- Corrected English Result propagation examples to use the supported `result<any>` annotation and extended the documentation consistency gate to cover the v2.1.10 English/Burmese release-note pair.
+- Updated release-note verification references to the final CI and release workflow runs.
+
 ## [2.1.10] — 2026-08-21
 
 ### Release engineering

@@ -629,9 +629,9 @@ zap --help
 
 ## နောက်တစ်ဆင့် လေ့လာရန်
 
-ဒီ course ပြီးပါက [`docs/SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md) တွင် syntax အပြည့်အစုံကို ပြန်လည်ကြည့်ပါ။ [`docs/LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) တွင် workflow နှင့် complete examples များကို လေ့လာပါ။ v0.6.0 ၏ future features များကို [`docs/ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တွင် ဖတ်ပါ။
+ဒီ course ပြီးပါက [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md) တွင် syntax အပြည့်အစုံကို ပြန်လည်ကြည့်ပါ။ [`LANGUAGE_SPEC_MM.md`](LANGUAGE_SPEC_MM.md) တွင် normative language contract ကို လေ့လာပြီး [`DOCUMENTATION_NAVIGATION_MM.md`](DOCUMENTATION_NAVIGATION_MM.md) မှ runtime၊ package၊ async၊ tooling နှင့် release လမ်းကြောင်းများကို ဆက်လက်ရွေးချယ်ပါ။ လက်ရှိ deferred scope နှင့် milestone များကို [`NEXT_TODO_PLAN_MM.md`](NEXT_TODO_PLAN_MM.md) တွင် ဖတ်ရှုနိုင်ပါသည်။
 
-လက်ရှိ roadmap တွင် structured error model၊ HTTP client၊ async/await၊ tasks၊ channels၊ linting၊ JSON diagnostics နှင့် package management တို့ ပါဝင်သော်လည်း ၎င်းတို့အားလုံးသည် လက်ရှိ stable runtime feature မဟုတ်သေးပါ။
+လက်ရှိ stable runtime feature များနှင့် roadmap-only feature များကို သီးခြားခွဲခြားဖော်ပြထားပါသည်။ Async scheduling၊ cancellation နှင့် timeout syntax၊ public weak references၊ tracing collection နှင့် broad trait implementation များသည် လက်ရှိ release ၏ အစိတ်အပိုင်းမဟုတ်ဘဲ deferred scope ဖြစ်ပါသည်။
 
 ## သင်တန်းပြီးဆုံးမှု စစ်ဆေးရန်
 
@@ -776,7 +776,7 @@ say directory["primary"].name_value()
 
 ### 15.8 OOP အတွက် သတိပြုရန်
 
-v0.7.0 တွင် class registry validation၊ class၊ object၊ constructor၊ methods၊ mutable properties၊ `self`၊ parent constructor initialization၊ method override နှင့် single inheritance ကို အသုံးပြုနိုင်သည်။ မရှိသော class သို့မဟုတ် parent class ကို အသုံးပြုပါက runtime/class declaration error ပြန်ပေးသည်။ Interfaces၊ abstract classes၊ private fields၊ generics၊ explicit `super` method calls နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။ Class name များကို စာလုံးကြီးဖြင့် စတင်ရေးခြင်းသည် ဖတ်ရလွယ်ကူစေသည်။
+v2.1.10 တွင် class registry validation၊ class၊ object၊ constructor၊ methods၊ mutable properties၊ `self`၊ parent constructor initialization၊ method override၊ field/method visibility နှင့် single inheritance ကို အသုံးပြုနိုင်သည်။ မရှိသော class သို့မဟုတ် parent class ကို အသုံးပြုပါက runtime/class declaration error ပြန်ပေးသည်။ Interfaces၊ abstract classes၊ user-defined generic declarations၊ explicit `super` method calls နှင့် multiple inheritance များကို မထည့်သွင်းသေးပါ။ Class name များကို စာလုံးကြီးဖြင့် စတင်ရေးခြင်းသည် ဖတ်ရလွယ်ကူစေသည်။
 
 ## OOP Learning Checkpoint
 
@@ -826,13 +826,13 @@ say "OOP test passed"
 
 ## Current Stable Boundary
 
-OOP feature သည် v0.7.0 native runtime တွင် class validation၊ parent constructor initialization၊ method override နှင့် mutable object state အပါအဝင် implementation အဖြစ် ပါဝင်နေပြီဖြစ်သည်။ v0.7.0 တွင် collection နှင့် line-based file helpers များလည်း ပါဝင်လာသည်။ `async/await`၊ channels၊ HTTP client၊ package registry နှင့် advanced type system များသည် roadmap အဖြစ်သာ ရှိသေးပြီး stable API ၏ အစိတ်အပိုင်းမဟုတ်သေးပါ။
+OOP feature သည် v2.1.10 native runtime တွင် class validation၊ parent constructor initialization၊ method override နှင့် mutable object state အပါအဝင် implemented baseline ဖြစ်ပါသည်။ Collection နှင့် line-based file helpers များလည်း လက်ရှိ standard-library surface ၏ အစိတ်အပိုင်းများ ဖြစ်ပါသည်။ Async runtime foundation၊ package registry နှင့် type-checking contract များကို သီးခြား documentation များတွင် ဖော်ပြထားပြီး broad language-level scheduling syntax နှင့် advanced generic declarations များကို deferred scope အဖြစ် သတ်မှတ်ထားပါသည်။
 
-သင်ခန်းစာအားလုံးပြီးနောက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ [`LANGUAGE_GUIDE.md`](LANGUAGE_GUIDE.md) နှင့် [`ROADMAP_0.6.0.md`](ROADMAP_0.6.0.md) တို့ကို ဆက်လက်ဖတ်ရှုပါ။
+သင်ခန်းစာအားလုံးပြီးနောက် [`SYNTAX_GUIDE.md`](SYNTAX_GUIDE.md)၊ [`LANGUAGE_SPEC_MM.md`](LANGUAGE_SPEC_MM.md) နှင့် [`DOCUMENTATION_NAVIGATION_MM.md`](DOCUMENTATION_NAVIGATION_MM.md) တို့ကို ဆက်လက်ဖတ်ရှုပါ။
 
 ## Lesson 16 — Collection Helpers နှင့် Line-based File I/O
 
-v0.7.0 တွင် list နှင့် map data များကို ပိုမိုလွယ်ကူစွာ ကိုင်တွယ်ရန် helper functions များ ထပ်တိုးထားသည်။ File ကို line တစ်ကြောင်းစီ ဖတ်ခြင်းနှင့် ရေးခြင်းကိုလည်း တိုက်ရိုက်လုပ်နိုင်သည်။
+လက်ရှိ Zap runtime တွင် list နှင့် map data များကို ကိုင်တွယ်ရန် helper functions များနှင့် file ကို line တစ်ကြောင်းစီ ဖတ်/ရေးနိုင်သော APIs များ ရှိပါသည်။
 
 ### Collection helpers
 
@@ -907,7 +907,7 @@ Collection helper များကို မှန်ကန်သော value typ
 
 ## Updated Course Completion Checklist
 
-v0.7.0 foundation ပြည့်စုံရန် OOP နှင့် standard library lesson များအပြင်—
+လက်ရှိ OOP နှင့် standard-library foundation ပြည့်စုံရန်—
 
 1. `is_empty`၊ `sum`၊ `min`၊ `max`၊ `reverse`၊ `sort` နှင့် `join` ကို အသုံးပြုနိုင်ခြင်း။
 2. `get(map, key, default)` ဖြင့် missing map key ကို လုံခြုံစွာ ကိုင်တွယ်နိုင်ခြင်း။
@@ -916,7 +916,7 @@ v0.7.0 foundation ပြည့်စုံရန် OOP နှင့် standard
 
 ## Lesson 17 — Lint နှင့် JSON Project Diagnostics
 
-v0.8.0 တွင် source style နှင့် project manifest ကို editor/CI workflow များအတွက် စစ်ဆေးနိုင်သော tooling နှစ်မျိုး ပါဝင်လာသည်။
+လက်ရှိ Zap တွင် source style နှင့် project manifest ကို editor/CI workflow များအတွက် စစ်ဆေးနိုင်သော tooling များ ရှိပါသည်။
 
 ### `zap lint`
 
@@ -961,7 +961,7 @@ zap check --json .
 
 `zap lint` ဖြင့် source style issue ရှာနိုင်ခြင်း၊ `zap check --json` ဖြင့် machine-readable project result ရယူနိုင်ခြင်း၊ success/error JSON နှစ်မျိုးကို ခွဲခြားဖတ်နိုင်ခြင်းနှင့် CI အတွက် command exit status အရေးကြီးကြောင်း နားလည်ရမည်။
 
-## v0.8.0 Course Completion Checklist
+## Course Completion Checklist
 
 1. OOP class၊ constructor၊ property၊ method နှင့် inheritance ကို အသုံးပြုနိုင်ခြင်း။
 2. Collection helpers၊ map default lookup နှင့် line-based file I/O ကို အသုံးပြုနိုင်ခြင်း။
@@ -1014,7 +1014,7 @@ zap check --json .
 ဤ structured fields များကို CI၊ editor နှင့် automation tools များက file၊ line၊ column အလိုက် တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 
 ### Result နှင့် Option အသုံးပြုပုံ
-v0.9.0 တွင် recoverable value အဖြစ် `ok(value)`၊ `err(value)`၊ `some(value)` နှင့် `option_none()` ကို အသုံးပြုနိုင်သည်။ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` ဖြင့် value အမျိုးအစားကို စစ်ဆေးနိုင်ပြီး `unwrap` သို့မဟုတ် `unwrap_or` ဖြင့် value ကို ရယူနိုင်သည်။
+Zap v2.1.10 တွင် recoverable value အဖြစ် `ok(value)`၊ `err(value)`၊ `some(value)` နှင့် `option_none()` ကို အသုံးပြုနိုင်သည်။ `is_ok`၊ `is_err`၊ `is_some` နှင့် `is_option_none` ဖြင့် value အမျိုးအစားကို စစ်ဆေးနိုင်ပြီး `unwrap` သို့မဟုတ် `unwrap_or` ဖြင့် value ကို ရယူနိုင်သည်။
 
 ```zap
 let success = ok(42)
@@ -1028,12 +1028,12 @@ say unwrap_or(failure, 0)
 say unwrap_or(missing, "unknown")
 ```
 
-`unwrap(err(...))` သို့မဟုတ် `unwrap(option_none())` ကို စစ်ဆေးခြင်းမရှိဘဲ ခေါ်ပါက runtime error ပြန်ပေးသည်။ `Result` နှင့် `Option` တန်ဖိုးများကို JSON အဖြစ်လည်း serialize လုပ်နိုင်သည်။ လက်ရှိအဆင့်တွင် Result/Option payload static type validation မပြီးသေးသော်လည်း Result error အတွက် `?` automatic propagation ကို အသုံးပြုနိုင်ပြီဖြစ်သည်။
+`unwrap(err(...))` သို့မဟုတ် `unwrap(option_none())` ကို စစ်ဆေးခြင်းမရှိဘဲ ခေါ်ပါက runtime error ပြန်ပေးသည်။ `Result` နှင့် `Option` တန်ဖိုးများကို JSON အဖြစ် serialize လုပ်နိုင်သည်။ `result<T>` နှင့် `option<T>` payload annotation များအတွက် static type validation ရှိပြီး Result error အတွက် `?` automatic propagation ကို အသုံးပြုနိုင်ပါသည်။
 
-### v0.9.0 Audit Note
-v0.9.0 တွင် function parameter/return annotation runtime checks၊ static signature validation၊ known function-call argument count/literal type checking၊ variable/nested-expression inference၊ `Result`/`Option` foundation နှင့် `zap check --json` structured diagnostics ကို ထည့်သွင်းထားသည်။ Generic type inference၊ control-flow narrowing၊ Result/Option payload static validation၊ `async/await`၊ HTTP client၊ package lockfile/registry နှင့် language server များမှာ မပြီးသေးသော roadmap features များ ဖြစ်သည်။ Result error အတွက် `?` automatic propagation ကို ထည့်သွင်းပြီးဖြစ်သည်။ Python-style typing၊ JavaScript-style modules၊ Go-style package/testing workflow နှင့် Dart-style asynchronous Futures/Streams/isolate concepts များကို နှိုင်းယှဉ်လေ့လာပြီး Zap တွင် လွယ်ကူမှုနှင့် safety ကို ဦးစားပေး၍ design လုပ်မည်။
+### v2.1.10 Current Status Note
+Function parameter/return annotations၊ static signature validation၊ control-flow narrowing၊ `Result`/`Option` payload validation နှင့် `zap check --json` structured diagnostics များသည် လက်ရှိ supported contract ၏ အစိတ်အပိုင်းများ ဖြစ်ပါသည်။ Generic declarations နှင့် advanced inference၊ broad async scheduling syntax၊ public weak references နှင့် tracing collection များသည် deferred scope ဖြစ်ပါသည်။
 
-နောက်ထပ် roadmap ကို [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ comparative audit ကို [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md) နှင့် release details ကို [`RELEASE_0.8.0.md`](RELEASE_0.8.0.md) တွင် ဖတ်ရှုပါ။
+လက်ရှိ roadmap နှင့် release details ကို [`DOCUMENTATION_NAVIGATION_MM.md`](DOCUMENTATION_NAVIGATION_MM.md)၊ [`TYPECHECK_CONFORMANCE_MATRIX_MM.md`](TYPECHECK_CONFORMANCE_MATRIX_MM.md)၊ [`NEXT_TODO_PLAN_MM.md`](NEXT_TODO_PLAN_MM.md) နှင့် [`RELEASE_2.1.10_MM.md`](RELEASE_2.1.10_MM.md) တွင် ဖတ်ရှုပါ။
 
 ## Lesson 18 — Result နှင့် `?` Automatic Propagation
 

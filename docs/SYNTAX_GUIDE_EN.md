@@ -234,10 +234,10 @@ say unwrap_or(missing, "default")
 The `?` operator propagates an error Result from the current function:
 
 ```zap
-fn read_value() -> Result:
+fn read_value() -> result<any>:
     return err("not available")
 
-fn use_value() -> Result:
+fn use_value() -> result<any>:
     let value = read_value()?
     return ok(value)
 ```

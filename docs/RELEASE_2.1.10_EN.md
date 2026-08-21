@@ -20,7 +20,7 @@ This release does not claim a new trait implementation, broad language-level asy
 
 ## Verification
 
-The native Rust quality gates passed locally: rustfmt, strict Clippy with `-D warnings`, all-target/all-feature tests with 160 unit tests and 254 core integration tests, and `git diff --check`. GitHub Actions run `32512452677` passed the documentation and benchmark quality job plus Linux x86_64, Windows x86_64, and macOS ARM64 build/test jobs.
+The native Rust quality gates passed locally: rustfmt, strict Clippy with `-D warnings`, all-target/all-feature tests with 160 unit tests and 254 core integration tests, and `git diff --check`. GitHub Actions run `32513512535` passed the documentation and benchmark quality job plus Linux x86_64, Windows x86_64, and macOS ARM64 build/test jobs; release workflow run `32513839968` successfully validated, signed, and published the v2.1.10 artifacts.
 
 See the [documentation navigation hub](DOCUMENTATION_NAVIGATION_EN.md), [benchmark harness contract](BENCHMARK_HARNESS_EN.md), [release version policy](RELEASE_VERSION_POLICY_EN.md), and [English language specification](LANGUAGE_SPEC_EN.md) for the maintained contracts.
 
