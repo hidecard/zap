@@ -25,6 +25,7 @@
 - Added an explicit `parser JSON lockfile corpus` CI gate running `adversarial_corpus`, `malformed_program_corpus`, `json_security_corpus`, `malformed_lockfile_corpus`, and `lockfile_quoted_values` independently of the complete native suite.
 - Hardened Unix release packaging for reproducibility by normalizing archive order, timestamps, ownership, numeric ownership, and gzip metadata; CI rebuilds each Unix archive and requires byte-for-byte equality before upload.
 - Replaced Windows `Compress-Archive` packaging with a deterministic .NET ZIP writer that sorts slash-separated file entries, fixes entry timestamps to the Unix epoch, uses stable compression settings, and rebuilds the archive byte-for-byte before upload; content and SHA-256 verification remain enforced.
+- Added cross-platform installer verification for clean Unix homes and Windows user profiles. Release archives now include uninstall scripts, and CI verifies installation, version reporting, executable launch, reinstall/upgrade, uninstall cleanup, archive contents, and SHA-256 metadata on the matching platform.
 
 ### Async and tooling
 

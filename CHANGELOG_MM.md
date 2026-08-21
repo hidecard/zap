@@ -25,6 +25,7 @@
 - Complete native suite နှင့် သီးခြားအနေဖြင့် `adversarial_corpus`၊ `malformed_program_corpus`၊ `json_security_corpus`၊ `malformed_lockfile_corpus` နှင့် `lockfile_quoted_values` များကို run သည့် `parser JSON lockfile corpus` CI gate ကို ထည့်သွင်းထားပါသည်။
 - Unix release packaging ကို reproducible ဖြစ်စေရန် archive order၊ timestamp၊ ownership၊ numeric ownership နှင့် gzip metadata များကို normalize လုပ်ထားပါသည်။ Upload မပြုမီ CI တွင် Unix archive တစ်ခုချင်းစီကို ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှုကို လိုအပ်စေပါသည်။
 - Windows `Compress-Archive` packaging အစား sorted slash-separated file entry များ၊ Unix epoch entry timestamp၊ stable compression setting များနှင့် deterministic .NET ZIP writer ကို အသုံးပြုထားပါသည်။ Upload မပြုမီ archive ကို ဒုတိယအကြိမ် ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှု၊ archive contents နှင့် SHA-256 checksum များကို ဆက်လက်စစ်ဆေးပါသည်။
+- Clean Unix home နှင့် Windows user profile များအတွက် cross-platform installer verification ကို ထည့်သွင်းထားပါသည်။ Release archive များတွင် uninstall script များပါဝင်ပြီး သက်ဆိုင်ရာ platform တွင် installation၊ version reporting၊ executable launch၊ reinstall/upgrade၊ uninstall cleanup၊ archive contents နှင့် SHA-256 metadata များကို CI ဖြင့် စစ်ဆေးပါသည်။
 
 ### Async နှင့် tooling
 

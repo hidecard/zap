@@ -149,7 +149,7 @@ jobs:
           rm -rf package
           mkdir -p package/zap/bin package/zap/docs package/zap/examples
           cp "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          cp README.md CHANGELOG.md CHANGELOG_EN.md CHANGELOG_MM.md install.sh package/zap/
+          cp README.md CHANGELOG.md CHANGELOG_EN.md CHANGELOG_MM.md install.sh uninstall.sh package/zap/
           cp docs/USAGE.md docs/LANGUAGE_GUIDE.md docs/SYNTAX_GUIDE_EN.md package/zap/docs/
           cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
           printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
@@ -165,7 +165,7 @@ jobs:
           Remove-Item -Recurse -Force package -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force package/zap/bin, package/zap/docs, package/zap/examples | Out-Null
           Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
-          Copy-Item README.md, CHANGELOG.md, CHANGELOG_EN.md, CHANGELOG_MM.md, install_windows.bat package/zap/
+          Copy-Item README.md, CHANGELOG.md, CHANGELOG_EN.md, CHANGELOG_MM.md, install_windows.bat, uninstall_windows.bat package/zap/
           Copy-Item docs/USAGE.md, docs/LANGUAGE_GUIDE.md, docs/SYNTAX_GUIDE_EN.md package/zap/docs/
           Copy-Item examples/default_parameters.zp, examples/hello.zp package/zap/examples/
           "Zap release artifact`nVersion: $($env:GITHUB_REF_NAME -replace '^v','')`nTarget: ${{ matrix.target }}" | Out-File -Encoding utf8 package/zap/RELEASE.txt
@@ -252,6 +252,16 @@ jobs:
           $releaseText = (tar -xOf "$env:ARCHIVE" zap/RELEASE.txt | Out-String)
           $releaseVersion = $env:GITHUB_REF_NAME -replace '^v',''
           if ($releaseText -notmatch "Version: $releaseVersion") { throw "Release version metadata mismatch" }
+
+      - name: Verify Unix installer in a clean home
+        if: runner.os != 'Windows'
+        shell: bash
+        run: bash scripts/verify_installer_unix.sh "$ARCHIVE" "${GITHUB_REF_NAME#v}"
+
+      - name: Verify Windows installer in a clean profile
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/verify_installer_windows.ps1 -Archive "$env:ARCHIVE" -ExpectedVersion ($env:GITHUB_REF_NAME -replace '^v','')
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
