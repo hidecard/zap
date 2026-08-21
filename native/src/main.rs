@@ -1796,7 +1796,7 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                     ));
                 }
             }
-            if trimmed.starts_with("if ") {
+            if trimmed.starts_with("if ") || trimmed.starts_with("while ") {
                 let narrowed = narrowed_branch_types(condition, &vars);
                 if !narrowed.is_empty() {
                     let previous = vars.clone();

@@ -17,13 +17,13 @@
 | Result/Option payloads | `result<T>` နှင့် `option<T>` payload annotation များသည် `ok`၊ `err` နှင့် `some` payload များကို စစ်သည် | Baseline ပြီး | Type annotation tests |
 | JSON diagnostics | Diagnostic တွင် `kind`၊ `message`၊ `error`၊ `file`၊ `line` နှင့် `column` fields ပါသည် | Baseline ပြီး | CLI/LSP fixtures |
 | Simple narrowing | Support လုပ်ထားသော `option<T>` နှင့် `result<T>` guard များအတွက် branch-local narrowing ရှိသည် | Baseline ပြီး | `TYPE_NARROWING_EN.md` |
-| Complex narrowing | Nested boolean expression၊ loop၊ reassignment နှင့် incompatible alias များ | တစ်စိတ်တစ်ပိုင်းပြီး | TC-010 alias fixtures၊ TC-006 loop boundary ကျန် |
+| Complex narrowing | Nested boolean expression၊ loop၊ reassignment နှင့် incompatible alias များ | တစ်စိတ်တစ်ပိုင်းပြီး | TC-006 loop fixtures၊ TC-010 alias fixtures၊ nested boolean edge case များ ကျန် |
 | Complex inference | Nested call၊ collection element နှင့် control-flow expression များ | တစ်စိတ်တစ်ပိုင်းပြီး | TC-007၊ TC-008 နှင့် TC-009 fixtures |
 | Generic design | Generic list/map/function syntax နှင့် inference contract | ဒီဇိုင်းလို | Specification decision record |
 
 ## လက်ရှိ conformance အထောက်အထား
 
-TC-009 အတွက် compatible branches၊ မကိုက်ညီသော branch result types နှင့် bool မဟုတ်သော condition များကို `zap check --json` ဖြင့် စစ်ဆေးသည့် permanent positive/negative fixtures များ ထည့်သွင်းပြီးဖြစ်သည်။ TC-010 အတွက် `option<T>` နှင့် `result<T>` wrapper identity သည် alias assignment ဖြတ်သန်းပြီးနောက် ထိန်းသိမ်းထားကြောင်းနှင့် reassignment ပြုလုပ်ပါက narrowed alias fact ကို invalidate လုပ်ကြောင်း အတည်ပြုသည့် permanent fixtures များ ထည့်သွင်းပြီးဖြစ်သည်။ ဤ fixtures များသည် L2 static-behavior evidence ကို တည်ဆောက်ပေးသည်။ Diagnostic location တည်ငြိမ်မှုနှင့် cross-tool L3/L4 gate များကို full validation အဆင့်တွင် ဆက်လက်စစ်ဆေးရမည်။
+TC-006 အတွက် guarded `while` body အတွင်း narrowed payload ကို အသုံးပြုနိုင်ပြီး loop ပြီးနောက် မူလ wrapper type ကို ပြန်လည်ရရှိကြောင်း အတည်ပြုသည့် permanent loop-boundary fixtures များ ရှိပါသည်။ TC-009 အတွက် compatible branches၊ မကိုက်ညီသော branch result types နှင့် bool မဟုတ်သော condition များကို `zap check --json` ဖြင့် စစ်ဆေးသည့် permanent positive/negative fixtures များ ထည့်သွင်းပြီးဖြစ်သည်။ TC-010 အတွက် `option<T>` နှင့် `result<T>` wrapper identity သည် alias assignment ဖြတ်သန်းပြီးနောက် ထိန်းသိမ်းထားကြောင်းနှင့် reassignment ပြုလုပ်ပါက narrowed alias fact ကို invalidate လုပ်ကြောင်း အတည်ပြုသည့် permanent fixtures များ ထည့်သွင်းပြီးဖြစ်သည်။ ဤ fixtures များသည် L2 static-behavior evidence ကို တည်ဆောက်ပေးသည်။ Diagnostic location တည်ငြိမ်မှုနှင့် cross-tool L3/L4 gate များကို full validation အဆင့်တွင် ဆက်လက်စစ်ဆေးရမည်။
 
 ## Acceptance levels
 

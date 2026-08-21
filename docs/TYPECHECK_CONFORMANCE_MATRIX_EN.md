@@ -17,13 +17,13 @@ This document defines the acceptance boundary for the next type-system workstrea
 | Result/Option payloads | `result<T>` and `option<T>` payload annotations validate `ok`, `err`, and `some` payloads | Implemented baseline | Type annotation tests |
 | JSON diagnostics | Diagnostics expose `kind`, `message`, `error`, `file`, `line`, and `column` fields | Implemented baseline | CLI/LSP fixtures |
 | Simple narrowing | Branch-local narrowing for supported `option<T>` and `result<T>` guards | Implemented baseline | `TYPE_NARROWING_EN.md` |
-| Complex narrowing | Nested boolean expressions, loops, reassignment, and incompatible aliases | Partially implemented | TC-010 alias fixtures; TC-006 loop boundary remains |
+| Complex narrowing | Nested boolean expressions, loops, reassignment, and incompatible aliases | Partially implemented | TC-006 loop fixtures; TC-010 alias fixtures; nested boolean edge cases remain |
 | Complex inference | Nested calls, collection elements, and control-flow expressions | Partially implemented | TC-007, TC-008, and TC-009 fixtures |
 | Generic design | Generic list/map/function syntax and inference contract | Design required | Specification decision record |
 
 ## Current conformance evidence
 
-TC-009 now has permanent positive and negative `zap check --json` fixtures for compatible branches, incompatible branch result types, and non-boolean conditions. TC-010 now has permanent fixtures proving that `option<T>` and `result<T>` wrapper identity survives alias assignment and that reassignment invalidates a narrowed alias fact. These fixtures establish L2 static-behavior evidence; stable diagnostic-location and cross-tool L3/L4 gates remain subject to the full validation phase.
+TC-006 now has permanent loop-boundary fixtures proving that a guarded `while` body can use the narrowed payload and that the original wrapper type is restored after the loop. TC-009 now has permanent positive and negative `zap check --json` fixtures for compatible branches, incompatible branch result types, and non-boolean conditions. TC-010 now has permanent fixtures proving that `option<T>` and `result<T>` wrapper identity survives alias assignment and that reassignment invalidates a narrowed alias fact. These fixtures establish L2 static-behavior evidence; stable diagnostic-location and cross-tool L3/L4 gates remain subject to the full validation phase.
 
 ## Acceptance levels
 

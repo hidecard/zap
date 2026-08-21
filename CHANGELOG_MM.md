@@ -14,6 +14,8 @@
 
 ### Type checking နှင့် conformance
 
+- Guard ပါသော `while` body များအတွက် loop-boundary narrowing ကို ထည့်သွင်းထားပါသည်။ Narrowed payload ကို loop အတွင်း အသုံးပြုနိုင်ပြီး loop ပြီးနောက် မူလ wrapper type ကို ပြန်လည်ထားရှိသဖြင့် reassignment နှင့် post-loop use များသည် type-safe ဖြစ်ပါသည်။
+- Loop အတွင်း option payload အသုံးပြုမှုနှင့် loop ပြီးနောက် wrapper ပြန်လည်ရရှိမှုအတွက် permanent TC-006 conformance coverage ကို ထည့်သွင်းထားပါသည်။
 - `if ... then ... else ...` control-flow expression များအတွက် type checking ကို ထည့်သွင်းထားပါသည်။ Condition သည် `bool` ဖြစ်ရမည်၊ branch result type နှစ်ခု ကိုက်ညီရမည်၊ မကိုက်ညီပါက structured `TypeError` ဖြင့် reject လုပ်ပါသည်။
 - `zap check --json` ဖြင့် compatible branch၊ မကိုက်ညီသော branch result နှင့် bool မဟုတ်သော condition များကို စစ်ဆေးသည့် permanent TC-009 conformance fixtures များ ထည့်သွင်းထားပါသည်။
 - `option<T>` နှင့် `result<T>` အတွက် alias assignment ဖြတ်သန်းသည့် wrapper preservation နှင့် reassignment ပြီးနောက် narrowing fact invalidation ကို စစ်ဆေးသည့် permanent TC-010 alias-narrowing fixtures များ ထည့်သွင်းထားပါသည်။

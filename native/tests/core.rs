@@ -1527,7 +1527,7 @@ fn typecheck_p1_conformance_tc006_to_tc008() {
     let cases = [
         (
             "tc006-loop-boundary",
-            "let maybe: option<number> = some(3)\nwhile is_some(maybe):\n    maybe = option_none()\nlet after_loop: number = maybe\n",
+            "let maybe: option<number> = some(3)\nwhile is_some(maybe):\n    let inside_loop: number = maybe\n    maybe = option_none()\nlet after_loop: number = maybe\n",
             false,
             "expects number, got option<any>",
         ),
