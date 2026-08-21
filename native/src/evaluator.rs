@@ -3649,7 +3649,7 @@ pub(crate) fn execute_lines(
 mod tests {
     use super::{
         configuration_path, direct_builtin, direct_external_builtin, execute_ast_program,
-        execute_lines, http_serve_once, require_capability_for_mode,
+        execute_lines, http_serve_once, json_to_value, require_capability_for_mode,
         validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
@@ -3871,6 +3871,38 @@ mod tests {
             Err(error) => assert!(error.contains("from_json failed:")),
             Ok(_) => panic!("malformed JSON should fail at runtime"),
         }
+    }
+
+    #[test]
+    fn json_security_corpus_is_deterministic_and_panic_free() {
+        let corpus = [
+            serde_json::json!({"__zap_variant": "unknown", "value": 1}),
+            serde_json::json!({"__zap_variant": "ok"}),
+            serde_json::json!({"__zap_variant": "future"}),
+            serde_json::json!({"__zap_variant": 7}),
+            serde_json::json!({"__zap_variant": "none", "extra": [1, {"x": true}]}),
+            serde_json::json!([null, true, {"nested": [1, 2, 3]}]),
+            serde_json::json!(9007199254740992i64),
+        ];
+        for input in corpus {
+            let first = std::panic::catch_unwind(|| json_to_value(input.clone()));
+            let second = std::panic::catch_unwind(|| json_to_value(input));
+            assert!(first.is_ok(), "JSON conversion panicked");
+            assert_eq!(
+                first
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(|value| value.show()),
+                second
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(|value| value.show())
+            );
+        }
+        let oversized = serde_json::Number::from_f64(1.5).expect("finite JSON number");
+        assert!(json_to_value(serde_json::Value::Number(oversized)).is_err());
     }
 
     #[test]

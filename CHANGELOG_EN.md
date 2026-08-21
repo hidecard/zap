@@ -19,6 +19,10 @@
 - Added an explicit `security_property` CI step alongside the complete native test suite. Formatting, Cargo check, 248 native tests, strict Clippy in CI, cross-platform builds, and the v2.1.0 release checksum gates remain enforced.
 - Added runtime workspace confinement for filesystem builtins. Relative and absolute paths are resolved against the active project workspace, parent traversal is rejected, and existing symlinks are canonicalized before containment checks so reads and writes cannot escape the workspace.
 - Added adversarial filesystem regression coverage for parent traversal and symlinks targeting outside files, plus an independent `filesystem_builtins` CI corpus step.
+- Added deterministic lexer and parser corpus coverage for huge numeric literals, unterminated strings, unknown punctuation, malformed indentation and delimiters, broken nested syntax, panic-free repeated parsing, and monotonic token spans.
+- Added JSON conversion security coverage for malformed tagged variants, oversized integers, recursive malformed input, deterministic conversion, and panic-free rejection.
+- Added lockfile security coverage for unsupported versions, incomplete or duplicate fields, invalid escapes, traversal-like package names, strict quoted values, deterministic rejection, and panic-free parsing.
+- Added an explicit `parser JSON lockfile corpus` CI gate running `adversarial_corpus`, `malformed_program_corpus`, `json_security_corpus`, `malformed_lockfile_corpus`, and `lockfile_quoted_values` independently of the complete native suite.
 
 ### Async and tooling
 

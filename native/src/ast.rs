@@ -1345,6 +1345,37 @@ mod tests {
     }
 
     #[test]
+    fn malformed_program_corpus_is_deterministic_and_panic_free() {
+        let corpus = [
+            "    say 1",
+            "if true:\n  say 1\n    say 2",
+            "fn broken(:\n    return",
+            "let value = [1, 2",
+            "class Broken:\n    fn init(",
+            "if true:\n    if false:\n        say 1\n  say 2",
+            "return )",
+            "",
+        ];
+        for source in corpus {
+            let first = std::panic::catch_unwind(|| parse_program(source));
+            let second = std::panic::catch_unwind(|| parse_program(source));
+            assert!(first.is_ok(), "parser panicked for {source:?}");
+            assert_eq!(
+                first
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(|program| program.statements.len()),
+                second
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(|program| program.statements.len())
+            );
+        }
+    }
+
+    #[test]
     fn represents_nested_binary_expression_shape() {
         let span = SourceSpan {
             line: 1,

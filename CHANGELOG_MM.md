@@ -19,6 +19,10 @@
 - Native test suite နှင့်အတူ သီးခြား `security_property` CI step ကို ထည့်သွင်းထားပါသည်။ Formatting၊ Cargo check၊ native test 248 ခု၊ CI strict Clippy၊ cross-platform build နှင့် v2.1.0 release checksum gate များကို ဆက်လက် enforce လုပ်ထားပါသည်။
 - Filesystem builtin များအတွက် runtime workspace confinement ကို ထည့်သွင်းထားပါသည်။ Relative နှင့် absolute path များကို active project workspace အပေါ် resolve လုပ်ပြီး parent traversal များကို reject လုပ်ကာ ရှိပြီးသား symlink များကို containment check မပြုမီ canonicalize လုပ်သဖြင့် workspace အပြင်သို့ ဖတ်ခြင်းနှင့် ရေးခြင်း မပြုနိုင်ပါ။
 - Parent traversal နှင့် အပြင်ဖိုင်သို့ ညွှန်သော symlink များအတွက် adversarial filesystem regression coverage ထည့်သွင်းပြီး သီးခြား `filesystem_builtins` CI corpus step ကိုလည်း ထည့်သွင်းထားပါသည်။
+- Huge numeric literal၊ unterminated string၊ unknown punctuation၊ malformed indentation နှင့် delimiter၊ broken nested syntax၊ panic-free repeated parsing နှင့် monotonic token span များအတွက် deterministic lexer နှင့် parser corpus coverage ထည့်သွင်းထားပါသည်။
+- Malformed tagged variant၊ oversized integer၊ recursive malformed input၊ deterministic conversion နှင့် panic-free rejection များအတွက် JSON conversion security coverage ထည့်သွင်းထားပါသည်။
+- Unsupported version၊ incomplete သို့မဟုတ် duplicate field၊ invalid escape၊ traversal-like package name၊ strict quoted value၊ deterministic rejection နှင့် panic-free parsing များအတွက် lockfile security coverage ထည့်သွင်းထားပါသည်။
+- Complete native suite နှင့် သီးခြားအနေဖြင့် `adversarial_corpus`၊ `malformed_program_corpus`၊ `json_security_corpus`၊ `malformed_lockfile_corpus` နှင့် `lockfile_quoted_values` များကို run သည့် `parser JSON lockfile corpus` CI gate ကို ထည့်သွင်းထားပါသည်။
 
 ### Async နှင့် tooling
 

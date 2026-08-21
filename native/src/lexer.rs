@@ -247,4 +247,38 @@ mod tests {
         let error = tokenize_with_spans("say \"hello").unwrap_err();
         assert!(error.contains("1:5"));
     }
+
+    #[test]
+    fn adversarial_corpus_is_deterministic_and_never_panics() {
+        let corpus = [
+            "",
+            "# comment only\n",
+            "say \"မြန်မာ\"",
+            "(((([[{{",
+            "999999999999999999999999999999",
+            "say \"unterminated",
+            "@",
+            "!",
+            "\\\\\\\\\\\\",
+            "name_123 and or >= <= !=",
+        ];
+        for source in corpus {
+            let first = std::panic::catch_unwind(|| tokenize_with_spans(source));
+            let second = std::panic::catch_unwind(|| tokenize_with_spans(source));
+            assert!(first.is_ok(), "lexer panicked for {source:?}");
+            assert_eq!(
+                first.as_ref().ok().and_then(|result| result.as_ref().ok()),
+                second.as_ref().ok().and_then(|result| result.as_ref().ok())
+            );
+            if let Ok(Ok(tokens)) = first {
+                let mut previous = (0, 0);
+                for token in tokens {
+                    let current = (token.span.line, token.span.column);
+                    assert!(current >= previous);
+                    assert!(token.span.length >= 1);
+                    previous = current;
+                }
+            }
+        }
+    }
 }

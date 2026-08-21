@@ -58,6 +58,14 @@ jobs:
       - name: Run filesystem confinement corpus
         run: cargo test --manifest-path native/Cargo.toml filesystem_builtins --all-features
 
+      - name: Run parser JSON lockfile corpus
+        run: |
+          cargo test --manifest-path native/Cargo.toml adversarial_corpus --all-features
+          cargo test --manifest-path native/Cargo.toml malformed_program_corpus --all-features
+          cargo test --manifest-path native/Cargo.toml json_security_corpus --all-features
+          cargo test --manifest-path native/Cargo.toml malformed_lockfile_corpus --all-features
+          cargo test --manifest-path native/Cargo.toml lockfile_quoted_values --all-features
+
       - name: Check repository whitespace
         run: git diff --check
 

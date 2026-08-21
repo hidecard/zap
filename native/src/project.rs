@@ -1172,3 +1172,54 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
         Ok(passed)
     }
 }
+
+#[cfg(test)]
+mod lockfile_security_tests {
+    use super::{parse_lockfile_quoted, parse_resolved_lockfile};
+
+    #[test]
+    fn malformed_lockfile_corpus_is_deterministic_and_panic_free() {
+        let corpus = [
+            "",
+            "lockfile_version = nope",
+            "lockfile_version = 3",
+            "lockfile_version = 2\n[resolved]\nfoo.version = \"1.0.0\"",
+            "lockfile_version = 2\n[resolved]\nfoo.unknown = \"x\"",
+            "lockfile_version = 2\n[resolved]\nfoo.version = \"1.0.0\"\nfoo.version = \"2.0.0\"",
+            "lockfile_version = 2\n[resolved]\nfoo.version = \"unterminated",
+            "lockfile_version = 2\n[resolved]\n../escape.version = \"1.0.0\"",
+            "lockfile_version = 2\n[resolved]\nfoo.version = \"1.0.0\\q\"",
+        ];
+        for input in corpus {
+            let first = std::panic::catch_unwind(|| parse_resolved_lockfile(input));
+            let second = std::panic::catch_unwind(|| parse_resolved_lockfile(input));
+            assert!(first.is_ok(), "lockfile parser panicked for {input:?}");
+            assert_eq!(
+                first
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(Vec::len),
+                second
+                    .as_ref()
+                    .ok()
+                    .and_then(|result| result.as_ref().ok())
+                    .map(Vec::len)
+            );
+        }
+    }
+
+    #[test]
+    fn lockfile_quoted_values_accept_only_supported_escapes() {
+        assert_eq!(
+            parse_lockfile_quoted("\"line\\nvalue\\\\ok\"", "test").expect("valid escapes"),
+            "line\nvalue\\ok"
+        );
+        for raw in ["value", "\"unterminated", "\"bad\\q\"", "\"dangling\\\""] {
+            assert!(
+                parse_lockfile_quoted(raw, "test").is_err(),
+                "accepted {raw:?}"
+            );
+        }
+    }
+}
