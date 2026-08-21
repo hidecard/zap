@@ -45,7 +45,7 @@ pairs=(
   'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
   'docs/P0_FOUNDATION_STATUS_EN.md:docs/P0_FOUNDATION_STATUS_MM.md'
   'docs/P2_PROGRESS.md:docs/P2_PROGRESS_MM.md'
-  'docs/RELEASE_2.1.12_EN.md:docs/RELEASE_2.1.12_MM.md'
+  'docs/RELEASE_2.1.13_EN.md:docs/RELEASE_2.1.13_MM.md'
 )
 
 for pair in "${pairs[@]}"; do
@@ -81,7 +81,7 @@ for file in \
   docs/P2_PROGRESS.md docs/P2_PROGRESS_MM.md \
   docs/RUNTIME_STATE_EN.md docs/RUNTIME_STATE_MM.md \
   docs/P0_FOUNDATION_STATUS_EN.md docs/P0_FOUNDATION_STATUS_MM.md \
-  docs/RELEASE_2.1.12_EN.md docs/RELEASE_2.1.12_MM.md; do
+  docs/RELEASE_2.1.13_EN.md docs/RELEASE_2.1.13_MM.md; do
   require_text "$file" "v$VERSION"
   if grep -Eq 'v2\.1\.(0|6|7|8)([^0-9]|$)' "$file"; then
     record FAIL "stale-version:$file"

@@ -1,6 +1,6 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.1.12
+**Verified baseline:** Zap v2.1.13
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path

@@ -1,6 +1,6 @@
 # Zap Async Boundaries
 
-**Status:** Normative runtime-boundary guidance for Zap v2.1.12
+**Status:** Normative runtime-boundary guidance for Zap v2.1.13
 
 ## Purpose
 

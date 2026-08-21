@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.13] — 2026-08-21
+
+### Release engineering
+- Migrated workspace confinement and LSP document ownership into explicit state objects with isolation regressions.
+
 ## [2.1.12] — 2026-08-22
 
 ### Release engineering

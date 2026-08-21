@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.13] — 2026-08-21
+
+### Release engineering
+- Workspace confinement နှင့် LSP document ownership ကို explicit state object များသို့ ရွှေ့ပြီး isolation regression များ ထည့်သွင်းထားပါသည်။
+
 ## [2.1.12] — 2026-08-22
 
 ### Release engineering

@@ -1,6 +1,6 @@
 # Zap Async Boundary များ
 
-**အခြေအနေ:** Zap v2.1.12 အတွက် normative runtime-boundary လမ်းညွှန်
+**အခြေအနေ:** Zap v2.1.13 အတွက် normative runtime-boundary လမ်းညွှန်
 
 ## ရည်ရွယ်ချက်
 

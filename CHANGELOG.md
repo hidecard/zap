@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.13] - 2026-08-21
+
+### Release summary
+- Migrated workspace confinement and LSP document ownership into explicit state objects.
+
 ## [2.1.12] - 2026-08-22
 
 ### Release summary
