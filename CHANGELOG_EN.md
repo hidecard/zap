@@ -23,6 +23,7 @@
 - Added permanent TC-009 conformance fixtures covering compatible branches, incompatible branch results, and non-boolean conditions through `zap check --json`, plus an L3 regression asserting stable `ok`, `kind`, `file`, `line`, `column`, `message`, and `error` fields for conditional type errors.
 - Added permanent TC-010 alias-narrowing fixtures for `option<T>` and `result<T>`, including wrapper preservation through alias assignment and invalidation after reassignment.
 - Updated the bilingual type-checking conformance matrices to record TC-006 loop-boundary coverage and TC-012 generic syntax as implemented baseline evidence; future generic declarations and advanced inference remain deferred.
+- Added an L4 LSP diagnostic regression and shared source-diagnostic bridge so CLI and LSP type errors use the same `TypeError` code, source-location semantics, and normalized message.
 
 ### Security and release hardening
 

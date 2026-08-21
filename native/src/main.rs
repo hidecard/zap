@@ -1965,6 +1965,13 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
     }
     Ok(())
 }
+pub(crate) fn source_diagnostics(source: &str, file: &Path) -> Vec<String> {
+    let mut diagnostics = lint_source(source);
+    if let Err(error) = validate_function_calls(source, file) {
+        diagnostics.push(error);
+    }
+    diagnostics
+}
 fn json_escape(value: &str) -> String {
     value
         .replace('\\', "\\\\")

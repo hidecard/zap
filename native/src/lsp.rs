@@ -686,16 +686,32 @@ fn symbol_range(source: &str, span: &crate::lexer::SourceSpan, name: &str) -> Va
 }
 
 fn publish_diagnostics(uri: &str, source: &str) -> Value {
-    let diagnostics = crate::lint_source(source)
+    let file = file_uri_path(uri).unwrap_or_else(|| PathBuf::from("<lsp>"));
+    let diagnostics = crate::source_diagnostics(source, &file)
         .into_iter()
-        .map(|message| {
-            let line = diagnostic_line(&message).unwrap_or(1).saturating_sub(1);
-            let width = source.lines().nth(line).map(|value| value.chars().count()).unwrap_or(1).max(1);
+        .map(|raw| {
+            let diagnostic = crate::diagnostics::ZapError::from_message(raw.clone());
+            let (_, _, parsed_line, parsed_column) = diagnostic.parts();
+            let line_number = if parsed_line == 0 {
+                diagnostic_line(&raw).unwrap_or(1)
+            } else {
+                parsed_line
+            };
+            let column_number = if parsed_column == 0 { 1 } else { parsed_column };
+            let line = line_number.saturating_sub(1);
+            let character = column_number.saturating_sub(1);
+            let width = source
+                .lines()
+                .nth(line)
+                .map(|value| value.chars().count())
+                .unwrap_or(character + 1)
+                .max(character + 1);
             json!({
-                "range": {"start": {"line": line, "character": 0}, "end": {"line": line, "character": width}},
-                "severity": 2,
+                "range": {"start": {"line": line, "character": character}, "end": {"line": line, "character": width}},
+                "severity": 1,
                 "source": "zap",
-                "message": message
+                "code": diagnostic.kind(),
+                "message": diagnostic.message()
             })
         })
         .collect::<Vec<_>>();
@@ -738,6 +754,25 @@ mod tests {
             response["params"]["diagnostics"][0]["range"]["start"]["line"],
             1
         );
+    }
+
+    #[test]
+    fn lsp_diagnostics_match_cli_type_error_contract() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": "file:///conditional.zp", "text": r#"let value: number = if true then 1 else "bad"
+"#}}
+        }))
+        .unwrap();
+        let diagnostic = &response["params"]["diagnostics"][0];
+        assert_eq!(diagnostic["code"], "TypeError");
+        assert_eq!(diagnostic["range"]["start"]["line"], 0);
+        assert_eq!(diagnostic["range"]["start"]["character"], 0);
+        assert!(diagnostic["message"]
+            .as_str()
+            .unwrap()
+            .contains("conditional branches must have compatible types"));
     }
 
     #[test]
