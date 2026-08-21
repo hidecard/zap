@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.1.13` |
+| Current release line | `v2.1.14` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -72,7 +72,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.1.13 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.1.13), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.1.14 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.1.14), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -82,7 +82,7 @@ Zap is distributed as a standalone native executable. No separate language runti
 | Windows | x86_64 | `.zip` | Extract and run `install_windows.bat` from Command Prompt |
 | macOS | ARM64 | `.tar.gz` | Extract, make the installer executable, and run `./install.sh` |
 
-For the current v2.1.13 release, the platform assets are `zap-2.1.13-linux-x86_64.tar.gz`, `zap-2.1.13-macos-arm64.tar.gz`, and `zap-2.1.13-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
+For the current v2.1.14 release, the platform assets are `zap-2.1.14-linux-x86_64.tar.gz`, `zap-2.1.14-macos-arm64.tar.gz`, and `zap-2.1.14-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
 
 ### Linux Installation
 
@@ -91,7 +91,7 @@ For the current v2.1.13 release, the platform assets are `zap-2.1.13-linux-x86_6
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.1.13-linux-x86_64.tar.gz
+tar -xzf zap-2.1.14-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -107,11 +107,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.1.13 release](https://github.com/hidecard/zap/releases/tag/v2.1.13).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.1.14 release](https://github.com/hidecard/zap/releases/tag/v2.1.14).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.1.13-macos-arm64.tar.gz
+tar -xzf zap-2.1.14-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -133,7 +133,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.1.13 release](https://github.com/hidecard/zap/releases/tag/v2.1.13).
+1. Download the Windows x86_64 `.zip` archive from the [v2.1.14 release](https://github.com/hidecard/zap/releases/tag/v2.1.14).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

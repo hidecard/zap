@@ -1,6 +1,6 @@
 # Zap Language Specification
 
-**Specification အခြေအနေ:** Zap v2.1.13 အတွက် normative foundation
+**Specification အခြေအနေ:** Zap v2.1.14 အတွက် normative foundation
 
 ဤစာတမ်းသည် language semantics များအတွက် canonical index ဖြစ်သည်။ အဟောင်း guide တစ်ခုခုသည် ဤစာတမ်းနှင့် မကိုက်ညီပါက specification နှင့် ကိုက်ညီအောင် implementation/test များကို ပြင်ရမည်။ Legacy behavior ကို အလိုအလျောက် normative အဖြစ် မယူဆဘဲ compatibility exception အဖြစ် အတိအကျ မှတ်တမ်းတင်ရမည်။
 

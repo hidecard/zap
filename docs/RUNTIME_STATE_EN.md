@@ -1,6 +1,6 @@
 # Runtime State and Execution Context
 
-**Status:** Implemented first slice for Zap v2.1.13
+**Status:** Implemented first slice for Zap v2.1.14
 
 This document defines the first explicit runtime-state boundary. It does not claim that every evaluator concern has already moved into one object; it records the state that has been migrated and the boundaries that remain deferred.
 

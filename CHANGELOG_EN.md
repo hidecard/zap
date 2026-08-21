@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.14] — 2026-08-21
+
+### Release engineering
+- Hardened the explicit workspace and LSP state migration and preserved Windows-compatible line-helper behavior after cross-platform CI regression.
+
 ## [2.1.13] — 2026-08-21
 
 ### Release engineering

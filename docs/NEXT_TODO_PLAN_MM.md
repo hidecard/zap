@@ -1,6 +1,6 @@
 # Zap နောက်ဆက်တွဲ Engineering TODO Plan
 
-**အခြေခံအခြေအနေ:** Zap v2.1.13 verified release ဖြစ်ပြီး P0-03 Structured Diagnostics ကို `master` branch တွင် ပြီးစီးထားသည်။
+**အခြေခံအခြေအနေ:** Zap v2.1.14 verified release ဖြစ်ပြီး P0-03 Structured Diagnostics ကို `master` branch တွင် ပြီးစီးထားသည်။
 
 **ရည်ရွယ်ချက်:** Stable diagnostic contract ပြီးစီးပြီးနောက် ဆက်လက်အကောင်အထည်ဖော်ရမည့် အစီအစဉ်ကို သတ်မှတ်ရန် ဖြစ်သည်။ ပြီးစီးပြီးသား release အလုပ်များကို ထပ်မတွက်ဘဲ ကျန်ရှိနေသော TODO register ကို executable milestone များအဖြစ် ခွဲထားသည်။
 

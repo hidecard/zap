@@ -1,6 +1,6 @@
 # Zap Remaining Engineering To-do Register
 
-**Baseline:** Zap v2.1.13 verified release
+**Baseline:** Zap v2.1.14 verified release
 **Source:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **Purpose:** Track every recommendation that is not fully complete, without treating already-verified release work as unfinished.
 

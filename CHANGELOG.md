@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.14] - 2026-08-21
+
+### Release summary
+- Hardened explicit workspace and LSP state migration with Windows-compatible line-helper behavior.
+
 ## [2.1.13] - 2026-08-21
 
 ### Release summary

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.14] — 2026-08-21
+
+### Release engineering
+- Explicit workspace နှင့် LSP state migration ကို ခိုင်မာစေပြီး cross-platform CI regression အပြီး Windows-compatible line-helper behavior ကို ထိန်းသိမ်းထားပါသည်။
+
 ## [2.1.13] — 2026-08-21
 
 ### Release engineering
