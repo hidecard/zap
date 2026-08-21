@@ -1,4 +1,4 @@
-#![allow(clippy::missing_const_for_thread_local, clippy::type_complexity)]
+#![allow(clippy::type_complexity)]
 
 mod ast;
 mod async_runtime;

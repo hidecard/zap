@@ -882,7 +882,7 @@ fn parse_class_header(text: &str) -> Option<Result<(String, Option<String>), Str
     let header = text.strip_suffix(':')?;
     let declaration = header.strip_prefix("class ")?;
     let declaration = declaration.strip_suffix(':').unwrap_or(declaration).trim();
-    let (name, base) = if let Some(rest) = declaration.strip_prefix(" ") {
+    let (name, base) = if let Some(rest) = declaration.strip_prefix(' ') {
         (rest.trim(), None)
     } else if let Some((name, parent)) = declaration.split_once(" extends ") {
         (name.trim(), Some(parent.trim().to_string()))

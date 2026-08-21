@@ -1,6 +1,17 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    use std::fmt::Write as _;
+    let digest = Sha256::digest(bytes);
+    let mut output = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        write!(&mut output, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    output
+}
+
 fn binary() -> String {
     env!("CARGO_BIN_EXE_zap").to_string()
 }
@@ -580,7 +591,7 @@ fn caches_explicit_module_execution_and_exports_only_public_symbols() {
     std::fs::create_dir_all(&root).unwrap();
     let module = root.join("counter.zp");
     let main = root.join("main.zp");
-    std::fs::write(&module, "say \"loaded\"\nlet secret = 99\nexport let answer = 42\nexport fn value():\n    return answer\n").unwrap();
+    std::fs::write(module, "say \"loaded\"\nlet secret = 99\nexport let answer = 42\nexport fn value():\n    return answer\n").unwrap();
     std::fs::write(
         &main,
         "import \"counter\"\nimport \"counter\"\nsay value()\nsay answer\n",
@@ -4911,14 +4922,7 @@ fn validates_registry_index_and_caches_verified_package() {
     std::fs::create_dir_all(&root).unwrap();
     let source = root.join("demo.pkg");
     std::fs::write(&source, b"demo package bytes").unwrap();
-    let checksum = {
-        use sha2::{Digest, Sha256};
-        let digest = Sha256::digest(b"demo package bytes");
-        digest
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    let checksum = sha256_hex(b"demo package bytes");
     let index = root.join("index.json");
     std::fs::write(
         &index,
@@ -5016,14 +5020,8 @@ fn install_uses_registry_cache_and_supports_offline_reuse() {
     );
 
     let source = root.join("demo.pkg");
-    std::fs::write(&source, b"registry package").unwrap();
-    let checksum = {
-        use sha2::{Digest, Sha256};
-        Sha256::digest(b"registry package")
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    std::fs::write(source, b"registry package").unwrap();
+    let checksum = sha256_hex(b"registry package");
     let index = root.join("index.json");
     std::fs::write(
         &index,
@@ -5088,13 +5086,7 @@ fn create_nested_offline_fixture(
     std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
     std::fs::write(root.join("appdep.pkg"), b"appdep package").unwrap();
     std::fs::write(root.join("leaf.pkg"), b"leaf package").unwrap();
-    let checksum = |bytes: &[u8]| {
-        use sha2::{Digest, Sha256};
-        Sha256::digest(bytes)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    let checksum = sha256_hex;
     let appdep_checksum = checksum(b"appdep package");
     let leaf_checksum = checksum(b"leaf package");
     let index = root.join("index.json");
@@ -5206,13 +5198,7 @@ fn install_reports_complete_transitive_resolved_graph() {
     std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
     std::fs::write(root.join("appdep.pkg"), b"appdep package").unwrap();
     std::fs::write(root.join("leaf.pkg"), b"leaf package").unwrap();
-    let checksum = |bytes: &[u8]| {
-        use sha2::{Digest, Sha256};
-        Sha256::digest(bytes)
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    let checksum = sha256_hex;
     let index = root.join("index.json");
     std::fs::write(
         &index,
@@ -5266,13 +5252,7 @@ fn registry_gc_dry_run_is_safe_and_deletion_is_deterministic() {
     .unwrap();
     std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
     std::fs::write(root.join("demo.pkg"), b"kept package").unwrap();
-    let checksum = {
-        use sha2::{Digest, Sha256};
-        Sha256::digest(b"kept package")
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    let checksum = sha256_hex(b"kept package");
     let index = root.join("index.json");
     std::fs::write(
         &index,
@@ -5349,13 +5329,7 @@ fn lockfile_records_resolved_registry_checksums() {
     .unwrap();
     std::fs::write(root.join("main.zp"), "say 1\n").unwrap();
     std::fs::write(root.join("demo.pkg"), b"locked registry package").unwrap();
-    let checksum = {
-        use sha2::{Digest, Sha256};
-        Sha256::digest(b"locked registry package")
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    };
+    let checksum = sha256_hex(b"locked registry package");
     let index = root.join("index.json");
     std::fs::write(
         &index,

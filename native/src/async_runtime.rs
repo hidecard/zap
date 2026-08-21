@@ -936,7 +936,6 @@ fn no_op_waker() -> Waker {
 
 struct NoopWaker;
 
-#[allow(clippy::manual_noop_waker)]
 impl Wake for NoopWaker {
     fn wake(self: Arc<Self>) {}
 }

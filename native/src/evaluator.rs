@@ -101,7 +101,6 @@ impl Drop for ExecutionGuard {
     }
 }
 
-#[allow(clippy::manual_is_multiple_of)]
 fn validate_indentation(lines: &[String]) -> Result<(), String> {
     let mut style: Option<&'static str> = None;
     for (index, line) in lines.iter().enumerate() {
@@ -802,7 +801,7 @@ static ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
 fn file_metadata(path: &Path) -> Result<Value, String> {
     let path = confined_path(path, "file_metadata")?;
     let metadata =
-        fs::symlink_metadata(&path).map_err(|error| format!("file_metadata failed: {error}"))?;
+        fs::symlink_metadata(path).map_err(|error| format!("file_metadata failed: {error}"))?;
     let file_type = metadata.file_type();
     let kind = if file_type.is_symlink() {
         "symlink"
@@ -3140,7 +3139,7 @@ pub(crate) fn load_module(
 ) -> Result<Flow, String> {
     let spec = raw.trim();
     let spec = spec.strip_prefix("import ").unwrap_or(spec).trim();
-    let spec = spec.strip_suffix(";").unwrap_or(spec).trim();
+    let spec = spec.strip_suffix(';').unwrap_or(spec).trim();
     let spec = spec.strip_suffix(" as").unwrap_or(spec).trim();
     let raw_path = spec.trim_matches('"');
     if raw_path.is_empty() {
