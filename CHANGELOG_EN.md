@@ -14,6 +14,8 @@
 
 ### Type checking and conformance
 
+- Accepted TC-012 generic syntax as the v2.1 implemented baseline for `list<T>`, `map<K, V>`, `option<T>`, and `result<T>`. Malformed forms remain rejected, while user-defined generic declarations and advanced inference are explicitly deferred in the design record.
+
 - Added explicit `is_option_none(value)` else-branch narrowing: the true branch retains `option<T>`, while the else branch receives the payload type when soundly known.
 - Added loop-boundary narrowing for guarded `while` bodies. The narrowed payload is available inside the loop, while the original wrapper type is restored after the loop so reassignment and post-loop use remain sound.
 - Added permanent TC-006 conformance coverage for in-loop option payload access and post-loop wrapper restoration.
