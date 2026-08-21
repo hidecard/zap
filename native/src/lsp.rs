@@ -2,7 +2,9 @@ use serde_json::{json, Value};
 use std::{
     cell::RefCell,
     collections::BTreeMap,
+    fs,
     io::{self, BufRead, BufReader, Write},
+    path::{Path, PathBuf},
 };
 
 thread_local! {
@@ -432,13 +434,7 @@ fn format_source(source: &str) -> String {
 
 fn workspace_symbol_response(message: &Value) -> Value {
     let query = message["params"]["query"].as_str().unwrap_or("");
-    let documents = DOCUMENTS.with(|documents| {
-        documents
-            .borrow()
-            .iter()
-            .map(|(uri, source)| (uri.clone(), source.clone()))
-            .collect::<Vec<_>>()
-    });
+    let documents = workspace_documents();
     let symbols = documents
         .iter()
         .flat_map(|(uri, source)| {
@@ -453,6 +449,100 @@ fn workspace_symbol_response(message: &Value) -> Value {
         })
         .collect::<Vec<_>>();
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": symbols})
+}
+
+fn workspace_documents() -> Vec<(String, String)> {
+    const MAX_MODULE_BYTES: u64 = 8 * 1024 * 1024;
+    let mut documents = DOCUMENTS.with(|documents| {
+        documents
+            .borrow()
+            .iter()
+            .map(|(uri, source)| (uri.clone(), source.clone()))
+            .collect::<BTreeMap<_, _>>()
+    });
+    let mut pending = documents.keys().cloned().collect::<Vec<_>>();
+    let mut cursor = 0;
+    while cursor < pending.len() {
+        let uri = pending[cursor].clone();
+        cursor += 1;
+        let Some(source) = documents.get(&uri).cloned() else {
+            continue;
+        };
+        let Some(source_path) = file_uri_path(&uri) else {
+            continue;
+        };
+        let Some(parent) = source_path.parent() else {
+            continue;
+        };
+        let Ok(program) = crate::ast::parse_program(&source) else {
+            continue;
+        };
+        for statement in program.statements {
+            let crate::ast::Stmt::Import {
+                path,
+                explicit: true,
+                ..
+            } = statement.node
+            else {
+                continue;
+            };
+            let Ok(relative) = module_import_path(&path) else {
+                continue;
+            };
+            let candidate = parent.join(relative);
+            let Ok(canonical) = candidate.canonicalize() else {
+                continue;
+            };
+            let Ok(canonical_parent) = parent.canonicalize() else {
+                continue;
+            };
+            if !canonical.starts_with(&canonical_parent)
+                || !canonical.is_file()
+                || fs::metadata(&canonical)
+                    .map(|metadata| metadata.len() > MAX_MODULE_BYTES)
+                    .unwrap_or(true)
+            {
+                continue;
+            }
+            let Ok(module_source) = fs::read_to_string(&canonical) else {
+                continue;
+            };
+            let module_uri = path_to_file_uri(&canonical);
+            if documents
+                .insert(module_uri.clone(), module_source)
+                .is_none()
+            {
+                pending.push(module_uri);
+            }
+        }
+    }
+    documents.into_iter().collect()
+}
+
+fn file_uri_path(uri: &str) -> Option<PathBuf> {
+    uri.strip_prefix("file://").map(PathBuf::from)
+}
+
+fn path_to_file_uri(path: &Path) -> String {
+    format!("file://{}", path.display())
+}
+
+fn module_import_path(path: &str) -> Result<PathBuf, String> {
+    let normalized = path.trim().trim_matches('"');
+    if normalized.is_empty() || normalized.contains(['/', '\\']) {
+        return Err(format!("invalid explicit import path `{path}`"));
+    }
+    let mut relative = PathBuf::new();
+    for component in normalized.split('.') {
+        if component.is_empty() || component == "." || component == ".." {
+            return Err(format!("invalid explicit import path `{path}`"));
+        }
+        relative.push(component);
+    }
+    if relative.extension().is_none() {
+        relative.set_extension("zp");
+    }
+    Ok(relative)
 }
 
 /// Return `(name, kind, range, detail)` for top-level declarations.
@@ -840,6 +930,45 @@ mod tests {
         assert!(symbols
             .iter()
             .any(|item| item["name"] == "second" && item["location"]["uri"] == "file:///two.zp"));
+    }
+
+    #[test]
+    fn workspace_symbols_index_imported_modules_without_opening_them() {
+        use std::{
+            fs,
+            time::{SystemTime, UNIX_EPOCH},
+        };
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("zap-lsp-index-{suffix}"));
+        fs::create_dir_all(root.join("app")).unwrap();
+        let main = root.join("main.zp");
+        fs::write(
+            &main,
+            "import app.util as util\nfn main():\n    return util\n",
+        )
+        .unwrap();
+        fs::write(root.join("app/util.zp"), "fn loaded():\n    return 1\n").unwrap();
+        let uri = format!("file://{}", main.display());
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "import app.util as util\nfn main():\n    return util\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 20, "method": "workspace/symbol",
+            "params": {"query": "loaded"}
+        }))
+        .unwrap();
+        let symbols = response["result"].as_array().unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0]["name"], "loaded");
+        assert!(symbols[0]["location"]["uri"]
+            .as_str()
+            .unwrap()
+            .ends_with("/app/util.zp"));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

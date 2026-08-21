@@ -82,7 +82,7 @@ The server communicates over standard input and output using JSON-RPC messages f
 | `textDocument/completion` | Filters deterministic keywords by the active source prefix and adds top-level `let` and function declarations from the document. |
 | `textDocument/hover` | Parses the stored document and reports parser-owned metadata for top-level functions, classes, and declarations. |
 | `textDocument/definition` | Resolves a referenced top-level declaration to its parser-span source range. |
-| `workspace/symbol` | Searches all indexed in-memory documents for deterministic top-level declaration symbols. |
+| `workspace/symbol` | Searches indexed in-memory documents and safely follows explicit local imports to discover deterministic symbols from package modules that are not open in the editor. |
 | `textDocument/formatting` | Returns one deterministic full-document edit that normalizes line endings, tabs, trailing spaces, and the final newline. |
 
 A minimal initialize request is:
@@ -95,6 +95,8 @@ Content-Length: 67\r\n
 
 Completion is context-aware rather than a fixed unfiltered list. For example, after typing `lo` in a document containing `async fn load():`, the completion response includes `load` as a function item. Hover uses the source position to identify the active word and the parser’s `SourceSpan`-carrying AST to describe the matching declaration.
 
+Workspace symbol indexing follows explicit local imports such as `import app.util as util` from the opened file’s directory and maps the dotted path to `app/util.zp`. Imported files are canonicalized before indexing, must remain under the importing directory, and are bounded to 8 MiB. Invalid, missing, oversized, unreadable, or traversal-like modules are skipped deterministically rather than becoming an editor or filesystem escape. Discovered module URIs are inserted into the same sorted index as open documents, so nested imports are traversed once and results remain stable.
+
 Diagnostics continue to reuse Zap’s existing lint implementation. This keeps command-line and editor diagnostics aligned. When a lint message reports a source line, the server maps it to a zero-based LSP range spanning that line’s character width; diagnostics without a parsed line use the first line as a deterministic fallback.
 
 ## Tooling Synchronization
@@ -103,6 +105,6 @@ The formatter and LSP now share the finalized async vocabulary. Completion adver
 
 ## Remaining P2 Boundary
 
-The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, richer nested-symbol indexing, module-aware package indexing, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, workspace symbols, and the VS Code grammar/tooling synchronization slice are implemented and tested.
+The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, multi-thread scheduling, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, workspace symbols, and the VS Code grammar/tooling synchronization slice are implemented and tested.
 
 For the package workflow, see the [English package guide](PACKAGE_EN.md) and [P2 progress](P2_PROGRESS.md). For the Burmese version of this guide, see [ASYNC_LSP_MM.md](ASYNC_LSP_MM.md).

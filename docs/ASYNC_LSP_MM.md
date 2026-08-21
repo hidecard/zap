@@ -82,10 +82,12 @@ Server သည် standard input/output မှတစ်ဆင့် `Content-Leng
 | `textDocument/completion` | လက်ရှိ source prefix အပေါ်မူတည်၍ keyword များကို filter လုပ်ပြီး document ထဲမှ top-level `let` နှင့် function declaration များကို ထည့်ပေးသည်။ |
 | `textDocument/hover` | သိမ်းဆည်းထားသော document ကို parse လုပ်ပြီး top-level function၊ class နှင့် declaration များအတွက် parser-owned metadata ပြသည်။ |
 | `textDocument/definition` | Referenced top-level declaration ကို parser-span source range သို့ resolve လုပ်သည်။ |
-| `workspace/symbol` | In-memory indexed documents အားလုံးထဲမှ top-level declaration symbols များကို deterministic ရှာဖွေသည်။ |
+| `workspace/symbol` | In-memory indexed documents များထဲမှ deterministic symbol များကို ရှာဖွေပြီး editor တွင် မဖွင့်ထားသော package module များကို explicit local import အတိုင်း လုံခြုံစွာ လိုက်လံရှာဖွေသည်။ |
 | `textDocument/formatting` | Line ending၊ tab၊ trailing space နှင့် နောက်ဆုံး newline များကို normalize လုပ်သော full-document edit တစ်ခု ပြန်ပေးသည်။ |
 
 Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ context-aware ဖြစ်ပါသည်။ ဥပမာ `async fn load():` ပါသော document ထဲတွင် `lo` ရိုက်ထားပါက completion response တွင် `load` ကို function item အဖြစ် ပြန်ပေးပါသည်။ Hover သည် source position မှ active word ကို ရှာပြီး parser ၏ `SourceSpan` ပါသော AST မှ declaration အချက်အလက်ကို ပြန်ထုတ်ပါသည်။
+
+Workspace symbol indexing သည် ဖွင့်ထားသော file ၏ directory မှ `import app.util as util` ကဲ့သို့သော explicit local import များကို လိုက်လံရှာဖွေပြီး dotted path ကို `app/util.zp` အဖြစ် ပြောင်းလဲပါသည်။ Imported file များကို indexing မပြုမီ canonicalize လုပ်ပြီး importing directory အတွင်းတွင်သာ ရှိရမည်ဖြစ်ကာ 8 MiB အထိသာ ခွင့်ပြုပါသည်။ Invalid၊ မတွေ့ရှိသော၊ အရွယ်အစားကျော်လွန်သော၊ ဖတ်မရသော သို့မဟုတ် traversal ဆန်သော module များကို editor သို့မဟုတ် filesystem escape မဖြစ်စေရန် deterministic အတိုင်း ကျော်လွှားပါသည်။ ရှာဖွေတွေ့ရှိသော module URI များကို open document များနှင့်အတူ sorted index တစ်ခုတည်းထဲ ထည့်သွင်းသဖြင့် nested import များကို တစ်ကြိမ်သာ လိုက်လံပြီး ရလဒ်များ တည်ငြိမ်နေပါသည်။
 
 Diagnostics များကို Zap ၏ ရှိပြီးသား lint implementation မှ ထုတ်ယူပါသည်။ ထို့ကြောင့် CLI နှင့် editor diagnostics များ၏ rules များ တူညီနေပါသည်။ Lint message တွင် source line ပါရှိပါက server သည် ၎င်းကို zero-based LSP range အဖြစ် ပြောင်းပြီး line ၏ character width အတိုင်း သတ်မှတ်ပါသည်။ Line မဖတ်နိုင်သော diagnostic များအတွက် ပထမ line ကို deterministic fallback အဖြစ် အသုံးပြုပါသည်။
 
@@ -95,6 +97,6 @@ Formatter နှင့် LSP တို့သည် finalized async vocabulary �
 
 ## လက်ကျန် P2 နယ်ပယ်
 
-ယခု foundation သည် production asynchronous I/O runtime သို့မဟုတ် multi-thread scheduler မဟုတ်သေးပါ။ External I/O integration၊ nested symbol indexing၊ module-aware package indexing နှင့် network registry service deployment များမှာ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
+ယခု foundation သည် production asynchronous I/O runtime သို့မဟုတ် multi-thread scheduler မဟုတ်သေးပါ။ External I/O integration၊ multi-thread scheduling နှင့် network registry service deployment များမှာ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
 
 Package workflow အတွက် [Burmese package guide](PACKAGE.md) နှင့် [P2 progress](P2_PROGRESS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [ASYNC_LSP_EN.md](ASYNC_LSP_EN.md) ကို ကြည့်ပါ။

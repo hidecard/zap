@@ -31,6 +31,7 @@
 ### Async and tooling
 
 - Added `textDocument/documentSymbol` support to the LSP and recursive nested-symbol indexing for function and class bodies. Symbols include deterministic ranges, selection ranges, details, and child declarations; regression coverage verifies nested symbols in both class and function scopes.
+- Added module-aware workspace-symbol indexing for explicit local imports. The indexer safely canonicalizes and bounds imported files, rejects traversal-like paths, deduplicates nested modules, and returns deterministic symbols from unopened local package files; regression coverage verifies safe discovery and traversal exclusion.
 
 - Added deterministic `AsyncRuntime::spawn_joinable(future)` task submission with `JoinHandle<T>::is_ready()` and future-based output joining.
 - Propagated `SpawnError::TaskLimitReached` from joinable task admission, preserving runtime task order, poll budgets, Rust 1.75 compatibility, and the no-worker-thread execution model.
