@@ -1710,6 +1710,23 @@ fn single_narrowed_type(
     Some((argument.to_string(), payload.to_string()))
 }
 
+fn else_narrowed_branch_type(
+    condition: &str,
+    vars: &HashMap<String, String>,
+) -> Option<(String, String)> {
+    let condition = condition.trim();
+    let argument = condition
+        .strip_prefix("is_option_none(")?
+        .strip_suffix(')')?
+        .trim();
+    if argument.is_empty() || argument.contains('(') || argument.contains(' ') {
+        return None;
+    }
+    let kind = vars.get(argument)?;
+    let payload = kind.strip_prefix("option<")?.strip_suffix('>')?;
+    Some((argument.to_string(), payload.to_string()))
+}
+
 fn narrowed_branch_types(condition: &str, vars: &HashMap<String, String>) -> Vec<(String, String)> {
     let condition = condition.trim();
     let conjunction = split_boolean_terms(condition, "and");
@@ -1767,6 +1784,7 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
     }
     let mut vars: HashMap<String, String> = HashMap::new();
     let mut branch_scopes: Vec<(usize, HashMap<String, String>)> = Vec::new();
+    let mut pending_else: Option<(usize, String)> = None;
     for (line_index, line) in source.lines().enumerate() {
         let indent = line.chars().take_while(|ch| *ch == ' ').count();
         while branch_scopes
@@ -1778,6 +1796,22 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
             }
         }
         let trimmed = line.trim();
+        if trimmed == "else:" {
+            if let Some((if_indent, condition)) = pending_else.take() {
+                if if_indent == indent {
+                    if let Some((name, kind)) = else_narrowed_branch_type(&condition, &vars) {
+                        let previous = vars.clone();
+                        vars.insert(name, kind);
+                        branch_scopes.push((indent, previous));
+                    }
+                }
+            }
+        } else if pending_else
+            .as_ref()
+            .is_some_and(|(if_indent, _)| indent <= *if_indent)
+        {
+            pending_else = None;
+        }
         if trimmed.starts_with("fn ") || trimmed.starts_with("def ") {
             continue;
         }
@@ -1797,6 +1831,9 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                 }
             }
             if trimmed.starts_with("if ") || trimmed.starts_with("while ") {
+                if trimmed.starts_with("if ") {
+                    pending_else = Some((indent, condition.to_string()));
+                }
                 let narrowed = narrowed_branch_types(condition, &vars);
                 if !narrowed.is_empty() {
                     let previous = vars.clone();

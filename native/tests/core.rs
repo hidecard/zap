@@ -1456,6 +1456,34 @@ fn narrows_complex_boolean_guards_and_aliases() {
 }
 
 #[test]
+fn typecheck_else_branch_option_narrowing() {
+    let root = std::env::temp_dir().join("zap_else_branch_option_narrowing");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"else-branch-option-narrowing\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "let maybe: option<number> = option_none()\nif is_option_none(maybe):\n    let none_value: option<number> = maybe\nelse:\n    let payload: number = maybe\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(
+        output.status.success(),
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
 fn typecheck_p0_conformance_matrix_tc001_to_tc005() {
     let cases = [
         (

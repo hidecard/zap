@@ -23,7 +23,7 @@ This document defines the acceptance boundary for the next type-system workstrea
 
 ## Current conformance evidence
 
-TC-006 now has permanent loop-boundary fixtures proving that a guarded `while` body can use the narrowed payload and that the original wrapper type is restored after the loop. TC-009 now has permanent positive and negative `zap check --json` fixtures for compatible branches, incompatible branch result types, and non-boolean conditions. TC-010 now has permanent fixtures proving that `option<T>` and `result<T>` wrapper identity survives alias assignment and that reassignment invalidates a narrowed alias fact. These fixtures establish L2 static-behavior evidence; stable diagnostic-location and cross-tool L3/L4 gates remain subject to the full validation phase.
+TC-006 now has permanent loop-boundary fixtures proving that a guarded `while` body can use the narrowed payload and that the original wrapper type is restored after the loop. Else-branch narrowing now covers the explicit `is_option_none(value)` guard: the true branch retains the option wrapper and the else branch receives the payload type. TC-009 now has permanent positive and negative `zap check --json` fixtures for compatible branches, incompatible branch result types, and non-boolean conditions. TC-010 now has permanent fixtures proving that `option<T>` and `result<T>` wrapper identity survives alias assignment and that reassignment invalidates a narrowed alias fact. These fixtures establish L2 static-behavior evidence; stable diagnostic-location and cross-tool L3/L4 gates remain subject to the full validation phase.
 
 ## Acceptance levels
 

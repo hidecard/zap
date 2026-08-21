@@ -14,6 +14,7 @@
 
 ### Type checking နှင့် conformance
 
+- Explicit `is_option_none(value)` else-branch narrowing ကို ထည့်သွင်းထားပါသည်။ True branch တွင် `option<T>` ကို ထိန်းသိမ်းပြီး sound ဖြစ်သောအခါ else branch တွင် payload type ကို အသုံးပြုနိုင်ပါသည်။
 - Guard ပါသော `while` body များအတွက် loop-boundary narrowing ကို ထည့်သွင်းထားပါသည်။ Narrowed payload ကို loop အတွင်း အသုံးပြုနိုင်ပြီး loop ပြီးနောက် မူလ wrapper type ကို ပြန်လည်ထားရှိသဖြင့် reassignment နှင့် post-loop use များသည် type-safe ဖြစ်ပါသည်။
 - Loop အတွင်း option payload အသုံးပြုမှုနှင့် loop ပြီးနောက် wrapper ပြန်လည်ရရှိမှုအတွက် permanent TC-006 conformance coverage ကို ထည့်သွင်းထားပါသည်။
 - `if ... then ... else ...` control-flow expression များအတွက် type checking ကို ထည့်သွင်းထားပါသည်။ Condition သည် `bool` ဖြစ်ရမည်၊ branch result type နှစ်ခု ကိုက်ညီရမည်၊ မကိုက်ညီပါက structured `TypeError` ဖြင့် reject လုပ်ပါသည်။
