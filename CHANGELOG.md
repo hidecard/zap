@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-08-21
+
+### Release summary
+- Corrected deterministic Windows archive-root packaging and release verification.
+
 ## [2.1.2] - 2026-08-21
 
 ### Release summary

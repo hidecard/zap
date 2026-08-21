@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.3] — 2026-08-21
+
+### Release engineering
+- Windows deterministic archive ၏ zap/ root layout နှင့် release verification မကိုက်ညီမှုကို ပြင်ဆင်ထားပါသည်။
+
 ## [2.1.2] — 2026-08-21
 
 ### Release engineering
