@@ -1717,7 +1717,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::fs;
     use std::io::{Read, Write};
-    use std::net::{TcpListener, TcpStream};
+    use std::net::{SocketAddr, TcpListener, TcpStream};
     use std::path::Path;
     use std::sync::{Arc, Mutex, OnceLock};
     use std::thread;
@@ -2647,6 +2647,14 @@ mod tests {
         );
     }
 
+    fn raw_registry_request(address: SocketAddr, request: &[u8]) -> Vec<u8> {
+        let mut stream = TcpStream::connect(address).unwrap();
+        stream.write_all(request).unwrap();
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response).unwrap();
+        response
+    }
+
     #[test]
     fn managed_registry_service_authenticates_and_persists_packages() {
         let root = std::env::temp_dir().join(format!(
@@ -2667,45 +2675,41 @@ mod tests {
         let address = service.address();
         let bytes = b"package";
         let checksum = sha256_hex(bytes);
-        let agent = ureq::Agent::new();
-        let response = agent
-            .post(&format!("http://{address}/publish"))
-            .set("Authorization", "Bearer token")
-            .set("X-Zap-Package-Name", "demo")
-            .set("X-Zap-Package-Version", "1.0.0")
-            .set("X-Zap-Package-Checksum", &checksum)
-            .send_bytes(bytes)
-            .unwrap();
-        assert_eq!(response.status(), 201);
-        let index = agent
-            .get(&format!("http://{address}/index.json"))
-            .set("Authorization", "Bearer token")
-            .call()
-            .unwrap();
-        assert_eq!(index.status(), 200);
-        let mut index_bytes = Vec::new();
-        index.into_reader().read_to_end(&mut index_bytes).unwrap();
+        let publish_request = format!(
+            "POST /publish HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nX-Zap-Package-Name: demo\r\nX-Zap-Package-Version: 1.0.0\r\nX-Zap-Package-Checksum: {checksum}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            bytes.len()
+        );
+        let mut publish_bytes = publish_request.into_bytes();
+        publish_bytes.extend_from_slice(bytes);
+        let publish_response = raw_registry_request(address, &publish_bytes);
+        assert!(String::from_utf8_lossy(&publish_response).starts_with("HTTP/1.1 201"));
+
+        let index_response = raw_registry_request(
+            address,
+            b"GET /index.json HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nConnection: close\r\n\r\n",
+        );
+        assert!(String::from_utf8_lossy(&index_response).starts_with("HTTP/1.1 200"));
+        let header_end = index_response
+            .windows(4)
+            .position(|window| window == b"\r\n\r\n")
+            .unwrap()
+            + 4;
+        let index_bytes = &index_response[header_end..];
         assert_eq!(
             verify_signed_index_bytes(&index_bytes, b"secret")
                 .unwrap()
                 .len(),
             1
         );
-        let mut unauthorized_stream = TcpStream::connect(address).unwrap();
-        unauthorized_stream
-            .write_all(b"GET /index.json HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
-            .unwrap();
-        let mut unauthorized_bytes = Vec::new();
-        unauthorized_stream
-            .read_to_end(&mut unauthorized_bytes)
-            .unwrap();
+        let unauthorized_bytes = raw_registry_request(
+            address,
+            b"GET /index.json HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+        );
         assert!(String::from_utf8_lossy(&unauthorized_bytes).starts_with("HTTP/1.1 401"));
-        let mut traversal_stream = TcpStream::connect(address).unwrap();
-        traversal_stream
-            .write_all(b"GET /packages/../index.json HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nConnection: close\r\n\r\n")
-            .unwrap();
-        let mut traversal_bytes = Vec::new();
-        traversal_stream.read_to_end(&mut traversal_bytes).unwrap();
+        let traversal_bytes = raw_registry_request(
+            address,
+            b"GET /packages/../index.json HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nConnection: close\r\n\r\n",
+        );
         assert!(String::from_utf8_lossy(&traversal_bytes).starts_with("HTTP/1.1 400"));
         service.stop().unwrap();
         fs::remove_dir_all(root).unwrap();
