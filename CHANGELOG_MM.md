@@ -23,7 +23,8 @@
 - Malformed tagged variant၊ oversized integer၊ recursive malformed input၊ deterministic conversion နှင့် panic-free rejection များအတွက် JSON conversion security coverage ထည့်သွင်းထားပါသည်။
 - Unsupported version၊ incomplete သို့မဟုတ် duplicate field၊ invalid escape၊ traversal-like package name၊ strict quoted value၊ deterministic rejection နှင့် panic-free parsing များအတွက် lockfile security coverage ထည့်သွင်းထားပါသည်။
 - Complete native suite နှင့် သီးခြားအနေဖြင့် `adversarial_corpus`၊ `malformed_program_corpus`၊ `json_security_corpus`၊ `malformed_lockfile_corpus` နှင့် `lockfile_quoted_values` များကို run သည့် `parser JSON lockfile corpus` CI gate ကို ထည့်သွင်းထားပါသည်။
-- Unix release packaging ကို reproducible ဖြစ်စေရန် archive order၊ timestamp၊ ownership၊ numeric ownership နှင့် gzip metadata များကို normalize လုပ်ထားပါသည်။ Upload မပြုမီ CI တွင် Unix archive တစ်ခုချင်းစီကို ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှုကို လိုအပ်စေပြီး Windows archive များအတွက် contents နှင့် SHA-256 verification ကို ဆက်လက်လုပ်ဆောင်ပါသည်။
+- Unix release packaging ကို reproducible ဖြစ်စေရန် archive order၊ timestamp၊ ownership၊ numeric ownership နှင့် gzip metadata များကို normalize လုပ်ထားပါသည်။ Upload မပြုမီ CI တွင် Unix archive တစ်ခုချင်းစီကို ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှုကို လိုအပ်စေပါသည်။
+- Windows `Compress-Archive` packaging အစား sorted slash-separated file entry များ၊ Unix epoch entry timestamp၊ stable compression setting များနှင့် deterministic .NET ZIP writer ကို အသုံးပြုထားပါသည်။ Upload မပြုမီ archive ကို ဒုတိယအကြိမ် ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှု၊ archive contents နှင့် SHA-256 checksum များကို ဆက်လက်စစ်ဆေးပါသည်။
 
 ### Async နှင့် tooling
 

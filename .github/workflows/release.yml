@@ -169,7 +169,30 @@ jobs:
           Copy-Item docs/USAGE.md, docs/LANGUAGE_GUIDE.md, docs/SYNTAX_GUIDE_EN.md package/zap/docs/
           Copy-Item examples/default_parameters.zp, examples/hello.zp package/zap/examples/
           "Zap release artifact`nVersion: $($env:GITHUB_REF_NAME -replace '^v','')`nTarget: ${{ matrix.target }}" | Out-File -Encoding utf8 package/zap/RELEASE.txt
-          Compress-Archive -Path package/zap -DestinationPath "$env:ARCHIVE"
+          Add-Type -AssemblyName System.IO.Compression
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          function New-DeterministicZip([string]$sourceRoot, [string]$destination) {
+            if (Test-Path $destination) { Remove-Item -Force $destination }
+            $stream = [System.IO.File]::Open($destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+            try {
+              $zip = New-Object System.IO.Compression.ZipArchive($stream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+              try {
+                $root = (Resolve-Path $sourceRoot).Path.TrimEnd([char]92, [char]47)
+                $files = Get-ChildItem -LiteralPath $root -File -Recurse | Sort-Object FullName
+                foreach ($file in $files) {
+                  $relative = $file.FullName.Substring($root.Length).TrimStart([char]92, [char]47) -replace '\\', '/'
+                  $entry = $zip.CreateEntry($relative, [System.IO.Compression.CompressionLevel]::Optimal)
+                  $entry.LastWriteTime = [DateTimeOffset]::FromUnixTimeSeconds(0)
+                  $input = [System.IO.File]::OpenRead($file.FullName)
+                  try {
+                    $output = $entry.Open()
+                    try { $input.CopyTo($output) } finally { $output.Dispose() }
+                  } finally { $input.Dispose() }
+                }
+              } finally { $zip.Dispose() }
+            } finally { $stream.Dispose() }
+          }
+          New-DeterministicZip 'package/zap' "$env:ARCHIVE"
           $hash = (Get-FileHash "$env:ARCHIVE" -Algorithm SHA256).Hash.ToLower()
           "$hash  $env:ARCHIVE" | Out-File -Encoding ascii "$env:ARCHIVE.sha256"
 
@@ -195,9 +218,36 @@ jobs:
           $actual = (Get-FileHash "$env:ARCHIVE" -Algorithm SHA256).Hash.ToLower()
           if ($expected -ne $actual) { throw "Archive checksum mismatch" }
           if (-not (Test-Path "$env:ARCHIVE")) { throw "Archive was not produced" }
+          Add-Type -AssemblyName System.IO.Compression
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          function New-DeterministicZip([string]$sourceRoot, [string]$destination) {
+            if (Test-Path $destination) { Remove-Item -Force $destination }
+            $stream = [System.IO.File]::Open($destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+            try {
+              $zip = New-Object System.IO.Compression.ZipArchive($stream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+              try {
+                $root = (Resolve-Path $sourceRoot).Path.TrimEnd([char]92, [char]47)
+                $files = Get-ChildItem -LiteralPath $root -File -Recurse | Sort-Object FullName
+                foreach ($file in $files) {
+                  $relative = $file.FullName.Substring($root.Length).TrimStart([char]92, [char]47) -replace '\\', '/'
+                  $entry = $zip.CreateEntry($relative, [System.IO.Compression.CompressionLevel]::Optimal)
+                  $entry.LastWriteTime = [DateTimeOffset]::FromUnixTimeSeconds(0)
+                  $input = [System.IO.File]::OpenRead($file.FullName)
+                  try {
+                    $output = $entry.Open()
+                    try { $input.CopyTo($output) } finally { $output.Dispose() }
+                  } finally { $input.Dispose() }
+                }
+              } finally { $zip.Dispose() }
+            } finally { $stream.Dispose() }
+          }
+          New-DeterministicZip 'package/zap' "$env:ARCHIVE.repro"
+          $reproHash = (Get-FileHash "$env:ARCHIVE.repro" -Algorithm SHA256).Hash.ToLower()
+          if ($expected -ne $reproHash) { throw "Windows archive is not reproducible" }
+          Remove-Item -Force "$env:ARCHIVE.repro"
           $entries = (tar -tf "$env:ARCHIVE")
-          foreach ($required in @('zap/bin/zap.exe', 'zap/README.md', 'zap/RELEASE.txt', 'zap/docs/SYNTAX_GUIDE_EN.md', 'zap/examples/hello.zp')) {
-            if ($entries -notcontains $required) { throw "Missing archive entry: $required" }
+          foreach ($required in @('bin/zap.exe', 'README.md', 'RELEASE.txt', 'docs/SYNTAX_GUIDE_EN.md', 'examples/hello.zp')) {
+            if ($entries -notcontains "zap/$required") { throw "Missing archive entry: zap/$required" }
           }
           $releaseText = (tar -xOf "$env:ARCHIVE" zap/RELEASE.txt | Out-String)
           $releaseVersion = $env:GITHUB_REF_NAME -replace '^v',''
