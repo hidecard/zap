@@ -4,7 +4,7 @@
 
 **ရည်ရွယ်ချက်:** Stable diagnostic contract ပြီးစီးပြီးနောက် ဆက်လက်အကောင်အထည်ဖော်ရမည့် အစီအစဉ်ကို သတ်မှတ်ရန် ဖြစ်သည်။ ပြီးစီးပြီးသား release အလုပ်များကို ထပ်မတွက်ဘဲ ကျန်ရှိနေသော TODO register ကို executable milestone များအဖြစ် ခွဲထားသည်။
 
-**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` diagnostics၊ cycle-safe value validation၊ deterministic value limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-A နှင့် P0-05-B လည်း ပြီးစီးထားသည်။ Descriptive deterministic `async_capabilities()` builtin၊ catalog entry၊ runtime/AST tests၊ typed resource-limit preflight validation နှင့် TCP request-size admission checks များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-C cross-platform matrix coverage၊ executor-backed language scheduling နှင့် language-level cancellation/timeout controls တို့သာ ကျန်ရှိသည်။
+**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` diagnostics၊ cycle-safe value validation၊ deterministic value limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-A၊ P0-05-B နှင့် P0-05-C လည်း ပြီးစီးထားသည်။ Descriptive deterministic `async_capabilities()` builtin၊ catalog entry၊ typed resource-limit preflight validation၊ TCP request-size admission checks နှင့် target-named CI artifact များပါသော Linux x86_64/Windows x86_64/macOS ARM64 focused matrix ကို ထည့်သွင်းပြီးဖြစ်သည်။ Executor-backed language scheduling နှင့် language-level cancellation/timeout controls တို့သာ deferred ဖြစ်နေသည်။
 
 ## နောက်ထပ် P0/P1 execution queue
 
@@ -148,7 +148,7 @@ RFC တွင် ဘာသာနှစ်မျိုး terminology၊ examples
 
 ## ချက်ချင်းဆက်လုပ်ရမည့်အလုပ်
 
-နောက်ထပ် implementation slice သည် **P0-05-C Cross-platform async matrix** ဖြစ်ရမည်။ Path၊ process၊ socket၊ deadline၊ cancellation နှင့် output-limit behavior များအတွက် target-native သို့မဟုတ် reproducible limitation evidence ကို ထည့်ရမည်။ P0/P1 safety gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
+နောက်ထပ် implementation slice သည် **P1-05-A Replayable verification layers** ဖြစ်ရမည်။ Fixed-seed property/fuzz replay နှင့် parser၊ JSON၊ lockfile၊ registry၊ memory၊ async failure corpus များကို ထည့်ရမည်။ P0/P1 safety gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
 
 ## ဆက်စပ်မှတ်တမ်းများ
 

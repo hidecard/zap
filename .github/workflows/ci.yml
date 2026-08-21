@@ -163,6 +163,21 @@ jobs:
       - name: Run target-native tests
         run: cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }} --all-targets --all-features
 
+      - name: Run focused async matrix
+        shell: bash
+        env:
+          ZAP_ASYNC_TARGET: ${{ matrix.target }}
+          ZAP_ASYNC_LOG: target/p005c-async-${{ matrix.target }}.log
+        run: scripts/test_p005c_async_matrix.sh
+
+      - name: Upload async matrix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p005c-async-${{ matrix.target }}
+          path: target/p005c-async-${{ matrix.target }}.log
+          if-no-files-found: error
+
       - name: Verify Linux/macOS binary
         if: runner.os != 'Windows'
         run: test -x native/target/${{ matrix.target }}/release/zap

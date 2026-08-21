@@ -4,7 +4,7 @@
 
 **Purpose:** Define the next implementation sequence after the stable diagnostic contract. This plan turns the remaining TODO register into executable milestones without treating already-completed release work as unfinished.
 
-**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. P0-05-A and P0-05-B are also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, runtime/AST tests, typed resource-limit preflight validation, and TCP request-size admission checks. P0-05-C cross-platform matrix coverage, executor-backed language scheduling, and language-level cancellation/timeout controls remain deferred.
+**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. P0-05-A, P0-05-B, and P0-05-C are also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, typed resource-limit preflight validation, TCP request-size admission checks, and a reproducible Linux x86_64/Windows x86_64/macOS ARM64 focused matrix with target-named CI artifacts. Executor-backed language scheduling and language-level cancellation/timeout controls remain deferred.
 
 ## Next P0/P1 execution queue
 
@@ -148,7 +148,7 @@ No parser or runtime implementation should begin until the RFC has bilingual ter
 
 ## Immediate next task
 
-The next implementation slice should be **P0-05-C Cross-platform async matrix**. Add target-native or reproducible limitation evidence for path, process, socket, deadline, cancellation, and output-limit behavior. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
+The next implementation slice should be **P1-05-A Replayable verification layers**. Add fixed-seed property/fuzz replay and durable parser, JSON, lockfile, registry, memory, and async failure corpora. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
 
 ## Related records
 

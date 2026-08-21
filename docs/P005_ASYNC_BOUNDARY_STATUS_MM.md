@@ -14,6 +14,6 @@ Runtime direct-builtin test သည် stable capability fields၊ default worker
 
 ## နောက်ထပ် P0-05 အလုပ်များ
 
-P0-05-B ၏ typed resource-limit preflight validation နှင့် TCP request-size admission check များ ပြီးစီးပြီ။ P0-05-C တွင် Linux၊ Windows နှင့် macOS အတွက် path/process/socket/deadline/cancellation/output-limit matrix ကို CI သို့မဟုတ် versioned limitation ဖြင့် အတည်ပြုရန် ကျန်ရှိသည်။ Executor-backed language-level scheduling နှင့် language-level cancellation/timeout controls ကိုလည်း နောက်ပိုင်း runtime slice အဖြစ်သာ ဆက်လုပ်ရမည်။
+P0-05-B ၏ typed resource-limit preflight validation နှင့် TCP request-size admission check များ ပြီးစီးပြီ။ P0-05-C တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 target များအတွက် တူညီသော focused async matrix script၊ target-named CI log artifact နှင့် versioned limitation policy ကို ထည့်သွင်းထားသည်။ Matrix သည် worker concurrency၊ invalid-limit preflight၊ TCP round trip/response/request bounds၊ platform-native process output/cancellation နှင့် bounded file read များကို စစ်ဆေးသည်။ Executor-backed language-level scheduling နှင့် language-level cancellation/timeout controls ကိုလည်း နောက်ပိုင်း runtime slice အဖြစ်သာ ဆက်လုပ်ရမည်။
 
 P1-05-A တွင် fixed-seed property/fuzz replay နှင့် parser၊ JSON၊ lockfile၊ registry၊ memory၊ async boundary failure corpus များကို CI artifact အဖြစ် ထိန်းသိမ်းရန် ဆက်လုပ်ရမည်။ ထို့နောက် P0-01 native/legacy parity report နှင့် P0-02 specification ownership index ကို ဆက်လုပ်မည်။
