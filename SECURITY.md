@@ -25,4 +25,4 @@ Zap is experimental software. Do not execute untrusted Zap programs with access 
 
 ## Release Integrity
 
-Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.1.9 release](https://github.com/hidecard/zap/releases/tag/v2.1.9) or a later official release when distributing Zap.
+Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.1.10 release](https://github.com/hidecard/zap/releases/tag/v2.1.10) or a later official release when distributing Zap.

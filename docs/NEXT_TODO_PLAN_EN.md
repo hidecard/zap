@@ -1,6 +1,6 @@
 # Zap Next Engineering TODO Plan
 
-**Baseline:** Zap v2.1.9 verified release, with P0-03 structured diagnostics completed in the `master` branch.
+**Baseline:** Zap v2.1.10 verified release, with P0-03 structured diagnostics completed in the `master` branch.
 
 **Purpose:** Define the next implementation sequence after the stable diagnostic contract. This plan turns the remaining TODO register into executable milestones without treating already-completed release work as unfinished.
 

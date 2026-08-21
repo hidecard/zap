@@ -1,6 +1,6 @@
 [package]
 name = "zap-native"
-version = "2.1.9"
+version = "2.1.10"
 edition = "2021"
 description = "Standalone native runtime for Zap"
 

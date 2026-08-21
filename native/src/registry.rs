@@ -1808,9 +1808,29 @@ mod tests {
                 }
                 request.extend_from_slice(&buffer[..count]);
             }
-            let request_text = String::from_utf8_lossy(&request);
-            assert!(request_text.starts_with(method));
-            assert!(request_text
+            let header_end = request
+                .windows(4)
+                .position(|window| window == b"\r\n\r\n")
+                .map(|position| position + 4)
+                .unwrap_or(request.len());
+            let request_headers = String::from_utf8_lossy(&request[..header_end]);
+            let content_length = request_headers
+                .lines()
+                .find_map(|line| {
+                    line.strip_prefix("Content-Length:")
+                        .and_then(|value| value.trim().parse::<usize>().ok())
+                })
+                .unwrap_or(0);
+            let mut body_received = request.len().saturating_sub(header_end);
+            while body_received < content_length {
+                let count = tls.read(&mut buffer).unwrap();
+                if count == 0 {
+                    break;
+                }
+                body_received += count;
+            }
+            assert!(request_headers.starts_with(method));
+            assert!(request_headers
                 .lines()
                 .any(|line| line == format!("Authorization: Bearer {expected_token}")));
             let response = format!(

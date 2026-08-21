@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.10] - 2026-08-21
+
+### Release summary
+- Added bilingual documentation consistency validation, navigation landing pages, and p95 benchmark regression protection.
+
 ## [2.1.9] - 2026-08-21
 
 ### Release summary

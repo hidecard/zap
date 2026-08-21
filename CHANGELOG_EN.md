@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.10] — 2026-08-21
+
+### Release engineering
+- Added bilingual documentation consistency validation, navigation landing pages, and p95 benchmark regression protection with configurable warm-up and threshold gates.
+
 ### Documentation consistency and navigation
 - Established a v2.1.9 bilingual documentation baseline for syntax, language specification, async boundaries, generic type-checking design, P2 progress, and benchmark policy metadata.
 - Added English/Burmese documentation navigation landing pages and linked them from both READMEs so normative contracts, verification evidence, and contribution paths are discoverable.
