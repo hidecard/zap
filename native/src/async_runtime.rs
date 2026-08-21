@@ -3,8 +3,10 @@ use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
+use std::thread;
 
 /// A small deterministic executor foundation for future Zap async syntax.
 ///
@@ -497,6 +499,199 @@ where
     }
 }
 
+/// Bounded limits for the production-oriented threaded scheduler and I/O facade.
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ThreadRuntimeLimits {
+    pub max_workers: usize,
+    pub max_tasks: usize,
+    pub max_read_bytes: u64,
+}
+
+impl Default for ThreadRuntimeLimits {
+    fn default() -> Self {
+        Self {
+            max_workers: 4,
+            max_tasks: 64,
+            max_read_bytes: 8 * 1024 * 1024,
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ThreadSpawnError {
+    InvalidWorkerLimit,
+    TaskLimitReached { limit: usize },
+    QueueClosed,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ThreadJoinError {
+    AlreadyJoined,
+    WorkerPanicked,
+}
+
+struct ThreadResult<T> {
+    result: Mutex<Option<Result<T, ThreadJoinError>>>,
+    waker: Mutex<Option<Waker>>,
+}
+
+/// A bounded worker scheduler for blocking system I/O and CPU-bound adapters.
+/// Tasks are admitted atomically, run on a fixed worker set, and wake joiners
+/// without requiring a polling thread to busy-wait.
+#[allow(dead_code)]
+pub struct ThreadedRuntime {
+    sender: mpsc::SyncSender<Box<dyn FnOnce() + Send + 'static>>,
+    active: Arc<std::sync::atomic::AtomicUsize>,
+    limits: ThreadRuntimeLimits,
+}
+
+#[allow(dead_code)]
+impl ThreadedRuntime {
+    pub fn new(limits: ThreadRuntimeLimits) -> Result<Self, ThreadSpawnError> {
+        if limits.max_workers == 0 || limits.max_tasks == 0 {
+            return Err(ThreadSpawnError::InvalidWorkerLimit);
+        }
+        let (sender, receiver) =
+            mpsc::sync_channel::<Box<dyn FnOnce() + Send + 'static>>(limits.max_tasks);
+        let receiver = Arc::new(Mutex::new(receiver));
+        for _ in 0..limits.max_workers {
+            let worker_receiver = receiver.clone();
+            thread::spawn(move || loop {
+                let job = worker_receiver
+                    .lock()
+                    .ok()
+                    .and_then(|queue| queue.recv().ok());
+                match job {
+                    Some(job) => job(),
+                    None => break,
+                }
+            });
+        }
+        Ok(Self {
+            sender,
+            active: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            limits,
+        })
+    }
+
+    pub fn limits(&self) -> ThreadRuntimeLimits {
+        self.limits
+    }
+
+    pub fn spawn_blocking<F, T>(&self, task: F) -> Result<ThreadJoinHandle<T>, ThreadSpawnError>
+    where
+        F: FnOnce() -> T + Send + 'static,
+        T: Send + 'static,
+    {
+        let mut current = self.active.load(Ordering::Acquire);
+        loop {
+            if current >= self.limits.max_tasks {
+                return Err(ThreadSpawnError::TaskLimitReached {
+                    limit: self.limits.max_tasks,
+                });
+            }
+            match self.active.compare_exchange_weak(
+                current,
+                current + 1,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => break,
+                Err(observed) => current = observed,
+            }
+        }
+        let shared = Arc::new(ThreadResult {
+            result: Mutex::new(None),
+            waker: Mutex::new(None),
+        });
+        let worker_result = shared.clone();
+        let active = self.active.clone();
+        let job = Box::new(move || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(task))
+                .map_err(|_| ThreadJoinError::WorkerPanicked);
+            if let Ok(mut slot) = worker_result.result.lock() {
+                *slot = Some(result);
+            }
+            if let Ok(mut slot) = worker_result.waker.lock() {
+                if let Some(waker) = slot.take() {
+                    waker.wake();
+                }
+            }
+            active.fetch_sub(1, Ordering::AcqRel);
+        });
+        if self.sender.send(job).is_err() {
+            self.active.fetch_sub(1, Ordering::AcqRel);
+            return Err(ThreadSpawnError::QueueClosed);
+        }
+        Ok(ThreadJoinHandle {
+            shared,
+            consumed: false,
+        })
+    }
+
+    pub fn read_file_async<P>(
+        &self,
+        path: P,
+    ) -> Result<ThreadJoinHandle<Result<Vec<u8>, String>>, ThreadSpawnError>
+    where
+        P: Into<std::path::PathBuf>,
+    {
+        let path = path.into();
+        let max_bytes = self.limits.max_read_bytes;
+        self.spawn_blocking(move || {
+            let metadata = std::fs::symlink_metadata(&path).map_err(|error| error.to_string())?;
+            if !metadata.file_type().is_file() {
+                return Err("async read requires a regular file".to_owned());
+            }
+            if metadata.len() > max_bytes {
+                return Err(format!("async read exceeds {} byte limit", max_bytes));
+            }
+            std::fs::read(&path).map_err(|error| error.to_string())
+        })
+    }
+}
+
+#[allow(dead_code)]
+pub struct ThreadJoinHandle<T> {
+    shared: Arc<ThreadResult<T>>,
+    consumed: bool,
+}
+
+#[allow(dead_code)]
+impl<T> ThreadJoinHandle<T> {
+    pub fn is_ready(&self) -> bool {
+        self.shared
+            .result
+            .lock()
+            .map(|result| result.is_some())
+            .unwrap_or(false)
+    }
+}
+
+impl<T> Future for ThreadJoinHandle<T> {
+    type Output = Result<T, ThreadJoinError>;
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        if this.consumed {
+            return Poll::Ready(Err(ThreadJoinError::AlreadyJoined));
+        }
+        if let Ok(mut result) = this.shared.result.lock() {
+            if let Some(value) = result.take() {
+                this.consumed = true;
+                return Poll::Ready(value);
+            }
+        }
+        if let Ok(mut waker) = this.shared.waker.lock() {
+            *waker = Some(context.waker().clone());
+        }
+        Poll::Pending
+    }
+}
+
 fn no_op_waker() -> Waker {
     Waker::from(Arc::new(NoopWaker))
 }
@@ -513,7 +708,7 @@ mod tests {
     use super::{
         block_on, delay_ticks, timeout_ticks, yield_now, AsyncRuntime, Cancellable,
         CancellationToken, JoinError, RunReport, RuntimeLimits, SpawnError, TaskJoinError,
-        TimeoutError,
+        ThreadJoinError, ThreadRuntimeLimits, ThreadSpawnError, ThreadedRuntime, TimeoutError,
     };
     use std::future::ready;
 
@@ -698,5 +893,80 @@ mod tests {
         token.cancel();
         runtime.run_until_idle();
         assert_eq!(runtime.pending_tasks(), 0);
+    }
+
+    #[test]
+    fn threaded_runtime_runs_two_tasks_concurrently() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 2,
+            max_tasks: 2,
+            max_read_bytes: 1024,
+        })
+        .unwrap();
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(3));
+        let first_barrier = barrier.clone();
+        let second_barrier = barrier.clone();
+        let first = runtime
+            .spawn_blocking(move || {
+                first_barrier.wait();
+                1_u8
+            })
+            .unwrap();
+        let second = runtime
+            .spawn_blocking(move || {
+                second_barrier.wait();
+                2_u8
+            })
+            .unwrap();
+        barrier.wait();
+        assert_eq!(block_on(first), Ok(1));
+        assert_eq!(block_on(second), Ok(2));
+    }
+
+    #[test]
+    fn threaded_runtime_enforces_task_limit_and_reports_panics() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 1,
+            max_read_bytes: 1024,
+        })
+        .unwrap();
+        let first =
+            runtime.spawn_blocking(|| std::thread::sleep(std::time::Duration::from_millis(20)));
+        assert!(first.is_ok());
+        assert!(matches!(
+            runtime.spawn_blocking(|| 7_u8),
+            Err(ThreadSpawnError::TaskLimitReached { limit: 1 })
+        ));
+        let panic_runtime = ThreadedRuntime::new(ThreadRuntimeLimits::default()).unwrap();
+        let panic_handle = panic_runtime
+            .spawn_blocking(|| panic!("worker failure"))
+            .unwrap();
+        assert_eq!(block_on(panic_handle), Err(ThreadJoinError::WorkerPanicked));
+    }
+
+    #[test]
+    fn async_file_read_is_bounded_and_returns_bytes() {
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("zap-async-read-{suffix}.txt"));
+        std::fs::write(&path, b"hello").unwrap();
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 5,
+        })
+        .unwrap();
+        let handle = runtime.read_file_async(&path).unwrap();
+        assert_eq!(block_on(handle), Ok(Ok(b"hello".to_vec())));
+        std::fs::write(&path, b"oversized").unwrap();
+        let oversized = runtime.read_file_async(&path).unwrap();
+        assert_eq!(
+            block_on(oversized),
+            Ok(Err("async read exceeds 5 byte limit".to_owned()))
+        );
+        std::fs::remove_file(path).unwrap();
     }
 }

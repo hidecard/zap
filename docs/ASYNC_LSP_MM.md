@@ -2,9 +2,9 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap P2 တွင် deterministic async language layer နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Runtime သည် single-threaded ဖြစ်ပြီး stable Rust နှင့် ကိုက်ညီပါသည်။ Language အနေဖြင့် `async fn`၊ deferred `Future` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
+Zap P2 တွင် deterministic async language layer၊ bounded threaded I/O adapter နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Deterministic executor သည် stable Rust နှင့် ကိုက်ညီပြီး Language အနေဖြင့် `async fn`၊ deferred `Future` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
 
-Scheduling ကို deterministic အဖြစ် ထိန်းသိမ်းထားပါသည်။ လက်ရှိတွင် async call သည် function body ကို run ပြီး completed `Future` value အဖြစ် ပြန်ပေးသည်။ `await` သည် ထို value ကို evaluation အတွင်း unwrap လုပ်သည်။ `delay_ticks`၊ `yield_now`၊ poll budget နှင့် runtime task limit များသည် deterministic scheduling control များကို ပေးပြီး `CancellationToken` နှင့် `Cancellable` သည် cooperative cancellation ပေးပါသည်။ Multi-thread scheduling နှင့် external I/O integration များမှာ foundation အပြင်ဘက်တွင် ရှိပါသည်။
+Deterministic language scheduling နှင့် production-oriented blocking adapter များကို သီးခြားခွဲထားပါသည်။ လက်ရှိတွင် async call သည် function body ကို run ပြီး completed `Future` value အဖြစ် ပြန်ပေးသည်။ `await` သည် ထို value ကို evaluation အတွင်း unwrap လုပ်သည်။ `delay_ticks`၊ `yield_now`၊ poll budget နှင့် runtime task limit များသည် deterministic scheduling control များကို ပေးပြီး `CancellationToken` နှင့် `Cancellable` သည် cooperative cancellation ပေးပါသည်။ `ThreadedRuntime` သည် explicitly submit လုပ်ထားသော blocking work နှင့် asynchronous file read များအတွက် bounded fixed worker set ကို ပေးပြီး deterministic language executor ကို အစားမထိုးပါ။
 
 ## Async Runtime
 
@@ -20,11 +20,19 @@ Native runtime တွင် deterministic executor operation သုံးမျ�
 | `yield_now()` | တစ်ကြိမ် suspend လုပ်ပြီး နောက် poll တွင် ပြန်လည်လုပ်ဆောင်သည်။ |
 | `spawn_limited(future)` | သတ်မှတ်ထားသော maximum task count ကို ကျော်လွန်မသွားအောင် ထိန်းသည်။ |
 | `run_with_budget(n)` | Poll အကြိမ်ရေ `n` အထိသာ လုပ်ပြီး deterministic `RunReport` ပြန်ပေးသည်။ |
+| `ThreadedRuntime::spawn_blocking(task)` | `Send + 'static` blocking adapter ကို bounded worker set ပေါ်တွင် run ပြီး wakeable join handle ပြန်ပေးသည်။ |
+| `ThreadedRuntime::read_file_async(path)` | Regular file တစ်ခုကို သတ်မှတ်ထားသော byte limit အတွင်း asynchronous ဖတ်သည်။ |
 | `spawn(future)` | Language-level facade အဖြစ် async expression ၏ completed `Future` value ကို ပြန်ပေးသည်။ |
 | `task_join(value)` | Language-level `Future` value ကို စစ်ဆေးပြီး unwrap လုပ်သည်။ |
 | `task_is_ready(value)` | Language-level task value ကို မစားသုံးဘဲ ready ဖြစ်/မဖြစ် စစ်ဆေးသည်။ |
 
-Executor သည် worker thread နှင့် external runtime dependency များကို မသုံးပါ။ `RuntimeLimits` သည် task count နှင့် poll count ကို ကန့်သတ်ပြီး `RunReport` သည် poll အရေအတွက်နှင့် ကျန် task အရေအတွက်ကို ဖော်ပြသည်။ ထို့ကြောင့် လက်ရှိ synchronous behavior ကို မပြောင်းလဲဘဲ နောက်ပိုင်း I/O integration များအတွက် တည်ငြိမ်သောအခြေခံ ရရှိပါသည်။ Cancellation သည် cooperative ဖြစ်ပြီး cancelled task သည် ၎င်း၏ inner future ကို ဆက်လက်မ poll ဘဲ ပြီးဆုံးပါသည်။
+Deterministic executor သည် external runtime dependency မရှိပါ။ `RuntimeLimits` သည် task count နှင့် poll count ကို ကန့်သတ်ပြီး `RunReport` သည် poll အရေအတွက်နှင့် ကျန် task အရေအတွက်ကို ဖော်ပြသည်။ သီးခြား `ThreadedRuntime` သည် Rust standard library ကိုသာ အသုံးပြုပြီး `ThreadRuntimeLimits` ဖြင့် worker count၊ admitted task count နှင့် maximum file-read bytes များကို ကန့်သတ်သည်။ Worker panic များကို `ThreadJoinError::WorkerPanicked` အဖြစ် ပြောင်းပေးပြီး task limit ကျော်လွန်သော admission ကို ငြင်းပယ်ကာ worker ပြီးဆုံးချိန်တွင် joiner ကို wake လုပ်သည်။ File read သည် regular file များကိုသာ ခွင့်ပြုပြီး directory သို့မဟုတ် အခြား non-file များကို ငြင်းပယ်ကာ byte limit ထက် မပိုဘဲ ဖတ်သည်။ Deterministic task များ၏ cancellation သည် cooperative ဖြစ်ပြီး blocking system call များကို admission နှင့် read-size control များဖြင့်သာ ကန့်သတ်ပါသည်။
+
+## Production I/O နှင့် Multi-thread Scheduling
+
+Deterministic language executor ပေါ်တွင် မ run သင့်သော blocking operation များအတွက် native runtime တွင် bounded threaded adapter ပါရှိပါသည်။ `ThreadedRuntime::new(ThreadRuntimeLimits { max_workers, max_tasks, max_read_bytes })` သည် fixed worker set တစ်ခုကို စတင်ပေးသည်။ `spawn_blocking` သည် `max_tasks` အထိသာ active job များကို လက်ခံပြီး worker ပြီးဆုံးချိန်တွင် wake လုပ်ပေးသော `ThreadJoinHandle` ကို ပြန်ပေးသည်။ Worker အတွင်း panic ဖြစ်ပါက runtime boundary ကို ဖြတ်မသွားဘဲ `WorkerPanicked` အဖြစ် ပြောင်းပေးသည်။
+
+`read_file_async` သည် ပထမဆုံး production I/O facade ဖြစ်ပါသည်။ Metadata ကို စစ်ဆေးပြီး regular file ဖြစ်ရမည်၊ `max_read_bytes` အတွင်း ရှိရမည်ဟု သတ်မှတ်ထားသည်။ Outer result သည် scheduler failure နှင့် inner result သည် file-operation failure ကို ခွဲခြားပေးသည်။ ဤ adapter သည် explicit ဖြစ်ပြီး Zap file operation အားလုံးကို အလိုအလျောက် thread ပြောင်းမပေးသလို OS-level sandboxing သို့မဟုတ် လည်ပတ်နေပြီးသား system call ကို အတင်းအကျပ် cancel လုပ်နိုင်သည်ဟုလည်း မဆိုလိုပါ။
 
 ## Async Language Syntax
 
@@ -97,6 +105,6 @@ Formatter နှင့် LSP တို့သည် finalized async vocabulary �
 
 ## လက်ကျန် P2 နယ်ပယ်
 
-ယခု foundation သည် production asynchronous I/O runtime သို့မဟုတ် multi-thread scheduler မဟုတ်သေးပါ။ External I/O integration၊ multi-thread scheduling နှင့် network registry service deployment များမှာ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
+Bounded production I/O adapter နှင့် multi-thread scheduler ကို regular-file read နှင့် explicitly submitted blocking task များအတွက် အကောင်အထည်ဖော်ပြီးဖြစ်ပါသည်။ ဆက်လက်ကျန်ရှိသော နယ်ပယ်များမှာ ပိုမိုကျယ်ပြန့်သော non-blocking socket/process adapter များ၊ blocking system call များ၏ forced cancellation၊ OS-level sandboxing နှင့် network registry service deployment တို့ ဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
 
 Package workflow အတွက် [Burmese package guide](PACKAGE.md) နှင့် [P2 progress](P2_PROGRESS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [ASYNC_LSP_EN.md](ASYNC_LSP_EN.md) ကို ကြည့်ပါ။

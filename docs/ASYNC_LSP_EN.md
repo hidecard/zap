@@ -2,9 +2,9 @@
 
 ## Status
 
-Zap P2 now includes a deterministic async language layer and an editor protocol foundation. The runtime remains single-threaded and stable-Rust compatible, while the language supports `async fn`, deferred `Future` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
+Zap P2 now includes a deterministic async language layer, a bounded threaded I/O adapter, and an editor protocol foundation. The deterministic executor remains stable-Rust compatible, while the language supports `async fn`, deferred `Future` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
 
-The implementation deliberately keeps scheduling deterministic. An async call currently evaluates its body to a completed `Future` value, and `await` unwraps that value during evaluation. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken` and `Cancellable` provide cooperative cancellation without worker threads or wall-clock dependence. Multi-thread scheduling and external I/O remain outside this foundation.
+The implementation separates deterministic language scheduling from production-oriented blocking adapters. An async call currently evaluates its body to a completed `Future` value, and `await` unwraps that value during evaluation. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken` and `Cancellable` provide cooperative cancellation. `ThreadedRuntime` supplies a bounded fixed worker set for explicitly submitted blocking work and asynchronous file reads; it does not replace the deterministic language executor.
 
 ## Async Runtime
 
@@ -20,11 +20,19 @@ The native runtime exposes three deterministic executor operations:
 | `yield_now()` | Suspend once and resume on the next deterministic poll. |
 | `spawn_limited(future)` | Enforce the configured maximum task count. |
 | `run_with_budget(n)` | Poll at most `n` times and return a deterministic `RunReport`. |
+| `ThreadedRuntime::spawn_blocking(task)` | Run a `Send + 'static` blocking adapter on a bounded worker set and return a wakeable join handle. |
+| `ThreadedRuntime::read_file_async(path)` | Read one regular file asynchronously with a configured byte limit and typed worker-join errors. |
 | `spawn(future)` | Language-level facade that returns the completed `Future` value for an async expression. |
 | `task_join(value)` | Validate and unwrap a language-level `Future` value. |
 | `task_is_ready(value)` | Check whether a language-level task value is ready without consuming it. |
 
-The executor avoids worker threads and external runtime dependencies. `RuntimeLimits` bounds task count and polls per run, and `RunReport` exposes the number of polls and remaining tasks. This provides a stable base for future I/O integrations without changing existing synchronous behavior. Cancellation is cooperative: a cancelled task completes without polling its inner future.
+The deterministic executor has no external runtime dependency. `RuntimeLimits` bounds task count and polls per run, and `RunReport` exposes the number of polls and remaining tasks. The separate `ThreadedRuntime` uses only Rust's standard library: `ThreadRuntimeLimits` bounds worker count, admitted tasks, and maximum file-read bytes. Worker panics become `ThreadJoinError::WorkerPanicked`, queue admission is rejected at the task limit, and completed workers wake their joiners. File reads require regular files, reject directories and other non-files, and never read beyond the configured byte limit. Cancellation remains cooperative for deterministic tasks; blocking system calls are bounded by admission and read-size controls rather than being forcibly interrupted.
+
+## Production I/O and Multi-thread Scheduling
+
+The native runtime exposes a bounded threaded adapter for blocking operations that must not run on the deterministic language executor. `ThreadedRuntime::new(ThreadRuntimeLimits { max_workers, max_tasks, max_read_bytes })` starts a fixed worker set. `spawn_blocking` admits only up to `max_tasks` active jobs and returns a `ThreadJoinHandle`; the handle is a `Future` that is woken when the worker finishes. A panic in a worker is converted to `WorkerPanicked` rather than crossing the runtime boundary.
+
+`read_file_async` is the first production I/O facade. It performs metadata validation and reads only regular files whose declared size is within `max_read_bytes`. It returns an outer worker result and an inner file-operation result, allowing scheduler failures and I/O failures to remain distinguishable. The adapter is intentionally explicit: it does not make arbitrary Zap file operations implicitly threaded, and it does not claim OS-level sandboxing or forced cancellation of an already-running system call.
 
 ## Async Language Syntax
 
@@ -105,6 +113,6 @@ The formatter and LSP now share the finalized async vocabulary. Completion adver
 
 ## Remaining P2 Boundary
 
-The completed foundation does not yet claim a production asynchronous I/O runtime or multi-thread scheduler. Remaining boundaries are external I/O integration, multi-thread scheduling, and a network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, workspace symbols, and the VS Code grammar/tooling synchronization slice are implemented and tested.
+The bounded production I/O adapter and multi-thread scheduler are now implemented for regular-file reads and explicitly submitted blocking tasks. Remaining boundaries are broader non-blocking socket/process adapters, forced cancellation of blocking system calls, OS-level sandboxing, and network registry service deployment. Signed index verification, deterministic cache garbage collection, authenticated local registry persistence, runtime resource limits, one-poll suspension, formatting, definitions, workspace symbols, and the VS Code grammar/tooling synchronization slice are implemented and tested.
 
 For the package workflow, see the [English package guide](PACKAGE_EN.md) and [P2 progress](P2_PROGRESS.md). For the Burmese version of this guide, see [ASYNC_LSP_MM.md](ASYNC_LSP_MM.md).
