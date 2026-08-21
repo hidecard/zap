@@ -27,7 +27,7 @@ Zap တွင် authenticated loopback registry service၊ signed-index persist
 
 ## Release Engineering
 
-Release pipeline တွင် dry-run-first version/changelog bump helper၊ tag-gated release preflight၊ deterministic three-target artifact aggregation၊ per-artifact နှင့် aggregate SHA-256 verification၊ `zap.release-manifest.v1`၊ `zap.provenance.v1`၊ detached GPG signatures၊ `zap-2.1.1-release-signing-key.asc` public signing-key asset နှင့် post-publish release verification တို့ ပါဝင်ပါသည်။ Release incident များအတွက် bilingual rollback/quarantine runbook ကိုလည်း ထည့်သွင်းထားပါသည်။
+Release pipeline တွင် dry-run-first version/changelog bump helper၊ tag-gated release preflight၊ deterministic three-target artifact aggregation၊ per-artifact နှင့် aggregate SHA-256 verification၊ `zap.release-manifest.v1`၊ `zap.provenance.v1`၊ detached GPG signatures၊ `zap-2.1.1-release-signing-key.asc` public signing-key asset နှင့် post-publish release verification တို့ ပါဝင်ပါသည်။ Unix archive များအတွက် repository-owned platform-neutral deterministic tar.gz helper ကို အသုံးပြုပြီး Windows ZIP entry များအတွက် ZIP က ထောက်ပံ့သော အနိမ့်ဆုံး timestamp ကို အသုံးပြုသဖြင့် reproducible packaging ကို ထိန်းသိမ်းထားပါသည်။ Release incident များအတွက် bilingual rollback/quarantine runbook ကိုလည်း ထည့်သွင်းထားပါသည်။
 
 ## Supported Targets
 

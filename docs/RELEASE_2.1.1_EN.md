@@ -27,7 +27,7 @@ Zap includes an authenticated loopback registry service with signed-index persis
 
 ## Release engineering
 
-The release pipeline now includes a dry-run-first version/changelog bump helper, tag-gated release preflight, deterministic three-target artifact aggregation, per-artifact and aggregate SHA-256 verification, `zap.release-manifest.v1`, `zap.provenance.v1`, detached GPG signatures, the `zap-2.1.1-release-signing-key.asc` public signing-key asset, and post-publish release verification. This patch release also reconciles the bilingual conformance matrices, roadmap status, and diagnostic release records before publication. A bilingual rollback/quarantine runbook is included for release incidents.
+The release pipeline now includes a dry-run-first version/changelog bump helper, tag-gated release preflight, deterministic three-target artifact aggregation, per-artifact and aggregate SHA-256 verification, `zap.release-manifest.v1`, `zap.provenance.v1`, detached GPG signatures, the `zap-2.1.1-release-signing-key.asc` public signing-key asset, and post-publish release verification. This patch release also reconciles the bilingual conformance matrices, roadmap status, and diagnostic release records before publication. Unix archives now use the repository-owned platform-neutral deterministic tar.gz helper, while Windows ZIP entries use the ZIP-supported minimum timestamp for reproducible packaging. A bilingual rollback/quarantine runbook is included for release incidents.
 
 ## Supported targets
 

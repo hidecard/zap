@@ -164,8 +164,7 @@ jobs:
           cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
           printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
           chmod 0755 package/zap/bin/${{ matrix.binary }}
-          export SOURCE_DATE_EPOCH=0
-          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C package zap | gzip -n > "$ARCHIVE"
+          python3 scripts/create_deterministic_tar_gz.py package/zap "$ARCHIVE" --archive-root zap
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
       - name: Package Windows release
@@ -192,7 +191,8 @@ jobs:
                 foreach ($file in $files) {
                   $relative = $file.FullName.Substring($root.Length).TrimStart([char]92, [char]47) -replace '\\', '/'
                   $entry = $zip.CreateEntry($relative, [System.IO.Compression.CompressionLevel]::Optimal)
-                  $entry.LastWriteTime = [DateTimeOffset]::FromUnixTimeSeconds(0)
+                  # ZIP timestamps cannot represent the Unix epoch; 1980-01-01 is the minimum supported value.
+                  $entry.LastWriteTime = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
                   $input = [System.IO.File]::OpenRead($file.FullName)
                   try {
                     $output = $entry.Open()
@@ -212,8 +212,7 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum -c "$ARCHIVE.sha256"
-          export SOURCE_DATE_EPOCH=0
-          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C package zap | gzip -n > "$ARCHIVE.repro"
+          python3 scripts/create_deterministic_tar_gz.py package/zap "$ARCHIVE.repro" --archive-root zap
           cmp -s "$ARCHIVE" "$ARCHIVE.repro" || { echo "Archive is not reproducible"; exit 1; }
           rm -f "$ARCHIVE.repro"
           tar -tzf "$ARCHIVE" | grep -E 'zap/bin/zap|zap/README.md|zap/RELEASE.txt|zap/docs/SYNTAX_GUIDE_EN.md|zap/examples/hello.zp'
@@ -241,7 +240,8 @@ jobs:
                 foreach ($file in $files) {
                   $relative = $file.FullName.Substring($root.Length).TrimStart([char]92, [char]47) -replace '\\', '/'
                   $entry = $zip.CreateEntry($relative, [System.IO.Compression.CompressionLevel]::Optimal)
-                  $entry.LastWriteTime = [DateTimeOffset]::FromUnixTimeSeconds(0)
+                  # ZIP timestamps cannot represent the Unix epoch; 1980-01-01 is the minimum supported value.
+                  $entry.LastWriteTime = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
                   $input = [System.IO.File]::OpenRead($file.FullName)
                   try {
                     $output = $entry.Open()
