@@ -977,19 +977,25 @@ fn resolve_registry_dependencies(
         .unwrap_or_else(|| project_dir.join(".zap/cache"));
     let Some(index_path) = std::env::var_os("ZAP_REGISTRY_INDEX") else {
         let locked = locked.unwrap_or_default();
-        if !update {
+        if !update && !locked.is_empty() {
             validate_locked_registry_set(dependencies, locked)?;
             if !validate_locked_cache(&cache_root, locked)? {
                 return Err("registry package is not cached without a registry index".into());
             }
         }
+        // A version-1 lockfile records dependency requirements but has no
+        // resolved package section. Preserve that legacy offline behavior;
+        // version-2 lockfiles are rejected earlier when their resolved section
+        // is absent or incomplete.
         return Ok(locked.to_vec());
     };
     if !update {
         let locked = locked.unwrap_or_default();
-        validate_locked_registry_set(dependencies, locked)?;
-        if validate_locked_cache(&cache_root, locked)? {
-            return Ok(locked.to_vec());
+        if !locked.is_empty() {
+            validate_locked_registry_set(dependencies, locked)?;
+            if validate_locked_cache(&cache_root, locked)? {
+                return Ok(locked.to_vec());
+            }
         }
     }
     let index_source = index_path.to_string_lossy().into_owned();

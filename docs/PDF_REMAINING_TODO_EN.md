@@ -19,7 +19,7 @@
 |---|---|---|---|
 | P0-01 | Canonical native/legacy conformance contract | Partial | Native behavior is canonical; legacy fixtures have a parity report, migration policy, and CI conformance command. |
 | P0-02 | Consolidated language specification | Partial | `LANGUAGE_SPEC_EN.md` is now the canonical semantic index for syntax, precedence, typing, runtime behavior, compatibility, and version ownership. Full migration of fragmented rules and complete conformance fixtures remain. |
-| P0-03 | Structured diagnostics | Partial | All user-facing errors expose severity, stable code, message, source span, notes/help, and snapshot-tested output. |
+| P0-03 | Structured diagnostics | Done | CLI JSON and LSP diagnostics expose stable `ZAP-*` code, kind, severity, normalized message, source span, deterministic notes/help, and deterministic snapshot/regression coverage. |
 | P0-04 | Memory and reference-cycle contract | Partial | `Rc<RefCell>` ownership policy, explicit non-thread-safe boundary, `Value::object`, `clear_object_fields`, `object_field_count`, and a cycle-breaking regression test are documented and implemented. Heap statistics, allocation counters, weak references, and tracing collection remain future work. |
 | P0-05 | Deterministic versus production async boundary | Partial | Deterministic executor is documented separately; production I/O, blocking-call, cancellation, and scheduling boundaries are explicit. |
 
@@ -44,9 +44,9 @@
 
 ## Execution order
 
-1. **P0-03:** Finish the structured diagnostic schema and snapshot fixtures.
-2. **P0-04:** Extend the implemented memory contract with heap statistics, allocation counters, weak-reference diagnostics, and closure-cycle coverage.
-3. **P0-05:** Document deterministic async limitations and production boundaries.
+1. **P0-04:** Extend the implemented memory contract with heap statistics, allocation counters, weak-reference diagnostics, and closure-cycle coverage.
+2. **P0-05:** Document deterministic async limitations and production boundaries.
+3. **P1-05:** Expand parser golden, property, fuzz, memory, security, and platform-specific test layers.
 4. **P1-02:** Add the benchmark/profiling harness before making performance claims.
 5. **P1-03:** Completed. Registry redaction, fail-closed, traversal, provenance, key-rotation, yanked-release, and end-to-end locked-cache tests enforce signed tag, commit, workflow, HTTPS source, checksum, full signing-fingerprint, explicit trusted-fingerprint allowlist, adversarial signed-provenance mutation rejection, yanked-candidate skipping, malformed-yanked rejection, stable exact/range all-yanked diagnostics, manifest requirement matching, offline cache reuse, and tampered lock/cache rejection.
 6. **P1-05:** Add parser golden, property, fuzz, memory, and security test layers.

@@ -710,9 +710,11 @@ fn publish_diagnostics(uri: &str, source: &str) -> Value {
                 "range": {"start": {"line": line, "character": character}, "end": {"line": line, "character": width}},
                 "severity": 1,
                 "source": "zap",
-                "code": diagnostic.kind(),
+                "code": diagnostic.code(),
                 "message": diagnostic.message(),
                 "data": {
+                    "kind": diagnostic.kind(),
+                    "code": diagnostic.code(),
                     "severity": diagnostic.severity(),
                     "notes": diagnostic.notes(),
                     "help": diagnostic.help()
@@ -771,8 +773,10 @@ mod tests {
         }))
         .unwrap();
         let diagnostic = &response["params"]["diagnostics"][0];
-        assert_eq!(diagnostic["code"], "TypeError");
+        assert_eq!(diagnostic["code"], "ZAP-TYPE-001");
         assert_eq!(diagnostic["severity"], 1);
+        assert_eq!(diagnostic["data"]["code"], "ZAP-TYPE-001");
+        assert_eq!(diagnostic["data"]["kind"], "TypeError");
         assert_eq!(diagnostic["data"]["severity"], "error");
         assert_eq!(
             diagnostic["data"]["notes"][0],

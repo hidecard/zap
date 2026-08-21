@@ -6,7 +6,8 @@ Zap သည် CLI project validator နှင့် language server နှစ်
 
 | Field | အဓိပ္ပါယ် |
 | --- | --- |
-| `kind` / `code` | `SyntaxError`၊ `NameError` သို့မဟုတ် `TypeError` ကဲ့သို့ တည်ငြိမ်သော error အမျိုးအစား။ |
+| `code` | Editor နှင့် CI အတွက် compatibility key ဖြစ်သော `ZAP-TYPE-001` ကဲ့သို့သော stable machine-readable identifier။ |
+| `kind` | `SyntaxError`၊ `NameError` သို့မဟုတ် `TypeError` ကဲ့သို့ တည်ငြိမ်သော user-facing error အမျိုးအစား။ |
 | `severity` | လက်ရှိတန်ဖိုးမှာ `error` ဖြစ်ပြီး နောက်ပိုင်း warning နှင့် information diagnostic များအတွက် ကြိုတင်ထားသည်။ |
 | `file` | ရရှိနိုင်ပါက diagnostic နှင့်သက်ဆိုင်သော source file။ |
 | `line` / `column` | CLI JSON output အတွက် one-based source position။ |
@@ -15,6 +16,24 @@ Zap သည် CLI project validator နှင့် language server နှစ်
 | `help` | ရွေးချယ်နိုင်သော deterministic ပြင်ဆင်ရန်အကြံပြုချက်။ |
 
 CLI JSON mode သည် `notes` ကို array အဖြစ် ထုတ်ပြီး `help` ကို string သို့မဟုတ် `null` အဖြစ် ထုတ်သည်။ LSP diagnostic သည် standard `severity`၊ `source`၊ `code`၊ `range` နှင့် `message` fields များကို ထိန်းသိမ်းပြီး Zap-specific metadata ကို `data` object အတွင်း ထည့်သည်။
+
+## Stable code registry
+
+| Code | Kind | အဓိပ္ပာယ် |
+| --- | --- | --- |
+| `ZAP-SYNTAX-001` | `SyntaxError` | Source syntax သို့မဟုတ် parsing အမှား။ |
+| `ZAP-NAME-001` | `NameError` | မသိသော သို့မဟုတ် မသတ်မှတ်ရသေးသော name။ |
+| `ZAP-TYPE-001` | `TypeError` | Value သို့မဟုတ် expression type မကိုက်ညီမှု။ |
+| `ZAP-VALUE-001` | `ValueError` | မမှန်ကန်သော value သို့မဟုတ် operation။ |
+| `ZAP-IO-001` | `IOError` | အထွေထွေ input/output အမှား။ |
+| `ZAP-FILE-001` | `FileNotFound` | လိုအပ်သော file မရှိခြင်း။ |
+| `ZAP-KEY-001` | `KeyError` | Object သို့မဟုတ် map key မတွေ့ခြင်း။ |
+| `ZAP-PERM-001` | `PermissionError` | Operation ကို ခွင့်မပြုခြင်း။ |
+| `ZAP-OVERFLOW-001` | `OverflowError` | ကန့်သတ်ထားသော numeric သို့မဟုတ် resource operation overflow ဖြစ်ခြင်း။ |
+| `ZAP-RUNTIME-001` | `Error` | Stable uncaught runtime failure။ |
+| `ZAP-PROJECT-001` | `ProjectError` | Project၊ manifest သို့မဟုတ် dependency validation အမှား။ |
+
+Code များသည် additive compatibility identifier များ ဖြစ်သည်။ နောင် release တွင် diagnostic kind သို့မဟုတ် message ပိုမိုတိကျလာနိုင်သော်လည်း ရှိပြီးသား code ကို မတူညီသော failure category အတွက် တိတ်တဆိတ် ပြန်မသုံးရပါ။
 
 ## Compatibility rules
 

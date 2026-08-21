@@ -365,7 +365,12 @@ fn check_json_reports_structured_type_diagnostics() {
     let _ = std::fs::remove_dir_all(&root);
     assert!(!output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
+    let payload: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap();
+    assert_eq!(payload["ok"], false);
+    assert_eq!(payload["code"], "ZAP-TYPE-001");
+    assert_eq!(payload["kind"], "TypeError");
     assert!(stdout.contains("\"ok\":false"));
+    assert!(stdout.contains("\"code\":\"ZAP-TYPE-001\""));
     assert!(stdout.contains("\"kind\":\"TypeError\""));
     assert!(stdout.contains("\"severity\":\"error\""));
     assert!(

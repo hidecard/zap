@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Structured diagnostics hardening
-- CLI JSON နှင့် LSP output နှစ်ခုလုံးတွင် severity၊ deterministic notes၊ ရွေးချယ်နိုင်သော help နှင့် TypeError parity regression assertions ပါဝင်သည့် တည်ငြိမ်သော structured diagnostic contract ကို ထည့်သွင်းထားပါသည်။
+- CLI JSON နှင့် LSP output နှစ်ခုလုံးတွင် stable `ZAP-*` codes၊ severity၊ deterministic notes၊ ရွေးချယ်နိုင်သော help၊ source locations နှင့် TypeError parity regression assertions ပါဝင်သည့် တည်ငြိမ်သော structured diagnostic contract ကို ထည့်သွင်းထားပါသည်။
 - Diagnostic fields နှင့် compatibility rules များအတွက် bilingual `docs/DIAGNOSTIC_MODEL_EN.md` နှင့် `docs/DIAGNOSTIC_MODEL_MM.md` documentation များကို ထည့်သွင်းထားပါသည်။
 
 ## [2.1.6] — 2026-08-21

@@ -19,7 +19,7 @@
 |---|---|---|---|
 | P0-01 | Native/legacy conformance စာချုပ် | Partial | Native behavior ကို canonical သတ်မှတ်ပြီး legacy fixture parity report၊ migration policy နှင့် CI conformance command ရှိရမည်။ |
 | P0-02 | ပေါင်းစည်းထားသော language specification | Partial | `LANGUAGE_SPEC_MM.md` သည် syntax၊ precedence၊ typing၊ runtime behavior၊ compatibility နှင့် version ownership အတွက် canonical semantic index ဖြစ်လာပြီ။ Fragmented rule များကို အပြည့်အဝ ရွှေ့ပြောင်းခြင်းနှင့် complete conformance fixture များသာ ကျန်ရှိသည်။ |
-| P0-03 | Structured diagnostics | Partial | User-facing error တိုင်းတွင် severity၊ stable code၊ message၊ source span၊ notes/help ပါပြီး snapshot test ရှိရမည်။ |
+| P0-03 | Structured diagnostics | Done | CLI JSON နှင့် LSP diagnostic များတွင် stable `ZAP-*` code၊ kind၊ severity၊ normalized message၊ source span၊ deterministic notes/help နှင့် deterministic snapshot/regression coverage ပါဝင်သည်။ |
 | P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ `Value::object`၊ `clear_object_fields`၊ `object_field_count` နှင့် cycle-breaking regression test ကို docs/code တွင် ထည့်ပြီးဖြစ်သည်။ Heap statistics၊ allocation counters၊ weak references နှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
 | P0-05 | Deterministic နှင့် production async boundary | Partial | Deterministic executor ကို သီးခြားရှင်းပြပြီး production I/O၊ blocking call၊ cancellation နှင့် scheduling boundary များ သတ်မှတ်ရမည်။ |
 
@@ -44,9 +44,9 @@
 
 ## လုပ်ဆောင်မည့်အစီအစဉ်
 
-၁။ **P0-03:** Structured diagnostic schema နှင့် snapshot fixtures ကို ပြီးစီးအောင်လုပ်ရန်။
-၂။ **P0-04:** အကောင်အထည်ဖော်ပြီးသော memory contract ကို heap statistics၊ allocation counters၊ weak-reference diagnostics နှင့် closure-cycle coverage ဖြင့် ဆက်လက်တိုးချဲ့ရန်။
-၃။ **P0-05:** Deterministic async limitations နှင့် production boundaries ကို documentation တွင် ပြတ်သားစွာ သတ်မှတ်ရန်။  
+၁။ **P0-04:** အကောင်အထည်ဖော်ပြီးသော memory contract ကို heap statistics၊ allocation counters၊ weak-reference diagnostics နှင့် closure-cycle coverage ဖြင့် ဆက်လက်တိုးချဲ့ရန်။
+၂။ **P0-05:** Deterministic async limitations နှင့် production boundaries ကို documentation တွင် ပြတ်သားစွာ သတ်မှတ်ရန်။
+၃။ **P1-05:** Parser golden၊ property၊ fuzz၊ memory၊ security နှင့် platform-specific test layers များကို တိုးချဲ့ရန်။
 ၄။ **P1-02:** Performance claim မပြုမီ benchmark/profiling harness တည်ဆောက်ရန်။  
 ၅။ **P1-03:** ပြီးစီးပြီး။ Registry redaction၊ fail-closed၊ traversal၊ provenance၊ key-rotation၊ yanked-release နှင့် end-to-end locked-cache tests များသည် signed tag၊ commit၊ workflow၊ HTTPS source၊ checksum၊ signing fingerprint အပြည့်အစုံ၊ trusted-fingerprint allowlist၊ adversarial signed-provenance mutation rejection၊ yanked candidate skip၊ malformed-yanked rejection၊ stable exact/range all-yanked diagnostics၊ manifest requirement ကိုက်ညီမှု၊ offline cache reuse နှင့် tampered lock/cache rejection တို့ကို enforce လုပ်ထားသည်။
 ၆။ **P1-05:** Parser golden၊ property၊ fuzz၊ memory နှင့် security test layers တိုးချဲ့ရန်။  

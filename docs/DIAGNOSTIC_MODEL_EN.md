@@ -6,7 +6,8 @@ Zap exposes one structured diagnostic contract across the CLI project validator 
 
 | Field | Meaning |
 | --- | --- |
-| `kind` / `code` | Stable category such as `SyntaxError`, `NameError`, or `TypeError`. |
+| `code` | Stable machine-readable identifier such as `ZAP-TYPE-001`; this is the compatibility key for editors and CI. |
+| `kind` | Stable user-facing category such as `SyntaxError`, `NameError`, or `TypeError`. |
 | `severity` | Current values are `error`; the field is reserved for future warning and information diagnostics. |
 | `file` | Source file associated with the diagnostic, when available. |
 | `line` / `column` | One-based source position for CLI JSON output. |
@@ -15,6 +16,24 @@ Zap exposes one structured diagnostic contract across the CLI project validator 
 | `help` | Optional deterministic remediation guidance. |
 
 The CLI JSON mode emits `notes` as an array and `help` as either a string or `null`. LSP diagnostics retain the standard `severity`, `source`, `code`, `range`, and `message` fields and place the additional Zap metadata in the `data` object.
+
+## Stable code registry
+
+| Code | Kind | Meaning |
+| --- | --- | --- |
+| `ZAP-SYNTAX-001` | `SyntaxError` | Source syntax or parsing failure. |
+| `ZAP-NAME-001` | `NameError` | Unknown or undefined name. |
+| `ZAP-TYPE-001` | `TypeError` | Value or expression type mismatch. |
+| `ZAP-VALUE-001` | `ValueError` | Invalid value or operation. |
+| `ZAP-IO-001` | `IOError` | General input/output failure. |
+| `ZAP-FILE-001` | `FileNotFound` | Required file does not exist. |
+| `ZAP-KEY-001` | `KeyError` | Object or map key is missing. |
+| `ZAP-PERM-001` | `PermissionError` | The operation is not permitted. |
+| `ZAP-OVERFLOW-001` | `OverflowError` | A bounded numeric or resource operation overflowed. |
+| `ZAP-RUNTIME-001` | `Error` | Stable uncaught runtime failure. |
+| `ZAP-PROJECT-001` | `ProjectError` | Project, manifest, or dependency validation failure. |
+
+Codes are additive compatibility identifiers. A diagnostic kind or message may become more specific in a future release, but an existing code must not be silently reused for a different failure category.
 
 ## Compatibility rules
 

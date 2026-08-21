@@ -190,6 +190,54 @@ impl ZapError {
         "error"
     }
 
+    /// Stable machine-readable identifier for the diagnostic contract.
+    ///
+    /// The identifier is intentionally distinct from `kind`: `kind` remains the
+    /// user-facing category while `code` is the compatibility key consumed by
+    /// editors and CI integrations.
+    pub(crate) fn code(&self) -> &'static str {
+        match self {
+            Self::Syntax { .. } => "ZAP-SYNTAX-001",
+            Self::Name { .. } => "ZAP-NAME-001",
+            Self::Type { .. } => "ZAP-TYPE-001",
+            Self::Value { .. } => "ZAP-VALUE-001",
+            Self::Io { .. } => "ZAP-IO-001",
+            Self::FileNotFound { .. } => "ZAP-FILE-001",
+            Self::Key { .. } => "ZAP-KEY-001",
+            Self::Permission { .. } => "ZAP-PERM-001",
+            Self::Overflow { .. } => "ZAP-OVERFLOW-001",
+            Self::Runtime { .. } => "ZAP-RUNTIME-001",
+            Self::Project { .. } => "ZAP-PROJECT-001",
+        }
+    }
+
+    /// Canonical field ordering for machine-readable CLI diagnostics.
+    pub(crate) fn json_fields(&self) -> String {
+        let (_, file, line, column) = self.parts();
+        let notes = self
+            .notes()
+            .into_iter()
+            .map(|note| format!("\"{}\"", json_escape(&note)))
+            .collect::<Vec<_>>();
+        let help = self.help().map_or_else(
+            || "null".to_string(),
+            |value| format!("\"{}\"", json_escape(value)),
+        );
+        format!(
+            "\"code\":\"{}\",\"kind\":\"{}\",\"severity\":\"{}\",\"file\":\"{}\",\"line\":{},\"column\":{},\"message\":\"{}\",\"notes\":[{}],\"help\":{},\"error\":\"{}\"",
+            self.code(),
+            self.kind(),
+            self.severity(),
+            json_escape(file),
+            line,
+            column,
+            json_escape(self.message()),
+            notes.join(","),
+            help,
+            json_escape(&self.to_string())
+        )
+    }
+
     pub(crate) fn notes(&self) -> Vec<String> {
         match self {
             Self::Type { .. } => {
@@ -332,6 +380,26 @@ impl fmt::Display for ZapError {
     }
 }
 
+fn json_escape(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            '\u{08}' => escaped.push_str("\\b"),
+            '\u{0c}' => escaped.push_str("\\f"),
+            character if character.is_control() => {
+                escaped.push_str(&format!("\\u{:04x}", character as u32));
+            }
+            character => escaped.push(character),
+        }
+    }
+    escaped
+}
+
 fn redact_sensitive(message: &str) -> String {
     let mut redacted = message.to_string();
     for key in ["password", "passwd", "secret", "token", "api_key", "apikey"] {
@@ -404,7 +472,7 @@ fn diagnostic_location(error: &str) -> (String, usize, usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::ZapError;
+    use super::{json_escape, ZapError};
 
     #[test]
     fn classifies_runtime_error_messages_stably() {
@@ -421,6 +489,7 @@ mod tests {
     fn structured_metadata_is_stable_for_type_errors() {
         let error = ZapError::from_message("TypeError at main.zp:4:12: expected number, got text");
         assert_eq!(error.severity(), "error");
+        assert_eq!(error.code(), "ZAP-TYPE-001");
         assert_eq!(error.kind(), "TypeError");
         assert_eq!(
             error.notes(),
@@ -430,6 +499,21 @@ mod tests {
             error.help(),
             Some("Use a compatible value or update the type annotation.")
         );
+    }
+
+    #[test]
+    fn structured_json_snapshot_is_stable_for_type_errors() {
+        let error = ZapError::from_message("TypeError at main.zp:4:12: expected number, got text");
+        assert_eq!(
+            error.json_fields(),
+            "\"code\":\"ZAP-TYPE-001\",\"kind\":\"TypeError\",\"severity\":\"error\",\"file\":\"main.zp\",\"line\":4,\"column\":12,\"message\":\"expected number, got text\",\"notes\":[\"Check the expression type and the expected annotation.\"],\"help\":\"Use a compatible value or update the type annotation.\",\"error\":\"TypeError at main.zp:4:12: expected number, got text\""
+        );
+    }
+
+    #[test]
+    fn json_snapshot_escapes_control_characters() {
+        assert_eq!(json_escape("line\tvalue\nnext"), "line\\tvalue\\nnext");
+        assert_eq!(json_escape("nul\u{0000}"), "nul\\u0000");
     }
 
     #[test]

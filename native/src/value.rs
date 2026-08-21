@@ -44,6 +44,7 @@ pub(crate) enum Value {
 impl Value {
     /// Construct an object whose fields are reference-counted independently from
     /// the value handle. This keeps object ownership explicit at runtime.
+    #[allow(dead_code)]
     pub(crate) fn object(class_name: impl Into<String>) -> Self {
         Self::Object {
             class_name: class_name.into(),
@@ -53,6 +54,7 @@ impl Value {
 
     /// Remove all fields from an object, which is the explicit cycle-breaking
     /// operation used by embedders before releasing cyclic object graphs.
+    #[allow(dead_code)]
     pub(crate) fn clear_object_fields(&self) -> bool {
         if let Self::Object { fields, .. } = self {
             fields.borrow_mut().clear();
@@ -62,6 +64,7 @@ impl Value {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn object_field_count(&self) -> Option<usize> {
         match self {
             Self::Object { fields, .. } => Some(fields.borrow().len()),

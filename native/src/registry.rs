@@ -2894,7 +2894,7 @@ mod tests {
             + 4;
         let index_bytes = &index_response[header_end..];
         assert_eq!(
-            verify_signed_index_bytes(&index_bytes, b"secret")
+            verify_signed_index_bytes(index_bytes, b"secret")
                 .unwrap()
                 .len(),
             1
