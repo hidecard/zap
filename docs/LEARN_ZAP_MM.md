@@ -461,18 +461,22 @@ if has_env("PATH"):
 
 ## Lesson 12 — Modules နှင့် Project Structure
 
-Project root တွင် `modules/greetings.zp` ဖိုင်ဖန်တီးပါ။
+Project manifest ၏ relative module root အောက်တွင် `modules/app/core.zp` ဖိုင်ဖန်တီးပါ။ Explicit `module` declaration နှင့် `export` ကို အသုံးပြုပြီး `export` မပါသော function/variable များသည် module အပြင်မှ မမြင်ရပါ။
 
 ```zap
+module app.core
+
 export fn greet(name):
     return "Hello, " + name
 ```
 
-`main.zp` တွင် explicit import လုပ်ပါ။ `export` မပါသော function/variable များသည် module အပြင်မှ မမြင်ရပါ။
+`main.zp` တွင် explicit dotted import နှင့် local alias ကို အသုံးပြုပါ။
 
 ```zap
-import "greetings"
-say greet("Zap")
+module app.main
+import app.core as core
+
+say core.greet("Zap")
 ```
 
 Project structure—
@@ -506,7 +510,7 @@ zap main.zp
 
 ### Module rules
 
-`import` ဖြင့် module တစ်ခုကို အကြိမ်များစွာ ခေါ်လျှင် runtime သည် canonical path အပေါ်အခြေခံသော cache ကို အသုံးပြုသဖြင့် module top-level code ကို တစ်ကြိမ်သာ run သည်။ Module နှစ်ခု အပြန်အလှန် import လုပ်ပါက circular import error ပြမည်။ Absolute filesystem path import များကို လုံခြုံရေးအရ ခွင့်မပြုပါ။ အဟောင်း code များအတွက် `use "greetings"` သည် legacy import အဖြစ် ဆက်လက်အလုပ်လုပ်နိုင်သော်လည်း library အသစ်များတွင် explicit `import`/`export` ကို အသုံးပြုသင့်သည်။
+`import` ဖြင့် module တစ်ခုကို အကြိမ်များစွာ ခေါ်လျှင် runtime သည် canonical path အပေါ်အခြေခံသော cache ကို အသုံးပြုသဖြင့် module top-level code ကို တစ်ကြိမ်သာ run သည်။ Dotted import path များကို module root အောက်တွင်သာ resolve လုပ်ပြီး absolute filesystem path၊ traversal-like path၊ missing entry နှင့် duplicate entry များကို reject လုပ်သည်။ Module နှစ်ခု အပြန်အလှန် import လုပ်ပါက circular import error ပြမည်။ အဟောင်း code များအတွက် `use`/path-style import များသည် legacy compatibility အဖြစ် ဆက်လက်အလုပ်လုပ်နိုင်သော်လည်း library အသစ်များတွင် explicit `module` နှင့် `import`/`export` syntax ကို အသုံးပြုသင့်သည်။
 
 ### လေ့ကျင့်ခန်း
 

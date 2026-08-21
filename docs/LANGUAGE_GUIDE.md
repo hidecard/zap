@@ -383,10 +383,23 @@ hello-zap/
     └── smoke.zp
 ```
 
-`use` ဖြင့် module ကို import လုပ်နိုင်သည်။ Runtime သည် main file directory၊ `modules/` နှင့် `lib/` directories များတွင် module file ကို ရှာဖွေသည်။
+Explicit `module` declaration နှင့် `import ... as ...` syntax ဖြင့် module ကို အသုံးပြုနိုင်သည်။ Project manifest ၏ `[module]` section အောက်ရှိ relative root မှာသာ dotted import path များကို deterministic resolve လုပ်ပြီး absolute path၊ traversal၊ missing file၊ duplicate entry နှင့် circular import များကို reject လုပ်သည်။ Legacy `use` syntax ကို compatibility အတွက်သာ ထိန်းသိမ်းထားပြီး library အသစ်များတွင် explicit syntax ကို အသုံးပြုသင့်သည်။
+
+`modules/app/core.zp`:
 
 ```zp
-use "greeting.zp"
+module app.core
+export fn greeting(name):
+    return "Hello, " + name
+```
+
+`main.zp`:
+
+```zp
+module app.main
+import app.core as core
+
+say core.greeting("Zap")
 ```
 
 Manifest သည် project name၊ version နှင့် entry file ကို သတ်မှတ်သည်။
@@ -483,7 +496,9 @@ cargo test --manifest-path native/Cargo.toml
 
 ## 21. လက်ရှိအခြေအနေ နှင့် နောက်ထပ်တိုးချဲ့မည့်အရာများ
 
-လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation၊ project scaffolding နှင့် recursive project test runner ပါဝင်သည်။ Function/method/closure named arguments၊ OOP visibility၊ constructor delegation နှင့် `option<T>`/`result<T>` guard-based type narrowing များလည်း ပါဝင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files များကို run လုပ်သည်။ နောက်ထပ် language evolution အတွက် static type checking၊ richer diagnostics၊ first-class module exports၊ package registry၊ async I/O နှင့် platform-specific libraries များကို အဆင့်လိုက် တိုးချဲ့သွားမည်။
+လက်ရှိ native foundation တွင် variables၊ expressions၊ control flow၊ functions၊ closures၊ collections၊ JSON၊ file I/O၊ modules၊ formatter၊ project validation၊ project scaffolding နှင့် recursive project test runner ပါဝင်သည်။ Function/method/closure named arguments၊ OOP visibility၊ constructor delegation နှင့် `option<T>`/`result<T>` guard-based type narrowing များလည်း ပါဝင်သည်။ `zap test` သည် `tests/` အောက်ရှိ subdirectories များအပါအဝင် `*_test.zp` files များကို run လုပ်သည်။ Package lockfile၊ registry authentication/policy၊ deterministic async task APIs၊ bounded production I/O၊ LSP/editor integration နှင့် release verification pipeline များသည် လက်ရှိ implementation နှင့် tooling scope ထဲတွင် ပါဝင်ပြီး သက်ဆိုင်ရာ reference guides များတွင် အသေးစိတ်ဖော်ပြထားသည်။
+
+နောက်ထပ် language evolution အတွက် complete static type checker၊ generic collections၊ pattern matching၊ richer exhaustiveness diagnostics၊ fuzz/property testing နှင့် benchmark/profiling workflows များကို သီးခြား roadmap အဖြစ် ဆက်လက်တိုးချဲ့မည်။
 
 လက်ရှိ runtime တွင် တကယ်အလုပ်လုပ်ပြီးသား syntax ကိုသာ production source တွင် အသုံးပြုပါ။ မပြီးသေးသော Web၊ Mobile၊ AI နှင့် IoT libraries များကို roadmap အဖြစ် သတ်မှတ်ထားပြီး core language stability ရရှိပြီးနောက် သီးခြား package များအဖြစ် တည်ဆောက်မည်။
 

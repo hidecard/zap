@@ -258,11 +258,13 @@ Validate user-provided paths in production programs and handle file errors expli
 
 ## Lesson 13 — Modules and Exports
 
-A project can contain local modules in the source directory, `modules/`, or `lib/`. Zap uses explicit imports and exports so that private symbols are not accidentally exposed.
+A project can contain local modules below the manifest’s relative module root. Zap uses explicit module declarations and `import ... as ...` paths so that private symbols are not accidentally exposed and module resolution remains deterministic. Absolute paths, traversal-like paths, missing entries, duplicate entries, and circular imports are rejected.
 
-`modules/greeting.zp`:
+`modules/app/core.zp`:
 
 ```zap
+module app.core
+
 export fn greet(name):
     return "Hello, " + name
 
@@ -273,11 +275,13 @@ fn private_helper():
 `main.zp`:
 
 ```zap
-import "greeting.zp"
-say greet("Zap")
+module app.main
+import app.core as core
+
+say core.greet("Zap")
 ```
 
-Only exported symbols are available to importers. Modules are cached during one runtime execution, circular imports are rejected, and absolute module paths are not accepted.
+Only exported symbols are available to importers. Modules are cached during one runtime execution, imported files are traversed in deterministic source order, and absolute module paths are not accepted. Legacy `use`/path-style imports may remain available for compatibility, but new libraries should use explicit `module` and `import`/`export` syntax.
 
 ## Lesson 14 — Result and Option Values
 
