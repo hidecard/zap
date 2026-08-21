@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Cross-platform CI hardening
+- Sanitized test-thread labels before using them in temporary directory names so the Windows native test matrix no longer receives invalid `::` path separators.
+
 ### Async boundary hardening
 - Added the deterministic `async_capabilities()` builtin and catalog entry describing the single-threaded executor, fixed-worker adapter, bounded network/process adapters, cancellation behavior, default limits, deferred language-level scheduling/cancellation/timeout, and unsupported interruption of arbitrary foreign blocking calls.
 - Added typed preflight validation for zero/oversized worker, task, read, socket, and process limits, plus TCP request-size rejection before queue admission.

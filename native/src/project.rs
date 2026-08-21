@@ -1273,10 +1273,22 @@ mod lockfile_security_tests {
 
     #[test]
     fn locked_cache_is_authoritative_for_yanked_release_but_not_tampering() {
+        let test_name = std::thread::current()
+            .name()
+            .unwrap_or("test")
+            .chars()
+            .map(|character| {
+                if character.is_ascii_alphanumeric() || character == '-' || character == '_' {
+                    character
+                } else {
+                    '_'
+                }
+            })
+            .collect::<String>();
         let root = std::env::temp_dir().join(format!(
             "zap-locked-cache-e2e-{}-{}",
             std::process::id(),
-            std::thread::current().name().unwrap_or("test")
+            test_name
         ));
         let _ = fs::remove_dir_all(&root);
         let cache = root.join("cache");
