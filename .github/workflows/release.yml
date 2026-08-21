@@ -202,7 +202,7 @@ jobs:
               } finally { $zip.Dispose() }
             } finally { $stream.Dispose() }
           }
-          New-DeterministicZip 'package/zap' "$env:ARCHIVE"
+          New-DeterministicZip 'package' "$env:ARCHIVE"
           $hash = (Get-FileHash "$env:ARCHIVE" -Algorithm SHA256).Hash.ToLower()
           "$hash  $env:ARCHIVE" | Out-File -Encoding ascii "$env:ARCHIVE.sha256"
 
@@ -251,7 +251,7 @@ jobs:
               } finally { $zip.Dispose() }
             } finally { $stream.Dispose() }
           }
-          New-DeterministicZip 'package/zap' "$env:ARCHIVE.repro"
+          New-DeterministicZip 'package' "$env:ARCHIVE.repro"
           $reproHash = (Get-FileHash "$env:ARCHIVE.repro" -Algorithm SHA256).Hash.ToLower()
           if ($expected -ne $reproHash) { throw "Windows archive is not reproducible" }
           Remove-Item -Force "$env:ARCHIVE.repro"
