@@ -1,6 +1,6 @@
 # Runtime State နှင့် Execution Context
 
-**အခြေအနေ:** နောက်ထွက်မည့် Zap release အတွက် first slice ကို အကောင်အထည်ဖော်ပြီး
+**အခြေအနေ:** Zap v2.1.11 အတွက် first slice ကို အကောင်အထည်ဖော်ပြီး
 
 ဤစာတမ်းသည် explicit runtime-state boundary ၏ ပထမဆုံးအပိုင်းကို သတ်မှတ်ပါသည်။ Evaluator ဆိုင်ရာ state အားလုံးကို object တစ်ခုတည်းသို့ ရွှေ့ပြီးပြီဟု မဆိုလိုဘဲ လက်ရှိရွှေ့ပြီးသော state နှင့် နောက်ပိုင်းလုပ်ရမည့် boundary များကို မှတ်တမ်းတင်ထားပါသည်။
 

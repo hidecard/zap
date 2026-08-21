@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.11] — 2026-08-21
+
+### Release engineering
+- Added the first explicit RuntimeState/ExecutionContext boundary for per-run module-cache, import-cycle, and execution-depth isolation, with regression tests and bilingual documentation.
+
 ### Documentation maintenance
 - Corrected the Burmese learner guide's historical v0.x references and outdated feature-status claims, and aligned its current boundary with v2.1.10 contracts and deferred scope.
 - Corrected English Result propagation examples to use the supported `result<any>` annotation and extended the documentation consistency gate to cover the v2.1.10 English/Burmese release-note pair.

@@ -8,7 +8,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 mkdir -p "$TMP_DIR/scripts" "$TMP_DIR/native" "$TMP_DIR/docs"
 cp "$SOURCE_VALIDATOR" "$TMP_DIR/scripts/validate_documentation_consistency.sh"
 chmod +x "$TMP_DIR/scripts/validate_documentation_consistency.sh"
-printf '[package]\nname = "zap-native"\nversion = "2.1.10"\n' > "$TMP_DIR/native/Cargo.toml"
+printf '[package]\nname = "zap-native"\nversion = "2.1.11"\n' > "$TMP_DIR/native/Cargo.toml"
 printf '%s\n' 'documentation navigation' > "$TMP_DIR/README.md"
 printf '%s\n' 'documentation navigation' > "$TMP_DIR/README_MM.md"
 
@@ -21,11 +21,11 @@ pairs=(
   TYPECHECK_GENERIC_DESIGN_EN TYPECHECK_GENERIC_DESIGN_MM
   RUNTIME_STATE_EN RUNTIME_STATE_MM
   P2_PROGRESS P2_PROGRESS_MM
-  RELEASE_2.1.10_EN RELEASE_2.1.10_MM
+  RELEASE_2.1.11_EN RELEASE_2.1.11_MM
 )
 for file in "${pairs[@]}"; do
   cat >"$TMP_DIR/docs/$file.md" <<'DOC'
-# Zap v2.1.10
+# Zap v2.1.11
 
 ## Contract
 
@@ -41,16 +41,16 @@ printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_MM.md' >> "$TMP_DIR/README.md"
 printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_EN.md' >> "$TMP_DIR/README_MM.md"
 printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_MM.md' >> "$TMP_DIR/README_MM.md"
 
-(cd "$TMP_DIR" && EXPECTED_VERSION=2.1.10 ZAP_DOCS_REPORT="$TMP_DIR/positive.tsv" scripts/validate_documentation_consistency.sh >/dev/null)
+(cd "$TMP_DIR" && EXPECTED_VERSION=2.1.11 ZAP_DOCS_REPORT="$TMP_DIR/positive.tsv" scripts/validate_documentation_consistency.sh >/dev/null)
 
-sed -i 's/v2\.1\.10/v2.1.9/' "$TMP_DIR/docs/SYNTAX_GUIDE_EN.md"
-if (cd "$TMP_DIR" && EXPECTED_VERSION=2.1.10 scripts/validate_documentation_consistency.sh >/dev/null 2>&1); then
+sed -i 's/v2\.1\.11/v2.1.10/' "$TMP_DIR/docs/SYNTAX_GUIDE_EN.md"
+if (cd "$TMP_DIR" && EXPECTED_VERSION=2.1.11 scripts/validate_documentation_consistency.sh >/dev/null 2>&1); then
   printf 'expected version drift to fail\n' >&2
   exit 1
 fi
-sed -i 's/v2\.1\.9/v2.1.10/' "$TMP_DIR/docs/SYNTAX_GUIDE_EN.md"
+sed -i 's/v2\.1\.10/v2.1.11/' "$TMP_DIR/docs/SYNTAX_GUIDE_EN.md"
 printf '\n## Drift\n' >> "$TMP_DIR/docs/LANGUAGE_SPEC_MM.md"
-if (cd "$TMP_DIR" && EXPECTED_VERSION=2.1.10 scripts/validate_documentation_consistency.sh >/dev/null 2>&1); then
+if (cd "$TMP_DIR" && EXPECTED_VERSION=2.1.11 scripts/validate_documentation_consistency.sh >/dev/null 2>&1); then
   printf 'expected section parity drift to fail\n' >&2
   exit 1
 fi

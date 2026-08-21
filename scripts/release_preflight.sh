@@ -201,6 +201,8 @@ check_release_files() {
     docs/BENCHMARK_HARNESS_MM.md
     docs/DOCUMENTATION_NAVIGATION_EN.md
     docs/DOCUMENTATION_NAVIGATION_MM.md
+    docs/RUNTIME_STATE_EN.md
+    docs/RUNTIME_STATE_MM.md
   )
   local path
   for path in "${required_files[@]}"; do
@@ -216,6 +218,7 @@ check_documentation_pairs() {
     'docs/REGISTRY_AUTH_EN.md:docs/REGISTRY_AUTH_MM.md'
     'docs/V2.1_ROADMAP_EN.md:docs/V2.1_ROADMAP_MM.md'
     'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
+    'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
   local pair en mm

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.11] — 2026-08-21
+
+### Release engineering
+- Per-run module-cache၊ import-cycle နှင့် execution-depth isolation အတွက် ပထမဆုံး explicit RuntimeState/ExecutionContext boundary၊ regression tests နှင့် bilingual documentation ကို ထည့်သွင်းထားပါသည်။
+
 ### Documentation maintenance
 - Burmese learner guide ထဲရှိ v0.x historical reference များနှင့် outdated feature-status claim များကို ပြင်ဆင်ပြီး v2.1.10 contract နှင့် deferred scope များနှင့် ကိုက်ညီအောင် ညှိထားပါသည်။
 - English Result propagation example များကို supported `result<any>` annotation အသုံးပြုအောင် ပြင်ဆင်ပြီး v2.1.10 English/Burmese release-note pair ကို documentation consistency gate ထဲ ထည့်သွင်းထားပါသည်။

@@ -1,6 +1,6 @@
 # Zap Language Specification
 
-**Specification status:** Normative foundation for Zap v2.1.10
+**Specification status:** Normative foundation for Zap v2.1.11
 
 This document is the canonical index for language semantics. When an older guide conflicts with this document, the implementation and tests must be brought into alignment with this specification; a compatibility exception must be recorded explicitly rather than inferred from legacy behavior.
 

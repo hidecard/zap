@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.11] - 2026-08-21
+
+### Release summary
+- Added the first explicit per-run RuntimeState and ExecutionContext boundary with bilingual documentation and regression coverage.
+
 ## [2.1.10] - 2026-08-21
 
 ### Release summary
