@@ -1523,6 +1523,61 @@ fn typecheck_p0_conformance_matrix_tc001_to_tc005() {
 }
 
 #[test]
+fn typecheck_p1_conformance_tc006_to_tc008() {
+    let cases = [
+        (
+            "tc006-loop-boundary",
+            "let maybe: option<number> = some(3)\nwhile is_some(maybe):\n    maybe = option_none()\nlet after_loop: number = maybe\n",
+            false,
+            "expects number, got option<any>",
+        ),
+        (
+            "tc007-nested-call-return",
+            "fn need_number(value: number):\n    return value\nfn nested():\n    return need_number(unwrap(some(7)))\nlet value: number = nested()\n",
+            true,
+            "",
+        ),
+        (
+            "tc008-collection-element",
+            "let values: list<number> = [1, 2]\nlet first: number = values[0]\n",
+            true,
+            "",
+        ),
+    ];
+
+    for (name, source, should_pass, expected_error) in cases {
+        let root = std::env::temp_dir().join(format!("zap_{name}_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("zap.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n"),
+        )
+        .unwrap();
+        std::fs::write(root.join("main.zp"), source).unwrap();
+
+        let output = Command::new(binary())
+            .args(["check", "--json", root.to_str().unwrap()])
+            .output()
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&root);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(
+            output.status.success(),
+            should_pass,
+            "{name}: {stdout}{stderr}"
+        );
+        if !should_pass {
+            assert!(
+                stdout.contains(expected_error) || stderr.contains(expected_error),
+                "{name}: expected {expected_error:?}, got stdout={stdout:?}, stderr={stderr:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn generates_canonical_dependency_lockfile() {
     let root = std::env::temp_dir().join("zap_lockfile_generation_project");
     std::fs::create_dir_all(&root).unwrap();
