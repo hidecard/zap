@@ -42,6 +42,33 @@ pub(crate) enum Value {
     None,
 }
 impl Value {
+    /// Construct an object whose fields are reference-counted independently from
+    /// the value handle. This keeps object ownership explicit at runtime.
+    pub(crate) fn object(class_name: impl Into<String>) -> Self {
+        Self::Object {
+            class_name: class_name.into(),
+            fields: Rc::new(RefCell::new(HashMap::new())),
+        }
+    }
+
+    /// Remove all fields from an object, which is the explicit cycle-breaking
+    /// operation used by embedders before releasing cyclic object graphs.
+    pub(crate) fn clear_object_fields(&self) -> bool {
+        if let Self::Object { fields, .. } = self {
+            fields.borrow_mut().clear();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn object_field_count(&self) -> Option<usize> {
+        match self {
+            Self::Object { fields, .. } => Some(fields.borrow().len()),
+            _ => None,
+        }
+    }
+
     pub(crate) fn show(&self) -> String {
         match self {
             Self::Text(x) => x.clone(),
@@ -75,5 +102,28 @@ impl Value {
             Self::Future(_) => true,
             Self::OptionNone | Self::None => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Value;
+    use std::rc::Rc;
+
+    #[test]
+    fn cyclic_object_graph_can_be_explicitly_broken() {
+        let object = Value::object("Node");
+        let Value::Object { fields, .. } = &object else {
+            panic!("object constructor must create an object value");
+        };
+        let weak_fields = Rc::downgrade(fields);
+        fields.borrow_mut().insert("self".into(), object.clone());
+        assert_eq!(object.object_field_count(), Some(1));
+        assert!(weak_fields.upgrade().is_some());
+
+        assert!(object.clear_object_fields());
+        assert_eq!(object.object_field_count(), Some(0));
+        drop(object);
+        assert!(weak_fields.upgrade().is_none());
     }
 }

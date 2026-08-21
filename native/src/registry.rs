@@ -16,6 +16,9 @@ pub struct RegistryPackage {
     pub version: String,
     pub source: String,
     pub checksum: String,
+    /// Yanked releases remain addressable for lockfile verification but are not
+    /// selected for new dependency resolution.
+    pub yanked: bool,
     /// Registry dependency requirements keyed by package name.
     pub dependencies: BTreeMap<String, String>,
 }
@@ -624,11 +627,20 @@ pub fn find_package(
     name: &str,
     version: &str,
 ) -> Result<RegistryPackage, String> {
-    index
+    if let Some(package) = index
         .iter()
-        .find(|package| package.name == name && package.version == version)
+        .find(|package| package.name == name && package.version == version && !package.yanked)
         .cloned()
-        .ok_or_else(|| format!("registry package not found: {name} {version}"))
+    {
+        return Ok(package);
+    }
+    if index
+        .iter()
+        .any(|package| package.name == name && package.version == version && package.yanked)
+    {
+        return Err(format!("registry package is yanked: {name} {version}"));
+    }
+    Err(format!("registry package not found: {name} {version}"))
 }
 
 /// Select the highest registry version satisfying a deterministic requirement.
@@ -640,9 +652,18 @@ pub fn find_package_requirement(
     requirement: &str,
 ) -> Result<RegistryPackage, String> {
     let requirement = VersionRequirement::parse(requirement)?;
+    let matching_yanked = index
+        .iter()
+        .filter(|package| package.name == name && package.yanked)
+        .filter_map(|package| {
+            Version::parse(&package.version)
+                .ok()
+                .filter(|version| requirement.matches(*version))
+        })
+        .count();
     index
         .iter()
-        .filter(|package| package.name == name)
+        .filter(|package| package.name == name && !package.yanked)
         .filter_map(|package| {
             Version::parse(&package.version)
                 .ok()
@@ -658,7 +679,11 @@ pub fn find_package_requirement(
         )
         .map(|(_, package)| package.clone())
         .ok_or_else(|| {
-            format!("registry package does not satisfy requirement: {name} {requirement}")
+            if matching_yanked > 0 {
+                format!("all matching registry packages are yanked: {name} {requirement}")
+            } else {
+                format!("registry package does not satisfy requirement: {name} {requirement}")
+            }
         })
 }
 
@@ -950,12 +975,19 @@ fn parse_package(value: &Value) -> Result<RegistryPackage, String> {
     if !is_sha256(&checksum) {
         return Err(format!("registry checksum is invalid for {name} {version}"));
     }
+    let yanked = match value.get("yanked") {
+        None => false,
+        Some(raw) => raw.as_bool().ok_or_else(|| {
+            format!("registry yanked field must be a boolean for {name} {version}")
+        })?,
+    };
     let dependencies = parse_registry_dependencies(value, &name, &version)?;
     let package = RegistryPackage {
         name,
         version,
         source,
         checksum,
+        yanked,
         dependencies,
     };
     validate_package_identity(&package)?;
@@ -1397,6 +1429,7 @@ fn handle_registry_connection(
                 version,
                 source: path.to_string(),
                 checksum,
+                yanked: false,
                 dependencies: BTreeMap::new(),
             };
             let temporary = registry_root.join(".zap-registry-request.pkg");
@@ -1710,9 +1743,9 @@ mod tests {
         hmac_sha256_hex, normalize_registry_origin, persist_registry_package, prune_cache,
         publish_package, publish_package_with_agent, read_index, read_index_source,
         read_signed_index, redact_registry_secret, registry_auth_failure_message,
-        resolve_dependency_graph, resolve_registry_token, sha256_hex, verify_cached_package,
-        verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage, RegistryScheme,
-        RegistryService, TrustedRegistryPolicy,
+        resolve_dependency_graph, resolve_registry_token, sha256_hex, validate_package_name,
+        verify_cached_package, verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage,
+        RegistryScheme, RegistryService, TrustedRegistryPolicy,
     };
     use std::collections::BTreeMap;
     use std::fs;
@@ -1805,6 +1838,7 @@ mod tests {
             version: "1.0.0".into(),
             source: "demo.pkg".into(),
             checksum: sha256_hex(b"package"),
+            yanked: false,
             dependencies: BTreeMap::new(),
         };
         publish_package_with_agent(&agent, &url, &archive, &package, Some("publish-token"))
@@ -2019,7 +2053,7 @@ mod tests {
         }))
         .unwrap();
         assert!(verify_signed_index_bytes(&valid, b"test-secret").is_ok());
-
+        assert!(verify_signed_index_bytes(&valid, b"wrong-secret").is_err());
         let mut corpus = vec![Vec::new(), b"null".to_vec(), b"[]".to_vec(), valid.clone()];
         corpus.extend((0..valid.len()).map(|index| {
             let mut mutated = valid.clone();
@@ -2040,6 +2074,28 @@ mod tests {
     }
 
     #[test]
+    fn rejects_non_boolean_yanked_metadata_without_fallback() {
+        let package = serde_json::json!([{
+            "name": "demo",
+            "version": "1.0.0",
+            "source": "demo.pkg",
+            "checksum": sha256_hex(b"package"),
+            "yanked": "true"
+        }]);
+        let canonical = serde_json::to_vec(&package).unwrap();
+        let signature = hmac_sha256_hex(b"test-secret", &canonical);
+        let index = serde_json::to_vec(&serde_json::json!({
+            "signature": signature,
+            "packages": package
+        }))
+        .unwrap();
+        let error = verify_signed_index_bytes(&index, b"test-secret").unwrap_err();
+        assert_eq!(
+            error,
+            "registry yanked field must be a boolean for demo 1.0.0"
+        );
+    }
+    #[test]
     fn security_property_secret_redaction_removes_all_token_occurrences() {
         let token = "s3cr3t-token-123";
         let message = format!("token={token}; retry token={token}; bearer {token}");
@@ -2056,6 +2112,28 @@ mod tests {
         assert_eq!(origin.port, None);
         assert_eq!(origin.path_prefix, "/api");
         assert!(origin.is_secure());
+    }
+
+    #[test]
+    fn package_name_validation_rejects_path_traversal_components() {
+        for name in [
+            "..",
+            "../escape",
+            "nested/name",
+            "nested\\\\name",
+            "bad\u{7f}name",
+        ] {
+            assert!(
+                validate_package_name(name).is_err(),
+                "accepted unsafe package name {name:?}"
+            );
+        }
+        for name in ["demo", "zap_core", "zap-runtime-2"] {
+            assert!(
+                validate_package_name(name).is_ok(),
+                "rejected safe package name {name:?}"
+            );
+        }
     }
 
     #[test]
@@ -2165,6 +2243,7 @@ mod tests {
             version: "1.0.0".into(),
             source: archive.display().to_string(),
             checksum: "0".repeat(64),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let error = publish_package("https://registry.invalid/publish", &archive, &package, None)
@@ -2180,6 +2259,13 @@ mod tests {
         let result = operation();
         std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
         result
+    }
+
+    fn with_secure_http<T>(operation: impl FnOnce() -> T) -> T {
+        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
+        operation()
     }
 
     fn local_http_response(status: &str, body: &[u8]) -> (String, std::thread::JoinHandle<()>) {
@@ -2227,9 +2313,10 @@ mod tests {
 
     #[test]
     fn insecure_http_registry_transport_is_rejected_by_default() {
-        std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
-        let error = read_index_source("http://127.0.0.1:1/index.json").unwrap_err();
-        assert!(error.contains("insecure HTTP registry transport is disabled"));
+        with_secure_http(|| {
+            let error = read_index_source("http://127.0.0.1:1/index.json").unwrap_err();
+            assert!(error.contains("insecure HTTP registry transport is disabled"));
+        });
     }
 
     #[test]
@@ -2290,6 +2377,7 @@ mod tests {
             version: "1.0.0".into(),
             source: archive.display().to_string(),
             checksum: sha256_hex(b"package"),
+            yanked: false,
             dependencies: BTreeMap::new(),
         };
         let (url, handle) =
@@ -2315,10 +2403,16 @@ mod tests {
             version: "1.0.0".into(),
             source: "file://source.pkg".into(),
             checksum: checksum.clone(),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let cached = cache_package(Path::new(&source), &root.join("cache"), &package).unwrap();
         verify_cached_package(&cached, &package).unwrap();
+        let locked_yanked = RegistryPackage {
+            yanked: true,
+            ..package.clone()
+        };
+        verify_cached_package(&cached, &locked_yanked).unwrap();
         assert!(cached.ends_with(format!("demo/1.0.0/{checksum}.pkg")));
         fs::remove_dir_all(&root).unwrap();
     }
@@ -2336,6 +2430,7 @@ mod tests {
                 version: "1.2.0".into(),
                 source: "c.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: BTreeMap::new(),
             },
             RegistryPackage {
@@ -2343,6 +2438,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "a.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: a_dependencies,
             },
             RegistryPackage {
@@ -2350,6 +2446,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "b.pkg".into(),
                 checksum,
+                yanked: false,
                 dependencies: b_dependencies,
             },
         ];
@@ -2379,6 +2476,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "a.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: a_dependencies,
             },
             RegistryPackage {
@@ -2386,6 +2484,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "b.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: b_dependencies,
             },
         ];
@@ -2407,6 +2506,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "left.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: left_dependencies,
             },
             RegistryPackage {
@@ -2414,6 +2514,7 @@ mod tests {
                 version: "1.0.0".into(),
                 source: "right.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: right_dependencies,
             },
             RegistryPackage {
@@ -2421,6 +2522,7 @@ mod tests {
                 version: "1.5.0".into(),
                 source: "shared-1.pkg".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: BTreeMap::new(),
             },
             RegistryPackage {
@@ -2428,6 +2530,7 @@ mod tests {
                 version: "2.1.0".into(),
                 source: "shared-2.pkg".into(),
                 checksum,
+                yanked: false,
                 dependencies: BTreeMap::new(),
             },
         ];
@@ -2443,6 +2546,39 @@ mod tests {
     }
 
     #[test]
+    fn yanked_releases_are_not_selected_for_exact_or_range_requests() {
+        let checksum = sha256_hex(b"package");
+        let index = vec![
+            RegistryPackage {
+                name: "demo".into(),
+                version: "1.0.0".into(),
+                source: "stable.pkg".into(),
+                checksum: checksum.clone(),
+                yanked: false,
+                dependencies: BTreeMap::new(),
+            },
+            RegistryPackage {
+                name: "demo".into(),
+                version: "2.0.0".into(),
+                source: "yanked.pkg".into(),
+                checksum,
+                yanked: true,
+                dependencies: BTreeMap::new(),
+            },
+        ];
+        assert_eq!(
+            super::find_package(&index, "demo", "2.0.0").unwrap_err(),
+            "registry package is yanked: demo 2.0.0"
+        );
+        assert_eq!(
+            super::find_package_requirement(&index, "demo", ">=1.0.0")
+                .unwrap()
+                .version,
+            "1.0.0"
+        );
+    }
+
+    #[test]
     fn range_selection_prefers_highest_compatible_version() {
         let checksum = sha256_hex(b"package");
         let index = vec![
@@ -2451,6 +2587,7 @@ mod tests {
                 version: "1.2.0".into(),
                 source: "a".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
@@ -2458,6 +2595,7 @@ mod tests {
                 version: "1.4.2".into(),
                 source: "b".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
@@ -2465,6 +2603,7 @@ mod tests {
                 version: "2.0.0".into(),
                 source: "c".into(),
                 checksum,
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
         ];
@@ -2485,6 +2624,7 @@ mod tests {
                 version: "1.2.0".into(),
                 source: "a".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
@@ -2492,6 +2632,7 @@ mod tests {
                 version: "1.2.9".into(),
                 source: "b".into(),
                 checksum: checksum.clone(),
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
             RegistryPackage {
@@ -2499,6 +2640,7 @@ mod tests {
                 version: "1.3.0".into(),
                 source: "c".into(),
                 checksum,
+                yanked: false,
                 dependencies: std::collections::BTreeMap::new(),
             },
         ];
@@ -2552,6 +2694,7 @@ mod tests {
             version: "1.0.0".into(),
             source: "keep".into(),
             checksum: checksum.clone(),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let stale = RegistryPackage {
@@ -2559,6 +2702,7 @@ mod tests {
             version: "2.0.0".into(),
             source: "stale".into(),
             checksum,
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let cache = root.join("cache");
@@ -2610,6 +2754,7 @@ mod tests {
             version: "1.0.0".into(),
             source: "demo.pkg".into(),
             checksum: sha256_hex(b"package"),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let artifact = persist_registry_package(
@@ -2638,12 +2783,26 @@ mod tests {
             version: "1.0.0".into(),
             source: "a".into(),
             checksum: sha256_hex(b"package"),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         }];
         let error = super::find_package_requirement(&index, "demo", "^2.0.0").unwrap_err();
         assert_eq!(
             error,
             "registry package does not satisfy requirement: demo ^2.0.0"
+        );
+
+        let yanked_index = vec![RegistryPackage {
+            name: "demo".into(),
+            version: "2.0.0".into(),
+            source: "yanked.pkg".into(),
+            checksum: sha256_hex(b"package"),
+            yanked: true,
+            dependencies: BTreeMap::new(),
+        }];
+        assert_eq!(
+            super::find_package_requirement(&yanked_index, "demo", "^2.0.0").unwrap_err(),
+            "all matching registry packages are yanked: demo ^2.0.0"
         );
     }
 
@@ -2675,6 +2834,25 @@ mod tests {
         let address = service.address();
         let bytes = b"package";
         let checksum = sha256_hex(bytes);
+        let unauthorized_publish = format!(
+            "POST /publish HTTP/1.1\r\nHost: localhost\r\nX-Zap-Package-Name: demo\r\nX-Zap-Package-Version: 1.0.0\r\nX-Zap-Package-Checksum: {checksum}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            bytes.len()
+        );
+        let mut unauthorized_publish_bytes = unauthorized_publish.into_bytes();
+        unauthorized_publish_bytes.extend_from_slice(bytes);
+        let unauthorized_publish_response =
+            raw_registry_request(address, &unauthorized_publish_bytes);
+        assert!(String::from_utf8_lossy(&unauthorized_publish_response).starts_with("HTTP/1.1 401"));
+
+        let invalid_identity_request = format!(
+            "POST /publish HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nX-Zap-Package-Name: ../escape\r\nX-Zap-Package-Version: 1.0.0\r\nX-Zap-Package-Checksum: {checksum}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            bytes.len()
+        );
+        let mut invalid_identity_bytes = invalid_identity_request.into_bytes();
+        invalid_identity_bytes.extend_from_slice(bytes);
+        let invalid_identity_response = raw_registry_request(address, &invalid_identity_bytes);
+        assert!(String::from_utf8_lossy(&invalid_identity_response).starts_with("HTTP/1.1 400"));
+
         let publish_request = format!(
             "POST /publish HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nX-Zap-Package-Name: demo\r\nX-Zap-Package-Version: 1.0.0\r\nX-Zap-Package-Checksum: {checksum}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
             bytes.len()
@@ -2683,6 +2861,18 @@ mod tests {
         publish_bytes.extend_from_slice(bytes);
         let publish_response = raw_registry_request(address, &publish_bytes);
         assert!(String::from_utf8_lossy(&publish_response).starts_with("HTTP/1.1 201"));
+
+        let bad_checksum_request = format!(
+            "POST /publish HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nX-Zap-Package-Name: mismatch\r\nX-Zap-Package-Version: 1.0.0\r\nX-Zap-Package-Checksum: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            "0".repeat(64),
+            bytes.len()
+        );
+        let mut bad_checksum_bytes = bad_checksum_request.into_bytes();
+        bad_checksum_bytes.extend_from_slice(bytes);
+        let bad_checksum_response = raw_registry_request(address, &bad_checksum_bytes);
+        let bad_checksum_text = String::from_utf8_lossy(&bad_checksum_response);
+        assert!(bad_checksum_text.starts_with("HTTP/1.1 422"));
+        assert!(bad_checksum_text.contains("publish checksum mismatch"));
 
         let index_response = raw_registry_request(
             address,

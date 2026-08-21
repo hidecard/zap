@@ -304,6 +304,7 @@ impl LockedRegistryPackage {
             version: self.version,
             source: self.source,
             checksum: self.checksum,
+            yanked: false,
             dependencies: BTreeMap::new(),
         }
     }

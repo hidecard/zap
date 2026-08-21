@@ -353,6 +353,7 @@ jobs:
           RELEASE_COMMIT: ${{ github.sha }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
           SOURCE_URI: https://github.com/${{ github.repository }}
+          TRUSTED_SIGNING_FINGERPRINTS: ${{ secrets.ZAP_RELEASE_GPG_TRUSTED_FINGERPRINTS }}
         run: bash scripts/sign_release_artifacts.sh "${GITHUB_REF_NAME#v}" artifacts
 
       - name: Publish release assets

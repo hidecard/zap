@@ -70,6 +70,23 @@ jobs:
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 
+      - name: Run dependency-free benchmark smoke
+        env:
+          ZAP_BENCH_REPEATS: 3
+          ZAP_BENCH_OUTPUT: benchmark-results/native.csv
+        run: |
+          cargo build --manifest-path native/Cargo.toml --release --locked
+          scripts/benchmark_native.sh
+          scripts/aggregate_benchmark.sh benchmark-results/native.csv benchmark-results/native-summary.csv
+          test "$(awk 'END { print NR - 1 }' benchmark-results/native-summary.csv)" -eq 7
+
+      - name: Upload benchmark evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-benchmark-${{ github.sha }}
+          path: benchmark-results/*.csv
+          if-no-files-found: error
+
       - name: Run filesystem confinement corpus
         run: cargo test --manifest-path native/Cargo.toml filesystem_builtins --all-features
 

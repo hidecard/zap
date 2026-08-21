@@ -21,6 +21,7 @@ Usage:
   zap lock-migrate [dir]                Upgrade a legacy registry lockfile to v2
   zap add <name> <ver> [dir]            Add a manifest dependency and invalidate zap.lock
   zap install [dir]    Validate and install dependencies from zap.lock
+  zap install --locked [dir]             Require and validate the existing zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
   zap registry gc [--dry-run] [dir]     Remove unreferenced registry cache files
   zap registry serve <root> [bind]     Serve an authenticated local registry
@@ -32,6 +33,7 @@ Usage:
                                       Store a token read from an environment variable
   zap registry credential remove <url> Remove a configured credential
   zap build [dir]                       Validate and prepare a project
+  zap build --locked [dir]              Require and validate the existing zap.lock
   zap init <dir>                        Create a new project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
@@ -219,6 +221,26 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 2 && args[1] == "install" {
         match install_dependencies(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap install error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "install" && args[2] == "--locked" {
+        match install_dependencies(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(e) => {
+                eprintln!("Zap install error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 4 && args[1] == "install" && args[2] == "--locked" {
+        match install_dependencies(Path::new(&args[3])) {
             Ok(info) => println!("{info}"),
             Err(e) => {
                 eprintln!("Zap install error: {e}");
@@ -511,6 +533,7 @@ pub fn run_cli(args: &[String]) {
             version: args[6].clone(),
             source: args[4].clone(),
             checksum: args[7].to_ascii_lowercase(),
+            yanked: false,
             dependencies: std::collections::BTreeMap::new(),
         };
         let policy = match crate::registry::load_effective_trusted_registry_policy() {
@@ -555,6 +578,27 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
+            Ok(info) => println!("built Zap project: {info}"),
+            Err(e) => {
+                eprintln!("Zap build error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "build" && args[2] == "--locked" {
+        match validate_project(Path::new(".")) {
+            Ok(info) => println!("built Zap project: {info}"),
+            Err(e) => {
+                eprintln!("Zap build error: {e}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 4 && args[1] == "build" && args[2] == "--locked" {
+        let dir = Path::new(&args[3]);
+        match validate_project(dir) {
             Ok(info) => println!("built Zap project: {info}"),
             Err(e) => {
                 eprintln!("Zap build error: {e}");

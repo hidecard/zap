@@ -50,8 +50,16 @@ jq -e --arg version "$VERSION" \
   '.schema == "zap.release-manifest.v1" and .version == $version and (.artifacts | type == "array" and length == 3)' \
   "$MANIFEST" >/dev/null || fail "manifest schema, version, or target count is invalid"
 jq -e --arg version "$VERSION" \
-  '.provenance_schema == "zap.provenance.v1" and .version == $version and (.subjects | type == "array" and length == 3)' \
-  "$PROVENANCE" >/dev/null || fail "provenance schema, version, or subject count is invalid"
+  '.provenance_schema == "zap.provenance.v1" and
+   .version == $version and
+   (.source.uri | type == "string" and startswith("https://")) and
+   (.source.ref | type == "string" and test("^refs/tags/v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)([-+][0-9A-Za-z.-]+)?$")) and
+   (.source.commit | type == "string" and test("^[A-Fa-f0-9]{40}$")) and
+   (.build.workflow_run_id | type == "string" and test("^[1-9][0-9]*$")) and
+   (.signing.mode == "signed") and
+   (.signing.key_id | type == "string" and test("^[A-Fa-f0-9]{40}$")) and
+   (.subjects | type == "array" and length == 3)' \
+  "$PROVENANCE" >/dev/null || fail "provenance identity, signing, or subject contract is invalid"
 
 mapfile -t ARCHIVES < <(jq -r '.artifacts[].name' "$MANIFEST" | LC_ALL=C sort)
 mapfile -t PROVENANCE_SUBJECTS < <(jq -r '.subjects[].name' "$PROVENANCE" | LC_ALL=C sort)

@@ -15,6 +15,9 @@
 #
 # Optional environment variables:
 #   SIGNING_KEY_ID  GPG key fingerprint, long key ID, or exact user ID.
+#   TRUSTED_SIGNING_FINGERPRINTS
+#                   Required in signed mode. Comma/space-separated full
+#                   fingerprints allowed during an explicit rotation window.
 #   GNUPGHOME       Keyring supplied by CI; never commit this directory.
 #   RELEASE_REF     Git ref recorded in provenance.
 #   RELEASE_COMMIT  Commit SHA recorded in provenance.
@@ -110,6 +113,27 @@ if [[ "$MODE" == "signed" ]]; then
   gpg --batch --list-secret-keys --with-colons "$SIGNING_KEY_ID" >/dev/null 2>&1 || \
     fail "no usable secret signing key found for SIGNING_KEY_ID"
 
+  SIGNING_KEY_FINGERPRINT="$(gpg --batch --with-colons --list-secret-keys "$SIGNING_KEY_ID" |
+    awk -F: '$1 == "fpr" { print $10; exit }')"
+  [[ "$SIGNING_KEY_FINGERPRINT" =~ ^[A-Fa-f0-9]{40}$ ]] || \
+    fail "signing key does not resolve to a full 40-hex fingerprint"
+
+  TRUSTED_SIGNING_FINGERPRINTS="${TRUSTED_SIGNING_FINGERPRINTS:-}"
+  [[ -n "$TRUSTED_SIGNING_FINGERPRINTS" ]] || \
+    fail "TRUSTED_SIGNING_FINGERPRINTS is required in signed mode"
+  trusted_match=0
+  IFS=', ' read -r -a trusted_fingerprints <<< "$TRUSTED_SIGNING_FINGERPRINTS"
+  for trusted_fingerprint in "${trusted_fingerprints[@]}"; do
+    [[ -n "$trusted_fingerprint" ]] || continue
+    [[ "$trusted_fingerprint" =~ ^[A-Fa-f0-9]{40}$ ]] || \
+      fail "trusted signing fingerprint must be a full 40-hex fingerprint"
+    if [[ "${trusted_fingerprint^^}" == "${SIGNING_KEY_FINGERPRINT^^}" ]]; then
+      trusted_match=1
+    fi
+  done
+  [[ "$trusted_match" -eq 1 ]] || \
+    fail "signing key fingerprint is not trusted by the configured rotation allowlist"
+
   gpg_sign() {
     local input="$1"
     local output="$2"
@@ -136,6 +160,18 @@ RELEASE_COMMIT="${RELEASE_COMMIT:-}"
 WORKFLOW_RUN_ID="${WORKFLOW_RUN_ID:-}"
 SOURCE_URI="${SOURCE_URI:-}"
 SIGNING_KEY_ID="${SIGNING_KEY_ID:-}"
+
+if [[ "$MODE" == "signed" ]]; then
+  [[ "$RELEASE_REF" =~ ^refs/tags/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)([-+][0-9A-Za-z.-]+)?$ ]] || \
+    fail "signed provenance requires a semantic-version release tag ref"
+  [[ "$RELEASE_COMMIT" =~ ^[A-Fa-f0-9]{40}$ ]] || \
+    fail "signed provenance requires a full 40-hex commit SHA"
+  [[ "$WORKFLOW_RUN_ID" =~ ^[1-9][0-9]*$ ]] || \
+    fail "signed provenance requires a numeric workflow run ID"
+  [[ "$SOURCE_URI" =~ ^https://[^[:space:]]+$ ]] || \
+    fail "signed provenance requires an HTTPS source URI"
+  SIGNING_KEY_ID="$SIGNING_KEY_FINGERPRINT"
+fi
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT

@@ -240,3 +240,73 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
         .zip(actual_args)
         .all(|(expected, actual)| annotation_matches(expected, actual))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        annotation_matches, is_allowed_annotation, parse_signature, split_static_args,
+        static_literal_type,
+    };
+
+    #[test]
+    fn parser_golden_static_literal_types_are_stable() {
+        let cases = [
+            ("\"Zap\"", Some("text")),
+            ("'Zap'", Some("text")),
+            ("42", Some("number")),
+            ("false", Some("bool")),
+            ("none", Some("none")),
+            ("[1, 2]", Some("list")),
+            ("{\"name\": \"Zap\"}", Some("map")),
+            ("answer", None),
+        ];
+        for (source, expected) in cases {
+            assert_eq!(static_literal_type(source), expected, "literal {source:?}");
+        }
+    }
+
+    #[test]
+    fn parser_golden_signatures_preserve_defaults_and_return_types() {
+        let (params, return_type) =
+            parse_signature("name: text = \"Zap\", retries: number = 3) -> result<text>")
+                .expect("valid signature");
+        assert_eq!(params.len(), 2);
+        assert_eq!(params[0].name, "name");
+        assert_eq!(params[0].annotation.as_deref(), Some("text"));
+        assert_eq!(params[0].default.as_deref(), Some("\"Zap\""));
+        assert_eq!(params[1].name, "retries");
+        assert_eq!(params[1].default.as_deref(), Some("3"));
+        assert_eq!(return_type.as_deref(), Some("result<text>"));
+    }
+
+    #[test]
+    fn parser_property_corpus_is_panic_free_and_deterministic() {
+        let corpus = [
+            "a, b, [1, 2], {\"x\": [true, none]}",
+            "nested({\"a\": 1}, [2, 3]), \"comma, inside\"",
+            "",
+            "outer(inner(1, 2), [3, 4])",
+        ];
+        for input in corpus {
+            let first = split_static_args(input);
+            let second = split_static_args(input);
+            assert_eq!(first, second, "splitter is not deterministic for {input:?}");
+        }
+    }
+
+    #[test]
+    fn parser_type_annotation_contract_is_stable() {
+        for annotation in [
+            "text",
+            "number",
+            "list<number>",
+            "map<text, list<number>>",
+            "option<result<text>>",
+        ] {
+            assert!(is_allowed_annotation(annotation), "rejected {annotation}");
+        }
+        assert!(!is_allowed_annotation("map<number>"));
+        assert!(annotation_matches("list<any>", "list<text>"));
+        assert!(!annotation_matches("list<number>", "list<text>"));
+    }
+}

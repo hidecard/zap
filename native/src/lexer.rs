@@ -249,6 +249,47 @@ mod tests {
     }
 
     #[test]
+    fn arithmetic_operator_corpus_is_deterministic_and_complete() {
+        let corpus = vec![
+            (
+                "1 + 2 - 3 * 4 / 5 % 6",
+                vec![
+                    Token::Plus,
+                    Token::Minus,
+                    Token::Star,
+                    Token::Slash,
+                    Token::Percent,
+                ],
+            ),
+            (
+                "(alpha <= beta) and (gamma != delta)",
+                vec![
+                    Token::LessEq,
+                    Token::NotEq,
+                    Token::And,
+                    Token::LParen,
+                    Token::RParen,
+                ],
+            ),
+            (
+                "left >= right or value == 0",
+                vec![Token::GreaterEq, Token::Or, Token::EqEq, Token::Number(0)],
+            ),
+        ];
+        for (source, expected) in corpus {
+            let first = tokenize_with_spans(source).expect("arithmetic corpus should tokenize");
+            let second = tokenize_with_spans(source).expect("arithmetic corpus should retokenize");
+            assert_eq!(first, second);
+            for expected_token in expected {
+                assert!(first.iter().any(|token| token.token == expected_token));
+            }
+            for token in first {
+                assert!(token.span.length >= 1);
+            }
+        }
+    }
+
+    #[test]
     fn adversarial_corpus_is_deterministic_and_never_panics() {
         let corpus = [
             "",
