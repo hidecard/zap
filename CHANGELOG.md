@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-08-21
+
+### Release summary
+- Fix Windows clean-profile installer verification on PowerShell runners.
+
 ## [2.1.3] - 2026-08-21
 
 ### Release summary

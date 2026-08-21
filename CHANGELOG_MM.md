@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.4] — 2026-08-21
+
+### Release engineering
+- Windows clean-profile installer verification တွင် PowerShell read-only HOME variable collision ဖြစ်မှုကို ပြင်ဆင်ထားပါသည်။
+
 ## [2.1.3] — 2026-08-21
 
 ### Release engineering

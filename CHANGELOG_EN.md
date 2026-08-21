@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.4] — 2026-08-21
+
+### Release engineering
+- Avoided the read-only PowerShell HOME variable collision in clean-profile installer verification.
+
 ## [2.1.3] — 2026-08-21
 
 ### Release engineering
