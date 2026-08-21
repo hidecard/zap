@@ -26,6 +26,7 @@
 - Hardened Unix release packaging for reproducibility by normalizing archive order, timestamps, ownership, numeric ownership, and gzip metadata; CI rebuilds each Unix archive and requires byte-for-byte equality before upload.
 - Replaced Windows `Compress-Archive` packaging with a deterministic .NET ZIP writer that sorts slash-separated file entries, fixes entry timestamps to the Unix epoch, uses stable compression settings, and rebuilds the archive byte-for-byte before upload; content and SHA-256 verification remain enforced.
 - Added cross-platform installer verification for clean Unix homes and Windows user profiles. Release archives now include uninstall scripts, and CI verifies installation, version reporting, executable launch, reinstall/upgrade, uninstall cleanup, archive contents, and SHA-256 metadata on the matching platform.
+- Added the `stdlib_security_corpus` adversarial test gate for oversized typed-JSON input, runtime category mismatches, Unicode index boundaries, duration overflow, structured-log limits, and oversized atomic-write content. Each case is repeated under `catch_unwind` to require deterministic rejection without a panic.
 
 ### Async and tooling
 

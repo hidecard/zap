@@ -26,6 +26,7 @@
 - Unix release packaging ကို reproducible ဖြစ်စေရန် archive order၊ timestamp၊ ownership၊ numeric ownership နှင့် gzip metadata များကို normalize လုပ်ထားပါသည်။ Upload မပြုမီ CI တွင် Unix archive တစ်ခုချင်းစီကို ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှုကို လိုအပ်စေပါသည်။
 - Windows `Compress-Archive` packaging အစား sorted slash-separated file entry များ၊ Unix epoch entry timestamp၊ stable compression setting များနှင့် deterministic .NET ZIP writer ကို အသုံးပြုထားပါသည်။ Upload မပြုမီ archive ကို ဒုတိယအကြိမ် ပြန်လည် build လုပ်ကာ byte-for-byte တူညီမှု၊ archive contents နှင့် SHA-256 checksum များကို ဆက်လက်စစ်ဆေးပါသည်။
 - Clean Unix home နှင့် Windows user profile များအတွက် cross-platform installer verification ကို ထည့်သွင်းထားပါသည်။ Release archive များတွင် uninstall script များပါဝင်ပြီး သက်ဆိုင်ရာ platform တွင် installation၊ version reporting၊ executable launch၊ reinstall/upgrade၊ uninstall cleanup၊ archive contents နှင့် SHA-256 metadata များကို CI ဖြင့် စစ်ဆေးပါသည်။
+- Oversized typed-JSON input၊ runtime category မကိုက်ညီမှု၊ Unicode index boundary၊ duration overflow၊ structured-log limit နှင့် oversized atomic-write content များအတွက် `stdlib_security_corpus` adversarial test gate ကို ထည့်သွင်းထားပါသည်။ Case တစ်ခုချင်းစီကို `catch_unwind` အောက်တွင် ထပ်မံ run ပြီး panic မဖြစ်ဘဲ rejection result တည်ငြိမ်ရမည်ဟု စစ်ဆေးပါသည်။
 
 ### Async နှင့် tooling
 

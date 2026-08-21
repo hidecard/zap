@@ -3648,13 +3648,19 @@ pub(crate) fn execute_lines(
 #[cfg(test)]
 mod tests {
     use super::{
-        configuration_path, direct_builtin, direct_external_builtin, execute_ast_program,
-        execute_lines, http_serve_once, json_to_value, require_capability_for_mode,
-        validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
+        configuration_path, direct_builtin, direct_external_builtin, direct_io_builtin,
+        execute_ast_program, execute_lines, http_serve_once, json_to_value,
+        require_capability_for_mode, validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::{Function, Value};
-    use std::{collections::HashMap, fs, path::Path, rc::Rc};
+    use std::{
+        collections::HashMap,
+        fs,
+        panic::{catch_unwind, AssertUnwindSafe},
+        path::Path,
+        rc::Rc,
+    };
 
     #[test]
     fn propagates_uncaught_raise_as_runtime_flow() {
@@ -4276,6 +4282,121 @@ mod tests {
         match result {
             Err(error) => assert!(error.contains("source line limit exceeded")),
             Ok(_) => panic!("source limit should reject oversized input"),
+        }
+    }
+
+    #[test]
+    fn stdlib_security_corpus() {
+        let cases: Vec<(&str, Box<dyn Fn() -> Result<Option<Value>, String>>)> = vec![
+            (
+                "typed-json-size",
+                Box::new(|| {
+                    direct_builtin(
+                        "from_json_typed",
+                        vec![
+                            Value::Text("x".repeat(super::MAX_JSON_BYTES + 1)),
+                            Value::Text("text".into()),
+                        ],
+                    )
+                }),
+            ),
+            (
+                "typed-json-category",
+                Box::new(|| {
+                    direct_builtin(
+                        "from_json_typed",
+                        vec![Value::Text("true".into()), Value::Text("number".into())],
+                    )
+                }),
+            ),
+            (
+                "unicode-index",
+                Box::new(|| {
+                    direct_builtin("char_at", vec![Value::Text("က".into()), Value::Number(2)])
+                }),
+            ),
+            (
+                "duration-overflow",
+                Box::new(|| direct_builtin("duration_parts", vec![Value::Number(i64::MIN)])),
+            ),
+            (
+                "log-level",
+                Box::new(|| {
+                    direct_builtin(
+                        "log_record",
+                        vec![
+                            Value::Text("notice".into()),
+                            Value::Text("message".into()),
+                            Value::Map(HashMap::new()),
+                        ],
+                    )
+                }),
+            ),
+            (
+                "log-message-size",
+                Box::new(|| {
+                    direct_builtin(
+                        "log_record",
+                        vec![
+                            Value::Text("info".into()),
+                            Value::Text("x".repeat(super::MAX_LOG_MESSAGE_BYTES + 1)),
+                            Value::Map(HashMap::new()),
+                        ],
+                    )
+                }),
+            ),
+            (
+                "log-field-key-size",
+                Box::new(|| {
+                    let fields = [(
+                        "x".repeat(super::MAX_LOG_FIELD_KEY_BYTES + 1),
+                        Value::Text("value".into()),
+                    )]
+                    .into_iter()
+                    .collect();
+                    direct_builtin(
+                        "log_record",
+                        vec![
+                            Value::Text("info".into()),
+                            Value::Text("message".into()),
+                            Value::Map(fields),
+                        ],
+                    )
+                }),
+            ),
+            (
+                "atomic-write-size",
+                Box::new(|| {
+                    direct_io_builtin(
+                        "atomic_write",
+                        &[
+                            Value::Text("/tmp/zap-stdlib-corpus.txt".into()),
+                            Value::Text("x".repeat(super::MAX_FILE_BYTES as usize + 1)),
+                        ],
+                    )
+                }),
+            ),
+        ];
+
+        for (name, case) in cases {
+            let first = catch_unwind(AssertUnwindSafe(&case));
+            let second = catch_unwind(AssertUnwindSafe(&case));
+            assert!(first.is_ok(), "stdlib corpus case panicked: {name}");
+            assert!(
+                second.is_ok(),
+                "stdlib corpus case panicked on repeat: {name}"
+            );
+            let first_result = first.expect("first corpus result should be present");
+            let second_result = second.expect("second corpus result should be present");
+            assert_eq!(
+                format!("{:?}", first_result),
+                format!("{:?}", second_result),
+                "stdlib corpus result was nondeterministic: {name}"
+            );
+            assert!(
+                first_result.is_err(),
+                "stdlib corpus case was accepted unexpectedly: {name}"
+            );
         }
     }
 

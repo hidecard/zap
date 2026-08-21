@@ -58,6 +58,9 @@ jobs:
       - name: Run filesystem confinement corpus
         run: cargo test --manifest-path native/Cargo.toml filesystem_builtins --all-features
 
+      - name: Run standard-library security corpus
+        run: cargo test --manifest-path native/Cargo.toml stdlib_security_corpus --all-features
+
       - name: Run parser JSON lockfile corpus
         run: |
           cargo test --manifest-path native/Cargo.toml adversarial_corpus --all-features
