@@ -83,6 +83,9 @@ jobs:
           cargo test --manifest-path native/Cargo.toml malformed_lockfile_corpus --all-features
           cargo test --manifest-path native/Cargo.toml lockfile_quoted_values --all-features
 
+      - name: Validate registry deployment policy
+        run: scripts/validate_registry_deployment.sh
+
       - name: Check repository whitespace
         run: git diff --check
 

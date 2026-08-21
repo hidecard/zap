@@ -1,0 +1,43 @@
+# Zap registry production-boundary contract.
+# This is a reference policy, not a credential store or a deployment secret.
+version = 1
+service = "zap-registry"
+bind_address = "127.0.0.1:8787"
+public_ingress = "tls-terminating-proxy-only"
+http_redirect = true
+allowed_methods = ["GET", "POST"]
+max_request_bytes = 1048576
+request_timeout_seconds = 10
+upstream_timeout_seconds = 15
+
+[sandbox]
+user = "zap-registry"
+dynamic_user = true
+no_new_privileges = true
+private_tmp = true
+private_devices = true
+protect_system = "strict"
+protect_home = true
+writable_paths = ["/var/lib/zap-registry"]
+
+[quotas]
+memory_bytes = 268435456
+cpu_percent = 50
+tasks = 64
+open_files = 1024
+
+[credentials]
+source = "deployment-secret-manager"
+file_mode = "0600"
+required = ["ZAP_REGISTRY_TOKEN", "ZAP_REGISTRY_SIGNING_SECRET"]
+redacted_from_logs = true
+
+[egress]
+backend_network = "loopback-only"
+allowed_cidrs = ["127.0.0.0/8", "::1/128"]
+external_egress = false
+
+[supervision]
+restart = "on-failure"
+restart_seconds = 3
+stop_timeout_seconds = 10

@@ -1,0 +1,42 @@
+[Unit]
+Description=Zap authenticated local registry service
+After=network.target
+
+[Service]
+Type=simple
+User=zap-registry
+Group=zap-registry
+DynamicUser=yes
+EnvironmentFile=-/etc/zap/registry.env
+ExecStart=/usr/local/bin/zap registry serve 127.0.0.1:8787 /var/lib/zap-registry
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=10s
+KillMode=control-group
+
+# Least privilege and filesystem confinement.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadWritePaths=/var/lib/zap-registry
+UMask=0077
+
+# Bounded resource usage.
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=64
+LimitNOFILE=1024
+
+# The service itself is loopback-only; an ingress proxy terminates TLS.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+
+[Install]
+WantedBy=multi-user.target
