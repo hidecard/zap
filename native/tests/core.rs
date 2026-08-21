@@ -5028,9 +5028,10 @@ fn registry_gc_dry_run_is_safe_and_deletion_is_deterministic() {
     );
     let dry_stdout = String::from_utf8_lossy(&dry_run.stdout);
     assert!(dry_stdout.contains("registry cache gc: 3 candidate(s)"));
-    let alpha_line = format!("would remove: {}", stale_a.display());
-    let demo_line = format!("would remove: {}", partial.display());
-    let zeta_line = format!("would remove: {}", stale_z.display());
+    let portable = |path: &std::path::Path| path.to_string_lossy().replace('\\', "/");
+    let alpha_line = format!("would remove: {}", portable(&stale_a));
+    let demo_line = format!("would remove: {}", portable(&partial));
+    let zeta_line = format!("would remove: {}", portable(&stale_z));
     assert!(dry_stdout.find(&alpha_line).unwrap() < dry_stdout.find(&demo_line).unwrap());
     assert!(dry_stdout.find(&demo_line).unwrap() < dry_stdout.find(&zeta_line).unwrap());
     assert!(stale_a.exists() && stale_z.exists() && partial.exists());

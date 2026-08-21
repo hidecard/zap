@@ -428,7 +428,8 @@ pub fn run_cli(args: &[String]) {
                     report.candidates.len()
                 );
                 for path in report.candidates {
-                    println!("{action}: {}", path.display());
+                    let portable_path = path.to_string_lossy().replace('\\', "/");
+                    println!("{action}: {portable_path}");
                 }
             }
             Err(error) => {
