@@ -20,7 +20,7 @@
 - Guard ပါသော `while` body များအတွက် loop-boundary narrowing ကို ထည့်သွင်းထားပါသည်။ Narrowed payload ကို loop အတွင်း အသုံးပြုနိုင်ပြီး loop ပြီးနောက် မူလ wrapper type ကို ပြန်လည်ထားရှိသဖြင့် reassignment နှင့် post-loop use များသည် type-safe ဖြစ်ပါသည်။
 - Loop အတွင်း option payload အသုံးပြုမှုနှင့် loop ပြီးနောက် wrapper ပြန်လည်ရရှိမှုအတွက် permanent TC-006 conformance coverage ကို ထည့်သွင်းထားပါသည်။
 - `if ... then ... else ...` control-flow expression များအတွက် type checking ကို ထည့်သွင်းထားပါသည်။ Condition သည် `bool` ဖြစ်ရမည်၊ branch result type နှစ်ခု ကိုက်ညီရမည်၊ မကိုက်ညီပါက structured `TypeError` ဖြင့် reject လုပ်ပါသည်။
-- `zap check --json` ဖြင့် compatible branch၊ မကိုက်ညီသော branch result နှင့် bool မဟုတ်သော condition များကို စစ်ဆေးသည့် permanent TC-009 conformance fixtures များ ထည့်သွင်းထားပါသည်။
+- `zap check --json` ဖြင့် compatible branch၊ မကိုက်ညီသော branch result နှင့် bool မဟုတ်သော condition များကို စစ်ဆေးသည့် permanent TC-009 conformance fixtures များ ထည့်သွင်းထားပါသည်။ ထို့အပြင် conditional type error များအတွက် `ok`၊ `kind`၊ `file`၊ `line`၊ `column`၊ `message` နှင့် `error` fields များ တည်ငြိမ်စွာ ထွက်ရှိကြောင်း L3 regression ဖြင့် စစ်ဆေးထားပါသည်။
 - `option<T>` နှင့် `result<T>` အတွက် alias assignment ဖြတ်သန်းသည့် wrapper preservation နှင့် reassignment ပြီးနောက် narrowing fact invalidation ကို စစ်ဆေးသည့် permanent TC-010 alias-narrowing fixtures များ ထည့်သွင်းထားပါသည်။
 - Bilingual type-checking conformance matrix များတွင် TC-006 loop-boundary coverage နှင့် TC-012 generic syntax ကို implemented baseline evidence အဖြစ် မှတ်တမ်းတင်ထားပါသည်။ Future generic declaration နှင့် advanced inference များကိုသာ deferred ထားရှိပါသည်။
 

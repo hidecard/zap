@@ -20,7 +20,7 @@
 - Added loop-boundary narrowing for guarded `while` bodies. The narrowed payload is available inside the loop, while the original wrapper type is restored after the loop so reassignment and post-loop use remain sound.
 - Added permanent TC-006 conformance coverage for in-loop option payload access and post-loop wrapper restoration.
 - Added control-flow expression typing for `if ... then ... else ...` expressions. Conditions must be `bool`, both branch result types must agree, and incompatible branches produce a structured `TypeError`.
-- Added permanent TC-009 conformance fixtures covering compatible branches, incompatible branch results, and non-boolean conditions through `zap check --json`.
+- Added permanent TC-009 conformance fixtures covering compatible branches, incompatible branch results, and non-boolean conditions through `zap check --json`, plus an L3 regression asserting stable `ok`, `kind`, `file`, `line`, `column`, `message`, and `error` fields for conditional type errors.
 - Added permanent TC-010 alias-narrowing fixtures for `option<T>` and `result<T>`, including wrapper preservation through alias assignment and invalidation after reassignment.
 - Updated the bilingual type-checking conformance matrices to record TC-006 loop-boundary coverage and TC-012 generic syntax as implemented baseline evidence; future generic declarations and advanced inference remain deferred.
 

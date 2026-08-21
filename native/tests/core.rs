@@ -1484,6 +1484,39 @@ fn typecheck_else_branch_option_narrowing() {
 }
 
 #[test]
+fn typecheck_json_preserves_l3_location_contract_for_conditional_type_error() {
+    let root = std::env::temp_dir().join("zap_conditional_l3_diagnostic");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join("zap.toml"),
+        "[package]\nname = \"conditional-l3-diagnostic\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("main.zp"),
+        "let value: number = if true then 1 else \"bad\"\n",
+    )
+    .unwrap();
+    let output = Command::new(binary())
+        .args(["check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"ok\":false"), "{stdout}");
+    assert!(stdout.contains("\"kind\":\"TypeError\""), "{stdout}");
+    assert!(stdout.contains("\"file\":"), "{stdout}");
+    assert!(stdout.contains("\"line\":1"), "{stdout}");
+    assert!(stdout.contains("\"column\":1"), "{stdout}");
+    assert!(
+        stdout.contains("conditional branches must have compatible types"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("\"error\":"), "{stdout}");
+}
+#[test]
 fn typecheck_p0_conformance_matrix_tc001_to_tc005() {
     let cases = [
         (
