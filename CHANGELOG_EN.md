@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.8] — 2026-08-21
+
+### Release engineering
+- Hardened release version consistency validation across Cargo, CLI output, tags, bilingual onboarding, security metadata, release notes, templates, and installers; CI and release preflight now fail closed on drift.
+
 ### Release version consistency
 - Added the Cargo-authoritative version validator, dynamic CLI/lockfile/tag checks, bilingual README archive checks, security-link checks, and hard-coded release-template detection.
 - Added deterministic TSV evidence, positive/negative version-drift regression tests, and CI/release-preflight enforcement.

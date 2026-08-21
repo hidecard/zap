@@ -24,10 +24,10 @@ No release workflow may publish artifacts when the package version, tag, CLI out
 Run the gate locally with:
 
 ```bash
-EXPECTED_VERSION=2.1.7 \
-RELEASE_TAG=v2.1.7 \
+EXPECTED_VERSION=2.1.8 \
+RELEASE_TAG=v2.1.8 \
 ZAP_VERSION_REPORT=target/version-consistency.tsv \
-scripts/validate_release_version.sh 2.1.7
+scripts/validate_release_version.sh 2.1.8
 scripts/test_validate_release_version.sh
 ```
 

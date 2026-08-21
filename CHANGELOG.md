@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.8] - 2026-08-21
+
+### Release summary
+- Hardened release version consistency validation across all user-facing release surfaces.
+
 ## [2.1.7] - 2026-08-21
 
 ### Release summary
