@@ -153,6 +153,8 @@ check_release_files() {
     native/Cargo.lock
     .github/workflows/ci.yml
     .github/workflows/release.yml
+    "docs/RELEASE_${EXPECTED_VERSION}_EN.md"
+    "docs/RELEASE_${EXPECTED_VERSION}_MM.md"
     scripts/verify_release_artifacts.sh
     scripts/verify_installer_unix.sh
     scripts/verify_installer_windows.ps1
@@ -175,6 +177,8 @@ check_documentation_pairs() {
     'docs/DEPLOYMENT_EN.md:docs/DEPLOYMENT_MM.md'
     'docs/REGISTRY_AUTH_EN.md:docs/REGISTRY_AUTH_MM.md'
     'docs/V2.1_ROADMAP_EN.md:docs/V2.1_ROADMAP_MM.md'
+    'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
+    "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
   local pair en mm
   for pair in "${pairs[@]}"; do
@@ -191,6 +195,10 @@ check_documentation_pairs() {
   require_text docs/V2.1_ROADMAP_MM.md 'v2.1.0'
   require_text docs/DEPLOYMENT_EN.md 'production'
   require_text docs/DEPLOYMENT_MM.md 'production'
+  require_text docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md "$EXPECTED_VERSION"
+  require_text docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md "$EXPECTED_VERSION"
+  require_text "docs/RELEASE_${EXPECTED_VERSION}_EN.md" "$EXPECTED_VERSION"
+  require_text "docs/RELEASE_${EXPECTED_VERSION}_MM.md" "$EXPECTED_VERSION"
 }
 
 check_source_safety() {
