@@ -853,10 +853,10 @@ fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
         drop(file);
         #[cfg(windows)]
         if path.exists() {
-            fs::remove_file(path)
+            fs::remove_file(&path)
                 .map_err(|error| format!("atomic_write replacement failed: {error}"))?;
         }
-        fs::rename(&temporary, path)
+        fs::rename(&temporary, &path)
             .map_err(|error| format!("atomic_write commit failed: {error}"))?;
         Ok(())
     })();
