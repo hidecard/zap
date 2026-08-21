@@ -6,6 +6,11 @@
 - Temporary directory name များတွင် test-thread label ထည့်ရာ၌ Windows အတွက် မမှန်ကန်သော `::` path separator မဖြစ်စေရန် sanitize လုပ်ထားပြီး Windows native test matrix regression ကို ပြင်ဆင်ထားပါသည်။
 - Registry service ၏ non-blocking listener မှ accept လုပ်ပြီးသော socket များကို request read မတိုင်မီ blocking mode သို့ ပြန်လည်သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် macOS target တွင် တစ်ခါတစ်ရံ empty response မြင်ရသော ပြဿနာကို ကာကွယ်ထားပါသည်။
 
+### Native/legacy parity hardening
+- `common`၊ `native-only` နှင့် `rejected` policy class များပါသော versioned six-case native/legacy matrix ကို ထည့်သွင်းထားပါသည်။
+- Normalized stdout digest comparison၊ deterministic TSV report၊ migration guidance နှင့် `scripts/test_p001_parity.sh` မှတစ်ဆင့် CI parity artifact gate ကို ထည့်သွင်းထားပါသည်။
+- Bilingual `docs/P001_PARITY_MATRIX_EN.md` နှင့် `docs/P001_PARITY_MATRIX_MM.md` documentation များကို ထည့်သွင်းထားပါသည်။
+
 ### Replayable verification hardening
 - Parser၊ JSON၊ lockfile၊ registry၊ memory နှင့် async boundary များအတွက် fixed-seed `ZAP_CORPUS_SEED` replay ကို ထည့်သွင်းထားပါသည်။
 - Durable failure fixture ၂၁ ခု၊ deterministic replay ordering၊ `target/p105-replay.log` ထဲတွင် SHA-256/base64 input evidence နှင့် `scripts/test_p105_layers.sh` မှတစ်ဆင့် CI artifact gate ကို ထည့်သွင်းထားပါသည်။

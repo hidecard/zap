@@ -19,7 +19,7 @@
 
 | ID | လုပ်ငန်း | Status | ပြီးစီးမှု စံနှုန်း |
 |---|---|---|---|
-| P0-01 | Native/legacy conformance စာချုပ် | Partial | Native behavior ကို canonical သတ်မှတ်ပြီး legacy fixture parity report၊ migration policy နှင့် CI conformance command ရှိရမည်။ |
+| P0-01 | Native/legacy conformance စာချုပ် | Partial — P0-01-A implemented | Native behavior ကို canonical သတ်မှတ်ထားသည်။ P0-01-A တွင် `common`၊ `native-only` နှင့် `rejected` policy များပါသော versioned six-case matrix၊ normalized stdout digest၊ deterministic tab-separated report၊ migration guidance နှင့် CI parity artifact gate များကို ထည့်သွင်းပြီးဖြစ်သည်။ Broader legacy inventory နှင့် future drift approval များသာ ကျန်ရှိသည်။ |
 | P0-02 | ပေါင်းစည်းထားသော language specification | Partial | `LANGUAGE_SPEC_MM.md` သည် syntax၊ precedence၊ typing၊ runtime behavior၊ compatibility နှင့် version ownership အတွက် canonical semantic index ဖြစ်လာပြီ။ Fragmented rule များကို အပြည့်အဝ ရွှေ့ပြောင်းခြင်းနှင့် complete conformance fixture များသာ ကျန်ရှိသည်။ |
 | P0-03 | Structured diagnostics | Done | CLI JSON နှင့် LSP diagnostic များတွင် stable `ZAP-*` code၊ kind၊ severity၊ normalized message၊ source span၊ deterministic notes/help နှင့် deterministic snapshot/regression coverage ပါဝင်သည်။ |
 | P0-04 | Memory နှင့် reference-cycle စာချုပ် | Partial | `Rc<RefCell>` ownership policy၊ explicit non-thread-safe boundary၊ tracked `Value::object`၊ `clear_object_fields`၊ `object_field_count`၊ bounded `memory_stats()`၊ object allocation/deallocation counters၊ cycle-safe value validation နှင့် deterministic memory-limit tests များကို ထည့်သွင်းပြီးဖြစ်သည်။ Public weak references၊ closure-level/process-wide telemetry၊ arbitrary cycle အလိုအလျောက် reclaim လုပ်ခြင်းနှင့် tracing collection တို့သာ ကျန်ရှိသည်။ |
@@ -47,7 +47,7 @@
 ## လုပ်ဆောင်မည့်အစီအစဉ်
 
 ၁။ **P1-05-A:** ပြီးစီးပြီး။ Fixed-seed property/fuzz replay၊ parser/JSON/lockfile/registry/memory/async durable failure corpus၊ replay evidence နှင့် CI artifact gate များကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ P1-05 ၏ broader fuzz နှင့် platform extension များကို သီးခြား track လုပ်မည်။
-၂။ **P0-01-A:** Executable native/legacy parity matrix နှင့် semantic-drift gate ကို ပြီးစီးရန်။
+၂။ **P0-01-A:** ပထမ executable parity slice အဖြစ် ပြီးစီးပြီး။ Six-case native/legacy policy matrix၊ normalized report၊ migration guidance နှင့် CI artifact gate များကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ Broader legacy inventory ကို သီးခြား track လုပ်မည်။
 ၃။ **P0-02-A:** Canonical specification ownership index နှင့် fixture mapping ကို ပြီးစီးရန်။
 ၄။ **P1-03:** ပြီးစီးပြီး။ Registry redaction၊ fail-closed၊ traversal၊ provenance၊ key-rotation၊ yanked-release နှင့် end-to-end locked-cache tests များသည် signed tag၊ commit၊ workflow၊ HTTPS source၊ checksum၊ signing fingerprint အပြည့်အစုံ၊ trusted-fingerprint allowlist၊ adversarial signed-provenance mutation rejection၊ yanked candidate skip၊ malformed-yanked rejection၊ stable exact/range all-yanked diagnostics၊ manifest requirement ကိုက်ညီမှု၊ offline cache reuse နှင့် tampered lock/cache rejection တို့ကို enforce လုပ်ထားသည်။
 ၅။ **P0-04:** Weak-reference၊ closure/process-wide telemetry၊ arbitrary-cycle reclamation နှင့် tracing-collector design ကျန်ရှိမှုများကိုသာ ဆက်လုပ်ရန်။

@@ -4,7 +4,7 @@
 
 **ရည်ရွယ်ချက်:** Stable diagnostic contract ပြီးစီးပြီးနောက် ဆက်လက်အကောင်အထည်ဖော်ရမည့် အစီအစဉ်ကို သတ်မှတ်ရန် ဖြစ်သည်။ ပြီးစီးပြီးသား release အလုပ်များကို ထပ်မတွက်ဘဲ ကျန်ရှိနေသော TODO register ကို executable milestone များအဖြစ် ခွဲထားသည်။
 
-**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` diagnostics၊ cycle-safe value validation၊ deterministic value limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-A၊ P0-05-B နှင့် P0-05-C လည်း ပြီးစီးထားသည်။ Descriptive deterministic `async_capabilities()` builtin၊ catalog entry၊ typed resource-limit preflight validation၊ TCP request-size admission checks နှင့် target-named CI artifact များပါသော Linux x86_64/Windows x86_64/macOS ARM64 focused matrix ကို ထည့်သွင်းပြီးဖြစ်သည်။ P1-05-A replayable verification slice ကိုလည်း fixed `ZAP_CORPUS_SEED`၊ durable failure-corpus category ခြောက်မျိုး၊ deterministic replay log နှင့် CI artifact upload တို့ဖြင့် အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ Executor-backed language scheduling နှင့် language-level cancellation/timeout controls များ deferred ဖြစ်နေပြီး P1-05 ၏ long-running fuzz၊ allocator-level နှင့် platform-specific extension များကို ဆက်လက် track လုပ်မည်။
+**လက်ရှိတိုးတက်မှု:** P0-04 ၏ ပထမ implementation slice ပြီးစီးထားသည်။ Tracked object allocation/deallocation statistics၊ bounded `memory_stats()` diagnostics၊ cycle-safe value validation၊ deterministic value limits၊ regression tests နှင့် bilingual memory-contract documentation များ ထည့်သွင်းပြီးဖြစ်သည်။ P0-05-A၊ P0-05-B နှင့် P0-05-C လည်း ပြီးစီးထားသည်။ Descriptive deterministic `async_capabilities()` builtin၊ catalog entry၊ typed resource-limit preflight validation၊ TCP request-size admission checks နှင့် target-named CI artifact များပါသော Linux x86_64/Windows x86_64/macOS ARM64 focused matrix ကို ထည့်သွင်းပြီးဖြစ်သည်။ P1-05-A replayable verification slice ကိုလည်း fixed `ZAP_CORPUS_SEED`၊ durable failure-corpus category ခြောက်မျိုး၊ deterministic replay log နှင့် CI artifact upload တို့ဖြင့် အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ P0-01-A executable native/legacy parity ကို versioned six-case policy matrix၊ normalized output digest၊ deterministic report နှင့် CI artifact upload တို့ဖြင့် အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ Executor-backed language scheduling နှင့် language-level cancellation/timeout controls များ deferred ဖြစ်နေပြီး P1-05 ၏ long-running fuzz၊ allocator-level နှင့် platform-specific extension များကို ဆက်လက် track လုပ်မည်။
 
 ## နောက်ထပ် P0/P1 execution queue
 
@@ -148,7 +148,7 @@ RFC တွင် ဘာသာနှစ်မျိုး terminology၊ examples
 
 ## ချက်ချင်းဆက်လုပ်ရမည့်အလုပ်
 
-**P1-05-A Replayable verification layers** slice ကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ် implementation slice သည် **P0-01-A Executable native/legacy parity** ဖြစ်ပြီး P1-05 ၏ long-running fuzz၊ allocator/heap-level နှင့် platform-specific extension များကို သီးခြား track လုပ်မည်။ P0/P1 safety gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
+**P1-05-A Replayable verification layers** နှင့် **P0-01-A Executable native/legacy parity** slices များကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ် implementation slice သည် **P0-02-A Specification ownership index** ဖြစ်ပြီး P1-05 ၏ long-running fuzz၊ allocator/heap-level နှင့် platform-specific extension များကို သီးခြား track လုပ်မည်။ P0/P1 safety gates များ မပြီးမချင်း traits implementation သို့မဟုတ် async syntax အကျယ်ပြန့်ကို မစသင့်သေးပါ။
 
 ## ဆက်စပ်မှတ်တမ်းများ
 

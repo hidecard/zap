@@ -129,6 +129,19 @@ jobs:
           path: target/p105-replay.log
           if-no-files-found: error
 
+      - name: Run P0-01 native/legacy parity matrix
+        env:
+          ZAP_PARITY_REPORT: target/p001-parity-report.tsv
+        run: scripts/test_p001_parity.sh
+
+      - name: Upload P0-01 parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-p001-parity-${{ github.sha }}
+          path: target/p001-parity-report.tsv
+          if-no-files-found: error
+
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
 

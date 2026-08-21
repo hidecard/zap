@@ -1,0 +1,3 @@
+fn twice(value):
+    return value + value
+say twice(3)

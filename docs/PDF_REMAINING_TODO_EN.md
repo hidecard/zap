@@ -19,7 +19,7 @@
 
 | ID | Work item | Status | Acceptance criteria |
 |---|---|---|---|
-| P0-01 | Canonical native/legacy conformance contract | Partial | Native behavior is canonical; legacy fixtures have a parity report, migration policy, and CI conformance command. |
+| P0-01 | Canonical native/legacy conformance contract | Partial — P0-01-A implemented | Native behavior is canonical. P0-01-A adds a versioned six-case matrix with `common`, `native-only`, and `rejected` policies, normalized stdout digests, deterministic tab-separated reports, migration guidance, and a CI parity artifact. Broader legacy inventory and future drift approvals remain. |
 | P0-02 | Consolidated language specification | Partial | `LANGUAGE_SPEC_EN.md` is now the canonical semantic index for syntax, precedence, typing, runtime behavior, compatibility, and version ownership. Full migration of fragmented rules and complete conformance fixtures remain. |
 | P0-03 | Structured diagnostics | Done | CLI JSON and LSP diagnostics expose stable `ZAP-*` code, kind, severity, normalized message, source span, deterministic notes/help, and deterministic snapshot/regression coverage. |
 | P0-04 | Memory and reference-cycle contract | Partial | `Rc<RefCell>` ownership policy, explicit non-thread-safe boundary, tracked `Value::object`, `clear_object_fields`, `object_field_count`, bounded `memory_stats()`, object allocation/deallocation counters, cycle-safe value validation, and deterministic memory-limit tests are implemented. Public weak references, closure-level/process-wide telemetry, automatic arbitrary-cycle reclamation, and tracing collection remain future work. |
@@ -47,7 +47,7 @@
 ## Execution order
 
 1. **P1-05-A:** Completed. Fixed-seed property/fuzz replay, durable parser/JSON/lockfile/registry/memory/async failure corpora, replay evidence, and a CI artifact gate are implemented. The broader P1-05 fuzz and platform extensions remain separately tracked.
-2. **P0-01-A:** Finish the executable native/legacy parity matrix and semantic-drift gate.
+2. **P0-01-A:** Completed as the first executable parity slice. The six-case native/legacy policy matrix, normalized report, migration guidance, and CI artifact gate are implemented; broader legacy inventory remains separately tracked.
 3. **P0-02-A:** Finish the canonical specification ownership index and fixture mapping.
 4. **P1-03:** Completed. Registry redaction, fail-closed, traversal, provenance, key-rotation, yanked-release, and end-to-end locked-cache tests enforce signed tag, commit, workflow, HTTPS source, checksum, full signing-fingerprint, explicit trusted-fingerprint allowlist, adversarial signed-provenance mutation rejection, yanked-candidate skipping, malformed-yanked rejection, stable exact/range all-yanked diagnostics, manifest requirement matching, offline cache reuse, and tampered lock/cache rejection.
 5. **P0-04:** Continue only the remaining weak-reference, closure/process-wide telemetry, arbitrary-cycle reclamation, and tracing-collector design work.

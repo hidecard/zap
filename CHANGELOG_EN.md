@@ -6,6 +6,11 @@
 - Sanitized test-thread labels before using them in temporary directory names so the Windows native test matrix no longer receives invalid `::` path separators.
 - Normalized accepted registry-service sockets back to blocking mode before request reads, preventing macOS targets from intermittently observing an empty response after a non-blocking listener accept.
 
+### Native/legacy parity hardening
+- Added a versioned six-case native/legacy matrix with `common`, `native-only`, and `rejected` policy classes.
+- Added normalized stdout digest comparison, deterministic TSV reports, migration guidance, and a CI parity artifact gate through `scripts/test_p001_parity.sh`.
+- Added bilingual `docs/P001_PARITY_MATRIX_EN.md` and `docs/P001_PARITY_MATRIX_MM.md` documentation.
+
 ### Replayable verification hardening
 - Added fixed-seed `ZAP_CORPUS_SEED` replay for parser, JSON, lockfile, registry, memory, and async boundaries.
 - Added 21 durable failure fixtures, deterministic replay ordering, SHA-256/base64 input evidence in `target/p105-replay.log`, and a CI artifact gate through `scripts/test_p105_layers.sh`.

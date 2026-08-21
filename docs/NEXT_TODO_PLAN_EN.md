@@ -4,7 +4,7 @@
 
 **Purpose:** Define the next implementation sequence after the stable diagnostic contract. This plan turns the remaining TODO register into executable milestones without treating already-completed release work as unfinished.
 
-**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. P0-05-A, P0-05-B, and P0-05-C are also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, typed resource-limit preflight validation, TCP request-size admission checks, and a reproducible Linux x86_64/Windows x86_64/macOS ARM64 focused matrix with target-named CI artifacts. P1-05-A replayable verification is now implemented with a fixed `ZAP_CORPUS_SEED`, six durable failure-corpus categories, deterministic replay logs, and CI artifact upload. Executor-backed language scheduling and language-level cancellation/timeout controls remain deferred; broader long-running fuzz, allocator-level, and additional platform-specific P1-05 work remains.
+**Current progress:** The first P0-04 slice is implemented: tracked object allocation/deallocation statistics, bounded `memory_stats()` diagnostics, cycle-safe value validation, deterministic value limits, regression tests, and bilingual memory-contract documentation. P0-05-A, P0-05-B, and P0-05-C are also implemented: the descriptive deterministic `async_capabilities()` builtin, catalog entry, typed resource-limit preflight validation, TCP request-size admission checks, and a reproducible Linux x86_64/Windows x86_64/macOS ARM64 focused matrix with target-named CI artifacts. P1-05-A replayable verification is now implemented with a fixed `ZAP_CORPUS_SEED`, six durable failure-corpus categories, deterministic replay logs, and CI artifact upload. P0-01-A executable native/legacy parity is now implemented with a versioned six-case policy matrix, normalized output digests, deterministic reports, and CI artifact upload. Executor-backed language scheduling and language-level cancellation/timeout controls remain deferred; broader long-running fuzz, allocator-level, and additional platform-specific P1-05 work remains.
 
 ## Next P0/P1 execution queue
 
@@ -148,7 +148,7 @@ No parser or runtime implementation should begin until the RFC has bilingual ter
 
 ## Immediate next task
 
-The **P1-05-A Replayable verification layers** slice is implemented. The next implementation slice is **P0-01-A Executable native/legacy parity**, while the remaining P1-05 long-running fuzz, allocator/heap-level, and platform-specific extensions remain tracked separately. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
+The **P1-05-A Replayable verification layers** and **P0-01-A Executable native/legacy parity** slices are implemented. The next implementation slice is **P0-02-A Specification ownership index**, while the remaining P1-05 long-running fuzz, allocator/heap-level, and platform-specific extensions remain tracked separately. Do not begin traits implementation or broad async syntax until the P0/P1 safety gates are complete.
 
 ## Related records
 

@@ -1,0 +1,7 @@
+# id	policy	fixture
+P001-COMMON-HELLO	common	common/hello.zp
+P001-COMMON-CONDITIONAL	common	common/conditional.zp
+P001-NATIVE-LET	native-only	native-only/let_binding.zp
+P001-COMMON-FUNCTION	common	common/function_body.zp
+P001-REJECT-GROUP	rejected	rejected/unclosed_group.zp
+P001-REJECT-STRING	rejected	rejected/unterminated_string.zp
