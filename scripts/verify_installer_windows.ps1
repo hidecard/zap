@@ -6,9 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $work = Join-Path $env:RUNNER_TEMP ("zap-installer-" + [Guid]::NewGuid().ToString('N'))
-$home = Join-Path $work 'home'
+$profileRoot = Join-Path $work 'home'
 $destination = Join-Path $work 'archive'
-New-Item -ItemType Directory -Force -Path $home, $destination | Out-Null
+New-Item -ItemType Directory -Force -Path $profileRoot, $destination | Out-Null
 
 try {
   Expand-Archive -LiteralPath $Archive -DestinationPath $destination -Force
@@ -16,15 +16,15 @@ try {
   $source = Join-Path $package 'bin\zap.exe'
   if (-not (Test-Path $source)) { throw 'missing executable in archive' }
 
-  $env:USERPROFILE = $home
-  $env:Path = "$(Join-Path $home '.zap\bin');$env:Path"
+  $env:USERPROFILE = $profileRoot
+  $env:Path = "$(Join-Path $profileRoot '.zap\bin');$env:Path"
   $installer = Join-Path $package 'install_windows.bat'
   $uninstaller = Join-Path $package 'uninstall_windows.bat'
 
   cmd.exe /d /c $installer
   if ($LASTEXITCODE -ne 0) { throw "installer failed with exit code $LASTEXITCODE" }
 
-  $installed = Join-Path $home '.zap\bin\zap.exe'
+  $installed = Join-Path $profileRoot '.zap\bin\zap.exe'
   if (-not (Test-Path $installed)) { throw 'installer did not create zap.exe' }
   $version = (& $installed --version | Out-String).Trim()
   if ($version -notmatch [regex]::Escape($ExpectedVersion)) { throw "installed version mismatch: $version" }
