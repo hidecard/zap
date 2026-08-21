@@ -17,6 +17,8 @@
 - Canonical registry URL normalization၊ adversarial URL rejection၊ trusted-registry နှင့် credential scope boundary၊ bounded allowlist behavior၊ longest-prefix token selection၊ token validation နှင့် secret redaction များအတွက် deterministic security-property corpus tests များ ထည့်သွင်းထားပါသည်။
 - Signed registry-index mutation coverage ကို ထည့်သွင်းပြီး malformed နှင့် byte-mutated input များကို `catch_unwind` ဖြင့် run ကာ parser panic မဖြစ်ရ၊ ပြုပြင်ထားသော index ကို လက်မခံရ ဟူသော အခြေအနေကို စစ်ဆေးထားပါသည်။
 - Native test suite နှင့်အတူ သီးခြား `security_property` CI step ကို ထည့်သွင်းထားပါသည်။ Formatting၊ Cargo check၊ native test 248 ခု၊ CI strict Clippy၊ cross-platform build နှင့် v2.1.0 release checksum gate များကို ဆက်လက် enforce လုပ်ထားပါသည်။
+- Filesystem builtin များအတွက် runtime workspace confinement ကို ထည့်သွင်းထားပါသည်။ Relative နှင့် absolute path များကို active project workspace အပေါ် resolve လုပ်ပြီး parent traversal များကို reject လုပ်ကာ ရှိပြီးသား symlink များကို containment check မပြုမီ canonicalize လုပ်သဖြင့် workspace အပြင်သို့ ဖတ်ခြင်းနှင့် ရေးခြင်း မပြုနိုင်ပါ။
+- Parent traversal နှင့် အပြင်ဖိုင်သို့ ညွှန်သော symlink များအတွက် adversarial filesystem regression coverage ထည့်သွင်းပြီး သီးခြား `filesystem_builtins` CI corpus step ကိုလည်း ထည့်သွင်းထားပါသည်။
 
 ### Async နှင့် tooling
 

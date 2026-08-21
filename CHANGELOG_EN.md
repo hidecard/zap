@@ -17,6 +17,8 @@
 - Added deterministic security-property corpus tests for canonical registry URL normalization, adversarial URL rejection, trusted-registry and credential scope boundaries, bounded allowlist behavior, longest-prefix token selection, token validation, and secret redaction.
 - Added signed registry-index mutation coverage that feeds malformed and byte-mutated inputs through `catch_unwind`, requiring deterministic errors rather than parser panics or acceptance of tampered indexes.
 - Added an explicit `security_property` CI step alongside the complete native test suite. Formatting, Cargo check, 248 native tests, strict Clippy in CI, cross-platform builds, and the v2.1.0 release checksum gates remain enforced.
+- Added runtime workspace confinement for filesystem builtins. Relative and absolute paths are resolved against the active project workspace, parent traversal is rejected, and existing symlinks are canonicalized before containment checks so reads and writes cannot escape the workspace.
+- Added adversarial filesystem regression coverage for parent traversal and symlinks targeting outside files, plus an independent `filesystem_builtins` CI corpus step.
 
 ### Async and tooling
 

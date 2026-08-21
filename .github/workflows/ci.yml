@@ -55,6 +55,9 @@ jobs:
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 
+      - name: Run filesystem confinement corpus
+        run: cargo test --manifest-path native/Cargo.toml filesystem_builtins --all-features
+
       - name: Check repository whitespace
         run: git diff --check
 

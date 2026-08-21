@@ -4,7 +4,7 @@ use std::{
     fs::{self, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, TcpListener, ToSocketAddrs},
-    path::Path,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     rc::Rc,
     sync::atomic::{AtomicU64, Ordering},
@@ -37,9 +37,63 @@ pub(crate) struct CallArgument {
 
 thread_local! {
     static EXECUTION_DEPTH: Cell<usize> = const { Cell::new(0) };
+    static WORKSPACE_ROOT: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
 struct ExecutionGuard;
+
+struct WorkspaceGuard {
+    previous: Option<PathBuf>,
+}
+
+impl Drop for WorkspaceGuard {
+    fn drop(&mut self) {
+        let previous = self.previous.take();
+        WORKSPACE_ROOT.with(|root| *root.borrow_mut() = previous);
+    }
+}
+
+fn enter_workspace(base: &Path) -> Result<WorkspaceGuard, String> {
+    let root = fs::canonicalize(base)
+        .map_err(|error| format!("workspace root is not accessible: {error}"))?;
+    if !root.is_dir() {
+        return Err("workspace root must be a directory".into());
+    }
+    let previous = WORKSPACE_ROOT.with(|current| current.borrow_mut().replace(root));
+    Ok(WorkspaceGuard { previous })
+}
+
+fn confined_path(path: &Path, operation: &str) -> Result<PathBuf, String> {
+    WORKSPACE_ROOT.with(|root| {
+        let Some(workspace) = root.borrow().as_ref().cloned() else {
+            return Ok(path.to_path_buf());
+        };
+        let candidate = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            workspace.join(path)
+        };
+        let resolved = if fs::symlink_metadata(&candidate).is_ok() {
+            fs::canonicalize(&candidate).map_err(|error| {
+                format!("{operation} failed: path cannot be safely resolved: {error}")
+            })?
+        } else {
+            let parent = candidate.parent().unwrap_or_else(|| Path::new("."));
+            let canonical_parent = fs::canonicalize(parent).map_err(|error| {
+                format!("{operation} failed: parent cannot be safely resolved: {error}")
+            })?;
+            canonical_parent.join(
+                candidate
+                    .file_name()
+                    .ok_or_else(|| format!("{operation} failed: expects a valid file path"))?,
+            )
+        };
+        if !resolved.starts_with(&workspace) {
+            return Err(format!("{operation} failed: path escapes the workspace"));
+        }
+        Ok(resolved)
+    })
+}
 
 impl Drop for ExecutionGuard {
     fn drop(&mut self) {
@@ -746,8 +800,9 @@ fn require_capability_for_mode(capability: &str, restricted: bool) -> Result<(),
 static ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn file_metadata(path: &Path) -> Result<Value, String> {
+    let path = confined_path(path, "file_metadata")?;
     let metadata =
-        fs::symlink_metadata(path).map_err(|error| format!("file_metadata failed: {error}"))?;
+        fs::symlink_metadata(&path).map_err(|error| format!("file_metadata failed: {error}"))?;
     let file_type = metadata.file_type();
     let kind = if file_type.is_symlink() {
         "symlink"
@@ -769,6 +824,7 @@ fn file_metadata(path: &Path) -> Result<Value, String> {
 }
 
 fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
+    let path = confined_path(path, "atomic_write")?;
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(format!(
             "atomic_write content exceeds the {MAX_FILE_BYTES} byte limit"
@@ -856,7 +912,7 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
                 return Err("read_text expects a text path".into());
             };
             Ok(Some(Value::Text(read_limited_text(
-                Path::new(path),
+                &confined_path(Path::new(path), "read_text")?,
                 "read_text",
             )?)))
         }
@@ -870,7 +926,11 @@ fn direct_io_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, String
             let (Value::Text(path), Value::Text(content)) = (&args[0], &args[1]) else {
                 return Err("write_text expects text path and content".into());
             };
-            write_limited_text(Path::new(path), content, "write_text")?;
+            write_limited_text(
+                &confined_path(Path::new(path), "write_text")?,
+                content,
+                "write_text",
+            )?;
             Ok(Some(Value::None))
         }
         "read_lines" => {
@@ -997,7 +1057,9 @@ fn direct_system_builtin(name: &str, args: &[Value]) -> Result<Option<Value>, St
             let Value::Text(path) = &args[0] else {
                 return Err("exists expects a text path".into());
             };
-            Ok(Some(Value::Bool(Path::new(path).exists())))
+            Ok(Some(Value::Bool(
+                confined_path(Path::new(path), "exists").is_ok_and(|path| path.exists()),
+            )))
         }
         "path_join" => {
             let mut path = std::path::PathBuf::new();
@@ -2860,6 +2922,7 @@ pub(crate) fn execute_ast_program(
     funcs: &mut HashMap<String, Rc<Function>>,
     base: &Path,
 ) -> Result<Flow, String> {
+    let _workspace = enter_workspace(base)?;
     if !ast_program_compatible(program) {
         let mut lines = Vec::new();
         ast_program_lines(program, 0, &mut lines);
@@ -3865,7 +3928,11 @@ mod tests {
 
     #[test]
     fn evaluates_file_builtins_from_native_ast() {
-        let path = std::env::temp_dir().join(format!("zap-direct-io-{}.txt", std::process::id()));
+        let workspace =
+            std::env::temp_dir().join(format!("zap-direct-io-workspace-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&workspace);
+        std::fs::create_dir_all(&workspace).expect("temporary workspace should be created");
+        let path = workspace.join("output.txt");
         let path_text = path.to_string_lossy().replace('\\', "\\\\");
         let source = format!(
             "write_text(\"{path_text}\", \"hello\")\nlet content: text = read_text(\"{path_text}\")\nwrite_lines(\"{path_text}\", split(\"one,two\", \",\"))\nlet lines = read_lines(\"{path_text}\")\n",
@@ -3873,7 +3940,7 @@ mod tests {
         let program = parse_program(&source).expect("valid file built-in AST program");
         let mut vars = HashMap::<String, Value>::new();
         let mut funcs = HashMap::<String, Rc<Function>>::new();
-        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+        execute_ast_program(&program, &mut vars, &mut funcs, &workspace)
             .expect("direct file built-ins should execute");
         assert_eq!(vars.get("content"), Some(&Value::Text("hello".into())));
         assert_eq!(
@@ -3884,6 +3951,63 @@ mod tests {
             ]))
         );
         let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_dir_all(workspace);
+    }
+
+    #[test]
+    fn filesystem_builtins_cannot_escape_workspace() {
+        let workspace =
+            std::env::temp_dir().join(format!("zap-confined-workspace-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&workspace);
+        std::fs::create_dir_all(&workspace).expect("workspace should be created");
+        let outside = workspace
+            .parent()
+            .expect("temporary directory parent")
+            .join("zap-confined-escape.txt");
+        let _ = std::fs::remove_file(&outside);
+        let source = "write_text(\"../zap-confined-escape.txt\", \"secret\")\n";
+        let program = parse_program(source).expect("valid traversal program");
+        let error = match execute_ast_program(
+            &program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            &workspace,
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("workspace traversal must fail"),
+        };
+        assert!(error.contains("write_text failed: path escapes the workspace"));
+        assert!(!outside.exists());
+        let _ = std::fs::remove_dir_all(workspace);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn filesystem_builtins_reject_symlinks_outside_workspace() {
+        use std::os::unix::fs::symlink;
+        let workspace =
+            std::env::temp_dir().join(format!("zap-symlink-workspace-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&workspace);
+        std::fs::create_dir_all(&workspace).expect("workspace should be created");
+        let outside = workspace
+            .parent()
+            .expect("temporary directory parent")
+            .join("zap-symlink-secret.txt");
+        std::fs::write(&outside, "secret").expect("outside fixture should be written");
+        symlink(&outside, workspace.join("link.txt")).expect("symlink fixture should be created");
+        let program = parse_program("read_text(\"link.txt\")\n").expect("valid symlink program");
+        let error = match execute_ast_program(
+            &program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            &workspace,
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("outside symlink must fail"),
+        };
+        assert!(error.contains("read_text failed: path escapes the workspace"));
+        let _ = std::fs::remove_file(&outside);
+        let _ = std::fs::remove_dir_all(workspace);
     }
 
     #[test]
