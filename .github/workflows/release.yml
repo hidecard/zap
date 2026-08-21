@@ -50,6 +50,16 @@ jobs:
       - name: Check repository whitespace
         run: git diff --check
 
+      - name: Run v2.1-E release preflight
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          ALLOW_DIRTY: "0"
+          RUN_CARGO_CHECKS: "0"
+          SKIP_DEPLOYMENT_VALIDATION: "0"
+        run: bash scripts/release_preflight.sh
+
       - name: Verify release tag version
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
