@@ -127,7 +127,7 @@ Remote publishing အတွက် archive ကို အရင် SHA-256 စစ�
 zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
 ```
 
-Checksum မကိုက်ညီပါက network request မလုပ်မီ publish ကို reject လုပ်သည်။ လက်ရှိ contract သည် package archive ကို opaque bytes အဖြစ် upload လုပ်ခြင်းဖြစ်ပြီး registry server-side persistence၊ signed index နှင့် authentication policy များသည် နောက်ထပ်အလုပ်များ ဖြစ်သည်။
+Checksum မကိုက်ညီပါက network request မလုပ်မီ publish ကို reject လုပ်သည်။ Local integration နှင့် controlled development environment များအတွက် `zap registry serve` သည် signed-index persistence boundary ပေါ်တွင် loopback-only HTTP service တစ်ခုကို စတင်ပေးသည်။ Service သည် bearer authentication အတွက် `ZAP_REGISTRY_TOKEN` နှင့် signed-index persistence အတွက် `ZAP_REGISTRY_SIGNING_SECRET` လိုအပ်ပြီး request header/body အရွယ်အစားကို ကန့်သတ်ကာ safe in-root GET path များကိုသာ serve လုပ်သည်။ Publish record များကို atomic အနေဖြင့် persist လုပ်ပြီး managed shutdown ကို ထောက်ပံ့သည်။ Unauthorized၊ traversal-style၊ malformed နှင့် oversized request များကို deterministic အဖြစ် reject လုပ်သည်။ Public production deployment၊ TLS termination၊ network ingress policy နှင့် external process supervision တို့သည် deployment-specific controls အဖြစ် ကျန်ရှိသည်။
 
 ## Dependency ထည့်ခြင်း
 
@@ -170,6 +170,7 @@ installed 2 locked dependencies: appdep@1.0.0, leaf@1.0.0
 zap check
 zap registry fetch https://registry.example/index.json
 zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
+zap registry serve
 zap check path/to/project
 zap lock
 zap lock path/to/project
@@ -188,4 +189,4 @@ zap main.zp
 zap fmt main.zp
 ```
 
-`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local/HTTPS registry index validation၊ direct/transitive version range resolution၊ content-addressed cache၊ SHA-256 integrity enforcement၊ offline reuse၊ checksum-verified archive publishing နှင့် lockfile-aware cache garbage collection foundation များကို ထောက်ပံ့သည်။ `zap install` သည် lockfile၊ local dependency graph နှင့် configured registry cache ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ registry source များကို validate လုပ်သည်။ `zap registry gc --dry-run [dir]` သည် ဖယ်ရှားမည့် stale artifact နှင့် temporary file များကိုသာ lexical order ဖြင့် ပြသပြီး cache ကို မပြောင်းလဲပါ။ `--dry-run` မပါဘဲ run လုပ်ပါက အတူတူသော candidate များကို ဖယ်ရှားသည်။ Valid canonical lockfile ထဲရှိ package များကို မဖယ်ရှားဘဲ project-scoped အတိုင်းလုပ်ဆောင်သောကြောင့် `ZAP_CACHE_DIR` shared cache အသုံးပြုလျှင် project တစ်ခုချင်းစီအတွက် သီးခြား run လုပ်ရမည်။ Registry authentication policy နှင့် server-side persistence များမှာ ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။
+`zap check` သည် manifest ဖတ်နိုင်ခြင်း၊ `name` နှင့် `version` ရှိခြင်း၊ dependency lockfile မှန်ကန်ခြင်း၊ entry file ရှိခြင်းနှင့် static source checks များကို စစ်ဆေးသည်။ လက်ရှိ package manager သည် deterministic local/HTTPS registry index validation၊ direct/transitive version range resolution၊ content-addressed cache၊ SHA-256 integrity enforcement၊ offline reuse၊ checksum-verified archive publishing၊ authenticated loopback registry service၊ signed-index persistence နှင့် lockfile-aware cache garbage collection foundation များကို ထောက်ပံ့သည်။ `zap registry serve` သည် `ZAP_REGISTRY_TOKEN` bearer authentication၊ bounded request parsing၊ safe in-root paths၊ atomic persistence နှင့် managed shutdown ကို အသုံးပြုသည်။ `zap install` သည် lockfile၊ local dependency graph နှင့် configured registry cache ကို validate လုပ်ပြီး `zap update` သည် lockfile ကို ပြန်လည် generate လုပ်ကာ registry source များကို validate လုပ်သည်။ `zap registry gc --dry-run [dir]` သည် ဖယ်ရှားမည့် stale artifact နှင့် temporary file များကိုသာ lexical order ဖြင့် ပြသပြီး cache ကို မပြောင်းလဲပါ။ `--dry-run` မပါဘဲ run လုပ်ပါက အတူတူသော candidate များကို ဖယ်ရှားသည်။ Valid canonical lockfile ထဲရှိ package များကို မဖယ်ရှားဘဲ project-scoped အတိုင်းလုပ်ဆောင်သောကြောင့် `ZAP_CACHE_DIR` shared cache အသုံးပြုလျှင် project တစ်ခုချင်းစီအတွက် သီးခြား run လုပ်ရမည်။ OS-level sandboxing၊ public-service TLS/ingress policy နှင့် external process supervision တို့မှာ deployment controls အဖြစ် ကျန်ရှိသည်။

@@ -2,8 +2,13 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread::JoinHandle;
+use std::time::Duration;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegistryPackage {
@@ -1169,6 +1174,303 @@ pub fn persist_registry_package(
     Ok(artifact_path)
 }
 
+/// Hard limits for the built-in registry service request parser.
+const REGISTRY_SERVICE_MAX_HEADERS: usize = 64 * 1024;
+const REGISTRY_SERVICE_MAX_BODY: usize = 16 * 1024 * 1024;
+
+/// Serve a small authenticated HTTP registry endpoint using only the standard
+/// library. The listener is non-blocking and exits when `stop` is cancelled.
+/// `POST /publish` persists an authenticated package and atomically rewrites the
+/// signed index; `GET /index.json` and safe `/packages/...` paths serve artifacts.
+#[allow(dead_code)]
+pub fn serve_registry(
+    bind: &str,
+    registry_root: PathBuf,
+    token: String,
+    signing_secret: Vec<u8>,
+    stop: Arc<AtomicBool>,
+) -> Result<(), String> {
+    if token.trim().is_empty() {
+        return Err("registry service requires a non-empty authentication token".to_string());
+    }
+    if signing_secret.is_empty() {
+        return Err("registry service requires a non-empty signing secret".to_string());
+    }
+    fs::create_dir_all(&registry_root)
+        .map_err(|error| format!("registry service root failed: {error}"))?;
+    let listener = TcpListener::bind(bind)
+        .map_err(|error| format!("registry service bind failed: {error}"))?;
+    serve_registry_listener(listener, registry_root, token, signing_secret, stop)
+}
+
+fn serve_registry_listener(
+    listener: TcpListener,
+    registry_root: PathBuf,
+    token: String,
+    signing_secret: Vec<u8>,
+    stop: Arc<AtomicBool>,
+) -> Result<(), String> {
+    listener
+        .set_nonblocking(true)
+        .map_err(|error| format!("registry service non-blocking setup failed: {error}"))?;
+    while !stop.load(Ordering::Acquire) {
+        match listener.accept() {
+            Ok((stream, _)) => {
+                let _ = handle_registry_connection(stream, &registry_root, &token, &signing_secret);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                std::thread::sleep(Duration::from_millis(2));
+            }
+            Err(error) => return Err(format!("registry service accept failed: {error}")),
+        }
+    }
+    Ok(())
+}
+
+/// A managed registry service suitable for local deployment and integration
+/// tests. Dropping it does not silently leave a worker running; call `stop` to
+/// request shutdown and join the service thread.
+#[allow(dead_code)]
+pub struct RegistryService {
+    address: SocketAddr,
+    stop: Arc<AtomicBool>,
+    join: Option<JoinHandle<Result<(), String>>>,
+}
+
+#[allow(dead_code)]
+impl RegistryService {
+    pub fn start(
+        bind: &str,
+        registry_root: PathBuf,
+        token: String,
+        signing_secret: Vec<u8>,
+    ) -> Result<Self, String> {
+        if token.trim().is_empty() {
+            return Err("registry service requires a non-empty authentication token".to_string());
+        }
+        if signing_secret.is_empty() {
+            return Err("registry service requires a non-empty signing secret".to_string());
+        }
+        fs::create_dir_all(&registry_root)
+            .map_err(|error| format!("registry service root failed: {error}"))?;
+        let listener = TcpListener::bind(bind)
+            .map_err(|error| format!("registry service bind failed: {error}"))?;
+        let address = listener
+            .local_addr()
+            .map_err(|error| format!("registry service address failed: {error}"))?;
+        let stop = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop);
+        let join = std::thread::spawn(move || {
+            serve_registry_listener(listener, registry_root, token, signing_secret, worker_stop)
+        });
+        Ok(Self {
+            address,
+            stop,
+            join: Some(join),
+        })
+    }
+
+    pub fn address(&self) -> SocketAddr {
+        self.address
+    }
+
+    pub fn stop(mut self) -> Result<(), String> {
+        self.stop.store(true, Ordering::Release);
+        self.join
+            .take()
+            .ok_or_else(|| "registry service already stopped".to_string())?
+            .join()
+            .map_err(|_| "registry service worker panicked".to_string())?
+    }
+}
+
+impl Drop for RegistryService {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(join) = self.join.take() {
+            let _ = join.join();
+        }
+    }
+}
+
+fn handle_registry_connection(
+    mut stream: TcpStream,
+    registry_root: &Path,
+    token: &str,
+    signing_secret: &[u8],
+) -> Result<(), String> {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| format!("registry connection timeout failed: {error}"))?;
+    let mut request = Vec::new();
+    let mut buffer = [0_u8; 4096];
+    let header_end = loop {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("registry request read failed: {error}"))?;
+        if count == 0 {
+            return Err("registry request ended before headers".to_string());
+        }
+        request.extend_from_slice(&buffer[..count]);
+        if request.len() > REGISTRY_SERVICE_MAX_HEADERS + REGISTRY_SERVICE_MAX_BODY {
+            return write_registry_response(&mut stream, 413, b"request too large");
+        }
+        if let Some(position) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+            break position + 4;
+        }
+        if request.len() > REGISTRY_SERVICE_MAX_HEADERS {
+            return write_registry_response(&mut stream, 431, b"request headers too large");
+        }
+    };
+    let header_text = std::str::from_utf8(&request[..header_end])
+        .map_err(|_| "registry request headers are not UTF-8".to_string())?;
+    let mut lines = header_text.split("\r\n");
+    let request_line = lines
+        .next()
+        .ok_or_else(|| "registry request line is missing".to_string())?;
+    let mut request_parts = request_line.split_whitespace();
+    let method = request_parts.next().unwrap_or_default().to_owned();
+    let path = request_parts.next().unwrap_or_default().to_owned();
+    let mut content_length = 0_usize;
+    let mut authorization = None;
+    let mut package_name = None;
+    let mut package_version = None;
+    let mut package_checksum = None;
+    for line in lines {
+        if line.is_empty() {
+            break;
+        }
+        let Some((name, value)) = line.split_once(':') else {
+            return write_registry_response(&mut stream, 400, b"malformed header");
+        };
+        let value = value.trim();
+        match name.to_ascii_lowercase().as_str() {
+            "content-length" => {
+                content_length = value
+                    .parse()
+                    .map_err(|_| "invalid content length".to_string())?;
+            }
+            "authorization" => authorization = Some(value.to_string()),
+            "x-zap-package-name" => package_name = Some(value.to_string()),
+            "x-zap-package-version" => package_version = Some(value.to_string()),
+            "x-zap-package-checksum" => package_checksum = Some(value.to_string()),
+            _ => {}
+        }
+    }
+    if content_length > REGISTRY_SERVICE_MAX_BODY {
+        return write_registry_response(&mut stream, 413, b"request body too large");
+    }
+    while request.len() - header_end < content_length {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("registry request body read failed: {error}"))?;
+        if count == 0 {
+            return write_registry_response(&mut stream, 400, b"request body is incomplete");
+        }
+        request.extend_from_slice(&buffer[..count]);
+    }
+    let authorized = authorization
+        .as_deref()
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .map(|candidate| constant_time_equal(candidate.as_bytes(), token.as_bytes()))
+        .unwrap_or(false);
+    if !authorized {
+        return write_registry_response(&mut stream, 401, b"registry authentication failed");
+    }
+    match method.as_str() {
+        "POST" if path == "/publish" || path == "/" => {
+            let name = package_name.ok_or_else(|| "package name header is missing".to_string())?;
+            let version =
+                package_version.ok_or_else(|| "package version header is missing".to_string())?;
+            let checksum =
+                package_checksum.ok_or_else(|| "package checksum header is missing".to_string())?;
+            if !is_safe_registry_segment(&name) || !is_safe_registry_segment(&version) {
+                return write_registry_response(&mut stream, 400, b"invalid package identity");
+            }
+            let body = request[header_end..header_end + content_length].to_vec();
+            let package = RegistryPackage {
+                name,
+                version,
+                source: path.to_string(),
+                checksum,
+                dependencies: BTreeMap::new(),
+            };
+            let temporary = registry_root.join(".zap-registry-request.pkg");
+            fs::write(&temporary, body)
+                .map_err(|error| format!("registry request staging failed: {error}"))?;
+            let result = persist_registry_package(
+                registry_root,
+                &temporary,
+                &package,
+                Some(token),
+                signing_secret,
+            );
+            let _ = fs::remove_file(&temporary);
+            match result {
+                Ok(_) => write_registry_response(&mut stream, 201, b"published"),
+                Err(error) => write_registry_response(&mut stream, 422, error.as_bytes()),
+            }
+        }
+        "GET" => {
+            let relative = path.strip_prefix('/').unwrap_or(&path);
+            if relative.is_empty() || relative.contains("..") {
+                return write_registry_response(&mut stream, 400, b"invalid registry path");
+            }
+            let requested = registry_root.join(relative);
+            if !is_safe_registry_path(registry_root, &requested) {
+                return write_registry_response(&mut stream, 400, b"invalid registry path");
+            }
+            match fs::read(requested) {
+                Ok(bytes) => write_registry_response(&mut stream, 200, &bytes),
+                Err(_) => write_registry_response(&mut stream, 404, b"not found"),
+            }
+        }
+        _ => write_registry_response(&mut stream, 405, b"method not allowed"),
+    }
+}
+
+fn write_registry_response(stream: &mut TcpStream, status: u16, body: &[u8]) -> Result<(), String> {
+    let reason = match status {
+        200 => "OK",
+        201 => "Created",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        404 => "Not Found",
+        405 => "Method Not Allowed",
+        413 => "Payload Too Large",
+        422 => "Unprocessable Entity",
+        431 => "Request Header Fields Too Large",
+        _ => "Error",
+    };
+    write!(
+        stream,
+        "HTTP/1.1 {status} {reason}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        body.len()
+    )
+    .and_then(|_| stream.write_all(body))
+    .map_err(|error| format!("registry response write failed: {error}"))
+}
+
+fn is_safe_registry_segment(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value != "."
+        && value != ".."
+        && !value.contains('/')
+        && !value.contains('\\')
+        && !value.chars().any(|character| character.is_control())
+}
+
+fn is_safe_registry_path(root: &Path, requested: &Path) -> bool {
+    let relative = requested.strip_prefix(root).ok();
+    relative
+        .map(|path| {
+            path.components()
+                .all(|component| matches!(component, Component::Normal(value) if !value.is_empty()))
+        })
+        .unwrap_or(false)
+}
+
 fn fetch_source_with_credentials(
     source: &str,
     credentials: &RegistryCredentialStore,
@@ -1406,12 +1708,12 @@ mod tests {
         read_signed_index, redact_registry_secret, registry_auth_failure_message,
         resolve_dependency_graph, resolve_registry_token, sha256_hex, verify_cached_package,
         verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage, RegistryScheme,
-        TrustedRegistryPolicy,
+        RegistryService, TrustedRegistryPolicy,
     };
     use std::collections::BTreeMap;
     use std::fs;
     use std::io::{Read, Write};
-    use std::net::TcpListener;
+    use std::net::{TcpListener, TcpStream};
     use std::path::Path;
     use std::sync::{Arc, Mutex, OnceLock};
     use std::thread;
@@ -2325,5 +2627,69 @@ mod tests {
             error,
             "registry package does not satisfy requirement: demo ^2.0.0"
         );
+    }
+
+    #[test]
+    fn managed_registry_service_authenticates_and_persists_packages() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-registry-service-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let service = RegistryService::start(
+            "127.0.0.1:0",
+            root.clone(),
+            "token".to_owned(),
+            b"secret".to_vec(),
+        )
+        .unwrap();
+        let address = service.address();
+        let bytes = b"package";
+        let checksum = sha256_hex(bytes);
+        let agent = ureq::Agent::new();
+        let response = agent
+            .post(&format!("http://{address}/publish"))
+            .set("Authorization", "Bearer token")
+            .set("X-Zap-Package-Name", "demo")
+            .set("X-Zap-Package-Version", "1.0.0")
+            .set("X-Zap-Package-Checksum", &checksum)
+            .send_bytes(bytes)
+            .unwrap();
+        assert_eq!(response.status(), 201);
+        let index = agent
+            .get(&format!("http://{address}/index.json"))
+            .set("Authorization", "Bearer token")
+            .call()
+            .unwrap();
+        assert_eq!(index.status(), 200);
+        let mut index_bytes = Vec::new();
+        index.into_reader().read_to_end(&mut index_bytes).unwrap();
+        assert_eq!(
+            verify_signed_index_bytes(&index_bytes, b"secret")
+                .unwrap()
+                .len(),
+            1
+        );
+        let mut unauthorized_stream = TcpStream::connect(address).unwrap();
+        unauthorized_stream
+            .write_all(b"GET /index.json HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+            .unwrap();
+        let mut unauthorized_bytes = Vec::new();
+        unauthorized_stream
+            .read_to_end(&mut unauthorized_bytes)
+            .unwrap();
+        assert!(String::from_utf8_lossy(&unauthorized_bytes).starts_with("HTTP/1.1 401"));
+        let mut traversal_stream = TcpStream::connect(address).unwrap();
+        traversal_stream
+            .write_all(b"GET /packages/../index.json HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer token\r\nConnection: close\r\n\r\n")
+            .unwrap();
+        let mut traversal_bytes = Vec::new();
+        traversal_stream.read_to_end(&mut traversal_bytes).unwrap();
+        assert!(String::from_utf8_lossy(&traversal_bytes).starts_with("HTTP/1.1 400"));
+        service.stop().unwrap();
+        fs::remove_dir_all(root).unwrap();
     }
 }

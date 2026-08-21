@@ -23,6 +23,7 @@ Usage:
   zap install [dir]    Validate and install dependencies from zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
   zap registry gc [--dry-run] [dir]     Remove unreferenced registry cache files
+  zap registry serve <root> [bind]     Serve an authenticated local registry
   zap registry trust list              List trusted registry origins
   zap registry trust add <url>         Add a trusted registry origin
   zap registry trust remove <url>      Remove a trusted registry origin
@@ -478,6 +479,32 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if (args.len() == 4 || args.len() == 5) && args[1] == "registry" && args[2] == "serve" {
+        let root = PathBuf::from(&args[3]);
+        let bind = args.get(4).map(String::as_str).unwrap_or("127.0.0.1:8080");
+        let token = match std::env::var("ZAP_REGISTRY_TOKEN") {
+            Ok(value) if !value.trim().is_empty() => value,
+            _ => {
+                eprintln!("Zap registry service error: ZAP_REGISTRY_TOKEN is required");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        };
+        let signing_secret = match std::env::var("ZAP_REGISTRY_SIGNING_SECRET") {
+            Ok(value) if !value.is_empty() => value.into_bytes(),
+            _ => {
+                eprintln!("Zap registry service error: ZAP_REGISTRY_SIGNING_SECRET is required");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        };
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        println!("serving registry at http://{bind}");
+        if let Err(error) = crate::registry::serve_registry(bind, root, token, signing_secret, stop)
+        {
+            eprintln!("Zap registry service error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        return;
+    }
     if args.len() == 8 && args[1] == "registry" && args[2] == "publish" {
         let package = crate::registry::RegistryPackage {
             name: args[5].clone(),
@@ -631,6 +658,7 @@ mod tests {
             "zap add",
             "zap install",
             "zap update",
+            "zap registry serve",
             "zap build",
             "zap init",
             "zap lsp",

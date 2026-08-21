@@ -747,6 +747,33 @@ impl ThreadedRuntime {
         };
         self.spawn_blocking(move || run_process_bounded(&command, &arguments, limits))
     }
+
+    /// Spawn a process that is forcibly terminated when the returned token is
+    /// cancelled. Cancellation is checked while waiting and always performs a
+    /// best-effort kill and wait before the worker resolves.
+    pub fn process_async_cancellable(
+        &self,
+        command: String,
+        arguments: Vec<String>,
+    ) -> Result<
+        (
+            ThreadJoinHandle<Result<ProcessOutput, String>>,
+            CancellationToken,
+        ),
+        ThreadSpawnError,
+    > {
+        let limits = AdapterLimits {
+            max_process_output_bytes: self.limits.max_read_bytes as usize,
+            process_timeout: Duration::from_secs(10),
+            ..AdapterLimits::default()
+        };
+        let token = CancellationToken::new();
+        let task_token = token.clone();
+        let handle = self.spawn_blocking(move || {
+            run_process_bounded_with_cancel(&command, &arguments, limits, &task_token)
+        })?;
+        Ok((handle, token))
+    }
 }
 
 #[allow(dead_code)]
@@ -820,6 +847,15 @@ fn run_process_bounded(
     arguments: &[String],
     limits: AdapterLimits,
 ) -> Result<ProcessOutput, String> {
+    run_process_bounded_with_cancel(command, arguments, limits, &CancellationToken::new())
+}
+
+fn run_process_bounded_with_cancel(
+    command: &str,
+    arguments: &[String],
+    limits: AdapterLimits,
+    token: &CancellationToken,
+) -> Result<ProcessOutput, String> {
     let mut child = Command::new(command)
         .args(arguments)
         .stdin(Stdio::null())
@@ -843,6 +879,13 @@ fn run_process_bounded(
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break status,
+            Ok(None) if token.is_cancelled() => {
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err("process cancelled and child terminated".to_owned());
+            }
             Ok(None) if Instant::now() >= deadline => {
                 let _ = child.kill();
                 let _ = child.wait();
@@ -1240,6 +1283,32 @@ mod tests {
         assert_eq!(
             block_on(output),
             Ok(Err("process output exceeds 2 byte limit".to_owned()))
+        );
+    }
+
+    #[test]
+    fn async_process_cancellation_terminates_child() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 1024,
+        })
+        .unwrap();
+        #[cfg(windows)]
+        let (command, arguments) = (
+            "cmd".to_owned(),
+            vec!["/C".to_owned(), "ping 127.0.0.1 -n 8 >NUL".to_owned()],
+        );
+        #[cfg(not(windows))]
+        let (command, arguments) = ("sh".to_owned(), vec!["-c".to_owned(), "sleep 5".to_owned()]);
+        let (handle, token) = runtime
+            .process_async_cancellable(command, arguments)
+            .unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        token.cancel();
+        assert_eq!(
+            block_on(handle),
+            Ok(Err("process cancelled and child terminated".to_owned()))
         );
     }
 

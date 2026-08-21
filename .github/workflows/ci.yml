@@ -69,6 +69,12 @@ jobs:
           cargo test --manifest-path native/Cargo.toml nonblocking_tcp_exchange --all-features
           cargo test --manifest-path native/Cargo.toml async_process_adapter --all-features
 
+      - name: Run forced process cancellation tests
+        run: "cargo test --manifest-path native/Cargo.toml forced_cancellation --all-features"
+
+      - name: Run authenticated registry service tests
+        run: "cargo test --manifest-path native/Cargo.toml registry_service --all-features"
+
       - name: Run parser JSON lockfile corpus
         run: |
           cargo test --manifest-path native/Cargo.toml adversarial_corpus --all-features
