@@ -52,7 +52,7 @@ Feature တစ်ခုကို **proposed** မှ **implemented** သို�
 | TC-009 | မကိုက်ညီသော branch type များပြန်ပေးသည့် control-flow expression | မကိုက်ညီသော expression result ကို reject လုပ်ရန် | TypeError တွင် branch context နှင့် location ပါရမည် | P1 |
 | TC-010 | Alias သည် branch များမှ `option<T>` သို့မဟုတ် `result<T>` ကို သယ်ဆောင်ခြင်း | Wrapper identity နှင့် narrowing facts ကို ထိန်းသိမ်းရန် | Unsound alias widening မဖြစ်ရ | P1 |
 | TC-011 | Unknown annotation သို့မဟုတ် malformed generic annotation | Parse/check အဆင့်တွင် reject လုပ်ရန် | Exact span နှင့် `kind=TypeError` သို့မဟုတ် syntax diagnostic | Baseline ပြီး |
-| TC-012 | `list<number>` ကဲ့သို့ generic syntax သုံးခြင်း | Generic design အတည်ပြုပြီးမှသာ လက်ခံရန် | မသိသော generic form များကို ဆက်လက် reject လုပ်ရန် | ဒီဇိုင်း gate |
+| TC-012 | `list<number>` ကဲ့သို့ generic syntax သုံးခြင်း | Support လုပ်ထားသော generic annotation form များကို လက်ခံပြီး malformed သို့မဟုတ် unsupported form များကို reject လုပ်ရန် | မသိသော generic form များကို type diagnostic ဖြင့် reject လုပ်ရမည် | Implemented baseline |
 
 ## Diagnostic contract
 

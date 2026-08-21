@@ -52,7 +52,7 @@ A feature may be promoted from **proposed** to **implemented** only when its syn
 | TC-009 | A control-flow expression returns incompatible branch types | Reject incompatible expression result | TypeError includes both branch context and location | P1 |
 | TC-010 | An alias carries `option<T>` or `result<T>` through multiple branches | Preserve wrapper identity and narrowing facts | No unsound alias widening | P1 |
 | TC-011 | Unknown annotation or malformed generic annotation | Reject during parse/check | `kind=TypeError` or syntax diagnostic with exact span | Implemented baseline |
-| TC-012 | Generic syntax such as `list<number>` is used | Accept only after generic design is ratified | Unknown generic forms remain rejected | Design gate |
+| TC-012 | Generic syntax such as `list<number>` is used | Accept supported generic annotation forms; reject malformed or unsupported forms | Unknown generic forms remain rejected with a type diagnostic | Implemented baseline |
 
 ## Diagnostic contract
 

@@ -22,7 +22,7 @@
 - Added control-flow expression typing for `if ... then ... else ...` expressions. Conditions must be `bool`, both branch result types must agree, and incompatible branches produce a structured `TypeError`.
 - Added permanent TC-009 conformance fixtures covering compatible branches, incompatible branch results, and non-boolean conditions through `zap check --json`.
 - Added permanent TC-010 alias-narrowing fixtures for `option<T>` and `result<T>`, including wrapper preservation through alias assignment and invalidation after reassignment.
-- Updated the bilingual type-checking conformance matrices to record L2 evidence and keep TC-006 loop-boundary coverage and TC-012 generic syntax as explicit remaining gates.
+- Updated the bilingual type-checking conformance matrices to record TC-006 loop-boundary coverage and TC-012 generic syntax as implemented baseline evidence; future generic declarations and advanced inference remain deferred.
 
 ### Security and release hardening
 

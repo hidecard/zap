@@ -22,7 +22,7 @@
 - `if ... then ... else ...` control-flow expression များအတွက် type checking ကို ထည့်သွင်းထားပါသည်။ Condition သည် `bool` ဖြစ်ရမည်၊ branch result type နှစ်ခု ကိုက်ညီရမည်၊ မကိုက်ညီပါက structured `TypeError` ဖြင့် reject လုပ်ပါသည်။
 - `zap check --json` ဖြင့် compatible branch၊ မကိုက်ညီသော branch result နှင့် bool မဟုတ်သော condition များကို စစ်ဆေးသည့် permanent TC-009 conformance fixtures များ ထည့်သွင်းထားပါသည်။
 - `option<T>` နှင့် `result<T>` အတွက် alias assignment ဖြတ်သန်းသည့် wrapper preservation နှင့် reassignment ပြီးနောက် narrowing fact invalidation ကို စစ်ဆေးသည့် permanent TC-010 alias-narrowing fixtures များ ထည့်သွင်းထားပါသည်။
-- Bilingual type-checking conformance matrix များတွင် L2 evidence ကို မှတ်တမ်းတင်ပြီး TC-006 loop-boundary coverage နှင့် TC-012 generic syntax ကို ကျန်ရှိနေသည့် explicit gate များအဖြစ် ထားရှိထားပါသည်။
+- Bilingual type-checking conformance matrix များတွင် TC-006 loop-boundary coverage နှင့် TC-012 generic syntax ကို implemented baseline evidence အဖြစ် မှတ်တမ်းတင်ထားပါသည်။ Future generic declaration နှင့် advanced inference များကိုသာ deferred ထားရှိပါသည်။
 
 ### Security နှင့် release hardening
 
