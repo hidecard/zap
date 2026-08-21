@@ -70,13 +70,13 @@ done
 check_tar_entry() {
   local archive="$1"
   local entry="$2"
-  tar -tzf "$RELEASE_DIR/$archive" | grep -Fxq "$entry" || fail "missing tar entry $entry in $archive"
+  tar -tzf "$RELEASE_DIR/$archive" | grep -Fx "$entry" >/dev/null || fail "missing tar entry $entry in $archive"
 }
 
 check_zip_entry() {
   local archive="$1"
   local entry="$2"
-  unzip -Z1 "$RELEASE_DIR/$archive" | grep -Fxq "$entry" || fail "missing zip entry $entry in $archive"
+  unzip -Z1 "$RELEASE_DIR/$archive" | grep -Fx "$entry" >/dev/null || fail "missing zip entry $entry in $archive"
 }
 
 for archive in "${ARCHIVES[@]}"; do
