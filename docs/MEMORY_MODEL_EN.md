@@ -10,7 +10,7 @@ Zap values use explicit ownership primitives. Function closures and object field
 
 Cyclic object graphs are not reclaimed by reference counting alone. Embedders and runtime cleanup paths must explicitly clear cyclic fields before releasing the final external object handle. The runtime exposes `clear_object_fields()` for this boundary and `object_field_count()` for diagnostics and regression tests.
 
-The interpreter remains single-threaded for mutable object access. This API does not claim thread-safe ownership or provide a tracing garbage collector. Any future multi-threaded runtime must introduce an explicit synchronization or tracing-collector design rather than sharing these handles across threads.
+The interpreter remains single-threaded for mutable object access. Object field reads and writes use checked `try_borrow`/`try_borrow_mut` accessors. If a read/write conflict occurs, the runtime returns a typed `BorrowError` with stable code `ZAP-BORROW-001` instead of panicking. `clear_object_fields()` and `object_field_count()` therefore return a fallible result at this boundary. This API does not claim thread-safe ownership or provide a tracing garbage collector. Any future multi-threaded runtime must introduce an explicit synchronization or tracing-collector design rather than sharing these handles across threads.
 
 The runtime exposes the zero-argument `memory_stats()` builtin as a bounded diagnostic record. Its stable map fields include `live_objects`, `object_allocations`, `object_deallocations`, `max_text_bytes`, `max_collection_items`, and `max_value_nodes`. The record also states that public weak references are `unsupported_public_api` and tracing collection is `not_implemented`; these values are explicit capability information, not promises of automatic cycle collection.
 
@@ -18,7 +18,7 @@ At public builtin boundaries, runtime values are checked without recursively loo
 
 ## Regression guarantee
 
-The native test `cyclic_object_graph_can_be_explicitly_broken` creates a self-referential object, verifies that the cycle is observable, clears the fields, and verifies that the field allocation can be released. This is a memory-contract test, not a claim that arbitrary cycles are automatically collected.
+The native test `cyclic_object_graph_can_be_explicitly_broken` creates a self-referential object, verifies that the cycle is observable, clears the fields, and verifies that the field allocation can be released. The `conflicting_object_borrows_return_typed_failures` regression holds one mutable field borrow and verifies deterministic `BorrowError` results for competing reads and writes without a panic. These are memory-contract tests, not a claim that arbitrary cycles are automatically collected.
 
 ## Future work
 

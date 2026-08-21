@@ -62,6 +62,12 @@ pub(crate) enum ZapError {
         line: usize,
         column: usize,
     },
+    Borrow {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
     Project {
         message: String,
         file: String,
@@ -102,6 +108,8 @@ impl ZapError {
             || message.starts_with("raised error")
         {
             "Error"
+        } else if message.starts_with("BorrowError") || message.contains("already borrowed") {
+            "BorrowError"
         } else if message.contains("cannot read")
             || message.contains("cannot write")
             || message.contains("I/O")
@@ -177,6 +185,12 @@ impl ZapError {
                 line,
                 column,
             },
+            "BorrowError" => Self::Borrow {
+                message,
+                file,
+                line,
+                column,
+            },
             _ => Self::Project {
                 message,
                 file,
@@ -207,6 +221,7 @@ impl ZapError {
             Self::Permission { .. } => "ZAP-PERM-001",
             Self::Overflow { .. } => "ZAP-OVERFLOW-001",
             Self::Runtime { .. } => "ZAP-RUNTIME-001",
+            Self::Borrow { .. } => "ZAP-BORROW-001",
             Self::Project { .. } => "ZAP-PROJECT-001",
         }
     }
@@ -247,6 +262,12 @@ impl ZapError {
             Self::Name { .. } => {
                 vec!["Check that the name is declared in the current scope.".to_string()]
             }
+            Self::Borrow { .. } => {
+                vec![
+                    "Avoid reading and mutating the same object fields at the same time."
+                        .to_string(),
+                ]
+            }
             _ => Vec::new(),
         }
     }
@@ -256,6 +277,9 @@ impl ZapError {
             Self::Type { .. } => Some("Use a compatible value or update the type annotation."),
             Self::Syntax { .. } => Some("Review the Zap syntax guide for the expected form."),
             Self::Name { .. } => Some("Declare the name before using it, or correct its spelling."),
+            Self::Borrow { .. } => {
+                Some("Finish the active object-field access before mutating the object.")
+            }
             _ => None,
         }
     }
@@ -272,6 +296,7 @@ impl ZapError {
             Self::Permission { .. } => "PermissionError",
             Self::Overflow { .. } => "OverflowError",
             Self::Runtime { .. } => "Error",
+            Self::Borrow { .. } => "BorrowError",
             Self::Project { .. } => "ProjectError",
         }
     }
@@ -345,6 +370,12 @@ impl ZapError {
                 column,
             }
             | Self::Runtime {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Borrow {
                 message,
                 file,
                 line,
@@ -528,5 +559,22 @@ mod tests {
         assert!(rendered.contains("password=<redacted>"));
         assert!(rendered.contains("token=<redacted>"));
         assert!(rendered.contains("api_key=<redacted>"));
+    }
+
+    #[test]
+    fn structured_metadata_is_stable_for_borrow_errors() {
+        let error = ZapError::from_message(
+            "BorrowError at main.zp:3:8: object fields are already borrowed",
+        );
+        assert_eq!(error.code(), "ZAP-BORROW-001");
+        assert_eq!(error.kind(), "BorrowError");
+        assert_eq!(error.parts().1, "main.zp");
+        assert_eq!(error.parts().2, 3);
+        assert_eq!(error.parts().3, 8);
+        assert_eq!(
+            error.help(),
+            Some("Finish the active object-field access before mutating the object.")
+        );
+        assert!(error.json_fields().contains("\"code\":\"ZAP-BORROW-001\""));
     }
 }

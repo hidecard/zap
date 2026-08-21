@@ -685,7 +685,7 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after json".into());
                 }
                 Value::Text(
-                    serde_json::to_string(&value_to_json(&v))
+                    serde_json::to_string(&value_to_json(&v)?)
                         .map_err(|e| format!("json encode failed: {e}"))?,
                 )
             }
@@ -820,7 +820,7 @@ impl<'a> ExprParser<'a> {
                         let object = Value::object(class_name.clone());
                         initialize_object_fields(&class_name, &object, self.vars, self.funcs)?;
                         if let Value::Object { fields, .. } = &object {
-                            fields.borrow_mut().extend(explicit_fields);
+                            fields.try_borrow_mut()?.extend(explicit_fields);
                         }
                         if self
                             .funcs
@@ -1162,7 +1162,7 @@ impl<'a> ExprParser<'a> {
                 } else {
                     left = match left {
                         Value::Object { fields, .. } => fields
-                            .borrow()
+                            .try_borrow()?
                             .get(&member)
                             .cloned()
                             .ok_or(format!("property not found: {member}"))?,

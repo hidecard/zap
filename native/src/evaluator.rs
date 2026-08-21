@@ -237,38 +237,50 @@ pub(crate) fn operate(a: Value, op: Token, b: Value) -> Result<Value, String> {
         _ => Err("invalid operation".into()),
     }
 }
-pub(crate) fn value_to_json(v: &Value) -> serde_json::Value {
+pub(crate) fn value_to_json(v: &Value) -> Result<serde_json::Value, String> {
     match v {
-        Value::None => serde_json::Value::Null,
-        Value::Bool(x) => serde_json::Value::Bool(*x),
-        Value::Number(x) => serde_json::Value::Number((*x).into()),
-        Value::Text(x) => serde_json::Value::String(x.clone()),
-        Value::List(xs) => serde_json::Value::Array(xs.iter().map(value_to_json).collect()),
-        Value::Map(m) => serde_json::Value::Object(
+        Value::None => Ok(serde_json::Value::Null),
+        Value::Bool(x) => Ok(serde_json::Value::Bool(*x)),
+        Value::Number(x) => Ok(serde_json::Value::Number((*x).into())),
+        Value::Text(x) => Ok(serde_json::Value::String(x.clone())),
+        Value::List(xs) => Ok(serde_json::Value::Array(
+            xs.iter()
+                .map(value_to_json)
+                .collect::<Result<Vec<_>, _>>()?,
+        )),
+        Value::Map(m) => Ok(serde_json::Value::Object(
             m.iter()
-                .map(|(k, v)| (k.clone(), value_to_json(v)))
-                .collect(),
-        ),
+                .map(|(k, v)| value_to_json(v).map(|value| (k.clone(), value)))
+                .collect::<Result<serde_json::Map<_, _>, _>>()?,
+        )),
         Value::Object { class_name, fields } => {
             let mut object = serde_json::Map::new();
             object.insert(
                 "__class".into(),
                 serde_json::Value::String(class_name.clone()),
             );
-            for (k, v) in fields.borrow().iter() {
-                object.insert(k.clone(), value_to_json(v));
+            for (k, v) in fields.try_borrow()?.iter() {
+                object.insert(k.clone(), value_to_json(v)?);
             }
-            serde_json::Value::Object(object)
+            Ok(serde_json::Value::Object(object))
         }
-        Value::ResultOk(x) => serde_json::json!({"__zap_variant":"ok","value":value_to_json(x)}),
-        Value::ResultErr(x) => serde_json::json!({"__zap_variant":"err","value":value_to_json(x)}),
-        Value::OptionSome(x) => {
-            serde_json::json!({"__zap_variant":"some","value":value_to_json(x)})
-        }
-        Value::OptionNone => serde_json::json!({"__zap_variant":"none"}),
-        Value::Future(value) => {
-            serde_json::json!({"__zap_variant":"future","value":value_to_json(value)})
-        }
+        Value::ResultOk(x) => Ok(serde_json::json!({
+            "__zap_variant":"ok",
+            "value":value_to_json(x)?
+        })),
+        Value::ResultErr(x) => Ok(serde_json::json!({
+            "__zap_variant":"err",
+            "value":value_to_json(x)?
+        })),
+        Value::OptionSome(x) => Ok(serde_json::json!({
+            "__zap_variant":"some",
+            "value":value_to_json(x)?
+        })),
+        Value::OptionNone => Ok(serde_json::json!({"__zap_variant":"none"})),
+        Value::Future(value) => Ok(serde_json::json!({
+            "__zap_variant":"future",
+            "value":value_to_json(value)?
+        })),
     }
 }
 pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
@@ -499,7 +511,7 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
         "json" => {
             expect(1)?;
-            let encoded = serde_json::to_string(&value_to_json(&args[0]))
+            let encoded = serde_json::to_string(&value_to_json(&args[0])?)
                 .map_err(|error| format!("json encode failed: {error}"))?;
             if encoded.len() > MAX_JSON_BYTES {
                 return Err(format!(
@@ -1328,11 +1340,11 @@ fn structured_log_json(record: &Value) -> Result<String, String> {
             sorted_keys.sort();
             let mut sorted_fields = serde_json::Map::new();
             for field_key in sorted_keys {
-                sorted_fields.insert(field_key.clone(), value_to_json(&fields[field_key]));
+                sorted_fields.insert(field_key.clone(), value_to_json(&fields[field_key])?);
             }
             ordered.insert(key.into(), serde_json::Value::Object(sorted_fields));
         } else {
-            ordered.insert(key.into(), value_to_json(value));
+            ordered.insert(key.into(), value_to_json(value)?);
         }
     }
     let encoded = serde_json::to_string(&serde_json::Value::Object(ordered))
@@ -2001,7 +2013,7 @@ pub(crate) fn initialize_object_fields(
             Value::Text(class_name.to_string()),
         );
         let evaluated = ast_expression(value, &local, funcs)?;
-        fields.borrow_mut().insert(field, evaluated);
+        fields.try_borrow_mut()?.insert(field, evaluated);
     }
     Ok(())
 }
@@ -3086,7 +3098,7 @@ pub(crate) fn execute_ast_program(
                         .ok_or(format!("undefined variable: {object_name}"))?;
                     match object {
                         Value::Object { fields, .. } => {
-                            fields.borrow_mut().insert(field.into(), evaluated);
+                            fields.try_borrow_mut()?.insert(field.into(), evaluated);
                         }
                         _ => return Err("property assignment expects an object".into()),
                     }
@@ -3755,7 +3767,7 @@ pub(crate) fn execute_lines(
                         .ok_or(format!("undefined variable: {object_name}"))?;
                     match object {
                         Value::Object { fields, .. } => {
-                            fields.borrow_mut().insert(field.trim().into(), value);
+                            fields.try_borrow_mut()?.insert(field.trim().into(), value);
                         }
                         _ => return Err("property assignment expects an object".into()),
                     }
@@ -3778,7 +3790,8 @@ mod tests {
     use super::{
         configuration_path, direct_builtin, direct_external_builtin, direct_io_builtin,
         execute_ast_program, execute_lines, http_serve_once, json_to_value,
-        require_capability_for_mode, validate_network_destination_for_mode, MAX_HTTP_REQUEST_BYTES,
+        require_capability_for_mode, validate_network_destination_for_mode, value_to_json,
+        MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
@@ -3960,6 +3973,19 @@ mod tests {
         assert_eq!(
             boundary.get("process_cancellation"),
             Some(&Value::Text("terminate_then_drain".into()))
+        );
+    }
+
+    #[test]
+    fn json_conversion_propagates_borrow_error_without_panic() {
+        let value = Value::object("Borrowed");
+        let Value::Object { fields, .. } = &value else {
+            panic!("object constructor must create an object value");
+        };
+        let _active_borrow = fields.try_borrow_mut().unwrap();
+        assert_eq!(
+            value_to_json(&value).unwrap_err(),
+            "BorrowError: object fields are already borrowed"
         );
     }
 

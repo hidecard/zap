@@ -1,5 +1,5 @@
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell, RefMut},
     collections::{HashMap, HashSet},
     ops::Deref,
     rc::Rc,
@@ -35,6 +35,18 @@ impl TrackedObjectFields {
         Rc::new(Self {
             fields: RefCell::new(HashMap::new()),
         })
+    }
+
+    pub(crate) fn try_borrow(&self) -> Result<Ref<'_, HashMap<String, Value>>, String> {
+        self.fields
+            .try_borrow()
+            .map_err(|_| "BorrowError: object fields are already borrowed".into())
+    }
+
+    pub(crate) fn try_borrow_mut(&self) -> Result<RefMut<'_, HashMap<String, Value>>, String> {
+        self.fields
+            .try_borrow_mut()
+            .map_err(|_| "BorrowError: object fields are already borrowed".into())
     }
 }
 
@@ -184,20 +196,20 @@ impl Value {
     /// Remove all fields from an object, which is the explicit cycle-breaking
     /// operation used by embedders before releasing cyclic object graphs.
     #[allow(dead_code)]
-    pub(crate) fn clear_object_fields(&self) -> bool {
+    pub(crate) fn clear_object_fields(&self) -> Result<bool, String> {
         if let Self::Object { fields, .. } = self {
-            fields.borrow_mut().clear();
-            true
+            fields.try_borrow_mut()?.clear();
+            Ok(true)
         } else {
-            false
+            Ok(false)
         }
     }
 
     #[allow(dead_code)]
-    pub(crate) fn object_field_count(&self) -> Option<usize> {
+    pub(crate) fn object_field_count(&self) -> Result<Option<usize>, String> {
         match self {
-            Self::Object { fields, .. } => Some(fields.borrow().len()),
-            _ => None,
+            Self::Object { fields, .. } => Ok(Some(fields.try_borrow()?.len())),
+            _ => Ok(None),
         }
     }
 
@@ -288,7 +300,7 @@ fn validate_value(
         Value::Object { fields, .. } => {
             let identity = Rc::as_ptr(fields) as usize;
             if visited_objects.insert(identity) {
-                for nested in fields.borrow().values() {
+                for nested in fields.try_borrow()?.values() {
                     validate_value(nested, visited_objects, nodes, depth + 1, node_limit)?;
                 }
             }
@@ -317,14 +329,17 @@ mod tests {
             panic!("object constructor must create an object value");
         };
         let weak_fields = Rc::downgrade(fields);
-        fields.borrow_mut().insert("self".into(), object.clone());
-        assert_eq!(object.object_field_count(), Some(1));
+        fields
+            .try_borrow_mut()
+            .unwrap()
+            .insert("self".into(), object.clone());
+        assert_eq!(object.object_field_count().unwrap(), Some(1));
         assert_eq!(memory_stats().live_objects, baseline.live_objects + 1);
         assert!(weak_fields.upgrade().is_some());
         assert!(object.validate_memory_limits().is_ok());
 
-        assert!(object.clear_object_fields());
-        assert_eq!(object.object_field_count(), Some(0));
+        assert!(object.clear_object_fields().unwrap());
+        assert_eq!(object.object_field_count().unwrap(), Some(0));
         drop(object);
         assert!(weak_fields.upgrade().is_none());
         assert_eq!(memory_stats().live_objects, baseline.live_objects);
@@ -355,6 +370,23 @@ mod tests {
     }
 
     #[test]
+    fn conflicting_object_borrows_return_typed_failures() {
+        let object = Value::object("Borrowed");
+        let Value::Object { fields, .. } = &object else {
+            panic!("object constructor must create an object value");
+        };
+        let _active_borrow = fields.try_borrow_mut().unwrap();
+        assert_eq!(
+            object.object_field_count().unwrap_err(),
+            "BorrowError: object fields are already borrowed"
+        );
+        assert_eq!(
+            object.clear_object_fields().unwrap_err(),
+            "BorrowError: object fields are already borrowed"
+        );
+    }
+
+    #[test]
     fn memory_limit_validation_is_cycle_safe_and_bounded() {
         let oversized = Value::Text("x".repeat(MAX_RUNTIME_TEXT_BYTES + 1));
         let error = oversized
@@ -372,8 +404,11 @@ mod tests {
         let Value::Object { fields, .. } = &object else {
             panic!("object constructor must create an object value");
         };
-        fields.borrow_mut().insert("self".into(), object.clone());
+        fields
+            .try_borrow_mut()
+            .unwrap()
+            .insert("self".into(), object.clone());
         assert!(object.validate_memory_limits().is_ok());
-        object.clear_object_fields();
+        object.clear_object_fields().unwrap();
     }
 }
