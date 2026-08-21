@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.6] — 2026-08-21
+
+### Release engineering
+- Hardened TC-001–TC-012 conformance coverage, pinned Rust quality gates, corrected Clippy compatibility, and verified cross-platform release packaging.
+
 ### Type checking and CI hardening
 - Synchronized the English type-checking conformance matrix with the verified v2.1.5 TC-001 through TC-012 baseline and documented advanced generic inference as deferred scope.
 - Added named CI gates for TC-001 through TC-010 conformance fixtures and the CLI/LSP `TypeError` diagnostic-parity regression.

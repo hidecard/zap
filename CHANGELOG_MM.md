@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.6] — 2026-08-21
+
+### Release engineering
+- TC-001–TC-012 conformance coverage၊ pinned Rust quality gates၊ Clippy compatibility နှင့် platform အစုံ release packaging verification များကို ပိုမိုတင်းကျပ်ထားပါသည်။
+
 ### Type checking နှင့် CI hardening
 - English type-checking conformance matrix ကို အတည်ပြုထားသော v2.1.5 TC-001 မှ TC-012 baseline နှင့် ကိုက်ညီအောင် ညှိပြီး advanced generic inference ကို deferred scope အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
 - TC-001 မှ TC-010 conformance fixtures များနှင့် CLI/LSP `TypeError` diagnostic-parity regression အတွက် CI gate အမည်သီးခြားများ ထည့်သွင်းထားပါသည်။

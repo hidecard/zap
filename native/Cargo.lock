@@ -530,7 +530,7 @@ dependencies = [
 
 [[package]]
 name = "zap-native"
-version = "2.1.5"
+version = "2.1.6"
 dependencies = [
  "rcgen",
  "rustls",
