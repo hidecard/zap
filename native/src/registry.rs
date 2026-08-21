@@ -1400,19 +1400,112 @@ fn constant_time_equal(left: &[u8], right: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        cache_package, cache_package_source, find_package, hmac_sha256_hex,
-        normalize_registry_origin, persist_registry_package, prune_cache, publish_package,
-        read_index, read_index_source, read_signed_index, redact_registry_secret,
-        registry_auth_failure_message, resolve_dependency_graph, resolve_registry_token,
-        sha256_hex, verify_cached_package, verify_signed_index_bytes, RegistryCredentialStore,
-        RegistryPackage, RegistryScheme, TrustedRegistryPolicy,
+        cache_package, cache_package_source, fetch_source_with_agent, find_package,
+        hmac_sha256_hex, normalize_registry_origin, persist_registry_package, prune_cache,
+        publish_package, publish_package_with_agent, read_index, read_index_source,
+        read_signed_index, redact_registry_secret, registry_auth_failure_message,
+        resolve_dependency_graph, resolve_registry_token, sha256_hex, verify_cached_package,
+        verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage, RegistryScheme,
+        TrustedRegistryPolicy,
     };
     use std::collections::BTreeMap;
     use std::fs;
     use std::io::{Read, Write};
     use std::net::TcpListener;
     use std::path::Path;
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::{Arc, Mutex, OnceLock};
+    use std::thread;
+
+    fn authenticated_tls_fixture(
+        method: &'static str,
+        expected_token: &'static str,
+        response_body: &'static str,
+        response_status: &'static str,
+    ) -> (String, ureq::Agent, thread::JoinHandle<()>) {
+        let certificate =
+            rcgen::generate_simple_self_signed(vec!["localhost".to_string()]).unwrap();
+        let certificate_der = certificate.serialize_der().unwrap();
+        let private_key = certificate.serialize_private_key_der();
+        let server_certificate = rustls::pki_types::CertificateDer::from(certificate_der.clone());
+        let server_key = rustls::pki_types::PrivateKeyDer::Pkcs8(
+            rustls::pki_types::PrivatePkcs8KeyDer::from(private_key),
+        );
+        let server_config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(vec![server_certificate.clone()], server_key)
+            .unwrap();
+        let mut roots = rustls::RootCertStore::empty();
+        roots.add(server_certificate).unwrap();
+        let client_config = rustls::ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth();
+        let agent = ureq::builder().tls_config(Arc::new(client_config)).build();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let handle = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let connection = rustls::ServerConnection::new(Arc::new(server_config)).unwrap();
+            let mut tls = rustls::StreamOwned::new(connection, stream);
+            let mut request = Vec::new();
+            let mut buffer = [0u8; 1024];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let count = tls.read(&mut buffer).unwrap();
+                if count == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buffer[..count]);
+            }
+            let request_text = String::from_utf8_lossy(&request);
+            assert!(request_text.starts_with(method));
+            assert!(request_text
+                .lines()
+                .any(|line| line == format!("Authorization: Bearer {expected_token}")));
+            let response = format!(
+                "HTTP/1.1 {response_status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response_body}",
+                response_body.len()
+            );
+            tls.write_all(response.as_bytes()).unwrap();
+            tls.flush().unwrap();
+        });
+        (
+            format!("https://localhost:{}/index.json", address.port()),
+            agent,
+            handle,
+        )
+    }
+
+    #[test]
+    fn authenticated_https_fetch_sends_bearer_token() {
+        let (url, agent, handle) =
+            authenticated_tls_fixture("GET", "fixture-token", "[]", "200 OK");
+        let mut credentials = RegistryCredentialStore::new();
+        credentials.insert(&url, "fixture-token").unwrap();
+        let bytes = fetch_source_with_agent(&agent, &url, &credentials).unwrap();
+        assert_eq!(bytes, b"[]");
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn authenticated_https_publish_sends_bearer_token() {
+        let (url, agent, handle) =
+            authenticated_tls_fixture("POST", "publish-token", "", "201 Created");
+        let root =
+            std::env::temp_dir().join(format!("zap-registry-tls-publish-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let archive = root.join("source.pkg");
+        fs::write(&archive, b"package").unwrap();
+        let package = RegistryPackage {
+            name: "demo".into(),
+            version: "1.0.0".into(),
+            source: "demo.pkg".into(),
+            checksum: sha256_hex(b"package"),
+            dependencies: BTreeMap::new(),
+        };
+        publish_package_with_agent(&agent, &url, &archive, &package, Some("publish-token"))
+            .unwrap();
+        handle.join().unwrap();
+        let _ = fs::remove_dir_all(root);
+    }
 
     #[test]
     fn credential_store_prefers_the_longest_matching_origin_path() {
