@@ -1994,6 +1994,17 @@ fn ast_expression(
             };
             operate(left, token, right)
         }
+        Expr::Conditional {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            if ast_expression(condition, vars, funcs)?.truthy() {
+                ast_expression(then_branch, vars, funcs)
+            } else {
+                ast_expression(else_branch, vars, funcs)
+            }
+        }
         Expr::Await(value) => match ast_expression(value, vars, funcs)? {
             Value::Future(value) => Ok(*value),
             _ => Err("await expects a future value".into()),
@@ -2551,6 +2562,16 @@ fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
                 ast_expr_source(right)
             )
         }
+        Expr::Conditional {
+            condition,
+            then_branch,
+            else_branch,
+        } => format!(
+            "if {} then {} else {}",
+            ast_expr_source(condition),
+            ast_expr_source(then_branch),
+            ast_expr_source(else_branch)
+        ),
         Expr::Call { callee, args } => format!(
             "{}({})",
             ast_expr_source(callee),

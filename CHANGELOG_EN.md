@@ -12,6 +12,13 @@
 - Added transport and registry-service failure coverage: insecure HTTP rejection, malformed remote-index diagnostics, and deterministic HTTP-status errors for non-2xx fetch and publish responses.
 - Completed the v2.1-B trusted-registry enforcement slice with canonical origin normalization, a bounded deterministic allowlist, persistent `zap registry trust list|add|remove` commands, origin-scoped bearer credentials, bounded `zap registry credential list|set|remove` management, token validation/redaction, stable `ZAP-REG-AUTH-001`/`002`/`003` diagnostics, credential-aware remote index loading, effective-policy checks across dependency resolution and registry fetch/cache/publish paths, and a Rust 1.75-compatible local TLS fixture covering successful authenticated HTTPS fetch/publish. Final v2.1.0 release integration is complete.
 
+### Type checking and conformance
+
+- Added control-flow expression typing for `if ... then ... else ...` expressions. Conditions must be `bool`, both branch result types must agree, and incompatible branches produce a structured `TypeError`.
+- Added permanent TC-009 conformance fixtures covering compatible branches, incompatible branch results, and non-boolean conditions through `zap check --json`.
+- Added permanent TC-010 alias-narrowing fixtures for `option<T>` and `result<T>`, including wrapper preservation through alias assignment and invalidation after reassignment.
+- Updated the bilingual type-checking conformance matrices to record L2 evidence and keep TC-006 loop-boundary coverage and TC-012 generic syntax as explicit remaining gates.
+
 ### Security and release hardening
 
 - Added deterministic security-property corpus tests for canonical registry URL normalization, adversarial URL rejection, trusted-registry and credential scope boundaries, bounded allowlist behavior, longest-prefix token selection, token validation, and secret redaction.

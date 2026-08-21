@@ -1443,6 +1443,21 @@ fn validate_function_returns(source: &str, file: &Path) -> Result<(), String> {
     }
     Ok(())
 }
+fn split_static_conditional(value: &str) -> Option<(&str, &str, &str)> {
+    let rest = value.strip_prefix("if ")?;
+    let then_index = rest.find(" then ")?;
+    let after_then = &rest[then_index + 6..];
+    let else_index = after_then.rfind(" else ")?;
+    let condition = rest[..then_index].trim();
+    let then_branch = after_then[..else_index].trim();
+    let else_branch = after_then[else_index + 6..].trim();
+    (!condition.is_empty() && !then_branch.is_empty() && !else_branch.is_empty()).then_some((
+        condition,
+        then_branch,
+        else_branch,
+    ))
+}
+
 fn static_expr_type(
     raw: &str,
     vars: &HashMap<String, String>,
@@ -1457,6 +1472,14 @@ fn static_expr_type(
                 .and_then(|rest| rest.strip_suffix('>'))
                 .map(str::to_string)
         });
+    }
+    if let Some((condition, then_branch, else_branch)) = split_static_conditional(value) {
+        if static_expr_type(condition, vars, signatures).as_deref() != Some("bool") {
+            return None;
+        }
+        let then_type = static_expr_type(then_branch, vars, signatures)?;
+        let else_type = static_expr_type(else_branch, vars, signatures)?;
+        return (then_type == else_type).then_some(then_type);
     }
     if value.starts_with('[') && value.ends_with(']') {
         let inner = &value[1..value.len() - 1];
@@ -1791,6 +1814,29 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                     .split_once(':')
                     .map(|(n, ty)| (n.trim(), Some(ty.trim())))
                     .unwrap_or((left.trim(), None));
+                if let Some((condition, then_branch, else_branch)) =
+                    split_static_conditional(right.trim())
+                {
+                    let condition_type = static_expr_type(condition, &vars, &signatures);
+                    if condition_type.as_deref() != Some("bool") {
+                        return Err(format!(
+                            "TypeError at {}:{}:1: conditional expression expects bool condition",
+                            file.display(),
+                            line_index + 1
+                        ));
+                    }
+                    let then_type = static_expr_type(then_branch, &vars, &signatures);
+                    let else_type = static_expr_type(else_branch, &vars, &signatures);
+                    if then_type.is_some() && else_type.is_some() && then_type != else_type {
+                        return Err(format!(
+                            "TypeError at {}:{}:1: conditional branches must have compatible types, got {} and {}",
+                            file.display(),
+                            line_index + 1,
+                            then_type.unwrap_or_default(),
+                            else_type.unwrap_or_default()
+                        ));
+                    }
+                }
                 if let Some(kind) = static_expr_type(right, &vars, &signatures) {
                     if let Some(expected) = annotation {
                         if !is_allowed_annotation(expected) {

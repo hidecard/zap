@@ -12,6 +12,13 @@
 - Transport နှင့် registry-service failure coverage များ ထည့်သွင်းပြီး insecure HTTP rejection၊ malformed remote-index diagnostic နှင့် non-2xx fetch/publish response များအတွက် deterministic HTTP-status error များကို စစ်ဆေးပြီးဖြစ်သည်။
 - v2.1-B trusted-registry enforcement အပိုင်းကို ပြီးစီးပြီး canonical origin normalization၊ bounded deterministic allowlist၊ persistent `zap registry trust list|add|remove` commands၊ origin-scoped bearer credential၊ bounded `zap registry credential list|set|remove` management၊ token validation/redaction၊ stable `ZAP-REG-AUTH-001`/`002`/`003` diagnostic၊ credential-aware remote index loading နှင့် dependency resolution၊ registry fetch/cache/publish လမ်းကြောင်းများတွင် effective-policy check များ၊ successful authenticated HTTPS fetch/publish အတွက် Rust 1.75-compatible local TLS fixture များကို ထည့်သွင်းထားပါသည်။ Final v2.1.0 release integration လည်း ပြီးစီးပါပြီ။
 
+### Type checking နှင့် conformance
+
+- `if ... then ... else ...` control-flow expression များအတွက် type checking ကို ထည့်သွင်းထားပါသည်။ Condition သည် `bool` ဖြစ်ရမည်၊ branch result type နှစ်ခု ကိုက်ညီရမည်၊ မကိုက်ညီပါက structured `TypeError` ဖြင့် reject လုပ်ပါသည်။
+- `zap check --json` ဖြင့် compatible branch၊ မကိုက်ညီသော branch result နှင့် bool မဟုတ်သော condition များကို စစ်ဆေးသည့် permanent TC-009 conformance fixtures များ ထည့်သွင်းထားပါသည်။
+- `option<T>` နှင့် `result<T>` အတွက် alias assignment ဖြတ်သန်းသည့် wrapper preservation နှင့် reassignment ပြီးနောက် narrowing fact invalidation ကို စစ်ဆေးသည့် permanent TC-010 alias-narrowing fixtures များ ထည့်သွင်းထားပါသည်။
+- Bilingual type-checking conformance matrix များတွင် L2 evidence ကို မှတ်တမ်းတင်ပြီး TC-006 loop-boundary coverage နှင့် TC-012 generic syntax ကို ကျန်ရှိနေသည့် explicit gate များအဖြစ် ထားရှိထားပါသည်။
+
 ### Security နှင့် release hardening
 
 - Canonical registry URL normalization၊ adversarial URL rejection၊ trusted-registry နှင့် credential scope boundary၊ bounded allowlist behavior၊ longest-prefix token selection၊ token validation နှင့် secret redaction များအတွက် deterministic security-property corpus tests များ ထည့်သွင်းထားပါသည်။

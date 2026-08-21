@@ -69,6 +69,11 @@ pub(crate) enum Expr {
         op: BinaryOp,
         right: Box<Spanned<Expr>>,
     },
+    Conditional {
+        condition: Box<Spanned<Expr>>,
+        then_branch: Box<Spanned<Expr>>,
+        else_branch: Box<Spanned<Expr>>,
+    },
     Call {
         callee: Box<Spanned<Expr>>,
         args: Vec<CallArg>,
@@ -253,6 +258,40 @@ impl AstParser {
                     length: value.span.column + value.span.length - token.span.column,
                 };
                 Ok(Spanned::new(Expr::Await(Box::new(value)), span))
+            }
+            crate::lexer::Token::Name(name) if name == "if" => {
+                let condition = self.parse_expression(0)?;
+                let then_token = self.advance();
+                if !matches!(then_token.token, crate::lexer::Token::Name(ref keyword) if keyword == "then")
+                {
+                    return Err(format!(
+                        "expected 'then' in conditional expression at {}:{}",
+                        then_token.span.line, then_token.span.column
+                    ));
+                }
+                let then_branch = self.parse_expression(0)?;
+                let else_token = self.advance();
+                if !matches!(else_token.token, crate::lexer::Token::Name(ref keyword) if keyword == "else")
+                {
+                    return Err(format!(
+                        "expected 'else' in conditional expression at {}:{}",
+                        else_token.span.line, else_token.span.column
+                    ));
+                }
+                let else_branch = self.parse_expression(0)?;
+                let span = SourceSpan {
+                    line: token.span.line,
+                    column: token.span.column,
+                    length: else_branch.span.column + else_branch.span.length - token.span.column,
+                };
+                Ok(Spanned::new(
+                    Expr::Conditional {
+                        condition: Box::new(condition),
+                        then_branch: Box::new(then_branch),
+                        else_branch: Box::new(else_branch),
+                    },
+                    span,
+                ))
             }
             crate::lexer::Token::Name(name) => {
                 let literal = match name.as_str() {

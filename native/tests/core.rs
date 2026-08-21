@@ -1576,7 +1576,110 @@ fn typecheck_p1_conformance_tc006_to_tc008() {
         }
     }
 }
-
+#[test]
+fn typecheck_p1_conformance_tc009_conditional_expression() {
+    let cases = [
+        (
+            "tc009-compatible-branches",
+            "let value: number = if true then 1 else 2\n",
+            true,
+            "",
+        ),
+        (
+            "tc009-incompatible-branches",
+            "let value: number = if true then 1 else \"two\"\n",
+            false,
+            "conditional branches must have compatible types",
+        ),
+        (
+            "tc009-non-boolean-condition",
+            "let value: number = if 1 then 1 else 2\n",
+            false,
+            "conditional expression expects bool condition",
+        ),
+    ];
+    for (name, source, should_pass, expected_error) in cases {
+        let root = std::env::temp_dir().join(format!("zap_{name}_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("zap.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n"),
+        )
+        .unwrap();
+        std::fs::write(root.join("main.zp"), source).unwrap();
+        let output = Command::new(binary())
+            .args(["check", "--json", root.to_str().unwrap()])
+            .output()
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&root);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(
+            output.status.success(),
+            should_pass,
+            "{name}: {stdout}{stderr}"
+        );
+        if !should_pass {
+            assert!(
+                stdout.contains(expected_error) || stderr.contains(expected_error),
+                "{name}: expected {expected_error:?}, got stdout={stdout:?}, stderr={stderr:?}"
+            );
+        }
+    }
+}
+#[test]
+fn typecheck_p1_conformance_tc010_alias_wrapper_narrowing() {
+    let cases = [
+        (
+            "tc010-option-alias-through-branches",
+            "fn need_number(value: number):\n    return value\nlet source: option<number> = some(7)\nlet alias: option<number> = source\nif is_some(alias):\n    let first: number = need_number(alias)\nelse:\n    let second: option<number> = alias\n",
+            true,
+            "",
+        ),
+        (
+            "tc010-result-alias-through-branches",
+            "fn need_number(value: number):\n    return value\nlet source: result<number> = ok(7)\nlet alias: result<number> = source\nif is_ok(alias):\n    let first: number = need_number(alias)\nelse:\n    let second: result<number> = alias\n",
+            true,
+            "",
+        ),
+        (
+            "tc010-alias-reassignment-invalidates-fact",
+            "let source: option<number> = some(7)\nlet alias: option<number> = source\nif is_some(alias):\n    alias = option_none()\n    let after: number = alias\n",
+            false,
+            "expects number, got option<any>",
+        ),
+    ];
+    for (name, source, should_pass, expected_error) in cases {
+        let root = std::env::temp_dir().join(format!("zap_{name}_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("zap.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n"),
+        )
+        .unwrap();
+        std::fs::write(root.join("main.zp"), source).unwrap();
+        let output = Command::new(binary())
+            .args(["check", "--json", root.to_str().unwrap()])
+            .output()
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&root);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(
+            output.status.success(),
+            should_pass,
+            "{name}: {stdout}{stderr}"
+        );
+        if !should_pass {
+            assert!(
+                stdout.contains(expected_error) || stderr.contains(expected_error),
+                "{name}: expected {expected_error:?}, got stdout={stdout:?}, stderr={stderr:?}"
+            );
+        }
+    }
+}
 #[test]
 fn generates_canonical_dependency_lockfile() {
     let root = std::env::temp_dir().join("zap_lockfile_generation_project");
