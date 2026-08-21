@@ -2187,15 +2187,29 @@ mod tests {
             let (mut stream, _) = listener.accept().unwrap();
             let mut request = Vec::with_capacity(4096);
             let mut buffer = [0_u8; 1024];
-            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+            let header_end = loop {
+                if let Some(position) = request.windows(4).position(|window| window == b"\r\n\r\n")
+                {
+                    break position + 4;
+                }
+                let read = stream.read(&mut buffer).unwrap();
+                if read == 0 || request.len() >= 64 * 1024 {
+                    break request.len();
+                }
+                request.extend_from_slice(&buffer[..read]);
+            };
+            let content_length = String::from_utf8_lossy(&request[..header_end.min(request.len())])
+                .lines()
+                .find_map(|line| line.strip_prefix("Content-Length:"))
+                .and_then(|value| value.trim().parse::<usize>().ok())
+                .unwrap_or(0);
+            let request_end = header_end.saturating_add(content_length);
+            while request.len() < request_end && request.len() < 64 * 1024 {
                 let read = stream.read(&mut buffer).unwrap();
                 if read == 0 {
                     break;
                 }
                 request.extend_from_slice(&buffer[..read]);
-                if request.len() >= 64 * 1024 {
-                    break;
-                }
             }
             let headers = format!(
                 "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
