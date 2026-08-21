@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.9] — 2026-08-21
+
+### Release engineering
+- Panic မဖြစ်သော object borrow diagnostics၊ checked field access နှင့် stable ZAP-BORROW-001 error များကို ထည့်သွင်းထားပါသည်။
+
 ### Memory borrow safety
 - Object field များအတွက် checked `try_borrow`/`try_borrow_mut` accessor များနှင့် `RefCell` panic မဖြစ်စေဘဲ stable `ZAP-BORROW-001` diagnostic ပါသော fail-closed `BorrowError` handling ကို ထည့်သွင်းထားပါသည်။
 - Recursive JSON error propagation နှင့် conflicting object borrow၊ structured diagnostic၊ safe object-field access regression များကို ထည့်သွင်းထားပါသည်။

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.9] — 2026-08-21
+
+### Release engineering
+- Added panic-free object borrow diagnostics with checked field access and stable ZAP-BORROW-001 errors.
+
 ### Memory borrow safety
 - Added checked object-field `try_borrow`/`try_borrow_mut` accessors and fail-closed `BorrowError` handling with stable `ZAP-BORROW-001` diagnostics instead of `RefCell` panics.
 - Added recursive JSON error propagation and regressions for conflicting object borrows, structured diagnostics, and safe object-field access.

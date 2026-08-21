@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.9] - 2026-08-21
+
+### Release summary
+- Added panic-free object borrow diagnostics and checked field access.
+
 ## [2.1.8] - 2026-08-21
 
 ### Release summary

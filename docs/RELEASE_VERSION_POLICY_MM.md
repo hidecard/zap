@@ -24,10 +24,10 @@ Package version၊ tag၊ CLI output၊ changelog၊ bilingual README onboarding
 Local တွင် အောက်ပါ gate ကို run နိုင်ပါသည်။
 
 ```bash
-EXPECTED_VERSION=2.1.8 \
-RELEASE_TAG=v2.1.8 \
+EXPECTED_VERSION=2.1.9 \
+RELEASE_TAG=v2.1.9 \
 ZAP_VERSION_REPORT=target/version-consistency.tsv \
-scripts/validate_release_version.sh 2.1.8
+scripts/validate_release_version.sh 2.1.9
 scripts/test_validate_release_version.sh
 ```
 
