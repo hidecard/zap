@@ -1246,7 +1246,7 @@ mod tests {
         #[cfg(windows)]
         let (command, arguments) = (
             "cmd".to_owned(),
-            vec!["/C".to_owned(), "<nul set /p =zap".to_owned()],
+            vec!["/C".to_owned(), "echo zap".to_owned()],
         );
         #[cfg(not(windows))]
         let (command, arguments) = (
@@ -1257,7 +1257,7 @@ mod tests {
         let output = block_on(output).unwrap().unwrap();
         assert!(output.success);
         assert_eq!(output.status, 0);
-        assert_eq!(output.stdout, "zap");
+        assert_eq!(output.stdout.trim_end_matches(['\r', '\n']), "zap");
         assert!(output.stderr.is_empty());
     }
 
@@ -1272,7 +1272,7 @@ mod tests {
         #[cfg(windows)]
         let (command, arguments) = (
             "cmd".to_owned(),
-            vec!["/C".to_owned(), "<nul set /p =zap".to_owned()],
+            vec!["/C".to_owned(), "echo zap".to_owned()],
         );
         #[cfg(not(windows))]
         let (command, arguments) = (
