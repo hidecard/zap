@@ -1,7 +1,7 @@
 # Zap Type-Checking နှင့် Conformance Acceptance Matrix
 
 **အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline  
-**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.1.0  
+**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.1.5
 **အကျယ်အဝန်း:** Static checking၊ control-flow narrowing၊ diagnostics နှင့် conformance fixtures
 
 ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
@@ -17,8 +17,8 @@
 | Result/Option payloads | `result<T>` နှင့် `option<T>` payload annotation များသည် `ok`၊ `err` နှင့် `some` payload များကို စစ်သည် | Baseline ပြီး | Type annotation tests |
 | JSON diagnostics | Diagnostic တွင် `kind`၊ `message`၊ `error`၊ `file`၊ `line` နှင့် `column` fields ပါသည် | Baseline ပြီး | CLI/LSP fixtures |
 | Simple narrowing | Support လုပ်ထားသော `option<T>` နှင့် `result<T>` guard များအတွက် branch-local narrowing ရှိသည် | Baseline ပြီး | `TYPE_NARROWING_EN.md` |
-| Complex narrowing | Nested boolean expression၊ loop၊ reassignment နှင့် incompatible alias များ | တစ်စိတ်တစ်ပိုင်းပြီး | TC-006 loop fixtures၊ TC-010 alias fixtures၊ nested boolean edge case များ ကျန် |
-| Complex inference | Nested call၊ collection element နှင့် control-flow expression များ | တစ်စိတ်တစ်ပိုင်းပြီး | TC-007၊ TC-008 နှင့် TC-009 fixtures |
+| Complex narrowing | Nested boolean expression၊ loop၊ reassignment နှင့် incompatible alias များ | Implemented baseline | TC-001–TC-006 နှင့် TC-010 fixtures၊ advanced inference ကို deferred ထားသည် |
+| Complex inference | Nested call၊ collection element နှင့် control-flow expression များ | Implemented baseline | TC-007–TC-009 fixtures၊ advanced generic inference ကို deferred ထားသည် |
 | Generic design | Generic list/map/function syntax နှင့် inference contract | Implemented baseline | `TYPECHECK_GENERIC_DESIGN_MM.md`၊ generic declaration နှင့် advanced inference ကို deferred ထားသည် |
 
 ## လက်ရှိ conformance အထောက်အထား
@@ -37,7 +37,7 @@ Feature တစ်ခုကို **proposed** မှ **implemented** သို�
 | L3 | Diagnostic contract တည်ငြိမ် | JSON schema၊ location၊ error kind နှင့် message assertions |
 | L4 | Conformance-ready | Runtime agreement၊ formatter/LSP agreement၊ bilingual docs နှင့် CI gate |
 
-## လက်ကျန်လုပ်ငန်း matrix
+## Conformance scenario matrix
 
 | ID | စစ်ဆေးရမည့်အခြေအနေ | မျှော်မှန်း static result | Diagnostic လိုအပ်ချက် | ဦးစားပေး |
 |---|---|---|---|---:|
@@ -73,7 +73,7 @@ Message wording သည် ပြောင်းလဲနိုင်သော်
 
 ## အကောင်အထည်ဖော်ရန် အစီအစဉ်
 
-ပထမဆုံး TC-001 မှ TC-005 အထိကို အကောင်အထည်ဖော်သင့်သည်။ ၎င်းတို့သည် branch-local facts နှင့် invalidation rules ၏ အခြေခံဖြစ်သည်။ ထို့နောက် call မှတစ်ဆင့် inference ဖြစ်သော TC-007 ကို တိုးချဲ့သင့်သည်။ Fact model တည်ငြိမ်ပြီးမှ TC-006၊ TC-008၊ TC-009 နှင့် TC-010 ကို ဆက်လုပ်သင့်သည်။ Generic syntax သည် design gate ဖြစ်သောကြောင့် fixture တစ်ခုအတွက်သာ generic implementation ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
+v2.1.5 အတွက် TC-001 မှ TC-012 အထိကို သတ်မှတ်ထားသော supported syntax boundary အတွင်း အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ်လုပ်ငန်းများတွင် negative collection-element cases၊ ပိုမိုနက်ရှိုင်းသော nested inference နှင့် user-defined generic declarations များကို design record နှင့် release gate အသစ်အောက်တွင်သာ တိုးချဲ့သင့်သည်။ Fixture တစ်ခုအတွက်သာ generic syntax ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
 
 ## ထပ်မလုပ်သင့်သည့် အပိုင်း
 
@@ -81,4 +81,4 @@ Message wording သည် ပြောင်းလဲနိုင်သော်
 
 ## ဤ workstream ပြီးစီးရန် သတ်မှတ်ချက်
 
-Type-checking baseline ပြီးစီးသည်ဟု သတ်မှတ်ရန် P0 rows အားလုံးတွင် L3 evidence ရှိရမည်။ Diagnostic location များသည် `file`၊ `line` နှင့် `column` အနေဖြင့် တည်ငြိမ်ရမည်။ Accepted program များတွင် runtime နှင့် static behavior ကိုက်ညီရမည်။ Negative fixtures များသည် ရည်ရွယ်ထားသော failure reason ဖြင့် fail ရမည်။ LSP/formatter သည် တူညီသော vocabulary ကို အသုံးပြုရမည်။ English/Burmese documentation pair သည် synchronized ဖြစ်ရမည်။
+v2.1.5 type-checking baseline သည် supported syntax boundary အတွင်း TC-001 မှ TC-012 အထိ ပြီးစီးသည်ဟု သတ်မှတ်နိုင်သည်။ P0 rows များတွင် L3 evidence ရှိပြီး TC-006၊ TC-009 နှင့် TC-010 တွင်လည်း L3 evidence ရှိသည်။ Diagnostic location များသည် `file`၊ `line` နှင့် `column` အနေဖြင့် တည်ငြိမ်သည်။ Accepted program များတွင် runtime နှင့် static behavior ကိုက်ညီပြီး negative fixtures များသည် သတ်မှတ်ထားသော failure reason ဖြင့် fail သည်။ LSP သည် shared diagnostic vocabulary ကို အသုံးပြုပြီး English/Burmese documentation pair သည် synchronized ဖြစ်သည်။ Advanced generic declarations နှင့် inference များသည် ဤ release boundary ပြင်ပတွင် ရှိသည်။

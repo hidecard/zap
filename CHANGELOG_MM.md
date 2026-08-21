@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Type checking နှင့် CI hardening
+- English type-checking conformance matrix ကို အတည်ပြုထားသော v2.1.5 TC-001 မှ TC-012 baseline နှင့် ကိုက်ညီအောင် ညှိပြီး advanced generic inference ကို deferred scope အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
+- TC-001 မှ TC-010 conformance fixtures များနှင့် CLI/LSP `TypeError` diagnostic-parity regression အတွက် CI gate အမည်သီးခြားများ ထည့်သွင်းထားပါသည်။
+- Local နှင့် CI validation များ reproducible ဖြစ်စေရန် repository Rust toolchain ကို `rustfmt` နှင့် `clippy` components ပါသော 1.75.0 သို့ pin လုပ်ထားပါသည်။
+- Type-check၊ LSP parity၊ formatting နှင့် CI-contract preflight စစ်ဆေးမှုများကို ထပ်ခါတလဲလဲ လုပ်နိုင်ရန် `scripts/validate_v216_preflight.sh` ကို ထည့်သွင်းထားပါသည်။
+- `pipefail` အောက်တွင် အောင်မြင်သော tar-entry check ကို false failure အဖြစ် မမှတ်တမ်းတင်စေရန် published-release archive verification pipe handling ကို ပြင်ဆင်ထားပါသည်။
+
 ## [2.1.5] — 2026-08-21
 
 ### Release engineering

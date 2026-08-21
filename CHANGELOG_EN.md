@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Type checking and CI hardening
+- Synchronized the English type-checking conformance matrix with the verified v2.1.5 TC-001 through TC-012 baseline and documented advanced generic inference as deferred scope.
+- Added named CI gates for TC-001 through TC-010 conformance fixtures and the CLI/LSP `TypeError` diagnostic-parity regression.
+- Pinned the repository Rust toolchain to 1.75.0 with `rustfmt` and `clippy` components for reproducible local and CI validation.
+- Added `scripts/validate_v216_preflight.sh` for repeatable type-check, LSP parity, formatting, and CI-contract preflight checks.
+- Fixed published-release archive verification pipe handling so successful tar-entry checks cannot be reported as false failures under `pipefail`.
+
 ## [2.1.5] — 2026-08-21
 
 ### Release engineering

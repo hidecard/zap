@@ -1,7 +1,7 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
 **Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** v2.1.0  
+**Verified baseline:** v2.1.5
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
 This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. It does not reopen the completed async runtime, registry, or release-engineering work.
@@ -17,8 +17,8 @@ This document defines the acceptance boundary for the next type-system workstrea
 | Result/Option payloads | `result<T>` and `option<T>` payload annotations validate `ok`, `err`, and `some` payloads | Implemented baseline | Type annotation tests |
 | JSON diagnostics | Diagnostics expose `kind`, `message`, `error`, `file`, `line`, and `column` fields | Implemented baseline | CLI/LSP fixtures |
 | Simple narrowing | Branch-local narrowing for supported `option<T>` and `result<T>` guards | Implemented baseline | `TYPE_NARROWING_EN.md` |
-| Complex narrowing | Nested boolean expressions, loops, reassignment, and incompatible aliases | Partially implemented | TC-006 loop fixtures; TC-010 alias fixtures; nested boolean edge cases remain |
-| Complex inference | Nested calls, collection elements, and control-flow expressions | Partially implemented | TC-007, TC-008, and TC-009 fixtures |
+| Complex narrowing | Nested boolean expressions, loops, reassignment, and incompatible aliases | Implemented baseline | TC-001–TC-006 and TC-010 fixtures; advanced inference remains deferred |
+| Complex inference | Nested calls, collection elements, and control-flow expressions | Implemented baseline | TC-007–TC-009 fixtures; advanced generic inference remains deferred |
 | Generic design | Generic list/map/function syntax and inference contract | Implemented baseline | `TYPECHECK_GENERIC_DESIGN_EN.md`; generic declarations and advanced inference deferred |
 
 ## Current conformance evidence
@@ -37,7 +37,7 @@ A feature may be promoted from **proposed** to **implemented** only when its syn
 | L3 | Diagnostic contract stable | JSON schema, location, error kind, and message assertions |
 | L4 | Conformance-ready | Runtime agreement, formatter/LSP agreement, bilingual docs, and CI gate |
 
-## Remaining work matrix
+## Conformance scenario matrix
 
 | ID | Scenario | Expected static result | Diagnostic requirement | Priority |
 |---|---|---|---|---:|
@@ -73,7 +73,7 @@ The exact wording may evolve, but `kind`, source location, and a user-actionable
 
 ## Implementation order
 
-The recommended order is to implement TC-001 through TC-005 first, because they establish branch-local facts and invalidation rules. TC-007 should then extend inference through calls. TC-006, TC-008, TC-009, and TC-010 should follow only after the fact model is stable. Generic syntax remains a design gate and must not be expanded merely to satisfy a fixture.
+The v2.1.5 implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. Future work should extend negative collection-element cases, deeper nested inference, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
 
 ## Do-not-duplicate boundary
 
@@ -81,4 +81,4 @@ The following work is intentionally outside this matrix because it is already im
 
 ## Definition of done for this workstream
 
-The type-checking baseline is complete when all P0 rows have L3 evidence, all diagnostics have stable file/line/column locations, runtime and static behavior agree for accepted programs, negative fixtures fail for the intended reason, the LSP/formatter consume the same vocabulary, and the English/Burmese documentation pair is synchronized.
+The v2.1.5 type-checking baseline is complete for TC-001 through TC-012 at the supported syntax boundary: P0 rows have L3 evidence, TC-006/TC-009/TC-010 have L3 evidence, diagnostics have stable file/line/column locations, accepted programs agree with runtime behavior, negative fixtures fail for their intended reasons, LSP consumes the shared diagnostic vocabulary, and the English/Burmese documentation pair is synchronized. Advanced generic declarations and inference remain outside this release boundary.

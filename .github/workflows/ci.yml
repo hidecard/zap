@@ -30,9 +30,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install stable Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.75.0
           components: rustfmt, clippy
 
       - name: Cache Cargo dependencies
@@ -51,6 +52,20 @@ jobs:
 
       - name: Run integration tests
         run: cargo test --manifest-path native/Cargo.toml --all-targets --all-features
+
+      - name: Run type-check conformance TC-001 through TC-005
+        run: cargo test --manifest-path native/Cargo.toml --test core typecheck_p0_conformance_matrix_tc001_to_tc005 --all-features -- --exact --nocapture
+
+      - name: Run type-check conformance TC-006 through TC-008
+        run: cargo test --manifest-path native/Cargo.toml --test core typecheck_p1_conformance_tc006_to_tc008 --all-features -- --exact --nocapture
+
+      - name: Run type-check conformance TC-009 and TC-010
+        run: |
+          cargo test --manifest-path native/Cargo.toml --test core typecheck_p1_conformance_tc009_conditional_expression --all-features -- --exact --nocapture
+          cargo test --manifest-path native/Cargo.toml --test core typecheck_p1_conformance_tc010_alias_wrapper_narrowing --all-features -- --exact --nocapture
+
+      - name: Run CLI/LSP diagnostic parity regression
+        run: cargo test --manifest-path native/Cargo.toml --bin zap lsp_diagnostics_match_cli_type_error_contract --all-features -- --nocapture
 
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
