@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-08-21
+
+### Release summary
+- Expanded specification ownership and added error-free P0/P1 release preflight gates.
+
 ## [2.1.6] - 2026-08-21
 
 ### Release summary

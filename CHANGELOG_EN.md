@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.7] — 2026-08-21
+
+### Release engineering
+- Expanded bilingual specification ownership to 27 stable rule IDs and added release preflight gates for ownership, parity, replay, and async contracts.
+
 ### Cross-platform CI hardening
 - Sanitized test-thread labels before using them in temporary directory names so the Windows native test matrix no longer receives invalid `::` path separators.
 - Normalized accepted registry-service sockets back to blocking mode before request reads, preventing macOS targets from intermittently observing an empty response after a non-blocking listener accept.

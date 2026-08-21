@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.7] — 2026-08-21
+
+### Release engineering
+- Bilingual specification ownership ကို stable rule ID ၂၇ ခုအထိ ချဲ့ထွင်ပြီး ownership၊ parity၊ replay နှင့် async contract များအတွက် release preflight gate များ ထည့်သွင်းထားပါသည်။
+
 ### Cross-platform CI hardening
 - Temporary directory name များတွင် test-thread label ထည့်ရာ၌ Windows အတွက် မမှန်ကန်သော `::` path separator မဖြစ်စေရန် sanitize လုပ်ထားပြီး Windows native test matrix regression ကို ပြင်ဆင်ထားပါသည်။
 - Registry service ၏ non-blocking listener မှ accept လုပ်ပြီးသော socket များကို request read မတိုင်မီ blocking mode သို့ ပြန်လည်သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် macOS target တွင် တစ်ခါတစ်ရံ empty response မြင်ရသော ပြဿနာကို ကာကွယ်ထားပါသည်။

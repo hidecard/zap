@@ -1,7 +1,7 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
 **Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** v2.1.6
+**Verified baseline:** v2.1.7
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
 This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. It does not reopen the completed async runtime, registry, or release-engineering work.
@@ -73,7 +73,7 @@ The exact wording may evolve, but `kind`, source location, and a user-actionable
 
 ## Implementation order
 
-The v2.1.6 implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. Future work should extend negative collection-element cases, deeper nested inference, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
+The v2.1.7 implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. Future work should extend negative collection-element cases, deeper nested inference, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
 
 ## Do-not-duplicate boundary
 
