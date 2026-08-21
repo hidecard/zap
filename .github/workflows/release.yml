@@ -339,6 +339,13 @@ jobs:
             echo "GPG_PASSPHRASE_FILE=$passphrase_file" >> "$GITHUB_ENV"
           fi
 
+      - name: Export public release verification key
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/export_release_public_key.sh \
+            "artifacts/zap-${GITHUB_REF_NAME#v}-release-signing-key.asc"
+
       - name: Sign artifacts and generate provenance
         shell: bash
         env:

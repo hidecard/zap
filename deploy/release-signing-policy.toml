@@ -1,0 +1,42 @@
+schema = "zap.release-signing-policy.v1"
+repository = "hidecard/zap"
+
+[secret_inputs]
+private_key_secret = "ZAP_RELEASE_GPG_PRIVATE_KEY"
+passphrase_secret = "ZAP_RELEASE_GPG_PASSPHRASE"
+private_key_storage = "github-actions-secret-or-approved-secret-manager"
+repository_storage_for_private_key = false
+
+[keyring]
+mode = "ephemeral-ci-keyring"
+required_gnupg_home_mode = "0700"
+passphrase_file_mode = "0600"
+public_key_output_mode = "0644"
+private_key_export_allowed = false
+
+[public_key_artifact]
+filename_template = "zap-{version}-release-signing-key.asc"
+format = "ASCII-armored OpenPGP public key"
+private_material_allowed = false
+publish_with_release = true
+
+[release_gates]
+preflight_required = true
+artifact_manifest_required = true
+aggregate_checksum_required = true
+provenance_required = true
+signature_verification_required = true
+post_publish_verification_required = true
+missing_signing_key_fails_closed = true
+
+[rotation]
+requires_new_key_id = true
+requires_public_key_distribution = true
+requires_release_verification_test = true
+old_key_revocation_must_be_announced = true
+
+[operator_boundaries]
+production_secrets_in_repository = false
+automatic_tag_creation = false
+automatic_secret_rotation = false
+manual_release_approval_required = true
