@@ -1246,7 +1246,7 @@ mod tests {
         #[cfg(windows)]
         let (command, arguments) = (
             "cmd".to_owned(),
-            vec!["/C".to_owned(), "echo zap".to_owned()],
+            vec!["/C".to_owned(), "<nul set /p =zap".to_owned()],
         );
         #[cfg(not(windows))]
         let (command, arguments) = (
@@ -1272,7 +1272,7 @@ mod tests {
         #[cfg(windows)]
         let (command, arguments) = (
             "cmd".to_owned(),
-            vec!["/C".to_owned(), "echo zap".to_owned()],
+            vec!["/C".to_owned(), "<nul set /p =zap".to_owned()],
         );
         #[cfg(not(windows))]
         let (command, arguments) = (
