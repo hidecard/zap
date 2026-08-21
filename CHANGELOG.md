@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-08-21
+
+### Release summary
+- Cross-platform deterministic archive packaging and release-workflow reproducibility hardening.
+
 ## [2.1.1] - 2026-08-21
 
 ### Release summary

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.1.2] — 2026-08-21
+
+### Release engineering
+- Cross-platform deterministic archive packaging နှင့် release-workflow reproducibility hardening ကို ပြင်ဆင်ထားပါသည်။
+
 ## [2.1.1] — 2026-08-21
 
 ### Release engineering
