@@ -22,6 +22,8 @@ Native runtime တွင် deterministic executor operation သုံးမျ�
 | `run_with_budget(n)` | Poll အကြိမ်ရေ `n` အထိသာ လုပ်ပြီး deterministic `RunReport` ပြန်ပေးသည်။ |
 | `ThreadedRuntime::spawn_blocking(task)` | `Send + 'static` blocking adapter ကို bounded worker set ပေါ်တွင် run ပြီး wakeable join handle ပြန်ပေးသည်။ |
 | `ThreadedRuntime::read_file_async(path)` | Regular file တစ်ခုကို သတ်မှတ်ထားသော byte limit အတွင်း asynchronous ဖတ်သည်။ |
+| `ThreadedRuntime::tcp_exchange(address, request)` | Response byte cap နှင့် deadline ပါသော bounded non-blocking TCP request/response exchange ကို လုပ်ဆောင်သည်။ |
+| `ThreadedRuntime::process_async(command, arguments)` | stdout/stderr capture limit၊ hard deadline နှင့် structured output ပါသော process ကို asynchronous run လုပ်သည်။ |
 | `spawn(future)` | Language-level facade အဖြစ် async expression ၏ completed `Future` value ကို ပြန်ပေးသည်။ |
 | `task_join(value)` | Language-level `Future` value ကို စစ်ဆေးပြီး unwrap လုပ်သည်။ |
 | `task_is_ready(value)` | Language-level task value ကို မစားသုံးဘဲ ready ဖြစ်/မဖြစ် စစ်ဆေးသည်။ |
@@ -32,7 +34,7 @@ Deterministic executor သည် external runtime dependency မရှိပါ�
 
 Deterministic language executor ပေါ်တွင် မ run သင့်သော blocking operation များအတွက် native runtime တွင် bounded threaded adapter ပါရှိပါသည်။ `ThreadedRuntime::new(ThreadRuntimeLimits { max_workers, max_tasks, max_read_bytes })` သည် fixed worker set တစ်ခုကို စတင်ပေးသည်။ `spawn_blocking` သည် `max_tasks` အထိသာ active job များကို လက်ခံပြီး worker ပြီးဆုံးချိန်တွင် wake လုပ်ပေးသော `ThreadJoinHandle` ကို ပြန်ပေးသည်။ Worker အတွင်း panic ဖြစ်ပါက runtime boundary ကို ဖြတ်မသွားဘဲ `WorkerPanicked` အဖြစ် ပြောင်းပေးသည်။
 
-`read_file_async` သည် ပထမဆုံး production I/O facade ဖြစ်ပါသည်။ Metadata ကို စစ်ဆေးပြီး regular file ဖြစ်ရမည်၊ `max_read_bytes` အတွင်း ရှိရမည်ဟု သတ်မှတ်ထားသည်။ Outer result သည် scheduler failure နှင့် inner result သည် file-operation failure ကို ခွဲခြားပေးသည်။ ဤ adapter သည် explicit ဖြစ်ပြီး Zap file operation အားလုံးကို အလိုအလျောက် thread ပြောင်းမပေးသလို OS-level sandboxing သို့မဟုတ် လည်ပတ်နေပြီးသား system call ကို အတင်းအကျပ် cancel လုပ်နိုင်သည်ဟုလည်း မဆိုလိုပါ။
+`read_file_async` သည် regular-file production I/O facade ဖြစ်ပါသည်။ `tcp_exchange(address, request)` သည် bounded TCP request/response adapter ဖြစ်ပြီး address resolution နှင့် connection ကို deadline ဖြင့် ကန့်သတ်ထားသည်။ Stream ကို non-blocking mode သို့ ပြောင်းပြီး socket သည် `WouldBlock` ပြန်ပေးသောအခါ yield လုပ်ကာ ဆက်လက်စောင့်သည်။ Response သည် `max_socket_bytes` ထက်ကျော်ပါက reject လုပ်သည်။ `process_async(command, arguments)` သည် worker set ပေါ်တွင် child process ကို run လုပ်ပြီး stdin ကို null ထားကာ stdout/stderr ကို သီးခြား drain လုပ်သည်၊ hard deadline နှင့် output cap များကို enforce လုပ်သည်။ API နှစ်ခုလုံးတွင် outer result သည် scheduler/admission failure နှင့် inner result သည် I/O သို့မဟုတ် process failure ကို ခွဲခြားပေးသည်။ ဤ adapter များသည် explicit ဖြစ်ပြီး OS-level sandboxing သို့မဟုတ် လည်ပတ်နေပြီးသား system call ကို အတင်းအကျပ် interrupt လုပ်နိုင်သည်ဟု မဆိုလိုပါ။ Process deadline ကျော်လွန်ပါက platform process API မှတစ်ဆင့် child ကို terminate လုပ်သည်။
 
 ## Async Language Syntax
 
@@ -105,6 +107,6 @@ Formatter နှင့် LSP တို့သည် finalized async vocabulary �
 
 ## လက်ကျန် P2 နယ်ပယ်
 
-Bounded production I/O adapter နှင့် multi-thread scheduler ကို regular-file read နှင့် explicitly submitted blocking task များအတွက် အကောင်အထည်ဖော်ပြီးဖြစ်ပါသည်။ ဆက်လက်ကျန်ရှိသော နယ်ပယ်များမှာ ပိုမိုကျယ်ပြန့်သော non-blocking socket/process adapter များ၊ blocking system call များ၏ forced cancellation၊ OS-level sandboxing နှင့် network registry service deployment တို့ ဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
+Bounded production I/O adapter နှင့် multi-thread scheduler သည် regular-file read၊ bounded non-blocking TCP exchange၊ bounded asynchronous process execution နှင့် explicitly submitted blocking task များအထိ လွှမ်းခြုံပြီးဖြစ်ပါသည်။ ဆက်လက်ကျန်ရှိသော နယ်ပယ်များမှာ blocking system call များ၏ forced cancellation၊ OS-level sandboxing နှင့် network registry service deployment တို့ ဖြစ်ပါသည်။ Signed-index verification၊ deterministic cache garbage collection၊ authenticated local registry persistence၊ runtime resource limits၊ one-poll suspension၊ formatting၊ definition၊ workspace symbols နှင့် VS Code grammar/tooling synchronization အပိုင်းများကို implementation နှင့် tests ဖြင့် ပြီးစီးထားပါသည်။
 
 Package workflow အတွက် [Burmese package guide](PACKAGE.md) နှင့် [P2 progress](P2_PROGRESS_MM.md) ကို ဖတ်ရှုနိုင်ပါသည်။ English version အတွက် [ASYNC_LSP_EN.md](ASYNC_LSP_EN.md) ကို ကြည့်ပါ။

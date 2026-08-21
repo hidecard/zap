@@ -64,6 +64,11 @@ jobs:
       - name: Run threaded async I/O and scheduler tests
         run: "cargo test --manifest-path native/Cargo.toml async_runtime --all-features"
 
+      - name: Run socket and process adapter tests
+        run: |
+          cargo test --manifest-path native/Cargo.toml nonblocking_tcp_exchange --all-features
+          cargo test --manifest-path native/Cargo.toml async_process_adapter --all-features
+
       - name: Run parser JSON lockfile corpus
         run: |
           cargo test --manifest-path native/Cargo.toml adversarial_corpus --all-features

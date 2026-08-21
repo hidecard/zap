@@ -1,12 +1,16 @@
 use std::cell::RefCell;
 use std::future::Future;
+use std::io::{Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::pin::Pin;
+use std::process::{Command, Stdio};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread;
+use std::time::{Duration, Instant};
 
 /// A small deterministic executor foundation for future Zap async syntax.
 ///
@@ -692,6 +696,197 @@ impl<T> Future for ThreadJoinHandle<T> {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AdapterLimits {
+    pub max_socket_bytes: usize,
+    pub socket_timeout: Duration,
+    pub max_process_output_bytes: usize,
+    pub process_timeout: Duration,
+}
+
+impl Default for AdapterLimits {
+    fn default() -> Self {
+        Self {
+            max_socket_bytes: 1024 * 1024,
+            socket_timeout: Duration::from_secs(10),
+            max_process_output_bytes: 64 * 1024,
+            process_timeout: Duration::from_secs(10),
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl ThreadedRuntime {
+    /// Execute one bounded TCP request/response exchange without blocking the
+    /// caller. The socket is switched to non-blocking mode and all waits are
+    /// deadline-bounded; response bytes are capped by `max_socket_bytes`.
+    pub fn tcp_exchange(
+        &self,
+        address: String,
+        request: Vec<u8>,
+    ) -> Result<ThreadJoinHandle<Result<Vec<u8>, String>>, ThreadSpawnError> {
+        let limits = AdapterLimits {
+            max_socket_bytes: self.limits.max_read_bytes as usize,
+            ..AdapterLimits::default()
+        };
+        self.spawn_blocking(move || nonblocking_tcp_exchange(&address, &request, limits))
+    }
+
+    /// Spawn a process with bounded stdout/stderr capture and a hard deadline.
+    /// On deadline expiry the child is killed and the join result is an error.
+    pub fn process_async(
+        &self,
+        command: String,
+        arguments: Vec<String>,
+    ) -> Result<ThreadJoinHandle<Result<ProcessOutput, String>>, ThreadSpawnError> {
+        let limits = AdapterLimits {
+            max_process_output_bytes: self.limits.max_read_bytes as usize,
+            process_timeout: Duration::from_secs(10),
+            ..AdapterLimits::default()
+        };
+        self.spawn_blocking(move || run_process_bounded(&command, &arguments, limits))
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProcessOutput {
+    pub status: i32,
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+fn nonblocking_tcp_exchange(
+    address: &str,
+    request: &[u8],
+    limits: AdapterLimits,
+) -> Result<Vec<u8>, String> {
+    let endpoint = address
+        .to_socket_addrs()
+        .map_err(|error| format!("tcp address resolution failed: {error}"))?
+        .next()
+        .ok_or_else(|| "tcp address resolution returned no endpoints".to_owned())?;
+    let deadline = Instant::now() + limits.socket_timeout;
+    let stream = TcpStream::connect_timeout(&endpoint, limits.socket_timeout)
+        .map_err(|error| format!("tcp connect failed: {error}"))?;
+    stream
+        .set_nonblocking(true)
+        .map_err(|error| format!("tcp non-blocking setup failed: {error}"))?;
+    let mut stream = stream;
+    let mut sent = 0;
+    while sent < request.len() {
+        match stream.write(&request[sent..]) {
+            Ok(0) => return Err("tcp peer closed during write".to_owned()),
+            Ok(count) => sent += count,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                if Instant::now() >= deadline {
+                    return Err("tcp write exceeded deadline".to_owned());
+                }
+                thread::sleep(Duration::from_millis(1));
+            }
+            Err(error) => return Err(format!("tcp write failed: {error}")),
+        }
+    }
+    let mut response = Vec::new();
+    let mut buffer = [0_u8; 8192];
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(count) => {
+                if response.len().saturating_add(count) > limits.max_socket_bytes {
+                    return Err(format!(
+                        "tcp response exceeds {} byte limit",
+                        limits.max_socket_bytes
+                    ));
+                }
+                response.extend_from_slice(&buffer[..count]);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                if Instant::now() >= deadline {
+                    return Err("tcp read exceeded deadline".to_owned());
+                }
+                thread::sleep(Duration::from_millis(1));
+            }
+            Err(error) => return Err(format!("tcp read failed: {error}")),
+        }
+    }
+    Ok(response)
+}
+
+fn run_process_bounded(
+    command: &str,
+    arguments: &[String],
+    limits: AdapterLimits,
+) -> Result<ProcessOutput, String> {
+    let mut child = Command::new(command)
+        .args(arguments)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("process start failed: {error}"))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "process stdout was not captured".to_owned())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "process stderr was not captured".to_owned())?;
+    let stdout_reader =
+        thread::spawn(move || read_capped_output(stdout, limits.max_process_output_bytes));
+    let stderr_reader =
+        thread::spawn(move || read_capped_output(stderr, limits.max_process_output_bytes));
+    let deadline = Instant::now() + limits.process_timeout;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err("process exceeded deadline".to_owned());
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(2)),
+            Err(error) => return Err(format!("process wait failed: {error}")),
+        }
+    };
+    let stdout = stdout_reader
+        .join()
+        .map_err(|_| "process stdout reader panicked".to_owned())??;
+    let stderr = stderr_reader
+        .join()
+        .map_err(|_| "process stderr reader panicked".to_owned())??;
+    let stdout = String::from_utf8(stdout).map_err(|_| "process stdout is not UTF-8".to_owned())?;
+    let stderr = String::from_utf8(stderr).map_err(|_| "process stderr is not UTF-8".to_owned())?;
+    Ok(ProcessOutput {
+        status: status.code().unwrap_or(-1),
+        success: status.success(),
+        stdout,
+        stderr,
+    })
+}
+
+fn read_capped_output<R: Read>(mut reader: R, limit: usize) -> Result<Vec<u8>, String> {
+    let mut output = Vec::new();
+    let mut buffer = [0_u8; 8192];
+    loop {
+        let count = reader
+            .read(&mut buffer)
+            .map_err(|error| format!("process output read failed: {error}"))?;
+        if count == 0 {
+            return Ok(output);
+        }
+        if output.len().saturating_add(count) > limit {
+            return Err(format!("process output exceeds {limit} byte limit"));
+        }
+        output.extend_from_slice(&buffer[..count]);
+    }
+}
+
 fn no_op_waker() -> Waker {
     Waker::from(Arc::new(NoopWaker))
 }
@@ -943,6 +1138,109 @@ mod tests {
             .spawn_blocking(|| panic!("worker failure"))
             .unwrap();
         assert_eq!(block_on(panic_handle), Err(ThreadJoinError::WorkerPanicked));
+    }
+
+    #[test]
+    fn nonblocking_tcp_exchange_round_trips_with_bounded_response() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 4];
+            stream.read_exact(&mut request).unwrap();
+            assert_eq!(&request, b"ping");
+            stream.write_all(b"pong").unwrap();
+        });
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 16,
+        })
+        .unwrap();
+        let response = runtime
+            .tcp_exchange(address.to_string(), b"ping".to_vec())
+            .unwrap();
+        assert_eq!(block_on(response), Ok(Ok(b"pong".to_vec())));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn nonblocking_tcp_exchange_rejects_oversized_response() {
+        use std::io::Write;
+        use std::net::TcpListener;
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.write_all(b"too-large").unwrap();
+        });
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 4,
+        })
+        .unwrap();
+        let response = runtime
+            .tcp_exchange(address.to_string(), Vec::new())
+            .unwrap();
+        assert_eq!(
+            block_on(response),
+            Ok(Err("tcp response exceeds 4 byte limit".to_owned()))
+        );
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn async_process_adapter_captures_output_cross_platform() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 1024,
+        })
+        .unwrap();
+        #[cfg(windows)]
+        let (command, arguments) = (
+            "cmd".to_owned(),
+            vec!["/C".to_owned(), "echo zap".to_owned()],
+        );
+        #[cfg(not(windows))]
+        let (command, arguments) = (
+            "sh".to_owned(),
+            vec!["-c".to_owned(), "printf zap".to_owned()],
+        );
+        let output = runtime.process_async(command, arguments).unwrap();
+        let output = block_on(output).unwrap().unwrap();
+        assert!(output.success);
+        assert_eq!(output.status, 0);
+        assert_eq!(output.stdout, "zap");
+        assert!(output.stderr.is_empty());
+    }
+
+    #[test]
+    fn async_process_adapter_rejects_capped_output() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 2,
+        })
+        .unwrap();
+        #[cfg(windows)]
+        let (command, arguments) = (
+            "cmd".to_owned(),
+            vec!["/C".to_owned(), "echo zap".to_owned()],
+        );
+        #[cfg(not(windows))]
+        let (command, arguments) = (
+            "sh".to_owned(),
+            vec!["-c".to_owned(), "printf zap".to_owned()],
+        );
+        let output = runtime.process_async(command, arguments).unwrap();
+        assert_eq!(
+            block_on(output),
+            Ok(Err("process output exceeds 2 byte limit".to_owned()))
+        );
     }
 
     #[test]
