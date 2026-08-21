@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Documentation consistency နှင့် navigation
+- Syntax၊ language specification၊ async boundary၊ generic type-checking design၊ P2 progress နှင့် benchmark policy metadata များအတွက် v2.1.9 bilingual documentation baseline ကို တည်ဆောက်ထားပါသည်။
+- English/Burmese documentation navigation landing page များကို ထည့်သွင်းပြီး README နှစ်ခုလုံးမှ link ချိတ်ထားသဖြင့် normative contract၊ verification evidence နှင့် contribution path များကို လွယ်ကူစွာ ရှာဖွေနိုင်ပါသည်။
+- Section parity၊ code-fence parity၊ stale-version၊ required-file နှင့် navigation-link check များပါသော `scripts/validate_documentation_consistency.sh` နှင့် positive/negative regression harness ကို ထည့်သွင်းထားပါသည်။
+
+### Benchmark regression ကာကွယ်မှု
+- Benchmark aggregation တွင် deterministic p95 column ကို တိုးချဲ့ပြီး `ZAP_BENCH_WARMUPS` မှတစ်ဆင့် configurable warm-up iteration များကို ထည့်သွင်းထားပါသည်။
+- `scripts/check_benchmark_regression.sh` မှတစ်ဆင့် mean/p95 threshold comparison ကို ထည့်သွင်းပြီး CI နှင့် release-preflight တွင် enforce လုပ်ထားပါသည်။ Checked-in evidence အဖြစ် `benchmark-results/native-summary.csv` ကို အသုံးပြုထားပါသည်။
+
 ## [2.1.9] — 2026-08-21
 
 ### Release engineering

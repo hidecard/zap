@@ -1,10 +1,10 @@
 # Zap Async Boundaries
 
-**Status:** Normative runtime-boundary guidance for Zap v2.1.6
+**Status:** Normative runtime-boundary guidance for Zap v2.1.9
 
 ## Purpose
 
-Zap currently provides a deterministic, single-threaded task executor for language-runtime experiments and bounded integration tests. This document separates that contract from the production asynchronous I/O architecture that Zap may adopt later. A deterministic task runner must not be presented as a complete network reactor, thread scheduler, or interruption mechanism.
+Zap provides a deterministic, single-threaded task executor for language-runtime experiments and bounded integration tests, together with explicitly submitted bounded production I/O adapters. This document separates those contracts from a full production asynchronous reactor that Zap may adopt later. A deterministic task runner must not be presented as a complete network reactor, thread scheduler, or interruption mechanism.
 
 ## Current deterministic executor
 
@@ -24,7 +24,7 @@ The executor is suitable for deterministic language semantics, unit tests, confo
 
 ## Production boundary
 
-Production asynchronous I/O requires an operating-system integration layer that waits for readiness events, registers and removes file descriptors, handles timers, and wakes tasks without busy polling. That layer is intentionally outside the current deterministic contract. A future reactor must define its supported platforms, readiness semantics, timer precision, shutdown behavior, and resource limits before it is exposed as a stable Zap API.
+The current production boundary provides bounded file, TCP, and process adapters through explicitly submitted worker operations; it does not provide a general operating-system reactor. A full production asynchronous I/O layer would wait for readiness events, register and remove file descriptors, handle timers, and wake tasks without busy polling. That reactor remains outside the current stable contract and must define its supported platforms, readiness semantics, timer precision, shutdown behavior, and resource limits before it is exposed as a stable Zap API.
 
 Blocking system calls require an explicit adapter boundary. A blocking filesystem operation, process wait, DNS lookup, or foreign-function call must not be executed on the reactor thread. The production design must either use a bounded blocking pool or an OS-specific cancellable operation. A cancellation request may stop waiting for a result, but it cannot be described as killing an arbitrary blocking syscall unless the adapter provides a documented, safe interruption guarantee.
 

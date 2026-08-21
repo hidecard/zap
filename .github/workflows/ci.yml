@@ -57,6 +57,22 @@ jobs:
       - name: Run version consistency regression
         run: scripts/test_validate_release_version.sh
 
+      - name: Validate documentation consistency
+        env:
+          ZAP_DOCS_REPORT: target/documentation-consistency.tsv
+        run: scripts/validate_documentation_consistency.sh
+
+      - name: Upload documentation consistency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-documentation-consistency-${{ github.sha }}
+          path: target/documentation-consistency.tsv
+          if-no-files-found: error
+
+      - name: Run documentation consistency regression
+        run: scripts/test_validate_documentation_consistency.sh
+
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
 
@@ -86,21 +102,25 @@ jobs:
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 
-      - name: Run dependency-free benchmark smoke
+      - name: Run dependency-free benchmark regression gate
         env:
-          ZAP_BENCH_REPEATS: 3
+          ZAP_BENCH_REPEATS: 5
+          ZAP_BENCH_WARMUPS: 1
           ZAP_BENCH_OUTPUT: benchmark-results/native.csv
+          ZAP_BENCH_MAX_REGRESSION_PERCENT: 200
         run: |
+          set -o pipefail
           cargo build --manifest-path native/Cargo.toml --release --locked
           scripts/benchmark_native.sh
-          scripts/aggregate_benchmark.sh benchmark-results/native.csv benchmark-results/native-summary.csv
-          test "$(awk 'END { print NR - 1 }' benchmark-results/native-summary.csv)" -eq 7
+          scripts/aggregate_benchmark.sh benchmark-results/native.csv benchmark-results/native-summary-current.csv
+          test "$(awk 'END { print NR - 1 }' benchmark-results/native-summary-current.csv)" -eq 7
+          scripts/check_benchmark_regression.sh benchmark-results/native-summary.csv benchmark-results/native-summary-current.csv "$ZAP_BENCH_MAX_REGRESSION_PERCENT" 2>&1 | tee benchmark-results/regression.txt
 
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
         with:
           name: zap-benchmark-${{ github.sha }}
-          path: benchmark-results/*.csv
+          path: benchmark-results/*
           if-no-files-found: error
 
       - name: Run filesystem confinement corpus

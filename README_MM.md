@@ -30,13 +30,15 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Project manifest | `zap.toml` |
 | CLI | `zap` |
 | Platforms | Linux၊ Windows၊ macOS ARM64 |
+| Documentation hub | [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) · [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) |
+| Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
 ## Learning Guide
 
-စတင်လေ့လာရန် [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) ကို ဖတ်ရှုပါ။ Syntax အသေးစိတ်အတွက် [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md) ကို အသုံးပြုနိုင်ပြီး English lessons အတွက် [English learning guide](docs/LEARN_ZAP_EN.md) နှင့် [English syntax guide](docs/SYNTAX_GUIDE_EN.md) ကို ဖတ်ရှုနိုင်ပါသည်။
+စတင်လေ့လာမည့်လမ်းကြောင်းကို ရွေးချယ်ရန် [မြန်မာ documentation navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) ကို အရင်ဖတ်ရှုပါ။ ထို့နောက် [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) နှင့် [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md) ကို အသုံးပြုနိုင်ပါသည်။ English lessons အတွက် [English learning guide](docs/LEARN_ZAP_EN.md)၊ [English syntax guide](docs/SYNTAX_GUIDE_EN.md) နှင့် [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) ကို ဖတ်ရှုနိုင်ပါသည်။
 
 ## Why Zap?
 

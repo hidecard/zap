@@ -30,14 +30,15 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Platforms | Linux, Windows, and macOS ARM64 release workflows |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
-| Documentation | [Zap Documentation Web](https://github.com/hidecard/zap/tree/master/docs) |
+| Documentation hub | [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) · [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) |
+| Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | P3 status | P3.3 production standard library and cross-platform hardening complete; v2.1 package reliability work in progress |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 
 ## Learning Guide
 
-Start with the [English learning guide](docs/LEARN_ZAP_EN.md), then use the [English syntax guide](docs/SYNTAX_GUIDE_EN.md) for detailed language reference. Burmese lessons are available in the [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) and [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md).
+Start with the [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) to choose a learner, reference, runtime, tooling, deployment, or release path. Then use the [English learning guide](docs/LEARN_ZAP_EN.md) and [English syntax guide](docs/SYNTAX_GUIDE_EN.md) for language reference. Burmese lessons are available in the [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md), [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md), and [မြန်မာ documentation navigation](docs/DOCUMENTATION_NAVIGATION_MM.md).
 
 ## Native Runtime Architecture
 

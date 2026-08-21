@@ -175,6 +175,11 @@ check_release_files() {
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
+    scripts/validate_documentation_consistency.sh
+    scripts/test_validate_documentation_consistency.sh
+    scripts/check_benchmark_regression.sh
+    scripts/test_benchmark_regression.sh
+    benchmark-results/native-summary.csv
     scripts/verify_installer_windows.ps1
     scripts/validate_registry_deployment.sh
     deploy/registry-deployment-policy.toml
@@ -192,6 +197,10 @@ check_release_files() {
     docs/P001_PARITY_MATRIX_MM.md
     docs/P105_REPLAY_EN.md
     docs/P105_REPLAY_MM.md
+    docs/BENCHMARK_HARNESS_EN.md
+    docs/BENCHMARK_HARNESS_MM.md
+    docs/DOCUMENTATION_NAVIGATION_EN.md
+    docs/DOCUMENTATION_NAVIGATION_MM.md
   )
   local path
   for path in "${required_files[@]}"; do
@@ -298,6 +307,14 @@ run_contract_validation() {
   local seed="${ZAP_CORPUS_SEED:-20260821}"
   mkdir -p "$report_dir"
 
+  EXPECTED_VERSION="$EXPECTED_VERSION" \
+    ZAP_DOCS_REPORT="$report_dir/documentation-consistency.tsv" \
+    bash scripts/validate_documentation_consistency.sh
+  pass "documentation consistency validation passed"
+
+  bash scripts/test_validate_documentation_consistency.sh
+  pass "documentation consistency regression validation passed"
+
   ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/spec-ownership.tsv" \
     bash scripts/validate_spec_ownership.sh
   pass "specification ownership validation passed"
@@ -314,6 +331,19 @@ run_contract_validation() {
   ZAP_ASYNC_LOG="$report_dir/p005c-async.log" \
     bash scripts/test_p005c_async_matrix.sh
   pass "focused async boundary matrix passed"
+
+  local benchmark_raw="$report_dir/benchmark-raw.csv"
+  local benchmark_summary="$report_dir/benchmark-summary.csv"
+  ZAP_BENCH_REPEATS="${ZAP_BENCH_REPEATS:-5}" \
+    ZAP_BENCH_WARMUPS="${ZAP_BENCH_WARMUPS:-1}" \
+    ZAP_BENCH_OUTPUT="$benchmark_raw" \
+    bash scripts/benchmark_native.sh
+  bash scripts/aggregate_benchmark.sh "$benchmark_raw" "$benchmark_summary"
+  scripts/check_benchmark_regression.sh \
+    benchmark-results/native-summary.csv "$benchmark_summary" \
+    "${ZAP_BENCH_MAX_REGRESSION_PERCENT:-200}" \
+    >"$report_dir/benchmark-regression.log" 2>&1
+  pass "benchmark regression validation passed"
 }
 
 run_deployment_validation() {

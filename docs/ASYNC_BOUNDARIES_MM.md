@@ -1,10 +1,10 @@
 # Zap Async Boundary များ
 
-**အခြေအနေ:** Zap v2.1.6 အတွက် normative runtime-boundary လမ်းညွှန်
+**အခြေအနေ:** Zap v2.1.9 အတွက် normative runtime-boundary လမ်းညွှန်
 
 ## ရည်ရွယ်ချက်
 
-လက်ရှိ Zap တွင် language-runtime စမ်းသပ်မှုများနှင့် ကန့်သတ်ထားသော integration test များအတွက် deterministic၊ single-threaded task executor ရှိပါသည်။ ဤစာတမ်းသည် ထို contract ကို နောက်ပိုင်းတွင် ထည့်သွင်းနိုင်မည့် production asynchronous I/O architecture နှင့် ခွဲခြားဖော်ပြပါသည်။ Deterministic task runner ကို ပြည့်စုံသော network reactor၊ thread scheduler သို့မဟုတ် interruption mechanism အဖြစ် မဖော်ပြရပါ။
+Zap တွင် language-runtime စမ်းသပ်မှုများနှင့် ကန့်သတ်ထားသော integration test များအတွက် deterministic၊ single-threaded task executor ရှိပြီး explicitly submitted bounded production I/O adapter များလည်း ရှိပါသည်။ ဤစာတမ်းသည် ထို contract များကို နောက်ပိုင်းတွင် ထည့်သွင်းနိုင်မည့် full production asynchronous reactor နှင့် ခွဲခြားဖော်ပြပါသည်။ Deterministic task runner ကို ပြည့်စုံသော network reactor၊ thread scheduler သို့မဟုတ် interruption mechanism အဖြစ် မဖော်ပြရပါ။
 
 ## လက်ရှိ deterministic executor
 
@@ -24,7 +24,7 @@ Executor သည် deterministic language semantics၊ unit test၊ conformance 
 
 ## Production boundary
 
-Production asynchronous I/O အတွက် readiness event များကို စောင့်ဆိုင်းခြင်း၊ file descriptor များ register/remove လုပ်ခြင်း၊ timer များကို ကိုင်တွယ်ခြင်းနှင့် busy polling မလုပ်ဘဲ task များကို wake လုပ်ခြင်းတို့ပါဝင်သော operating-system integration layer လိုအပ်ပါသည်။ ထို layer သည် လက်ရှိ deterministic contract ၏ အပြင်ဘက်တွင် ရည်ရွယ်ချက်ရှိရှိ ထားရှိထားပါသည်။ အနာဂတ် reactor တစ်ခုကို stable Zap API အဖြစ် မဖော်ပြမီ support ပြုမည့် platform များ၊ readiness semantics၊ timer precision၊ shutdown အပြုအမူနှင့် resource limits များကို သတ်မှတ်ရမည်။
+လက်ရှိ production boundary တွင် explicitly submitted worker operations မှတစ်ဆင့် bounded file၊ TCP နှင့် process adapter များ ပါဝင်သော်လည်း general operating-system reactor မပါဝင်သေးပါ။ Full production asynchronous I/O layer သည် readiness event များကို စောင့်ဆိုင်းခြင်း၊ file descriptor များ register/remove လုပ်ခြင်း၊ timer များကို ကိုင်တွယ်ခြင်းနှင့် busy polling မလုပ်ဘဲ task များကို wake လုပ်ခြင်းတို့ ပါဝင်ရမည်။ ထို reactor သည် လက်ရှိ stable contract ၏ အပြင်ဘက်တွင် ရှိနေပြီး stable Zap API အဖြစ် မဖော်ပြမီ support ပြုမည့် platform များ၊ readiness semantics၊ timer precision၊ shutdown အပြုအမူနှင့် resource limits များကို သတ်မှတ်ရမည်။
 
 Blocking system call များအတွက် explicit adapter boundary လိုအပ်ပါသည်။ Blocking filesystem operation၊ process wait၊ DNS lookup သို့မဟုတ် foreign-function call တို့ကို reactor thread ပေါ်တွင် မလုပ်ရပါ။ Production design သည် bounded blocking pool သို့မဟုတ် OS-specific cancellable operation တစ်ခုခုကို အသုံးပြုရမည်။ Cancellation request သည် result ကို စောင့်ဆိုင်းခြင်းကို ရပ်နိုင်သော်လည်း adapter က လုံခြုံသော interruption guarantee ကို documentation ဖြင့် မပေးထားလျှင် arbitrary blocking syscall ကို kill လုပ်နိုင်သည်ဟု မဖော်ပြရပါ။
 

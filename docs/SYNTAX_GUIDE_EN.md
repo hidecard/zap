@@ -1,6 +1,6 @@
 # Zap Syntax Reference — English
 
-> **Supported version:** Zap v2.1.0\
+> **Supported version:** Zap v2.1.9\
 > **Last verified:** 2026-08-21 against the native runtime, CLI, formatter, LSP, and v2.1-D async/tooling implementation.
 
 This reference summarizes the syntax supported by the current Zap runtime. Zap source files use the `.zp` extension and blocks are defined by indentation.
@@ -136,7 +136,7 @@ async fn answer() -> number:
 say (await answer()) + 1
 ```
 
-The current runtime executes async bodies deterministically and does not create background threads. Timers, cancellation, and richer suspension behavior remain runtime roadmap items. See the [Async/LSP guide](ASYNC_LSP_EN.md) for the executor and editor protocol details.
+The current runtime executes async bodies deterministically and does not create background threads. Deterministic timers, cooperative cancellation, task budgets, and suspension controls are supported; richer task lifecycle semantics and executor-backed language scheduling remain roadmap items. See the [Async/LSP guide](ASYNC_LSP_EN.md) for the executor and editor protocol details.
 
 ## Classes
 

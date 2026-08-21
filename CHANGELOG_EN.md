@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Documentation consistency and navigation
+- Established a v2.1.9 bilingual documentation baseline for syntax, language specification, async boundaries, generic type-checking design, P2 progress, and benchmark policy metadata.
+- Added English/Burmese documentation navigation landing pages and linked them from both READMEs so normative contracts, verification evidence, and contribution paths are discoverable.
+- Added `scripts/validate_documentation_consistency.sh` with section-parity, code-fence-parity, stale-version, required-file, and navigation-link checks, plus a positive/negative regression harness.
+
+### Benchmark regression protection
+- Extended benchmark aggregation with a deterministic p95 column and added configurable warm-up iterations through `ZAP_BENCH_WARMUPS`.
+- Added mean/p95 threshold comparison through `scripts/check_benchmark_regression.sh`, with CI and release-preflight enforcement and checked-in `benchmark-results/native-summary.csv` evidence.
+
 ## [2.1.9] — 2026-08-21
 
 ### Release engineering

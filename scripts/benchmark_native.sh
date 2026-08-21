@@ -4,10 +4,15 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 NATIVE_DIR="$ROOT_DIR/native"
 REPEATS=${ZAP_BENCH_REPEATS:-5}
+WARMUPS=${ZAP_BENCH_WARMUPS:-1}
 OUT_FILE=${ZAP_BENCH_OUTPUT:-"$ROOT_DIR/benchmark-results/native.csv"}
 
 if ! [[ "$REPEATS" =~ ^[1-9][0-9]*$ ]]; then
   printf 'ZAP_BENCH_REPEATS must be a positive integer\n' >&2
+  exit 2
+fi
+if ! [[ "$WARMUPS" =~ ^[0-9]+$ ]]; then
+  printf 'ZAP_BENCH_WARMUPS must be a non-negative integer\n' >&2
   exit 2
 fi
 
@@ -105,17 +110,25 @@ if [[ ! -x "$BIN" ]]; then
 fi
 
 printf 'suite,iteration,elapsed_seconds\n' >"$OUT_FILE"
-printf '# zap benchmark suite\n# binary=%s\n# repeats=%s\n' "$BIN" "$REPEATS" >&2
+printf '# zap benchmark suite\n# binary=%s\n# repeats=%s\n# warmups=%s\n' "$BIN" "$REPEATS" "$WARMUPS" >&2
+
+run_fixture() {
+  local fixture="$1"
+  if [[ "$fixture" == "imports" ]]; then
+    "$BIN" check "$WORK_DIR/imports" >/dev/null
+  else
+    "$BIN" run "$WORK_DIR/$fixture.zp" >/dev/null
+  fi
+}
 
 for fixture in loops calls closures allocations json async imports; do
+  for _ in $(seq 1 "$WARMUPS"); do
+    run_fixture "$fixture"
+  done
   for iteration in $(seq 1 "$REPEATS"); do
     elapsed=$(
       TIMEFORMAT='%R'
-      if [[ "$fixture" == "imports" ]]; then
-        { time "$BIN" check "$WORK_DIR/imports" >/dev/null; } 2>&1
-      else
-        { time "$BIN" run "$WORK_DIR/$fixture.zp" >/dev/null; } 2>&1
-      fi
+      { time run_fixture "$fixture"; } 2>&1
     )
     if ! [[ "$elapsed" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
       printf 'benchmark %s iteration %s returned invalid timing: %s\n' "$fixture" "$iteration" "$elapsed" >&2
