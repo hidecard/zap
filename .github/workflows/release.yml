@@ -354,3 +354,14 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: artifacts/*
+
+      - name: Verify published release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf published-release
+          mkdir -p published-release
+          gh release download "$GITHUB_REF_NAME" --dir published-release --clobber
+          bash scripts/verify_published_release.sh "${GITHUB_REF_NAME#v}" published-release
