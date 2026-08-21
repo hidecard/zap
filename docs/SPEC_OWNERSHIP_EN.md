@@ -1,0 +1,35 @@
+# P0-02-A Specification Ownership Index
+
+## Purpose
+
+The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the first executable ownership slice for the canonical Zap specification. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
+
+## Required row fields
+
+| Field | Contract |
+|---|---|
+| `rule_id` | Stable `SPEC-NNN` identifier; IDs are unique and must not be silently reused for a different rule |
+| `domain` | Short semantic domain such as `values-typing`, `diagnostics`, or `async-deterministic` |
+| `canonical_en` | Repository-relative English specification path plus a section reference |
+| `canonical_mm` | Repository-relative Burmese specification path plus a section reference |
+| `fixture_owner` | Repository-relative source, test, matrix, or script path, optionally followed by `#fragment` |
+| `status` | `implemented` or `deferred` |
+| `compatibility` | One of `normative`, `compatibility`, `deprecated`, or `rejected` |
+
+The validator checks that both bilingual documents and referenced sections exist, that every fixture owner exists and contains its named fragment, that policy values are valid, and that the index contains a meaningful number of rows. Its report is deterministic TSV output with a per-row `PASS` or `FAIL` decision.
+
+## Ownership rules
+
+The canonical specification owns semantics. Implementation modules own executable behavior within that semantic boundary: the AST/parser owns syntax construction, the evaluator owns runtime expression and statement behavior, diagnostics owns structured error fields, the registry owns package transport and integrity, and CI owns enforcement. A cross-cutting rule must still have one canonical bilingual section and may reference multiple implementation tests through a stable fixture owner policy.
+
+A new public rule is incomplete until it has an index row, a bilingual section or an explicit cross-link to a normative subcontract, and a passing or intentionally failing fixture. A deferred rule must remain labeled `deferred` rather than being described as implemented in release documentation. Compatibility behavior must be classified explicitly; legacy acceptance alone cannot promote it to `normative` status.
+
+## Validation command and CI artifact
+
+Run the ownership gate locally with:
+
+```text
+ZAP_SPEC_OWNERSHIP_REPORT=target/spec-ownership-report.tsv scripts/validate_spec_ownership.sh
+```
+
+GitHub Actions runs the same command in the Rust quality job and uploads `target/spec-ownership-report.tsv` as a commit-named artifact. The next specification slice may expand the index to every fragmented rule, but it must preserve the stable IDs and bilingual ownership fields introduced here.

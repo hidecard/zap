@@ -142,6 +142,19 @@ jobs:
           path: target/p001-parity-report.tsv
           if-no-files-found: error
 
+      - name: Validate P0-02 specification ownership index
+        env:
+          ZAP_SPEC_OWNERSHIP_REPORT: target/spec-ownership-report.tsv
+        run: scripts/validate_spec_ownership.sh
+
+      - name: Upload P0-02 ownership evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-p002-ownership-${{ github.sha }}
+          path: target/spec-ownership-report.tsv
+          if-no-files-found: error
+
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
 

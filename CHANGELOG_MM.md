@@ -6,6 +6,11 @@
 - Temporary directory name များတွင် test-thread label ထည့်ရာ၌ Windows အတွက် မမှန်ကန်သော `::` path separator မဖြစ်စေရန် sanitize လုပ်ထားပြီး Windows native test matrix regression ကို ပြင်ဆင်ထားပါသည်။
 - Registry service ၏ non-blocking listener မှ accept လုပ်ပြီးသော socket များကို request read မတိုင်မီ blocking mode သို့ ပြန်လည်သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် macOS target တွင် တစ်ခါတစ်ရံ empty response မြင်ရသော ပြဿနာကို ကာကွယ်ထားပါသည်။
 
+### Specification ownership hardening
+- `SPEC_OWNERSHIP_INDEX.tsv` တွင် stable rule ID ၁၅ ခု၊ bilingual canonical section၊ implementation/conformance owner၊ status နှင့် compatibility class များကို mapping လုပ်ထားပါသည်။
+- Missing section၊ missing fixture owner၊ duplicate ID နှင့် invalid policy value များကို reject လုပ်သော `scripts/validate_spec_ownership.sh` နှင့် CI TSV artifact gate ကို ထည့်သွင်းထားပါသည်။
+- Bilingual `docs/SPEC_OWNERSHIP_EN.md` နှင့် `docs/SPEC_OWNERSHIP_MM.md` guidance များကို ထည့်သွင်းပြီး canonical language specification နှစ်ခုလုံးမှ index သို့ link ချိတ်ထားပါသည်။
+
 ### Native/legacy parity hardening
 - `common`၊ `native-only` နှင့် `rejected` policy class များပါသော versioned six-case native/legacy matrix ကို ထည့်သွင်းထားပါသည်။
 - Normalized stdout digest comparison၊ deterministic TSV report၊ migration guidance နှင့် `scripts/test_p001_parity.sh` မှတစ်ဆင့် CI parity artifact gate ကို ထည့်သွင်းထားပါသည်။

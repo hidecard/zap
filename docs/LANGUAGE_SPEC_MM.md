@@ -56,6 +56,10 @@ User-facing diagnostic တိုင်းတွင် severity၊ stable code၊
 
 Parser သည် syntax နှင့် AST construction ကို ပိုင်ဆိုင်သည်။ Evaluator သည် runtime expression နှင့် statement behavior ကို ပိုင်ဆိုင်သည်။ Diagnostics module သည် stable error contract ကို ပိုင်ဆိုင်သည်။ Registry module သည် package transport၊ authentication၊ checksum၊ signature နှင့် cache policy ကို ပိုင်ဆိုင်သည်။ CI သည် repository တွင် သတ်မှတ်ထားသည့် gate များကို enforce လုပ်သည်။ Subsystem တစ်ခုသည် အခြား subsystem ၏ contract ကို တိတ်တဆိတ် ပြန်လည်သတ်မှတ်ခွင့် မရှိပါ။
 
+## Specification ownership index
+
+Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) ဖြစ်ပြီး field နှင့် migration contract ကို [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) နှင့် [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md) တွင် မှတ်တမ်းတင်ထားသည်။ CI သည် index ထဲရှိ English section၊ Burmese section နှင့် fixture owner တစ်ခုချင်းစီ ရှိကြောင်း စစ်ဆေးသည်။
+
 ## ဆက်စပ် normative contract များ
 
 အောက်ပါစာတမ်းများသည် အသေးစိတ် subcontract များကို ပေးပြီး ဤ specification နှင့်အတူ bilingual ဖြစ်နေရမည်။

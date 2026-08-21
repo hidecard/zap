@@ -56,6 +56,10 @@ The current release line is v2.1.x. A semantics change requires a specification 
 
 The parser owns syntax and AST construction. The evaluator owns runtime expression and statement behavior. The diagnostics module owns the stable error contract. The registry module owns package transport, authentication, checksums, signatures, and cache policy. CI owns enforcement of the repository's declared gates. No subsystem may silently redefine another subsystem's contract.
 
+## Specification ownership index
+
+The machine-readable rule-to-section-to-fixture map is [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv), with the field and migration contract documented in [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) and [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md). CI validates that every indexed English section, Burmese section, and fixture owner exists.
+
 ## Related normative contracts
 
 The following documents provide detailed subcontracts and must remain bilingual with this specification:
