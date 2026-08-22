@@ -36,7 +36,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| Verification status | M2-VERIFY-01 bounded 12-round replay job with fail-closed corpus limits and CI/release-preflight evidence |
+| Verification status | M2-VERIFY-01 bounded 12-round replay plus M2-VERIFY-02 native Linux/Windows/macOS async and archive matrix evidence |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 
 ## Learning Guide

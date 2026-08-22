@@ -174,6 +174,7 @@ check_release_files() {
     scripts/test_m2_verify_replay.sh
     scripts/test_m2_verify_replay_contract.sh
     scripts/test_p005c_async_matrix.sh
+    scripts/test_platform_archive.sh
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -346,6 +347,9 @@ run_contract_validation() {
   ZAP_ASYNC_LOG="$report_dir/p005c-async.log" \
     bash scripts/test_p005c_async_matrix.sh
   pass "focused async boundary matrix passed"
+
+  bash scripts/test_platform_archive.sh
+  pass "platform archive determinism regression passed"
 
   local benchmark_raw="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"

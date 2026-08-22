@@ -1442,6 +1442,79 @@ mod tests {
     }
 
     #[test]
+    fn async_file_read_preserves_newlines_and_rejects_directory() {
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("zap-async-platform-{suffix}"));
+        let file = root.join("newlines.txt");
+        let directory = root.join("directory");
+        std::fs::create_dir_all(&directory).unwrap();
+        std::fs::write(&file, b"line1\r\nline2\n").unwrap();
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 64,
+        })
+        .unwrap();
+        let contents = runtime.read_file_async(&file).unwrap();
+        assert_eq!(block_on(contents), Ok(Ok(b"line1\r\nline2\n".to_vec())));
+        let directory_result = runtime.read_file_async(&directory).unwrap();
+        assert_eq!(
+            block_on(directory_result),
+            Ok(Err("async read requires a regular file".to_owned()))
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn async_file_read_rejects_symlink_target() {
+        use std::os::unix::fs::symlink;
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("zap-async-symlink-{suffix}"));
+        let file = root.join("source.txt");
+        let link = root.join("link.txt");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&file, b"safe").unwrap();
+        symlink(&file, &link).unwrap();
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits::default()).unwrap();
+        let result = runtime.read_file_async(&link).unwrap();
+        assert_eq!(
+            block_on(result),
+            Ok(Err("async read requires a regular file".to_owned()))
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn async_process_adapter_reports_nonzero_status_cross_platform() {
+        let runtime = ThreadedRuntime::new(ThreadRuntimeLimits {
+            max_workers: 1,
+            max_tasks: 2,
+            max_read_bytes: 1024,
+        })
+        .unwrap();
+        #[cfg(windows)]
+        let (command, arguments) = (
+            "cmd".to_owned(),
+            vec!["/C".to_owned(), "exit /B 7".to_owned()],
+        );
+        #[cfg(not(windows))]
+        let (command, arguments) = ("sh".to_owned(), vec!["-c".to_owned(), "exit 7".to_owned()]);
+        let output = runtime.process_async(command, arguments).unwrap();
+        let output = block_on(output).unwrap().unwrap();
+        assert_eq!(output.status, 7);
+        assert!(!output.success);
+        assert!(output.stdout.is_empty());
+        assert!(output.stderr.is_empty());
+    }
+
+    #[test]
     fn async_file_read_is_bounded_and_returns_bytes() {
         let suffix = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

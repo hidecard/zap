@@ -36,6 +36,12 @@ Cancellation သည် cooperative ဖြစ်ပြီး သတ်မှတ�
 
 Task error များသည် join handle များမှ typed result အဖြစ် ပြန့်ပွားပါသည်။ Caller က join handle ကို drop လုပ်ပါက result ကို ဆက်လက် observe မလုပ်နိုင်တော့သော်လည်း API က ထိုအပြုအမူကို တိတိကျကျ သတ်မှတ်မထားလျှင် handle drop သည် အထွေထွေ cancellation guarantee မဟုတ်ပါ။ Production API များသည် cancellation သည် best effort ဟုတ်/မဟုတ်၊ completion မတိုင်မီ resource များ ပိတ်သိမ်းမည်/မည်မဟုတ်နှင့် reactor shutdown error များကို မည်သို့ report လုပ်မည်ကို သတ်မှတ်ရမည်။
 
+## M2-VERIFY-02 platform-native matrix
+
+GitHub Actions သည် single Linux run တစ်ခုကို cross-platform evidence ဟု မယူဆဘဲ native Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 target များတွင် focused matrix ကို run လုပ်ပါသည်။ Target တစ်ခုချင်းစီ၏ exact unit regression များတွင် worker admission၊ bounded TCP exchange၊ oversized request/response rejection၊ process output/status/cancellation၊ bounded file read၊ newline byte preservation နှင့် directory rejection တို့ ပါဝင်ပါသည်။ Linux နှင့် macOS တွင် shared Unix filesystem boundary ကို စစ်ဆေးသော Unix symlink rejection case ကိုလည်း ထပ်မံ run လုပ်ပါသည်။ Windows တွင် symlink policy အတွက် တူညီသော evidence ရှိသည်ဟု မဆိုဘဲ platform limitation ကို မှတ်တမ်းတင်ထားပါသည်။
+
+Matrix သည် runner တိုင်းတွင် `scripts/test_platform_archive.sh` ကိုလည်း run လုပ်ပါသည်။ ထို regression သည် CRLF ပါသော tree အသေးတစ်ခုကို ဖန်တီး၍ deterministic tar.gz archive ကို နှစ်ကြိမ် build လုပ်ပြီး bytes တူညီမှု၊ sorted member name များနှင့် extract လုပ်ထားသော payload bytes တူညီမှုကို စစ်ဆေးပါသည်။ Runner တစ်ခုချင်းစီသည် target triple၊ runner operating system၊ Rust/Cargo version၊ exact test name များ၊ archive result နှင့် final status ပါသော target-named log ကို ရေးပါသည်။ Matrix သည် support ပြုထားသော CI target များတွင် repository ၏ document လုပ်ထားသော behavior ကိုသာ သက်သေပြပြီး arbitrary third-party binary သို့မဟုတ် foreign operating-system call များ portable ဖြစ်သည်ဟု မဆိုပါ။
+
 ## Stability rules
 
 Deterministic executor နှင့် context-owned language scheduling boundary သည် v2.1.x အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
@@ -50,4 +56,4 @@ Deterministic executor နှင့် context-owned language scheduling boundar
 
 ## Verification
 
-လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ language `task_cancel` နှင့် `task_join_timeout`၊ cancellation precedence၊ timeout behavior နှင့် child-process cancellation အတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics ကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။
+လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ language `task_cancel` နှင့် `task_join_timeout`၊ cancellation precedence၊ timeout behavior၊ child-process cancellation နှင့် M2-VERIFY-02 target-native filesystem/process/socket/archive case များအတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics နှင့် document လုပ်ထားသော adapter boundary များကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။

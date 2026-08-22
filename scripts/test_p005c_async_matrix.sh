@@ -22,7 +22,7 @@ printf 'log: %s\n' "$LOG_PATH"
 run_test() {
   local name="$1"
   printf '\np0-05-c: %s\n' "$name"
-  cargo test --manifest-path "$MANIFEST" --target "$TARGET" "$name" --all-features -- --exact --nocapture
+  cargo test --manifest-path "$MANIFEST" --target "$TARGET" --bin zap --all-features "async_runtime::tests::$name" -- --exact --nocapture
 }
 
 # The same exact filters run on Linux, Windows, and macOS. Platform-specific
@@ -36,9 +36,17 @@ for test_name in \
   tcp_exchange_rejects_oversized_request_before_admission \
   async_process_adapter_captures_output_cross_platform \
   async_process_adapter_rejects_capped_output \
+  async_process_adapter_reports_nonzero_status_cross_platform \
   async_process_cancellation_terminates_child \
-  async_file_read_is_bounded_and_returns_bytes; do
+  async_file_read_is_bounded_and_returns_bytes \
+  async_file_read_preserves_newlines_and_rejects_directory; do
   run_test "$test_name"
 done
+
+if [[ "$TARGET" == *-unknown-linux-* || "$TARGET" == *-apple-darwin ]]; then
+  run_test async_file_read_rejects_symlink_target
+fi
+
+scripts/test_platform_archive.sh
 
 printf '\np0-05-c: matrix passed for %s\n' "$TARGET"

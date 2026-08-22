@@ -36,6 +36,12 @@ Cancellation is cooperative and has a defined precedence: a cancellation-aware w
 
 Task errors propagate through join handles as typed results. A caller that drops a join handle may stop observing the result, but dropping the handle does not provide a general cancellation guarantee unless the API explicitly documents that behavior. Production APIs must specify whether cancellation is best effort, whether resources are closed before completion, and how errors from reactor shutdown are reported.
 
+## M2-VERIFY-02 platform-native matrix
+
+GitHub Actions runs the focused matrix on the native Linux x86_64, Windows x86_64, and macOS ARM64 targets rather than treating a single Linux run as cross-platform evidence. Each target executes the target binary's exact unit regressions for worker admission, bounded TCP exchange, oversized request/response rejection, process output/status/cancellation, bounded file reads, newline-byte preservation, and directory rejection. Linux and macOS additionally execute the Unix symlink rejection case because it exercises the shared Unix filesystem boundary; Windows records the platform limitation instead of claiming equivalent symlink-policy evidence.
+
+The matrix also runs `scripts/test_platform_archive.sh` on every runner. That regression creates a small CRLF-containing tree, builds the deterministic tar.gz archive twice, compares the bytes, verifies sorted member names, and compares the extracted payload bytes. Each runner writes target-named logs containing the target triple, runner operating system, Rust/Cargo versions, exact test names, archive result, and final status. The matrix proves the repository's documented behavior on the supported CI targets; it does not claim that arbitrary third-party binaries or foreign operating-system calls are portable.
+
 ## Stability rules
 
 The deterministic executor and the context-owned language scheduling boundary are the stable baseline for v2.1.x. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
@@ -50,4 +56,4 @@ A future production implementation must add, at minimum:
 
 ## Verification
 
-The current contract is verified by native tests for bounded polling, task limits, join results, context-owned language-task readiness/completion, scheduler reset isolation, language `task_cancel` and `task_join_timeout`, cancellation precedence, timeout behavior, and child-process cancellation. These tests verify deterministic semantics only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.
+The current contract is verified by native tests for bounded polling, task limits, join results, context-owned language-task readiness/completion, scheduler reset isolation, language `task_cancel` and `task_join_timeout`, cancellation precedence, timeout behavior, child-process cancellation, and the M2-VERIFY-02 target-native filesystem/process/socket/archive cases. These tests verify deterministic semantics and the documented adapter boundaries only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.
