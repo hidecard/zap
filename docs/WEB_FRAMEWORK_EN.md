@@ -2,13 +2,13 @@
 
 **Verified baseline:** Zap v2.2.3
 **Branch:** `Framework`
-**Status:** Web Foundation v0.2 — runnable contract package; production HTTP adapter remains separate
+**Status:** Web Foundation v0.2 — runnable contract package plus initial `zap-host` adapter prototype; production integrations remain separate
 
 ## Purpose
 
 The Web package defines a stable boundary between a Zap application and a host HTTP implementation. It is intentionally contract-first: the Zap side normalizes a bounded request, applies route and method policy, and returns a bounded response map. It does not open a listener, own TLS, or perform blocking socket work.
 
-The package is designed to let a future host adapter reuse an established HTTP stack rather than forcing the Zap runtime to become a second network reactor. A Rust adapter may use an existing routing and middleware ecosystem such as Axum/Tower while translating only the documented DTO boundary.[1]
+The package is designed to let a host adapter reuse an established HTTP stack rather than forcing the Zap runtime to become a second network reactor. The initial Rust adapter is available under [`host/zap-host`](../host/zap-host) and uses Axum/Tower while translating only the documented DTO boundary.[1]
 
 ## Current package layout
 
@@ -75,11 +75,11 @@ The current router is intentionally small and deterministic:
 | Unsupported method | Any valid path | 405 | `method_not_allowed` error |
 | Invalid path/body/request ID | Any | 400 | `invalid_request` error |
 
-The route function never executes a handler for an invalid request. This ordering is important: validation and capability policy happen before application dispatch, so a future adapter can attach authentication, rate limits, and tracing around a stable boundary.
+The route function never executes a handler for an invalid request. This ordering is important: validation and capability policy happen before application dispatch. The current `zap-host` adapter attaches authentication, rate limits, tracing, and bounded extraction around this stable boundary.
 
 ## Host-adapter contract
 
-A production Web adapter should implement the following pipeline:
+The current `zap-host` prototype implements the following pipeline with Axum/Tower; a production deployment must complete each policy explicitly:
 
 ```text
 HTTP bytes

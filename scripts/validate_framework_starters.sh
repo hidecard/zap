@@ -98,6 +98,8 @@ require_file docs/FRAMEWORK_EN.md
 require_file docs/FRAMEWORK_MM.md
 require_file docs/WEB_FRAMEWORK_EN.md
 require_file docs/WEB_FRAMEWORK_MM.md
+require_file docs/ZAP_HOST_EN.md
+require_file docs/ZAP_HOST_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
@@ -108,10 +110,43 @@ require_text docs/WEB_FRAMEWORK_EN.md "database_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "database_contract.zp"
 require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
+require_text docs/ZAP_HOST_EN.md "host/zap-host"
+require_text docs/ZAP_HOST_MM.md "host/zap-host"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "WEB_FRAMEWORK_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_HOST_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_HOST_MM.md"
+for host_file in \
+  host/zap-host/Cargo.toml \
+  host/zap-host/Cargo.lock \
+  host/zap-host/README.md \
+  host/zap-host/src/lib.rs \
+  host/zap-host/src/main.rs \
+  host/zap-host/tests/http_contract.rs; do
+  require_file "$host_file"
+done
+
+if command -v cargo >/dev/null 2>&1; then
+  if cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check >/dev/null 2>&1; then
+    record PASS "host-format:host/zap-host"
+  else
+    record FAIL "host-format:host/zap-host"
+  fi
+  if cargo clippy --manifest-path host/zap-host/Cargo.toml --all-targets --all-features -- -D warnings >/dev/null 2>&1; then
+    record PASS "host-clippy:host/zap-host"
+  else
+    record FAIL "host-clippy:host/zap-host"
+  fi
+  if cargo test --manifest-path host/zap-host/Cargo.toml --all-targets >/dev/null 2>&1; then
+    record PASS "host-test:host/zap-host"
+  else
+    record FAIL "host-test:host/zap-host"
+  fi
+else
+  record PASS "host-quality:skipped-no-cargo"
+fi
 
 ZAP_BIN=${ZAP_BIN:-}
 if [[ -z "$ZAP_BIN" && -x "$ROOT_DIR/target/release/zap" ]]; then

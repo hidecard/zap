@@ -39,7 +39,9 @@ jobs:
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: native
+          workspaces: |
+            native
+            host/zap-host
 
       - name: Validate release version consistency
         env:
@@ -252,6 +254,18 @@ jobs:
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
 
+      - name: Check zap-host formatting
+        run: cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check
+
+      - name: Run zap-host Clippy
+        run: cargo clippy --manifest-path host/zap-host/Cargo.toml --all-targets --all-features -- -D warnings
+
+      - name: Run zap-host check
+        run: cargo check --manifest-path host/zap-host/Cargo.toml --all-targets --all-features
+
+      - name: Run zap-host tests
+        run: cargo test --manifest-path host/zap-host/Cargo.toml --all-targets
+
       - name: Check repository whitespace
         run: git diff --check
 
@@ -285,7 +299,9 @@ jobs:
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: native
+          workspaces: |
+            native
+            host/zap-host
           key: ${{ matrix.target }}
 
       - name: Build native runtime

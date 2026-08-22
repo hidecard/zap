@@ -128,7 +128,7 @@ CI gate သည် undeclared dependency၊ missing lockfile၊ unresolved placeh
 
 Framework branch တွင် native HTTP server၊ custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ ORM သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထိုအရာများကို language core ထဲ တိုက်ရိုက်ထည့်ခြင်းသည် mature ecosystem များကို ထပ်ရေးရပြီး host contract မတည်ငြိမ်မီ security surface တိုးစေပါသည်။
 
-နောက်ထပ် milestone သည် `zap-host` ဖြစ်ပါသည်။ Capability registration၊ typed DTO၊ bounded request/response adapter၊ deterministic fake-host test၊ structured error၊ redaction နှင့် replay fixture များကို အရင်တည်ဆောက်ရမည်။ ထို contract တည်ငြိမ်ပြီးမှ Web သို့မဟုတ် Linux/SBC IoT gateway တစ်ခုကို contract prototype မှ adapter prototype အဖြစ် တိုးမြှင့်သင့်ပါသည်။
+ပထမဆုံး `zap-host` adapter prototype ကို `host/zap-host` အောက်တွင် ထည့်သွင်းပြီးပါပြီ။ ၎င်းတွင် Axum/Tower HTTP boundary၊ capability-facing trait များ၊ typed DTO mapping၊ bounded request/response handling၊ deterministic in-process test၊ structured error၊ sensitive header redaction နှင့် graceful shutdown ပါဝင်ပါသည်။ Setup နှင့် production checklist အသေးစိတ်ကို [`ZAP_HOST_MM.md`](ZAP_HOST_MM.md) တွင် ဖတ်နိုင်ပါသည်။ Real Zap runtime embedding၊ database/authentication provider၊ shared quota storage၊ TLS နှင့် deployment-specific evidence များသည် နောက်ဆက်တွဲအလုပ်များ ဖြစ်နေသေးပါသည်။
 
 ## Framework Foundation v0.1 Definition of Done
 

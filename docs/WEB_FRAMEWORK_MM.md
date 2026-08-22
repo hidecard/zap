@@ -3,13 +3,13 @@
 **အတည်ပြုထားသော baseline:** Zap v2.2.3
 **Branch:** `Framework`
 
-**အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package ဖြစ်ပြီး production HTTP adapter ကို သီးခြားထားသည်
+**အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
 
 ## ရည်ရွယ်ချက်
 
 Web package သည် Zap application နှင့် host HTTP implementation ကြားတွင် တည်ငြိမ်သော boundary တစ်ခု သတ်မှတ်ပေးသည်။ Zap ဘက်တွင် bounded request ကို normalize လုပ်ပြီး route/method policy ကို စစ်ဆေးကာ bounded response map ပြန်ပေးသည်။ Listener မဖွင့်ပါ၊ TLS မပိုင်ပါ၊ blocking socket work မလုပ်ပါ။
 
-အနာဂတ် host adapter သည် Zap runtime ကို network reactor အသစ်တစ်ခုအဖြစ် ပြန်ရေးမည့်အစား ရှိပြီးသား HTTP stack ကို reuse လုပ်နိုင်ရန် ဒီ contract ကို သတ်မှတ်ထားခြင်း ဖြစ်သည်။ Rust adapter သည် Axum/Tower ကဲ့သို့ ရှိပြီးသား routing နှင့် middleware ecosystem ကို အသုံးပြုပြီး document လုပ်ထားသော DTO boundary ကိုသာ ဘာသာပြန်နိုင်သည်။[1]
+Host adapter သည် Zap runtime ကို network reactor အသစ်တစ်ခုအဖြစ် ပြန်ရေးမည့်အစား ရှိပြီးသား HTTP stack ကို reuse လုပ်နိုင်ရန် ဒီ contract ကို သတ်မှတ်ထားခြင်း ဖြစ်သည်။ ပထမဆုံး Rust adapter ကို [`host/zap-host`](../host/zap-host) အောက်တွင် ထည့်သွင်းထားပြီး Axum/Tower ကို အသုံးပြုကာ document လုပ်ထားသော DTO boundary ကိုသာ ဘာသာပြန်သည်။[1]
 
 ## လက်ရှိ package ဖွဲ့စည်းပုံ
 

@@ -11,3 +11,4 @@ bin/
 dist/
 .pytest_cache/
 .DS_Store
+**/target/

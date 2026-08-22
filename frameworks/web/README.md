@@ -24,4 +24,4 @@ Production သို့ မတင်မီ real driver adapter တွင် para
 
 နောက်ပိုင်း Web adapter သည် incoming HTTP request ကို bounded Zap map အဖြစ် ပြောင်းပြီး returned response map ကို HTTP response အဖြစ် ပြောင်းရမည်။ Method/path normalization၊ header/body limits၊ timeout၊ cancellation၊ error mapping၊ redaction နှင့် shutdown ကို adapter က ပိုင်ဆိုင်ရမည်။
 
-ပထမဆုံး real adapter ကို existing HTTP stack အပေါ် တည်ဆောက်ရန် အကြံပြုသည်။ `Framework` branch ၏ scope သည် contract starter အထိသာ ဖြစ်ပြီး production listener မဟုတ်ပါ။ အသေးစိတ်ကို [`docs/FRAMEWORK_MM.md`](../../docs/FRAMEWORK_MM.md) တွင် ဖတ်ပါ။
+ပထမဆုံး adapter prototype ကို existing HTTP stack အပေါ် တည်ဆောက်ထားသည်။ `Framework` branch ၏ Zap contract scope သည် dependency-free အတိုင်း ရှိနေပြီး host implementation ကို [`host/zap-host`](../../host/zap-host) တွင် သီးခြားထားသည်။ Run စစ်ဆေးရန် `cd host/zap-host && cargo test --all-targets` ကို သုံးပါ။ အသေးစိတ်ကို [`docs/FRAMEWORK_MM.md`](../../docs/FRAMEWORK_MM.md) နှင့် [`docs/ZAP_HOST_MM.md`](../../docs/ZAP_HOST_MM.md) တွင် ဖတ်ပါ။

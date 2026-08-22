@@ -208,6 +208,14 @@ check_release_files() {
     docs/FRAMEWORK_MM.md
     docs/WEB_FRAMEWORK_EN.md
     docs/WEB_FRAMEWORK_MM.md
+    docs/ZAP_HOST_EN.md
+    docs/ZAP_HOST_MM.md
+    host/zap-host/Cargo.toml
+    host/zap-host/Cargo.lock
+    host/zap-host/README.md
+    host/zap-host/src/lib.rs
+    host/zap-host/src/main.rs
+    host/zap-host/tests/http_contract.rs
     scripts/validate_framework_starters.sh
     frameworks/README.md
     frameworks/web/README.md
@@ -284,6 +292,7 @@ check_documentation_pairs() {
     'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
     'docs/FRAMEWORK_EN.md:docs/FRAMEWORK_MM.md'
     'docs/WEB_FRAMEWORK_EN.md:docs/WEB_FRAMEWORK_MM.md'
+    'docs/ZAP_HOST_EN.md:docs/ZAP_HOST_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
@@ -369,6 +378,14 @@ run_optional_cargo_checks() {
   pass "cargo check passed"
   cargo test --manifest-path native/Cargo.toml --all-targets --all-features
   pass "native test suite passed"
+  cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check
+  pass "zap-host cargo fmt check passed"
+  cargo clippy --manifest-path host/zap-host/Cargo.toml --all-targets --all-features -- -D warnings
+  pass "zap-host strict cargo clippy passed"
+  cargo check --manifest-path host/zap-host/Cargo.toml --all-targets --all-features
+  pass "zap-host cargo check passed"
+  cargo test --manifest-path host/zap-host/Cargo.toml --all-targets
+  pass "zap-host test suite passed"
 }
 
 run_contract_validation() {

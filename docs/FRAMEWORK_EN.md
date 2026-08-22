@@ -128,7 +128,7 @@ The CI gate should fail if a starter contains undeclared dependencies, a missing
 
 The Framework branch does not yet provide a native HTTP server, custom mobile renderer, MCU interpreter, MQTT client, OTA manager, cloud deployment command, ORM, or provider-specific AI client. Adding those directly to the language core would duplicate mature ecosystems and expand the security surface before the host contract is stable.
 
-The next implementation milestone is `zap-host`: capability registration, typed DTOs, bounded request/response adapters, deterministic fake-host tests, structured errors, redaction, and replay fixtures. Only after that contract is stable should one target—preferably Web on a controlled host or IoT on a Linux/SBC gateway—be promoted from contract prototype to adapter prototype.
+The initial `zap-host` adapter prototype is now available under `host/zap-host`. It provides an Axum/Tower HTTP boundary, capability-facing traits, typed DTO mapping, bounded request/response handling, deterministic in-process tests, structured errors, redaction of sensitive headers, and graceful shutdown. The detailed setup and production checklist are documented in [`ZAP_HOST_EN.md`](ZAP_HOST_EN.md). Real Zap runtime embedding, database/authentication providers, shared quota storage, TLS, and deployment-specific evidence remain separate follow-up work.
 
 ## Definition of done for Framework Foundation v0.1
 
