@@ -83,14 +83,14 @@ Start the editor server with:
 zap lsp
 ```
 
-The server communicates over standard input and output using JSON-RPC messages framed with `Content-Length` headers.
+The server communicates over standard input and output using JSON-RPC messages framed with `Content-Length` headers. `initialize` advertises `textDocumentSync` with `openClose: true` and `change: 1`, meaning clients must send full-document changes through `params.contentChanges`; the server does not read a non-standard `textDocument.text` field from `didChange`.
 
 | Message | Behavior |
 |---|---|
 | `initialize` | Returns Zap server information and advertises text synchronization, completion, diagnostics, hover, definition, rename, and workspace-symbol capabilities. |
 | `shutdown` | Returns a successful null result. |
-| `textDocument/didOpen` | Stores the document and publishes lint diagnostics with deterministic source ranges. |
-| `textDocument/didChange` | Replaces the stored document and publishes updated diagnostics. |
+| `textDocument/didOpen` | Stores the document text and optional monotonically increasing version, then publishes lint diagnostics with deterministic source ranges. |
+| `textDocument/didChange` | Uses the standard `params.contentChanges` payload for the advertised full-sync mode, replaces the stored document from the final full-text change, rejects stale/unversioned updates after a versioned open, and publishes diagnostics from the accepted text. Range-based incremental changes are rejected safely until a position-aware incremental mode is implemented. |
 | `textDocument/didClose` | Removes the document from the per-session workspace index without affecting other LSP sessions. |
 | `textDocument/completion` | Filters deterministic language keywords, all cataloged standard-library builtins, and top-level `let` and function declarations by the active source prefix. |
 | `textDocument/hover` | Parses the stored document and reports parser-owned metadata for top-level functions, classes, and declarations; async builtins expose stable scheduling documentation. |
@@ -111,7 +111,7 @@ Completion is context-aware rather than a fixed unfiltered list. It combines lan
 
 Workspace symbol indexing follows explicit local imports such as `import app.util as util` from the opened file’s directory and maps the dotted path to `app/util.zp`. Imported files are canonicalized before indexing, must remain under the importing directory, and are bounded to 8 MiB. Invalid, missing, oversized, unreadable, or traversal-like modules are skipped deterministically rather than becoming an editor or filesystem escape. Discovered module URIs are inserted into the same sorted index as open documents, so nested imports are traversed once and results remain stable.
 
-Diagnostics continue to reuse Zap’s existing lint implementation. This keeps command-line and editor diagnostics aligned. When a lint message reports a source line, the server maps it to a zero-based LSP range spanning that line’s character width; diagnostics without a parsed line use the first line as a deterministic fallback.
+Diagnostics continue to reuse Zap’s existing lint implementation. This keeps command-line and editor diagnostics aligned. Accepted document versions are monotonic within an LSP session; stale or unversioned changes after a versioned document are ignored without replacing the last known-good buffer. A full-sync change publishes diagnostics from the new `contentChanges` text, so completion, hover, definition, symbols, formatting, and rename observe the same accepted in-memory document. Incremental range edits are intentionally rejected rather than applied approximately, and a future incremental implementation must negotiate and test position encoding before it is advertised. When a lint message reports a source line, the server maps it to a zero-based LSP range spanning that line’s character width; diagnostics without a parsed line use the first line as a deterministic fallback.
 
 ## Tooling Synchronization
 

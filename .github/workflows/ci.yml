@@ -102,6 +102,9 @@ jobs:
       - name: Run M3-LSP-01 semantic parity contract
         run: scripts/test_lsp_semantic_parity.sh
 
+      - name: Run LSP protocol synchronization contract
+        run: scripts/test_lsp_protocol_sync.sh
+
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 

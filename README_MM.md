@@ -20,7 +20,7 @@ Zap ကို စတင်လေ့လာသူများအတွက် ရ�
 
 ## Project Status
 
-Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ cooperative `task_cancel`၊ poll-budget `task_join_timeout` ပါသော async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။ M2-VERIFY-01 တွင် fixed-seed bounded replay၊ repeated semantic outcome digest နှင့် CI/release-preflight evidence များကို ထည့်သွင်းထားပါသည်။ M3-STDLIB-01 တွင် public standard-library domain နှင့် builtin တစ်ခုချင်းစီအတွက် stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout/error နှင့် determinism metadata ပါသော catalog နှင့် bilingual policy ကို ထည့်သွင်းထားပါသည်။ M3-LSP-01 တွင် parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware indexing၊ catalog-driven completion နှင့် async builtin hover/signature metadata ပါသော LSP/editor semantic parity ကို ထည့်သွင်းထားပါသည်။ M4-RFC-01 သည် traits နှင့် composition အတွက် reviewed design direction ကို မှတ်တမ်းတင်ထားသော်လည်း proposed syntax ကို enable မလုပ်သေးပါ။
+Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ cooperative `task_cancel`၊ poll-budget `task_join_timeout` ပါသော async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။ M2-VERIFY-01 တွင် fixed-seed bounded replay၊ repeated semantic outcome digest နှင့် CI/release-preflight evidence များကို ထည့်သွင်းထားပါသည်။ M3-STDLIB-01 တွင် public standard-library domain နှင့် builtin တစ်ခုချင်းစီအတွက် stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout/error နှင့် determinism metadata ပါသော catalog နှင့် bilingual policy ကို ထည့်သွင်းထားပါသည်။ M3-LSP-01 တွင် parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware indexing၊ catalog-driven completion နှင့် async builtin hover/signature metadata ပါသော LSP/editor semantic parity ကို ထည့်သွင်းထားပါသည်။ M4-RFC-01 သည် traits နှင့် composition အတွက် reviewed design direction ကို မှတ်တမ်းတင်ထားသော်လည်း proposed syntax ကို enable မလုပ်သေးပါ။ v2.2.0 နောက်ပိုင်း LSP hardening တွင် standard full-sync `didChange` ၏ `params.contentChanges` ကို အသုံးပြုကာ document version များကို track လုပ်ပြီး accepted buffer အပေါ် diagnostics ထုတ်ပေးသည်။ Stale သို့မဟုတ် unsupported range edit များကို လုံခြုံစွာ reject လုပ်သည်။ Scope-aware semantic rename သည် နောက်ဆက်တွဲအလုပ်ဖြစ်ပြီး လက်ရှိ lexer-span rename ကို shadowed binding များအတွက် production-safe ဟု မယူဆရပါ။
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|
@@ -36,7 +36,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
 | Runtime architecture | `runtime_state.rs` နှင့် `value.rs` တွင် per-run `RuntimeState`၊ `MemoryBudget`၊ `ObjectStore`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking၊ execution-depth accounting၊ reset-detached lifecycle statistics နှင့် parent-linked `EnvFrame` closure များကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
-| Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence နှင့် M3-LSP-01 semantic-parity/editor validation evidence |
+| Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence၊ M3-LSP-01 semantic-parity/editor validation နှင့် post-release LSP protocol synchronization evidence |
 | Language design | [Traits/composition RFC](docs/TRAITS_RFC_MM.md) — design-only ဖြစ်ပြီး v2.2.0 အတွက် deferred |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -45,6 +45,10 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 ## Learning Guide
 
 စတင်လေ့လာမည့်လမ်းကြောင်းကို ရွေးချယ်ရန် [မြန်မာ documentation navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) ကို အရင်ဖတ်ရှုပါ။ ထို့နောက် [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) နှင့် [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md) ကို အသုံးပြုနိုင်ပါသည်။ English lessons အတွက် [English learning guide](docs/LEARN_ZAP_EN.md)၊ [English syntax guide](docs/SYNTAX_GUIDE_EN.md) နှင့် [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) ကို ဖတ်ရှုနိုင်ပါသည်။
+
+### LSP editor hardening အတွင်း limitation
+
+လက်ရှိ server သည် full document synchronization ကို ကြေညာပြီး လက်ခံထားသော newer document version များအတွက် standard `contentChanges` ကို မှန်ကန်စွာ အသုံးပြုသည်။ Position-aware application မတည်ဆောက်မချင်း range-based incremental change များကို reject လုပ်ထားသည်။ Rename သည် string၊ comment၊ keyword နှင့် builtin များကို မပြောင်းလဲစေသော်လည်း shadowed binding များအတွက် scope-aware မဖြစ်သေးသဖြင့် automated refactoring အတွက် မယုံကြည်သင့်ပါ။ Protocol regression ကို `scripts/test_lsp_protocol_sync.sh` ဖြင့် စစ်ဆေးနိုင်သည်။
 
 ## Why Zap?
 

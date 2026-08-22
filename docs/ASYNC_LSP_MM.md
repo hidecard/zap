@@ -83,14 +83,14 @@ Editor server ကို အောက်ပါ command ဖြင့် စတင�
 zap lsp
 ```
 
-Server သည် standard input/output မှတစ်ဆင့် `Content-Length` header ဖြင့် frame လုပ်ထားသော JSON-RPC message များကို ဆက်သွယ်ပါသည်။
+Server သည် standard input/output မှတစ်ဆင့် `Content-Length` header ဖြင့် frame လုပ်ထားသော JSON-RPC message များကို ဆက်သွယ်ပါသည်။ `initialize` သည် `textDocumentSync` တွင် `openClose: true` နှင့် `change: 1` ကို ကြေညာသဖြင့် client များသည် full-document change ကို `params.contentChanges` မှတစ်ဆင့် ပေးရမည်ဖြစ်သည်။ `didChange` ထဲရှိ non-standard `textDocument.text` field ကို server မဖတ်ပါ။
 
 | Message | အပြုအမူ |
 |---|---|
 | `initialize` | Zap server information ကို ပြန်ပေးပြီး text synchronization၊ completion၊ diagnostics၊ hover၊ definition၊ rename နှင့် workspace-symbol capabilities များကို ကြေညာသည်။ |
 | `shutdown` | အောင်မြင်သော null result ကို ပြန်ပေးသည်။ |
-| `textDocument/didOpen` | Document ကို သိမ်းဆည်းပြီး deterministic source ranges ပါသော lint diagnostics ထုတ်ပေးသည်။ |
-| `textDocument/didChange` | သိမ်းဆည်းထားသော document ကို အစားထိုးပြီး diagnostics အသစ် ထုတ်ပေးသည်။ |
+| `textDocument/didOpen` | Document text နှင့် optional monotonically increasing version ကို သိမ်းဆည်းပြီး deterministic source range ပါသော lint diagnostics ထုတ်ပေးသည်။ |
+| `textDocument/didChange` | ကြေညာထားသော full-sync mode အတွက် standard `params.contentChanges` payload ကို အသုံးပြုကာ နောက်ဆုံး full-text change မှ stored document ကို အစားထိုးသည်။ Versioned open ပြီးနောက် stale/unversioned update များကို reject လုပ်ပြီး လက်ခံထားသော text အပေါ် diagnostics ထုတ်ပေးသည်။ Position-aware incremental mode မတည်ဆောက်မချင်း range-based incremental change များကို လုံခြုံစွာ reject လုပ်သည်။ |
 | `textDocument/didClose` | Per-session workspace index မှ document ကို ဖယ်ရှားပြီး အခြား LSP session များကို မထိခိုက်စေပါ။ |
 | `textDocument/completion` | လက်ရှိ source prefix အပေါ်မူတည်၍ language keyword၊ catalog ထဲရှိ standard-library builtin အားလုံးနှင့် document ထဲမှ top-level `let`/function declaration များကို filter လုပ်သည်။ |
 | `textDocument/hover` | သိမ်းဆည်းထားသော document ကို parse လုပ်ပြီး top-level function၊ class နှင့် declaration များအတွက် parser-owned metadata ပြသည်။ Async builtin များအတွက် stable scheduling documentation ကို ပြသည်။ |
@@ -103,7 +103,7 @@ Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ con
 
 Workspace symbol indexing သည် ဖွင့်ထားသော file ၏ directory မှ `import app.util as util` ကဲ့သို့သော explicit local import များကို လိုက်လံရှာဖွေပြီး dotted path ကို `app/util.zp` အဖြစ် ပြောင်းလဲပါသည်။ Imported file များကို indexing မပြုမီ canonicalize လုပ်ပြီး importing directory အတွင်းတွင်သာ ရှိရမည်ဖြစ်ကာ 8 MiB အထိသာ ခွင့်ပြုပါသည်။ Invalid၊ မတွေ့ရှိသော၊ အရွယ်အစားကျော်လွန်သော၊ ဖတ်မရသော သို့မဟုတ် traversal ဆန်သော module များကို editor သို့မဟုတ် filesystem escape မဖြစ်စေရန် deterministic အတိုင်း ကျော်လွှားပါသည်။ ရှာဖွေတွေ့ရှိသော module URI များကို open document များနှင့်အတူ sorted index တစ်ခုတည်းထဲ ထည့်သွင်းသဖြင့် nested import များကို တစ်ကြိမ်သာ လိုက်လံပြီး ရလဒ်များ တည်ငြိမ်နေပါသည်။
 
-Diagnostics များကို Zap ၏ ရှိပြီးသား lint implementation မှ ထုတ်ယူပါသည်။ ထို့ကြောင့် CLI နှင့် editor diagnostics များ၏ rules များ တူညီနေပါသည်။ Lint message တွင် source line ပါရှိပါက server သည် ၎င်းကို zero-based LSP range အဖြစ် ပြောင်းပြီး line ၏ character width အတိုင်း သတ်မှတ်ပါသည်။ Line မဖတ်နိုင်သော diagnostic များအတွက် ပထမ line ကို deterministic fallback အဖြစ် အသုံးပြုပါသည်။
+Diagnostics များကို Zap ၏ ရှိပြီးသား lint implementation မှ ထုတ်ယူပါသည်။ ထို့ကြောင့် CLI နှင့် editor diagnostics များ၏ rules များ တူညီနေပါသည်။ LSP session တစ်ခုအတွင်း document version များသည် monotonic ဖြစ်ရမည်။ Versioned document အတွက် stale သို့မဟုတ် unversioned change များကို လျစ်လျူရှုပြီး နောက်ဆုံးမှန်ကန်သော buffer ကို မအစားထိုးပါ။ Full-sync change လက်ခံသောအခါ `contentChanges` ထဲမှ text အသစ်အပေါ် diagnostics ထုတ်ပေးသဖြင့် completion၊ hover၊ definition၊ symbol၊ formatting နှင့် rename အားလုံးသည် တစ်ခုတည်းသော accepted in-memory document ကို အသုံးပြုသည်။ Incremental range edit များကို မမှန်ကန်စွာ ခန့်မှန်း apply မလုပ်ဘဲ intentional reject လုပ်ထားပြီး future incremental implementation မတိုင်မီ position encoding ကို negotiate/test လုပ်ရမည်။ Lint message တွင် source line ပါရှိပါက server သည် ၎င်းကို zero-based LSP range အဖြစ် ပြောင်းပြီး line ၏ character width အတိုင်း သတ်မှတ်ပါသည်။ Line မဖတ်နိုင်သော diagnostic များအတွက် ပထမ line ကို deterministic fallback အဖြစ် အသုံးပြုပါသည်။
 
 ## Tooling Synchronization
 

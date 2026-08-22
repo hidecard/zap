@@ -179,6 +179,7 @@ check_release_files() {
     scripts/test_benchmark_provenance.sh
     scripts/test_stdlib_policy.sh
     scripts/test_lsp_semantic_parity.sh
+    scripts/test_lsp_protocol_sync.sh
     scripts/validate_vscode_assets.py
     editors/vscode/package.json
     editors/vscode/language-configuration.json
@@ -377,6 +378,9 @@ run_contract_validation() {
 
   bash scripts/test_lsp_semantic_parity.sh
   pass "LSP and VS Code semantic-parity contract passed"
+
+  bash scripts/test_lsp_protocol_sync.sh
+  pass "LSP protocol synchronization contract passed"
 
   local benchmark_raw="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"

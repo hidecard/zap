@@ -8,15 +8,44 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[derive(Debug, Clone)]
+struct DocumentState {
+    version: Option<i64>,
+    text: String,
+}
+
 #[derive(Debug, Default)]
 pub struct LspState {
-    documents: BTreeMap<String, String>,
+    documents: BTreeMap<String, DocumentState>,
 }
 
 impl LspState {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+fn accepts_document_version(current: Option<i64>, incoming: Option<i64>) -> bool {
+    match (current, incoming) {
+        (Some(current), Some(incoming)) => incoming > current,
+        (Some(_), None) => false,
+        (None, _) => true,
+    }
+}
+
+fn full_sync_text(changes: &[Value]) -> Option<String> {
+    if changes.is_empty()
+        || changes
+            .iter()
+            .any(|change| change.get("range").is_some() || change.get("rangeLength").is_some())
+    {
+        return None;
+    }
+    changes
+        .last()
+        .and_then(|change| change.get("text"))
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
 }
 
 pub fn run_stdio() -> Result<(), String> {
@@ -125,7 +154,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
             "id": message.get("id").cloned().unwrap_or(Value::Null),
             "result": {
                 "capabilities": {
-                    "textDocumentSync": 1,
+                    "textDocumentSync": {"openClose": true, "change": 1},
                     "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
                     "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
                     "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
@@ -152,13 +181,43 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
         "textDocument/formatting" => Some(formatting_response(message, state)),
         "workspace/symbol" => Some(workspace_symbol_response(message, state)),
         "textDocument/documentSymbol" => Some(document_symbol_response(message, state)),
-        "textDocument/didOpen" | "textDocument/didChange" => {
+        "textDocument/didOpen" => {
             let params = message.get("params")?;
             let document = params.get("textDocument")?;
             let uri = document.get("uri")?.as_str()?;
             let text = document.get("text").and_then(Value::as_str).unwrap_or("");
-            state.documents.insert(uri.to_string(), text.to_string());
+            let version = document.get("version").and_then(Value::as_i64);
+            state.documents.insert(
+                uri.to_string(),
+                DocumentState {
+                    version,
+                    text: text.to_string(),
+                },
+            );
             Some(publish_diagnostics(uri, text))
+        }
+        "textDocument/didChange" => {
+            let params = message.get("params")?;
+            let document = params.get("textDocument")?;
+            let uri = document.get("uri")?.as_str()?;
+            let version = document.get("version").and_then(Value::as_i64);
+            let changes = params.get("contentChanges")?.as_array()?;
+            let current_version = state
+                .documents
+                .get(uri)
+                .and_then(|document| document.version);
+            if !accepts_document_version(current_version, version) {
+                return None;
+            }
+            let text = full_sync_text(changes)?;
+            state.documents.insert(
+                uri.to_string(),
+                DocumentState {
+                    version,
+                    text: text.clone(),
+                },
+            );
+            Some(publish_diagnostics(uri, &text))
         }
         "textDocument/didClose" => {
             let uri = message["params"]["textDocument"]["uri"].as_str()?;
@@ -192,7 +251,11 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let position = &message["params"]["position"];
     let prefix = source_prefix(
         &source,
@@ -261,7 +324,11 @@ fn signature_help_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
     let character = message["params"]["position"]["character"]
         .as_u64()
@@ -391,7 +458,11 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
         .as_str()
         .unwrap_or("");
     let new_name = message["params"]["newName"].as_str().unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     if !is_valid_identifier(new_name) {
         return json!({
             "jsonrpc": "2.0",
@@ -475,7 +546,11 @@ fn hover_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
     let character = message["params"]["position"]["character"]
         .as_u64()
@@ -533,7 +608,11 @@ fn definition_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let position = &message["params"]["position"];
     let word = source_prefix(
         &source,
@@ -557,7 +636,11 @@ fn formatting_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let formatted = format_source(&source);
     let end_line = source.lines().count().saturating_sub(1) as u64;
     let end_character = source
@@ -624,7 +707,7 @@ fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
     while cursor < pending.len() {
         let uri = pending[cursor].clone();
         cursor += 1;
-        let Some(source) = documents.get(&uri).cloned() else {
+        let Some(source) = documents.get(&uri).map(|document| document.text.clone()) else {
             continue;
         };
         let Some(source_path) = file_uri_path(&uri) else {
@@ -668,14 +751,23 @@ fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
             };
             let module_uri = path_to_file_uri(&canonical);
             if documents
-                .insert(module_uri.clone(), module_source)
+                .insert(
+                    module_uri.clone(),
+                    DocumentState {
+                        version: None,
+                        text: module_source,
+                    },
+                )
                 .is_none()
             {
                 pending.push(module_uri);
             }
         }
     }
-    documents.into_iter().collect()
+    documents
+        .into_iter()
+        .map(|(uri, document)| (uri, document.text))
+        .collect()
 }
 
 fn file_uri_path(uri: &str) -> Option<PathBuf> {
@@ -759,7 +851,11 @@ fn document_symbol_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
         .unwrap_or("");
-    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.clone())
+        .unwrap_or_default();
     let symbols = crate::ast::parse_program(&source)
         .map(|program| document_symbols_for_program(uri, &source, &program))
         .unwrap_or_default();
@@ -1406,6 +1502,156 @@ mod tests {
     }
 
     #[test]
+    fn did_change_full_sync_uses_content_changes_and_updates_symbols() {
+        let uri = "file:///sync-symbols.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 1, "text": "fn first():\n    return 1\n"}}
+            }),
+            &mut state,
+        );
+        let change = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri, "version": 2},
+                    "contentChanges": [{"text": "fn second():\n    return 2\n"}]
+                }
+            }),
+            &mut state,
+        )
+        .expect("accepted full-sync change should publish diagnostics");
+        assert_eq!(change["params"]["uri"], uri);
+        let symbols = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 47, "method": "textDocument/documentSymbol",
+                "params": {"textDocument": {"uri": uri}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let names = symbols["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|symbol| symbol["name"].as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(names, vec!["second"]);
+    }
+
+    #[test]
+    fn did_change_full_sync_publishes_diagnostics_from_new_text() {
+        let uri = "file:///sync-diagnostics.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 1, "text": "let value: number = 1\n"}}
+            }),
+            &mut state,
+        );
+        let change = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri, "version": 2},
+                    "contentChanges": [{"text": "let value: number = \"bad\"\n"}]
+                }
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(change["params"]["diagnostics"][0]["code"], "ZAP-TYPE-001");
+    }
+
+    #[test]
+    fn did_change_rejects_stale_versions_without_replacing_document() {
+        let uri = "file:///sync-version.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 2, "text": "fn current():\n    return 1\n"}}
+            }),
+            &mut state,
+        );
+        assert!(handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri, "version": 1},
+                    "contentChanges": [{"text": "fn stale():\n    return 1\n"}]
+                }
+            }),
+            &mut state,
+        )
+        .is_none());
+        let symbols = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 48, "method": "textDocument/documentSymbol",
+                "params": {"textDocument": {"uri": uri}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(symbols["result"][0]["name"], "current");
+    }
+
+    #[test]
+    fn did_change_rejects_unversioned_update_after_versioned_open() {
+        let uri = "file:///sync-unversioned.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 1, "text": "fn current():\n    return 1\n"}}
+            }),
+            &mut state,
+        );
+        assert!(handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri},
+                    "contentChanges": [{"text": "fn unsafe():\n    return 1\n"}]
+                }
+            }),
+            &mut state,
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn did_change_rejects_incremental_payload_when_full_sync_is_advertised() {
+        let uri = "file:///sync-incremental.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 1, "text": "fn current():\n    return 1\n"}}
+            }),
+            &mut state,
+        );
+        assert!(handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri, "version": 2},
+                    "contentChanges": [{
+                        "range": {"start": {"line": 0, "character": 3}, "end": {"line": 0, "character": 10}},
+                        "rangeLength": 7,
+                        "text": "updated"
+                    }]
+                }
+            }),
+            &mut state,
+        )
+        .is_none());
+    }
+
+    #[test]
     fn initialize_advertises_rename_provider() {
         let response = handle_message(&json!({
             "jsonrpc": "2.0", "id": 46, "method": "initialize", "params": {}
@@ -1438,7 +1684,14 @@ mod tests {
             handle_message(&json!({"jsonrpc":"2.0","id":7,"method":"initialize"})).unwrap();
         assert_eq!(response["id"], 7);
         assert_eq!(response["result"]["serverInfo"]["name"], "zap");
-        assert_eq!(response["result"]["capabilities"]["textDocumentSync"], 1);
+        assert_eq!(
+            response["result"]["capabilities"]["textDocumentSync"]["change"],
+            1
+        );
+        assert_eq!(
+            response["result"]["capabilities"]["textDocumentSync"]["openClose"],
+            true
+        );
         assert_eq!(
             response["result"]["capabilities"]["definitionProvider"],
             true
