@@ -8,7 +8,7 @@ The policy applies to the current release line, **v2.2.0**, and is intended to b
 
 ## Stability model
 
-Every public domain and builtin has one stability label, one introduction release, one deprecation-window value, one semantic-versioning rule, one platform-support declaration, explicit input/output limits, a timeout policy, an error contract, and a determinism flag. A new public API must not be added to the catalog with any field omitted.
+Every public domain and builtin has one stability label, one introduction release, one deprecation-window value, one semantic-versioning rule, one platform-support declaration, explicit input/output limits, a timeout policy, an error contract, and a `determinism_class`. A new public API must not be added to the catalog with any field omitted. Catalog schema version 2 also retains the schema-version-1 `deterministic` boolean as a compatibility view.
 
 | Label | Meaning | Compatibility consequence |
 |---|---|---|
@@ -19,26 +19,32 @@ Every public domain and builtin has one stability label, one introduction releas
 
 The current public catalog marks all released domains and builtins as `stable`, introduced in `2.1.14`, with no active deprecation window. Future entries may use another label only when their documentation and tests satisfy the corresponding requirements.
 
+## Determinism taxonomy
+
+`determinism_class` is more precise than the legacy boolean. `pure` means the result is a function of explicit inputs and has no runtime or external-state dependency. `input-deterministic` means validated inputs determine a repeatable transformation, including parsing, encoding, or duration decomposition. `runtime-dependent` means the result may depend on process state, scheduling, platform configuration, or the current clock. `external-io` means the operation reads, writes, or coordinates with the filesystem, environment, network, process table, or another external system.
+
+The retained `deterministic` field is `true` only for `pure` and `input-deterministic` entries, and `false` for `runtime-dependent` and `external-io` entries. New tooling should consume `determinism_class`; the boolean remains available for consumers that still read schema-version-1 metadata. Domain classifications are conservative defaults, and builtin-level exceptions are explicit: path and structured-log builders are `pure`; URL parsing/encoding/decoding and duration transforms are `input-deterministic`; clock and environment/configuration access are `runtime-dependent` or `external-io` as appropriate.
+
 ## Public domain policy
 
 The following table is the normative domain-level summary. Individual builtins inherit the limits and error contract of their domain unless the catalog gives a narrower value.
 
-| Public domain | Stability | Since | Deprecation window | Semver rule | Supported targets | Input limit | Output limit | Timeout policy | Deterministic |
+| Public domain | Stability | Since | Deprecation window | Semver rule | Supported targets | Input limit | Output limit | Timeout policy | Determinism class |
 |---|---|---|---|---|---|---|---|---|---|
-| `text` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB text argument | 8 KiB text result | not applicable | yes |
-| `math` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded integer arguments | bounded integer result | not applicable | yes |
-| `collections` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB logical collection graph | 8 MiB logical collection graph | not applicable | yes |
-| `filesystem` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB path/content input | 8 MiB text/line output | not applicable | yes |
-| `json` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB JSON input | 8 MiB JSON output | not applicable | yes |
-| `system` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB environment/path input | 8 KiB text or structured result | not applicable | yes |
-| `time` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | checked integer milliseconds | checked duration map | not applicable | yes |
-| `logging` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB message and 64 fields | 64 KiB encoded record | not applicable | yes |
-| `runtime` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded diagnostic request | bounded statistics map | not applicable | yes |
-| `async` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | run-owned task and poll budgets | bounded task result | cooperative cancellation or poll-budget timeout | yes |
-| `network` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB URL and 8 MiB request body | 8 MiB response body | bounded connect/read/write; server wait 10 seconds | yes |
-| `process` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | text command, text arguments, 1 MiB output | 1 MiB captured stdout/stderr | bounded child wait and cleanup | yes |
+| `text` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB text argument | 8 KiB text result | not applicable | pure |
+| `math` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded integer arguments | bounded integer result | not applicable | pure |
+| `collections` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB logical collection graph | 8 MiB logical collection graph | not applicable | pure |
+| `filesystem` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB path/content input | 8 MiB text/line output | not applicable | external-io |
+| `json` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB JSON input | 8 MiB JSON output | not applicable | pure |
+| `system` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB environment/path input | 8 KiB text or structured result | not applicable | runtime-dependent |
+| `time` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | checked integer milliseconds | checked duration map | not applicable | runtime-dependent |
+| `logging` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB message and 64 fields | 64 KiB encoded record | not applicable | external-io |
+| `runtime` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded diagnostic request | bounded statistics map | not applicable | runtime-dependent |
+| `async` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | run-owned task and poll budgets | bounded task result | cooperative cancellation or poll-budget timeout | runtime-dependent |
+| `network` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB URL and 8 MiB request body | 8 MiB response body | bounded connect/read/write; server wait 10 seconds | external-io |
+| `process` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | text command, text arguments, 1 MiB output | 1 MiB captured stdout/stderr | bounded child wait and cleanup | external-io |
 
-All public domains use the stable runtime diagnostic contract. Invalid types, malformed values, path escapes, oversized values, unavailable platform operations, and exceeded logical budgets fail closed. The `deterministic` field describes repeatable Zap-level behavior and does not claim that external clocks, network peers, process scheduling, or filesystem latency are deterministic.
+All public domains use the stable runtime diagnostic contract. Invalid types, malformed values, path escapes, oversized values, unavailable platform operations, and exceeded logical budgets fail closed. The `determinism_class` field describes the source of repeatability and dependency; it does not claim that external clocks, network peers, process scheduling, or filesystem latency are deterministic. In particular, a `pure` or `input-deterministic` builtin can be listed within a domain whose default is `runtime-dependent` or `external-io` when the builtin-level implementation has no such dependency.
 
 ## API evolution and semver rules
 
@@ -68,4 +74,4 @@ The public surface remains discoverable through the [English standard-library in
 
 ## Current release decision
 
-For v2.2.0, all cataloged standard-library domains and builtins remain **stable**, have no active deprecation window, follow the minor-compatible default, support the release-target matrix, and expose bounded deterministic error behavior. Namespace imports and remote standard-library packages remain separate future milestones; traits-based composition is documented by the design-only M4-RFC-01 and remains deferred.
+For v2.2.0, all cataloged standard-library domains and builtins remain **stable**, have no active deprecation window, follow the minor-compatible default, support the release-target matrix, and expose bounded error behavior. Their schema-2 determinism classes distinguish pure/input-driven transformations from runtime-dependent and external-I/O behavior; the legacy boolean remains only as a compatibility view. Namespace imports and remote standard-library packages remain separate future milestones; traits-based composition is documented by the design-only M4-RFC-01 and remains deferred.

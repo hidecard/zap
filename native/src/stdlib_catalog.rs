@@ -61,6 +61,31 @@ impl PlatformSupport {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DeterminismClass {
+    Pure,
+    InputDeterministic,
+    RuntimeDependent,
+    ExternalIo,
+}
+
+#[allow(dead_code)]
+impl DeterminismClass {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Pure => "pure",
+            Self::InputDeterministic => "input-deterministic",
+            Self::RuntimeDependent => "runtime-dependent",
+            Self::ExternalIo => "external-io",
+        }
+    }
+
+    pub(crate) const fn legacy_deterministic(self) -> bool {
+        matches!(self, Self::Pure | Self::InputDeterministic)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct PublicDomainPolicy {
     pub domain: &'static str,
@@ -73,6 +98,8 @@ pub(crate) struct PublicDomainPolicy {
     pub output_limit: &'static str,
     pub timeout: &'static str,
     pub error_contract: &'static str,
+    pub determinism_class: DeterminismClass,
+    /// Compatibility view retained for consumers of schema version 1.
     pub deterministic: bool,
 }
 
@@ -89,14 +116,52 @@ pub(crate) struct PublicBuiltin {
     pub output_limit: &'static str,
     pub timeout: &'static str,
     pub error_contract: &'static str,
+    pub determinism_class: DeterminismClass,
+    /// Compatibility view retained for consumers of schema version 1.
     pub deterministic: bool,
 }
 
 #[allow(dead_code)]
-pub(crate) const CATALOG_SCHEMA_VERSION: u32 = 1;
+pub(crate) const CATALOG_SCHEMA_VERSION: u32 = 2;
 
 macro_rules! stable_domain {
-    ($domain:literal, $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+    ("text", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "text", $input_limit, $output_limit, $timeout, DeterminismClass::Pure)
+    };
+    ("math", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "math", $input_limit, $output_limit, $timeout, DeterminismClass::Pure)
+    };
+    ("collections", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "collections", $input_limit, $output_limit, $timeout, DeterminismClass::Pure)
+    };
+    ("filesystem", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "filesystem", $input_limit, $output_limit, $timeout, DeterminismClass::ExternalIo)
+    };
+    ("json", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "json", $input_limit, $output_limit, $timeout, DeterminismClass::Pure)
+    };
+    ("system", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "system", $input_limit, $output_limit, $timeout, DeterminismClass::RuntimeDependent)
+    };
+    ("time", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "time", $input_limit, $output_limit, $timeout, DeterminismClass::RuntimeDependent)
+    };
+    ("logging", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "logging", $input_limit, $output_limit, $timeout, DeterminismClass::ExternalIo)
+    };
+    ("runtime", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "runtime", $input_limit, $output_limit, $timeout, DeterminismClass::RuntimeDependent)
+    };
+    ("async", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "async", $input_limit, $output_limit, $timeout, DeterminismClass::RuntimeDependent)
+    };
+    ("network", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "network", $input_limit, $output_limit, $timeout, DeterminismClass::ExternalIo)
+    };
+    ("process", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "process", $input_limit, $output_limit, $timeout, DeterminismClass::ExternalIo)
+    };
+    (@build $domain:literal, $input_limit:literal, $output_limit:literal, $timeout:literal, $determinism:expr) => {
         PublicDomainPolicy {
             domain: $domain,
             stability: StabilityLabel::Stable,
@@ -108,7 +173,8 @@ macro_rules! stable_domain {
             output_limit: $output_limit,
             timeout: $timeout,
             error_contract: "stable runtime diagnostic; malformed and oversized input fails closed",
-            deterministic: true,
+            determinism_class: $determinism,
+            deterministic: ($determinism).legacy_deterministic(),
         }
     };
 }
@@ -192,7 +258,110 @@ pub(crate) const PUBLIC_DOMAINS: &[PublicDomainPolicy] = &[
 ];
 
 macro_rules! stable_builtin {
-    ($name:literal, $domain:literal) => {
+    ("path_join", "system") => {
+        stable_builtin!("path_join", "system", DeterminismClass::Pure)
+    };
+    ("now", "system") => {
+        stable_builtin!("now", "system", DeterminismClass::RuntimeDependent)
+    };
+    ("utc_now", "time") => {
+        stable_builtin!("utc_now", "time", DeterminismClass::RuntimeDependent)
+    };
+    ("duration_parts", "time") => {
+        stable_builtin!(
+            "duration_parts",
+            "time",
+            DeterminismClass::InputDeterministic
+        )
+    };
+    ("duration_between", "time") => {
+        stable_builtin!(
+            "duration_between",
+            "time",
+            DeterminismClass::InputDeterministic
+        )
+    };
+    ("env", "system") => {
+        stable_builtin!("env", "system", DeterminismClass::ExternalIo)
+    };
+    ("has_env", "system") => {
+        stable_builtin!("has_env", "system", DeterminismClass::ExternalIo)
+    };
+    ("env_get", "system") => {
+        stable_builtin!("env_get", "system", DeterminismClass::ExternalIo)
+    };
+    ("config_dir", "system") => {
+        stable_builtin!("config_dir", "system", DeterminismClass::ExternalIo)
+    };
+    ("config_path", "system") => {
+        stable_builtin!("config_path", "system", DeterminismClass::ExternalIo)
+    };
+    ("basename", "system") => {
+        stable_builtin!("basename", "system", DeterminismClass::Pure)
+    };
+    ("dirname", "system") => {
+        stable_builtin!("dirname", "system", DeterminismClass::Pure)
+    };
+    ("url_parse", "network") => {
+        stable_builtin!("url_parse", "network", DeterminismClass::InputDeterministic)
+    };
+    ("url_encode", "network") => {
+        stable_builtin!(
+            "url_encode",
+            "network",
+            DeterminismClass::InputDeterministic
+        )
+    };
+    ("url_decode", "network") => {
+        stable_builtin!(
+            "url_decode",
+            "network",
+            DeterminismClass::InputDeterministic
+        )
+    };
+    ("log_record", "logging") => {
+        stable_builtin!("log_record", "logging", DeterminismClass::Pure)
+    };
+    ("log_json", "logging") => {
+        stable_builtin!("log_json", "logging", DeterminismClass::Pure)
+    };
+    ($name:literal, "text") => {
+        stable_builtin!($name, "text", DeterminismClass::Pure)
+    };
+    ($name:literal, "math") => {
+        stable_builtin!($name, "math", DeterminismClass::Pure)
+    };
+    ($name:literal, "collections") => {
+        stable_builtin!($name, "collections", DeterminismClass::Pure)
+    };
+    ($name:literal, "filesystem") => {
+        stable_builtin!($name, "filesystem", DeterminismClass::ExternalIo)
+    };
+    ($name:literal, "json") => {
+        stable_builtin!($name, "json", DeterminismClass::Pure)
+    };
+    ($name:literal, "system") => {
+        stable_builtin!($name, "system", DeterminismClass::RuntimeDependent)
+    };
+    ($name:literal, "time") => {
+        stable_builtin!($name, "time", DeterminismClass::RuntimeDependent)
+    };
+    ($name:literal, "logging") => {
+        stable_builtin!($name, "logging", DeterminismClass::ExternalIo)
+    };
+    ($name:literal, "runtime") => {
+        stable_builtin!($name, "runtime", DeterminismClass::RuntimeDependent)
+    };
+    ($name:literal, "async") => {
+        stable_builtin!($name, "async", DeterminismClass::RuntimeDependent)
+    };
+    ($name:literal, "network") => {
+        stable_builtin!($name, "network", DeterminismClass::ExternalIo)
+    };
+    ($name:literal, "process") => {
+        stable_builtin!($name, "process", DeterminismClass::ExternalIo)
+    };
+    ($name:literal, $domain:literal, $determinism:expr) => {
         PublicBuiltin {
             name: $name,
             domain: $domain,
@@ -205,7 +374,8 @@ macro_rules! stable_builtin {
             output_limit: "see domain policy",
             timeout: "see domain policy",
             error_contract: "stable runtime diagnostic; malformed and oversized input fails closed",
-            deterministic: true,
+            determinism_class: $determinism,
+            deterministic: ($determinism).legacy_deterministic(),
         }
     };
 }
@@ -285,14 +455,37 @@ pub(crate) fn contains(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        contains, SemverPolicy, StabilityLabel, CATALOG_SCHEMA_VERSION, PUBLIC_BUILTINS,
-        PUBLIC_DOMAINS,
+        contains, DeterminismClass, SemverPolicy, StabilityLabel, CATALOG_SCHEMA_VERSION,
+        PUBLIC_BUILTINS, PUBLIC_DOMAINS,
     };
     use std::collections::BTreeSet;
 
+    fn expected_determinism(domain: &str) -> DeterminismClass {
+        match domain {
+            "text" | "math" | "collections" | "json" => DeterminismClass::Pure,
+            "filesystem" | "logging" | "network" | "process" => DeterminismClass::ExternalIo,
+            "system" | "time" | "runtime" | "async" => DeterminismClass::RuntimeDependent,
+            _ => DeterminismClass::InputDeterministic,
+        }
+    }
+
+    fn expected_builtin_determinism(name: &str, domain: &str) -> DeterminismClass {
+        match name {
+            "path_join" | "basename" | "dirname" => DeterminismClass::Pure,
+            "duration_parts" | "duration_between" | "url_parse" | "url_encode" | "url_decode" => {
+                DeterminismClass::InputDeterministic
+            }
+            "log_record" | "log_json" => DeterminismClass::Pure,
+            "env" | "has_env" | "env_get" | "config_dir" | "config_path" => {
+                DeterminismClass::ExternalIo
+            }
+            _ => expected_determinism(domain),
+        }
+    }
+
     #[test]
     fn standard_library_catalog_metadata_is_complete_and_unique() {
-        assert_eq!(CATALOG_SCHEMA_VERSION, 1);
+        assert_eq!(CATALOG_SCHEMA_VERSION, 2);
         assert_eq!(PUBLIC_DOMAINS.len(), 12);
         let domains = PUBLIC_DOMAINS
             .iter()
@@ -309,7 +502,15 @@ mod tests {
             assert!(!policy.output_limit.is_empty());
             assert!(!policy.timeout.is_empty());
             assert!(!policy.error_contract.is_empty());
-            assert!(policy.deterministic);
+            assert_eq!(
+                policy.determinism_class,
+                expected_determinism(policy.domain)
+            );
+            assert_eq!(
+                policy.deterministic,
+                policy.determinism_class.legacy_deterministic()
+            );
+            assert!(!policy.determinism_class.as_str().is_empty());
         }
 
         let mut builtin_names = BTreeSet::new();
@@ -333,10 +534,51 @@ mod tests {
             assert!(!builtin.output_limit.is_empty());
             assert!(!builtin.timeout.is_empty());
             assert!(!builtin.error_contract.is_empty());
-            assert!(builtin.deterministic);
+            assert_eq!(
+                builtin.determinism_class,
+                expected_builtin_determinism(builtin.name, builtin.domain)
+            );
+            assert_eq!(
+                builtin.deterministic,
+                builtin.determinism_class.legacy_deterministic()
+            );
+            assert!(!builtin.determinism_class.as_str().is_empty());
         }
         assert!(contains("task_cancel"));
         assert!(contains("task_join_timeout"));
+    }
+
+    #[test]
+    fn determinism_class_labels_and_legacy_compatibility_are_stable() {
+        assert_eq!(DeterminismClass::Pure.as_str(), "pure");
+        assert_eq!(
+            DeterminismClass::InputDeterministic.as_str(),
+            "input-deterministic"
+        );
+        assert_eq!(
+            DeterminismClass::RuntimeDependent.as_str(),
+            "runtime-dependent"
+        );
+        assert_eq!(DeterminismClass::ExternalIo.as_str(), "external-io");
+        assert!(DeterminismClass::Pure.legacy_deterministic());
+        assert!(DeterminismClass::InputDeterministic.legacy_deterministic());
+        assert!(!DeterminismClass::RuntimeDependent.legacy_deterministic());
+        assert!(!DeterminismClass::ExternalIo.legacy_deterministic());
+
+        for class in [
+            DeterminismClass::Pure,
+            DeterminismClass::InputDeterministic,
+            DeterminismClass::RuntimeDependent,
+            DeterminismClass::ExternalIo,
+        ] {
+            assert!(
+                PUBLIC_BUILTINS
+                    .iter()
+                    .any(|builtin| builtin.determinism_class == class),
+                "catalog has no builtin in {} class",
+                class.as_str()
+            );
+        }
     }
 
     #[test]

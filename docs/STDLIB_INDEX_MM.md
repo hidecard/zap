@@ -4,7 +4,7 @@
 **ရည်ရွယ်ချက်:** Language user နှင့် package author များအတွက် public standard-library reference ဖြစ်ပြီး stability rule များကို ချိတ်ဆက်ထားသော policy က ပိုင်ဆိုင်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package author guide](PACKAGE.md) · [Stability policy](STDLIB_POLICY_MM.md)
 
-Zap ၏ standard library ကို အများပြည်သူအသုံးပြုနိုင်သော domain များအဖြစ် စနစ်တကျ ခွဲခြားထားပါသည်။ Runtime dispatch ကို compatibility အတွက် ဗဟိုမှ ဆက်လက်လုပ်ဆောင်သော်လည်း ဤ index သည် documentation၊ tooling နှင့် နောင်တွင် ထည့်သွင်းမည့် package modules များအတွက် တည်ငြိမ်သော public organization ကို သတ်မှတ်ပေးပါသည်။ Normative stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout၊ error နှင့် determinism rule များကို [standard-library stability policy](STDLIB_POLICY_MM.md) တွင် သတ်မှတ်ထားပါသည်။
+Zap ၏ standard library ကို အများပြည်သူအသုံးပြုနိုင်သော domain များအဖြစ် စနစ်တကျ ခွဲခြားထားပါသည်။ Runtime dispatch ကို compatibility အတွက် ဗဟိုမှ ဆက်လက်လုပ်ဆောင်သော်လည်း ဤ index သည် documentation၊ tooling နှင့် နောင်တွင် ထည့်သွင်းမည့် package modules များအတွက် တည်ငြိမ်သော public organization ကို သတ်မှတ်ပေးပါသည်။ Normative stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout၊ error နှင့် schema-2 determinism-class rule များကို [standard-library stability policy](STDLIB_POLICY_MM.md) တွင် သတ်မှတ်ထားပါသည်။
 
 | Public module | အသုံးပြုနိုင်သောအပိုင်း | အဓိက API များ |
 |---|---|---|
@@ -49,4 +49,4 @@ let served = http_serve_once(8080, "Hello from Zap")
 say served["path"]
 ```
 
-လက်ရှိ release line တွင် API များကို direct builtin များအဖြစ် အသုံးပြုနိုင်ပါသည်။ ဖော်ပြထားသော domain နှင့် builtin အားလုံးကို v2.2.0 အတွက် stable၊ active deprecation window မရှိ၊ release-target platform matrix ကို ထောက်ပံ့သည်ဟု catalog တွင် မှတ်တမ်းတင်ထားပါသည်။ Change checklist အတွက် [stability policy](STDLIB_POLICY_MM.md) ကို ကြည့်ပါ။ Namespace import syntax နှင့် remote standard-library package များကို P1 verification ပြီးနောက် Ecosystem milestone အတွက် ဆက်လက်လုပ်ဆောင်ပါမည်။
+လက်ရှိ release line တွင် API များကို direct builtin များအဖြစ် အသုံးပြုနိုင်ပါသည်။ ဖော်ပြထားသော domain နှင့် builtin အားလုံးကို v2.2.0 အတွက် stable၊ active deprecation window မရှိ၊ release-target platform matrix ကို ထောက်ပံ့ပြီး explicit schema-2 determinism class ပါရှိသည်ဟု catalog တွင် မှတ်တမ်းတင်ထားပါသည်။ Change checklist အတွက် [stability policy](STDLIB_POLICY_MM.md) ကို ကြည့်ပါ။ Namespace import syntax နှင့် remote standard-library package များကို P1 verification ပြီးနောက် Ecosystem milestone အတွက် ဆက်လက်လုပ်ဆောင်ပါမည်။

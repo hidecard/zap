@@ -8,7 +8,7 @@
 
 ## Stability model
 
-Public domain နှင့် builtin တစ်ခုချင်းစီတွင် stability label တစ်ခု၊ စတင်ထည့်သွင်းသည့် release တစ်ခု၊ deprecation-window value တစ်ခု၊ semantic-versioning rule တစ်ခု၊ platform-support declaration တစ်ခု၊ input/output limit များ၊ timeout policy တစ်ခု၊ error contract တစ်ခုနှင့် determinism flag တစ်ခု ရှိရမည်။ Public API အသစ်ကို catalog ထဲသို့ field တစ်ခုခု မပြည့်စုံဘဲ ထည့်သွင်းခြင်း မပြုရ။
+Public domain နှင့် builtin တစ်ခုချင်းစီတွင် stability label တစ်ခု၊ စတင်ထည့်သွင်းသည့် release တစ်ခု၊ deprecation-window value တစ်ခု၊ semantic-versioning rule တစ်ခု၊ platform-support declaration တစ်ခု၊ input/output limit များ၊ timeout policy တစ်ခု၊ error contract တစ်ခုနှင့် `determinism_class` တစ်ခု ရှိရမည်။ Public API အသစ်ကို catalog ထဲသို့ field တစ်ခုခု မပြည့်စုံဘဲ ထည့်သွင်းခြင်း မပြုရ။ Catalog schema version 2 တွင် schema-version-1 ၏ `deterministic` boolean ကို compatibility view အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 | Label | အဓိပ္ပာယ် | Compatibility အကျိုးဆက် |
 |---|---|---|
@@ -19,26 +19,32 @@ Public domain နှင့် builtin တစ်ခုချင်းစီတွ
 
 လက်ရှိ public catalog တွင် release လုပ်ပြီးသား domain နှင့် builtin အားလုံးကို `stable`၊ `2.1.14` တွင် စတင်အသုံးပြုနိုင်ပြီး active deprecation window မရှိဟု သတ်မှတ်ထားသည်။ အနာဂတ် entry များတွင် အခြား label သုံးမည်ဆိုပါက သက်ဆိုင်ရာ documentation နှင့် test လိုအပ်ချက်များကို ဖြည့်ဆည်းရမည်။
 
+## Determinism taxonomy
+
+`determinism_class` သည် legacy boolean ထက် ပိုမိုတိကျသော metadata ဖြစ်သည်။ `pure` သည် explicit input များပေါ်တွင်သာ မူတည်ပြီး runtime state သို့မဟုတ် external state dependency မရှိသော result ဖြစ်သည်။ `input-deterministic` သည် စစ်ဆေးပြီးသော input များက repeatable transformation ကို သတ်မှတ်ပေးခြင်းဖြစ်ပြီး parsing၊ encoding နှင့် duration decomposition တို့ ပါဝင်သည်။ `runtime-dependent` သည် process state၊ scheduling၊ platform configuration သို့မဟုတ် လက်ရှိ clock ပေါ် မူတည်၍ run တစ်ကြိမ်နှင့်တစ်ကြိမ် ပြောင်းနိုင်သည်။ `external-io` သည် filesystem၊ environment၊ network၊ process table သို့မဟုတ် အခြား external system များနှင့် ဖတ်ခြင်း၊ ရေးခြင်း သို့မဟုတ် ဆက်သွယ်ခြင်း ပါဝင်သည်။
+
+ဆက်လက်ထိန်းသိမ်းထားသော `deterministic` field သည် `pure` နှင့် `input-deterministic` entry များအတွက်သာ `true` ဖြစ်ပြီး `runtime-dependent` နှင့် `external-io` entry များအတွက် `false` ဖြစ်သည်။ Tooling အသစ်များသည် `determinism_class` ကို အသုံးပြုသင့်ပြီး schema-version-1 metadata ကို ဖတ်နေသေးသော consumer များအတွက် boolean ကို ဆက်လက်ပေးထားသည်။ Domain classification များသည် conservative default များဖြစ်ပြီး builtin-level exception များကို အတိအလင်း သတ်မှတ်ထားသည်။ Path နှင့် structured-log builder များသည် `pure`၊ URL parse/encode/decode နှင့် duration transform များသည် `input-deterministic`၊ clock နှင့် environment/configuration access များသည် သက်ဆိုင်ရာအလိုက် `runtime-dependent` သို့မဟုတ် `external-io` ဖြစ်သည်။
+
 ## Public domain policy
 
 အောက်ပါ table သည် domain-level normative summary ဖြစ်သည်။ Catalog တွင် ပိုမိုကျဉ်းမြောင်းသောတန်ဖိုး မပေးထားပါက builtin တစ်ခုချင်းစီသည် ၎င်း၏ domain ၏ limit နှင့် error contract ကို အမွေဆက်ခံသည်။
 
-| Public domain | Stability | Since | Deprecation window | Semver rule | ထောက်ပံ့သော target | Input limit | Output limit | Timeout policy | Deterministic |
+| Public domain | Stability | Since | Deprecation window | Semver rule | ထောက်ပံ့သော target | Input limit | Output limit | Timeout policy | Determinism class |
 |---|---|---|---|---|---|---|---|---|---|
-| `text` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB text argument | 8 KiB text result | not applicable | yes |
-| `math` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded integer arguments | bounded integer result | not applicable | yes |
-| `collections` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB logical collection graph | 8 MiB logical collection graph | not applicable | yes |
-| `filesystem` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB path/content input | 8 MiB text/line output | not applicable | yes |
-| `json` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB JSON input | 8 MiB JSON output | not applicable | yes |
-| `system` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB environment/path input | 8 KiB text or structured result | not applicable | yes |
-| `time` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | checked integer milliseconds | checked duration map | not applicable | yes |
-| `logging` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB message and 64 fields | 64 KiB encoded record | not applicable | yes |
-| `runtime` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded diagnostic request | bounded statistics map | not applicable | yes |
-| `async` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | run-owned task and poll budgets | bounded task result | cooperative cancellation or poll-budget timeout | yes |
-| `network` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB URL and 8 MiB request body | 8 MiB response body | bounded connect/read/write; server wait 10 seconds | yes |
-| `process` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | text command, text arguments, 1 MiB output | 1 MiB captured stdout/stderr | bounded child wait and cleanup | yes |
+| `text` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB text argument | 8 KiB text result | not applicable | pure |
+| `math` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded integer arguments | bounded integer result | not applicable | pure |
+| `collections` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB logical collection graph | 8 MiB logical collection graph | not applicable | pure |
+| `filesystem` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB path/content input | 8 MiB text/line output | not applicable | external-io |
+| `json` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB JSON input | 8 MiB JSON output | not applicable | pure |
+| `system` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB environment/path input | 8 KiB text or structured result | not applicable | runtime-dependent |
+| `time` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | checked integer milliseconds | checked duration map | not applicable | runtime-dependent |
+| `logging` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB message and 64 fields | 64 KiB encoded record | not applicable | external-io |
+| `runtime` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded diagnostic request | bounded statistics map | not applicable | runtime-dependent |
+| `async` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | run-owned task and poll budgets | bounded task result | cooperative cancellation or poll-budget timeout | runtime-dependent |
+| `network` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB URL and 8 MiB request body | 8 MiB response body | bounded connect/read/write; server wait 10 seconds | external-io |
+| `process` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | text command, text arguments, 1 MiB output | 1 MiB captured stdout/stderr | bounded child wait and cleanup | external-io |
 
-Public domain အားလုံးသည် stable runtime diagnostic contract ကို အသုံးပြုသည်။ Invalid type၊ malformed value၊ path escape၊ oversized value၊ မရရှိနိုင်သော platform operation နှင့် logical budget ကျော်လွန်မှုများသည် fail-closed ဖြစ်ရမည်။ `deterministic` field သည် repeatable Zap-level behavior ကိုသာ ဆိုလိုပြီး external clock၊ network peer၊ process scheduling သို့မဟုတ် filesystem latency တို့ deterministic ဖြစ်သည်ဟု မဆိုလိုပါ။
+Public domain အားလုံးသည် stable runtime diagnostic contract ကို အသုံးပြုသည်။ Invalid type၊ malformed value၊ path escape၊ oversized value၊ မရရှိနိုင်သော platform operation နှင့် logical budget ကျော်လွန်မှုများသည် fail-closed ဖြစ်ရမည်။ `determinism_class` field သည် repeatability နှင့် dependency ၏ အရင်းအမြစ်ကို ဖော်ပြပြီး external clock၊ network peer၊ process scheduling သို့မဟုတ် filesystem latency တို့ deterministic ဖြစ်သည်ဟု မဆိုလိုပါ။ Builtin တစ်ခု၏ implementation တွင် ထို dependency မရှိပါက `pure` သို့မဟုတ် `input-deterministic` builtin ကို `runtime-dependent` သို့မဟုတ် `external-io` default ရှိသော domain အတွင်းတွင် သတ်မှတ်နိုင်သည်။
 
 ## API evolution နှင့် semver rules
 
@@ -68,4 +74,4 @@ Public surface ကို [English standard-library index](STDLIB_INDEX_EN.md) �
 
 ## လက်ရှိ release ဆုံးဖြတ်ချက်
 
-v2.2.0 အတွက် catalog ထဲရှိ standard-library domain နှင့် builtin အားလုံးသည် **stable** ဖြစ်သည်။ Active deprecation window မရှိ၊ default minor-compatible rule ကို လိုက်နာပြီး release-target matrix ကို ထောက်ပံ့ကာ bounded deterministic error behavior ကို ဖော်ပြသည်။ Namespace import နှင့် remote standard-library package များသည် သီးခြား future milestone များအဖြစ် ဆက်ရှိပြီး traits-based composition ကို design-only M4-RFC-01 တွင် မှတ်တမ်းတင်ထားသော်လည်း deferred အဖြစ် ဆက်ရှိသည်။
+v2.2.0 အတွက် catalog ထဲရှိ standard-library domain နှင့် builtin အားလုံးသည် **stable** ဖြစ်သည်။ Active deprecation window မရှိ၊ default minor-compatible rule ကို လိုက်နာပြီး release-target matrix ကို ထောက်ပံ့ကာ bounded error behavior ကို ဖော်ပြသည်။ Schema-2 determinism class များသည် pure/input-driven transformation များကို runtime-dependent နှင့် external-I/O behavior များမှ ခွဲခြားပေးပြီး legacy boolean ကို compatibility view အဖြစ်သာ ဆက်လက်ထိန်းသိမ်းထားသည်။ Namespace import နှင့် remote standard-library package များသည် သီးခြား future milestone များအဖြစ် ဆက်ရှိပြီး traits-based composition ကို design-only M4-RFC-01 တွင် မှတ်တမ်းတင်ထားသော်လည်း deferred အဖြစ် ဆက်ရှိသည်။

@@ -21,17 +21,21 @@ pass() {
 [[ -f "$burmese" ]] || fail "missing $burmese"
 
 for marker in \
-  'CATALOG_SCHEMA_VERSION: u32 = 1' \
+  'CATALOG_SCHEMA_VERSION: u32 = 2' \
   'pub(crate) const PUBLIC_DOMAINS' \
   'pub(crate) const PUBLIC_BUILTINS' \
   'deprecation_window' \
   'SemverPolicy' \
   'PlatformSupport' \
   'error_contract' \
+  'determinism_class: DeterminismClass' \
   'deterministic: bool'; do
   grep -Fq -- "$marker" "$catalog" || fail "catalog marker missing: $marker"
 done
-pass "catalog contains the complete stability metadata schema"
+for class in Pure InputDeterministic RuntimeDependent ExternalIo; do
+  grep -Fq -- "$class" "$catalog" || fail "catalog is missing determinism class $class"
+done
+pass "catalog contains the complete stability and determinism metadata schema"
 
 domains=(text math collections filesystem json system time logging runtime async network process)
 for domain in "${domains[@]}"; do
@@ -46,7 +50,11 @@ for document in "$english" "$burmese"; do
   grep -Fq -- 'minor-compatible' "$document" || fail "$document is missing semver policy"
   grep -Fq -- 'Deprecation window' "$document" || fail "$document is missing deprecation metadata"
   grep -Fq -- 'Platform' "$document" || fail "$document is missing platform metadata"
-  grep -Fq -- 'Deterministic' "$document" || fail "$document is missing determinism metadata"
+  grep -Fq -- 'determinism' "$document" || fail "$document is missing determinism metadata"
+  grep -Fq -- '`pure`' "$document" || fail "$document is missing pure determinism class"
+  grep -Fq -- '`input-deterministic`' "$document" || fail "$document is missing input-deterministic class"
+  grep -Fq -- '`runtime-dependent`' "$document" || fail "$document is missing runtime-dependent class"
+  grep -Fq -- '`external-io`' "$document" || fail "$document is missing external-io class"
 done
 pass "bilingual policy documents contain release, semver, deprecation, platform, and determinism fields"
 
@@ -57,4 +65,5 @@ pass "English/Burmese policy section counts match"
 
 grep -Fq -- 'standard_library_catalog_metadata_is_complete_and_unique' "$catalog" || fail "catalog metadata regression test missing"
 grep -Fq -- 'standard_library_catalog_domain_order_is_deterministic' "$catalog" || fail "catalog ordering regression test missing"
+grep -Fq -- 'expected_builtin_determinism' "$catalog" || fail "builtin determinism regression oracle missing"
 pass "catalog metadata regression tests are present"
