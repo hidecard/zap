@@ -1,0 +1,21 @@
+# Authentication and authorization contract.
+# The host adapter authenticates credentials; Zap receives only bounded identity data.
+
+export fn auth_context(authenticated, subject, scopes):
+    let subject_ok = type(subject) == "text" and len(subject) > 0 and len(subject) <= 128
+    let scopes_ok = type(scopes) == "list" and len(scopes) <= 32
+    return {"authenticated": authenticated and subject_ok and scopes_ok, "subject": subject, "scopes": scopes, "subject_ok": subject_ok, "scopes_ok": scopes_ok}
+
+export fn authorize(context, required_scope):
+    if not context["authenticated"]:
+        return {"allowed": false, "status": 401, "error_code": "unauthenticated", "error": "authentication is required"}
+    if type(required_scope) != "text" or len(required_scope) == 0 or len(required_scope) > 128:
+        return {"allowed": false, "status": 500, "error_code": "invalid_policy", "error": "required scope is invalid"}
+    if not contains(context["scopes"], required_scope):
+        return {"allowed": false, "status": 403, "error_code": "forbidden", "error": "required scope is missing"}
+    return {"allowed": true, "status": 200, "subject": context["subject"], "scope": required_scope}
+
+export fn public_identity(context):
+    if not context["authenticated"]:
+        return {"authenticated": false}
+    return {"authenticated": true, "subject": context["subject"]}

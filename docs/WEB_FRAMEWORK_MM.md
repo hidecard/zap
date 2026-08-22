@@ -2,6 +2,7 @@
 
 **အတည်ပြုထားသော baseline:** Zap v2.2.3
 **Branch:** `Framework`
+
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package ဖြစ်ပြီး production HTTP adapter ကို သီးခြားထားသည်
 
 ## ရည်ရွယ်ချက်
@@ -136,7 +137,75 @@ Web package သည် test layer လေးမျိုးကို ခွဲထ�
 3. **Integration tests** သည် host adapter ရှိလာပြီးမှ loopback server သုံးရမည်။ Payload bounded ဖြစ်ရမည်၊ fixed/injected listener သုံးရမည်၊ cleanup explicit လုပ်ရမည်။
 4. **Security/reliability tests** သည် malformed path၊ oversized header/body၊ timeout၊ cancellation၊ duplicate request၊ log redaction နှင့် shutdown race များကို inject လုပ်ရမည်။
 
-လက်ရှိ `web_contract_test.zp` သည် positive route များ၊ 400/405 rejection၊ request-ID validation၊ method normalization၊ JSON content type နှင့် no-store policy ကို cover လုပ်ထားသည်။ ဤ test သည် TLS၊ authentication၊ production concurrency သို့မဟုတ် external network behavior ပြီးစီးကြောင်း သက်သေမဟုတ်ပါ။
+လက်ရှိ `web_contract_test.zp` သည် positive route များ၊ 400/405 rejection၊ request-ID validation၊ method normalization၊ JSON content type နှင့် no-store policy ကို cover လုပ်ထားသည်။ `api_contract_test.zp` သည် DTO mapping၊ repository success/not-found behavior၊ 401/403 authorization၊ 429 quota exhaustion၊ window reset၊ clock reversal နှင့် invalid policy ကို ထပ်မံ cover လုပ်ထားသည်။ ဤ test များသည် TLS၊ production concurrency သို့မဟုတ် external network behavior ပြီးစီးကြောင်း သက်သေမဟုတ်ပါ။
+
+## API နှင့် DTO contract
+
+Web API layer သည် server router မဟုတ်ဘဲ orchestration contract ဖြစ်သည်။ `api_contract.zp` သည် `get_user_api`, `create_user_api`, `list_users_api` functions များကို export လုပ်ထားသည်။ Host adapter သည် `GET /users/{id}`, `POST /users`, `GET /users` ကဲ့သို့ route များကို ထို functions များနှင့် map လုပ်နိုင်သော်လည်း variable-path matching ကို adapter ကသာ တာဝန်ယူရမည်။
+
+| API function | Input DTO | Success | အရေးကြီးသော failures |
+|---|---|---:|---|
+| `get_user_api` | `request_id`, numeric `user_id`, auth context, rate state, timestamp | 200 | 401, 403, 404, 429, 500 |
+| `create_user_api` | `request_id`, body DTO `{name, email}`, auth context, rate state, timestamp | 201 | 400, 401, 403, 429, 500, 503 |
+| `list_users_api` | `request_id`, auth context, rate state, timestamp | 200 | 401, 403, 429, 500, 503 |
+
+API သည် `response` နှင့် updated `rate_state` ပါသော wrapper ကို ပြန်ပေးသည်။ Wrapper မရှိပါက host adapter သည် successful request ပြီးနောက် quota state ကို မတော်တဆ ပျောက်စေနိုင်သည်။
+
+Request DTO validator သည် text ဖြစ်သော `name` နှင့် `email` ကိုသာ လက်ခံသည်။ Name ကို trim လုပ်၊ email ကို lower-case ပြောင်း၊ length limit ထားပြီး `@` marker အနည်းဆုံးလိုအပ်သည်။ ဤသည်မှာ သေးငယ်သော contract ဖြစ်ပြီး complete email verification policy မဟုတ်ပါ။ Real API တွင် schema package ပိုတင်းကျပ်စွာ ထည့်နိုင်သော်လည်း explicit size limit နှင့် deterministic error mapping ကို မဖျက်ရ။
+
+## Database integration boundary
+
+`database_contract.zp` သည် `repository_info`, `find_user`, `insert_user`, `list_users` functions များဖြင့် repository boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိ implementation သည် deterministic fake repository ဖြစ်သောကြောင့် credential၊ network၊ database process သို့မဟုတ် mutable global state မလိုဘဲ API ကို test လုပ်နိုင်သည်။
+
+| Database boundary | Contract requirement |
+|---|---|
+| Driver selection | PostgreSQL၊ SQLite၊ MySQL သို့မဟုတ် အခြား driver ကို host adapter က ရွေးရမည်။ Zap code သည် driver တစ်ခုကို မယူဆရ |
+| Query arguments | Validated DTO fields ကို bound parameters အဖြစ် ပေးရမည်။ User text နှင့် SQL ကို string concatenate မလုပ်ရ |
+| Transactions | Transaction begin/commit/rollback ကို adapter က ပိုင်ဆိုင်ပြီး typed success/failure DTO သာ ပြန်ပေးရမည် |
+| Connection pool | Pool size၊ acquisition timeout၊ idle timeout နှင့် shutdown ကို adapter က ပိုင်ဆိုင်ရမည် |
+| Failure mapping | Not-found သည် domain result ဖြစ်ရမည်။ Connection/timeout/pool failure ကို repository-unavailable result အဖြစ် map လုပ်ရမည် |
+| Returned row | `user_response` မှတစ်ဆင့် public fields များသာ map လုပ်ရမည်။ Password hash၊ token၊ internal note သို့မဟုတ် driver handle မထုတ်ရ |
+| Observability | Operation name၊ duration၊ outcome နှင့် request ID ကို log လုပ်ရမည်။ Query value နှင့် secret ကို redact လုပ်ရမည် |
+
+API သည် repository not-found ကို `404` နှင့် repository availability failure ကို `503` အဖြစ် map လုပ်သည်။ Duplicate execution လုံခြုံသော operation များတွင်သာ retry/idempotency ထည့်ရမည်။ Insert ကို မစဉ်းစားဘဲ blind retry မလုပ်ရ။
+
+## Authentication နှင့် authorization
+
+`auth_contract.zp` သည် raw credential ကို host က validate လုပ်ပြီးသားဟု ယူဆသည်။ Host သည် `authenticated`၊ bounded `subject` နှင့် bounded scope list ကိုသာ `auth_context` သို့ ပေးရမည်။ Zap contract သည် `Authorization` header၊ cookie၊ private key သို့မဟုတ် token secret ကို မဖတ်ရ။
+
+`authorize(context, "users:read")` သို့မဟုတ် `authorize(context, "users:write")` သည် deterministic decision ပြန်ပေးသည်။ Identity မရှိလျှင် `401`၊ authenticated ဖြစ်သော်လည်း required scope မရှိလျှင် `403`၊ internal policy မမှန်လျှင် `500` ဖြစ်သည်။ User-supplied request field သည် authenticated subject ကို အစားမထိုးနိုင်ရန် host adapter က စစ်ရမည်။
+
+Production adapter ၏ အနည်းဆုံး policy သည် issuer၊ audience၊ expiry၊ signature၊ token type နှင့် key rotation ကို host identity layer တွင် စစ်ရန်၊ Zap value မတည်ဆောက်မီ subject/scope count ကို bound လုပ်ရန်၊ log လမ်းကြောင်းအားလုံးတွင် raw credential ကို redact လုပ်ရန်နှင့် revocation/clock-skew behavior ကို သတ်မှတ်ရန် ဖြစ်သည်။ ဤအရာများကို contract starter က မအကောင်အထည်ဖော်သေးပါ။
+
+## Rate-limiting contract
+
+`rate_limit_contract.zp` သည် deterministic fixed-window decision function ကို အကောင်အထည်ဖော်သည်။ State တွင် `key`, `limit`, `window_ms`, `window_start`, `used` ပါဝင်ပြီး `allow_request` သည် `allowed`၊ `remaining` သို့မဟုတ် `retry_after_ms` နှင့် next state ကို ပြန်ပေးသည်။
+
+| Decision | Status | Host က လုပ်ရမည့်အရာ |
+|---|---:|---|
+| Quota အတွင်း valid request | 200 | ပြန်ရလာသော state ကို request result လက်ခံမီ atomic persist လုပ်ရမည် |
+| Quota ပြည့်သွားခြင်း | 429 | `retry_after_ms` ပြန်ပေးပြီး protected repository operation ကို မခေါ်ရ |
+| Window သက်တမ်းကုန်ခြင်း | 200 | Usage ကို reset လုပ်၊ timestamp အသစ်နှင့် window start ကို persist လုပ်ရမည် |
+| Clock နောက်ပြန်သွားခြင်း | 500 | Decision ကို reject လုပ်ပြီး adapter တွင် monotonic clock သုံးရမည် |
+| Key/policy မမှန်ခြင်း | 500 | Fail closed လုပ်ပြီး configuration owner ကို alert လုပ်ရမည် |
+
+Adapter သည် authenticated subject သို့မဟုတ် normalized network identity ကဲ့သို့ keying strategy ကို ရွေးချယ်ရမည်။ Arbitrary client header ကို identity key အဖြစ် မယုံရ။ Zap function သည် shared state ကို mutate မလုပ်ဘဲ new state ပြန်ပေးသောကြောင့် concurrent request များ quota ကျော်မသွားရန် host တွင် atomic store သို့မဟုတ် single-owner event loop လိုအပ်သည်။
+
+Fixed-window algorithm သည် foundation သာဖြစ်ပြီး abuse control အပြည့်အစုံ မဟုတ်ပါ။ Burst၊ endpoint၊ organization နှင့် global limits များ ထည့်မည်ဆိုလျှင် limiter တစ်ခုချင်းစီအတွက် key၊ clock၊ storage၊ failure နှင့် observability contract သီးခြားထားရမည်။
+
+## API security နှင့် reliability test matrix
+
+| Test group | လိုအပ်သော cases | Pass evidence |
+|---|---|---|
+| DTO | Missing field၊ wrong type၊ empty/oversized name၊ invalid email၊ lower-case normalization | `api_contract_test.zp` နှင့် boundary corpus |
+| Repository | Found row၊ not-found row၊ invalid ID၊ insert success၊ unavailable/timeout mapping | Fake repository contract နှင့် adapter failure tests |
+| Authorization | Unauthenticated၊ missing scope၊ valid read/write၊ forged subject mismatch | 401/403 matrix နှင့် identity-binding fixture |
+| Rate limit | First request၊ last allowed request၊ 429၊ reset၊ duplicate state၊ clock reversal၊ invalid policy | State transition table နှင့် atomic-store test |
+| API composition | Auth မတိုင်မီ repository မခေါ်ခြင်း၊ rate limit မတိုင်မီ repository မခေါ်ခြင်း၊ insert မတိုင်မီ DTO စစ်ခြင်း၊ response တိုင်း request ID ပါခြင်း | Call-order သို့မဟုတ် fake-adapter trace |
+| Reliability | Repository timeout၊ cancellation၊ pool exhaustion၊ retry/insert idempotency၊ shutdown | Bounded deadline ပါသော fault-injection report |
+| Security | Header redaction၊ body cap၊ path normalization၊ response validation၊ log ထဲ raw credential မပါခြင်း | Golden logs နှင့် malformed-input corpus |
+
+လက်ရှိ contract test layer သည် database/network မပါဘဲ run လုပ်သည်။ Production promotion မလုပ်မီ fake-host adapter suite နှင့် injected listener၊ bounded payload၊ deterministic clock၊ explicit cleanup ပါသော loopback integration suite တို့ကို ထည့်ရမည်။
 
 ## Route တိုးချဲ့နည်း
 
@@ -146,7 +215,7 @@ Route တစ်ခုထည့်ရန် `web_contract.zp` ၏ route table/log
 
 ## မလုပ်သေးသည့်အရာများ
 
-လက်ရှိ Web Foundation သည် production HTTP server ဖြစ်ကြောင်း မဆိုထားပါ။ Multi-request reactor၊ TLS၊ HTTP/2/HTTP/3 policy၊ WebSocket၊ database access၊ template၊ static-file serving၊ authentication၊ authorization၊ rate limit၊ background jobs၊ cloud deployment နှင့် automatic code generation မပါဝင်သေးပါ။ ထို feature များသည် contract နှင့် evidence သီးခြားလိုအပ်သည်။
+လက်ရှိ Web Foundation သည် production HTTP server ဖြစ်ကြောင်း မဆိုထားပါ။ API၊ database၊ authentication နှင့် rate-limit files များသည် contract prototype နှင့် deterministic test double များသာဖြစ်ပြီး multi-request reactor၊ TLS၊ HTTP/2/HTTP/3 policy၊ WebSocket၊ real database connectivity၊ credential verification၊ distributed quota storage၊ template၊ static-file serving၊ background jobs၊ cloud deployment နှင့် automatic code generation မပေးသေးပါ။ Production feature တစ်ခုချင်းစီအတွက် host adapter contract နှင့် evidence သီးခြားလိုအပ်သည်။
 
 ## References
 

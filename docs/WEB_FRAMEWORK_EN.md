@@ -136,7 +136,75 @@ The Web package must keep four test layers separate:
 3. **Integration tests** run a loopback server only after the host adapter exists; they must use bounded payloads, fixed ports or injected listeners, and explicit cleanup.
 4. **Security and reliability tests** inject malformed paths, oversized headers/bodies, timeouts, cancellation, duplicate requests, log-redaction cases, and shutdown races.
 
-The current `web_contract_test.zp` covers positive routes, 400/405 rejection, request-ID validation, method normalization, JSON content type, and no-store policy. It is not evidence that TLS, authentication, production concurrency, or external network behavior is complete.
+The current `web_contract_test.zp` covers positive routes, 400/405 rejection, request-ID validation, method normalization, JSON content type, and no-store policy. The `api_contract_test.zp` additionally covers DTO mapping, repository success/not-found behavior, 401/403 authorization, 429 quota exhaustion, window reset, clock reversal, and invalid policy. These tests are not evidence that TLS, production concurrency, or external network behavior is complete.
+
+## API and DTO contract
+
+The Web API layer is an orchestration contract, not a server router. `api_contract.zp` exports `get_user_api`, `create_user_api`, and `list_users_api`. A host adapter may map routes such as `GET /users/{id}`, `POST /users`, and `GET /users` to these functions, but variable-path matching remains an adapter responsibility.
+
+| API function | Input DTO | Success | Important failures |
+|---|---|---:|---|
+| `get_user_api` | `request_id`, numeric `user_id`, auth context, rate state, timestamp | 200 | 401, 403, 404, 429, 500 |
+| `create_user_api` | `request_id`, body DTO `{name, email}`, auth context, rate state, timestamp | 201 | 400, 401, 403, 429, 500, 503 |
+| `list_users_api` | `request_id`, auth context, rate state, timestamp | 200 | 401, 403, 429, 500, 503 |
+
+The API returns a wrapper containing `response` and the updated `rate_state`. The response is the previously documented map with JSON body and security headers. The wrapper prevents a host adapter from accidentally discarding quota state after a successful request.
+
+The request DTO validator accepts only text `name` and `email`, trims the name, lower-cases the email, bounds lengths, and requires a simple `@` marker. This is a deliberately small contract, not a complete email-verification policy. A real API may add a stricter schema package, but it must preserve explicit size limits and deterministic error mapping.
+
+## Database integration boundary
+
+`database_contract.zp` defines the repository boundary with `repository_info`, `find_user`, `insert_user`, and `list_users`. The current implementation is a deterministic fake repository so the API can be tested without credentials, network access, a database process, or mutable global state.
+
+| Database boundary | Contract requirement |
+|---|---|
+| Driver selection | The host adapter selects PostgreSQL, SQLite, MySQL, or another driver; Zap code must not assume one driver |
+| Query arguments | Pass validated DTO fields as bound parameters; never construct SQL by concatenating user text |
+| Transactions | The adapter owns transaction begin/commit/rollback and exposes only typed success/failure DTOs |
+| Connection pool | The adapter owns pool size, acquisition timeout, idle timeout, and shutdown |
+| Failure mapping | Not-found is a domain result; connection, timeout, and pool failures map to an explicit repository-unavailable result |
+| Returned row | Map only public fields through `user_response`; do not expose password hashes, tokens, internal notes, or driver handles |
+| Observability | Log operation name, duration, outcome, and request ID; redact query values and secrets |
+
+The API maps repository not-found to `404` and repository availability failures to `503`. A database adapter must add retry and idempotency rules only for operations where duplicate execution is safe. It must not retry an insert blindly.
+
+## Authentication and authorization
+
+`auth_contract.zp` assumes the host has already validated the raw credential. The host passes only `authenticated`, a bounded `subject`, and a bounded list of scopes to `auth_context`. The Zap contract never reads an `Authorization` header, cookie, private key, or token secret.
+
+`authorize(context, "users:read")` or `authorize(context, "users:write")` returns a deterministic decision. Missing identity is `401`; an authenticated identity without the required scope is `403`; an invalid internal policy is `500`. The host adapter must ensure that a user-supplied request field cannot replace the authenticated subject.
+
+The minimum production adapter policy is to validate issuer, audience, expiry, signature, token type, and key rotation in the host identity layer; bound subject and scope counts before creating a Zap value; redact raw credentials from every log path; and define how revocation and clock skew are handled. These are adapter responsibilities and are not implemented by the contract starter.
+
+## Rate-limiting contract
+
+`rate_limit_contract.zp` implements a deterministic fixed-window decision function. The state contains `key`, `limit`, `window_ms`, `window_start`, and `used`. `allow_request` returns `allowed`, `remaining` or `retry_after_ms`, and the next state.
+
+| Decision | Status | Required host behavior |
+|---|---:|---|
+| Valid request under quota | 200 | Atomically persist returned state before accepting the request result |
+| Quota exhausted | 429 | Return `retry_after_ms`; do not invoke the protected repository operation |
+| Window expired | 200 | Reset usage at the supplied timestamp and persist the new window start |
+| Clock reversal | 500 | Reject the decision and use a monotonic clock source in the adapter |
+| Invalid key or policy | 500 | Fail closed and alert the configuration owner |
+
+The adapter chooses the keying strategy, such as authenticated subject for user quotas or a normalized network identity for anonymous quotas. It must not trust an arbitrary client header as the identity key. Because the Zap function returns a new state rather than mutating shared state, the host must use an atomic store or a single-owner event loop; otherwise concurrent requests can oversubscribe the quota.
+
+The fixed-window algorithm is a foundation, not a universal abuse-control solution. Production deployments may add separate burst, endpoint, organization, and global limits, but each added limiter needs its own key, clock, storage, failure, and observability contract.
+
+## API security and reliability test matrix
+
+| Test group | Required cases | Pass evidence |
+|---|---|---|
+| DTO | Missing fields, wrong types, empty/oversized name, invalid email, lower-case normalization | `api_contract_test.zp` and boundary corpus |
+| Repository | Found row, not-found row, invalid ID, insert success, unavailable/timeout mapping | Fake repository contract plus adapter failure tests |
+| Authorization | Unauthenticated, missing scope, valid read, valid write, forged subject mismatch | 401/403 matrix and identity-binding fixture |
+| Rate limit | First request, last allowed request, 429, reset, duplicate state, clock reversal, invalid policy | State transition table and atomic-store test |
+| API composition | Auth before repository, rate limit before repository, DTO before insert, request ID in every response | Call-order or fake-adapter trace |
+| Reliability | Repository timeout, cancellation, pool exhaustion, retry/insert idempotency, shutdown | Fault-injection report with bounded deadlines |
+| Security | Header redaction, body cap, path normalization, response validation, no raw credential in logs | Golden logs and malformed-input corpus |
+
+The current contract test layer runs without a database or network. Before production promotion, add a fake-host adapter suite and then a loopback integration suite with injected listeners, bounded payloads, deterministic clocks, and explicit cleanup.
 
 ## Extension procedure
 
@@ -146,7 +214,7 @@ A future adapter package should be introduced only after its capability list, DT
 
 ## Explicit non-goals
 
-The current Web Foundation does not claim to be a production HTTP server. It does not implement a multi-request reactor, TLS, HTTP/2 or HTTP/3 policy, WebSocket, database access, templates, static-file serving, authentication, authorization, rate limiting, background jobs, cloud deployment, or automatic code generation. These features require separate contracts and evidence.
+The current Web Foundation does not claim to be a production HTTP server. The API, database, authentication, and rate-limit files are contract prototypes and deterministic test doubles; they do not provide a multi-request reactor, TLS, HTTP/2 or HTTP/3 policy, WebSocket, real database connectivity, credential verification, distributed quota storage, templates, static-file serving, background jobs, cloud deployment, or automatic code generation. Each production feature requires a separate host adapter contract and evidence.
 
 ## References
 

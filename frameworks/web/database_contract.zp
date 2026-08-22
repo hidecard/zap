@@ -1,0 +1,22 @@
+# Database adapter contract.
+# This module models repository DTOs only; it never opens a database connection.
+
+export fn repository_info():
+    return {"driver": "host-adapter", "mode": "read-write", "transaction": "adapter-owned", "parameters": "bound-values", "status": "contract-only"}
+
+export fn find_user(user_id):
+    if type(user_id) != "number":
+        return {"ok": false, "error_code": "invalid_id", "error": "user id must be numeric"}
+    if user_id == 1:
+        return {"ok": true, "row": {"id": 1, "name": "Ada", "email": "ADA@EXAMPLE.COM"}}
+    return {"ok": false, "error_code": "not_found", "error": "user was not found"}
+
+export fn insert_user(user):
+    if type(user) != "map":
+        return {"ok": false, "error_code": "invalid_record", "error": "repository input must be a map"}
+    if not contains(keys(user), "name") or not contains(keys(user), "email"):
+        return {"ok": false, "error_code": "invalid_record", "error": "repository input is incomplete"}
+    return {"ok": true, "row": {"id": 2, "name": user["name"], "email": user["email"]}}
+
+export fn list_users():
+    return {"ok": true, "rows": [{"id": 1, "name": "Ada", "email": "ADA@EXAMPLE.COM"}, {"id": 2, "name": "Grace", "email": "grace@example.com"}]}

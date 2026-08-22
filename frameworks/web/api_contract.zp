@@ -1,0 +1,69 @@
+# Web API contract: DTO validation, authorization, rate limiting, and repository mapping.
+# Host adapters provide authenticated identity, request DTOs, and repository implementation.
+
+import "web_contract"
+import "dto_contract"
+import "database_contract"
+import "auth_contract"
+import "rate_limit_contract"
+
+export fn api_response(status, payload):
+    return response(status, json(payload), security_headers())
+
+export fn rate_gate(rate_state, now_ms, request_id):
+    let decision = allow_request(rate_state, now_ms)
+    if not decision["allowed"]:
+        let next_state = rate_state
+        if contains(keys(decision), "state"):
+            next_state = decision["state"]
+        return {"allowed": false, "response": api_response(decision["status"], {"error": decision["error_code"], "message": decision["error"], "request_id": request_id}), "state": next_state}
+    return {"allowed": true, "response": none, "state": decision["state"]}
+
+export fn get_user_api(request, auth, rate_state, now_ms):
+    let rate = rate_gate(rate_state, now_ms, request["request_id"])
+    if not rate["allowed"]:
+        return {"response": rate["response"], "rate_state": rate["state"]}
+    let permission = authorize(auth, "users:read")
+    if not permission["allowed"]:
+        return {"response": api_response(permission["status"], {"error": permission["error_code"], "message": permission["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let result = find_user(request["user_id"])
+    if not result["ok"]:
+        return {"response": api_response(404, {"error": result["error_code"], "message": result["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let mapped = user_response(result["row"])
+    if not mapped["valid"]:
+        return {"response": api_response(500, {"error": mapped["error_code"], "message": mapped["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    return {"response": api_response(200, {"data": mapped["value"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+
+export fn create_user_api(request, auth, rate_state, now_ms):
+    let rate = rate_gate(rate_state, now_ms, request["request_id"])
+    if not rate["allowed"]:
+        return {"response": rate["response"], "rate_state": rate["state"]}
+    let permission = authorize(auth, "users:write")
+    if not permission["allowed"]:
+        return {"response": api_response(permission["status"], {"error": permission["error_code"], "message": permission["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let parsed = create_user_request(request["body"])
+    if not parsed["valid"]:
+        return {"response": api_response(400, {"error": parsed["error_code"], "message": parsed["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let saved = insert_user(parsed["value"])
+    if not saved["ok"]:
+        return {"response": api_response(503, {"error": "repository_unavailable", "message": saved["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let mapped = user_response(saved["row"])
+    if not mapped["valid"]:
+        return {"response": api_response(500, {"error": mapped["error_code"], "message": mapped["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    return {"response": api_response(201, {"data": mapped["value"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+
+export fn list_users_api(request, auth, rate_state, now_ms):
+    let rate = rate_gate(rate_state, now_ms, request["request_id"])
+    if not rate["allowed"]:
+        return {"response": rate["response"], "rate_state": rate["state"]}
+    let permission = authorize(auth, "users:read")
+    if not permission["allowed"]:
+        return {"response": api_response(permission["status"], {"error": permission["error_code"], "message": permission["error"], "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let result = list_users()
+    if not result["ok"]:
+        return {"response": api_response(503, {"error": "repository_unavailable", "message": "user repository is unavailable", "request_id": request["request_id"]}), "rate_state": rate["state"]}
+    let mapped = list_response(result["rows"])
+    let first_data = none
+    if mapped["count"] > 0 and mapped["first"]["valid"]:
+        first_data = mapped["first"]["value"]
+    return {"response": api_response(200, {"count": mapped["count"], "first": first_data, "request_id": request["request_id"]}), "rate_state": rate["state"]}

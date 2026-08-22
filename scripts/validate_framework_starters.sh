@@ -88,6 +88,12 @@ done
 
 require_file frameworks/web/web_contract.zp
 require_file frameworks/web/web_contract_test.zp
+require_file frameworks/web/api_contract.zp
+require_file frameworks/web/api_contract_test.zp
+require_file frameworks/web/dto_contract.zp
+require_file frameworks/web/database_contract.zp
+require_file frameworks/web/auth_contract.zp
+require_file frameworks/web/rate_limit_contract.zp
 require_file docs/FRAMEWORK_EN.md
 require_file docs/FRAMEWORK_MM.md
 require_file docs/WEB_FRAMEWORK_EN.md
@@ -96,6 +102,12 @@ require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
 require_text docs/WEB_FRAMEWORK_MM.md "Web Foundation v0.2"
+require_text docs/WEB_FRAMEWORK_EN.md "api_contract.zp"
+require_text docs/WEB_FRAMEWORK_MM.md "api_contract.zp"
+require_text docs/WEB_FRAMEWORK_EN.md "database_contract.zp"
+require_text docs/WEB_FRAMEWORK_MM.md "database_contract.zp"
+require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
+require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"

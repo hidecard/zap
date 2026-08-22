@@ -1,0 +1,43 @@
+import "web_contract"
+import "api_contract"
+import "dto_contract"
+import "database_contract"
+import "auth_contract"
+import "rate_limit_contract"
+
+let read_auth = auth_context(true, "test-user", ["users:read"])
+let write_auth = auth_context(true, "test-user", ["users:write"])
+let no_auth = auth_context(false, "", [])
+let base_limit = new_rate_limit("subject:test-user", 2, 1000, 1000, 0)
+
+let read = get_user_api({"request_id": "test-read", "user_id": 1}, read_auth, base_limit, 1000)
+let create = create_user_api({"request_id": "test-create", "body": {"name": "  Bob  ", "email": "BOB@EXAMPLE.COM"}}, write_auth, read["rate_state"], 1000)
+let limited = get_user_api({"request_id": "test-limit", "user_id": 1}, read_auth, create["rate_state"], 1000)
+let unauthorized = get_user_api({"request_id": "test-unauthorized", "user_id": 1}, no_auth, new_rate_limit("guest", 5, 1000, 1000, 0), 1000)
+let forbidden = create_user_api({"request_id": "test-forbidden", "body": {"name": "Eve", "email": "eve@example.com"}}, read_auth, new_rate_limit("subject:test-user", 5, 1000, 1000, 0), 1000)
+let missing = get_user_api({"request_id": "test-missing", "user_id": 99}, read_auth, new_rate_limit("subject:test-user", 5, 1000, 1000, 0), 1000)
+let invalid = create_user_api({"request_id": "test-invalid", "body": {"name": 7, "email": "bad"}}, write_auth, new_rate_limit("subject:test-user", 5, 1000, 1000, 0), 1000)
+let next_window = allow_request(new_rate_limit("subject:test-user", 1, 1000, 1000, 1), 2000)
+let backwards = allow_request(new_rate_limit("subject:test-user", 1, 1000, 1000, 0), 999)
+let invalid_policy = allow_request(new_rate_limit("subject:test-user", 0, 1000, 1000, 0), 1000)
+let api_invalid_policy = get_user_api({"request_id": "test-api-policy", "user_id": 1}, read_auth, new_rate_limit("subject:test-user", 0, 1000, 1000, 0), 1000)
+let dto = create_user_request({"name": "  Ada  ", "email": "ADA@EXAMPLE.COM"})
+let row = user_response({"id": 7, "name": "Ada", "email": "ADA@EXAMPLE.COM"})
+let repository = repository_info()
+
+assert(read["response"]["status"] == 200, "authorized read must return 200")
+assert(create["response"]["status"] == 201, "authorized create must return 201")
+assert(limited["response"]["status"] == 429, "rate exhaustion must return 429")
+assert(unauthorized["response"]["status"] == 401, "missing authentication must return 401")
+assert(forbidden["response"]["status"] == 403, "missing scope must return 403")
+assert(missing["response"]["status"] == 404, "repository not-found must return 404")
+assert(invalid["response"]["status"] == 400, "invalid request DTO must return 400")
+assert(next_window["allowed"] == true and next_window["state"]["used"] == 1, "new rate window must reset usage")
+assert(backwards["error_code"] == "clock_reversal", "backward clock must be rejected")
+assert(invalid_policy["error_code"] == "invalid_rate_policy", "invalid rate policy must be rejected")
+assert(api_invalid_policy["response"]["status"] == 500, "invalid API rate policy must fail safely")
+assert(dto["valid"] == true and dto["value"]["name"] == "Ada" and dto["value"]["email"] == "ada@example.com", "request DTO mapping failed")
+assert(row["valid"] == true and row["value"]["email"] == "ada@example.com", "response DTO mapping failed")
+assert(repository["status"] == "contract-only", "database adapter boundary must be explicit")
+
+say "Web API contract test passed"

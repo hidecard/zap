@@ -216,6 +216,12 @@ check_release_files() {
     frameworks/web/main.zp
     frameworks/web/web_contract.zp
     frameworks/web/web_contract_test.zp
+    frameworks/web/api_contract.zp
+    frameworks/web/api_contract_test.zp
+    frameworks/web/dto_contract.zp
+    frameworks/web/database_contract.zp
+    frameworks/web/auth_contract.zp
+    frameworks/web/rate_limit_contract.zp
     frameworks/mobile/README.md
     frameworks/mobile/zap.toml
     frameworks/mobile/zap.lock

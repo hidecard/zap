@@ -1,0 +1,23 @@
+# Deterministic fixed-window rate-limit contract.
+# The host adapter must store and update the returned state atomically.
+
+export fn new_rate_limit(key, limit, window_ms, window_start, used):
+    return {"key": key, "limit": limit, "window_ms": window_ms, "window_start": window_start, "used": used}
+
+export fn allow_request(state, now_ms):
+    if type(state["key"]) != "text" or len(state["key"]) == 0 or len(state["key"]) > 256:
+        return {"allowed": false, "status": 500, "error_code": "invalid_rate_key", "error": "rate-limit key is invalid"}
+    if state["limit"] <= 0 or state["window_ms"] <= 0 or state["used"] < 0:
+        return {"allowed": false, "status": 500, "error_code": "invalid_rate_policy", "error": "rate-limit policy is invalid"}
+    if now_ms < state["window_start"]:
+        return {"allowed": false, "status": 500, "error_code": "clock_reversal", "error": "rate-limit clock moved backwards"}
+    let elapsed = now_ms - state["window_start"]
+    let active_used = state["used"]
+    let active_start = state["window_start"]
+    if elapsed >= state["window_ms"]:
+        active_used = 0
+        active_start = now_ms
+    if active_used >= state["limit"]:
+        return {"allowed": false, "status": 429, "error_code": "rate_limited", "error": "request quota exceeded", "retry_after_ms": state["window_ms"] - (now_ms - active_start), "state": {"key": state["key"], "limit": state["limit"], "window_ms": state["window_ms"], "window_start": active_start, "used": active_used}}
+    let next_used = active_used + 1
+    return {"allowed": true, "status": 200, "remaining": state["limit"] - next_used, "state": {"key": state["key"], "limit": state["limit"], "window_ms": state["window_ms"], "window_start": active_start, "used": next_used}}

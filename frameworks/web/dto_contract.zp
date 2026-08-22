@@ -1,0 +1,32 @@
+# Web DTO contract: validate at the boundary and expose only public fields.
+
+export fn create_user_request(body):
+    let has_name = contains(keys(body), "name")
+    let has_email = contains(keys(body), "email")
+    if not has_name or not has_email:
+        return {"valid": false, "error_code": "invalid_body", "error": "name and email are required"}
+    if type(body["name"]) != "text" or type(body["email"]) != "text":
+        return {"valid": false, "error_code": "invalid_body", "error": "name and email must be text"}
+    let name = trim(body["name"])
+    let email = lower(trim(body["email"]))
+    if len(name) == 0 or len(name) > 120:
+        return {"valid": false, "error_code": "invalid_body", "error": "name length is outside the allowed range"}
+    if len(email) == 0 or len(email) > 254 or not contains(email, "@"):
+        return {"valid": false, "error_code": "invalid_body", "error": "email format is not accepted"}
+    return {"valid": true, "value": {"name": name, "email": email}}
+
+export fn user_response(row):
+    let has_id = contains(keys(row), "id")
+    let has_name = contains(keys(row), "name")
+    let has_email = contains(keys(row), "email")
+    if not has_id or not has_name or not has_email:
+        return {"valid": false, "error_code": "invalid_record", "error": "database row is missing public fields"}
+    if type(row["id"]) != "number" or type(row["name"]) != "text" or type(row["email"]) != "text":
+        return {"valid": false, "error_code": "invalid_record", "error": "database row has an invalid field type"}
+    return {"valid": true, "value": {"id": row["id"], "name": row["name"], "email": lower(trim(row["email"]))}}
+
+export fn list_response(rows):
+    let first = {"valid": false, "error_code": "empty_result", "error": "no rows available"}
+    if len(rows) > 0:
+        first = user_response(rows[0])
+    return {"valid": first["valid"], "count": len(rows), "first": first}
