@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+### Post-v2.2.0 corrective cycle
+- LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01 နှင့် EXT-201 ကို post-release `master` တွင် ပြီးစီးထားသည်။ Standard full-document synchronization၊ versioned state၊ file-local scope-aware rename၊ negotiated positions၊ strict file URI၊ bounded workspace index နှင့် canonical VS Code package များ ပါဝင်ပြီး incremental range change နှင့် cross-file rename ကို support မလုပ်သေးပါ။
+- API-301 တွင် schema-2 `determinism_class` (`pure`၊ `input-deterministic`၊ `runtime-dependent` နှင့် `external-io`) နှင့် compatibility-preserving legacy `deterministic` boolean ကို ထည့်သွင်းထားသည်။
+- DOC-401 သည် v2.2.0 tag commit [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb) နှင့် ၎င်း၏ asset များ immutable ဖြစ်ကြောင်း၊ ပြင်ဆင်ထားသော behavior ကို v2.2.1 patch အသစ်တွင်သာ ထုတ်ဝေမည်ဖြစ်ကြောင်း မှတ်တမ်းတင်သည်။ အသေးစိတ်ကို [`POST_V2.2.0_REMEDIATION_MM.md`](docs/POST_V2.2.0_REMEDIATION_MM.md) တွင် ကြည့်ပါ။
+
 ## [2.2.0] - 2026-08-22
 
 ### Release summary

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Post-v2.2.0 corrective cycle
+- Completed LSP-SYNC-01, LSP-REN-01, LSP-INTEROP-01, and EXT-201 on `master`: standard full-document synchronization with versioned state, file-local scope-aware rename, negotiated UTF-8/UTF-16/UTF-32 positions, strict file URIs, bounded workspace indexing, and canonical VS Code packaging. Incremental range changes and cross-file rename remain unsupported.
+- Completed API-301 on post-release `master`: added schema-2 `determinism_class` values (`pure`, `input-deterministic`, `runtime-dependent`, and `external-io`) with explicit domain/builtin coverage and a compatibility-preserving legacy `deterministic` boolean.
+- DOC-401 records the provenance boundary: v2.2.0 remains immutable at tag commit [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb), and the corrected behavior is planned for the new v2.2.1 patch. See [`POST_V2.2.0_REMEDIATION_EN.md`](docs/POST_V2.2.0_REMEDIATION_EN.md).
+
 ## [2.2.0] — 2026-08-22
 
 ### Release engineering

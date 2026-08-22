@@ -48,6 +48,7 @@ pairs=(
   'docs/STDLIB_POLICY_EN.md:docs/STDLIB_POLICY_MM.md'
   'docs/TRAITS_RFC_EN.md:docs/TRAITS_RFC_MM.md'
   'docs/P2_PROGRESS.md:docs/P2_PROGRESS_MM.md'
+  'docs/POST_V2.2.0_REMEDIATION_EN.md:docs/POST_V2.2.0_REMEDIATION_MM.md'
   "docs/RELEASE_${VERSION}_EN.md:docs/RELEASE_${VERSION}_MM.md"
 )
 

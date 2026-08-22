@@ -13,7 +13,7 @@
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_EN.md) | [Memory model](MEMORY_MODEL_EN.md), [diagnostics](DIAGNOSTIC_MODEL_EN.md), [async boundaries](ASYNC_BOUNDARIES_EN.md) |
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_EN.md) | [LSP implementation](../native/src/lsp.rs), [canonical VS Code extension](../vscode-extension), [editor assets](../editors/vscode), [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh), [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_EN.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml), [security policy](../SECURITY.md) |
-| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [release preflight](../scripts/release_preflight.sh) |
+| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [post-v2.2.0 remediation/provenance](POST_V2.2.0_REMEDIATION_EN.md), [release preflight](../scripts/release_preflight.sh) |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_EN.md) | [Language specification](LANGUAGE_SPEC_EN.md), [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) |
 
 ## M3-DOC-01 checked surfaces
@@ -41,10 +41,10 @@
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_EN.md) | `scripts/test_p001_parity.sh` |
 | Verification/replay | [P1-05 replay and M2-VERIFY-01 bounded replay contract](P105_REPLAY_EN.md) | `scripts/test_p105_replay.sh` and `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_EN.md) | Checked-in `benchmark-results/native-summary.csv` and CI threshold gate |
-| Releases | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | `scripts/validate_release_version.sh` and release preflight |
+| Releases | [Release version policy](RELEASE_VERSION_POLICY_EN.md) · [post-v2.2.0 remediation/provenance](POST_V2.2.0_REMEDIATION_EN.md) | `scripts/validate_release_version.sh` and release preflight |
 
 ## Version and contribution rules
 
 The authoritative package version is `native/Cargo.toml`. Release-facing surfaces must agree with it, and CI validates the agreement. When a normative rule changes, update the English and Burmese contract together, add or update its fixture owner in `SPEC_OWNERSHIP_INDEX.tsv`, record compatibility impact using the bilingual compatibility template, and include regression evidence before merging. Public standard-library changes must also update the catalog and its stability policy pair.
 
-Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. See the [remaining TODO register](PDF_REMAINING_TODO_EN.md) and [next-step plan](NEXT_TODO_PLAN_EN.md) for tracked work.
+Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. The [post-v2.2.0 remediation/provenance record](POST_V2.2.0_REMEDIATION_EN.md) distinguishes immutable v2.2.0 assets from later `master` corrections and the planned v2.2.1 patch. See the [remaining TODO register](PDF_REMAINING_TODO_EN.md) and [next-step plan](NEXT_TODO_PLAN_EN.md) for tracked work.

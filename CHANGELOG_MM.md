@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### v2.2.0 နောက်ပိုင်း corrective cycle
+- LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01 နှင့် EXT-201 ကို `master` တွင် ပြီးစီးထားသည်။ Standard full-document synchronization နှင့် versioned state၊ file-local scope-aware rename၊ negotiated UTF-8/UTF-16/UTF-32 position၊ strict file URI၊ bounded workspace indexing နှင့် canonical VS Code packaging များ ပါဝင်သည်။ Incremental range change နှင့် cross-file rename ကို support မလုပ်သေးပါ။
+- API-301 ကို post-release `master` တွင် ပြီးစီးထားသည်။ Schema-2 `determinism_class` (`pure`၊ `input-deterministic`၊ `runtime-dependent` နှင့် `external-io`)၊ explicit domain/builtin coverage နှင့် compatibility-preserving legacy `deterministic` boolean ကို ထည့်သွင်းထားသည်။
+- DOC-401 သည် provenance boundary ကို မှတ်တမ်းတင်သည်။ v2.2.0 သည် [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb) tag commit တွင် immutable ဖြစ်ပြီး ပြင်ဆင်ထားသော behavior ကို v2.2.1 patch အသစ်တွင် ထုတ်ဝေရန် စီစဉ်ထားသည်။ [`POST_V2.2.0_REMEDIATION_MM.md`](docs/POST_V2.2.0_REMEDIATION_MM.md) ကို ကြည့်ပါ။
+
 ## [2.2.0] — 2026-08-22
 
 ### Release engineering

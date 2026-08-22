@@ -1,6 +1,6 @@
 # Zap Remaining Engineering To-do Register
 
-**Baseline:** Zap v2.2.0 verified release
+**Baseline:** Zap v2.2.0 remains the verified published release; its tag and assets are immutable, while later corrective work is tracked toward v2.2.1.
 **Source:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **Purpose:** Track every recommendation that is not fully complete, without treating already-verified release work as unfinished.
 
@@ -42,10 +42,12 @@
 | ID | Work item | Status | Acceptance criteria |
 |---|---|---|---|
 | P2-01 | Composition and traits/interfaces | Completed as M4-RFC-01 design-only | The bilingual design RFC defines composition versus single inheritance, trait/protocol rules, method resolution, visibility, diagnostics, migration from inheritance, dispatch boundaries, rejected alternatives, compatibility impact, and an explicit decision to defer parser/runtime implementation beyond v2.2.0. |
-| P2-02 | Standard-library API stability policy | Completed as M3-STDLIB-01 | Every public domain and builtin has machine-readable stability label, introduction release, deprecation window, semver rule, platform support matrix, input/output limits, timeout/error contract, determinism field, bilingual policy documentation, and catalog/policy regression gates. |
-| P2-03 | LSP/VS Code semantic parity | Completed as M3-LSP-01 | Parser/lexer-backed rename edits, didClose workspace cleanup, nested/module-aware indexing, catalog-driven completion, async builtin hover/signature metadata, checked-in VS Code grammar/configuration, and CI/release-preflight semantic-parity validation are tested. |
+| P2-02 | Standard-library API stability policy | Completed as M3-STDLIB-01; API-301 corrective taxonomy completed on post-release master | Every public domain and builtin has machine-readable stability label, introduction release, deprecation window, semver rule, platform support matrix, input/output limits, timeout/error contract, schema-2 determinism class, compatibility-preserving legacy boolean, bilingual policy documentation, and catalog/policy regression gates. |
+| P2-03 | LSP/VS Code semantic parity | Completed as M3-LSP-01 plus post-release corrective hardening | Standard full-sync/versioned document changes, file-local scope-aware rename with explicit cross-file limitation, didClose cleanup, nested/module-aware indexing, catalog-driven completion, async builtin hover/signature metadata, canonical checked-in VS Code package, and CI/release-preflight semantic-parity validation are tested. |
 | P2-04 | Learning/reference documentation split | Completed as M3-DOC-01 | Beginner guide, syntax reference, specification, stdlib reference, package author guide, runtime internals, deployment/security docs, tooling, and release paths have bilingual navigation, verified-version metadata, canonical companion links, and repository-relative entry points. |
-| M4-REL-01 | v2.2.0 release preparation and publication | Completed and verified | Cargo/Cargo.lock/CLI/tag agreement, bilingual release notes, README/security/archive updates, clean release preflight, signed Linux/macOS/Windows assets, checksums/provenance, and successful GitHub Actions verification. |
+| M4-REL-01 | v2.2.0 release preparation and publication | Completed and verified as historical release | Cargo/Cargo.lock/CLI/tag agreement, bilingual release notes, README/security/archive updates, clean release preflight, signed Linux/macOS/Windows assets, checksums/provenance, and successful GitHub Actions verification. The published tag is immutable and does not include later corrective master commits. |
+| API-301 | Standard-library determinism taxonomy | Completed on post-release `master` | Schema-2 `DeterminismClass` metadata, explicit domain/builtin classifications, legacy-boolean compatibility, bilingual policy/index updates, and catalog/policy regressions. |
+| DOC-401 | Post-v2.2.0 traceability and remediation documentation | Completed on post-release `master` | Bilingual provenance record, roadmap/progress/README clarification, navigation links, changelog clarification, and explicit v2.2.1 release boundary that does not rewrite v2.2.0. |
 
 ## Execution order
 
@@ -61,12 +63,14 @@
 10. **P0-04/P0-RS-01:** The checked-borrow and first explicit runtime-state slices are implemented. M2-MEM-01 and M2-MEM-02 add run-owned logical byte/task/output budget APIs, deterministic object charges, lifecycle counters, reset detachment, and `ObjectStore` counters without allocator/tracing claims. Continue only the remaining public weak-reference, closure/process-wide telemetry, allocator-level measurement, arbitrary-cycle reclamation, tracing-collector design, and broader hidden-state migration work.
 11. **P1-01/P1-04:** Completed. The bilingual gradual-typing baseline is documented and the clean-machine locked-install/build verifier is executable and deterministic.
 12. **M2-ASYNC-02:** Completed. Cooperative language task cancellation, poll-budget timeout joins, deterministic `Cancelled`/`TimedOut` diagnostics, bilingual contract updates, and end-to-end regression coverage are implemented.
-13. **M3-STDLIB-01:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, determinism metadata, and policy regressions.
-14. **M3-LSP-01:** Completed. Parser/lexer-backed rename, didClose cleanup, nested/module-aware symbol indexing, catalog-driven completion, async hover/signature metadata, VS Code assets, and the semantic-parity contract are implemented and wired into CI/release preflight.
+13. **M3-STDLIB-01/API-301:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, schema-2 determinism classes, legacy-boolean compatibility, explicit builtin exceptions, and policy regressions on post-release `master`.
+14. **M3-LSP-01:** Completed with post-release corrective hardening. Standard full-sync/versioned document changes, file-local scope-aware rename, explicit cross-file limitation, didClose cleanup, nested/module-aware symbol indexing, catalog-driven completion, async hover/signature metadata, canonical VS Code assets, and the semantic-parity contract are implemented and wired into CI/release preflight.
 15. **M3-DOC-01:** Completed. Bilingual learner/reference navigation now covers learner, syntax, specification, standard library, package author, runtime, deployment/security, tooling, and release paths with verified v2.2.0 metadata and canonical companion links.
 16. **M4-RFC-01:** Completed as a reviewed design-only bilingual RFC; traits, interfaces, composition syntax, and method-resolution implementation remain deferred beyond v2.2.0.
-17. **M4-REL-01:** Completed. v2.2.0 was published from the clean version-consistent commit with signed cross-platform assets, checksums/provenance, and successful release-workflow verification.
+17. **M4-REL-01:** Completed as the historical release. v2.2.0 was published from the clean version-consistent commit with signed cross-platform assets, checksums/provenance, and successful release-workflow verification; its tag and assets remain immutable.
+18. **API-301:** Completed on post-release `master`; the determinism taxonomy and bilingual policy/index corrections are not being represented as original v2.2.0 contents.
+19. **DOC-401:** Completed on post-release `master`. The bilingual provenance record, roadmap/progress/README clarification, navigation links, and changelog correction are complete before the new v2.2.1 release.
 
 ## Release policy
 
-Each execution step must pass formatting, strict Clippy in the pinned CI toolchain, the full native test suite, relevant conformance tests, bilingual documentation parity, and `git diff --check`. No new release tag should be created until the corresponding acceptance criteria and CI gates pass.
+Each execution step must pass formatting, strict Clippy in the pinned CI toolchain, the full native test suite, relevant conformance tests, bilingual documentation parity, and `git diff --check`. Post-release corrections must be recorded separately from the immutable v2.2.0 tag. No v2.2.1 release tag should be created until its acceptance criteria, provenance record, and CI gates pass.
