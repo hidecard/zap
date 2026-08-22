@@ -1,5 +1,9 @@
 # Zap Standard Library Public Modules
 
+**Verified baseline:** Zap v2.1.14
+**ရည်ရွယ်ချက်:** Language user နှင့် package author များအတွက် public standard-library reference ဖြစ်ပြီး stability rule များကို ချိတ်ဆက်ထားသော policy က ပိုင်ဆိုင်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package author guide](PACKAGE.md) · [Stability policy](STDLIB_POLICY_MM.md)
+
 Zap ၏ standard library ကို အများပြည်သူအသုံးပြုနိုင်သော domain များအဖြစ် စနစ်တကျ ခွဲခြားထားပါသည်။ Runtime dispatch ကို compatibility အတွက် ဗဟိုမှ ဆက်လက်လုပ်ဆောင်သော်လည်း ဤ index သည် documentation၊ tooling နှင့် နောင်တွင် ထည့်သွင်းမည့် package modules များအတွက် တည်ငြိမ်သော public organization ကို သတ်မှတ်ပေးပါသည်။ Normative stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout၊ error နှင့် determinism rule များကို [standard-library stability policy](STDLIB_POLICY_MM.md) တွင် သတ်မှတ်ထားပါသည်။
 
 | Public module | အသုံးပြုနိုင်သောအပိုင်း | အဓိက API များ |

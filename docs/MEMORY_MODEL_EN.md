@@ -1,5 +1,9 @@
 # Zap Memory Model
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** Runtime-maintainer reference for ownership, borrowing, closure capture, object fields, cleanup boundaries, and non-goals.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_EN.md) · [Async/LSP guide](ASYNC_LSP_EN.md)
+
 ## Scope
 
 Zap values use explicit ownership primitives. Function closures and object fields are reference-counted, while mutable state is guarded by `RefCell` on the single-threaded interpreter path.

@@ -1,5 +1,9 @@
 # Security Policy
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** Security-maintainer and release-operator reference for supported versions, reporting, provenance, and release-integrity controls.
+**Navigation:** [Documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md) · [Deployment boundaries](docs/DEPLOYMENT_EN.md) · [Release signing](docs/RELEASE_SIGNING_EN.md) · [Release version policy](docs/RELEASE_VERSION_POLICY_EN.md)
+
 ## Supported Versions
 
 Security fixes are applied to the latest version published in the [GitHub Releases](https://github.com/hidecard/zap/releases) page. Older release lines may not receive security updates.

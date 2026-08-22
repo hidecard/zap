@@ -1,5 +1,10 @@
 # Learn Zap — Burmese Beginner Course
 
+**Verified baseline:** Zap v2.1.14
+**ရည်ရွယ်ချက်:** Installation နှင့် အခြေခံ syntax မှ modules၊ typed Result/Option၊ testing၊ tooling နှင့် project အသေးစားများအထိ learner-first လမ်းညွှန်ပေးရန် ဖြစ်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Package author guide](PACKAGE.md) · [Runtime state](RUNTIME_STATE_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
+
+
 ဒီစာအုပ်သည် Zap programming language ကို ပထမဆုံးစတင်လေ့လာမည့်သူများအတွက် ရေးထားသော lesson-based guide ဖြစ်သည်။ Lesson တစ်ခုစီတွင် အယူအဆ၊ code နမူနာ၊ run လုပ်ပုံ၊ expected output နှင့် လေ့ကျင့်ခန်း ပါဝင်သည်။ Code များကို ကိုယ်တိုင် `.zp` file ထဲရေးပြီး `zap file.zp` ဖြင့် စမ်းသပ်ပါ။
 
 ## သင်ကြားရေးအစီအစဉ်

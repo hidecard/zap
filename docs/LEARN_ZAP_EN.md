@@ -1,5 +1,9 @@
 # Learn Zap — English Guide
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** A learner-first path from installation and core syntax to modules, typed results, testing, tooling, and small projects.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
+
 Zap is a small, readable, general-purpose programming language using `.zp` source files. This guide is designed for a first-time learner. It moves from running a program to values, control flow, functions, modules, error handling, testing, and small projects.
 
 > **Language choice:** If you prefer Burmese, use [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md). The Burmese guide follows this same core learning path and includes additional localized advanced lessons for OOP, tooling, diagnostics, and typed Result/Option payloads.

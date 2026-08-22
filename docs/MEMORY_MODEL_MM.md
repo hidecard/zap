@@ -1,5 +1,9 @@
 # Zap Memory Model
 
+**Verified baseline:** Zap v2.1.14
+**ရည်ရွယ်ချက်:** Ownership၊ borrowing၊ closure capture၊ object field၊ cleanup boundary နှင့် non-goal များအတွက် runtime-maintainer reference ဖြစ်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Runtime state](RUNTIME_STATE_MM.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_MM.md) · [Async/LSP guide](ASYNC_LSP_MM.md)
+
 ## အကျယ်အဝန်း
 
 Zap value များသည် ownership ကို ရှင်းလင်းစွာ သတ်မှတ်ထားသော reference-counted primitives များကို အသုံးပြုသည်။ Function closure နှင့် object field များသည် reference-counted ဖြစ်ပြီး single-threaded interpreter လမ်းကြောင်းတွင် mutable state ကို `RefCell` ဖြင့် ထိန်းချုပ်ထားသည်။

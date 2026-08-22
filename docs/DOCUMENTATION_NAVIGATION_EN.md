@@ -11,9 +11,19 @@
 | Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) | [Language specification](LANGUAGE_SPEC_EN.md), [type-check matrix](TYPECHECK_CONFORMANCE_MATRIX_EN.md) |
 | Package author | [Package guide](PACKAGE_EN.md) | [Stdlib index](STDLIB_INDEX_EN.md), [registry/authentication contract](REGISTRY_AUTH_EN.md) |
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_EN.md) | [Memory model](MEMORY_MODEL_EN.md), [diagnostics](DIAGNOSTIC_MODEL_EN.md), [async boundaries](ASYNC_BOUNDARIES_EN.md) |
-| Tooling contributor | [Async/LSP guide](ASYNC_LSP_EN.md) | [LSP implementation](../native/src/lsp.rs), [VS Code extension](../vscode-extension) |
+| Tooling contributor | [Async/LSP guide](ASYNC_LSP_EN.md) | [LSP implementation](../native/src/lsp.rs), [VS Code assets](../editors/vscode), [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_EN.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml), [security policy](../SECURITY.md) |
-| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md) |
+| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [release preflight](../scripts/release_preflight.sh) |
+
+## M3-DOC-01 checked surfaces
+
+| Audience section | Verified entry point | Canonical companion |
+|---|---|---|
+| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.1.14 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
+| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.1.14 | [Language specification](LANGUAGE_SPEC_EN.md) |
+| Package author | [Package guide](PACKAGE_EN.md) — v2.1.14 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.1.14 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.1.14 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
 
 ## Normative contract map
 

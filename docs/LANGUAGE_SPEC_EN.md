@@ -1,5 +1,8 @@
 # Zap Language Specification
 
+**Purpose:** Canonical normative owner for Zap syntax, typing, runtime behavior, diagnostics, compatibility, and version decisions.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
+
 **Specification status:** Normative foundation for Zap v2.1.14
 
 This document is the canonical index for language semantics. When an older guide conflicts with this document, the implementation and tests must be brought into alignment with this specification; a compatibility exception must be recorded explicitly rather than inferred from legacy behavior.

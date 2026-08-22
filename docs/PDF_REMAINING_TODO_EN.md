@@ -44,7 +44,7 @@
 | P2-01 | Composition and traits/interfaces | Deferred | A design RFC defines composition, trait/protocol rules, method resolution, diagnostics, and migration from inheritance before implementation. |
 | P2-02 | Standard-library API stability policy | Completed as M3-STDLIB-01 | Every public domain and builtin has machine-readable stability label, introduction release, deprecation window, semver rule, platform support matrix, input/output limits, timeout/error contract, determinism field, bilingual policy documentation, and catalog/policy regression gates. |
 | P2-03 | LSP/VS Code semantic parity | Completed as M3-LSP-01 | Parser/lexer-backed rename edits, didClose workspace cleanup, nested/module-aware indexing, catalog-driven completion, async builtin hover/signature metadata, checked-in VS Code grammar/configuration, and CI/release-preflight semantic-parity validation are tested. |
-| P2-04 | Learning/reference documentation split | Partial | Beginner guide, syntax reference, specification, stdlib reference, package author guide, runtime internals, and deployment/security docs have navigation and verified-version metadata. |
+| P2-04 | Learning/reference documentation split | Completed as M3-DOC-01 | Beginner guide, syntax reference, specification, stdlib reference, package author guide, runtime internals, deployment/security docs, tooling, and release paths have bilingual navigation, verified-version metadata, canonical companion links, and repository-relative entry points. |
 
 ## Execution order
 
@@ -62,8 +62,8 @@
 12. **M2-ASYNC-02:** Completed. Cooperative language task cancellation, poll-budget timeout joins, deterministic `Cancelled`/`TimedOut` diagnostics, bilingual contract updates, and end-to-end regression coverage are implemented.
 13. **M3-STDLIB-01:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, determinism metadata, and policy regressions.
 14. **M3-LSP-01:** Completed. Parser/lexer-backed rename, didClose cleanup, nested/module-aware symbol indexing, catalog-driven completion, async hover/signature metadata, VS Code assets, and the semantic-parity contract are implemented and wired into CI/release preflight.
-15. **P2-04 / M3-DOC-01:** Complete the learner/reference documentation split and verified-version navigation.
-16. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.
+15. **M3-DOC-01:** Completed. Bilingual learner/reference navigation now covers learner, syntax, specification, standard library, package author, runtime, deployment/security, tooling, and release paths with verified v2.1.14 metadata and canonical companion links.
+16. **P2-01 / M4-RFC-01:** Write and review the traits/composition RFC before changing the parser or runtime.
 
 ## Release policy
 

@@ -1,5 +1,9 @@
 # Zap Registry Production Deployment Boundaries
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** Operator reference for local and public registry deployment boundaries, validation, TLS, supervision, credentials, quotas, and egress controls.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Security policy](../SECURITY.md) · [Release policy](RELEASE_VERSION_POLICY_EN.md)
+
 ## Scope
 
 Zap includes a controlled local registry service, but a public production deployment must add an explicit operating boundary around that service. This guide defines the repository's reproducible reference policy. It is an operator contract and validation target; it does not provision certificates, create cloud resources, or publish a registry automatically.

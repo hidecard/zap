@@ -1,5 +1,9 @@
 # Zap Registry Production Deployment Boundaries
 
+**Verified baseline:** Zap v2.1.14
+**ရည်ရွယ်ချက်:** Local နှင့် public registry deployment boundary၊ validation၊ TLS၊ supervision၊ credential၊ quota နှင့် egress control များအတွက် operator reference ဖြစ်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Package author guide](PACKAGE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Security policy](../SECURITY.md) · [Release policy](RELEASE_VERSION_POLICY_MM.md)
+
 ## အကျယ်အဝန်း
 
 Zap တွင် controlled local registry service ပါဝင်သော်လည်း public production deployment ပြုလုပ်မည်ဆိုပါက service ပတ်ဝန်းကျင်တွင် သတ်မှတ်ထားသော operating boundary များ ထပ်မံလိုအပ်ပါသည်။ ဤလမ်းညွှန်သည် repository အတွင်းရှိ reproducible reference policy ကို သတ်မှတ်ထားခြင်းဖြစ်သည်။ Operator contract နှင့် validation target အဖြစ် အသုံးပြုရန်ဖြစ်ပြီး certificate provision၊ cloud resource ဖန်တီးခြင်း သို့မဟုတ် registry ကို အလိုအလျောက် public publish လုပ်ခြင်း မပြုလုပ်ပါ။

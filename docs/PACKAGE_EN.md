@@ -1,5 +1,9 @@
 # Zap Package Manifest and Lockfile
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** Package-author reference for manifests, canonical lockfiles, local dependencies, registry integrity, and project commands.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Registry/authentication contract](REGISTRY_AUTH_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
+
 A Zap project stores its package manifest in `zap.toml` at the project root. The native runtime validates the manifest with `zap check`, validates the entry source, and—when dependencies are declared—requires a canonical `zap.lock` file.
 
 ## Minimal manifest

@@ -1,5 +1,9 @@
 # Zap Standard Library Public Modules
 
+**Verified baseline:** Zap v2.1.14
+**Purpose:** Public standard-library reference for language users and package authors; stability rules are owned by the linked policy.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stability policy](STDLIB_POLICY_EN.md)
+
 Zap's standard library is organized into stable public domains. The runtime dispatch remains centralized for compatibility, while this domain index provides a deterministic public organization for documentation, tooling, and future package modules. The normative stability, deprecation, semver, platform, limit, timeout, error, and determinism rules are defined in the [standard-library stability policy](STDLIB_POLICY_EN.md).
 
 | Public module | Scope | Representative APIs |

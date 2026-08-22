@@ -1,5 +1,8 @@
 # Zap Syntax Reference — English
 
+**Purpose:** Normative, searchable syntax reference for Zap language users, linked to the canonical specification and executable contracts.
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Diagnostics](DIAGNOSTIC_MODEL_EN.md)
+
 > **Supported version:** Zap v2.1.14\
 > **Last verified:** 2026-08-21 against the native runtime, CLI, formatter, LSP, and v2.1-D async/tooling implementation.
 

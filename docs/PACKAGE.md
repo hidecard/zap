@@ -1,5 +1,9 @@
 # Zap Package Manifest
 
+**Verified baseline:** Zap v2.1.14
+**ရည်ရွယ်ချက်:** Manifest၊ canonical lockfile၊ local dependency၊ registry integrity နှင့် project command များအတွက် package-author reference ဖြစ်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Registry/authentication contract](REGISTRY_AUTH_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
+
 Zap project တစ်ခု၏ root directory တွင် `zap.toml` ဖိုင်ကို ထားနိုင်သည်။ Native runtime သည် manifest ကို `zap check` command ဖြင့် validate လုပ်ပြီး main source file ရှိ/မရှိ စစ်ဆေးသည်။
 
 ## Minimal manifest

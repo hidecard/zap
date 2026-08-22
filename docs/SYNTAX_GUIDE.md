@@ -1,5 +1,8 @@
 # Zap Syntax Guide
 
+**ရည်ရွယ်ချက်:** Canonical specification နှင့် executable contract များသို့ ပြန်ချိတ်ထားသော ရှာဖွေရလွယ်ကူသည့် normative syntax reference ဖြစ်သည်။
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Diagnostics](DIAGNOSTIC_MODEL_MM.md)
+
 > **ထောက်ပံ့ထားသော version:** Zap v2.1.14\
 > **နောက်ဆုံးစစ်ဆေးခဲ့သည့်နေ့:** 2026-08-21 — native runtime၊ CLI၊ formatter၊ LSP နှင့် v2.1-D async/tooling implementation များနှင့် တိုက်စစ်ထားသည်။
 
