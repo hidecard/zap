@@ -621,6 +621,27 @@ fn direct_builtin_with_context_inner(
                 Ok(Some(Value::Text(encoded)))
             }
         }
+        "assert" => {
+            if args.len() != 1 && args.len() != 2 {
+                return Err(format!(
+                    "assert expects one or two arguments, got {}",
+                    args.len()
+                ));
+            }
+            let message = args
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| Value::Text("assertion failed".into()));
+            if args[0].truthy() {
+                Ok(Some(Value::None))
+            } else {
+                Err(format!(
+                    "{}: expected true, got {}",
+                    message.show(),
+                    args[0].show()
+                ))
+            }
+        }
         "json" => {
             expect(1)?;
             let encoded = serde_json::to_string(&value_to_json(&args[0])?)
@@ -912,6 +933,16 @@ fn direct_builtin_with_context_inner(
             };
             Ok(Some(Value::Bool(matched)))
         }
+        "sqrt" => {
+            expect(1)?;
+            let Value::Number(value) = args[0] else {
+                return Err("sqrt expects a non-negative number".into());
+            };
+            if value < 0 {
+                return Err("sqrt expects a non-negative number".into());
+            }
+            Ok(Some(Value::Number((value as f64).sqrt().round() as i64)))
+        }
         "abs" => {
             expect(1)?;
             let Value::Number(value) = args[0] else {
@@ -978,6 +1009,27 @@ fn direct_builtin_with_context_inner(
             };
             let mut values = values.clone();
             values.reverse();
+            Ok(Some(Value::List(values)))
+        }
+        "sort" => {
+            expect(1)?;
+            let Value::List(values) = &args[0] else {
+                return Err("sort expects a list".into());
+            };
+            let mut values = values.clone();
+            if values.iter().all(|value| matches!(value, Value::Number(_))) {
+                values.sort_by_key(|value| match value {
+                    Value::Number(number) => *number,
+                    _ => 0,
+                });
+            } else if values.iter().all(|value| matches!(value, Value::Text(_))) {
+                values.sort_by_key(|value| match value {
+                    Value::Text(text) => text.clone(),
+                    _ => String::new(),
+                });
+            } else {
+                return Err("sort expects a list of numbers or text".into());
+            }
             Ok(Some(Value::List(values)))
         }
         "range" => {
@@ -4954,6 +5006,32 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn evaluates_legacy_visible_helpers_from_native_ast() {
+        let program = parse_program(
+            r#"let numbers = [4, 1, 8, 2]
+let sorted = sort(numbers)
+let root = sqrt(16)
+assert(join(sorted, ",") == "1,2,4,8", "sort failed")
+"#,
+        )
+        .expect("legacy-visible helper program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("legacy-visible helpers should execute from native AST");
+        assert_eq!(
+            vars.get("sorted"),
+            Some(&Value::List(vec![
+                Value::Number(1),
+                Value::Number(2),
+                Value::Number(4),
+                Value::Number(8),
+            ]))
+        );
+        assert_eq!(vars.get("root"), Some(&Value::Number(4)));
     }
 
     #[test]
