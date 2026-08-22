@@ -175,6 +175,8 @@ check_release_files() {
     scripts/test_m2_verify_replay_contract.sh
     scripts/test_p005c_async_matrix.sh
     scripts/test_platform_archive.sh
+    scripts/test_benchmark_regression.sh
+    scripts/test_benchmark_provenance.sh
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -351,12 +353,22 @@ run_contract_validation() {
   bash scripts/test_platform_archive.sh
   pass "platform archive determinism regression passed"
 
+  bash scripts/test_benchmark_regression.sh
+  pass "benchmark schema and regression contract passed"
+
+  bash scripts/test_benchmark_provenance.sh
+  pass "benchmark provenance contract passed"
+
   local benchmark_raw="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"
+  local benchmark_provenance="$report_dir/benchmark-provenance.tsv"
   ZAP_BENCH_REPEATS="${ZAP_BENCH_REPEATS:-5}" \
     ZAP_BENCH_WARMUPS="${ZAP_BENCH_WARMUPS:-1}" \
     ZAP_BENCH_OUTPUT="$benchmark_raw" \
+    ZAP_BENCH_PROVENANCE="$benchmark_provenance" \
     bash scripts/benchmark_native.sh
+  test -s "$benchmark_provenance"
+  awk -F '\t' 'NR > 1 { seen[$1]++ } END { if (seen["schema_version"] != 1 || seen["status"] != 1 || seen["git_commit"] != 1 || seen["target_triple"] != 1 || seen["binary_sha256"] != 1 || seen["repeats"] != 1 || seen["warmups"] != 1) exit 1 }' "$benchmark_provenance"
   bash scripts/aggregate_benchmark.sh "$benchmark_raw" "$benchmark_summary"
   scripts/check_benchmark_regression.sh \
     benchmark-results/native-summary.csv "$benchmark_summary" \

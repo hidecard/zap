@@ -29,6 +29,7 @@ awk -F, '
     }
     count[suite]++
     sum[suite]+=elapsed
+    sumsq[suite]+=elapsed * elapsed
     values[suite, count[suite]]=elapsed
     if (!(suite in min) || elapsed < min[suite]) min[suite]=elapsed
     if (!(suite in max) || elapsed > max[suite]) max[suite]=elapsed
@@ -37,7 +38,7 @@ awk -F, '
     if (NR < 2) { print "benchmark input has no data rows" > "/dev/stderr"; exit 2 }
     for (suite in count) names[++n]=suite
     for (i=1; i<=n; i++) for (j=i+1; j<=n; j++) if (names[j] < names[i]) { t=names[i]; names[i]=names[j]; names[j]=t }
-    print "suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds"
+    print "suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds,stddev_seconds,variance_seconds,cv_percent"
     for (i=1; i<=n; i++) {
       suite=names[i]
       for (a=1; a<=count[suite]; a++) for (b=a+1; b<=count[suite]; b++) {
@@ -46,7 +47,13 @@ awk -F, '
       rank=int(count[suite] * 0.95)
       if (rank < count[suite] * 0.95) rank++
       if (rank < 1) rank=1
-      printf "%s,%d,%.6f,%.6f,%.6f,%.6f\n", suite,count[suite],min[suite],sum[suite]/count[suite],values[suite,rank],max[suite]
+      mean=sum[suite]/count[suite]
+      variance=(sumsq[suite]/count[suite])-(mean*mean)
+      if (variance < 0 && variance > -0.000000000001) variance=0
+      if (variance < 0) { print "negative benchmark variance for " suite > "/dev/stderr"; exit 2 }
+      stddev=sqrt(variance)
+      cv=mean > 0 ? (stddev/mean)*100 : 0
+      printf "%s,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.3f\n", suite,count[suite],min[suite],mean,values[suite,rank],max[suite],stddev,variance,cv
     }
   }
 ' "$INPUT" > "$tmp"

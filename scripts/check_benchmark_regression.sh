@@ -29,19 +29,19 @@ awk -F, -v max_percent="$MAX_REGRESSION_PERCENT" '
     while ((getline line < path) > 0) {
       if (line_no++ == 0) {
         header=line
-        if (header != "suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds") {
+        if (header != "suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds,stddev_seconds,variance_seconds,cv_percent") {
           fail(path ": invalid header")
         }
         continue
       }
       if (line == "") continue
       field_count=split(line, row, ",")
-      if (field_count != 6) {
+      if (field_count != 9) {
         fail(path ": invalid row: " line)
         continue
       }
-      suite=row[1]; iterations=row[2]; min=row[3]; mean=row[4]; p95=row[5]; max=row[6]
-      if (suite !~ /^[A-Za-z0-9_-]+$/ || iterations !~ /^[1-9][0-9]*$/ || !valid_number(min) || !valid_number(mean) || !valid_number(p95) || !valid_number(max)) {
+      suite=row[1]; iterations=row[2]; min=row[3]; mean=row[4]; p95=row[5]; max=row[6]; stddev=row[7]; variance=row[8]; cv=row[9]
+      if (suite !~ /^[A-Za-z0-9_-]+$/ || iterations !~ /^[1-9][0-9]*$/ || !valid_number(min) || !valid_number(mean) || !valid_number(p95) || !valid_number(max) || !valid_number(stddev) || !valid_number(variance) || !valid_number(cv)) {
         fail(path ": invalid values for suite " suite)
         continue
       }
