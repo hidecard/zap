@@ -35,3 +35,4 @@ SPEC-033	memory-budget	docs/MEMORY_BUDGET_OBJECT_STORE_EN.md#Default limits	docs
 SPEC-034	registry-transport	docs/LANGUAGE_SPEC_EN.md#8. Conformance ownership	docs/LANGUAGE_SPEC_MM.md#၈။ Conformance ownership	native/src/registry.rs#registry_client_accepts_chunked_response_body	implemented	normative
 SPEC-035	benchmark-provenance	docs/BENCHMARK_HARNESS_EN.md#Verification	docs/BENCHMARK_HARNESS_MM.md#Verification	scripts/test_benchmark_provenance.sh#schema_version	implemented	normative
 SPEC-036	release-version	docs/RELEASE_VERSION_POLICY_EN.md#Validation and evidence	docs/RELEASE_VERSION_POLICY_MM.md#Validation နှင့် evidence	scripts/validate_release_version.sh#REPORT=	implemented	normative
+SPEC-037	runtime-borrow-equality	docs/MEMORY_MODEL_EN.md#Ownership contract	docs/MEMORY_MODEL_MM.md#Ownership contract	native/src/value.rs#value_equality_is_cycle_safe_and_borrow_checked	implemented	normative
