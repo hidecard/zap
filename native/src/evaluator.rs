@@ -2497,6 +2497,16 @@ pub(crate) fn call_function_with_context(
     )
 }
 
+fn execute_ast_body_with_frame(
+    body: &Program,
+    local: &mut HashMap<String, Value>,
+    local_funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+    frame: &Rc<EnvFrame>,
+) -> Result<Flow, String> {
+    execute_ast_program_with_frame(body, local, local_funcs, context, Path::new("."), frame)
+}
+
 fn call_function_with_arguments(
     f: &Function,
     args: Vec<CallArgument>,
@@ -2516,7 +2526,14 @@ fn call_function_with_arguments(
             args.len()
         ));
     }
-    let mut local = f.closure.snapshot();
+    let ast_frame = f
+        .ast_body
+        .as_ref()
+        .map(|_| EnvFrame::child(Rc::clone(&f.closure)));
+    let mut local = ast_frame
+        .as_ref()
+        .map(|frame| frame.snapshot())
+        .unwrap_or_else(|| f.closure.snapshot());
     let captured_keys = f.closure.capture_keys();
     let mut positional_index = 0usize;
     let mut named = HashMap::new();
@@ -2558,26 +2575,31 @@ fn call_function_with_arguments(
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
         }
-        local.insert(param.name.clone(), v);
+        local.insert(param.name.clone(), v.clone());
+        if let Some(frame) = &ast_frame {
+            frame.insert_local(param.name.clone(), v);
+        }
     }
     let mut local_funcs = funcs.clone();
-    let value = match if let Some(body) = &f.ast_body {
-        execute_ast_program_with_context(
-            body,
-            &mut local,
-            &mut local_funcs,
-            context,
-            Path::new("."),
+    let (value, use_snapshot_sync) = if let Some(body) = &f.ast_body {
+        let frame = ast_frame.as_ref().expect("AST function has a call frame");
+        (
+            execute_ast_body_with_frame(body, &mut local, &mut local_funcs, context, frame)?,
+            false,
         )
     } else {
-        execute_lines_with_context(
-            &f.body,
-            &mut local,
-            &mut local_funcs,
-            context,
-            Path::new("."),
+        (
+            execute_lines_with_context(
+                &f.body,
+                &mut local,
+                &mut local_funcs,
+                context,
+                Path::new("."),
+            )?,
+            true,
         )
-    }? {
+    };
+    let value = match value {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
         Flow::Break | Flow::LoopContinue => {
@@ -2585,7 +2607,9 @@ fn call_function_with_arguments(
         }
         Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
-    f.closure.sync_captured(&captured_keys, &local);
+    if use_snapshot_sync {
+        f.closure.sync_captured(&captured_keys, &local);
+    }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -2634,9 +2658,19 @@ fn call_method_with_arguments(
             args.len()
         ));
     }
-    let mut local = f.closure.snapshot();
+    let ast_frame = f
+        .ast_body
+        .as_ref()
+        .map(|_| EnvFrame::child(Rc::clone(&f.closure)));
+    let mut local = ast_frame
+        .as_ref()
+        .map(|frame| frame.snapshot())
+        .unwrap_or_else(|| f.closure.snapshot());
     let captured_keys = f.closure.capture_keys();
-    local.insert("self".into(), self_value);
+    local.insert("self".into(), self_value.clone());
+    if let Some(frame) = &ast_frame {
+        frame.insert_local("self".into(), self_value);
+    }
     if let Some(Value::Text(owner_class)) = local.get("__zap_owner_class").cloned() {
         if let Some(Value::Text(parent_class)) = funcs
             .get(&format!("{owner_class}.__parent__"))
@@ -2644,7 +2678,10 @@ fn call_method_with_arguments(
             .cloned()
             .map(Value::Text)
         {
-            local.insert("super".into(), Value::Text(parent_class));
+            local.insert("super".into(), Value::Text(parent_class.clone()));
+            if let Some(frame) = &ast_frame {
+                frame.insert_local("super".into(), Value::Text(parent_class));
+            }
         }
     }
     let mut positional_index = 0usize;
@@ -2687,26 +2724,31 @@ fn call_method_with_arguments(
         if let Some(annotation) = &param.annotation {
             check_annotation(&param.name, annotation, &v)?;
         }
-        local.insert(param.name.clone(), v);
+        local.insert(param.name.clone(), v.clone());
+        if let Some(frame) = &ast_frame {
+            frame.insert_local(param.name.clone(), v);
+        }
     }
     let mut local_funcs = funcs.clone();
-    let value = match if let Some(body) = &f.ast_body {
-        execute_ast_program_with_context(
-            body,
-            &mut local,
-            &mut local_funcs,
-            context,
-            Path::new("."),
+    let (flow, use_snapshot_sync) = if let Some(body) = &f.ast_body {
+        let frame = ast_frame.as_ref().expect("AST method has a call frame");
+        (
+            execute_ast_body_with_frame(body, &mut local, &mut local_funcs, context, frame)?,
+            false,
         )
     } else {
-        execute_lines_with_context(
-            &f.body,
-            &mut local,
-            &mut local_funcs,
-            context,
-            Path::new("."),
+        (
+            execute_lines_with_context(
+                &f.body,
+                &mut local,
+                &mut local_funcs,
+                context,
+                Path::new("."),
+            )?,
+            true,
         )
-    }? {
+    };
+    let value = match flow {
         Flow::Return(v) => v,
         Flow::Continue => Value::None,
         Flow::Break | Flow::LoopContinue => {
@@ -2714,11 +2756,13 @@ fn call_method_with_arguments(
         }
         Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
-    let captured_keys = captured_keys
-        .into_iter()
-        .filter(|key| key != "self")
-        .collect::<Vec<_>>();
-    f.closure.sync_captured(&captured_keys, &local);
+    if use_snapshot_sync {
+        let captured_keys = captured_keys
+            .into_iter()
+            .filter(|key| key != "self")
+            .collect::<Vec<_>>();
+        f.closure.sync_captured(&captured_keys, &local);
+    }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -2971,7 +3015,7 @@ struct AstFunctionSpec<'a> {
 
 fn register_ast_function(
     spec: AstFunctionSpec<'_>,
-    vars: &HashMap<String, Value>,
+    frame: &Rc<EnvFrame>,
     funcs: &mut HashMap<String, Rc<Function>>,
 ) {
     let function = Rc::new(Function {
@@ -2989,7 +3033,7 @@ fn register_ast_function(
         is_async: spec.is_async,
         body: Vec::new(),
         ast_body: Some(spec.body.clone()),
-        closure: EnvFrame::child(EnvFrame::from_map(vars)),
+        closure: EnvFrame::child(Rc::clone(frame)),
     });
     funcs.insert(spec.name.to_string(), function.clone());
     if spec.exported {
@@ -3001,7 +3045,7 @@ fn register_ast_class(
     name: &str,
     base: &Option<String>,
     body: &Program,
-    vars: &HashMap<String, Value>,
+    frame: &Rc<EnvFrame>,
     funcs: &mut HashMap<String, Rc<Function>>,
 ) -> Result<(), String> {
     funcs.insert(
@@ -3013,7 +3057,7 @@ fn register_ast_class(
             is_async: false,
             body: Vec::new(),
             ast_body: None,
-            closure: EnvFrame::child(EnvFrame::from_map(vars)),
+            closure: EnvFrame::child(Rc::clone(frame)),
         }),
     );
     if let Some(parent) = base {
@@ -3030,7 +3074,7 @@ fn register_ast_class(
                 body: vec![parent.clone()],
 
                 ast_body: None,
-                closure: EnvFrame::child(EnvFrame::from_map(vars)),
+                closure: EnvFrame::child(Rc::clone(frame)),
             }),
         );
     }
@@ -3057,7 +3101,7 @@ fn register_ast_class(
                     is_async: false,
                     body: Vec::new(),
                     ast_body: Some(default_body),
-                    closure: EnvFrame::child(EnvFrame::from_map(vars)),
+                    closure: EnvFrame::child(Rc::clone(frame)),
                 }),
             );
         } else if let Stmt::Function {
@@ -3080,7 +3124,7 @@ fn register_ast_class(
                         is_async: false,
                         body: Vec::new(),
                         ast_body: None,
-                        closure: EnvFrame::child(EnvFrame::from_map(vars)),
+                        closure: EnvFrame::child(Rc::clone(frame)),
                     }),
                 );
             }
@@ -3102,8 +3146,8 @@ fn register_ast_class(
                     },
                 );
             }
-            let mut method_closure = vars.clone();
-            method_closure.insert("__zap_owner_class".into(), Value::Text(name.to_string()));
+            let method_closure = EnvFrame::child(Rc::clone(frame));
+            method_closure.insert_local("__zap_owner_class".into(), Value::Text(name.to_string()));
             funcs.insert(
                 format!("{name}.{method}"),
                 Rc::new(Function {
@@ -3113,7 +3157,7 @@ fn register_ast_class(
                     is_async: *is_async,
                     body: Vec::new(),
                     ast_body: Some(body.clone()),
-                    closure: EnvFrame::child(EnvFrame::from_map(&method_closure)),
+                    closure: method_closure,
                 }),
             );
         }
@@ -3157,6 +3201,27 @@ pub(crate) fn execute_ast_program_with_context(
     context: &mut ExecutionContext,
     base: &Path,
 ) -> Result<Flow, String> {
+    let frame = EnvFrame::from_map(vars);
+    let result = execute_ast_program_with_frame(program, vars, funcs, context, base, &frame);
+    let snapshot = frame.snapshot();
+    vars.clear();
+    vars.extend(snapshot);
+    result
+}
+
+fn sync_vars_from_frame(frame: &Rc<EnvFrame>, vars: &mut HashMap<String, Value>) {
+    vars.clear();
+    vars.extend(frame.snapshot());
+}
+
+fn execute_ast_program_with_frame(
+    program: &Program,
+    vars: &mut HashMap<String, Value>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+    base: &Path,
+    frame: &Rc<EnvFrame>,
+) -> Result<Flow, String> {
     enter_workspace(context, base)?;
     debug_assert!(ast_program_compatible(program));
     let _guard = enter_execution(
@@ -3168,6 +3233,7 @@ pub(crate) fn execute_ast_program_with_context(
         context,
     )?;
     for statement in &program.statements {
+        sync_vars_from_frame(frame, vars);
         let flow = match &statement.node {
             Stmt::Expression(value) => {
                 let _ = ast_expression_with_context(value, vars, funcs, context)?;
@@ -3199,7 +3265,7 @@ pub(crate) fn execute_ast_program_with_context(
                         _ => return Err("property assignment expects an object".into()),
                     }
                 } else {
-                    vars.insert(name.clone(), evaluated);
+                    frame.assign(name, evaluated);
                 }
                 Flow::Continue
             }
@@ -3217,9 +3283,9 @@ pub(crate) fn execute_ast_program_with_context(
                 if let Some(annotation) = annotation {
                     check_annotation(name, annotation, &evaluated)?;
                 }
-                vars.insert(name.clone(), evaluated);
+                frame.insert_local(name.clone(), evaluated);
                 if *exported {
-                    vars.insert(format!("__zap_export_var__:{name}"), Value::None);
+                    frame.insert_local(format!("__zap_export_var__:{name}"), Value::None);
                 }
                 Flow::Continue
             }
@@ -3237,17 +3303,17 @@ pub(crate) fn execute_ast_program_with_context(
                 body,
                 binding,
                 catch_body,
-            } => match execute_ast_program_with_context(body, vars, funcs, context, base)? {
+            } => match execute_ast_program_with_frame(body, vars, funcs, context, base, frame)? {
                 Flow::Raise(error) => {
-                    let previous = vars.insert(binding.clone(), error);
-                    let caught =
-                        execute_ast_program_with_context(catch_body, vars, funcs, context, base);
+                    let previous = frame.get_local(binding);
+                    frame.insert_local(binding.clone(), error);
+                    let caught = execute_ast_program_with_frame(
+                        catch_body, vars, funcs, context, base, frame,
+                    );
                     match previous {
-                        Some(value) => {
-                            vars.insert(binding.clone(), value);
-                        }
+                        Some(value) => frame.insert_local(binding.clone(), value),
                         None => {
-                            vars.remove(binding);
+                            frame.remove_local(binding);
                         }
                     }
                     caught?
@@ -3272,9 +3338,9 @@ pub(crate) fn execute_ast_program_with_context(
                 else_branch,
             } => {
                 if ast_expression_with_context(condition, vars, funcs, context)?.truthy() {
-                    execute_ast_program_with_context(then_branch, vars, funcs, context, base)?
+                    execute_ast_program_with_frame(then_branch, vars, funcs, context, base, frame)?
                 } else if let Some(branch) = else_branch {
-                    execute_ast_program_with_context(branch, vars, funcs, context, base)?
+                    execute_ast_program_with_frame(branch, vars, funcs, context, base, frame)?
                 } else {
                     Flow::Continue
                 }
@@ -3285,7 +3351,7 @@ pub(crate) fn execute_ast_program_with_context(
                     if !ast_expression_with_context(condition, vars, funcs, context)?.truthy() {
                         break Flow::Continue;
                     }
-                    match execute_ast_program_with_context(body, vars, funcs, context, base)? {
+                    match execute_ast_program_with_frame(body, vars, funcs, context, base, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break Flow::Continue,
                         flow @ Flow::Return(_) => break flow,
@@ -3316,8 +3382,8 @@ pub(crate) fn execute_ast_program_with_context(
                 }
                 let mut outcome = Flow::Continue;
                 for item in items {
-                    vars.insert(binding.clone(), item);
-                    match execute_ast_program_with_context(body, vars, funcs, context, base)? {
+                    frame.assign(binding, item);
+                    match execute_ast_program_with_frame(body, vars, funcs, context, base, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
                         flow @ Flow::Return(_) | flow @ Flow::Raise(_) => {
@@ -3347,18 +3413,20 @@ pub(crate) fn execute_ast_program_with_context(
                         is_async: *is_async,
                         exported: *exported,
                     },
-                    vars,
+                    frame,
                     funcs,
                 );
                 Flow::Continue
             }
             Stmt::Class { name, base, body } => {
-                register_ast_class(name, base, body, vars, funcs)?;
+                register_ast_class(name, base, body, frame, funcs)?;
                 Flow::Continue
             }
             Stmt::Module { .. } => Flow::Continue,
             Stmt::Import { path, explicit, .. } => {
-                load_module_with_context(path, vars, funcs, context, base, *explicit)?
+                let flow = load_module_with_context(path, vars, funcs, context, base, *explicit)?;
+                frame.sync_from_snapshot(vars);
+                flow
             }
         };
         match flow {
@@ -4127,6 +4195,22 @@ mod tests {
             .expect("parent-linked closure should execute");
         assert_eq!(vars.get("first"), Some(&Value::Number(1)));
         assert_eq!(vars.get("second"), Some(&Value::Number(2)));
+    }
+
+    #[test]
+    fn live_closures_share_reassigned_outer_cells_without_breaking_shadowing_or_recursion() {
+        let program = parse_program(
+            "fn make_live_reader() -> function:\n    let value = 1\n    fn read() -> number:\n        return value\n    value = 2\n    return read\nfn make_shared_reader() -> function:\n    let value = 0\n    fn increment() -> number:\n        value = value + 1\n        return value\n    fn read() -> number:\n        return value\n    increment()\n    return read\nfn make_shadow_reader() -> function:\n    let value = 4\n    fn read() -> number:\n        let value = 9\n        return value\n    return read\nfn factorial(value: number) -> number:\n    if value <= 1:\n        return 1\n    return value * factorial(value - 1)\nlet live = make_live_reader()\nlet shared = make_shared_reader()\nlet shadow = make_shadow_reader()\nlet reassigned = live()\nlet sibling_value = shared()\nlet shadowed = shadow()\nlet recursive = factorial(5)\n",
+        )
+        .expect("live closure program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("live closures should execute through the AST");
+        assert_eq!(vars.get("reassigned"), Some(&Value::Number(2)));
+        assert_eq!(vars.get("sibling_value"), Some(&Value::Number(1)));
+        assert_eq!(vars.get("shadowed"), Some(&Value::Number(9)));
+        assert_eq!(vars.get("recursive"), Some(&Value::Number(120)));
     }
 
     #[test]

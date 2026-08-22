@@ -86,14 +86,19 @@ impl Drop for TrackedObjectFields {
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct EnvFrame {
-    values: RefCell<HashMap<String, Value>>,
+    values: RefCell<HashMap<String, Rc<RefCell<Value>>>>,
     parent: Option<Rc<EnvFrame>>,
 }
 
 impl EnvFrame {
     pub(crate) fn from_map(values: &HashMap<String, Value>) -> Rc<Self> {
         Rc::new(Self {
-            values: RefCell::new(values.clone()),
+            values: RefCell::new(
+                values
+                    .iter()
+                    .map(|(name, value)| (name.clone(), Rc::new(RefCell::new(value.clone()))))
+                    .collect(),
+            ),
             parent: None,
         })
     }
@@ -105,30 +110,59 @@ impl EnvFrame {
         })
     }
 
-    pub(crate) fn get(&self, name: &str) -> Option<Value> {
+    pub(crate) fn get_local(&self, name: &str) -> Option<Value> {
         self.values
             .borrow()
             .get(name)
-            .cloned()
+            .map(|cell| cell.borrow().clone())
+    }
+
+    pub(crate) fn contains_local(&self, name: &str) -> bool {
+        self.values.borrow().contains_key(name)
+    }
+
+    pub(crate) fn contains(&self, name: &str) -> bool {
+        self.contains_local(name)
+            || self
+                .parent
+                .as_ref()
+                .is_some_and(|parent| parent.contains(name))
+    }
+
+    pub(crate) fn get(&self, name: &str) -> Option<Value> {
+        self.get_local(name)
             .or_else(|| self.parent.as_ref().and_then(|parent| parent.get(name)))
     }
 
     #[allow(dead_code)]
     pub(crate) fn insert_local(&self, name: String, value: Value) {
-        self.values.borrow_mut().insert(name, value);
+        self.values
+            .borrow_mut()
+            .insert(name, Rc::new(RefCell::new(value)));
+    }
+
+    pub(crate) fn remove_local(&self, name: &str) -> Option<Value> {
+        self.values
+            .borrow_mut()
+            .remove(name)
+            .map(|cell| match Rc::try_unwrap(cell) {
+                Ok(value) => value.into_inner(),
+                Err(cell) => cell.borrow().clone(),
+            })
     }
 
     pub(crate) fn assign(&self, name: &str, value: Value) {
-        if self.values.borrow().contains_key(name) {
-            self.values.borrow_mut().insert(name.to_string(), value);
+        let local_cell = self.values.borrow().get(name).cloned();
+        if let Some(cell) = local_cell {
+            *cell.borrow_mut() = value;
         } else if let Some(parent) = &self.parent {
-            if parent.get(name).is_some() {
+            if parent.contains(name) {
                 parent.assign(name, value);
                 return;
             }
-            self.values.borrow_mut().insert(name.to_string(), value);
+            self.insert_local(name.to_string(), value);
         } else {
-            self.values.borrow_mut().insert(name.to_string(), value);
+            self.insert_local(name.to_string(), value);
         }
     }
 
@@ -142,13 +176,15 @@ impl EnvFrame {
             self.values
                 .borrow()
                 .iter()
-                .map(|(key, value)| (key.clone(), value.clone())),
+                .map(|(key, cell)| (key.clone(), cell.borrow().clone())),
         );
         values
     }
 
     pub(crate) fn capture_keys(&self) -> Vec<String> {
-        self.snapshot().into_keys().collect()
+        let mut keys = self.snapshot().into_keys().collect::<Vec<_>>();
+        keys.sort();
+        keys
     }
 
     pub(crate) fn sync_captured(&self, keys: &[String], values: &HashMap<String, Value>) {
@@ -164,17 +200,17 @@ impl EnvFrame {
         let local_keys = self.values.borrow().keys().cloned().collect::<Vec<_>>();
         for key in local_keys {
             if let Some(value) = values.get(&key) {
-                self.insert_local(key, value.clone());
+                self.assign(&key, value.clone());
             }
         }
         for (key, value) in values {
-            if self.values.borrow().contains_key(key) {
+            if self.contains_local(key) {
                 continue;
             }
             if self
                 .parent
                 .as_ref()
-                .is_some_and(|parent| parent.get(key).is_some())
+                .is_some_and(|parent| parent.contains(key))
             {
                 self.parent
                     .as_ref()
