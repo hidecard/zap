@@ -452,6 +452,290 @@ fn is_valid_identifier(name: &str) -> bool {
         && characters.all(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
+#[derive(Clone, Debug)]
+struct RenameBinding {
+    name: String,
+    line: usize,
+}
+
+#[derive(Clone, Debug)]
+struct RenameScope {
+    parent: Option<usize>,
+    indent: usize,
+    bindings: Vec<usize>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct RenameModel {
+    bindings: Vec<RenameBinding>,
+    scopes: Vec<RenameScope>,
+    token_bindings: BTreeMap<usize, usize>,
+    token_scopes: BTreeMap<usize, usize>,
+}
+
+fn rename_keyword(name: &str) -> bool {
+    matches!(
+        name,
+        "let"
+            | "fn"
+            | "async"
+            | "if"
+            | "else"
+            | "for"
+            | "while"
+            | "class"
+            | "module"
+            | "import"
+            | "return"
+            | "true"
+            | "false"
+            | "none"
+            | "and"
+            | "or"
+            | "as"
+            | "try"
+            | "catch"
+            | "raise"
+            | "pass"
+            | "break"
+            | "continue"
+    )
+}
+
+fn line_name_tokens<'a>(
+    token_ids: &'a [usize],
+    tokens: &'a [crate::lexer::SpannedToken],
+) -> impl Iterator<Item = (usize, &'a str)> + 'a {
+    token_ids
+        .iter()
+        .filter_map(|index| match &tokens[*index].token {
+            crate::lexer::Token::Name(name) => Some((*index, name.as_str())),
+            _ => None,
+        })
+}
+
+fn declaration_token_after(
+    token_ids: &[usize],
+    tokens: &[crate::lexer::SpannedToken],
+    keyword: &str,
+) -> Option<usize> {
+    let keyword_position = token_ids.iter().position(
+        |index| matches!(&tokens[*index].token, crate::lexer::Token::Name(name) if name == keyword),
+    )?;
+    token_ids[keyword_position + 1..]
+        .iter()
+        .find(|index| {
+            matches!(&tokens[**index].token, crate::lexer::Token::Name(name) if !rename_keyword(name))
+        })
+        .copied()
+}
+
+fn function_name_token(
+    token_ids: &[usize],
+    tokens: &[crate::lexer::SpannedToken],
+) -> Option<usize> {
+    let mut after_fn = false;
+    for index in token_ids {
+        match &tokens[*index].token {
+            crate::lexer::Token::Name(name) if name == "fn" => after_fn = true,
+            crate::lexer::Token::Name(_) if after_fn => return Some(*index),
+            _ => {}
+        }
+    }
+    None
+}
+
+fn line_opens_scope(token_ids: &[usize], tokens: &[crate::lexer::SpannedToken]) -> bool {
+    let words = line_name_tokens(token_ids, tokens)
+        .map(|(_, name)| name)
+        .collect::<Vec<_>>();
+    matches!(
+        words.as_slice(),
+        ["fn", ..]
+            | ["async", "fn", ..]
+            | ["class", ..]
+            | ["if", ..]
+            | ["else", ..]
+            | ["for", ..]
+            | ["while", ..]
+            | ["try", ..]
+            | ["catch", ..]
+    )
+}
+
+fn indentation_width(line: &str) -> usize {
+    line.chars()
+        .take_while(|character| character.is_whitespace() && *character != '\n')
+        .map(|character| if character == '\t' { 4 } else { 1 })
+        .sum()
+}
+
+fn add_rename_binding(
+    model: &mut RenameModel,
+    token_index: usize,
+    scope: usize,
+    line: usize,
+    name: &str,
+) {
+    let binding = model.bindings.len();
+    model.bindings.push(RenameBinding {
+        name: name.to_string(),
+        line,
+    });
+    model.scopes[scope].bindings.push(binding);
+    model.token_bindings.insert(token_index, binding);
+    model.token_scopes.insert(token_index, scope);
+}
+
+fn rename_model(source: &str, tokens: &[crate::lexer::SpannedToken]) -> RenameModel {
+    let line_count = source.lines().count().max(1).max(
+        tokens
+            .iter()
+            .map(|token| token.span.line)
+            .max()
+            .unwrap_or(1),
+    );
+    let mut tokens_by_line = vec![Vec::new(); line_count + 1];
+    for (index, token) in tokens.iter().enumerate() {
+        if token.span.line <= line_count {
+            tokens_by_line[token.span.line].push(index);
+        }
+    }
+
+    let mut model = RenameModel {
+        scopes: vec![RenameScope {
+            parent: None,
+            indent: 0,
+            bindings: Vec::new(),
+        }],
+        ..RenameModel::default()
+    };
+    let mut scope_for_line = vec![0; line_count + 1];
+    let mut block_children = vec![None; line_count + 1];
+    let mut scope_stack = vec![0];
+    for line in 1..=line_count {
+        let line_text = source.lines().nth(line - 1).unwrap_or("");
+        if line_text.trim().is_empty() {
+            scope_for_line[line] = *scope_stack.last().unwrap_or(&0);
+            continue;
+        }
+        let indent = indentation_width(line_text);
+        while scope_stack.len() > 1 && indent <= model.scopes[*scope_stack.last().unwrap()].indent {
+            scope_stack.pop();
+        }
+        let current = *scope_stack.last().unwrap_or(&0);
+        scope_for_line[line] = current;
+        if line_opens_scope(&tokens_by_line[line], tokens) {
+            let child = model.scopes.len();
+            model.scopes.push(RenameScope {
+                parent: Some(current),
+                indent,
+                bindings: Vec::new(),
+            });
+            block_children[line] = Some(child);
+            scope_stack.push(child);
+        }
+    }
+    for line in 1..=line_count {
+        let current = scope_for_line[line];
+        let token_ids = &tokens_by_line[line];
+        for index in token_ids {
+            model.token_scopes.entry(*index).or_insert(current);
+        }
+        if let Some(function_index) = function_name_token(token_ids, tokens) {
+            if let crate::lexer::Token::Name(name) = &tokens[function_index].token {
+                add_rename_binding(&mut model, function_index, current, line, name);
+            }
+            if let Some(child) = block_children[line] {
+                let mut in_params = false;
+                let mut expect_name = false;
+                for index in token_ids
+                    .iter()
+                    .skip_while(|index| **index != function_index)
+                    .skip(1)
+                {
+                    match &tokens[*index].token {
+                        crate::lexer::Token::LParen if !in_params => {
+                            in_params = true;
+                            expect_name = true;
+                        }
+                        crate::lexer::Token::RParen if in_params => break,
+                        crate::lexer::Token::Comma if in_params => expect_name = true,
+                        crate::lexer::Token::Name(name)
+                            if in_params && expect_name && !rename_keyword(name) =>
+                        {
+                            add_rename_binding(&mut model, *index, child, line, name);
+                            expect_name = false;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        } else {
+            for keyword in ["let", "class", "module", "import", "catch"] {
+                let scope = current;
+                if keyword == "import" {
+                    let Some(as_position) = token_ids.iter().position(|index| {
+                        matches!(&tokens[*index].token, crate::lexer::Token::Name(name) if name == "as")
+                    }) else {
+                        continue;
+                    };
+                    if let Some(token_index) = token_ids[as_position + 1..].iter().find(|index| {
+                        matches!(&tokens[**index].token, crate::lexer::Token::Name(name) if !rename_keyword(name))
+                    }) {
+                        if let crate::lexer::Token::Name(name) = &tokens[*token_index].token {
+                            add_rename_binding(&mut model, *token_index, scope, line, name);
+                        }
+                    }
+                } else if let Some(token_index) =
+                    declaration_token_after(token_ids, tokens, keyword)
+                {
+                    if let crate::lexer::Token::Name(name) = &tokens[token_index].token {
+                        add_rename_binding(&mut model, token_index, scope, line, name);
+                    }
+                }
+            }
+            if let Some(for_position) = token_ids.iter().position(|index| {
+                matches!(&tokens[*index].token, crate::lexer::Token::Name(name) if name == "for")
+            }) {
+                if let Some(token_index) = token_ids[for_position + 1..].iter().find(|index| {
+                    matches!(&tokens[**index].token, crate::lexer::Token::Name(name) if !rename_keyword(name))
+                }) {
+                    if let crate::lexer::Token::Name(name) = &tokens[*token_index].token {
+                        add_rename_binding(
+                            &mut model,
+                            *token_index,
+                            block_children[line].unwrap_or(current),
+                            line,
+                            name,
+                        );
+                    }
+                }
+            }
+        }
+    }
+    model
+}
+
+fn resolved_rename_binding(
+    model: &RenameModel,
+    name: &str,
+    mut scope: usize,
+    line: usize,
+) -> Option<usize> {
+    loop {
+        if let Some(binding) = model.scopes[scope].bindings.iter().rev().find(|binding| {
+            model.bindings[**binding].name == name && model.bindings[**binding].line <= line
+        }) {
+            return Some(*binding);
+        }
+        let Some(parent) = model.scopes[scope].parent else {
+            return None;
+        };
+        scope = parent;
+    }
+}
+
 fn rename_response(message: &Value, state: &LspState) -> Value {
     let id = message.get("id").cloned().unwrap_or(Value::Null);
     let uri = message["params"]["textDocument"]["uri"]
@@ -484,7 +768,7 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
             });
         }
     };
-    let Some(old_name) = tokens.iter().find_map(|token| {
+    let target = tokens.iter().enumerate().find_map(|(index, token)| {
         let crate::lexer::Token::Name(name) = &token.token else {
             return None;
         };
@@ -493,46 +777,57 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
         (start_line == line
             && character >= start_character
             && character <= start_character.saturating_add(token.span.length))
-        .then(|| name.clone())
-    }) else {
+        .then_some((index, name.clone()))
+    });
+    let Some((target_index, old_name)) = target else {
         return json!({"jsonrpc": "2.0", "id": id, "result": Value::Null});
     };
-    if crate::stdlib_catalog::contains(&old_name)
-        || matches!(
-            old_name.as_str(),
-            "let"
-                | "fn"
-                | "async"
-                | "if"
-                | "else"
-                | "for"
-                | "while"
-                | "class"
-                | "module"
-                | "import"
-                | "return"
-                | "true"
-                | "false"
-                | "none"
-        )
-    {
+    if crate::stdlib_catalog::contains(&old_name) || rename_keyword(&old_name) {
         return json!({
             "jsonrpc": "2.0",
             "id": id,
             "error": {"code": -32602, "message": "built-in names and language keywords cannot be renamed"}
         });
     }
+    let model = rename_model(&source, &tokens);
+    let target_scope = model.token_scopes.get(&target_index).copied().unwrap_or(0);
+    let Some(target_binding) = model
+        .token_bindings
+        .get(&target_index)
+        .copied()
+        .or_else(|| resolved_rename_binding(&model, &old_name, target_scope, line + 1))
+    else {
+        return json!({"jsonrpc": "2.0", "id": id, "result": Value::Null});
+    };
     let edits = tokens
-        .into_iter()
-        .filter_map(|token| match token.token {
-            crate::lexer::Token::Name(name) if name == old_name => Some(json!({
-                "range": {
-                    "start": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1)},
-                    "end": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1).saturating_add(token.span.length)}
-                },
-                "newText": new_name
-            })),
-            _ => None,
+        .iter()
+        .enumerate()
+        .filter_map(|(index, token)| {
+            let crate::lexer::Token::Name(name) = &token.token else {
+                return None;
+            };
+            if name != &old_name || rename_keyword(name) {
+                return None;
+            }
+            let previous_is_dot = index > 0 && matches!(tokens[index - 1].token, crate::lexer::Token::Dot);
+            if previous_is_dot {
+                return None;
+            }
+            let scope = model.token_scopes.get(&index).copied().unwrap_or(0);
+            let binding = model
+                .token_bindings
+                .get(&index)
+                .copied()
+                .or_else(|| resolved_rename_binding(&model, name, scope, token.span.line));
+            (binding == Some(target_binding)).then(|| {
+                json!({
+                    "range": {
+                        "start": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1)},
+                        "end": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1).saturating_add(token.span.length)}
+                    },
+                    "newText": new_name
+                })
+            })
         })
         .collect::<Vec<_>>();
     json!({
@@ -1433,6 +1728,144 @@ mod tests {
         )
         .unwrap();
         assert_eq!(builtin["error"]["code"], -32602);
+    }
+
+    #[test]
+    fn rename_resolves_outer_binding_without_renaming_inner_shadow() {
+        let uri = "file:///rename-shadow.zp";
+        let source = "let value = 1\nfn demo():\n    let value = 2\n    say value\nsay value\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 49, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 5}, "newName": "outer_value"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 2);
+        assert_eq!(edits[0]["range"]["start"]["line"], 0);
+        assert_eq!(edits[1]["range"]["start"]["line"], 4);
+    }
+
+    #[test]
+    fn rename_resolves_parameters_through_nested_closure_scopes() {
+        let uri = "file:///rename-closure.zp";
+        let source = "fn greet(value):\n    fn nested():\n        return value\n    return value\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 50, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 10}, "newName": "input"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 3);
+        assert!(edits.iter().all(|edit| edit["newText"] == "input"));
+    }
+
+    #[test]
+    fn rename_does_not_edit_comments_or_string_literals() {
+        let uri = "file:///rename-literals.zp";
+        let source = "let value = 1\n# value\nsay \"value\"\nsay value\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 51, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 5}, "newName": "renamed"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 2);
+        assert!(edits.iter().all(|edit| edit["range"]["start"]["line"] != 1));
+        assert!(edits.iter().all(|edit| edit["range"]["start"]["line"] != 2));
+    }
+
+    #[test]
+    fn rename_preserves_import_path_and_updates_alias_references() {
+        let uri = "file:///rename-import.zp";
+        let source = "import app.util as helper\nsay helper\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 53, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 19}, "newName": "utils"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 2);
+        assert_eq!(edits[0]["range"]["start"]["character"], 19);
+        assert_eq!(edits[1]["range"]["start"]["line"], 1);
+    }
+
+    #[test]
+    fn rename_after_full_sync_uses_updated_document_state() {
+        let uri = "file:///rename-after-change.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "version": 1, "text": "let old_name = 1\nsay old_name\n"}}
+            }),
+            &mut state,
+        );
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": uri, "version": 2},
+                    "contentChanges": [{"text": "let new_name = 1\nsay new_name\n"}]
+                }
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 52, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 5}, "newName": "renamed"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 2);
+        assert_eq!(edits[0]["range"]["start"]["line"], 0);
+        assert_eq!(edits[1]["range"]["start"]["line"], 1);
     }
 
     #[test]
