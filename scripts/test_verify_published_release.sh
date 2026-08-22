@@ -39,6 +39,10 @@ KEY_ID="$(gpg --batch --homedir "$GNUPGHOME" --list-secret-keys --with-colons za
 KEY_FINGERPRINT="$(gpg --batch --homedir "$GNUPGHOME" --list-secret-keys --with-colons "$KEY_ID" | awk -F: '$1 == "fpr" { print $10; exit }')"
 test -n "$KEY_FINGERPRINT"
 GNUPGHOME="$GNUPGHOME" SIGNING_KEY_ID="$KEY_ID" TRUSTED_SIGNING_FINGERPRINTS="$KEY_FINGERPRINT" \
+  RELEASE_REF=refs/tags/v2.1.0 \
+  RELEASE_COMMIT=0000000000000000000000000000000000000000 \
+  WORKFLOW_RUN_ID=1 \
+  SOURCE_URI=https://github.com/hidecard/zap \
   "$ROOT/scripts/sign_release_artifacts.sh" 2.1.0 "$RELEASE_DIR" >/tmp/zap-verify-signing.out
 
 GNUPGHOME="$GNUPGHOME" "$ROOT/scripts/verify_published_release.sh" 2.1.0 "$RELEASE_DIR" >/tmp/zap-verify-success.out
