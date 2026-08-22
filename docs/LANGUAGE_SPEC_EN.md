@@ -44,7 +44,7 @@ A function has a name, ordered parameters, optional annotations, optional defaul
 
 Object fields use the documented single-threaded `Rc<RefCell>` ownership model. Cyclic object graphs require an explicit cycle-breaking operation before the owning graph is discarded. The runtime is not thread-safe by default; this boundary is intentional.
 
-The current async executor is deterministic and poll-budgeted. It provides joinable tasks, cancellation-aware joins, timeout propagation, task readiness, and typed task failures. It is not a production I/O reactor. Blocking calls, socket readiness, worker scheduling, shutdown, and forced cancellation of foreign blocking work require the separate production boundary contract in `ASYNC_BOUNDARIES_EN.md`.
+The current async executor is deterministic and poll-budgeted. Language `async fn` calls schedule their completed values through the caller's `RuntimeState` and return a context-owned `ScheduledFuture`; `await` and `task_join` drive the executor before consuming the result, while `task_is_ready` observes readiness without polling. The runtime also provides joinable tasks, cancellation-aware joins, timeout propagation, and typed task failures. It is not a production I/O reactor. Blocking calls, socket readiness, worker scheduling, shutdown, and forced cancellation of foreign blocking work require the separate production boundary contract in `ASYNC_BOUNDARIES_EN.md`.
 
 ## 7. Diagnostics and compatibility
 

@@ -462,7 +462,7 @@ impl<'a> ExprParser<'a> {
                         Value::Callable(_) => "function",
                         Value::ResultOk(_) | Value::ResultErr(_) => "result",
                         Value::OptionSome(_) | Value::OptionNone => "option",
-                        Value::Future(_) => "future",
+                        Value::Future(_) | Value::ScheduledFuture(_) => "future",
                         Value::None => "none",
                     }
                     .into(),

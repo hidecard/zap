@@ -44,7 +44,7 @@ Function တစ်ခုတွင် name၊ ordered parameter များ၊ o
 
 Object field များသည် documented single-threaded `Rc<RefCell>` ownership model ကို သုံးသည်။ Cyclic object graph ကို discard မလုပ်မီ explicit cycle-breaking operation လုပ်ရမည်။ Runtime သည် default အားဖြင့် thread-safe မဟုတ်ဘဲ ဤ boundary သည် ရည်ရွယ်ချက်ရှိရှိ သတ်မှတ်ထားခြင်း ဖြစ်သည်။
 
-လက်ရှိ async executor သည် deterministic ဖြစ်ပြီး poll-budget သုံးသည်။ Joinable task၊ cancellation-aware join၊ timeout propagation၊ task readiness နှင့် typed task failure များကို ပေးသည်။ ၎င်းသည် production I/O reactor မဟုတ်ပါ။ Blocking call၊ socket readiness၊ worker scheduling၊ shutdown နှင့် foreign blocking work ကို forced cancellation ပြုလုပ်ခြင်းတို့အတွက် `ASYNC_BOUNDARIES_MM.md` ထဲရှိ သီးခြား production boundary contract ကို လိုက်နာရမည်။
+လက်ရှိ async executor သည် deterministic ဖြစ်ပြီး poll-budget သုံးသည်။ Language `async fn` call များသည် caller ၏ `RuntimeState` မှတစ်ဆင့် completed value ကို schedule လုပ်ပြီး context ပိုင် `ScheduledFuture` ပြန်ပေးသည်။ `await` နှင့် `task_join` သည် result ကို consume မလုပ်မီ executor ကို drive လုပ်ပြီး `task_is_ready` သည် poll မလုပ်ဘဲ readiness ကို စောင့်ကြည့်သည်။ Runtime သည် joinable task၊ cancellation-aware join၊ timeout propagation နှင့် typed task failure များကိုလည်း ပေးသည်။ ၎င်းသည် production I/O reactor မဟုတ်ပါ။ Blocking call၊ socket readiness၊ worker scheduling၊ shutdown နှင့် foreign blocking work ကို forced cancellation ပြုလုပ်ခြင်းတို့အတွက် `ASYNC_BOUNDARIES_MM.md` ထဲရှိ သီးခြား production boundary contract ကို လိုက်နာရမည်။
 
 ## ၇။ Diagnostics နှင့် compatibility
 

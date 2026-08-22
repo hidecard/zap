@@ -5699,7 +5699,7 @@ fn runs_language_level_async_task_facade_end_to_end() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "true\n7\n");
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "false\n7\n");
 }
 
 #[test]

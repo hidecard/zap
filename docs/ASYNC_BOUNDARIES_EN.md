@@ -8,19 +8,19 @@ Zap provides a deterministic, single-threaded task executor for language-runtime
 
 ## Current deterministic executor
 
-The current executor stores tasks in insertion order and polls them with a no-op waker. `run_until_idle()` uses the configured maximum poll budget, while `run_with_budget()` returns a `RunReport` containing the number of polls, pending-task count, and whether the budget was exhausted. The executor can enforce a maximum task count and a maximum number of polls per run.
+The current executor stores tasks in insertion order and polls them with a no-op waker. `run_until_idle()` uses the configured maximum poll budget, while `run_with_budget()` returns a `RunReport` containing the number of polls, pending-task count, and whether the budget was exhausted. The executor can enforce a maximum task count and a maximum number of polls per run. Language `async fn` calls now schedule their result in the caller's `RuntimeState` and return a `ScheduledFuture` task handle; `await` and `task_join` drive the context-owned executor before consuming the result, while `task_is_ready` observes readiness without polling.
 
 | Contract | Current behavior |
 |---|---|
-| Scheduling | Cooperative, single-threaded polling in deterministic task order. |
+| Scheduling | Cooperative, single-threaded polling in deterministic task order; language task handles are owned by the current `ExecutionContext`. |
 | Wake-up | No operating-system reactor; the executor uses a no-op waker. |
 | Fairness | Bounded by the poll budget and task order; no latency guarantee is made. |
 | Shared state | Runtime task handles use `Rc<RefCell<...>>`; this is not `Send`/`Sync`. |
-| Failure | Join handles preserve task failure or cancellation as an explicit result. |
+| Failure | Join handles preserve task failure or cancellation as an explicit result; a language task that cannot be found after reset is not observable in the new run. |
 | Cancellation | Cancellation tokens are checked before polling the wrapped future; cancellation is cooperative. |
 | Limits | `max_tasks` and `max_polls_per_run` prevent unbounded executor work. |
 
-The executor is suitable for deterministic language semantics, unit tests, conformance fixtures, and small in-process tasks that never block. It is not suitable for claiming production-grade socket readiness, parallel CPU execution, preemptive fairness, or forced interruption of arbitrary code.
+The executor is suitable for deterministic language semantics, context-owned `ScheduledFuture` handles, unit tests, conformance fixtures, and small in-process tasks that never block. It is not suitable for claiming production-grade socket readiness, parallel CPU execution, preemptive fairness, or forced interruption of arbitrary code.
 
 ## Production boundary
 
@@ -38,7 +38,7 @@ Task errors propagate through join handles as typed results. A caller that drops
 
 ## Stability rules
 
-The deterministic executor is the stable baseline for v2.1.x. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
+The deterministic executor and the context-owned language scheduling boundary are the stable baseline for v2.1.x. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
 
 A future production implementation must add, at minimum:
 
@@ -50,4 +50,4 @@ A future production implementation must add, at minimum:
 
 ## Verification
 
-The current contract is verified by native tests for bounded polling, task limits, join results, cancellation precedence, timeout behavior, and child-process cancellation. These tests verify deterministic semantics only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.
+The current contract is verified by native tests for bounded polling, task limits, join results, context-owned language-task readiness/completion, scheduler reset isolation, cancellation precedence, timeout behavior, and child-process cancellation. These tests verify deterministic semantics only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.

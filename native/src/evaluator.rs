@@ -275,6 +275,11 @@ pub(crate) fn value_to_json(v: &Value) -> Result<serde_json::Value, String> {
             "__zap_variant":"future",
             "value":value_to_json(value)?
         })),
+        Value::ScheduledFuture(id) => Ok(serde_json::json!({
+            "__zap_variant":"future",
+            "state":"scheduled",
+            "task_id":id
+        })),
     }
 }
 pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
@@ -307,6 +312,9 @@ pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
                 "none" => Ok(Value::OptionNone),
                 "callable" => Err("JSON callable values cannot be deserialized".into()),
                 "future" => {
+                    if m.get("state") == Some(&serde_json::Value::String("scheduled".into())) {
+                        return Err("JSON scheduled future values cannot be deserialized".into());
+                    }
                     let value = m
                         .remove("value")
                         .ok_or_else(|| "JSON future variant is missing its value".to_string())?;
@@ -346,7 +354,7 @@ pub(crate) fn value_type_name(value: &Value) -> &'static str {
         Value::ResultOk(_) | Value::ResultErr(_) => "result",
         Value::OptionSome(_) | Value::OptionNone => "option",
         Value::Callable(_) => "function",
-        Value::Future(_) => "future",
+        Value::Future(_) | Value::ScheduledFuture(_) => "future",
     }
 }
 
@@ -496,21 +504,32 @@ pub(crate) fn direct_builtin_with_context(
             match &args[0] {
                 Value::Future(value) => {
                     if let Some(context) = context.as_deref_mut() {
-                        context.state_mut().memory_budget_mut().admit_task()?;
+                        let task_id = context
+                            .state_mut()
+                            .schedule_language_task((**value).clone())?;
+                        Ok(Some(Value::ScheduledFuture(task_id)))
+                    } else {
+                        Ok(Some(Value::Future(value.clone())))
                     }
-                    Ok(Some(Value::Future(value.clone())))
                 }
+                Value::ScheduledFuture(id) => Ok(Some(Value::ScheduledFuture(*id))),
                 _ => Err("spawn expects a future value".into()),
             }
         }
         "task_join" => {
             expect(1)?;
             match &args[0] {
-                Value::Future(value) => {
-                    if let Some(context) = context.as_deref_mut() {
-                        context.state_mut().memory_budget_mut().complete_task();
-                    }
-                    Ok(Some((**value).clone()))
+                Value::Future(value) => Ok(Some((**value).clone())),
+                Value::ScheduledFuture(id) => {
+                    let context = context
+                        .as_deref_mut()
+                        .ok_or("task_join requires an execution context")?;
+                    context.state_mut().run_language_tasks_until_idle();
+                    let value = context
+                        .state_mut()
+                        .take_language_task(*id)
+                        .ok_or_else(|| format!("language task {id} did not complete"))?;
+                    Ok(Some(value))
                 }
                 _ => Err("task_join expects a future value".into()),
             }
@@ -519,6 +538,14 @@ pub(crate) fn direct_builtin_with_context(
             expect(1)?;
             match &args[0] {
                 Value::Future(_) => Ok(Some(Value::Bool(true))),
+                Value::ScheduledFuture(id) => {
+                    let context = context
+                        .as_deref()
+                        .ok_or("task_is_ready requires an execution context")?;
+                    Ok(Some(Value::Bool(
+                        context.state().language_task_is_ready(*id),
+                    )))
+                }
                 _ => Err("task_is_ready expects a future value".into()),
             }
         }
@@ -683,7 +710,7 @@ pub(crate) fn direct_builtin_with_context(
                 Value::Callable(_) => "function",
                 Value::ResultOk(_) | Value::ResultErr(_) => "result",
                 Value::OptionSome(_) | Value::OptionNone => "option",
-                Value::Future(_) => "future",
+                Value::Future(_) | Value::ScheduledFuture(_) => "future",
             };
             Ok(Some(Value::Text(type_name.into())))
         }
@@ -2233,6 +2260,13 @@ fn ast_expression_with_context(
         }
         Expr::Await(value) => match ast_expression_with_context(value, vars, funcs, context)? {
             Value::Future(value) => Ok(*value),
+            Value::ScheduledFuture(id) => {
+                context.state_mut().run_language_tasks_until_idle();
+                context
+                    .state_mut()
+                    .take_language_task(id)
+                    .ok_or_else(|| format!("language task {id} did not complete"))
+            }
             _ => Err("await expects a future value".into()),
         },
         Expr::Propagate(_) => {
@@ -2480,7 +2514,8 @@ fn call_function_with_arguments(
         check_annotation("return", annotation, &value)?;
     }
     if f.is_async {
-        Ok(Value::Future(Box::new(value)))
+        let task_id = context.state_mut().schedule_language_task(value)?;
+        Ok(Value::ScheduledFuture(task_id))
     } else {
         Ok(value)
     }
@@ -2612,7 +2647,8 @@ fn call_method_with_arguments(
         check_annotation("return", annotation, &value)?;
     }
     if f.is_async {
-        Ok(Value::Future(Box::new(value)))
+        let task_id = context.state_mut().schedule_language_task(value)?;
+        Ok(Value::ScheduledFuture(task_id))
     } else {
         Ok(value)
     }
@@ -2657,7 +2693,7 @@ fn value_type(v: &Value) -> &'static str {
         Value::Callable(_) => "function",
         Value::ResultOk(_) | Value::ResultErr(_) => "result",
         Value::OptionSome(_) | Value::OptionNone => "option",
-        Value::Future(_) => "future",
+        Value::Future(_) | Value::ScheduledFuture(_) => "future",
         Value::None => "none",
     }
 }
@@ -4123,10 +4159,10 @@ mod tests {
         let mut funcs = HashMap::<String, Rc<Function>>::new();
         execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
             .expect("async AST program should execute");
-        assert_eq!(
+        assert!(matches!(
             vars.get("pending"),
-            Some(&Value::Future(Box::new(Value::Number(7))))
-        );
+            Some(Value::ScheduledFuture(_))
+        ));
         assert_eq!(vars.get("result"), Some(&Value::Number(7)));
         assert!(funcs.get("load").is_some_and(|function| function.is_async));
     }
@@ -4140,7 +4176,7 @@ mod tests {
         let mut funcs = HashMap::<String, Rc<Function>>::new();
         execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
             .expect("task APIs should execute");
-        assert_eq!(vars.get("ready"), Some(&Value::Bool(true)));
+        assert_eq!(vars.get("ready"), Some(&Value::Bool(false)));
         assert_eq!(vars.get("result"), Some(&Value::Number(7)));
 
         let error = direct_builtin("spawn", vec![Value::Number(1)])
@@ -4281,19 +4317,16 @@ mod tests {
             .memory_budget_mut()
             .set_limits(1_000, 1, 2);
 
-        super::direct_builtin_with_context(
+        let handle = super::direct_builtin_with_context(
             "spawn",
             vec![Value::Future(Box::new(Value::Number(7)))],
             Some(&mut context),
         )
-        .expect("one task should be admitted");
+        .expect("one task should be admitted")
+        .expect("spawn should return a task handle");
         assert_eq!(context.state().memory_budget().usage().1, 1);
-        super::direct_builtin_with_context(
-            "task_join",
-            vec![Value::Future(Box::new(Value::Number(7)))],
-            Some(&mut context),
-        )
-        .expect("task join should complete the task");
+        super::direct_builtin_with_context("task_join", vec![handle], Some(&mut context))
+            .expect("task join should complete the task");
         assert_eq!(context.state().memory_budget().usage().1, 0);
 
         super::direct_builtin_with_context(

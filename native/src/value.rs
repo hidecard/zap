@@ -216,6 +216,7 @@ pub(crate) enum Value {
     OptionSome(Box<Value>),
     OptionNone,
     Future(Box<Value>),
+    ScheduledFuture(u64),
     None,
 }
 
@@ -434,6 +435,7 @@ impl Value {
             Self::OptionSome(x) => format!("Some({})", x.show()),
             Self::OptionNone => "Option.none".into(),
             Self::Future(value) => format!("Future({})", value.show()),
+            Self::ScheduledFuture(id) => format!("Future(task#{id})"),
             Self::None => "none".into(),
         }
     }
@@ -448,7 +450,7 @@ impl Value {
             Self::ResultOk(_) => true,
             Self::ResultErr(_) => false,
             Self::OptionSome(_) => true,
-            Self::Future(_) => true,
+            Self::Future(_) | Self::ScheduledFuture(_) => true,
             Self::OptionNone | Self::None => false,
         }
     }
@@ -520,6 +522,7 @@ fn validate_value(
         Value::Bool(_)
         | Value::Number(_)
         | Value::Callable(_)
+        | Value::ScheduledFuture(_)
         | Value::OptionNone
         | Value::None => Ok(()),
     }

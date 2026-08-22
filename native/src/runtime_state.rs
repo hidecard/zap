@@ -1,3 +1,4 @@
+use std::fmt;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -5,6 +6,7 @@ use std::{
     rc::Rc,
 };
 
+use crate::async_runtime::AsyncRuntime;
 use crate::{Function, Value};
 
 pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<Function>>);
@@ -202,6 +204,61 @@ impl ObjectStore {
     }
 }
 
+pub(crate) type LanguageTaskId = u64;
+
+#[derive(Default)]
+struct LanguageScheduler {
+    runtime: AsyncRuntime,
+    outputs: HashMap<LanguageTaskId, Rc<RefCell<Option<Value>>>>,
+    next_id: LanguageTaskId,
+}
+
+impl fmt::Debug for LanguageScheduler {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("LanguageScheduler")
+            .field("pending_tasks", &self.runtime.pending_tasks())
+            .field("tracked_outputs", &self.outputs.len())
+            .field("next_id", &self.next_id)
+            .finish()
+    }
+}
+
+impl LanguageScheduler {
+    fn schedule(&mut self, value: Value) -> Result<LanguageTaskId, String> {
+        let id = self.next_id.saturating_add(1);
+        self.next_id = id;
+        let output = Rc::new(RefCell::new(None));
+        let task_output = output.clone();
+        self.runtime
+            .spawn_limited(async move {
+                *task_output.borrow_mut() = Some(value);
+            })
+            .map_err(|_| "language task scheduler rejected the task".to_string())?;
+        self.outputs.insert(id, output);
+        Ok(id)
+    }
+
+    fn run_until_idle(&mut self) {
+        self.runtime.run_until_idle();
+    }
+
+    fn is_ready(&self, id: LanguageTaskId) -> bool {
+        self.outputs
+            .get(&id)
+            .is_some_and(|output| output.borrow().is_some())
+    }
+
+    fn take(&mut self, id: LanguageTaskId) -> Option<Value> {
+        let output = self.outputs.get(&id)?.clone();
+        let value = output.borrow_mut().take();
+        if value.is_some() {
+            self.outputs.remove(&id);
+        }
+        value
+    }
+}
+
 /// Per-run mutable state that must not leak between independent executions.
 ///
 /// The first runtime-state migration slice owns module caching, import-cycle
@@ -214,6 +271,7 @@ pub(crate) struct RuntimeState {
     module_loading: Vec<PathBuf>,
     module_cache: HashMap<PathBuf, ModuleCacheEntry>,
     execution_depth: Rc<Cell<usize>>,
+    language_scheduler: LanguageScheduler,
 }
 
 impl Default for RuntimeState {
@@ -231,6 +289,7 @@ impl RuntimeState {
             module_loading: Vec::new(),
             module_cache: HashMap::new(),
             execution_depth: Rc::new(Cell::new(0)),
+            language_scheduler: LanguageScheduler::default(),
         }
     }
 
@@ -243,6 +302,7 @@ impl RuntimeState {
         self.module_loading.clear();
         self.module_cache.clear();
         self.execution_depth.set(0);
+        self.language_scheduler = LanguageScheduler::default();
     }
 
     pub(crate) fn workspace_root(&self) -> Option<&Path> {
@@ -300,6 +360,36 @@ impl RuntimeState {
     pub(crate) fn execution_depth_handle(&self) -> Rc<Cell<usize>> {
         Rc::clone(&self.execution_depth)
     }
+
+    pub(crate) fn schedule_language_task(
+        &mut self,
+        value: Value,
+    ) -> Result<LanguageTaskId, String> {
+        self.memory_budget.admit_task()?;
+        match self.language_scheduler.schedule(value) {
+            Ok(id) => Ok(id),
+            Err(error) => {
+                self.memory_budget.complete_task();
+                Err(error)
+            }
+        }
+    }
+
+    pub(crate) fn run_language_tasks_until_idle(&mut self) {
+        self.language_scheduler.run_until_idle();
+    }
+
+    pub(crate) fn language_task_is_ready(&self, id: LanguageTaskId) -> bool {
+        self.language_scheduler.is_ready(id)
+    }
+
+    pub(crate) fn take_language_task(&mut self, id: LanguageTaskId) -> Option<Value> {
+        let value = self.language_scheduler.take(id);
+        if value.is_some() {
+            self.memory_budget.complete_task();
+        }
+        value
+    }
 }
 
 /// Explicit execution context passed through the runtime entrypoint.
@@ -331,6 +421,7 @@ impl ExecutionContext {
 #[cfg(test)]
 mod tests {
     use super::ExecutionContext;
+    use crate::Value;
     use std::path::Path;
 
     #[test]
@@ -420,6 +511,32 @@ mod tests {
             .reserve_object(1, 0)
             .is_err());
         assert_eq!(context.state().memory_budget().usage(), (100, 0, 0));
+    }
+
+    #[test]
+    fn language_scheduler_is_executor_backed_and_reset_safe() {
+        let mut context = ExecutionContext::new();
+        let id = context
+            .state_mut()
+            .schedule_language_task(Value::Number(7))
+            .expect("language task should be admitted");
+        assert!(!context.state().language_task_is_ready(id));
+        assert_eq!(context.state().memory_budget().usage(), (0, 1, 0));
+        context.state_mut().run_language_tasks_until_idle();
+        assert!(context.state().language_task_is_ready(id));
+        assert_eq!(
+            context.state_mut().take_language_task(id),
+            Some(Value::Number(7))
+        );
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+
+        let pending_id = context
+            .state_mut()
+            .schedule_language_task(Value::Number(9))
+            .expect("second language task should be admitted");
+        context.reset_for_run();
+        assert!(!context.state().language_task_is_ready(pending_id));
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
     }
 
     #[test]

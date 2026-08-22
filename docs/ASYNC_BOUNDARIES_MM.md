@@ -8,19 +8,19 @@ Zap တွင် language-runtime စမ်းသပ်မှုများန�
 
 ## လက်ရှိ deterministic executor
 
-လက်ရှိ executor သည် task များကို ထည့်သွင်းသည့်အစီအစဉ်အတိုင်း သိမ်းဆည်းပြီး no-op waker ဖြင့် poll လုပ်ပါသည်။ `run_until_idle()` သည် သတ်မှတ်ထားသော အများဆုံး poll budget ကို အသုံးပြုပြီး `run_with_budget()` သည် poll အရေအတွက်၊ pending task အရေအတွက်နှင့် budget ကုန်ဆုံးခြင်း ရှိ/မရှိ ပါဝင်သော `RunReport` ကို ပြန်ပေးပါသည်။ Executor သည် task အများဆုံးအရေအတွက်နှင့် run တစ်ကြိမ်လျှင် poll အများဆုံးအရေအတွက်ကို ကန့်သတ်နိုင်ပါသည်။
+လက်ရှိ executor သည် task များကို ထည့်သွင်းသည့်အစီအစဉ်အတိုင်း သိမ်းဆည်းပြီး no-op waker ဖြင့် poll လုပ်ပါသည်။ `run_until_idle()` သည် သတ်မှတ်ထားသော အများဆုံး poll budget ကို အသုံးပြုပြီး `run_with_budget()` သည် poll အရေအတွက်၊ pending task အရေအတွက်နှင့် budget ကုန်ဆုံးခြင်း ရှိ/မရှိ ပါဝင်သော `RunReport` ကို ပြန်ပေးပါသည်။ Executor သည် task အများဆုံးအရေအတွက်နှင့် run တစ်ကြိမ်လျှင် poll အများဆုံးအရေအတွက်ကို ကန့်သတ်နိုင်ပါသည်။ Language `async fn` call များသည် caller ၏ `RuntimeState` ထဲတွင် result ကို schedule လုပ်ပြီး `ScheduledFuture` task handle ပြန်ပေးသည်။ `await` နှင့် `task_join` သည် result ကို consume မလုပ်မီ context ပိုင် executor ကို drive လုပ်ပြီး `task_is_ready` သည် poll မလုပ်ဘဲ readiness ကို စောင့်ကြည့်သည်။
 
 | Contract | လက်ရှိအပြုအမူ |
 |---|---|
-| Scheduling | Cooperative၊ single-threaded polling ဖြစ်ပြီး task အစီအစဉ်မှာ deterministic ဖြစ်သည်။ |
+| Scheduling | Cooperative၊ single-threaded polling ဖြစ်ပြီး task အစီအစဉ်မှာ deterministic ဖြစ်သည်။ Language task handle များကို လက်ရှိ `ExecutionContext` က ပိုင်ဆိုင်သည်။ |
 | Wake-up | Operating-system reactor မရှိပါ။ Executor သည် no-op waker ကို အသုံးပြုသည်။ |
 | Fairness | Poll budget နှင့် task အစီအစဉ်ပေါ်တွင် ကန့်သတ်ထားပြီး latency အာမခံချက် မရှိပါ။ |
 | Shared state | Runtime task handle များသည် `Rc<RefCell<...>>` ကို အသုံးပြု၍ `Send`/`Sync` မဖြစ်ပါ။ |
-| Failure | Join handle များသည် task failure သို့မဟုတ် cancellation ကို explicit result အဖြစ် ထိန်းသိမ်းသည်။ |
+| Failure | Join handle များသည် task failure သို့မဟုတ် cancellation ကို explicit result အဖြစ် ထိန်းသိမ်းသည်။ Reset ပြီးနောက် မတွေ့နိုင်တော့သော language task ကို run အသစ်တွင် observe မလုပ်နိုင်ပါ။ |
 | Cancellation | Cancellation token ကို wrapped future မ poll မီ စစ်ဆေးပြီး cancellation သည် cooperative ဖြစ်သည်။ |
 | Limits | `max_tasks` နှင့် `max_polls_per_run` တို့က executor work အကန့်အသတ်မဲ့ ဖြစ်ခြင်းကို တားဆီးသည်။ |
 
-Executor သည် deterministic language semantics၊ unit test၊ conformance fixture နှင့် blocking မလုပ်သော သေးငယ်သည့် in-process task များအတွက် သင့်တော်ပါသည်။ Production-grade socket readiness၊ parallel CPU execution၊ preemptive fairness သို့မဟုတ် arbitrary code ကို အတင်းအကျပ် ရပ်တန့်နိုင်ခြင်းကို အာမခံရန် မသင့်တော်ပါ။
+Executor သည် deterministic language semantics၊ context-owned `ScheduledFuture` handle များ၊ unit test၊ conformance fixture နှင့် blocking မလုပ်သော သေးငယ်သည့် in-process task များအတွက် သင့်တော်ပါသည်။ Production-grade socket readiness၊ parallel CPU execution၊ preemptive fairness သို့မဟုတ် arbitrary code ကို အတင်းအကျပ် ရပ်တန့်နိုင်ခြင်းကို အာမခံရန် မသင့်တော်ပါ။
 
 ## Production boundary
 
@@ -38,7 +38,7 @@ Task error များသည် join handle များမှ typed result အ
 
 ## Stability rules
 
-Deterministic executor သည် v2.1.x အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
+Deterministic executor နှင့် context-owned language scheduling boundary သည် v2.1.x အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
 
 အနာဂတ် production implementation တွင် အနည်းဆုံး အောက်ပါအချက်များ ပါဝင်ရမည်။
 
@@ -50,4 +50,4 @@ Deterministic executor သည် v2.1.x အတွက် stable baseline ဖြ�
 
 ## Verification
 
-လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ cancellation precedence၊ timeout behavior နှင့် child-process cancellation အတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics ကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။
+လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ cancellation precedence၊ timeout behavior နှင့် child-process cancellation အတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics ကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။
