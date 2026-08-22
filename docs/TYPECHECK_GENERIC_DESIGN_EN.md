@@ -34,7 +34,7 @@ Whitespace around nested arguments is accepted after trimming. Generic forms mus
 
 ## Compatibility and rollout
 
-This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
+This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The v2.2.3 release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
 
 Future work may add generic function parameters, user-defined generic declarations, variance rules, and stronger collection-element inference. Those features require a separate design record because they would affect declaration parsing, symbol binding, call-site inference, diagnostics, and LSP synchronization.
 

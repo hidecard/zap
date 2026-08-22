@@ -34,7 +34,7 @@ Nested argument များအနီးရှိ whitespace ကို trim ပ�
 
 ## Compatibility နှင့် rollout
 
-ဤဆုံးဖြတ်ချက်သည် branch narrowing နှင့် alias invalidation တွင် အသုံးပြုနေသော `option<T>` နှင့် `result<T>` semantics များကို မပြောင်းလဲစေပါ။ Native test suite တွင် စစ်ဆေးပြီးသား collection form များကိုလည်း formalize လုပ်ပေးပါသည်။ ထို့ကြောင့် v2.2.2 release gate တွင် duplicate experimental parser path အသစ် ထပ်ထည့်မည့်အစား TC-012 ကို implemented baseline အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
+ဤဆုံးဖြတ်ချက်သည် branch narrowing နှင့် alias invalidation တွင် အသုံးပြုနေသော `option<T>` နှင့် `result<T>` semantics များကို မပြောင်းလဲစေပါ။ Native test suite တွင် စစ်ဆေးပြီးသား collection form များကိုလည်း formalize လုပ်ပေးပါသည်။ ထို့ကြောင့် v2.2.3 release gate တွင် duplicate experimental parser path အသစ် ထပ်ထည့်မည့်အစား TC-012 ကို implemented baseline အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
 
 နောင်တွင် generic function parameter၊ user-defined generic declaration၊ variance rule နှင့် ပိုမိုအားကောင်းသော collection-element inference များကို ထည့်သွင်းနိုင်ပါသည်။ ထိုအင်္ဂါရပ်များသည် declaration parsing၊ symbol binding၊ call-site inference၊ diagnostic နှင့် LSP synchronization များကို သက်ရောက်စေသောကြောင့် သီးခြား design record လိုအပ်ပါသည်။
 
