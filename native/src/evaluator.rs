@@ -1979,11 +1979,11 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     };
     let parsed = parse_url(url)?;
     let Value::Map(parts) = parsed else {
-        unreachable!()
+        return Err("http_request URL parser returned an invalid result".into());
     };
     let scheme = match parts.get("scheme") {
         Some(Value::Text(value)) => value,
-        _ => unreachable!(),
+        _ => return Err("http_request URL parser omitted the scheme".into()),
     };
     if scheme != "http" && scheme != "https" {
         return Err("http_request supports only http and https URLs".into());
@@ -2003,7 +2003,7 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     };
     let host = match parts.get("host") {
         Some(Value::Text(value)) => value,
-        _ => unreachable!(),
+        _ => return Err("http_request URL parser omitted the host".into()),
     };
     validate_network_destination(host, port)?;
     let agent = ureq::AgentBuilder::new()
