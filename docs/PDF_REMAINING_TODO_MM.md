@@ -41,10 +41,11 @@
 
 | ID | လုပ်ငန်း | Status | ပြီးစီးမှု စံနှုန်း |
 |---|---|---|---|
-| P2-01 | Composition နှင့် traits/interfaces | Deferred | Inheritance မှ migration၊ composition၊ trait/protocol rules နှင့် method resolution အတွက် RFC ကို implementation မစမီ ရေးသား/သုံးသပ်ရမည်။ |
+| P2-01 | Composition နှင့် traits/interfaces | M4-RFC-01 design-only အဖြစ် ပြီးစီး | Bilingual design RFC သည် composition နှင့် single inheritance နှိုင်းယှဉ်ချက်၊ trait/protocol rule၊ method resolution၊ visibility၊ diagnostic၊ inheritance migration၊ dispatch boundary၊ rejected alternative၊ compatibility impact နှင့် v2.2.0 ကျော်လွန်သည်အထိ parser/runtime implementation ကို deferred ထားသည့် explicit decision များကို သတ်မှတ်ထားသည်။ |
 | P2-02 | Standard-library API stability policy | M3-STDLIB-01 အဖြစ် ပြီးစီး | Public domain နှင့် builtin တစ်ခုချင်းစီတွင် machine-readable stability label၊ introduction release၊ deprecation window၊ semver rule၊ platform support matrix၊ input/output limit၊ timeout/error contract နှင့် determinism field ရှိပြီး bilingual policy documentation နှင့် catalog/policy regression gate များ ပါဝင်ရမည်။ |
 | P2-03 | LSP/VS Code semantic parity | M3-LSP-01 အဖြစ် ပြီးစီး | Parser/lexer-backed rename edit၊ didClose workspace cleanup၊ nested/module-aware indexing၊ catalog-driven completion၊ async builtin hover/signature metadata၊ checked-in VS Code grammar/configuration နှင့် CI/release-preflight semantic-parity validation များကို test လုပ်ပြီးဖြစ်သည်။ |
 | P2-04 | Learning/reference documentation ခွဲခြားခြင်း | M3-DOC-01 အဖြစ် ပြီးစီး | Beginner guide၊ syntax reference၊ specification၊ stdlib reference၊ package author guide၊ runtime internals၊ deployment/security၊ tooling နှင့် release လမ်းကြောင်းများတွင် bilingual navigation၊ verified-version metadata၊ canonical companion link နှင့် repository-relative entry point များ ရှိသည်။ |
+| M4-REL-01 | v2.2.0 release ပြင်ဆင်ခြင်းနှင့် ထုတ်ဝေခြင်း | ပြီးစီးပြီး၊ verified | Cargo/Cargo.lock/CLI/tag agreement၊ bilingual release note၊ README/security/archive update၊ clean release preflight၊ signed Linux/macOS/Windows asset၊ checksum/provenance နှင့် successful GitHub Actions verification များကို အောင်မြင်ထားသည်။ |
 
 ## လုပ်ဆောင်မည့်အစီအစဉ်
 
@@ -63,7 +64,8 @@
 ၁၃။ **M3-STDLIB-01:** ပြီးစီးပြီး။ Machine-readable twelve-domain catalog နှင့် bilingual stability policy သည် label၊ introduction release၊ deprecation window၊ semver rule၊ release-target platform၊ limit၊ timeout/error contract၊ determinism metadata နှင့် policy regression များကို သတ်မှတ်ထားသည်။
 ၁၄။ **M3-LSP-01:** ပြီးစီးပြီး။ Parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware symbol indexing၊ catalog-driven completion၊ async hover/signature metadata၊ VS Code assets နှင့် semantic-parity contract များကို CI နှင့် release preflight တွင် ချိတ်ဆက်ထားသည်။
 ၁၅။ **M3-DOC-01:** ပြီးစီးပြီး။ Bilingual learner/reference navigation သည် learner၊ syntax၊ specification၊ standard library၊ package author၊ runtime၊ deployment/security၊ tooling နှင့် release လမ်းကြောင်းများကို verified v2.2.0 metadata နှင့် canonical companion link များဖြင့် လွှမ်းခြုံထားသည်။
-၁၆။ **P2-01 / M4-RFC-01:** Parser/runtime မပြောင်းမီ traits/composition RFC ကို ရေးသားပြီး review လုပ်ရန်။
+၁၆။ **M4-RFC-01:** Reviewed design-only bilingual RFC အဖြစ် ပြီးစီးပြီး traits၊ interfaces၊ composition syntax နှင့် method-resolution implementation များကို v2.2.0 ကျော်လွန်သည်အထိ deferred ထားသည်။
+၁၇။ **M4-REL-01:** ပြီးစီးပြီး။ v2.2.0 ကို clean version-consistent commit မှ signed cross-platform asset၊ checksum/provenance နှင့် successful release-workflow verification များဖြင့် ထုတ်ဝေထားသည်။
 
 ## Release policy
 

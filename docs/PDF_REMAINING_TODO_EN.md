@@ -41,10 +41,11 @@
 
 | ID | Work item | Status | Acceptance criteria |
 |---|---|---|---|
-| P2-01 | Composition and traits/interfaces | Deferred | A design RFC defines composition, trait/protocol rules, method resolution, diagnostics, and migration from inheritance before implementation. |
+| P2-01 | Composition and traits/interfaces | Completed as M4-RFC-01 design-only | The bilingual design RFC defines composition versus single inheritance, trait/protocol rules, method resolution, visibility, diagnostics, migration from inheritance, dispatch boundaries, rejected alternatives, compatibility impact, and an explicit decision to defer parser/runtime implementation beyond v2.2.0. |
 | P2-02 | Standard-library API stability policy | Completed as M3-STDLIB-01 | Every public domain and builtin has machine-readable stability label, introduction release, deprecation window, semver rule, platform support matrix, input/output limits, timeout/error contract, determinism field, bilingual policy documentation, and catalog/policy regression gates. |
 | P2-03 | LSP/VS Code semantic parity | Completed as M3-LSP-01 | Parser/lexer-backed rename edits, didClose workspace cleanup, nested/module-aware indexing, catalog-driven completion, async builtin hover/signature metadata, checked-in VS Code grammar/configuration, and CI/release-preflight semantic-parity validation are tested. |
 | P2-04 | Learning/reference documentation split | Completed as M3-DOC-01 | Beginner guide, syntax reference, specification, stdlib reference, package author guide, runtime internals, deployment/security docs, tooling, and release paths have bilingual navigation, verified-version metadata, canonical companion links, and repository-relative entry points. |
+| M4-REL-01 | v2.2.0 release preparation and publication | Completed and verified | Cargo/Cargo.lock/CLI/tag agreement, bilingual release notes, README/security/archive updates, clean release preflight, signed Linux/macOS/Windows assets, checksums/provenance, and successful GitHub Actions verification. |
 
 ## Execution order
 
@@ -63,7 +64,8 @@
 13. **M3-STDLIB-01:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, determinism metadata, and policy regressions.
 14. **M3-LSP-01:** Completed. Parser/lexer-backed rename, didClose cleanup, nested/module-aware symbol indexing, catalog-driven completion, async hover/signature metadata, VS Code assets, and the semantic-parity contract are implemented and wired into CI/release preflight.
 15. **M3-DOC-01:** Completed. Bilingual learner/reference navigation now covers learner, syntax, specification, standard library, package author, runtime, deployment/security, tooling, and release paths with verified v2.2.0 metadata and canonical companion links.
-16. **P2-01 / M4-RFC-01:** Write and review the traits/composition RFC before changing the parser or runtime.
+16. **M4-RFC-01:** Completed as a reviewed design-only bilingual RFC; traits, interfaces, composition syntax, and method-resolution implementation remain deferred beyond v2.2.0.
+17. **M4-REL-01:** Completed. v2.2.0 was published from the clean version-consistent commit with signed cross-platform assets, checksums/provenance, and successful release-workflow verification.
 
 ## Release policy
 
