@@ -1,6 +1,6 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **ရည်ရွယ်ချက်:** ဤစာမျက်နှာသည် learner၊ language user၊ package author၊ runtime maintainer နှင့် release operator များအတွက် Burmese entry point ဖြစ်ပါသည်။ Normative behavior သည် canonical specification သို့မဟုတ် explicit linked contract တွင်သာ သတ်မှတ်ပါသည်။ ရှင်းလင်းဖော်ပြသည့် guide များသည် ထို contract များကို တိတ်တဆိတ် override မလုပ်ရပါ။
 
 ## လေ့လာမည့်လမ်းကြောင်း ရွေးချယ်ခြင်း
@@ -20,11 +20,11 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [လေ့လာရေး guide](LEARN_ZAP_MM.md) — v2.1.14 | [Syntax guide](SYNTAX_GUIDE.md) |
-| Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.1.14 | [Language specification](LANGUAGE_SPEC_MM.md) |
-| Package author | [Package guide](PACKAGE.md) — v2.1.14 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.1.14 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
-| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_MM.md) — v2.1.14 | [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md) |
+| Learner | [လေ့လာရေး guide](LEARN_ZAP_MM.md) — v2.2.0 | [Syntax guide](SYNTAX_GUIDE.md) |
+| Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.2.0 | [Language specification](LANGUAGE_SPEC_MM.md) |
+| Package author | [Package guide](PACKAGE.md) — v2.2.0 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.2.0 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_MM.md) — v2.2.0 | [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md) |
 
 ## Normative contract map
 

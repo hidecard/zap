@@ -4,7 +4,7 @@
 
 ဤ policy သည် public standard-library domain တစ်ခုချင်းစီနှင့် တိုက်ရိုက်ဖော်ပြထားသော builtin များအတွက် compatibility contract ကို သတ်မှတ်သည်။ Machine-readable source သည် native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog ဖြစ်ပြီး ဤစာတမ်းက metadata ကို user နှင့် maintainer များ မည်သို့ဖတ်ရမည်ကို ရှင်းပြသည်။ Runtime dispatch ကို evaluator ထဲတွင် ဗဟိုပြုထားဆဲဖြစ်ပြီး catalog သည် ဒုတိယ implementation path တစ်ခု မဖန်တီးပါ။
 
-ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.1.14** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
+ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.2.0** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
 
 ## Stability model
 
@@ -68,4 +68,4 @@ Public surface ကို [English standard-library index](STDLIB_INDEX_EN.md) �
 
 ## လက်ရှိ release ဆုံးဖြတ်ချက်
 
-v2.1.14 အတွက် catalog ထဲရှိ standard-library domain နှင့် builtin အားလုံးသည် **stable** ဖြစ်သည်။ Active deprecation window မရှိ၊ default minor-compatible rule ကို လိုက်နာပြီး release-target matrix ကို ထောက်ပံ့ကာ bounded deterministic error behavior ကို ဖော်ပြသည်။ Namespace import၊ remote standard-library package နှင့် traits-based composition တို့သည် သီးခြား future milestone များအဖြစ် ဆက်ရှိသည်။
+v2.2.0 အတွက် catalog ထဲရှိ standard-library domain နှင့် builtin အားလုံးသည် **stable** ဖြစ်သည်။ Active deprecation window မရှိ၊ default minor-compatible rule ကို လိုက်နာပြီး release-target matrix ကို ထောက်ပံ့ကာ bounded deterministic error behavior ကို ဖော်ပြသည်။ Namespace import နှင့် remote standard-library package များသည် သီးခြား future milestone များအဖြစ် ဆက်ရှိပြီး traits-based composition ကို design-only M4-RFC-01 တွင် မှတ်တမ်းတင်ထားသော်လည်း deferred အဖြစ် ဆက်ရှိသည်။

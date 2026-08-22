@@ -13,6 +13,11 @@ if [[ -z "$ROOT_DIR" ]]; then
 fi
 cd "$ROOT_DIR"
 
+if [[ -f "$HOME/.cargo/env" ]]; then
+  # Keep local release checks aligned with the pinned toolchain when rustup is installed.
+  source "$HOME/.cargo/env"
+fi
+
 EXPECTED_VERSION="${1:-${EXPECTED_VERSION:-}}"
 RELEASE_TAG="${RELEASE_TAG:-}"
 if [[ -z "$RELEASE_TAG" && "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then

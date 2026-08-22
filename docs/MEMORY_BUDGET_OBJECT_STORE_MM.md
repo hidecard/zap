@@ -2,7 +2,7 @@
 
 **Design status:** M2-MEM-01 foundation design
 
-**စစ်ဆေးထားသော baseline:** Zap v2.1.14။
+**စစ်ဆေးထားသော baseline:** Zap v2.2.0။
 
 ## ရည်ရွယ်ချက်
 

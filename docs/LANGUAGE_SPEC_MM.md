@@ -3,7 +3,7 @@
 **ရည်ရွယ်ချက်:** Zap ၏ syntax၊ typing၊ runtime behavior၊ diagnostics၊ compatibility နှင့် version decision များအတွက် canonical normative owner ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Package author guide](PACKAGE.md) · [Runtime state](RUNTIME_STATE_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 
-**Specification အခြေအနေ:** Zap v2.1.14 အတွက် normative foundation
+**Specification အခြေအနေ:** Zap v2.2.0 အတွက် normative foundation
 
 ဤစာတမ်းသည် language semantics များအတွက် canonical index ဖြစ်သည်။ အဟောင်း guide တစ်ခုခုသည် ဤစာတမ်းနှင့် မကိုက်ညီပါက specification နှင့် ကိုက်ညီအောင် implementation/test များကို ပြင်ရမည်။ Legacy behavior ကို အလိုအလျောက် normative အဖြစ် မယူဆဘဲ compatibility exception အဖြစ် အတိအကျ မှတ်တမ်းတင်ရမည်။
 

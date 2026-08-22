@@ -1,6 +1,6 @@
 # Zap Standard Library Public Modules
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **Purpose:** Public standard-library reference for language users and package authors; stability rules are owned by the linked policy.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stability policy](STDLIB_POLICY_EN.md)
 
@@ -49,4 +49,4 @@ let served = http_serve_once(8080, "Hello from Zap")
 say served["path"]
 ```
 
-The current release line exposes these APIs as direct builtins. Every listed domain and builtin is cataloged as stable for v2.1.14 with no active deprecation window and the release-target platform matrix; see the [stability policy](STDLIB_POLICY_EN.md) for the change checklist. Namespace import syntax and remote standard-library packages remain later ecosystem milestones after P1 verification.
+The current release line exposes these APIs as direct builtins. Every listed domain and builtin is cataloged as stable for v2.2.0 with no active deprecation window and the release-target platform matrix; see the [stability policy](STDLIB_POLICY_EN.md) for the change checklist. Namespace import syntax and remote standard-library packages remain later ecosystem milestones after P1 verification.

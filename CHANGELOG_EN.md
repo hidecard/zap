@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-08-22
+
+### Release engineering
+- Completed the audited runtime, verification, registry, standard-library, LSP/editor, bilingual documentation, and traits/composition RFC milestones.
+
+### Compatibility and language design
+- Preserved canonical AST execution, single-inheritance `extends`, deterministic async scheduling, bounded registry behavior, and existing standard-library contracts.
+- Added the reviewed bilingual traits/composition RFC as a design-only record; `trait`, `interface`, `with`, and new conflict-resolution syntax remain deferred and unsupported in v2.2.0.
+
+### Tooling and documentation
+- Added parser/lexer-backed LSP rename, didClose cleanup, nested/module-aware workspace symbols, catalog-driven completion, async builtin hover/signature metadata, and validated VS Code assets.
+- Completed bilingual learner/reference navigation with verified-version metadata and canonical companion links.
 ## [2.1.14] — 2026-08-21
 
 ### Release engineering

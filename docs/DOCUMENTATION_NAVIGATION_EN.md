@@ -1,6 +1,6 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path
@@ -20,11 +20,11 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.1.14 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
-| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.1.14 | [Language specification](LANGUAGE_SPEC_EN.md) |
-| Package author | [Package guide](PACKAGE_EN.md) — v2.1.14 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.1.14 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
-| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.1.14 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
+| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.2.0 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
+| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.2.0 | [Language specification](LANGUAGE_SPEC_EN.md) |
+| Package author | [Package guide](PACKAGE_EN.md) — v2.2.0 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.2.0 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.2.0 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
 
 ## Normative contract map
 

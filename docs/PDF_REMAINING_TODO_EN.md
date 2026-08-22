@@ -1,6 +1,6 @@
 # Zap Remaining Engineering To-do Register
 
-**Baseline:** Zap v2.1.14 verified release
+**Baseline:** Zap v2.2.0 verified release
 **Source:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **Purpose:** Track every recommendation that is not fully complete, without treating already-verified release work as unfinished.
 
@@ -62,7 +62,7 @@
 12. **M2-ASYNC-02:** Completed. Cooperative language task cancellation, poll-budget timeout joins, deterministic `Cancelled`/`TimedOut` diagnostics, bilingual contract updates, and end-to-end regression coverage are implemented.
 13. **M3-STDLIB-01:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, determinism metadata, and policy regressions.
 14. **M3-LSP-01:** Completed. Parser/lexer-backed rename, didClose cleanup, nested/module-aware symbol indexing, catalog-driven completion, async hover/signature metadata, VS Code assets, and the semantic-parity contract are implemented and wired into CI/release preflight.
-15. **M3-DOC-01:** Completed. Bilingual learner/reference navigation now covers learner, syntax, specification, standard library, package author, runtime, deployment/security, tooling, and release paths with verified v2.1.14 metadata and canonical companion links.
+15. **M3-DOC-01:** Completed. Bilingual learner/reference navigation now covers learner, syntax, specification, standard library, package author, runtime, deployment/security, tooling, and release paths with verified v2.2.0 metadata and canonical companion links.
 16. **P2-01 / M4-RFC-01:** Write and review the traits/composition RFC before changing the parser or runtime.
 
 ## Release policy

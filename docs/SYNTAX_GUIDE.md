@@ -3,10 +3,10 @@
 **ရည်ရွယ်ချက်:** Canonical specification နှင့် executable contract များသို့ ပြန်ချိတ်ထားသော ရှာဖွေရလွယ်ကူသည့် normative syntax reference ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Diagnostics](DIAGNOSTIC_MODEL_MM.md)
 
-> **ထောက်ပံ့ထားသော version:** Zap v2.1.14\
+> **ထောက်ပံ့ထားသော version:** Zap v2.2.0\
 > **နောက်ဆုံးစစ်ဆေးခဲ့သည့်နေ့:** 2026-08-21 — native runtime၊ CLI၊ formatter၊ LSP နှင့် v2.1-D async/tooling implementation များနှင့် တိုက်စစ်ထားသည်။
 
-ဤ guide သည် Zap v2.1.14 native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax၊ standard built-ins နှင့် developer tooling များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
+ဤ guide သည် Zap v2.2.0 native runtime တွင် လက်ရှိအသုံးပြုနိုင်သော syntax၊ standard built-ins နှင့် developer tooling များကို အခြေခံထားသည်။ Zap source file များသည် `.zp` extension ကို အသုံးပြုရပြီး ဥပမာ `main.zp` ဖြစ်သည်။
 
 > Zap သည် ရိုးရှင်းသော indentation-based block syntax၊ ရှင်းလင်းသော keywords နှင့် standalone CLI workflow ကို အဓိကထားသော programming language ဖြစ်သည်။
 
@@ -566,7 +566,7 @@ zap main.zp
 
 ## 22. လက်ရှိအခြေအနေ နှင့် နောက်တစ်ဆင့်
 
-အထက်ပါ core syntax များသည် Zap v2.1.14 native runtime ၏ လက်ရှိအခြေအနေကို ကိုယ်စားပြုသည်။ Web response helpers နှင့် `ai.ask` ကဲ့သို့သော Web/AI API များ၏ provider-specific integration များသည် သီးခြား scope ဖြစ်ပြီး production deployment တွင် explicit configuration နှင့် security policy လိုအပ်သည်။ Async runtime၊ bounded production I/O၊ package registry၊ type checking နှင့် editor tooling တို့၏ လက်ရှိ support ကို သက်ဆိုင်ရာ reference guides များနှင့်အတူ ထိန်းသိမ်းထားသည်။
+အထက်ပါ core syntax များသည် Zap v2.2.0 native runtime ၏ လက်ရှိအခြေအနေကို ကိုယ်စားပြုသည်။ Web response helpers နှင့် `ai.ask` ကဲ့သို့သော Web/AI API များ၏ provider-specific integration များသည် သီးခြား scope ဖြစ်ပြီး production deployment တွင် explicit configuration နှင့် security policy လိုအပ်သည်။ Async runtime၊ bounded production I/O၊ package registry၊ type checking နှင့် editor tooling တို့၏ လက်ရှိ support ကို သက်ဆိုင်ရာ reference guides များနှင့်အတူ ထိန်းသိမ်းထားသည်။
 
 ## Async functions နှင့် await
 

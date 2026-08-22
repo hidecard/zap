@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-08-22
+
+### Release engineering
+- Audited runtime၊ verification၊ registry၊ standard-library၊ LSP/editor၊ bilingual documentation နှင့် traits/composition RFC milestone များကို ပြီးစီးထားပါသည်။
+
+### Compatibility နှင့် language design
+- Canonical AST execution၊ single-inheritance `extends`၊ deterministic async scheduling၊ bounded registry behavior နှင့် ရှိပြီးသား standard-library contract များကို ထိန်းသိမ်းထားပါသည်။
+- Reviewed bilingual traits/composition RFC ကို design-only record အဖြစ် ထည့်သွင်းထားသော်လည်း `trait`၊ `interface`၊ `with` နှင့် conflict-resolution syntax အသစ်များသည် v2.2.0 တွင် deferred/unsupported ဖြစ်နေဆဲ ဖြစ်ပါသည်။
+
+### Tooling နှင့် documentation
+- Parser/lexer-backed LSP rename၊ didClose cleanup၊ nested/module-aware workspace symbol၊ catalog-driven completion၊ async builtin hover/signature metadata နှင့် validated VS Code asset များကို ထည့်သွင်းထားပါသည်။
+- Verified-version metadata နှင့် canonical companion link များပါသော bilingual learner/reference navigation ကို ပြီးစီးထားပါသည်။
 ## [2.1.14] — 2026-08-21
 
 ### Release engineering

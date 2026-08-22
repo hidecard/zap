@@ -1,6 +1,6 @@
 # Zap တွင် ကျန်ရှိသော Engineering To-do Register
 
-**အခြေခံအခြေအနေ:** Zap v2.1.14 verified release
+**အခြေခံအခြေအနေ:** Zap v2.2.0 verified release
 **ရင်းမြစ်:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **ရည်ရွယ်ချက်:** ပြီးစီးပြီးသား release အလုပ်များကို မပြီးသေးဟု မတွက်ဘဲ PDF အကြံပြုချက်များထဲမှ အမှန်တကယ်ကျန်ရှိသောအချက်အားလုံးကို စောင့်ကြည့်ရန်။
 
@@ -62,7 +62,7 @@
 ၁၂။ **M2-ASYNC-02:** ပြီးစီးပြီး။ Cooperative language task cancellation၊ poll-budget timeout join၊ deterministic `Cancelled`/`TimedOut` diagnostic၊ bilingual contract update နှင့် end-to-end regression coverage များကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။
 ၁၃။ **M3-STDLIB-01:** ပြီးစီးပြီး။ Machine-readable twelve-domain catalog နှင့် bilingual stability policy သည် label၊ introduction release၊ deprecation window၊ semver rule၊ release-target platform၊ limit၊ timeout/error contract၊ determinism metadata နှင့် policy regression များကို သတ်မှတ်ထားသည်။
 ၁၄။ **M3-LSP-01:** ပြီးစီးပြီး။ Parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware symbol indexing၊ catalog-driven completion၊ async hover/signature metadata၊ VS Code assets နှင့် semantic-parity contract များကို CI နှင့် release preflight တွင် ချိတ်ဆက်ထားသည်။
-၁၅။ **M3-DOC-01:** ပြီးစီးပြီး။ Bilingual learner/reference navigation သည် learner၊ syntax၊ specification၊ standard library၊ package author၊ runtime၊ deployment/security၊ tooling နှင့် release လမ်းကြောင်းများကို verified v2.1.14 metadata နှင့် canonical companion link များဖြင့် လွှမ်းခြုံထားသည်။
+၁၅။ **M3-DOC-01:** ပြီးစီးပြီး။ Bilingual learner/reference navigation သည် learner၊ syntax၊ specification၊ standard library၊ package author၊ runtime၊ deployment/security၊ tooling နှင့် release လမ်းကြောင်းများကို verified v2.2.0 metadata နှင့် canonical companion link များဖြင့် လွှမ်းခြုံထားသည်။
 ၁၆။ **P2-01 / M4-RFC-01:** Parser/runtime မပြောင်းမီ traits/composition RFC ကို ရေးသားပြီး review လုပ်ရန်။
 
 ## Release policy

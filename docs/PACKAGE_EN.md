@@ -1,6 +1,6 @@
 # Zap Package Manifest and Lockfile
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **Purpose:** Package-author reference for manifests, canonical lockfiles, local dependencies, registry integrity, and project commands.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Registry/authentication contract](REGISTRY_AUTH_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 

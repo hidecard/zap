@@ -1,6 +1,6 @@
 # Zap Package Manifest
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **ရည်ရွယ်ချက်:** Manifest၊ canonical lockfile၊ local dependency၊ registry integrity နှင့် project command များအတွက် package-author reference ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Registry/authentication contract](REGISTRY_AUTH_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 

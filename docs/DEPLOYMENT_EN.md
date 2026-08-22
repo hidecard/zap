@@ -1,6 +1,6 @@
 # Zap Registry Production Deployment Boundaries
 
-**Verified baseline:** Zap v2.1.14
+**Verified baseline:** Zap v2.2.0
 **Purpose:** Operator reference for local and public registry deployment boundaries, validation, TLS, supervision, credentials, quotas, and egress controls.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Security policy](../SECURITY.md) · [Release policy](RELEASE_VERSION_POLICY_EN.md)
 

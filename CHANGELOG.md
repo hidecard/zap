@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-22
+
+### Release summary
+- Completed the audited runtime, verification, registry, standard-library, LSP/editor, bilingual documentation, and traits/composition RFC milestones; the traits RFC remains design-only and does not enable new syntax.
+
 ## [2.1.14] - 2026-08-21
 
 ### Release summary
