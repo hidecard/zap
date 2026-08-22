@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the executable ownership index for the canonical Zap specification. Its current 28 rows cover source execution, precedence, typing, first-class callable functions, modules, memory, deterministic and production async boundaries, diagnostics, registry, lockfiles, JSON/filesystem limits, standard-library catalog, CLI JSON, compatibility policy, and CI enforcement. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
+The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the executable ownership index for the canonical Zap specification. Its current 36 rows cover source execution, precedence, typing, first-class callable functions, modules, memory and budget boundaries, deterministic and production async behavior, LSP synchronization/interoperability/rename, diagnostics, registry transport and security, lockfiles, JSON/filesystem limits, standard-library determinism, benchmark provenance, release versioning, CLI JSON, compatibility policy, and CI enforcement. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
 
 ## Required row fields
 
@@ -32,4 +32,4 @@ Run the ownership gate locally with:
 ZAP_SPEC_OWNERSHIP_REPORT=target/spec-ownership-report.tsv scripts/validate_spec_ownership.sh
 ```
 
-GitHub Actions runs the same command in the Rust quality job and uploads `target/spec-ownership-report.tsv` as a commit-named artifact. The index may continue to expand to every fragmented rule, but it must preserve the stable IDs, required-domain coverage, and bilingual ownership fields introduced here.
+GitHub Actions runs the same command in the Rust quality job and uploads `target/spec-ownership-report.tsv` as a commit-named artifact. The index may continue to expand to every fragmented rule. The current expansion explicitly owns the post-review LSP protocol and interoperability contracts, schema-2 standard-library determinism, logical memory budgets, registry transport limits, benchmark provenance, and release-version validation; future rows must preserve the stable IDs, required-domain coverage, and bilingual ownership fields introduced here.

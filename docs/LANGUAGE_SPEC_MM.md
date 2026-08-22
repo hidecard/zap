@@ -53,7 +53,7 @@ Object field များသည် documented single-threaded `Rc<RefCell>` owne
 
 User-facing diagnostic တိုင်းတွင် severity၊ stable code၊ message၊ ရရှိနိုင်ပါက source location၊ notes နှင့် help တို့ကို ထိန်းသိမ်းရမည်။ CLI နှင့် LSP consumer များသည် semantic diagnostic field တစ်စုံတစ်ရာတည်းကို မျှဝေရမည်။ Compatibility behavior ကို **normative**၊ **compatibility**၊ **deprecated** သို့မဟုတ် **rejected** အဖြစ် အမည်တပ်ရမည်။ Fixture အဟောင်းတစ်ခုက လက်ခံသောကြောင့်သာ behavior တစ်ခုကို normative မသတ်မှတ်ရ။
 
-လက်ရှိ release line သည် v2.1.x ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
+လက်ရှိ release line သည် v2.2.1 ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
 
 ## ၈။ Conformance ownership
 
@@ -75,4 +75,4 @@ Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX
 | Syntax reference | `SYNTAX_GUIDE_EN.md` | `SYNTAX_GUIDE_MM.md` |
 | Standard library | `STDLIB_TEXT_MATH_COLLECTION_EN.md` | `STDLIB_TEXT_MATH_COLLECTION_MM.md` |
 
-**လက်ရှိကန့်သတ်ချက်:** ဤစာတမ်းသည် canonical semantic foundation နှင့် navigation point ဖြစ်သည်။ ကျန်ရှိသည့်အလုပ်မှာ fragmented rule တစ်ခုချင်းစီကို ဤစာတမ်း သို့မဟုတ် အတိအလင်း link ချိတ်ထားသည့် normative subcontract ထဲသို့ ရွှေ့ရန်၊ rule တစ်ခုချင်းစီအတွက် parser/evaluator conformance fixture ထည့်ရန်နှင့် မဖြေရှင်းရသေးသော legacy behavior ၏ version ownership ကို မှတ်တမ်းတင်ရန် ဖြစ်သည်။
+**လက်ရှိကန့်သတ်ချက်:** ဤစာတမ်းသည် canonical semantic foundation နှင့် navigation point ဖြစ်သည်။ ချဲ့ထွင်ထားသော ownership index တွင် post-review LSP၊ standard-library determinism၊ memory-budget၊ registry-transport၊ benchmark-provenance နှင့် release-version contract များအပါအဝင် stable rule ၃၆ ခု ပါဝင်သည်။ ကျန်ရှိသည့်အလုပ်မှာ အခြား fragmented rule တစ်ခုချင်းစီကို ဤစာတမ်း သို့မဟုတ် အတိအလင်း link ချိတ်ထားသည့် normative subcontract ထဲသို့ ရွှေ့ရန်၊ rule တစ်ခုချင်းစီအတွက် parser/evaluator conformance fixture ထည့်ရန်နှင့် မဖြေရှင်းရသေးသော legacy behavior ၏ version ownership ကို မှတ်တမ်းတင်ရန် ဖြစ်သည်။

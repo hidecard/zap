@@ -44,7 +44,7 @@ The matrix also runs `scripts/test_platform_archive.sh` on every runner. That re
 
 ## Stability rules
 
-The deterministic executor and the context-owned language scheduling boundary are the stable baseline for v2.1.x. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
+The deterministic executor and the context-owned language scheduling boundary are the stable baseline for v2.2.1. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
 
 A future production implementation must add, at minimum:
 

@@ -44,7 +44,7 @@ Matrix သည် runner တိုင်းတွင် `scripts/test_platform_ar
 
 ## Stability rules
 
-Deterministic executor နှင့် context-owned language scheduling boundary သည် v2.1.x အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
+Deterministic executor နှင့် context-owned language scheduling boundary သည် v2.2.1 အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
 
 အနာဂတ် production implementation တွင် အနည်းဆုံး အောက်ပါအချက်များ ပါဝင်ရမည်။
 

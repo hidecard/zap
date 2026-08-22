@@ -104,6 +104,8 @@ required_domains=(
   compatibility-policy ci-gates diagnostic-fields evaluator-propagation memory-stats
   async-capability async-budget package-validation lockfile-generation registry-index
   stdlib-catalog cli-project-json compatibility-template ownership-validator
+  lsp-document-sync lsp-interoperability lsp-scope-rename stdlib-determinism
+  memory-budget registry-transport benchmark-provenance release-version
 )
 if (( rows < 20 )); then
   printf 'spec ownership: index must contain at least 20 rule rows, found %s\n' "$rows" >&2

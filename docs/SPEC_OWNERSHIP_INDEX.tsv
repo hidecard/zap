@@ -27,3 +27,11 @@ SPEC-024	stdlib-catalog	docs/LANGUAGE_SPEC_EN.md#8. Conformance ownership	docs/L
 SPEC-025	cli-project-json	docs/LANGUAGE_SPEC_EN.md#7. Diagnostics and compatibility	docs/LANGUAGE_SPEC_MM.md#၇။ Diagnostics နှင့် compatibility	native/src/main.rs#print_project_json	implemented	normative
 SPEC-026	compatibility-template	docs/LANGUAGE_SPEC_EN.md#7. Diagnostics and compatibility	docs/LANGUAGE_SPEC_MM.md#၇။ Diagnostics နှင့် compatibility	docs/COMPATIBILITY_CHANGE_TEMPLATE_EN.md	implemented	compatibility
 SPEC-027	ownership-validator	docs/LANGUAGE_SPEC_EN.md#8. Conformance ownership	docs/LANGUAGE_SPEC_MM.md#၈။ Conformance ownership	scripts/validate_spec_ownership.sh	implemented	normative
+SPEC-029	lsp-document-sync	docs/ASYNC_LSP_EN.md#LSP Server	docs/ASYNC_LSP_MM.md#LSP Server	native/src/lsp.rs#contentChanges	implemented	normative
+SPEC-030	lsp-interoperability	docs/ASYNC_LSP_EN.md#LSP Server	docs/ASYNC_LSP_MM.md#LSP Server	native/src/lsp.rs#negotiate_position_encoding	implemented	normative
+SPEC-031	lsp-scope-rename	docs/ASYNC_LSP_EN.md#LSP Server	docs/ASYNC_LSP_MM.md#LSP Server	native/src/lsp.rs#rename_response	implemented	normative
+SPEC-032	stdlib-determinism	docs/STDLIB_POLICY_EN.md#Determinism taxonomy	docs/STDLIB_POLICY_MM.md#Determinism taxonomy	native/src/stdlib_catalog.rs#determinism_class_labels_and_legacy_compatibility_are_stable	implemented	normative
+SPEC-033	memory-budget	docs/MEMORY_BUDGET_OBJECT_STORE_EN.md#Default limits	docs/MEMORY_BUDGET_OBJECT_STORE_MM.md#Default limits	native/src/runtime_state.rs#memory_budget_and_object_store_are_isolated_and_reset	implemented	normative
+SPEC-034	registry-transport	docs/LANGUAGE_SPEC_EN.md#8. Conformance ownership	docs/LANGUAGE_SPEC_MM.md#၈။ Conformance ownership	native/src/registry.rs#registry_client_accepts_chunked_response_body	implemented	normative
+SPEC-035	benchmark-provenance	docs/BENCHMARK_HARNESS_EN.md#Verification	docs/BENCHMARK_HARNESS_MM.md#Verification	scripts/test_benchmark_provenance.sh#schema_version	implemented	normative
+SPEC-036	release-version	docs/RELEASE_VERSION_POLICY_EN.md#Validation and evidence	docs/RELEASE_VERSION_POLICY_MM.md#Validation နှင့် evidence	scripts/validate_release_version.sh#REPORT=	implemented	normative

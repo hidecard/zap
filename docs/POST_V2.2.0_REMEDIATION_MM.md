@@ -1,12 +1,12 @@
 # v2.2.0 နောက်ပိုင်း ပြင်ဆင်မှုနှင့် Provenance မှတ်တမ်း
 
-**မှတ်တမ်းအခြေအနေ:** v2.2.1 သို့ corrective work ဆက်လက်လုပ်ဆောင်နေသည်
+**မှတ်တမ်းအခြေအနေ:** v2.2.1 corrective release ထုတ်ဝေပြီး၊ နောက်ဆက်တွဲ engineering queue ကို သီးခြား track လုပ်ထားသည်
 
 ## အကျုံးဝင်မှုနှင့် provenance
 
 ဤမှတ်တမ်းသည် Zap v2.2.0 ၏ deep technical review အပြီး စတင်ခဲ့သော corrective-release cycle ကို မှတ်တမ်းတင်သည်။ ထုတ်ဝေပြီးသား v2.2.0 release notes နှင့် သီးခြားထားရခြင်းမှာ သမိုင်းမှတ်တမ်းကို မပြန်ရေးရန် ဖြစ်သည်။ Published **v2.2.0 tag သည် immutable** ဖြစ်ပြီး [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb) commit ကို ညွှန်ပြထားသည်။ အောင်မြင်ခဲ့သော release workflow ကို [GitHub Actions run 32546657968](https://github.com/hidecard/zap/actions/runs/32546657968) တွင် မှတ်တမ်းတင်ထားသည်။ နောက်ပိုင်း correction များကို ထို historical tag သို့ backport၊ force-push သို့မဟုတ် v2.2.0 ၏ အစိတ်အပိုင်းဟု မဖော်ပြပါ။
 
-လက်ရှိ `master` branch တွင် နောက်ပိုင်း corrective commit များ ပါရှိသည်။ ထိုပြောင်းလဲမှုများကို package အဖြစ် ပထမဆုံး ထုတ်ပေးမည့် release သည် **v2.2.1** ဖြစ်ရန် စီစဉ်ထားသည်။ ထို release မထွက်မီ v2.2.0 archive ကို install လုပ်သော user များသည် အောက်တွင် ဖော်ပြထားသော နောက်ပိုင်း `master` behavior မဟုတ်ဘဲ v2.2.0-tagged behavior ကို ရရှိမည် ဖြစ်သည်။
+လက်ရှိ `master` branch တွင် နောက်ပိုင်း corrective commit များ ပါရှိသည်။ ထိုပြောင်းလဲမှုများကို **v2.2.1** အဖြစ် package ပြုလုပ်ပြီး ထုတ်ဝေထားသည်။ v2.2.0 archive ကို install လုပ်သော user များသည် v2.2.0-tagged behavior ကို ရရှိမည်ဖြစ်ပြီး v2.2.1 release တွင် အောက်တွင် ဖော်ပြထားသော corrective behavior များ ပါဝင်သည်။
 
 | Provenance boundary | Commit သို့မဟုတ် record | အဓိပ္ပာယ် |
 |---|---|---|

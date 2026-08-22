@@ -33,7 +33,7 @@ Zap တွင် လက်ရှိ `extends` ဖြင့် class၊ method �
 
 ## ၃။ လက်ရှိ baseline
 
-လက်ရှိ Zap baseline တွင် class declaration၊ method၊ constructor နှင့် `extends` ဖြင့် single inheritance ပါဝင်သည်။ လက်ရှိ specification သည် syntax နှင့် runtime semantics ကို ပိုင်ဆိုင်ပြီး structured diagnostic တွင် severity၊ stable code၊ message နှင့် ရနိုင်သည့် source location များ ပါရမည် [1]။ လက်ရှိ release line သည် v2.1.x ဖြစ်ပြီး semantics change တစ်ခုအတွက် specification update၊ bilingual documentation၊ conformance fixture၊ changelog entry နှင့် explicit version decision လိုအပ်သည် [1]။
+လက်ရှိ Zap baseline တွင် class declaration၊ method၊ constructor နှင့် `extends` ဖြင့် single inheritance ပါဝင်သည်။ လက်ရှိ specification သည် syntax နှင့် runtime semantics ကို ပိုင်ဆိုင်ပြီး structured diagnostic တွင် severity၊ stable code၊ message နှင့် ရနိုင်သည့် source location များ ပါရမည် [1]။ လက်ရှိ release line သည် v2.2.1 ဖြစ်ပြီး semantics change တစ်ခုအတွက် specification update၊ bilingual documentation၊ conformance fixture၊ changelog entry နှင့် explicit version decision လိုအပ်သည် [1]။
 
 ထို့ကြောင့် ဤ RFC ကြောင့် လက်ရှိ baseline မပြောင်းလဲပါ။
 

@@ -1,12 +1,12 @@
 # Post-v2.2.0 Remediation and Provenance Record
 
-**Record status:** Corrective work in progress toward v2.2.1
+**Record status:** v2.2.1 corrective release published; subsequent engineering queue remains tracked separately
 
 ## Scope and provenance
 
 This record documents the corrective-release cycle initiated after the attached deep technical review of Zap v2.2.0. It is intentionally separate from the historical v2.2.0 release notes. The published **v2.2.0 tag remains immutable** at commit [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb), and its successful release workflow is recorded at [GitHub Actions run 32546657968](https://github.com/hidecard/zap/actions/runs/32546657968). No later correction is being backported into, force-pushed onto, or represented as part of that historical tag.
 
-The current `master` branch contains subsequent corrective commits. The first corrected release that packages those changes is planned as **v2.2.1**. Until that release is published, users who install the v2.2.0 archives receive the v2.2.0-tagged behavior, not the later `master` behavior described below.
+The current `master` branch contains subsequent corrective commits. Those changes were packaged and published as **v2.2.1**. Users who install the v2.2.0 archives receive the v2.2.0-tagged behavior, while the v2.2.1 release contains the corrective behavior described below.
 
 | Provenance boundary | Commit or record | Meaning |
 |---|---|---|

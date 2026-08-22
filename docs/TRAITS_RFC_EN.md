@@ -33,7 +33,7 @@ The proposal addresses composition as a separate design problem. It does not cla
 
 ## 3. Current baseline
 
-The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line remains v2.1.x, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
+The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line is v2.2.1, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
 
 The current baseline therefore remains unchanged by this RFC:
 

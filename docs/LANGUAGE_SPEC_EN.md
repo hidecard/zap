@@ -53,7 +53,7 @@ The current async executor is deterministic and poll-budgeted. Language `async f
 
 Every user-facing diagnostic must preserve severity, stable code, message, source location where available, notes, and help. CLI and LSP consumers share the same semantic diagnostic fields. Compatibility behavior must be labeled as one of: **normative**, **compatibility**, **deprecated**, or **rejected**. A behavior cannot become normative solely because an old fixture happens to accept it.
 
-The current release line is v2.1.x. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
+The current release line is v2.2.1. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
 
 ## 8. Conformance ownership
 
@@ -75,4 +75,4 @@ The following documents provide detailed subcontracts and must remain bilingual 
 | Syntax reference | `SYNTAX_GUIDE_EN.md` | `SYNTAX_GUIDE_MM.md` |
 | Standard library | `STDLIB_TEXT_MATH_COLLECTION_EN.md` | `STDLIB_TEXT_MATH_COLLECTION_MM.md` |
 
-**Current limitation:** This is the canonical semantic foundation and navigation point. The remaining work is to migrate every fragmented rule into this document or an explicitly linked normative subcontract, add parser/evaluator conformance fixtures for each rule, and record version ownership for unresolved legacy behavior.
+**Current limitation:** This is the canonical semantic foundation and navigation point. The expanded ownership index now covers 36 stable rules, including post-review LSP, standard-library determinism, memory-budget, registry-transport, benchmark-provenance, and release-version contracts. Remaining work is to migrate every other fragmented rule into this document or an explicitly linked normative subcontract, add parser/evaluator conformance fixtures for each rule, and record version ownership for unresolved legacy behavior.
