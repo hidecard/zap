@@ -1504,7 +1504,8 @@ fn diagnostic_line(message: &str) -> Option<usize> {
 mod tests {
     use super::{
         can_store_document, decode_messages, file_uri_path, handle_message,
-        handle_message_with_state, LspState, MAX_WORKSPACE_BYTES, MAX_WORKSPACE_DOCUMENTS,
+        handle_message_with_state, path_to_file_uri, LspState, MAX_WORKSPACE_BYTES,
+        MAX_WORKSPACE_DOCUMENTS,
     };
     use serde_json::{json, Value};
 
@@ -1793,7 +1794,7 @@ mod tests {
         )
         .unwrap();
         fs::write(root.join("app/util.zp"), "fn loaded():\n    return 1\n").unwrap();
-        let uri = format!("file://{}", main.display());
+        let uri = path_to_file_uri(&main);
         let _ = handle_message(&json!({
             "jsonrpc": "2.0", "method": "textDocument/didOpen",
             "params": {"textDocument": {"uri": uri, "text": "import app.util as util\nfn main():\n    return util\n"}}
