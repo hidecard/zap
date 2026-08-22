@@ -895,7 +895,8 @@ fn validate_annotation_syntax(annotation: &str) -> Result<(), String> {
         None => (value.to_ascii_lowercase(), None),
     };
     let known = [
-        "any", "text", "number", "bool", "list", "map", "object", "result", "option", "none",
+        "any", "text", "number", "bool", "list", "map", "object", "result", "option", "function",
+        "none",
     ];
     if !known.contains(&base.as_str()) {
         return Err(format!("unknown type annotation '{value}'"));

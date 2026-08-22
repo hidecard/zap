@@ -28,13 +28,13 @@ Parentheses are the normative escape hatch for ambiguous intent. Boolean operato
 
 ## 3. Values and typing
 
-The core value categories are `text`, `number`, `bool`, `list`, `map`, `object`, `none`, and typed `result`/`option` forms where exposed by the runtime. Annotations may use primitive names and bounded generic forms such as `list<number>`, `map<text, number>`, `option<text>`, and `result<text>`. `any` is an explicit escape hatch and does not imply runtime coercion.
+The core value categories are `text`, `number`, `bool`, `list`, `map`, `object`, `function`, `none`, and typed `result`/`option` forms where exposed by the runtime. Annotations may use primitive names and bounded generic forms such as `list<number>`, `map<text, number>`, `option<text>`, and `result<text>`. The `function` annotation accepts first-class callable values. `any` is an explicit escape hatch and does not imply runtime coercion.
 
 Static checks validate declared annotations, collection element expectations, function arguments, return values, and control-flow narrowing where the implementation has enough information. Runtime checks remain authoritative at dynamic boundaries. A mismatch is reported through the structured diagnostic contract, not as an undocumented Rust panic or unstable string.
 
 ## 4. Functions, calls, and closures
 
-A function has a name, ordered parameters, optional annotations, optional default expressions, an optional return annotation, and an AST body. Arguments may be positional or named according to the call contract. Defaults are evaluated when the corresponding argument is omitted. Duplicate, unknown, or multiply supplied arguments are errors. Closures capture the lexical environment defined by the implementation; ownership and cycle behavior must follow the memory contract.
+A function has a name, ordered parameters, optional annotations, optional default expressions, an optional return annotation, and an AST body. A declared function name evaluates to a first-class callable value; that value can be assigned, passed as an argument, returned, and invoked through any callable expression. Arguments may be positional or named according to the call contract. Defaults are evaluated when the corresponding argument is omitted. Duplicate, unknown, multiply supplied, or non-callable invocations are errors, and arity/type failures use deterministic runtime messages. Closures capture the lexical environment defined by the implementation; ownership and cycle behavior must follow the memory contract. Callable values display as `<callable>` and serialize to the deterministic `{"__zap_variant":"callable"}` marker; the marker is intentionally not deserializable because it does not carry executable code.
 
 ## 5. Control flow and modules
 

@@ -246,7 +246,7 @@ while count < 3:
 
 ## 12. Functions
 
-Function ကြေညာရန် `fn name(parameters):` ကို အသုံးပြုသည်။ Function ထဲမှ value ပြန်ပေးရန် `return` ကို အသုံးပြုနိုင်သည်။
+Function ကြေညာရန် `fn name(parameters):` ကို အသုံးပြုသည်။ Function ထဲမှ value ပြန်ပေးရန် `return` ကို အသုံးပြုနိုင်သည်။ `function` annotation သည် first-class callable value ကို ဖော်ပြသည်။ Function name ကို variable ထဲ assign လုပ်ပြီး argument အဖြစ်ပေးခြင်း၊ return ပြန်ခြင်းနှင့် callable alias ကို invoke လုပ်ခြင်းတို့ ပြုလုပ်နိုင်သည်။
 
 ```zp
 fn greet(name):
@@ -263,6 +263,13 @@ fn add(a, b):
     return a + b
 
 say add(7, 8)
+
+fn apply(f: function, value: number) -> number:
+    return f(value, value)
+
+let alias = add
+say alias(7, 8)
+say apply(add, 4)
 ```
 
 Function သည် return မပြုလုပ်လျှင် အလုပ်လုပ်ပြီးနောက် တန်ဖိုးမရှိသော result ရှိနိုင်သည်။

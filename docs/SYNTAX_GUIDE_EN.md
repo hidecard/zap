@@ -42,7 +42,7 @@ let enabled: bool = true
 port = 9090
 ```
 
-Available annotation names include `text`, `number`, `bool`, `list`, `map`, `none`, and `any`. `zap check` reports known annotation mismatches.
+Available annotation names include `text`, `number`, `bool`, `list`, `map`, `function`, `none`, and `any`. The `function` annotation describes a first-class callable value. `zap check` reports known annotation mismatches.
 
 ## Operators
 
@@ -112,7 +112,7 @@ say create_user("may")
 say create_user("may", "admin")
 ```
 
-Named arguments are supported for function and method calls. See the complete [Default Function Parameters guide](DEFAULT_PARAMETERS_EN.md) for validation rules, method examples, and runnable samples.
+Named arguments are supported for function and method calls. Callable function names can be assigned to variables, passed to parameters annotated as `function`, returned from functions, and invoked through aliases. See the complete [Default Function Parameters guide](DEFAULT_PARAMETERS_EN.md) for validation rules, method examples, and runnable samples.
 
 ### Async functions and await
 

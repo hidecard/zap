@@ -184,6 +184,7 @@ pub(crate) fn is_allowed_annotation(annotation: &str) -> bool {
     let value = annotation.trim();
     if [
         "text", "number", "bool", "list", "map", "object", "none", "any", "result", "option",
+        "function",
     ]
     .contains(&value)
     {

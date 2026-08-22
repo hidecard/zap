@@ -459,6 +459,7 @@ impl<'a> ExprParser<'a> {
                         Value::List(_) => "list",
                         Value::Map(_) => "map",
                         Value::Object { .. } => "object",
+                        Value::Callable(_) => "function",
                         Value::ResultOk(_) | Value::ResultErr(_) => "result",
                         Value::OptionSome(_) | Value::OptionNone => "option",
                         Value::Future(_) => "future",
@@ -1096,6 +1097,8 @@ impl<'a> ExprParser<'a> {
                     evaluator::direct_external_builtin_with_context(&n, &args, Some(self.context))?
                 {
                     value
+                } else if let Some(Value::Callable(function)) = self.vars.get(&n) {
+                    call_function_with_context(function, args, self.funcs, self.context)?
                 } else {
                     let f = self
                         .funcs
@@ -1109,6 +1112,11 @@ impl<'a> ExprParser<'a> {
                 .vars
                 .get(&n)
                 .cloned()
+                .or_else(|| {
+                    self.funcs
+                        .get(&n)
+                        .map(|function| Value::Callable(function.clone()))
+                })
                 .ok_or(format!("undefined variable: {n}"))?,
             Token::LParen => {
                 let v = self.parse(0)?;
@@ -1303,7 +1311,7 @@ fn manifest_value(text: &str, key: &str) -> Option<String> {
 }
 fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String> {
     let allowed = [
-        "text", "number", "bool", "list", "map", "object", "none", "any",
+        "text", "number", "bool", "list", "map", "object", "none", "any", "function",
     ];
     for (index, line) in source.lines().enumerate() {
         let trimmed = line.trim();
@@ -2046,6 +2054,7 @@ fn main() {
 #[cfg(test)]
 mod zap_error_tests {
     use super::*;
+    use std::cell::RefCell;
 
     #[test]
     fn classifies_type_errors_and_preserves_location() {
@@ -2095,6 +2104,40 @@ mod zap_error_tests {
         let error = run_checked("use core", Path::new("."))
             .expect_err("AST import semantics should reject an unresolved module");
         assert!(error.message().contains("module not found: core"));
+    }
+
+    #[test]
+    fn compatibility_expression_supports_callable_aliases() {
+        let mut context = ExecutionContext::new();
+        let mut vars = HashMap::new();
+        let mut funcs = HashMap::new();
+        funcs.insert(
+            "increment".into(),
+            Rc::new(Function {
+                visibility: "public".into(),
+                params: vec![Param {
+                    name: "value".into(),
+                    annotation: Some("number".into()),
+                    default: None,
+                }],
+                return_annotation: Some("number".into()),
+                is_async: false,
+                body: vec!["return value + 1".into()],
+                ast_body: None,
+                closure: Rc::new(RefCell::new(HashMap::new())),
+            }),
+        );
+        let alias_tokens = lexer::tokenize("increment").expect("alias expression should tokenize");
+        let alias = ExprParser::new(&alias_tokens, &vars, &funcs, &mut context)
+            .parse_complete()
+            .expect("legacy function names should produce callable values");
+        assert_eq!(alias.show(), "<callable>");
+        vars.insert("alias".into(), alias);
+        let call_tokens = lexer::tokenize("alias(4)").expect("call expression should tokenize");
+        let result = ExprParser::new(&call_tokens, &vars, &funcs, &mut context)
+            .parse_complete()
+            .expect("callable aliases should be invokable");
+        assert_eq!(result, Value::Number(5));
     }
 
     #[test]

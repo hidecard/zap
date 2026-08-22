@@ -2,7 +2,7 @@
 
 ## ရည်ရွယ်ချက်
 
-Machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) သည် canonical Zap specification အတွက် executable ownership index ဖြစ်ပါသည်။ လက်ရှိ row ၂၇ ခုသည် source execution၊ precedence၊ typing၊ functions၊ modules၊ memory၊ deterministic/production async boundary၊ diagnostics၊ registry၊ lockfile၊ JSON/filesystem limits၊ standard-library catalog၊ CLI JSON၊ compatibility policy နှင့် CI enforcement များကို လွှမ်းခြုံထားပါသည်။ Public rule တစ်ခုချင်းစီ၏ English section၊ Burmese section၊ implementation သို့မဟုတ် conformance fixture owner၊ implementation status နှင့် compatibility class ကို row တစ်ကြောင်းစီတွင် သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် rule တစ်ခုသည် အဟောင်း guide တွင် ပါနေခြင်း သို့မဟုတ် legacy runtime က လက်ခံနေခြင်းတစ်ခုတည်းကြောင့် normative ဖြစ်သွားခြင်းကို ကာကွယ်ပါသည်။
+Machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) သည် canonical Zap specification အတွက် executable ownership index ဖြစ်ပါသည်။ လက်ရှိ row ၂၈ ခုသည် source execution၊ precedence၊ typing၊ first-class callable functions၊ modules၊ memory၊ deterministic/production async boundary၊ diagnostics၊ registry၊ lockfile၊ JSON/filesystem limits၊ standard-library catalog၊ CLI JSON၊ compatibility policy နှင့် CI enforcement များကို လွှမ်းခြုံထားပါသည်။ Public rule တစ်ခုချင်းစီ၏ English section၊ Burmese section၊ implementation သို့မဟုတ် conformance fixture owner၊ implementation status နှင့် compatibility class ကို row တစ်ကြောင်းစီတွင် သတ်မှတ်ထားပါသည်။ ထို့ကြောင့် rule တစ်ခုသည် အဟောင်း guide တွင် ပါနေခြင်း သို့မဟုတ် legacy runtime က လက်ခံနေခြင်းတစ်ခုတည်းကြောင့် normative ဖြစ်သွားခြင်းကို ကာကွယ်ပါသည်။
 
 ## Row field များ၏ လိုအပ်ချက်
 

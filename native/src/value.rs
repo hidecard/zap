@@ -107,6 +107,7 @@ pub(crate) enum Value {
         class_name: String,
         fields: Rc<TrackedObjectFields>,
     },
+    Callable(Rc<Function>),
     ResultOk(Box<Value>),
     ResultErr(Box<Value>),
     OptionSome(Box<Value>),
@@ -324,6 +325,7 @@ impl Value {
             ),
             Self::Map(x) => format!("{{{} keys}}", x.len()),
             Self::Object { class_name, .. } => format!("<object {class_name}>"),
+            Self::Callable(_) => "<callable>".into(),
             Self::ResultOk(x) => format!("Ok({})", x.show()),
             Self::ResultErr(x) => format!("Err({})", x.show()),
             Self::OptionSome(x) => format!("Some({})", x.show()),
@@ -339,7 +341,7 @@ impl Value {
             Self::Text(x) => !x.is_empty(),
             Self::List(x) => !x.is_empty(),
             Self::Map(x) => !x.is_empty(),
-            Self::Object { .. } => true,
+            Self::Object { .. } | Self::Callable(_) => true,
             Self::ResultOk(_) => true,
             Self::ResultErr(_) => false,
             Self::OptionSome(_) => true,
@@ -412,7 +414,11 @@ fn validate_value(
         | Value::Future(nested) => {
             validate_value(nested, visited_objects, nodes, depth + 1, node_limit)
         }
-        Value::Bool(_) | Value::Number(_) | Value::OptionNone | Value::None => Ok(()),
+        Value::Bool(_)
+        | Value::Number(_)
+        | Value::Callable(_)
+        | Value::OptionNone
+        | Value::None => Ok(()),
     }
 }
 

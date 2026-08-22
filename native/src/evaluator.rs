@@ -270,6 +270,7 @@ pub(crate) fn value_to_json(v: &Value) -> Result<serde_json::Value, String> {
             "value":value_to_json(x)?
         })),
         Value::OptionNone => Ok(serde_json::json!({"__zap_variant":"none"})),
+        Value::Callable(_) => Ok(serde_json::json!({"__zap_variant":"callable"})),
         Value::Future(value) => Ok(serde_json::json!({
             "__zap_variant":"future",
             "value":value_to_json(value)?
@@ -304,6 +305,7 @@ pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
                     })
                 }
                 "none" => Ok(Value::OptionNone),
+                "callable" => Err("JSON callable values cannot be deserialized".into()),
                 "future" => {
                     let value = m
                         .remove("value")
@@ -343,6 +345,7 @@ pub(crate) fn value_type_name(value: &Value) -> &'static str {
         Value::Object { .. } => "object",
         Value::ResultOk(_) | Value::ResultErr(_) => "result",
         Value::OptionSome(_) | Value::OptionNone => "option",
+        Value::Callable(_) => "function",
         Value::Future(_) => "future",
     }
 }
@@ -677,6 +680,7 @@ pub(crate) fn direct_builtin_with_context(
                 Value::List(_) => "list",
                 Value::Map(_) => "map",
                 Value::Object { .. } => "object",
+                Value::Callable(_) => "function",
                 Value::ResultOk(_) | Value::ResultErr(_) => "result",
                 Value::OptionSome(_) | Value::OptionNone => "option",
                 Value::Future(_) => "future",
@@ -2162,7 +2166,11 @@ fn ast_expression_with_context(
         Expr::Name(name) => vars
             .get(name)
             .cloned()
-            .or_else(|| funcs.get(name).map(|_| Value::None))
+            .or_else(|| {
+                funcs
+                    .get(name)
+                    .map(|function| Value::Callable(function.clone()))
+            })
             .ok_or_else(|| format!("undefined variable: {name}")),
         Expr::List(items) => items
             .iter()
@@ -2250,7 +2258,11 @@ fn ast_expression_with_context(
                 Expr::Name(name) => {
                     if let Some(function) = funcs.get(name) {
                         return call_function_with_arguments(function, values, funcs, context);
-                    } else if values.iter().any(|argument| argument.name.is_some()) {
+                    }
+                    if let Some(Value::Callable(function)) = vars.get(name) {
+                        return call_function_with_arguments(function, values, funcs, context);
+                    }
+                    if values.iter().any(|argument| argument.name.is_some()) {
                         return Err(format!(
                             "named arguments are not supported for built-in function: {name}"
                         ));
@@ -2313,7 +2325,16 @@ fn ast_expression_with_context(
                     check_method_visibility(&function, &dispatch_class, vars, funcs)?;
                     call_method_with_arguments(&function, values, receiver, funcs, context)
                 }
-                _ => expression_with_context(&ast_expr_source(node), vars, funcs, context),
+                _ => {
+                    let callee = ast_expression_with_context(callee, vars, funcs, context)?;
+                    let Value::Callable(function) = callee else {
+                        return Err(format!(
+                            "value of type {} is not callable",
+                            value_type_name(&callee)
+                        ));
+                    };
+                    call_function_with_arguments(&function, values, funcs, context)
+                }
             }
         }
         Expr::Member { target, member } => {
@@ -2647,6 +2668,7 @@ fn value_type(v: &Value) -> &'static str {
         Value::List(_) => "list",
         Value::Map(_) => "map",
         Value::Object { .. } => "object",
+        Value::Callable(_) => "function",
         Value::ResultOk(_) | Value::ResultErr(_) => "result",
         Value::OptionSome(_) | Value::OptionNone => "option",
         Value::Future(_) => "future",
@@ -2741,6 +2763,7 @@ fn matches_annotation(annotation: &str, value: &Value) -> Result<bool, String> {
             | ("list", "list")
             | ("map", "map")
             | ("object", "object")
+            | ("function", "function")
             | ("result", "result")
             | ("option", "option")
             | ("none", "none")
@@ -3997,6 +4020,66 @@ mod tests {
             .get("twice")
             .is_some_and(|function| function.ast_body.is_some()));
         assert_eq!(vars.get("result"), Some(&Value::Number(6)));
+    }
+
+    #[test]
+    fn callable_values_support_assignment_arguments_returns_and_serialization() {
+        let program = parse_program(
+            "fn add(a: number, b: number) -> number:\n    return a + b\nfn apply(f: function, value: number) -> number:\n    return f(value, value)\nfn choose() -> function:\n    return add\nlet alias = add\nlet from_alias = alias(2, 3)\nlet from_argument = apply(add, 4)\nlet from_return = choose()(5, 6)\nlet kind = type(add)\nlet rendered = str(add)\nlet encoded = json(add)\n",
+        )
+        .expect("callable value program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("callable values should execute through the AST");
+        assert_eq!(vars.get("from_alias"), Some(&Value::Number(5)));
+        assert_eq!(vars.get("from_argument"), Some(&Value::Number(8)));
+        assert_eq!(vars.get("from_return"), Some(&Value::Number(11)));
+        assert_eq!(vars.get("kind"), Some(&Value::Text("function".into())));
+        assert_eq!(
+            vars.get("rendered"),
+            Some(&Value::Text("<callable>".into()))
+        );
+        assert_eq!(
+            vars.get("encoded"),
+            Some(&Value::Text("{\"__zap_variant\":\"callable\"}".into()))
+        );
+    }
+
+    #[test]
+    fn callable_values_report_deterministic_arity_and_type_errors() {
+        let arity_program = parse_program(
+            "fn add(a: number, b: number) -> number:\n    return a + b\nlet result = add(1)\n",
+        )
+        .expect("arity program should parse");
+        let arity_error = match execute_ast_program(
+            &arity_program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        ) {
+            Ok(_) => panic!("missing callable arguments must fail"),
+            Err(error) => error,
+        };
+        assert_eq!(arity_error, "function expects 2 to 2 arguments, got 1");
+
+        let type_program = parse_program(
+            "fn apply(f: function) -> number:\n    return 1\nlet result = apply(1)\n",
+        )
+        .expect("callable type program should parse");
+        let type_error = match execute_ast_program(
+            &type_program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        ) {
+            Ok(_) => panic!("non-callable function arguments must fail"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            type_error,
+            "type mismatch for f: expected function, got number"
+        );
     }
 
     #[test]

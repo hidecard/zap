@@ -28,13 +28,13 @@ Operator များသည် အောက်ပါအတိုင်း အင
 
 ## ၃။ Values နှင့် typing
 
-Core value category များမှာ `text`၊ `number`၊ `bool`၊ `list`၊ `map`၊ `object`၊ `none` နှင့် runtime က ဖော်ပြသည့် typed `result`/`option` form များ ဖြစ်သည်။ Annotation များတွင် primitive name များနှင့် `list<number>`၊ `map<text, number>`၊ `option<text>`၊ `result<text>` ကဲ့သို့ bounded generic form များကို သုံးနိုင်သည်။ `any` သည် အတိအလင်း ခွင့်ပြုထားသည့် escape hatch ဖြစ်ပြီး runtime coercion ကို မဆိုလိုပါ။
+Core value category များမှာ `text`၊ `number`၊ `bool`၊ `list`၊ `map`၊ `object`၊ `function`၊ `none` နှင့် runtime က ဖော်ပြသည့် typed `result`/`option` form များ ဖြစ်သည်။ Annotation များတွင် primitive name များနှင့် `list<number>`၊ `map<text, number>`၊ `option<text>`၊ `result<text>` ကဲ့သို့ bounded generic form များကို သုံးနိုင်သည်။ `function` annotation သည် first-class callable value များကို လက်ခံသည်။ `any` သည် အတိအလင်း ခွင့်ပြုထားသည့် escape hatch ဖြစ်ပြီး runtime coercion ကို မဆိုလိုပါ။
 
 Static check များသည် declared annotation၊ collection element expectation၊ function argument၊ return value နှင့် implementation က သိနိုင်သည့် control-flow narrowing များကို စစ်ဆေးသည်။ Dynamic boundary များတွင် runtime check သည် အဆုံးသတ်အာဏာရှိသည်။ Mismatch ကို undocumented Rust panic သို့မဟုတ် မတည်ငြိမ်သော string မဟုတ်ဘဲ structured diagnostic ဖြင့် ဖော်ပြရမည်။
 
 ## ၄။ Functions၊ calls နှင့် closures
 
-Function တစ်ခုတွင် name၊ ordered parameter များ၊ optional annotation များ၊ optional default expression များ၊ optional return annotation နှင့် AST body ပါဝင်သည်။ Call contract အရ positional သို့မဟုတ် named argument သုံးနိုင်သည်။ Argument မပေးထားသည့်အခါ default ကို evaluate လုပ်သည်။ Duplicate၊ unknown သို့မဟုတ် တစ်ကြိမ်ထက်ပိုပေးသော argument များသည် error ဖြစ်သည်။ Closure သည် implementation က သတ်မှတ်ထားသော lexical environment ကို capture လုပ်ပြီး ownership/cycle behavior သည် memory contract အတိုင်း ဖြစ်ရမည်။
+Function တစ်ခုတွင် name၊ ordered parameter များ၊ optional annotation များ၊ optional default expression များ၊ optional return annotation နှင့် AST body ပါဝင်သည်။ Declared function name ကို first-class callable value အဖြစ် evaluate လုပ်ပြီး ထို value ကို assign လုပ်ခြင်း၊ argument အဖြစ်ပေးခြင်း၊ return ပြန်ခြင်းနှင့် callable expression တစ်ခုခုမှ invoke လုပ်ခြင်းတို့ ပြုလုပ်နိုင်သည်။ Call contract အရ positional သို့မဟုတ် named argument သုံးနိုင်သည်။ Argument မပေးထားသည့်အခါ default ကို evaluate လုပ်သည်။ Duplicate၊ unknown၊ တစ်ကြိမ်ထက်ပိုပေးသော argument သို့မဟုတ် callable မဟုတ်သည့် value ကို invoke လုပ်ခြင်းတို့သည် error ဖြစ်ပြီး arity/type failure များသည် deterministic runtime message သုံးသည်။ Closure သည် implementation က သတ်မှတ်ထားသော lexical environment ကို capture လုပ်ပြီး ownership/cycle behavior သည် memory contract အတိုင်း ဖြစ်ရမည်။ Callable value ကို `<callable>` ဟု ပြသပြီး deterministic `{"__zap_variant":"callable"}` marker အဖြစ် serialize လုပ်သည်။ Executable code မပါသောကြောင့် ထို marker ကို deserialize ပြန်မလုပ်နိုင်ပါ။
 
 ## ၅။ Control flow နှင့် modules
 

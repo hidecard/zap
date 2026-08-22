@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the executable ownership index for the canonical Zap specification. Its current 27 rows cover source execution, precedence, typing, functions, modules, memory, deterministic and production async boundaries, diagnostics, registry, lockfiles, JSON/filesystem limits, standard-library catalog, CLI JSON, compatibility policy, and CI enforcement. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
+The machine-readable [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) is the executable ownership index for the canonical Zap specification. Its current 28 rows cover source execution, precedence, typing, first-class callable functions, modules, memory, deterministic and production async boundaries, diagnostics, registry, lockfiles, JSON/filesystem limits, standard-library catalog, CLI JSON, compatibility policy, and CI enforcement. Each public rule row names its English section, Burmese section, implementation or conformance fixture owner, implementation status, and compatibility class. The index prevents a rule from being normative only because it appears in an old guide or happens to be accepted by the legacy runtime.
 
 ## Required row fields
 
