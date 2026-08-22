@@ -230,16 +230,31 @@ pub(crate) type LanguageTaskId = u64;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum LanguageTaskError {
+    UnknownTask,
+    AlreadyJoined,
     Cancelled,
     TimedOut,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LanguageTaskState {
+    Pending,
+    Ready,
+    Cancelled,
+    TimedOut,
+    Joined,
+}
+
+struct LanguageTaskRecord {
+    output: Rc<RefCell<Option<Result<Value, LanguageTaskError>>>>,
+    token: CancellationToken,
+    state: LanguageTaskState,
 }
 
 #[derive(Default)]
 struct LanguageScheduler {
     runtime: AsyncRuntime,
-    outputs: HashMap<LanguageTaskId, Rc<RefCell<Option<Result<Value, LanguageTaskError>>>>>,
-    tokens: HashMap<LanguageTaskId, CancellationToken>,
-    timed_out: std::collections::HashSet<LanguageTaskId>,
+    tasks: HashMap<LanguageTaskId, LanguageTaskRecord>,
     next_id: LanguageTaskId,
 }
 
@@ -248,7 +263,7 @@ impl fmt::Debug for LanguageScheduler {
         formatter
             .debug_struct("LanguageScheduler")
             .field("pending_tasks", &self.runtime.pending_tasks())
-            .field("tracked_outputs", &self.outputs.len())
+            .field("tracked_tasks", &self.tasks.len())
             .field("next_id", &self.next_id)
             .finish()
     }
@@ -270,29 +285,55 @@ impl LanguageScheduler {
                 *task_output.borrow_mut() = Some(result);
             })
             .map_err(|_| "language task scheduler rejected the task".to_string())?;
-        self.outputs.insert(id, output);
-        self.tokens.insert(id, token);
+        self.tasks.insert(
+            id,
+            LanguageTaskRecord {
+                output,
+                token,
+                state: LanguageTaskState::Pending,
+            },
+        );
         Ok(id)
     }
 
     fn run_until_idle(&mut self) {
         self.runtime.run_until_idle();
+        self.refresh_states();
+    }
+
+    fn refresh_states(&mut self) {
+        for record in self.tasks.values_mut() {
+            if record.state == LanguageTaskState::Pending
+                && record.output.borrow().as_ref().is_some()
+            {
+                record.state = match record.output.borrow().as_ref() {
+                    Some(Err(LanguageTaskError::Cancelled)) => LanguageTaskState::Cancelled,
+                    Some(_) => LanguageTaskState::Ready,
+                    None => LanguageTaskState::Pending,
+                };
+            }
+        }
     }
 
     fn is_ready(&self, id: LanguageTaskId) -> bool {
-        self.outputs
-            .get(&id)
-            .is_some_and(|output| output.borrow().is_some())
+        self.tasks.get(&id).is_some_and(|record| {
+            matches!(
+                record.state,
+                LanguageTaskState::Ready
+                    | LanguageTaskState::Cancelled
+                    | LanguageTaskState::TimedOut
+            ) || record.output.borrow().as_ref().is_some()
+        })
     }
 
     fn cancel(&mut self, id: LanguageTaskId) -> bool {
-        if self.is_ready(id) {
-            return false;
-        }
-        let Some(token) = self.tokens.get(&id) else {
+        let Some(record) = self.tasks.get_mut(&id) else {
             return false;
         };
-        token.cancel();
+        if !matches!(record.state, LanguageTaskState::Pending) || record.token.is_cancelled() {
+            return false;
+        }
+        record.token.cancel();
         true
     }
 
@@ -300,34 +341,50 @@ impl LanguageScheduler {
         &mut self,
         id: LanguageTaskId,
         poll_budget: Option<usize>,
-    ) -> Result<Value, LanguageTaskError> {
+    ) -> (Result<Value, LanguageTaskError>, bool) {
+        if !self.tasks.contains_key(&id) {
+            return (Err(LanguageTaskError::UnknownTask), false);
+        }
+        if self
+            .tasks
+            .get(&id)
+            .is_some_and(|record| record.state == LanguageTaskState::Joined)
+        {
+            return (Err(LanguageTaskError::AlreadyJoined), false);
+        }
         match poll_budget {
             Some(budget) => {
                 self.runtime.run_with_budget(budget);
+                self.refresh_states();
                 if !self.is_ready(id) {
-                    self.timed_out.insert(id);
-                    if let Some(token) = self.tokens.get(&id) {
-                        token.cancel();
+                    if let Some(record) = self.tasks.get_mut(&id) {
+                        record.state = LanguageTaskState::TimedOut;
+                        record.token.cancel();
                     }
                     self.runtime.run_with_budget(1);
+                    self.refresh_states();
                 }
             }
             None => self.run_until_idle(),
         }
-        let output = self.outputs.get(&id).cloned();
-        let value = output.and_then(|output| output.borrow_mut().take());
-        self.outputs.remove(&id);
-        self.tokens.remove(&id);
-        let timed_out = self.timed_out.remove(&id);
-        match value {
-            Some(Ok(value)) => Ok(value),
-            Some(Err(LanguageTaskError::Cancelled)) if timed_out => {
-                Err(LanguageTaskError::TimedOut)
-            }
-            Some(Err(error)) => Err(error),
-            None if timed_out => Err(LanguageTaskError::TimedOut),
-            None => Err(LanguageTaskError::Cancelled),
-        }
+        self.refresh_states();
+        let record = self
+            .tasks
+            .get_mut(&id)
+            .expect("task existence checked before join");
+        let result = match record.state {
+            LanguageTaskState::TimedOut => Err(LanguageTaskError::TimedOut),
+            LanguageTaskState::Cancelled => Err(LanguageTaskError::Cancelled),
+            LanguageTaskState::Ready => record
+                .output
+                .borrow_mut()
+                .take()
+                .unwrap_or(Err(LanguageTaskError::Cancelled)),
+            LanguageTaskState::Pending => Err(LanguageTaskError::Cancelled),
+            LanguageTaskState::Joined => Err(LanguageTaskError::AlreadyJoined),
+        };
+        record.state = LanguageTaskState::Joined;
+        (result, true)
     }
 }
 
@@ -483,8 +540,10 @@ impl RuntimeState {
         id: LanguageTaskId,
         poll_budget: Option<usize>,
     ) -> Result<Value, LanguageTaskError> {
-        let result = self.language_scheduler.join(id, poll_budget);
-        self.memory_budget.complete_task();
+        let (result, release_budget) = self.language_scheduler.join(id, poll_budget);
+        if release_budget {
+            self.memory_budget.complete_task();
+        }
         result
     }
 }
@@ -626,6 +685,15 @@ mod tests {
             Ok(Value::Number(7))
         );
         assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+        assert_eq!(
+            context.state_mut().join_language_task(id, None),
+            Err(super::LanguageTaskError::AlreadyJoined)
+        );
+        assert_eq!(
+            context.state_mut().join_language_task(id + 100, None),
+            Err(super::LanguageTaskError::UnknownTask)
+        );
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
 
         let pending_id = context
             .state_mut()
@@ -633,6 +701,43 @@ mod tests {
             .expect("second language task should be admitted");
         context.reset_for_run();
         assert!(!context.state().language_task_is_ready(pending_id));
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+    }
+
+    #[test]
+    fn cancelled_and_timed_out_tasks_release_budget_once() {
+        let mut context = ExecutionContext::new();
+        let cancelled = context
+            .state_mut()
+            .schedule_language_task(Value::Number(1))
+            .expect("cancelled task should be admitted");
+        assert!(context.state_mut().cancel_language_task(cancelled));
+        assert_eq!(context.state().memory_budget().usage(), (0, 1, 0));
+        assert_eq!(
+            context.state_mut().join_language_task(cancelled, None),
+            Err(super::LanguageTaskError::Cancelled)
+        );
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+        assert!(!context.state_mut().cancel_language_task(cancelled));
+        assert_eq!(
+            context.state_mut().join_language_task(cancelled, None),
+            Err(super::LanguageTaskError::AlreadyJoined)
+        );
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+
+        let timed_out = context
+            .state_mut()
+            .schedule_language_task(Value::Number(2))
+            .expect("timed-out task should be admitted");
+        assert_eq!(
+            context.state_mut().join_language_task(timed_out, Some(0)),
+            Err(super::LanguageTaskError::TimedOut)
+        );
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+        assert_eq!(
+            context.state_mut().join_language_task(timed_out, Some(0)),
+            Err(super::LanguageTaskError::AlreadyJoined)
+        );
         assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
     }
 

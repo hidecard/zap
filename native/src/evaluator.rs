@@ -4491,6 +4491,42 @@ mod tests {
     }
 
     #[test]
+    fn language_task_join_reports_terminal_state_without_double_release() {
+        let mut context = ExecutionContext::new();
+        let task_id = context
+            .state_mut()
+            .schedule_language_task(Value::Number(7))
+            .expect("task should be admitted");
+        let handle = Value::ScheduledFuture(task_id);
+        assert_eq!(
+            super::direct_builtin_with_context(
+                "task_join",
+                vec![handle.clone()],
+                Some(&mut context)
+            )
+            .expect("first join should return the task result"),
+            Some(Value::Number(7))
+        );
+        let used_after_first_join = context.state().memory_budget().usage().0;
+        let repeated =
+            super::direct_builtin_with_context("task_join", vec![handle], Some(&mut context))
+                .expect_err("repeated join should report its terminal state");
+        assert_eq!(repeated, "language task 1 failed: AlreadyJoined");
+        let unknown = super::direct_builtin_with_context(
+            "task_join",
+            vec![Value::ScheduledFuture(task_id + 100)],
+            Some(&mut context),
+        )
+        .expect_err("unknown join should report an explicit state");
+        assert_eq!(unknown, "language task 101 failed: UnknownTask");
+        assert_eq!(context.state().memory_budget().usage().1, 0);
+        assert_eq!(
+            context.state().memory_budget().usage().0,
+            used_after_first_join
+        );
+    }
+
+    #[test]
     fn async_capabilities_builtin_reports_explicit_boundaries() {
         let Value::Map(capabilities) = direct_builtin("async_capabilities", vec![])
             .expect("async_capabilities should succeed")
