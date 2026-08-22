@@ -11,7 +11,7 @@
 | Language user | [Syntax guide](SYNTAX_GUIDE.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [type-check matrix](TYPECHECK_CONFORMANCE_MATRIX_MM.md) |
 | Package author | [Burmese package guide](PACKAGE.md) | [Stdlib index](STDLIB_INDEX_MM.md)၊ [registry/authentication contract](REGISTRY_AUTH_MM.md) |
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_MM.md) | [Memory model](MEMORY_MODEL_MM.md)၊ [diagnostics](DIAGNOSTIC_MODEL_MM.md)၊ [async boundaries](ASYNC_BOUNDARIES_MM.md) |
-| Tooling contributor | [Async/LSP guide](ASYNC_LSP_MM.md) | [LSP implementation](../native/src/lsp.rs)၊ [VS Code assets](../editors/vscode)၊ [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh) |
+| Tooling contributor | [Async/LSP guide](ASYNC_LSP_MM.md) | [LSP implementation](../native/src/lsp.rs)၊ [canonical VS Code extension](../vscode-extension)၊ [editor assets](../editors/vscode)၊ [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh)၊ [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md) |
 | Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [release preflight](../scripts/release_preflight.sh) |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_MM.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) |

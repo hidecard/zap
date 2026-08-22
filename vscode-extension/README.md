@@ -14,6 +14,7 @@ This extension adds first-class `.zp` editing support for the Zap programming la
 | Hover | Shows LSP documentation for functions, classes, modules, imports, and bindings. |
 | Go to definition | Resolves top-level Zap declarations through the LSP definition provider. |
 | Workspace symbols | Makes Zap declarations searchable through VS Code symbol search. |
+| Rename | Resolves file-local lexical bindings, including parameters, closures, shadowing, and import aliases; cross-file rename remains unsupported. |
 | Snippets | Includes functions, loops, conditionals, `try`/`catch`, imports, `main`, and `raise`. |
 | Diagnostics | Receives `textDocument/publishDiagnostics` from the Zap LSP and retains CLI JSON checking as a fallback. |
 | Run current file | Runs `zap run <file.zp>` in the integrated terminal or Output panel. |
@@ -21,7 +22,7 @@ This extension adds first-class `.zp` editing support for the Zap programming la
 
 ## Marketplace installation
 
-The official **Zap Language Support v0.5.0** extension is available from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). Install it from a terminal with:
+The official **Zap Language Support v2.2.0** extension is available from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). This repository's canonical distributable source is the `vscode-extension/` directory. Install it from a terminal with:
 
 ```bash
 code --install-extension ArkarYan.zap-language-support
@@ -33,7 +34,7 @@ After installation, reload VS Code if prompted and ensure the Zap CLI is availab
 
 Open this folder in VS Code and choose **Extensions: Install from VSIX...** after creating a package with the repository script. For development, use **Developer: Install Extension from Location...** and select the `vscode-extension` directory.
 
-The extension requires the Zap CLI to be available as `zap` on `PATH`, or configured explicitly through `zap.executable`. The extension launches `zap lsp` as a stdio JSON-RPC server and synchronizes open and changed `.zp` documents with it.
+The extension requires the Zap CLI to be available as `zap` on `PATH`, or configured explicitly through `zap.executable`. The extension launches `zap lsp` as a stdio JSON-RPC server and synchronizes open and changed `.zp` documents with it. The native server advertises full synchronization, consumes standard `params.contentChanges`, tracks newer document versions, negotiates UTF-8/UTF-16/UTF-32 positions, and rejects unsupported incremental edits safely.
 
 ## Commands
 
@@ -51,8 +52,8 @@ The Command Palette provides **Zap: Run Current File**, **Zap: Check Workspace**
 }
 ```
 
-The LSP client uses standard `Content-Length` JSON-RPC framing and supports initialize, document open/change/close, completion, signature help, hover, definition, document formatting, workspace symbols, and publish-diagnostics notifications. Signature help is triggered after `(` and `,`; document formatting is available through **Format Document** and **Format Selection** where supported by VS Code. Diagnostics are intentionally bounded by the native LSP and CLI and are refreshed after edits with a short debounce. The extension does not reimplement the Zap parser; it consumes the CLI's stable JSON diagnostic boundary, which keeps editor behavior aligned with command-line behavior.
+The LSP client uses standard `Content-Length` JSON-RPC framing and supports initialize, document open/change/close, completion, signature help, hover, definition, rename, document formatting, workspace symbols, and publish-diagnostics notifications. Signature help is triggered after `(` and `,`; document formatting is available through **Format Document** and **Format Selection** where supported by VS Code. Diagnostics are intentionally bounded by the native LSP and CLI and are refreshed after edits with a short debounce. The extension does not reimplement the Zap parser; it consumes the CLI's stable JSON diagnostic boundary, which keeps editor behavior aligned with command-line behavior. Workspace indexing is capped at 256 documents, 32 import levels, and 32 MiB of source text. The native LSP currently exposes file-local rename only; review edits before automated refactoring.
 
 ## Development
 
-Run `node scripts/test-extension.js` to validate the manifest, grammar, snippets, and extension JavaScript. Run `node scripts/package-extension.js` to create a repository-local `.vsix`-compatible zip archive under `dist/`.
+Run `node scripts/test-extension.js` to validate the v2.2.0 manifest, canonical grammar, snippets, and extension JavaScript. Run `node scripts/package-extension.js` to create a repository-local `.vsix` package under `dist/`; the resulting archive is the release candidate produced from this canonical directory.

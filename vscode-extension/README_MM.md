@@ -14,6 +14,7 @@
 | Hover | function၊ class၊ module၊ import နှင့် binding အချက်အလက်များကို mouse hover ဖြင့် ပြခြင်း |
 | Go to definition | Zap LSP မှ top-level declaration များသို့ သွားရောက်နိုင်ခြင်း |
 | Workspace symbols | VS Code symbol search မှ Zap declaration များကို ရှာဖွေနိုင်ခြင်း |
+| Rename | Parameter၊ closure၊ shadowing နှင့် import alias အပါအဝင် file-local lexical binding များကို resolve လုပ်ခြင်း၊ cross-file rename ကို မထောက်ပံ့သေးခြင်း |
 | Snippets | function၊ loop၊ condition၊ `try/catch`၊ import၊ `main` နှင့် `raise` snippets များ |
 | Error diagnostics | Zap LSP `publishDiagnostics` နှင့် CLI fallback ရလဒ်များကို Problems panel တွင် ပြခြင်း |
 | Run | လက်ရှိ `.zp` file ကို integrated terminal တွင် `zap run` ဖြင့် run ခြင်း |
@@ -21,7 +22,7 @@
 
 ## Marketplace မှ install ပြုလုပ်ခြင်း
 
-Official **Zap Language Support v0.5.0** ကို [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support) မှ ရယူနိုင်ပါသည်။ Terminal မှ install ပြုလုပ်ရန် အောက်ပါ command ကို အသုံးပြုပါ။
+Official **Zap Language Support v2.2.0** ကို [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support) မှ ရယူနိုင်ပါသည်။ ဤ repository တွင် ဖြန့်ချိရန် canonical source သည် `vscode-extension/` directory ဖြစ်ပါသည်။ Terminal မှ install ပြုလုပ်ရန် အောက်ပါ command ကို အသုံးပြုပါ။
 
 ```bash
 code --install-extension ArkarYan.zap-language-support
@@ -31,7 +32,7 @@ Install ပြီးပါက VS Code ကို reload ပြုလုပ်ပ�
 
 ## အသုံးပြုရန်
 
-Zap CLI ကို `PATH` ထဲတွင် ထည့်ထားပါ သို့မဟုတ် VS Code Settings တွင် `zap.executable` ကို Zap executable လမ်းကြောင်းအဖြစ် သတ်မှတ်ပါ။ Extension သည် `zap lsp` ကို stdio JSON-RPC server အဖြစ် စတင်ပြီး ဖွင့်ထားသော `.zp` document များကို server နှင့် synchronize လုပ်ပါသည်။ ထို့နောက် `vscode-extension` folder ကို VS Code ဖြင့် ဖွင့်ပြီး **Developer: Install Extension from Location...** ကို ရွေးချယ်ပါ။
+Zap CLI ကို `PATH` ထဲတွင် ထည့်ထားပါ သို့မဟုတ် VS Code Settings တွင် `zap.executable` ကို Zap executable လမ်းကြောင်းအဖြစ် သတ်မှတ်ပါ။ Extension သည် `zap lsp` ကို stdio JSON-RPC server အဖြစ် စတင်ပြီး ဖွင့်ထားသော `.zp` document များကို server နှင့် synchronize လုပ်ပါသည်။ Native server သည် full synchronization ကို ကြေညာပြီး standard `params.contentChanges` ကို အသုံးပြုကာ newer document version များကို track လုပ်သည်။ UTF-8/UTF-16/UTF-32 position များကို negotiate လုပ်ပြီး unsupported incremental edit များကို လုံခြုံစွာ reject လုပ်သည်။ ထို့နောက် `vscode-extension` folder ကို VS Code ဖြင့် ဖွင့်ပြီး **Developer: Install Extension from Location...** ကို ရွေးချယ်ပါ။
 
 ## Commands
 
@@ -49,4 +50,4 @@ Command Palette မှ **Zap: Run Current File**၊ **Zap: Check Workspace** န
 }
 ```
 
-LSP client သည် `Content-Length` JSON-RPC framing ကို အသုံးပြုပြီး initialize၊ document open/change/close၊ completion၊ signature help၊ hover၊ definition၊ document formatting၊ workspace symbols နှင့် publish-diagnostics notification များကို ထောက်ပံ့ပါသည်။ Signature help သည် `(` နှင့် `,` ရိုက်ပြီးနောက် အလုပ်လုပ်ပြီး document formatting ကို VS Code ၏ **Format Document** မှ အသုံးပြုနိုင်ပါသည်။ Extension သည် Zap parser ကို သီးခြားပြန်ရေးမထားဘဲ native LSP နှင့် CLI diagnostic boundary များကို အသုံးပြုသောကြောင့် command line နှင့် editor diagnostics များ တူညီစွာ အလုပ်လုပ်ပါသည်။
+LSP client သည် `Content-Length` JSON-RPC framing ကို အသုံးပြုပြီး initialize၊ document open/change/close၊ completion၊ signature help၊ hover၊ definition၊ rename၊ document formatting၊ workspace symbols နှင့် publish-diagnostics notification များကို ထောက်ပံ့ပါသည်။ Signature help သည် `(` နှင့် `,` ရိုက်ပြီးနောက် အလုပ်လုပ်ပြီး document formatting ကို VS Code ၏ **Format Document** မှ အသုံးပြုနိုင်ပါသည်။ Extension သည် Zap parser ကို သီးခြားပြန်ရေးမထားဘဲ native LSP နှင့် CLI diagnostic boundary များကို အသုံးပြုသောကြောင့် command line နှင့် editor diagnostics များ တူညီစွာ အလုပ်လုပ်ပါသည်။ Workspace indexing သည် document ၂၅၆ ခု၊ import level ၃၂ နှင့် source text ၃၂ MiB အထိ ကန့်သတ်ထားသည်။ Native LSP rename သည် file-local ဖြစ်ပြီး automated refactoring မလုပ်မီ edit ရလဒ်ကို ပြန်လည်စစ်ဆေးရမည်။

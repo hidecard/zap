@@ -1,77 +1,47 @@
 {
-  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Zap",
   "scopeName": "source.zap",
+  "fileTypes": ["zp"],
   "patterns": [
-    { "include": "#comments" },
-    { "include": "#strings" },
-    { "include": "#numbers" },
-    { "include": "#declarations" },
-    { "include": "#keywords" },
-    { "include": "#types" },
-    { "include": "#builtins" },
-    { "include": "#constants" },
-    { "include": "#operators" }
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#numbers"},
+    {"include": "#keywords"},
+    {"include": "#builtins"},
+    {"include": "#functions"}
   ],
   "repository": {
     "comments": {
       "patterns": [
-        { "name": "comment.line.number-sign.zap", "match": "#.*$" }
+        {"match": "#.*$", "name": "comment.line.number-sign.zap"}
       ]
     },
     "strings": {
+      "name": "string.quoted.double.zap",
+      "begin": "\"",
+      "end": "\"",
       "patterns": [
-        {
-          "name": "string.quoted.double.zap",
-          "begin": "\"",
-          "end": "\"",
-          "patterns": [{ "name": "constant.character.escape.zap", "match": "\\\\." }]
-        },
-        {
-          "name": "string.quoted.single.zap",
-          "begin": "'",
-          "end": "'",
-          "patterns": [{ "name": "constant.character.escape.zap", "match": "\\\\." }]
-        }
+        {"match": "\\\\[nrt\\\"\\\\]", "name": "constant.character.escape.zap"}
       ]
     },
     "numbers": {
       "patterns": [
-        { "name": "constant.numeric.zap", "match": "\\b(?:0[xX][0-9a-fA-F]+|0[bB][01]+|\\d+(?:\\.\\d+)?)\\b" }
-      ]
-    },
-    "declarations": {
-      "patterns": [
-        { "name": "keyword.declaration.function.zap", "match": "\\b(fn|function)\\s+([A-Za-z_][A-Za-z0-9_]*)", "captures": { "1": { "name": "keyword.declaration.function.zap" }, "2": { "name": "entity.name.function.zap" } } },
-        { "name": "keyword.declaration.class.zap", "match": "\\b(class|struct|enum|module)\\s+([A-Za-z_][A-Za-z0-9_]*)", "captures": { "1": { "name": "keyword.declaration.zap" }, "2": { "name": "entity.name.type.zap" } } },
-        { "name": "keyword.control.import.zap", "match": "\\b(import)\\s+([^\\s]+)(?:\\s+(as)\\s+([A-Za-z_][A-Za-z0-9_]*))?", "captures": { "1": { "name": "keyword.control.import.zap" }, "3": { "name": "keyword.control.import.zap" }, "4": { "name": "variable.other.constant.zap" } } }
+        {"match": "\\b-?[0-9]+\\b", "name": "constant.numeric.zap"}
       ]
     },
     "keywords": {
       "patterns": [
-        { "name": "keyword.control.zap", "match": "\\b(if|elif|else|for|while|in|break|continue|return|raise|try|catch|match|case|pass|async|await|defer)\\b" },
-        { "name": "keyword.operator.logical.zap", "match": "\\b(and|or|not)\\b" },
-        { "name": "storage.type.function.zap", "match": "\\b(let|const|var|mut|pub|private|protected|static|self|super)\\b" }
-      ]
-    },
-    "types": {
-      "patterns": [
-        { "name": "storage.type.zap", "match": "\\b(number|text|bool|none|list|map|set|option|result|future|unknown|any)\\b" }
+        {"match": "\\b(?:let|fn|async|await|if|else|for|while|class|module|import|return|true|false|none|and|or)\\b", "name": "keyword.control.zap"}
       ]
     },
     "builtins": {
       "patterns": [
-        { "name": "support.function.zap", "match": "\\b(say|print|len|type|range|enumerate|zip|map|filter|reduce|now|sleep|url_parse|url_encode|url_decode|http_get|http_request|process_run|has_env|env|path_join|basename|dirname|json_parse|json_stringify|spawn|task_join|task_is_ready)\\b(?=\\s*\\()" }
+        {"match": "\\b(?:len|str|type|memory_stats|upper|lower|trim|split|join|contains|replace|abs|min|max|pow|sum|range|keys|entries|enumerate|count|reverse|read_text|write_text|read_lines|write_lines|file_metadata|atomic_write|json|from_json|from_json_typed|char_at|substring|codepoints|path_join|now|utc_now|duration_parts|duration_between|spawn|task_join|task_is_ready|task_cancel|task_join_timeout|async_capabilities|log_record|log_json|env|has_env|env_get|config_dir|config_path|basename|dirname|url_parse|url_encode|url_decode|http_get|http_request|http_serve_once|process_run)(?=\\s*\\()", "name": "support.function.builtin.zap"}
       ]
     },
-    "constants": {
+    "functions": {
       "patterns": [
-        { "name": "constant.language.zap", "match": "\\b(true|false|none|null)\\b" }
-      ]
-    },
-    "operators": {
-      "patterns": [
-        { "name": "keyword.operator.assignment.zap", "match": "(?:==|!=|<=|>=|=>|\\+|-|\\*|/|%|<|>|=|\\||&)" }
+        {"match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()", "name": "entity.name.function.zap"}
       ]
     }
   }

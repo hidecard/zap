@@ -180,10 +180,21 @@ check_release_files() {
     scripts/test_stdlib_policy.sh
     scripts/test_lsp_semantic_parity.sh
     scripts/test_lsp_protocol_sync.sh
+    scripts/test_vscode_extension.sh
     scripts/validate_vscode_assets.py
     editors/vscode/package.json
     editors/vscode/language-configuration.json
     editors/vscode/syntaxes/zap.tmLanguage.json
+    vscode-extension/package.json
+    vscode-extension/extension.js
+    vscode-extension/lsp-client.js
+    vscode-extension/language-configuration.json
+    vscode-extension/syntaxes/zap.tmLanguage.json
+    vscode-extension/snippets/zap.json
+    vscode-extension/scripts/test-extension.js
+    vscode-extension/scripts/package-extension.js
+    vscode-extension/README.md
+    vscode-extension/README_MM.md
     docs/ASYNC_LSP_EN.md
     docs/ASYNC_LSP_MM.md
     scripts/validate_spec_ownership.sh
@@ -381,6 +392,9 @@ run_contract_validation() {
 
   bash scripts/test_lsp_protocol_sync.sh
   pass "LSP protocol synchronization contract passed"
+
+  bash scripts/test_vscode_extension.sh
+  pass "canonical VS Code extension package contract passed"
 
   local benchmark_raw="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"

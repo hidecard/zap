@@ -2,25 +2,25 @@
   "comments": {
     "lineComment": "#"
   },
-  "brackets": [["(", ")"], ["[", "]"], ["{", "}"]],
+  "brackets": [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"]
+  ],
   "autoClosingPairs": [
-    { "open": "(", "close": ")" },
-    { "open": "[", "close": "]" },
-    { "open": "{", "close": "}" },
-    { "open": "\"", "close": "\"" },
-    { "open": "'", "close": "'" }
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+    ["\"", "\""]
   ],
   "surroundingPairs": [
-    ["(", ")"], ["[", "]"], ["{", "}"], ["\"", "\""], ["'", "'"]
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+    ["\"", "\""]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^(?!\\s*(#|$)).*(\\:|\\{)\\s*$",
-    "decreaseIndentPattern": "^\\s*(catch|else|elif)\\b.*"
-  },
-  "folding": {
-    "markers": {
-      "start": "^\\s*#\\s*region\\b",
-      "end": "^\\s*#\\s*endregion\\b"
-    }
+    "increaseIndentPattern": "^(\\s*)(?:if|else|for|while|fn|async\\s+fn|class|module)\\b.*:\\s*$",
+    "decreaseIndentPattern": "^(\\s*)(?:else)\\b"
   }
 }

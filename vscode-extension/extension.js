@@ -261,6 +261,31 @@ function activate(context) {
       }).catch(() => undefined);
     }
   }));
+  context.subscriptions.push(vscode.languages.registerRenameProvider('zap', {
+    provideRenameEdits(document, position, newName) {
+      if (!lspClient || !lspClient.started) return undefined;
+      return lspClient.request('textDocument/rename', {
+        textDocument: { uri: document.uri.toString() },
+        position: { line: position.line, character: position.character },
+        newName
+      }).then(result => {
+        if (!result || !result.changes) return undefined;
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        for (const [uri, edits] of Object.entries(result.changes)) {
+          workspaceEdit.set(vscode.Uri.parse(uri), (edits || []).map(edit => new vscode.TextEdit(
+            new vscode.Range(
+              edit.range.start.line,
+              edit.range.start.character,
+              edit.range.end.line,
+              edit.range.end.character
+            ),
+            edit.newText || ''
+          )));
+        }
+        return workspaceEdit;
+      }).catch(() => undefined);
+    }
+  }));
   context.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider('zap', {
     provideWorkspaceSymbols(query) {
       if (!lspClient || !lspClient.started) return [];

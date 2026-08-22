@@ -137,6 +137,7 @@ require_text SECURITY.md "Latest \`v${major_minor}.x\`"
 require_text SECURITY.md "releases/tag/v$EXPECTED_VERSION"
 require_text docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md "$EXPECTED_VERSION"
 require_text docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md "$EXPECTED_VERSION"
+require_text vscode-extension/package.json "\"version\": \"$EXPECTED_VERSION\""
 require_text "docs/RELEASE_${EXPECTED_VERSION}_EN.md" "$EXPECTED_VERSION"
 require_text "docs/RELEASE_${EXPECTED_VERSION}_MM.md" "$EXPECTED_VERSION"
 

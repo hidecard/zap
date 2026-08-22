@@ -105,6 +105,9 @@ jobs:
       - name: Run LSP protocol synchronization contract
         run: scripts/test_lsp_protocol_sync.sh
 
+      - name: Run canonical VS Code extension package contract
+        run: scripts/test_vscode_extension.sh
+
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 
