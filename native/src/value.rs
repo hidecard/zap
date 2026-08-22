@@ -35,7 +35,10 @@ pub(crate) struct TrackedObjectFields {
 
 impl PartialEq for TrackedObjectFields {
     fn eq(&self, other: &Self) -> bool {
-        self.fields.borrow().eq(&other.fields.borrow())
+        match (self.fields.try_borrow(), other.fields.try_borrow()) {
+            (Ok(left), Ok(right)) => left.eq(&right),
+            _ => false,
+        }
     }
 }
 
@@ -322,18 +325,13 @@ impl EnvFrame {
             if self.try_contains_local(key)? {
                 continue;
             }
-            if self
-                .parent
-                .as_ref()
-                .map_or(Ok(false), |parent| parent.try_contains(key))?
-            {
-                self.parent
-                    .as_ref()
-                    .expect("parent checked")
-                    .try_assign(key, value.clone())?;
-            } else {
-                self.try_insert_local(key.clone(), value.clone())?;
+            if let Some(parent) = self.parent.as_ref() {
+                if parent.try_contains(key)? {
+                    parent.try_assign(key, value.clone())?;
+                    continue;
+                }
             }
+            self.try_insert_local(key.clone(), value.clone())?;
         }
         Ok(())
     }
@@ -356,7 +354,7 @@ pub(crate) struct Function {
     pub(crate) ast_body: Option<crate::ast::Program>,
     pub(crate) closure: Rc<EnvFrame>,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub(crate) enum Value {
     Text(String),
     Number(i64),
@@ -375,6 +373,115 @@ pub(crate) enum Value {
     Future(Box<Value>),
     ScheduledFuture(u64),
     None,
+}
+
+pub(crate) fn try_values_equal(left: &Value, right: &Value) -> Result<bool, String> {
+    let mut seen_objects = HashSet::new();
+    let mut nodes = 0usize;
+    values_equal_inner(left, right, &mut seen_objects, &mut nodes)
+}
+
+fn values_equal_inner(
+    left: &Value,
+    right: &Value,
+    seen_objects: &mut HashSet<(usize, usize)>,
+    nodes: &mut usize,
+) -> Result<bool, String> {
+    *nodes = nodes
+        .checked_add(1)
+        .ok_or_else(|| "value equality node counter overflow".to_string())?;
+    if *nodes > MAX_RUNTIME_VALUE_NODES {
+        return Err(format!(
+            "value equality exceeded {MAX_RUNTIME_VALUE_NODES} nodes"
+        ));
+    }
+    match (left, right) {
+        (Value::Text(left), Value::Text(right)) => Ok(left == right),
+        (Value::Number(left), Value::Number(right)) => Ok(left == right),
+        (Value::Bool(left), Value::Bool(right)) => Ok(left == right),
+        (Value::List(left), Value::List(right)) => {
+            if left.len() != right.len() {
+                return Ok(false);
+            }
+            left.iter()
+                .zip(right)
+                .try_fold(true, |equal, (left, right)| {
+                    if !equal {
+                        return Ok(false);
+                    }
+                    values_equal_inner(left, right, seen_objects, nodes)
+                })
+        }
+        (Value::Map(left), Value::Map(right)) => {
+            if left.len() != right.len() {
+                return Ok(false);
+            }
+            left.iter().try_fold(true, |equal, (key, left)| {
+                if !equal {
+                    return Ok(false);
+                }
+                let Some(right) = right.get(key) else {
+                    return Ok(false);
+                };
+                values_equal_inner(left, right, seen_objects, nodes)
+            })
+        }
+        (
+            Value::Object {
+                class_name: left_class,
+                fields: left_fields,
+            },
+            Value::Object {
+                class_name: right_class,
+                fields: right_fields,
+            },
+        ) => {
+            if left_class != right_class {
+                return Ok(false);
+            }
+            let identity = (
+                Rc::as_ptr(left_fields) as usize,
+                Rc::as_ptr(right_fields) as usize,
+            );
+            if !seen_objects.insert(identity) {
+                return Ok(true);
+            }
+            let left_fields = left_fields.try_borrow()?;
+            let right_fields = right_fields.try_borrow()?;
+            if left_fields.len() != right_fields.len() {
+                return Ok(false);
+            }
+            left_fields.iter().try_fold(true, |equal, (key, left)| {
+                if !equal {
+                    return Ok(false);
+                }
+                let Some(right) = right_fields.get(key) else {
+                    return Ok(false);
+                };
+                values_equal_inner(left, right, seen_objects, nodes)
+            })
+        }
+        (Value::Callable(left), Value::Callable(right)) => Ok(Rc::ptr_eq(left, right)),
+        (Value::ResultOk(left), Value::ResultOk(right))
+        | (Value::ResultErr(left), Value::ResultErr(right))
+        | (Value::OptionSome(left), Value::OptionSome(right))
+        | (Value::Future(left), Value::Future(right)) => {
+            values_equal_inner(left, right, seen_objects, nodes)
+        }
+        (Value::OptionNone, Value::OptionNone)
+        | (Value::ScheduledFuture(_), Value::ScheduledFuture(_))
+        | (Value::None, Value::None) => match (left, right) {
+            (Value::ScheduledFuture(left), Value::ScheduledFuture(right)) => Ok(left == right),
+            _ => Ok(true),
+        },
+        _ => Ok(false),
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        try_values_equal(self, other).unwrap_or(false)
+    }
 }
 
 #[cfg(test)]
@@ -819,7 +926,10 @@ fn logical_frame_size(
     if !visited_frames.insert(identity) {
         return Ok(0);
     }
-    let values = frame.values.borrow();
+    let values = frame
+        .values
+        .try_borrow()
+        .map_err(|_| EnvFrame::borrow_error())?;
     let mut total = logical_add(32, values.len().saturating_mul(8))?;
     for (name, cell) in values.iter() {
         total = total
@@ -827,7 +937,7 @@ fn logical_frame_size(
             .ok_or_else(|| "memory budget exceeded: logical frame size overflow".to_string())?;
         total = total
             .checked_add(logical_value_size(
-                &cell.borrow(),
+                &*cell.try_borrow().map_err(|_| EnvFrame::borrow_error())?,
                 visited_objects,
                 visited_frames,
                 visited_functions,
@@ -891,9 +1001,13 @@ fn validate_frame(
     if !visited_frames.insert(identity) {
         return Ok(());
     }
-    for cell in frame.values.borrow().values() {
+    let values = frame
+        .values
+        .try_borrow()
+        .map_err(|_| EnvFrame::borrow_error())?;
+    for cell in values.values() {
         validate_value(
-            &cell.borrow(),
+            &*cell.try_borrow().map_err(|_| EnvFrame::borrow_error())?,
             visited_objects,
             visited_frames,
             visited_functions,
@@ -1048,8 +1162,8 @@ fn validate_value(
 #[cfg(test)]
 mod tests {
     use super::{
-        memory_stats, EnvFrame, Function, Param, Value, MAX_RUNTIME_COLLECTION_ITEMS,
-        MAX_RUNTIME_TEXT_BYTES,
+        memory_stats, try_values_equal, EnvFrame, Function, Param, Value,
+        MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES,
     };
     use crate::runtime_state::ExecutionContext;
     use std::{collections::HashMap, rc::Rc};
@@ -1150,6 +1264,40 @@ mod tests {
     }
 
     #[test]
+    fn value_equality_is_cycle_safe_and_borrow_checked() {
+        let left = Value::object("Cycle");
+        let right = Value::object("Cycle");
+        let Value::Object {
+            fields: left_fields,
+            ..
+        } = &left
+        else {
+            panic!("object constructor must create an object value");
+        };
+        let Value::Object {
+            fields: right_fields,
+            ..
+        } = &right
+        else {
+            panic!("object constructor must create an object value");
+        };
+        left_fields
+            .try_borrow_mut()
+            .unwrap()
+            .insert("self".into(), left.clone());
+        right_fields
+            .try_borrow_mut()
+            .unwrap()
+            .insert("self".into(), right.clone());
+        assert!(try_values_equal(&left, &right).unwrap());
+        let _active_borrow = left_fields.try_borrow_mut().unwrap();
+        assert_eq!(
+            try_values_equal(&left, &left).unwrap_err(),
+            "BorrowError: object fields are already borrowed"
+        );
+    }
+
+    #[test]
     fn conflicting_object_borrows_return_typed_failures() {
         let object = Value::object("Borrowed");
         let Value::Object { fields, .. } = &object else {
@@ -1182,6 +1330,29 @@ mod tests {
         );
         assert_eq!(
             frame.try_assign("value", Value::Number(3)).unwrap_err(),
+            "BorrowError: environment frame is already borrowed"
+        );
+    }
+
+    #[test]
+    fn frame_borrows_propagate_through_accounting_and_validation() {
+        let frame = EnvFrame::from_map(&HashMap::from([("value".into(), Value::Number(1))]));
+        let callable = Value::Callable(Rc::new(Function {
+            visibility: "public".into(),
+            params: Vec::new(),
+            return_annotation: None,
+            is_async: false,
+            body: Vec::new(),
+            ast_body: None,
+            closure: frame.clone(),
+        }));
+        let _active_borrow = frame.values.try_borrow_mut().unwrap();
+        assert_eq!(
+            callable.logical_size().unwrap_err(),
+            "BorrowError: environment frame is already borrowed"
+        );
+        assert_eq!(
+            callable.validate_memory_limits().unwrap_err(),
             "BorrowError: environment frame is already borrowed"
         );
     }

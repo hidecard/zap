@@ -368,10 +368,9 @@ impl LanguageScheduler {
             None => self.run_until_idle(),
         }
         self.refresh_states();
-        let record = self
-            .tasks
-            .get_mut(&id)
-            .expect("task existence checked before join");
+        let Some(record) = self.tasks.get_mut(&id) else {
+            return (Err(LanguageTaskError::UnknownTask), false);
+        };
         let result = match record.state {
             LanguageTaskState::TimedOut => Err(LanguageTaskError::TimedOut),
             LanguageTaskState::Cancelled => Err(LanguageTaskError::Cancelled),

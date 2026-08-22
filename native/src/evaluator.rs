@@ -15,6 +15,7 @@ use std::{
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
+use crate::value::try_values_equal;
 use crate::ExprParser;
 use crate::{
     parse_signature, read_limited_text, resolve_module, write_limited_text, EnvFrame,
@@ -221,8 +222,8 @@ pub(crate) fn operate(a: Value, op: Token, b: Value) -> Result<Value, String> {
         (Value::Text(x), Token::Plus, Value::Text(y)) => Ok(Value::Text(x + &y)),
         (Value::Bool(x), Token::And, Value::Bool(y)) => Ok(Value::Bool(x && y)),
         (Value::Bool(x), Token::Or, Value::Bool(y)) => Ok(Value::Bool(x || y)),
-        (x, Token::EqEq, y) => Ok(Value::Bool(x == y)),
-        (x, Token::NotEq, y) => Ok(Value::Bool(x != y)),
+        (x, Token::EqEq, y) => try_values_equal(&x, &y).map(Value::Bool),
+        (x, Token::NotEq, y) => try_values_equal(&x, &y).map(|equal| Value::Bool(!equal)),
         (Value::Number(x), Token::Less, Value::Number(y)) => Ok(Value::Bool(x < y)),
         (Value::Number(x), Token::Greater, Value::Number(y)) => Ok(Value::Bool(x > y)),
         (Value::Number(x), Token::LessEq, Value::Number(y)) => Ok(Value::Bool(x <= y)),
@@ -2552,7 +2553,7 @@ fn ast_expression_with_context_inner(
                 Value::Object { class_name, fields } => {
                     check_field_visibility(&class_name, member, vars, funcs)?;
                     fields
-                        .borrow()
+                        .try_borrow()?
                         .get(member)
                         .cloned()
                         .ok_or_else(|| format!("property not found: {member}"))
@@ -2697,7 +2698,9 @@ fn call_function_with_arguments(
     }
     let mut local_funcs = funcs.clone();
     let (value, use_snapshot_sync) = if let Some(body) = &f.ast_body {
-        let frame = ast_frame.as_ref().expect("AST function has a call frame");
+        let Some(frame) = ast_frame.as_ref() else {
+            return Err("internal error: AST function is missing a call frame".into());
+        };
         (
             execute_ast_body_with_frame(body, &mut local, &mut local_funcs, context, frame)?,
             false,
@@ -2849,7 +2852,9 @@ fn call_method_with_arguments(
     }
     let mut local_funcs = funcs.clone();
     let (flow, use_snapshot_sync) = if let Some(body) = &f.ast_body {
-        let frame = ast_frame.as_ref().expect("AST method has a call frame");
+        let Some(frame) = ast_frame.as_ref() else {
+            return Err("internal error: AST method is missing a call frame".into());
+        };
         (
             execute_ast_body_with_frame(body, &mut local, &mut local_funcs, context, frame)?,
             false,
@@ -4770,6 +4775,28 @@ mod tests {
             value_to_json(&value).unwrap_err(),
             "BorrowError: object fields are already borrowed"
         );
+    }
+
+    #[test]
+    fn ast_object_member_read_propagates_borrow_error_without_panic() {
+        let object = Value::object("Borrowed");
+        let Value::Object { fields, .. } = &object else {
+            panic!("object constructor must create an object value");
+        };
+        let _active_borrow = fields.try_borrow_mut().unwrap();
+        let program = parse_program("let result = borrowed.value\n")
+            .expect("object-member program should parse");
+        let mut vars = HashMap::from([("borrowed".into(), object.clone())]);
+        let error = match execute_ast_program(
+            &program,
+            &mut vars,
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("borrowed object member access must fail"),
+        };
+        assert_eq!(error, "BorrowError: object fields are already borrowed");
     }
 
     #[test]
