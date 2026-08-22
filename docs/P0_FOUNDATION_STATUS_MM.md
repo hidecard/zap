@@ -1,6 +1,6 @@
 # P0 AST Foundation အခြေအနေ
 
-**Zap v2.2.2 နှင့် စစ်ဆေးအတည်ပြုထားပါသည်။**
+**Zap v2.2.3 နှင့် စစ်ဆေးအတည်ပြုထားပါသည်။**
 
 ## AST migration အခြေအနေ
 
@@ -31,7 +31,7 @@ Sequence indexing သည် zero-based ဖြစ်ပါသည်။ Negative n
 
 ## လက်ခံအတည်ပြုမှု အခြေအနေ
 
-Native suite သည် လက်ရှိ **160 unit tests** နှင့် **254 core integration tests** ကို pass ဖြစ်ပါသည်။ Function၊ method၊ export နှင့် local-module body များအပါအဝင် parser ပိုင် program အားလုံးအတွက် AST boundary နှင့် native AST execution ကို အသုံးပြုနေပါသည်။ Resource limit၊ typed diagnostic နှင့် legacy source-line compatibility များကို legacy-created runtime function များနှင့် explicit compatibility test များအတွက်သာ ဆက်လက်ထားရှိပါသည်။
+Native suite သည် လက်ရှိ **232 unit tests** နှင့် **256 core integration tests** ကို pass ဖြစ်ပါသည်။ Function၊ method၊ export နှင့် local-module body များအပါအဝင် parser ပိုင် program အားလုံးအတွက် AST boundary နှင့် native AST execution ကို အသုံးပြုနေပါသည်။ Resource limit၊ typed diagnostic နှင့် legacy source-line compatibility များကို legacy-created runtime function များနှင့် explicit compatibility test များအတွက်သာ ဆက်လက်ထားရှိပါသည်။
 
 ## P0 completion boundary
 

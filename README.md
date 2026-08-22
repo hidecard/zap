@@ -14,15 +14,15 @@
 
 > **Zap** is a simple, readable, general-purpose programming language with `.zp` source files and a standalone native runtime.
 
-Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow. Each native source run now receives an explicit `ExecutionContext` for module-cache, import-cycle, execution-depth, workspace-confinement, logical budget with recursive value charging/rollback, object-store isolation, and parent-linked lexical closure frames backed by live binding cells. Object/capture cycles remain subject to the explicit `clear_object_fields()` policy, and checked object/frame accesses return typed borrow failures rather than panicking. The LSP server owns open documents in an explicit per-session `LspState`. Normal source programs and local modules execute through the canonical AST boundary; native object construction, default expressions, and direct built-in dispatch are covered there, while unsupported named built-in calls fail explicitly. The line interpreter remains only as a compatibility boundary for older line-bodied function records. Post-v2.2.2 master hardening now makes canonical equality cycle-safe and bounded, propagates checked object/frame borrow errors through logical accounting and AST member reads, hardens task/frame invariant fallbacks, and removes an LSP rename scope-stack panic path. These are post-release master changes pending v2.2.3; no public weak-reference API, automatic collector, traits implementation, parser syntax, or runtime syntax is added.
+Zap is designed to make programming approachable while providing a clear path from small scripts to structured applications. The language uses indentation-based blocks, readable keywords, explicit modules, optional type annotations, structured Result/Option values, and a practical command-line workflow. Each native source run now receives an explicit `ExecutionContext` for module-cache, import-cycle, execution-depth, workspace-confinement, logical budget with recursive value charging/rollback, object-store isolation, and parent-linked lexical closure frames backed by live binding cells. Object/capture cycles remain subject to the explicit `clear_object_fields()` policy, and checked object/frame accesses return typed borrow failures rather than panicking. The LSP server owns open documents in an explicit per-session `LspState`. Normal source programs and local modules execute through the canonical AST boundary; native object construction, default expressions, and direct built-in dispatch are covered there, while unsupported named built-in calls fail explicitly. The line interpreter remains only as a compatibility boundary for older line-bodied function records. Post-v2.2.2 master hardening now makes canonical equality cycle-safe and bounded, propagates checked object/frame borrow errors through logical accounting and AST member reads, hardens task/frame invariant fallbacks, and removes an LSP rename scope-stack panic path. These post-v2.2.2 hardening changes are included in v2.2.3; no public weak-reference API, automatic collector, traits implementation, parser syntax, or runtime syntax is added.
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets with explicit terminal-state and one-time join-release semantics; async function bodies use the documented eager scheduled-value contract, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, workspace symbols, parser/lexer-backed rename, didClose cleanup, nested/module-aware indexing, and async builtin metadata. M4-RFC-01 records the reviewed design direction for traits and composition without enabling the proposed syntax. Post-v2.2.0 LSP hardening now consumes standard full-sync `didChange` content from `params.contentChanges`, tracks document versions, publishes diagnostics from the accepted buffer, and safely rejects stale or unsupported range edits. Scope-aware semantic rename now resolves file-local bindings, including shadowing, closures, parameters, and import aliases; cross-file rename remains unsupported. These LSP/editor corrections landed on `master` after the immutable v2.2.0 tag and are included in the v2.2.1 corrective release; the subsequent runtime-safety, helper, grammar, and documentation corrections are included in v2.2.2. The post-v2.2.2 hardening described above remains pending v2.2.3.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets with explicit terminal-state and one-time join-release semantics; async function bodies use the documented eager scheduled-value contract, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, workspace symbols, parser/lexer-backed rename, didClose cleanup, nested/module-aware indexing, and async builtin metadata. M4-RFC-01 records the reviewed design direction for traits and composition without enabling the proposed syntax. Post-v2.2.0 LSP hardening now consumes standard full-sync `didChange` content from `params.contentChanges`, tracks document versions, publishes diagnostics from the accepted buffer, and safely rejects stale or unsupported range edits. Scope-aware semantic rename now resolves file-local bindings, including shadowing, closures, parameters, and import aliases; cross-file rename remains unsupported. These LSP/editor corrections landed on `master` after the immutable v2.2.0 tag and are included in the v2.2.1 corrective release; the subsequent runtime-safety, helper, grammar, and documentation corrections are included in v2.2.2. The post-v2.2.2 hardening described above is included in v2.2.3.
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.2.2` |
+| Current release line | `v2.2.3` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -37,13 +37,13 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, M3-LSP-01 semantic-parity/editor validation, and post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.2 |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.3 |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
-| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0, v2.2.1, and v2.2.2 remain immutable; v2.2.1 contains the LSP/editor corrections, v2.2.2 contains the subsequent runtime-safety/helper corrections, and post-v2.2.2 hardening remains on `master` as candidate v2.2.3 scope |
+| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0, v2.2.1, and v2.2.2 remain immutable; v2.2.1 contains the LSP/editor corrections, v2.2.2 contains the subsequent runtime-safety/helper corrections, and v2.2.3 contains the post-v2.2.2 runtime, equality, borrow, and LSP hardening |
 
 ## Release provenance
 
-The installation links and archive names in this README point to the published [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) and published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.2 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.2 release notes. The post-v2.2.2 hardening on `master` is candidate scope for v2.2.3.
+The installation links and archive names in this README point to the published [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) and published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
 
 ## Learning Guide
 
@@ -84,7 +84,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.2 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.2), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.3 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.3), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -94,7 +94,7 @@ Zap is distributed as a standalone native executable. No separate language runti
 | Windows | x86_64 | `.zip` | Extract and run `install_windows.bat` from Command Prompt |
 | macOS | ARM64 | `.tar.gz` | Extract, make the installer executable, and run `./install.sh` |
 
-For the current v2.2.2 release, the platform assets are `zap-2.2.2-linux-x86_64.tar.gz`, `zap-2.2.2-macos-arm64.tar.gz`, and `zap-2.2.2-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
+For the current v2.2.3 release, the platform assets are `zap-2.2.3-linux-x86_64.tar.gz`, `zap-2.2.3-macos-arm64.tar.gz`, and `zap-2.2.3-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
 
 ### Linux Installation
 
@@ -103,7 +103,7 @@ For the current v2.2.2 release, the platform assets are `zap-2.2.2-linux-x86_64.
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.2.2-linux-x86_64.tar.gz
+tar -xzf zap-2.2.3-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -119,11 +119,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.2.2-macos-arm64.tar.gz
+tar -xzf zap-2.2.3-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -145,7 +145,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2).
+1. Download the Windows x86_64 `.zip` archive from the [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

@@ -4,7 +4,7 @@
 
 This policy defines the compatibility contract for every public standard-library domain and its directly exposed builtins. The machine-readable source is the native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog, while this document explains how users and maintainers interpret the metadata. Runtime dispatch remains centralized in the evaluator; the catalog does not create a second implementation path.
 
-The policy applies to the current release line, **v2.2.2**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
+The policy applies to the current release line, **v2.2.3**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
 
 ## Stability model
 
@@ -74,4 +74,4 @@ The public surface remains discoverable through the [English standard-library in
 
 ## Current release decision
 
-For v2.2.2, all cataloged standard-library domains and builtins remain **stable**, have no active deprecation window, follow the minor-compatible default, support the release-target matrix, and expose bounded error behavior. Their schema-2 determinism classes distinguish pure/input-driven transformations from runtime-dependent and external-I/O behavior; the legacy boolean remains only as a compatibility view. Namespace imports and remote standard-library packages remain separate future milestones; traits-based composition is documented by the design-only M4-RFC-01 and remains deferred.
+For v2.2.3, all cataloged standard-library domains and builtins remain **stable**, have no active deprecation window, follow the minor-compatible default, support the release-target matrix, and expose bounded error behavior. Their schema-2 determinism classes distinguish pure/input-driven transformations from runtime-dependent and external-I/O behavior; the legacy boolean remains only as a compatibility view. Namespace imports and remote standard-library packages remain separate future milestones; traits-based composition is documented by the design-only M4-RFC-01 and remains deferred.

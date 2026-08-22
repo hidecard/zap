@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.3] — 2026-08-22
+
+### Release engineering
+- Bounded cycle-safe equality၊ object နှင့် EnvFrame borrow propagation၊ panic-free task/frame invariant၊ checked LSP rename scope boundary နှင့် synchronized bilingual documentation များကို ထည့်သွင်းထားပါသည်။
+
 ## [2.2.2] — 2026-08-22
 
 ### Release engineering

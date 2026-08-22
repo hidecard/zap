@@ -1,7 +1,7 @@
 # Zap Traits နှင့် Composition RFC
 
 **RFC အခြေအနေ:** Design-only proposal ဖြစ်ပြီး parser သို့မဟုတ် runtime implementation မပါဝင်ပါ။
-**စစ်ဆေးထားသော baseline:** Zap v2.2.2
+**စစ်ဆေးထားသော baseline:** Zap v2.2.3
 **ဆုံးဖြတ်မည့် version:** Future post-v2.2 language version အတွက် review ပြုလုပ်ရန်။ v2.2.0 တွင် traits၊ interfaces သို့မဟုတ် inheritance semantics အသစ်များကို enable မလုပ်ပါ။
 **ဖတ်ရှုသင့်သူများ:** Language designer၊ runtime maintainer၊ package author နှင့် အနာဂတ် compatibility change reviewer များ။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax guide](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package guide](PACKAGE.md) · [English RFC](TRAITS_RFC_EN.md)
@@ -33,7 +33,7 @@ Zap တွင် လက်ရှိ `extends` ဖြင့် class၊ method �
 
 ## ၃။ လက်ရှိ baseline
 
-လက်ရှိ Zap baseline တွင် class declaration၊ method၊ constructor နှင့် `extends` ဖြင့် single inheritance ပါဝင်သည်။ လက်ရှိ specification သည် syntax နှင့် runtime semantics ကို ပိုင်ဆိုင်ပြီး structured diagnostic တွင် severity၊ stable code၊ message နှင့် ရနိုင်သည့် source location များ ပါရမည် [1]။ လက်ရှိ release line သည် v2.2.2 ဖြစ်ပြီး semantics change တစ်ခုအတွက် specification update၊ bilingual documentation၊ conformance fixture၊ changelog entry နှင့် explicit version decision လိုအပ်သည် [1]။
+လက်ရှိ Zap baseline တွင် class declaration၊ method၊ constructor နှင့် `extends` ဖြင့် single inheritance ပါဝင်သည်။ လက်ရှိ specification သည် syntax နှင့် runtime semantics ကို ပိုင်ဆိုင်ပြီး structured diagnostic တွင် severity၊ stable code၊ message နှင့် ရနိုင်သည့် source location များ ပါရမည် [1]။ လက်ရှိ release line သည် v2.2.3 ဖြစ်ပြီး semantics change တစ်ခုအတွက် specification update၊ bilingual documentation၊ conformance fixture၊ changelog entry နှင့် explicit version decision လိုအပ်သည် [1]။
 
 ထို့ကြောင့် ဤ RFC ကြောင့် လက်ရှိ baseline မပြောင်းလဲပါ။
 

@@ -1,10 +1,10 @@
 # Zap Type-Checking နှင့် Conformance Acceptance Matrix
 
 **အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline  
-**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.2.2
+**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.2.3
 **အကျယ်အဝန်း:** Static checking၊ control-flow narrowing၊ diagnostics နှင့် conformance fixtures
 
-ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ နောက်ဆုံးစစ်ဆေးထားသော release metadata သည် v2.2.2 ဖြစ်ပြီး ဤ patch သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
+ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ နောက်ဆုံးစစ်ဆေးထားသော release metadata သည် v2.2.3 ဖြစ်ပြီး ဤ release သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
 
 ## လက်ရှိ baseline
 
@@ -73,7 +73,7 @@ Message wording သည် ပြောင်းလဲနိုင်သော်
 
 ## အကောင်အထည်ဖော်ရန် အစီအစဉ်
 
-v2.2.0 အတွက် TC-001 မှ TC-012 အထိကို သတ်မှတ်ထားသော supported syntax boundary အတွင်း အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ်လုပ်ငန်းများတွင် negative collection-element cases၊ ပိုမိုနက်ရှိုင်းသော nested inference နှင့် user-defined generic declarations များကို design record နှင့် release gate အသစ်အောက်တွင်သာ တိုးချဲ့သင့်သည်။ Fixture တစ်ခုအတွက်သာ generic syntax ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
+TC-001 မှ TC-012 အထိကို သတ်မှတ်ထားသော supported syntax boundary အတွင်း အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ်လုပ်ငန်းများတွင် negative collection-element cases၊ ပိုမိုနက်ရှိုင်းသော nested inference နှင့် user-defined generic declarations များကို design record နှင့် release gate အသစ်အောက်တွင်သာ တိုးချဲ့သင့်သည်။ Fixture တစ်ခုအတွက်သာ generic syntax ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
 
 ## ထပ်မလုပ်သင့်သည့် အပိုင်း
 
@@ -81,4 +81,4 @@ v2.2.0 အတွက် TC-001 မှ TC-012 အထိကို သတ်မှ�
 
 ## ဤ workstream ပြီးစီးရန် သတ်မှတ်ချက်
 
-v2.2.0 type-checking baseline သည် supported syntax boundary အတွင်း TC-001 မှ TC-012 အထိ ပြီးစီးသည်ဟု သတ်မှတ်နိုင်သည်။ P0 rows များတွင် L3 evidence ရှိပြီး TC-006၊ TC-009 နှင့် TC-010 တွင်လည်း L3 evidence ရှိသည်။ Diagnostic location များသည် `file`၊ `line` နှင့် `column` အနေဖြင့် တည်ငြိမ်သည်။ Accepted program များတွင် runtime နှင့် static behavior ကိုက်ညီပြီး negative fixtures များသည် သတ်မှတ်ထားသော failure reason ဖြင့် fail သည်။ LSP သည် shared diagnostic vocabulary ကို အသုံးပြုပြီး English/Burmese documentation pair သည် synchronized ဖြစ်သည်။ Advanced generic declarations နှင့် inference များသည် ဤ release boundary ပြင်ပတွင် ရှိသည်။
+v2.2.3 type-checking baseline သည် supported syntax boundary အတွင်း TC-001 မှ TC-012 အထိ ပြီးစီးသည်ဟု သတ်မှတ်နိုင်သည်။ P0 rows များတွင် L3 evidence ရှိပြီး TC-006၊ TC-009 နှင့် TC-010 တွင်လည်း L3 evidence ရှိသည်။ Diagnostic location များသည် `file`၊ `line` နှင့် `column` အနေဖြင့် တည်ငြိမ်သည်။ Accepted program များတွင် runtime နှင့် static behavior ကိုက်ညီပြီး negative fixtures များသည် သတ်မှတ်ထားသော failure reason ဖြင့် fail သည်။ LSP သည် shared diagnostic vocabulary ကို အသုံးပြုပြီး English/Burmese documentation pair သည် synchronized ဖြစ်သည်။ Advanced generic declarations နှင့် inference များသည် ဤ release boundary ပြင်ပတွင် ရှိသည်။

@@ -1,6 +1,6 @@
 # P0 AST Foundation Status
 
-**Verified against Zap v2.2.2.**
+**Verified against Zap v2.2.3.**
 
 ## AST migration status
 
@@ -31,7 +31,7 @@ Sequence indexing is zero-based. A negative numeric index is invalid and produce
 
 ## Acceptance status
 
-The native suite currently passes **160 unit tests** and **254 core integration tests**. The AST boundary and native AST execution are active for all parser-owned programs, including function, method, export, and local-module bodies. Resource limits, typed diagnostics, and legacy source-line compatibility remain available only for legacy-created runtime functions and explicit compatibility tests.
+The native suite currently passes **232 unit tests** and **256 core integration tests**. The AST boundary and native AST execution are active for all parser-owned programs, including function, method, export, and local-module bodies. Resource limits, typed diagnostics, and legacy source-line compatibility remain available only for legacy-created runtime functions and explicit compatibility tests.
 
 ## P0 completion boundary
 

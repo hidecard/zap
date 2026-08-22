@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-08-22
+
+### Release summary
+- Runtime reliability hardening with bounded cycle-safe equality, checked borrow propagation, panic-free invariants, and synchronized bilingual documentation.
+
 ## [2.2.2] - 2026-08-22
 
 ### Release summary
