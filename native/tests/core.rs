@@ -5703,6 +5703,31 @@ fn runs_language_level_async_task_facade_end_to_end() {
 }
 
 #[test]
+fn async_function_invocation_eagerly_evaluates_before_scheduling_value() {
+    let file = std::env::temp_dir().join(format!(
+        "zap_async_eager_invocation_{}_{}.zp",
+        std::process::id(),
+        std::thread::current().name().unwrap_or("test")
+    ));
+    std::fs::write(
+        &file,
+        "async fn load() -> number:\n    say \"inside\"\n    return 7\nlet pending = load()\nsay \"after\"\nlet result: number = await pending\nsay result\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "inside\nafter\n7\n"
+    );
+}
+
+#[test]
 fn runs_language_level_async_cancellation_and_timeout_end_to_end() {
     let cases = [
         (

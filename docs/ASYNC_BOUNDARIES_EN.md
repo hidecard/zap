@@ -8,7 +8,9 @@ Zap provides a deterministic, single-threaded task executor for language-runtime
 
 ## Current deterministic executor
 
-The current executor stores tasks in insertion order and polls them with a no-op waker. `run_until_idle()` uses the configured maximum poll budget, while `run_with_budget()` returns a `RunReport` containing the number of polls, pending-task count, and whether the budget was exhausted. The executor can enforce a maximum task count and a maximum number of polls per run. Language `async fn` calls now schedule their result in the caller's `RuntimeState` and return a `ScheduledFuture` task handle; `await` and `task_join` drive the context-owned executor before consuming the result, while `task_is_ready` observes readiness without polling.
+The current executor stores tasks in insertion order and polls them with a no-op waker. `run_until_idle()` uses the configured maximum poll budget, while `run_with_budget()` returns a `RunReport` containing the number of polls, pending-task count, and whether the budget was exhausted. The executor can enforce a maximum task count and a maximum number of polls per run. Language `async fn` calls use the defined eager scheduled-value contract: invocation validates arguments and executes the function body immediately, including its observable effects, then schedules the completed result in the caller's `RuntimeState` and returns a `ScheduledFuture` task handle; `await` and `task_join` drive the context-owned executor before consuming that result, while `task_is_ready` observes readiness without polling.
+
+This eager contract is intentional for the current language surface. It does not claim that function execution is deferred until `await` or `join`; a future lazy-continuation design would require separate capture, cancellation, and context-lifetime semantics and is not part of this patch.
 
 | Contract | Current behavior |
 |---|---|
@@ -44,7 +46,7 @@ The matrix also runs `scripts/test_platform_archive.sh` on every runner. That re
 
 ## Stability rules
 
-The deterministic executor and the context-owned language scheduling boundary are the stable baseline for v2.2.1. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim parallel scheduling or production non-blocking I/O until the corresponding reactor and platform gates exist.
+The deterministic executor, eager language async scheduled-value contract, and context-owned language scheduling boundary are the stable baseline for v2.2.1. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim lazy continuation, parallel scheduling, or production non-blocking I/O until the corresponding semantic and reactor/platform gates exist.
 
 A future production implementation must add, at minimum:
 
@@ -56,4 +58,4 @@ A future production implementation must add, at minimum:
 
 ## Verification
 
-The current contract is verified by native tests for bounded polling, task limits, explicit terminal states, one-time admitted-task release, unknown/repeated joins, context-owned language-task readiness/completion, scheduler reset isolation, language `task_cancel` and `task_join_timeout`, cancellation precedence, timeout behavior, child-process cancellation, and the M2-VERIFY-02 target-native filesystem/process/socket/archive cases. These tests verify deterministic semantics and the documented adapter boundaries only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.
+The current contract is verified by native tests for bounded polling, task limits, eager async invocation output ordering, explicit terminal states, one-time admitted-task release, unknown/repeated joins, context-owned language-task readiness/completion, scheduler reset isolation, language `task_cancel` and `task_join_timeout`, cancellation precedence, timeout behavior, child-process cancellation, and the M2-VERIFY-02 target-native filesystem/process/socket/archive cases. These tests verify deterministic semantics and the documented adapter boundaries only; they do not certify lazy continuation, a production reactor, or forced cancellation of arbitrary blocking work.

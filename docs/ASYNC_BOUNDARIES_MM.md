@@ -8,7 +8,9 @@ Zap တွင် language-runtime စမ်းသပ်မှုများန�
 
 ## လက်ရှိ deterministic executor
 
-လက်ရှိ executor သည် task များကို ထည့်သွင်းသည့်အစီအစဉ်အတိုင်း သိမ်းဆည်းပြီး no-op waker ဖြင့် poll လုပ်ပါသည်။ `run_until_idle()` သည် သတ်မှတ်ထားသော အများဆုံး poll budget ကို အသုံးပြုပြီး `run_with_budget()` သည် poll အရေအတွက်၊ pending task အရေအတွက်နှင့် budget ကုန်ဆုံးခြင်း ရှိ/မရှိ ပါဝင်သော `RunReport` ကို ပြန်ပေးပါသည်။ Executor သည် task အများဆုံးအရေအတွက်နှင့် run တစ်ကြိမ်လျှင် poll အများဆုံးအရေအတွက်ကို ကန့်သတ်နိုင်ပါသည်။ Language `async fn` call များသည် caller ၏ `RuntimeState` ထဲတွင် result ကို schedule လုပ်ပြီး `ScheduledFuture` task handle ပြန်ပေးသည်။ `await` နှင့် `task_join` သည် result ကို consume မလုပ်မီ context ပိုင် executor ကို drive လုပ်ပြီး `task_is_ready` သည် poll မလုပ်ဘဲ readiness ကို စောင့်ကြည့်သည်။
+လက်ရှိ executor သည် task များကို ထည့်သွင်းသည့်အစီအစဉ်အတိုင်း သိမ်းဆည်းပြီး no-op waker ဖြင့် poll လုပ်ပါသည်။ `run_until_idle()` သည် သတ်မှတ်ထားသော အများဆုံး poll budget ကို အသုံးပြုပြီး `run_with_budget()` သည် poll အရေအတွက်၊ pending task အရေအတွက်နှင့် budget ကုန်ဆုံးခြင်း ရှိ/မရှိ ပါဝင်သော `RunReport` ကို ပြန်ပေးပါသည်။ Executor သည် task အများဆုံးအရေအတွက်နှင့် run တစ်ကြိမ်လျှင် poll အများဆုံးအရေအတွက်ကို ကန့်သတ်နိုင်ပါသည်။ Language `async fn` call များတွင် လက်ရှိသတ်မှတ်ထားသော eager scheduled-value contract ကို အသုံးပြုပါသည်။ Invocation အချိန်တွင် argument validation ပြုလုပ်ပြီး function body ကို observable effect များအပါအဝင် ချက်ချင်း execute လုပ်ကာ ပြီးစီးသော result ကို caller ၏ `RuntimeState` ထဲတွင် schedule လုပ်ပြီး `ScheduledFuture` task handle ပြန်ပေးသည်။ `await` နှင့် `task_join` သည် result ကို consume မလုပ်မီ context ပိုင် executor ကို drive လုပ်ပြီး `task_is_ready` သည် poll မလုပ်ဘဲ readiness ကို စောင့်ကြည့်သည်။
+
+ဤ eager contract သည် လက်ရှိ language surface အတွက် ရည်ရွယ်ချက်ရှိရှိ သတ်မှတ်ထားခြင်းဖြစ်သည်။ Function execution ကို `await` သို့မဟုတ် `join` အချိန်အထိ ရွှေ့ဆိုင်းသည်ဟု မဆိုလိုပါ။ အနာဂတ် lazy-continuation design အတွက် capture၊ cancellation နှင့် context-lifetime semantics သီးခြားလိုအပ်ပြီး ဤ patch တွင် မပါဝင်ပါ။
 
 | Contract | လက်ရှိအပြုအမူ |
 |---|---|
@@ -44,7 +46,7 @@ Matrix သည် runner တိုင်းတွင် `scripts/test_platform_ar
 
 ## Stability rules
 
-Deterministic executor နှင့် context-owned language scheduling boundary သည် v2.2.1 အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
+Deterministic executor၊ eager language async scheduled-value contract နှင့် context-owned language scheduling boundary သည် v2.2.1 အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ semantic၊ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် lazy continuation၊ parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
 
 အနာဂတ် production implementation တွင် အနည်းဆုံး အောက်ပါအချက်များ ပါဝင်ရမည်။
 
@@ -56,4 +58,4 @@ Deterministic executor နှင့် context-owned language scheduling boundar
 
 ## Verification
 
-လက်ရှိ contract ကို bounded polling၊ task limits၊ explicit terminal state၊ one-time admitted-task release၊ unknown/repeated join၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ language `task_cancel` နှင့် `task_join_timeout`၊ cancellation precedence၊ timeout behavior၊ child-process cancellation နှင့် M2-VERIFY-02 target-native filesystem/process/socket/archive case များအတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics နှင့် document လုပ်ထားသော adapter boundary များကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။
+လက်ရှိ contract ကို bounded polling၊ task limits၊ eager async invocation output ordering၊ explicit terminal state၊ one-time admitted-task release၊ unknown/repeated join၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ language `task_cancel` နှင့် `task_join_timeout`၊ cancellation precedence၊ timeout behavior၊ child-process cancellation နှင့် M2-VERIFY-02 target-native filesystem/process/socket/archive case များအတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics နှင့် document လုပ်ထားသော adapter boundary များကိုသာ စစ်ဆေးပြီး lazy continuation၊ production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။

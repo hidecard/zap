@@ -2676,6 +2676,8 @@ fn call_function_with_arguments(
         check_annotation("return", annotation, &value)?;
     }
     if f.is_async {
+        // Async language calls intentionally execute the body eagerly; only the
+        // completed value is scheduled for deterministic await/join observation.
         let task_id = context.state_mut().schedule_language_task(value)?;
         Ok(Value::ScheduledFuture(task_id))
     } else {
@@ -2829,6 +2831,8 @@ fn call_method_with_arguments(
         check_annotation("return", annotation, &value)?;
     }
     if f.is_async {
+        // Keep method calls aligned with function calls: execute eagerly and
+        // schedule only the completed value for await/join.
         let task_id = context.state_mut().schedule_language_task(value)?;
         Ok(Value::ScheduledFuture(task_id))
     } else {
