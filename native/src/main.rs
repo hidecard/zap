@@ -205,8 +205,28 @@ impl<'a> ExprParser<'a> {
                 )?
                 .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
+            Token::Name(n) if n == "task_join_timeout" && *self.peek() == Token::LParen => {
+                self.take();
+                let value = self.parse(0)?;
+                if self.take() != Token::Comma {
+                    return Err(format!("expected comma in {n}"));
+                }
+                let poll_budget = self.parse(0)?;
+                if self.take() != Token::RParen {
+                    return Err(format!("expected ) after {n}"));
+                }
+                direct_builtin_with_context(
+                    n.as_str(),
+                    vec![value, poll_budget],
+                    Some(&mut *self.context),
+                )?
+                .ok_or_else(|| format!("unknown standard function: {n}"))?
+            }
             Token::Name(n)
-                if (n == "spawn" || n == "task_join" || n == "task_is_ready")
+                if (n == "spawn"
+                    || n == "task_join"
+                    || n == "task_is_ready"
+                    || n == "task_cancel")
                     && *self.peek() == Token::LParen =>
             {
                 self.take();

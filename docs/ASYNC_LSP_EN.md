@@ -2,9 +2,9 @@
 
 ## Status
 
-Zap P2 now includes a deterministic async language layer, a bounded threaded I/O adapter, and an editor protocol foundation. The deterministic executor remains stable-Rust compatible, while the language supports `async fn`, deferred `Future` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
+Zap P2 now includes a deterministic async language layer, a bounded threaded I/O adapter, and an editor protocol foundation. The deterministic executor remains stable-Rust compatible, while the language supports `async fn`, context-owned `ScheduledFuture` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
 
-The implementation separates deterministic language scheduling from production-oriented blocking adapters. An async call currently evaluates its body to a completed `Future` value, and `await` unwraps that value during evaluation. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken` and `Cancellable` provide cooperative cancellation. `ThreadedRuntime` supplies a bounded fixed worker set for explicitly submitted blocking work and asynchronous file reads; it does not replace the deterministic language executor.
+The implementation separates deterministic language scheduling from production-oriented blocking adapters. An async call schedules its result in the caller's `RuntimeState` and returns a context-owned `ScheduledFuture`; `await` drives the executor and unwraps that value. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken`, `Cancellable`, and the language `task_cancel` API provide cooperative cancellation. `ThreadedRuntime` supplies a bounded fixed worker set for explicitly submitted blocking work and asynchronous file reads; it does not replace the deterministic language executor.
 
 ## Async Runtime
 
@@ -24,9 +24,11 @@ The native runtime exposes three deterministic executor operations:
 | `ThreadedRuntime::read_file_async(path)` | Read one regular file asynchronously with a configured byte limit and typed worker-join errors. |
 | `ThreadedRuntime::tcp_exchange(address, request)` | Perform one bounded non-blocking TCP request/response exchange with a response-byte cap and deadline. |
 | `ThreadedRuntime::process_async(command, arguments)` | Run a process asynchronously with bounded stdout/stderr capture, a hard deadline, and structured output. |
-| `spawn(future)` | Language-level facade that returns the completed `Future` value for an async expression. |
-| `task_join(value)` | Validate and unwrap a language-level `Future` value. |
-| `task_is_ready(value)` | Check whether a language-level task value is ready without consuming it. |
+| `spawn(future)` | Language-level facade that preserves or schedules a context-owned `ScheduledFuture`. |
+| `task_join(value)` | Drive the context executor and consume a language-level task result. |
+| `task_is_ready(value)` | Check whether a language-level task value is ready without consuming or polling it. |
+| `task_cancel(value)` | Request cooperative cancellation for a pending language task and return whether it was accepted. |
+| `task_join_timeout(value, poll_budget)` | Drive at most the supplied poll budget and report `TimedOut` if the task remains pending. |
 
 The deterministic executor has no external runtime dependency. `RuntimeLimits` bounds task count and polls per run, and `RunReport` exposes the number of polls and remaining tasks. The separate `ThreadedRuntime` uses only Rust's standard library: `ThreadRuntimeLimits` bounds worker count, admitted tasks, and maximum file-read bytes. Worker panics become `ThreadJoinError::WorkerPanicked`, queue admission is rejected at the task limit, and completed workers wake their joiners. File reads require regular files, reject directories and other non-files, and never read beyond the configured byte limit. Cooperative cancellation remains the default for deterministic tasks, while process adapters provide explicit child termination on cancellation or deadline; arbitrary foreign blocking calls remain outside the safe cancellation contract.
 
@@ -38,7 +40,7 @@ The native runtime exposes a bounded threaded adapter for blocking operations th
 
 ## Async Language Syntax
 
-Declare an asynchronous function by placing `async` before `fn`. The function call returns a `Future` value rather than the plain result. Use `await` to obtain the completed result:
+Declare an asynchronous function by placing `async` before `fn`. The function call returns a context-owned `ScheduledFuture` rather than the plain result. Use `await` to drive the deterministic executor and obtain the completed result:
 
 ```zap
 async fn load_version() -> number:
@@ -49,7 +51,7 @@ let version: number = await pending
 say version
 ```
 
-An `async` function may use the same parameter and return-type annotations as an ordinary function. The evaluator preserves the declaration flag on the runtime function and validates the declared result before wrapping it in a `Future`.
+An `async` function may use the same parameter and return-type annotations as an ordinary function. The evaluator preserves the declaration flag on the runtime function, validates the declared result, and schedules it through the caller's `RuntimeState`.
 
 `await` is an expression and may be used in a declaration, assignment, return expression, or nested call where an expression is accepted:
 
@@ -61,7 +63,7 @@ let value = await answer()
 say value + 1
 ```
 
-The current deterministic model has no background threads: a `Future` is a stable runtime value containing the completed result, and `await` unwraps it. The language-level task facade is intentionally eager in this slice: `spawn(async_call())` creates a task-shaped `Future` from the already evaluated async result, while `task_join` unwraps it and `task_is_ready` checks it without consuming it. Awaiting or joining a non-Future value is rejected with a runtime error instead of silently changing the value.
+The current deterministic model has no background threads: a `ScheduledFuture` is a stable runtime value containing a per-run task ID, and `await` or `task_join` drives the context executor before consuming its result. `spawn(async_call())` preserves the scheduled handle, while `task_is_ready` checks readiness without consuming or polling it. `task_cancel` requests cooperative cancellation, and `task_join_timeout` bounds executor polling with a deterministic `TimedOut` failure. Awaiting or joining a non-Future value is rejected with a runtime error instead of silently changing the value.
 
 ```zap
 async fn answer() -> number:
@@ -111,7 +113,7 @@ Diagnostics continue to reuse Zap’s existing lint implementation. This keeps c
 
 ## Tooling Synchronization
 
-The formatter and LSP now share the finalized async vocabulary. Completion advertises `spawn`, `task_join`, and `task_is_ready` with stable descriptions, while the VS Code TextMate grammar highlights the same builtins as callable Zap functions. The extension validation script parses the grammar and rejects a package when any async builtin is missing, preventing drift between the language facade and editor assets.
+The formatter and LSP now share the finalized async vocabulary. Completion advertises `spawn`, `task_join`, `task_is_ready`, `task_cancel`, and `task_join_timeout` with stable descriptions, while the VS Code TextMate grammar highlights the same builtins as callable Zap functions. The extension validation script parses the grammar and rejects a package when any async builtin is missing, preventing drift between the language facade and editor assets.
 
 ## Production Deployment Boundaries
 

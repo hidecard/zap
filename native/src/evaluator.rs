@@ -384,19 +384,19 @@ fn async_capabilities_value() -> Value {
     );
     values.insert(
         "language_task_surface".into(),
-        Value::Text("eager_future_facade".into()),
+        Value::Text("executor_backed_scheduled_future".into()),
     );
     values.insert(
         "language_level_scheduling".into(),
-        Value::Text("deferred".into()),
+        Value::Text("runtime_state_executor".into()),
     );
     values.insert(
         "language_level_cancellation".into(),
-        Value::Text("deferred".into()),
+        Value::Text("cooperative_token".into()),
     );
     values.insert(
         "language_level_timeout".into(),
-        Value::Text("deferred".into()),
+        Value::Text("poll_budget".into()),
     );
     values.insert(
         "foreign_blocking_interrupt".into(),
@@ -524,11 +524,10 @@ pub(crate) fn direct_builtin_with_context(
                     let context = context
                         .as_deref_mut()
                         .ok_or("task_join requires an execution context")?;
-                    context.state_mut().run_language_tasks_until_idle();
                     let value = context
                         .state_mut()
-                        .take_language_task(*id)
-                        .ok_or_else(|| format!("language task {id} did not complete"))?;
+                        .join_language_task(*id, None)
+                        .map_err(|error| format!("language task {id} failed: {error:?}"))?;
                     Ok(Some(value))
                 }
                 _ => Err("task_join expects a future value".into()),
@@ -547,6 +546,43 @@ pub(crate) fn direct_builtin_with_context(
                     )))
                 }
                 _ => Err("task_is_ready expects a future value".into()),
+            }
+        }
+        "task_cancel" => {
+            expect(1)?;
+            match &args[0] {
+                Value::ScheduledFuture(id) => {
+                    let context = context
+                        .as_deref_mut()
+                        .ok_or("task_cancel requires an execution context")?;
+                    Ok(Some(Value::Bool(
+                        context.state_mut().cancel_language_task(*id),
+                    )))
+                }
+                Value::Future(_) => Ok(Some(Value::Bool(false))),
+                _ => Err("task_cancel expects a future value".into()),
+            }
+        }
+        "task_join_timeout" => {
+            expect(2)?;
+            let Value::Number(ticks) = args[1] else {
+                return Err("task_join_timeout expects poll budget as a number".into());
+            };
+            let budget = usize::try_from(ticks)
+                .map_err(|_| "task_join_timeout expects a non-negative poll budget".to_string())?;
+            match &args[0] {
+                Value::ScheduledFuture(id) => {
+                    let context = context
+                        .as_deref_mut()
+                        .ok_or("task_join_timeout requires an execution context")?;
+                    let value = context
+                        .state_mut()
+                        .join_language_task(*id, Some(budget))
+                        .map_err(|error| format!("language task {id} failed: {error:?}"))?;
+                    Ok(Some(value))
+                }
+                Value::Future(value) => Ok(Some((**value).clone())),
+                _ => Err("task_join_timeout expects a future value".into()),
             }
         }
         "log_record" | "log_json" => {
@@ -2260,13 +2296,10 @@ fn ast_expression_with_context(
         }
         Expr::Await(value) => match ast_expression_with_context(value, vars, funcs, context)? {
             Value::Future(value) => Ok(*value),
-            Value::ScheduledFuture(id) => {
-                context.state_mut().run_language_tasks_until_idle();
-                context
-                    .state_mut()
-                    .take_language_task(id)
-                    .ok_or_else(|| format!("language task {id} did not complete"))
-            }
+            Value::ScheduledFuture(id) => context
+                .state_mut()
+                .join_language_task(id, None)
+                .map_err(|error| format!("language task {id} failed: {error:?}")),
             _ => Err("await expects a future value".into()),
         },
         Expr::Propagate(_) => {
@@ -2303,9 +2336,11 @@ fn ast_expression_with_context(
                         .iter()
                         .map(|argument| argument.value.clone())
                         .collect::<Vec<_>>();
-                    if let Some(value) =
-                        direct_builtin_with_context(name, positional.clone(), Some(&mut *context))?
-                    {
+                    if let Some(value) = super::direct_builtin_with_context(
+                        name,
+                        positional.clone(),
+                        Some(&mut *context),
+                    )? {
                         Ok(value)
                     } else if let Some(value) =
                         direct_io_builtin_with_context(name, &positional, Some(context))?
@@ -4184,6 +4219,60 @@ mod tests {
         assert_eq!(error, "spawn expects a future value");
     }
     #[test]
+    fn language_task_apis_cancel_and_timeout_deterministically() {
+        let mut cancellation_context = ExecutionContext::new();
+        let cancellation_id = cancellation_context
+            .state_mut()
+            .schedule_language_task(Value::Number(7))
+            .expect("task should be admitted");
+        let cancellation_handle = Value::ScheduledFuture(cancellation_id);
+        assert_eq!(
+            super::direct_builtin_with_context(
+                "task_cancel",
+                vec![cancellation_handle.clone()],
+                Some(&mut cancellation_context),
+            )
+            .expect("task_cancel should succeed"),
+            Some(Value::Bool(true))
+        );
+        let cancellation_error = super::direct_builtin_with_context(
+            "task_join",
+            vec![cancellation_handle],
+            Some(&mut cancellation_context),
+        )
+        .expect_err("cancelled task join should fail");
+        assert_eq!(cancellation_error, "language task 1 failed: Cancelled");
+
+        let mut timeout_context = ExecutionContext::new();
+        let timeout_id = timeout_context
+            .state_mut()
+            .schedule_language_task(Value::Number(9))
+            .expect("task should be admitted");
+        let timeout_error = super::direct_builtin_with_context(
+            "task_join_timeout",
+            vec![Value::ScheduledFuture(timeout_id), Value::Number(0)],
+            Some(&mut timeout_context),
+        )
+        .expect_err("zero poll budget should time out the task");
+        assert_eq!(timeout_error, "language task 1 failed: TimedOut");
+
+        let mut bounded_context = ExecutionContext::new();
+        let bounded_id = bounded_context
+            .state_mut()
+            .schedule_language_task(Value::Number(11))
+            .expect("task should be admitted");
+        assert_eq!(
+            super::direct_builtin_with_context(
+                "task_join_timeout",
+                vec![Value::ScheduledFuture(bounded_id), Value::Number(1)],
+                Some(&mut bounded_context),
+            )
+            .expect("one poll should complete the task"),
+            Some(Value::Number(11))
+        );
+    }
+
+    #[test]
     fn async_capabilities_builtin_reports_explicit_boundaries() {
         let Value::Map(capabilities) = direct_builtin("async_capabilities", vec![])
             .expect("async_capabilities should succeed")
@@ -4197,11 +4286,15 @@ mod tests {
         );
         assert_eq!(
             capabilities.get("language_task_surface"),
-            Some(&Value::Text("eager_future_facade".into()))
+            Some(&Value::Text("executor_backed_scheduled_future".into()))
         );
         assert_eq!(
             capabilities.get("language_level_cancellation"),
-            Some(&Value::Text("deferred".into()))
+            Some(&Value::Text("cooperative_token".into()))
+        );
+        assert_eq!(
+            capabilities.get("language_level_timeout"),
+            Some(&Value::Text("poll_budget".into()))
         );
         assert_eq!(
             capabilities.get("foreign_blocking_interrupt"),

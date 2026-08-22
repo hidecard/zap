@@ -32,7 +32,7 @@ Multi-thread scheduling သည် သီးခြား boundary တစ်ခု
 
 ## Cancellation နှင့် timeout semantics
 
-Cancellation သည် cooperative ဖြစ်ပြီး သတ်မှတ်ထားသော precedence ရှိပါသည်။ Cancellation-aware wrapper သည် inner future ကို poll မလုပ်မီ token ကို စစ်ဆေးပါသည်။ Cancel လုပ်ထားသော task သည် တိတ်တဆိတ် ပျောက်ကွယ်သွားခြင်းမဟုတ်ဘဲ cancellation result ဖြင့် ပြီးဆုံးပါသည်။ Timeout ကို operation နှင့် timer future တို့၏ race အဖြစ် အကောင်အထည်ဖော်သင့်ပြီး shutdown တွင် timer နှင့် operation နှစ်ခုလုံး ပါဝင်ရမည်။ Timeout သည် underlying blocking operation ကို အတင်းအကျပ် terminate လုပ်ပြီးပြီဟု မဆိုလိုပါ။
+Cancellation သည် cooperative ဖြစ်ပြီး သတ်မှတ်ထားသော precedence ရှိပါသည်။ Cancellation-aware wrapper သည် inner future ကို poll မလုပ်မီ token ကို စစ်ဆေးပါသည်။ Language `task_cancel(future)` API သည် context ပိုင် pending task အတွက် cancellation request ပြုလုပ်ပြီး request လက်ခံ/မလက်ခံကို ပြန်ပေးသည်။ ထို့နောက် `task_join` က deterministic `Cancelled` failure ကို report လုပ်သည်။ `task_join_timeout(future, poll_budget)` သည် ပေးထားသော poll budget အများဆုံးအထိ drive လုပ်ပြီး task မ ready ဖြစ်သေးပါက deterministic `TimedOut` failure ကို report လုပ်သည်။ Cancel လုပ်ထားသော task သည် တိတ်တဆိတ် ပျောက်ကွယ်သွားခြင်းမဟုတ်ဘဲ cancellation result ဖြင့် ပြီးဆုံးပါသည်။ Timeout ကို operation နှင့် timer future တို့၏ race အဖြစ် အကောင်အထည်ဖော်သင့်ပြီး shutdown တွင် timer နှင့် operation နှစ်ခုလုံး ပါဝင်ရမည်။ Timeout သည် underlying blocking operation ကို အတင်းအကျပ် terminate လုပ်ပြီးပြီဟု မဆိုလိုပါ။
 
 Task error များသည် join handle များမှ typed result အဖြစ် ပြန့်ပွားပါသည်။ Caller က join handle ကို drop လုပ်ပါက result ကို ဆက်လက် observe မလုပ်နိုင်တော့သော်လည်း API က ထိုအပြုအမူကို တိတိကျကျ သတ်မှတ်မထားလျှင် handle drop သည် အထွေထွေ cancellation guarantee မဟုတ်ပါ။ Production API များသည် cancellation သည် best effort ဟုတ်/မဟုတ်၊ completion မတိုင်မီ resource များ ပိတ်သိမ်းမည်/မည်မဟုတ်နှင့် reactor shutdown error များကို မည်သို့ report လုပ်မည်ကို သတ်မှတ်ရမည်။
 
@@ -50,4 +50,4 @@ Deterministic executor နှင့် context-owned language scheduling boundar
 
 ## Verification
 
-လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ cancellation precedence၊ timeout behavior နှင့် child-process cancellation အတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics ကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။
+လက်ရှိ contract ကို bounded polling၊ task limits၊ join result၊ context-owned language-task readiness/completion၊ scheduler reset isolation၊ language `task_cancel` နှင့် `task_join_timeout`၊ cancellation precedence၊ timeout behavior နှင့် child-process cancellation အတွက် native tests များဖြင့် စစ်ဆေးထားပါသည်။ ထို tests များသည် deterministic semantics ကိုသာ စစ်ဆေးပြီး production reactor သို့မဟုတ် arbitrary blocking work အတွက် forced cancellation ကို အတည်ပြုခြင်း မဟုတ်ပါ။

@@ -20,7 +20,7 @@ Zap ကို စတင်လေ့လာသူများအတွက် ရ�
 
 ## Project Status
 
-Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။
+Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ cooperative `task_cancel`၊ poll-budget `task_join_timeout` ပါသော async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|

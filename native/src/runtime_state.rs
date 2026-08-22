@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::async_runtime::AsyncRuntime;
+use crate::async_runtime::{AsyncRuntime, Cancellable, CancellationToken};
 use crate::{Function, Value};
 
 pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<Function>>);
@@ -206,10 +206,18 @@ impl ObjectStore {
 
 pub(crate) type LanguageTaskId = u64;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum LanguageTaskError {
+    Cancelled,
+    TimedOut,
+}
+
 #[derive(Default)]
 struct LanguageScheduler {
     runtime: AsyncRuntime,
-    outputs: HashMap<LanguageTaskId, Rc<RefCell<Option<Value>>>>,
+    outputs: HashMap<LanguageTaskId, Rc<RefCell<Option<Result<Value, LanguageTaskError>>>>>,
+    tokens: HashMap<LanguageTaskId, CancellationToken>,
+    timed_out: std::collections::HashSet<LanguageTaskId>,
     next_id: LanguageTaskId,
 }
 
@@ -230,12 +238,18 @@ impl LanguageScheduler {
         self.next_id = id;
         let output = Rc::new(RefCell::new(None));
         let task_output = output.clone();
+        let token = CancellationToken::new();
+        let task_token = token.clone();
         self.runtime
             .spawn_limited(async move {
-                *task_output.borrow_mut() = Some(value);
+                let result = Cancellable::new(async move { value }, task_token)
+                    .await
+                    .map_err(|_| LanguageTaskError::Cancelled);
+                *task_output.borrow_mut() = Some(result);
             })
             .map_err(|_| "language task scheduler rejected the task".to_string())?;
         self.outputs.insert(id, output);
+        self.tokens.insert(id, token);
         Ok(id)
     }
 
@@ -249,13 +263,49 @@ impl LanguageScheduler {
             .is_some_and(|output| output.borrow().is_some())
     }
 
-    fn take(&mut self, id: LanguageTaskId) -> Option<Value> {
-        let output = self.outputs.get(&id)?.clone();
-        let value = output.borrow_mut().take();
-        if value.is_some() {
-            self.outputs.remove(&id);
+    fn cancel(&mut self, id: LanguageTaskId) -> bool {
+        if self.is_ready(id) {
+            return false;
         }
-        value
+        let Some(token) = self.tokens.get(&id) else {
+            return false;
+        };
+        token.cancel();
+        true
+    }
+
+    fn join(
+        &mut self,
+        id: LanguageTaskId,
+        poll_budget: Option<usize>,
+    ) -> Result<Value, LanguageTaskError> {
+        match poll_budget {
+            Some(budget) => {
+                self.runtime.run_with_budget(budget);
+                if !self.is_ready(id) {
+                    self.timed_out.insert(id);
+                    if let Some(token) = self.tokens.get(&id) {
+                        token.cancel();
+                    }
+                    self.runtime.run_with_budget(1);
+                }
+            }
+            None => self.run_until_idle(),
+        }
+        let output = self.outputs.get(&id).cloned();
+        let value = output.and_then(|output| output.borrow_mut().take());
+        self.outputs.remove(&id);
+        self.tokens.remove(&id);
+        let timed_out = self.timed_out.remove(&id);
+        match value {
+            Some(Ok(value)) => Ok(value),
+            Some(Err(LanguageTaskError::Cancelled)) if timed_out => {
+                Err(LanguageTaskError::TimedOut)
+            }
+            Some(Err(error)) => Err(error),
+            None if timed_out => Err(LanguageTaskError::TimedOut),
+            None => Err(LanguageTaskError::Cancelled),
+        }
     }
 }
 
@@ -375,6 +425,7 @@ impl RuntimeState {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn run_language_tasks_until_idle(&mut self) {
         self.language_scheduler.run_until_idle();
     }
@@ -383,12 +434,18 @@ impl RuntimeState {
         self.language_scheduler.is_ready(id)
     }
 
-    pub(crate) fn take_language_task(&mut self, id: LanguageTaskId) -> Option<Value> {
-        let value = self.language_scheduler.take(id);
-        if value.is_some() {
-            self.memory_budget.complete_task();
-        }
-        value
+    pub(crate) fn cancel_language_task(&mut self, id: LanguageTaskId) -> bool {
+        self.language_scheduler.cancel(id)
+    }
+
+    pub(crate) fn join_language_task(
+        &mut self,
+        id: LanguageTaskId,
+        poll_budget: Option<usize>,
+    ) -> Result<Value, LanguageTaskError> {
+        let result = self.language_scheduler.join(id, poll_budget);
+        self.memory_budget.complete_task();
+        result
     }
 }
 
@@ -525,8 +582,8 @@ mod tests {
         context.state_mut().run_language_tasks_until_idle();
         assert!(context.state().language_task_is_ready(id));
         assert_eq!(
-            context.state_mut().take_language_task(id),
-            Some(Value::Number(7))
+            context.state_mut().join_language_task(id, None),
+            Ok(Value::Number(7))
         );
         assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
 

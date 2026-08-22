@@ -181,6 +181,14 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
         domain: "async",
     },
     PublicBuiltin {
+        name: "task_cancel",
+        domain: "async",
+    },
+    PublicBuiltin {
+        name: "task_join_timeout",
+        domain: "async",
+    },
+    PublicBuiltin {
         name: "async_capabilities",
         domain: "async",
     },

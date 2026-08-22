@@ -136,7 +136,18 @@ async fn answer() -> number:
 say (await answer()) + 1
 ```
 
-The current runtime executes async bodies deterministically and does not create background threads. Deterministic timers, cooperative cancellation, task budgets, and suspension controls are supported; richer task lifecycle semantics and executor-backed language scheduling remain roadmap items. See the [Async/LSP guide](ASYNC_LSP_EN.md) for the executor and editor protocol details.
+The current runtime executes async bodies deterministically and does not create background threads. Language async results are executor-backed `ScheduledFuture` handles owned by the current run. Use `task_cancel(handle)` for cooperative cancellation, `task_join(handle)` to consume a result, and `task_join_timeout(handle, poll_budget)` to enforce a deterministic poll budget:
+
+```zap
+async fn load() -> number:
+    return 7
+
+let handle = load()
+say task_is_ready(handle)       # false before executor polling
+say task_join_timeout(handle, 1) # 7
+```
+
+A cancelled join reports a deterministic `Cancelled` failure, while an exhausted poll budget reports `TimedOut`. Deterministic timers, task budgets, and suspension controls remain supported; this language scheduler is not a production I/O reactor. See the [Async/LSP guide](ASYNC_LSP_EN.md) for the executor and editor protocol details.
 
 ## Classes
 

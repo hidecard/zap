@@ -207,7 +207,9 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
         ("await", "Await a Future value"),
         ("spawn", "Create a task from a Future"),
         ("task_join", "Join a spawned task"),
-        ("task_is_ready", "Check task readiness"),
+        ("task_is_ready", "Check task readiness without polling"),
+        ("task_cancel", "Request cooperative task cancellation"),
+        ("task_join_timeout", "Join a task with a poll budget"),
     ];
     for line in source.lines() {
         let declaration = line.trim();
@@ -808,13 +810,19 @@ mod tests {
             .iter()
             .filter_map(|item| item["label"].as_str())
             .collect::<Vec<_>>();
-        for expected in ["spawn", "task_join", "task_is_ready"] {
+        for expected in [
+            "spawn",
+            "task_join",
+            "task_is_ready",
+            "task_cancel",
+            "task_join_timeout",
+        ] {
             assert!(
                 labels.contains(&expected),
                 "missing completion item: {expected}"
             );
         }
-        assert_eq!(labels.len(), 15);
+        assert_eq!(labels.len(), 17);
     }
 
     #[test]

@@ -2,9 +2,9 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap P2 တွင် deterministic async language layer၊ bounded threaded I/O adapter နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Deterministic executor သည် stable Rust နှင့် ကိုက်ညီပြီး Language အနေဖြင့် `async fn`၊ deferred `Future` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
+Zap P2 တွင် deterministic async language layer၊ bounded threaded I/O adapter နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Deterministic executor သည် stable Rust နှင့် ကိုက်ညီပြီး Language အနေဖြင့် `async fn`၊ context-owned `ScheduledFuture` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
 
-Deterministic language scheduling နှင့် production-oriented blocking adapter များကို သီးခြားခွဲထားပါသည်။ လက်ရှိတွင် async call သည် function body ကို run ပြီး completed `Future` value အဖြစ် ပြန်ပေးသည်။ `await` သည် ထို value ကို evaluation အတွင်း unwrap လုပ်သည်။ `delay_ticks`၊ `yield_now`၊ poll budget နှင့် runtime task limit များသည် deterministic scheduling control များကို ပေးပြီး `CancellationToken` နှင့် `Cancellable` သည် cooperative cancellation ပေးပါသည်။ `ThreadedRuntime` သည် explicitly submit လုပ်ထားသော blocking work နှင့် asynchronous file read များအတွက် bounded fixed worker set ကို ပေးပြီး deterministic language executor ကို အစားမထိုးပါ။
+Deterministic language scheduling နှင့် production-oriented blocking adapter များကို သီးခြားခွဲထားပါသည်။ Async call သည် caller ၏ `RuntimeState` ထဲတွင် result ကို schedule လုပ်ပြီး context-owned `ScheduledFuture` ပြန်ပေးသည်။ `await` သည် executor ကို drive လုပ်ပြီး ထို value ကို unwrap လုပ်သည်။ `delay_ticks`၊ `yield_now`၊ poll budget နှင့် runtime task limit များသည် deterministic scheduling control များကို ပေးပြီး `CancellationToken`၊ `Cancellable` နှင့် language `task_cancel` API သည် cooperative cancellation ပေးပါသည်။ `ThreadedRuntime` သည် explicitly submit လုပ်ထားသော blocking work နှင့် asynchronous file read များအတွက် bounded fixed worker set ကို ပေးပြီး deterministic language executor ကို အစားမထိုးပါ။
 
 ## Async Runtime
 
@@ -24,9 +24,11 @@ Native runtime တွင် deterministic executor operation သုံးမျ�
 | `ThreadedRuntime::read_file_async(path)` | Regular file တစ်ခုကို သတ်မှတ်ထားသော byte limit အတွင်း asynchronous ဖတ်သည်။ |
 | `ThreadedRuntime::tcp_exchange(address, request)` | Response byte cap နှင့် deadline ပါသော bounded non-blocking TCP request/response exchange ကို လုပ်ဆောင်သည်။ |
 | `ThreadedRuntime::process_async(command, arguments)` | stdout/stderr capture limit၊ hard deadline နှင့် structured output ပါသော process ကို asynchronous run လုပ်သည်။ |
-| `spawn(future)` | Language-level facade အဖြစ် async expression ၏ completed `Future` value ကို ပြန်ပေးသည်။ |
-| `task_join(value)` | Language-level `Future` value ကို စစ်ဆေးပြီး unwrap လုပ်သည်။ |
-| `task_is_ready(value)` | Language-level task value ကို မစားသုံးဘဲ ready ဖြစ်/မဖြစ် စစ်ဆေးသည်။ |
+| `spawn(future)` | Language-level facade အဖြစ် context-owned `ScheduledFuture` ကို ထိန်းသိမ်း သို့မဟုတ် schedule လုပ်သည်။ |
+| `task_join(value)` | Context executor ကို drive လုပ်ပြီး language task result ကို consume လုပ်သည်။ |
+| `task_is_ready(value)` | Language task value ကို မစားသုံးဘဲ၊ poll မလုပ်ဘဲ ready ဖြစ်/မဖြစ် စစ်ဆေးသည်။ |
+| `task_cancel(value)` | Pending language task အတွက် cooperative cancellation request ပြုလုပ်ပြီး လက်ခံ/မလက်ခံ ပြန်ပေးသည်။ |
+| `task_join_timeout(value, poll_budget)` | Poll budget အများဆုံးအထိ drive လုပ်ပြီး task pending ဖြစ်နေသေးပါက `TimedOut` ပြန်ပေးသည်။ |
 
 Deterministic executor သည် external runtime dependency မရှိပါ။ `RuntimeLimits` သည် task count နှင့် poll count ကို ကန့်သတ်ပြီး `RunReport` သည် poll အရေအတွက်နှင့် ကျန် task အရေအတွက်ကို ဖော်ပြသည်။ သီးခြား `ThreadedRuntime` သည် Rust standard library ကိုသာ အသုံးပြုပြီး `ThreadRuntimeLimits` ဖြင့် worker count၊ admitted task count နှင့် maximum file-read bytes များကို ကန့်သတ်သည်။ Worker panic များကို `ThreadJoinError::WorkerPanicked` အဖြစ် ပြောင်းပေးပြီး task limit ကျော်လွန်သော admission ကို ငြင်းပယ်ကာ worker ပြီးဆုံးချိန်တွင် joiner ကို wake လုပ်သည်။ File read သည် regular file များကိုသာ ခွင့်ပြုပြီး directory သို့မဟုတ် အခြား non-file များကို ငြင်းပယ်ကာ byte limit ထက် မပိုဘဲ ဖတ်သည်။ Deterministic task များအတွက် cooperative cancellation ကို default အဖြစ်ထားရှိပြီး process adapter များတွင် cancellation သို့မဟုတ် deadline ရောက်ပါက child process ကို explicit terminate လုပ်နိုင်သည်။ Zap မပိုင်သော arbitrary blocking call များအတွက် safe forced cancellation မပေးပါ။
 
@@ -38,7 +40,7 @@ Deterministic language executor ပေါ်တွင် မ run သင့်သ
 
 ## Async Language Syntax
 
-`fn` ရှေ့တွင် `async` ထည့်ပြီး asynchronous function ကြေညာနိုင်ပါသည်။ Function call သည် ပုံမှန် result အစား `Future` value ပြန်ပေးပြီး completed result ရယူရန် `await` ကို အသုံးပြုရပါသည်။
+`fn` ရှေ့တွင် `async` ထည့်ပြီး asynchronous function ကြေညာနိုင်ပါသည်။ Function call သည် ပုံမှန် result အစား context-owned `ScheduledFuture` value ပြန်ပေးပြီး deterministic executor ကို drive လုပ်ကာ completed result ရယူရန် `await` ကို အသုံးပြုရပါသည်။
 
 ```zap
 async fn load_version() -> number:
@@ -49,7 +51,7 @@ let version: number = await pending
 say version
 ```
 
-`async` function သည် ပုံမှန် function ကဲ့သို့ parameter နှင့် return-type annotation များကို အသုံးပြုနိုင်ပါသည်။ Evaluator သည် runtime function ပေါ်တွင် async declaration flag ကို ထိန်းသိမ်းပြီး declared result ကို validate လုပ်ကာ `Future` ထဲ wrap လုပ်ပါသည်။
+`async` function သည် ပုံမှန် function ကဲ့သို့ parameter နှင့် return-type annotation များကို အသုံးပြုနိုင်ပါသည်။ Evaluator သည် runtime function ပေါ်တွင် async declaration flag ကို ထိန်းသိမ်းပြီး declared result ကို validate လုပ်ကာ caller ၏ `RuntimeState` မှတစ်ဆင့် schedule လုပ်ပါသည်။
 
 `await` သည် expression ဖြစ်သောကြောင့် declaration၊ assignment၊ return expression သို့မဟုတ် nested call များထဲတွင် အသုံးပြုနိုင်ပါသည်။
 
@@ -61,7 +63,7 @@ let value = await answer()
 say value + 1
 ```
 
-လက်ရှိ deterministic model တွင် background thread မရှိပါ။ `Future` သည် completed result ကို ထိန်းသိမ်းထားသော stable runtime value ဖြစ်ပြီး `await` သည် ၎င်းကို unwrap လုပ်ပါသည်။ ဤ slice တွင် language-level task facade သည် eager ဖြစ်ပါသည်။ `spawn(async_call())` သည် အရင် evaluation လုပ်ပြီးသား async result မှ task ပုံစံ `Future` ကို ဖန်တီးပေးသည်။ `task_join` သည် ၎င်းကို unwrap လုပ်ပြီး `task_is_ready` သည် value ကို မစားသုံးဘဲ ready အခြေအနေကို စစ်ဆေးသည်။ `Future` မဟုတ်သော value ကို await သို့မဟုတ် join လုပ်ပါက value ကို တိတ်တဆိတ် ပြောင်းလဲမည့်အစား runtime error ပြန်ပေးပါသည်။
+လက်ရှိ deterministic model တွင် background thread မရှိပါ။ `ScheduledFuture` သည် per-run task ID ပါသော stable runtime value ဖြစ်ပြီး `await` သို့မဟုတ် `task_join` သည် result ကို consume မလုပ်မီ context executor ကို drive လုပ်ပါသည်။ `spawn(async_call())` သည် scheduled handle ကို ထိန်းသိမ်းပြီး `task_is_ready` သည် consume သို့မဟုတ် poll မလုပ်ဘဲ readiness ကို စစ်ဆေးသည်။ `task_cancel` သည် cooperative cancellation request ပြုလုပ်ပြီး `task_join_timeout` သည် executor poll ကို ကန့်သတ်ကာ deterministic `TimedOut` failure ပြန်ပေးသည်။ `Future` မဟုတ်သော value ကို await သို့မဟုတ် join လုပ်ပါက value ကို တိတ်တဆိတ် ပြောင်းလဲမည့်အစား runtime error ပြန်ပေးပါသည်။
 
 ```zap
 async fn answer() -> number:
@@ -103,7 +105,7 @@ Diagnostics များကို Zap ၏ ရှိပြီးသား lint im
 
 ## Tooling Synchronization
 
-Formatter နှင့် LSP တို့သည် finalized async vocabulary တစ်ခုတည်းကို အသုံးပြုပါသည်။ Completion တွင် `spawn`၊ `task_join` နှင့် `task_is_ready` ကို stable description များဖြင့် ပြသပြီး VS Code TextMate grammar တွင်လည်း ထို builtins များကို callable Zap function များအဖြစ် highlight လုပ်ပါသည်။ Extension validation script သည် grammar ကို parse လုပ်ပြီး async builtin တစ်ခုခုပျောက်ဆုံးပါက package ကို reject လုပ်သဖြင့် language facade နှင့် editor asset များကြား drift မဖြစ်စေရန် ကာကွယ်ပေးပါသည်။
+Formatter နှင့် LSP တို့သည် finalized async vocabulary တစ်ခုတည်းကို အသုံးပြုပါသည်။ Completion တွင် `spawn`၊ `task_join`၊ `task_is_ready`၊ `task_cancel` နှင့် `task_join_timeout` ကို stable description များဖြင့် ပြသပြီး VS Code TextMate grammar တွင်လည်း ထို builtins များကို callable Zap function များအဖြစ် highlight လုပ်ပါသည်။ Extension validation script သည် grammar ကို parse လုပ်ပြီး async builtin တစ်ခုခုပျောက်ဆုံးပါက package ကို reject လုပ်သဖြင့် language facade နှင့် editor asset များကြား drift မဖြစ်စေရန် ကာကွယ်ပေးပါသည်။
 
 ## Production Deployment Boundaries
 

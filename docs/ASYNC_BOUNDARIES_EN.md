@@ -32,7 +32,7 @@ Multi-thread scheduling is also a separate boundary. The current `Rc<RefCell>` t
 
 ## Cancellation and timeout semantics
 
-Cancellation is cooperative and has a defined precedence: a cancellation-aware wrapper checks its token before polling the inner future. A cancelled task completes with a cancellation result rather than silently disappearing. Timeouts should be implemented as a race between the operation and a timer future, with the timer and operation both participating in shutdown. A timeout must not imply that an underlying blocking operation was forcibly terminated.
+Cancellation is cooperative and has a defined precedence: a cancellation-aware wrapper checks its token before polling the inner future. The language `task_cancel(future)` API requests cancellation for a pending context-owned task and returns whether the request was accepted; `task_join` then reports the deterministic `Cancelled` failure. `task_join_timeout(future, poll_budget)` drives at most the supplied poll budget and reports deterministic `TimedOut` failure when the task is not ready. A cancelled task completes with a cancellation result rather than silently disappearing. Timeouts should be implemented as a race between the operation and a timer future, with the timer and operation both participating in shutdown. A timeout must not imply that an underlying blocking operation was forcibly terminated.
 
 Task errors propagate through join handles as typed results. A caller that drops a join handle may stop observing the result, but dropping the handle does not provide a general cancellation guarantee unless the API explicitly documents that behavior. Production APIs must specify whether cancellation is best effort, whether resources are closed before completion, and how errors from reactor shutdown are reported.
 
@@ -50,4 +50,4 @@ A future production implementation must add, at minimum:
 
 ## Verification
 
-The current contract is verified by native tests for bounded polling, task limits, join results, context-owned language-task readiness/completion, scheduler reset isolation, cancellation precedence, timeout behavior, and child-process cancellation. These tests verify deterministic semantics only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.
+The current contract is verified by native tests for bounded polling, task limits, join results, context-owned language-task readiness/completion, scheduler reset isolation, language `task_cancel` and `task_join_timeout`, cancellation precedence, timeout behavior, and child-process cancellation. These tests verify deterministic semantics only; they do not certify a production reactor or forced cancellation of arbitrary blocking work.

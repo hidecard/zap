@@ -5703,6 +5703,51 @@ fn runs_language_level_async_task_facade_end_to_end() {
 }
 
 #[test]
+fn runs_language_level_async_cancellation_and_timeout_end_to_end() {
+    let cases = [
+        (
+            "let handle = load()\nsay task_cancel(handle)\n",
+            true,
+            "true\n",
+            "",
+        ),
+        (
+            "let handle = load()\nsay task_join_timeout(handle, 1)\n",
+            true,
+            "7\n",
+            "",
+        ),
+        (
+            "let handle = load()\ntask_join_timeout(handle, 0)\n",
+            false,
+            "",
+            "TimedOut",
+        ),
+    ];
+    for (index, (body, success, expected_stdout, expected_stderr)) in cases.iter().enumerate() {
+        let file = std::env::temp_dir().join(format!(
+            "zap_async_cancel_timeout_{}_{}.zp",
+            std::process::id(),
+            index
+        ));
+        let source = format!("async fn load() -> number:\n    return 7\n{body}");
+        std::fs::write(&file, source).unwrap();
+        let output = Command::new(binary()).arg(&file).output().unwrap();
+        let _ = std::fs::remove_file(&file);
+        assert_eq!(output.status.success(), *success);
+        assert_eq!(String::from_utf8_lossy(&output.stdout), *expected_stdout);
+        if !expected_stderr.is_empty() {
+            assert!(
+                String::from_utf8_lossy(&output.stderr).contains(expected_stderr),
+                "expected {:?} in {}",
+                expected_stderr,
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+}
+
+#[test]
 fn rejects_invalid_language_level_async_task_inputs_end_to_end() {
     let cases = [
         ("spawn(1)\n", "spawn expects a future value"),
