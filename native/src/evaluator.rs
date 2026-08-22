@@ -2592,11 +2592,12 @@ fn call_function_with_arguments(
         .ast_body
         .as_ref()
         .map(|_| EnvFrame::child(Rc::clone(&f.closure)));
-    let mut local = ast_frame
-        .as_ref()
-        .map(|frame| frame.snapshot())
-        .unwrap_or_else(|| f.closure.snapshot());
-    let captured_keys = f.closure.capture_keys();
+    let mut local = if let Some(frame) = &ast_frame {
+        frame.try_snapshot()?
+    } else {
+        f.closure.try_snapshot()?
+    };
+    let captured_keys = f.closure.try_capture_keys()?;
     let mut positional_index = 0usize;
     let mut named = HashMap::new();
     let mut saw_named = false;
@@ -2639,7 +2640,7 @@ fn call_function_with_arguments(
         }
         local.insert(param.name.clone(), v.clone());
         if let Some(frame) = &ast_frame {
-            frame.insert_local(param.name.clone(), v);
+            frame.try_insert_local(param.name.clone(), v)?;
         }
     }
     let mut local_funcs = funcs.clone();
@@ -2670,7 +2671,7 @@ fn call_function_with_arguments(
         Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
     if use_snapshot_sync {
-        f.closure.sync_captured(&captured_keys, &local);
+        f.closure.try_sync_captured(&captured_keys, &local)?;
     }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
@@ -2726,14 +2727,15 @@ fn call_method_with_arguments(
         .ast_body
         .as_ref()
         .map(|_| EnvFrame::child(Rc::clone(&f.closure)));
-    let mut local = ast_frame
-        .as_ref()
-        .map(|frame| frame.snapshot())
-        .unwrap_or_else(|| f.closure.snapshot());
-    let captured_keys = f.closure.capture_keys();
+    let mut local = if let Some(frame) = &ast_frame {
+        frame.try_snapshot()?
+    } else {
+        f.closure.try_snapshot()?
+    };
+    let captured_keys = f.closure.try_capture_keys()?;
     local.insert("self".into(), self_value.clone());
     if let Some(frame) = &ast_frame {
-        frame.insert_local("self".into(), self_value);
+        frame.try_insert_local("self".into(), self_value)?;
     }
     if let Some(Value::Text(owner_class)) = local.get("__zap_owner_class").cloned() {
         if let Some(Value::Text(parent_class)) = funcs
@@ -2744,7 +2746,7 @@ fn call_method_with_arguments(
         {
             local.insert("super".into(), Value::Text(parent_class.clone()));
             if let Some(frame) = &ast_frame {
-                frame.insert_local("super".into(), Value::Text(parent_class));
+                frame.try_insert_local("super".into(), Value::Text(parent_class))?;
             }
         }
     }
@@ -2790,7 +2792,7 @@ fn call_method_with_arguments(
         }
         local.insert(param.name.clone(), v.clone());
         if let Some(frame) = &ast_frame {
-            frame.insert_local(param.name.clone(), v);
+            frame.try_insert_local(param.name.clone(), v)?;
         }
     }
     let mut local_funcs = funcs.clone();
@@ -2825,7 +2827,7 @@ fn call_method_with_arguments(
             .into_iter()
             .filter(|key| key != "self")
             .collect::<Vec<_>>();
-        f.closure.sync_captured(&captured_keys, &local);
+        f.closure.try_sync_captured(&captured_keys, &local)?;
     }
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
@@ -3244,7 +3246,8 @@ fn register_ast_class(
                 );
             }
             let method_closure = EnvFrame::child(Rc::clone(frame));
-            method_closure.insert_local("__zap_owner_class".into(), Value::Text(name.to_string()));
+            method_closure
+                .try_insert_local("__zap_owner_class".into(), Value::Text(name.to_string()))?;
             insert_ast_function_with_charge(
                 format!("{name}.{method}"),
                 Rc::new(Function {
@@ -3302,15 +3305,25 @@ pub(crate) fn execute_ast_program_with_context(
 ) -> Result<Flow, String> {
     let frame = EnvFrame::from_map_with_base(vars, base);
     let result = execute_ast_program_with_frame(program, vars, funcs, context, base, &frame);
-    let snapshot = frame.snapshot();
-    vars.clear();
-    vars.extend(snapshot);
-    result
+    match result {
+        Err(error) => Err(error),
+        Ok(flow) => {
+            let snapshot = frame.try_snapshot()?;
+            vars.clear();
+            vars.extend(snapshot);
+            Ok(flow)
+        }
+    }
 }
 
-fn sync_vars_from_frame(frame: &Rc<EnvFrame>, vars: &mut HashMap<String, Value>) {
+fn sync_vars_from_frame(
+    frame: &Rc<EnvFrame>,
+    vars: &mut HashMap<String, Value>,
+) -> Result<(), String> {
+    let snapshot = frame.try_snapshot()?;
     vars.clear();
-    vars.extend(frame.snapshot());
+    vars.extend(snapshot);
+    Ok(())
 }
 
 fn execute_ast_program_with_frame(
@@ -3332,7 +3345,7 @@ fn execute_ast_program_with_frame(
         context,
     )?;
     for statement in &program.statements {
-        sync_vars_from_frame(frame, vars);
+        sync_vars_from_frame(frame, vars)?;
         let flow = match &statement.node {
             Stmt::Expression(value) => {
                 let _ = ast_expression_with_context(value, vars, funcs, context)?;
@@ -3364,7 +3377,7 @@ fn execute_ast_program_with_frame(
                         _ => return Err("property assignment expects an object".into()),
                     }
                 } else {
-                    frame.assign(name, evaluated);
+                    frame.try_assign(name, evaluated)?;
                 }
                 Flow::Continue
             }
@@ -3382,9 +3395,9 @@ fn execute_ast_program_with_frame(
                 if let Some(annotation) = annotation {
                     check_annotation(name, annotation, &evaluated)?;
                 }
-                frame.insert_local(name.clone(), evaluated);
+                frame.try_insert_local(name.clone(), evaluated)?;
                 if *exported {
-                    frame.insert_local(format!("__zap_export_var__:{name}"), Value::None);
+                    frame.try_insert_local(format!("__zap_export_var__:{name}"), Value::None)?;
                 }
                 Flow::Continue
             }
@@ -3404,15 +3417,15 @@ fn execute_ast_program_with_frame(
                 catch_body,
             } => match execute_ast_program_with_frame(body, vars, funcs, context, base, frame)? {
                 Flow::Raise(error) => {
-                    let previous = frame.get_local(binding);
-                    frame.insert_local(binding.clone(), error);
+                    let previous = frame.try_get_local(binding)?;
+                    frame.try_insert_local(binding.clone(), error)?;
                     let caught = execute_ast_program_with_frame(
                         catch_body, vars, funcs, context, base, frame,
                     );
                     match previous {
-                        Some(value) => frame.insert_local(binding.clone(), value),
+                        Some(value) => frame.try_insert_local(binding.clone(), value)?,
                         None => {
-                            frame.remove_local(binding);
+                            frame.try_remove_local(binding)?;
                         }
                     }
                     caught?
@@ -3481,7 +3494,7 @@ fn execute_ast_program_with_frame(
                 }
                 let mut outcome = Flow::Continue;
                 for item in items {
-                    frame.assign(binding, item);
+                    frame.try_assign(binding, item)?;
                     match execute_ast_program_with_frame(body, vars, funcs, context, base, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
@@ -3525,7 +3538,7 @@ fn execute_ast_program_with_frame(
             Stmt::Module { .. } => Flow::Continue,
             Stmt::Import { path, explicit, .. } => {
                 let flow = load_module_with_context(path, vars, funcs, context, base, *explicit)?;
-                frame.sync_from_snapshot(vars);
+                frame.try_sync_from_snapshot(vars)?;
                 flow
             }
         };
@@ -4912,6 +4925,10 @@ mod tests {
             panic!("memory_stats should return a map");
         };
         assert!(matches!(stats.get("live_objects"), Some(Value::Number(_))));
+        assert_eq!(
+            stats.get("cycle_policy"),
+            Some(&Value::Text("explicit_clear_object_fields".into()))
+        );
     }
 
     #[test]

@@ -39,7 +39,7 @@ The initial defaults remain conservative and compatible with existing limits. Th
 
 Production object construction receives the current context-owned object store. Allocation increments `object_allocations` and `live_objects`; dropping the tracked field storage decrements `live_objects` and increments `object_deallocations`. Explicit cleanup records attempts, successes, and borrow failures; bounded validation records validation runs. Reset replaces the active store, so objects retained from a prior run cannot mutate the next run's counters. Test-only or compatibility constructors may create an untracked standalone object, but they must not reintroduce process-global production statistics. `memory_stats()` reports the current execution store and budget when called through an execution context and reports stable zero counters and default budget fields for a context-free compatibility call.
 
-Object counters are diagnostic evidence, not a reclamation guarantee. Cycles remain explicitly breakable through the existing checked field APIs. Public weak references and automatic tracing collection remain deferred and must continue to be reported as unsupported/not implemented.
+Object counters are diagnostic evidence, not a reclamation guarantee. The current cycle policy is `explicit_clear_object_fields`: cycles remain explicitly breakable through the existing checked field APIs, while public weak references and automatic tracing collection remain deferred and are reported as unsupported/not implemented. Lexical-frame snapshots, insertion, assignment, and import synchronization use checked operations as well, returning deterministic `BorrowError` results instead of panicking when a frame is already borrowed.
 
 ## Errors and determinism
 

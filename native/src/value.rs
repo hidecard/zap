@@ -131,116 +131,216 @@ impl EnvFrame {
             .or_else(|| self.parent.as_ref().and_then(|parent| parent.base_path()))
     }
 
+    fn borrow_error() -> String {
+        "BorrowError: environment frame is already borrowed".into()
+    }
+
+    pub(crate) fn try_get_local(&self, name: &str) -> Result<Option<Value>, String> {
+        let values = self.values.try_borrow().map_err(|_| Self::borrow_error())?;
+        let Some(cell) = values.get(name) else {
+            return Ok(None);
+        };
+        cell.try_borrow()
+            .map(|value| Some(value.clone()))
+            .map_err(|_| Self::borrow_error())
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn get_local(&self, name: &str) -> Option<Value> {
-        self.values
-            .borrow()
-            .get(name)
-            .map(|cell| cell.borrow().clone())
+        self.try_get_local(name).ok().flatten()
     }
 
+    pub(crate) fn try_contains_local(&self, name: &str) -> Result<bool, String> {
+        Ok(self
+            .values
+            .try_borrow()
+            .map_err(|_| Self::borrow_error())?
+            .contains_key(name))
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn contains_local(&self, name: &str) -> bool {
-        self.values.borrow().contains_key(name)
+        self.try_contains_local(name).unwrap_or(false)
     }
 
+    pub(crate) fn try_contains(&self, name: &str) -> Result<bool, String> {
+        if self.try_contains_local(name)? {
+            return Ok(true);
+        }
+        self.parent
+            .as_ref()
+            .map_or(Ok(false), |parent| parent.try_contains(name))
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn contains(&self, name: &str) -> bool {
-        self.contains_local(name)
-            || self
-                .parent
-                .as_ref()
-                .is_some_and(|parent| parent.contains(name))
+        self.try_contains(name).unwrap_or(false)
     }
 
+    pub(crate) fn try_get(&self, name: &str) -> Result<Option<Value>, String> {
+        if let Some(value) = self.try_get_local(name)? {
+            return Ok(Some(value));
+        }
+        self.parent
+            .as_ref()
+            .map_or(Ok(None), |parent| parent.try_get(name))
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn get(&self, name: &str) -> Option<Value> {
-        self.get_local(name)
-            .or_else(|| self.parent.as_ref().and_then(|parent| parent.get(name)))
+        self.try_get(name).ok().flatten()
+    }
+
+    pub(crate) fn try_insert_local(&self, name: String, value: Value) -> Result<(), String> {
+        self.values
+            .try_borrow_mut()
+            .map_err(|_| Self::borrow_error())?
+            .insert(name, Rc::new(RefCell::new(value)));
+        Ok(())
     }
 
     #[allow(dead_code)]
     pub(crate) fn insert_local(&self, name: String, value: Value) {
-        self.values
-            .borrow_mut()
-            .insert(name, Rc::new(RefCell::new(value)));
+        let _ = self.try_insert_local(name, value);
     }
 
-    pub(crate) fn remove_local(&self, name: &str) -> Option<Value> {
-        self.values
-            .borrow_mut()
-            .remove(name)
-            .map(|cell| match Rc::try_unwrap(cell) {
-                Ok(value) => value.into_inner(),
-                Err(cell) => cell.borrow().clone(),
-            })
-    }
-
-    pub(crate) fn assign(&self, name: &str, value: Value) {
-        let local_cell = self.values.borrow().get(name).cloned();
-        if let Some(cell) = local_cell {
-            *cell.borrow_mut() = value;
-        } else if let Some(parent) = &self.parent {
-            if parent.contains(name) {
-                parent.assign(name, value);
-                return;
-            }
-            self.insert_local(name.to_string(), value);
-        } else {
-            self.insert_local(name.to_string(), value);
-        }
-    }
-
-    pub(crate) fn snapshot(&self) -> HashMap<String, Value> {
-        let mut values = self
-            .parent
-            .as_ref()
-            .map(|parent| parent.snapshot())
-            .unwrap_or_default();
-        values.extend(
-            self.values
-                .borrow()
-                .iter()
-                .map(|(key, cell)| (key.clone(), cell.borrow().clone())),
-        );
-        values
-    }
-
-    pub(crate) fn capture_keys(&self) -> Vec<String> {
-        let mut keys = self.snapshot().into_keys().collect::<Vec<_>>();
-        keys.sort();
-        keys
-    }
-
-    pub(crate) fn sync_captured(&self, keys: &[String], values: &HashMap<String, Value>) {
-        for key in keys {
-            if let Some(value) = values.get(key) {
-                self.assign(key, value.clone());
-            }
+    pub(crate) fn try_remove_local(&self, name: &str) -> Result<Option<Value>, String> {
+        let cell = self
+            .values
+            .try_borrow_mut()
+            .map_err(|_| Self::borrow_error())?
+            .remove(name);
+        let Some(cell) = cell else {
+            return Ok(None);
+        };
+        match Rc::try_unwrap(cell) {
+            Ok(value) => Ok(Some(value.into_inner())),
+            Err(cell) => cell
+                .try_borrow()
+                .map(|value| Some(value.clone()))
+                .map_err(|_| Self::borrow_error()),
         }
     }
 
     #[allow(dead_code)]
-    pub(crate) fn sync_from_snapshot(&self, values: &HashMap<String, Value>) {
-        let local_keys = self.values.borrow().keys().cloned().collect::<Vec<_>>();
+    pub(crate) fn remove_local(&self, name: &str) -> Option<Value> {
+        self.try_remove_local(name).ok().flatten()
+    }
+
+    pub(crate) fn try_assign(&self, name: &str, value: Value) -> Result<(), String> {
+        let local_cell = self
+            .values
+            .try_borrow()
+            .map_err(|_| Self::borrow_error())?
+            .get(name)
+            .cloned();
+        if let Some(cell) = local_cell {
+            *cell.try_borrow_mut().map_err(|_| Self::borrow_error())? = value;
+        } else if let Some(parent) = &self.parent {
+            if parent.try_contains(name)? {
+                parent.try_assign(name, value)?;
+                return Ok(());
+            }
+            self.try_insert_local(name.to_string(), value)?;
+        } else {
+            self.try_insert_local(name.to_string(), value)?;
+        }
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn assign(&self, name: &str, value: Value) {
+        let _ = self.try_assign(name, value);
+    }
+
+    pub(crate) fn try_snapshot(&self) -> Result<HashMap<String, Value>, String> {
+        let mut values = self
+            .parent
+            .as_ref()
+            .map(|parent| parent.try_snapshot())
+            .transpose()?
+            .unwrap_or_default();
+        let local_values = self.values.try_borrow().map_err(|_| Self::borrow_error())?;
+        for (key, cell) in local_values.iter() {
+            let value = cell.try_borrow().map_err(|_| Self::borrow_error())?;
+            values.insert(key.clone(), value.clone());
+        }
+        Ok(values)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn snapshot(&self) -> HashMap<String, Value> {
+        self.try_snapshot().unwrap_or_default()
+    }
+
+    pub(crate) fn try_capture_keys(&self) -> Result<Vec<String>, String> {
+        let mut keys = self.try_snapshot()?.into_keys().collect::<Vec<_>>();
+        keys.sort();
+        Ok(keys)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn capture_keys(&self) -> Vec<String> {
+        self.try_capture_keys().unwrap_or_default()
+    }
+
+    pub(crate) fn try_sync_captured(
+        &self,
+        keys: &[String],
+        values: &HashMap<String, Value>,
+    ) -> Result<(), String> {
+        for key in keys {
+            if let Some(value) = values.get(key) {
+                self.try_assign(key, value.clone())?;
+            }
+        }
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn sync_captured(&self, keys: &[String], values: &HashMap<String, Value>) {
+        let _ = self.try_sync_captured(keys, values);
+    }
+
+    pub(crate) fn try_sync_from_snapshot(
+        &self,
+        values: &HashMap<String, Value>,
+    ) -> Result<(), String> {
+        let local_keys = self
+            .values
+            .try_borrow()
+            .map_err(|_| Self::borrow_error())?
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>();
         for key in local_keys {
             if let Some(value) = values.get(&key) {
-                self.assign(&key, value.clone());
+                self.try_assign(&key, value.clone())?;
             }
         }
         for (key, value) in values {
-            if self.contains_local(key) {
+            if self.try_contains_local(key)? {
                 continue;
             }
             if self
                 .parent
                 .as_ref()
-                .is_some_and(|parent| parent.contains(key))
+                .map_or(Ok(false), |parent| parent.try_contains(key))?
             {
                 self.parent
                     .as_ref()
                     .expect("parent checked")
-                    .assign(key, value.clone());
+                    .try_assign(key, value.clone())?;
             } else {
-                self.insert_local(key.clone(), value.clone());
+                self.try_insert_local(key.clone(), value.clone())?;
             }
         }
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn sync_from_snapshot(&self, values: &HashMap<String, Value>) {
+        let _ = self.try_sync_from_snapshot(values);
     }
 }
 
@@ -383,6 +483,10 @@ impl Value {
         values.insert(
             "tracing_collector".into(),
             Self::Text("not_implemented".into()),
+        );
+        values.insert(
+            "cycle_policy".into(),
+            Self::Text("explicit_clear_object_fields".into()),
         );
         values.insert(
             "cleanup_attempts".into(),
@@ -1039,6 +1143,10 @@ mod tests {
             stats["tracing_collector"],
             Value::Text("not_implemented".into())
         );
+        assert_eq!(
+            stats["cycle_policy"],
+            Value::Text("explicit_clear_object_fields".into())
+        );
     }
 
     #[test]
@@ -1055,6 +1163,26 @@ mod tests {
         assert_eq!(
             object.clear_object_fields().unwrap_err(),
             "BorrowError: object fields are already borrowed"
+        );
+    }
+
+    #[test]
+    fn checked_envframe_borrows_return_typed_failures() {
+        let frame = EnvFrame::from_map(&HashMap::from([("value".into(), Value::Number(1))]));
+        let _active_borrow = frame.values.try_borrow_mut().unwrap();
+        assert_eq!(
+            frame.try_snapshot().unwrap_err(),
+            "BorrowError: environment frame is already borrowed"
+        );
+        assert_eq!(
+            frame
+                .try_insert_local("other".into(), Value::Number(2))
+                .unwrap_err(),
+            "BorrowError: environment frame is already borrowed"
+        );
+        assert_eq!(
+            frame.try_assign("value", Value::Number(3)).unwrap_err(),
+            "BorrowError: environment frame is already borrowed"
         );
     }
 

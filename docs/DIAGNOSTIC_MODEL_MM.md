@@ -31,7 +31,7 @@ CLI JSON mode သည် `notes` ကို array အဖြစ် ထုတ်ပ�
 | `ZAP-PERM-001` | `PermissionError` | Operation ကို ခွင့်မပြုခြင်း။ |
 | `ZAP-OVERFLOW-001` | `OverflowError` | ကန့်သတ်ထားသော numeric သို့မဟုတ် resource operation overflow ဖြစ်ခြင်း။ |
 | `ZAP-RUNTIME-001` | `Error` | Stable uncaught runtime failure။ |
-| `ZAP-BORROW-001` | `BorrowError` | Checked object-field read/write conflict ဖြစ်သောအခါ panic မဖြစ်ဘဲ runtime error ပြန်ပေးခြင်း။ |
+| `ZAP-BORROW-001` | `BorrowError` | Checked object-field သို့မဟုတ် lexical-EnvFrame borrow conflict ဖြစ်သောအခါ panic မဖြစ်ဘဲ runtime error ပြန်ပေးခြင်း။ |
 | `ZAP-MEMORY-001` | `MemoryError` | Run-owned logical byte၊ object၊ task၊ output သို့မဟုတ် bounded value-lifecycle limit ကျော်လွန်ခြင်း။ |
 | `ZAP-PROJECT-001` | `ProjectError` | Project၊ manifest သို့မဟုတ် dependency validation အမှား။ |
 
@@ -41,7 +41,7 @@ Code များသည် additive compatibility identifier များ ဖြ
 
 Diagnostic code၊ field name၊ severity value နှင့် message normalization တို့သည် tooling contract ၏ အစိတ်အပိုင်းများဖြစ်သည်။ ရှိပြီးသား fields များကို မဖယ်ရှားဘဲ field အသစ်များကိုသာ ထပ်တိုးနိုင်သည်။ လူဖတ်ရန် rendering သည် ပြောင်းလဲနိုင်သော်လည်း CLI JSON နှင့် LSP snapshot များသည် deterministic ဖြစ်ရမည်။ Secret များ သို့မဟုတ် source ထဲတွင် မပါသော environment-specific path များကို မထည့်ရ။
 
-လက်ရှိ type diagnostic များတွင် `Check the expression type and the expected annotation.` note နှင့် `Use a compatible value or update the type annotation.` help text ပါဝင်သည်။ Borrow diagnostic တွင် `Avoid reading and mutating the same object fields at the same time.` note နှင့် `Finish the active object-field access before mutating the object.` help text ပါဝင်သည်။ Memory diagnostic တွင် value၊ task သို့မဟုတ် output admission ကို လျှော့ရန်၊ သို့မဟုတ် retry မလုပ်မီ cyclic object field များကို ရှင်းရန် deterministic guidance ပါဝင်သည်။ Syntax နှင့် name diagnostics များတွင်လည်း အလားတူ deterministic guidance ပါဝင်သည်။
+လက်ရှိ type diagnostic များတွင် `Check the expression type and the expected annotation.` note နှင့် `Use a compatible value or update the type annotation.` help text ပါဝင်သည်။ Borrow diagnostic သည် active object-field သို့မဟုတ် lexical-frame access ပြီးဆုံးစေရန် stable guidance ကို အသုံးပြုပြီး competing read သို့မဟုတ် mutation မလုပ်မီ စောင့်စေသည်။ Object-field အတွက် `Avoid reading and mutating the same object fields at the same time.` note နှင့် `Finish the active object-field access before mutating the object.` help text ကို ဆက်လက်အသုံးပြုသည်။ Memory diagnostic တွင် value၊ task သို့မဟုတ် output admission ကို လျှော့ရန်၊ သို့မဟုတ် retry မလုပ်မီ cyclic object field များကို ရှင်းရန် deterministic guidance ပါဝင်သည်။ Syntax နှင့် name diagnostics များတွင်လည်း အလားတူ deterministic guidance ပါဝင်သည်။
 
 ## Verification
 
