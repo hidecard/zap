@@ -14,6 +14,7 @@
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_EN.md) | [LSP implementation](../native/src/lsp.rs), [VS Code assets](../editors/vscode), [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_EN.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml), [security policy](../SECURITY.md) |
 | Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [release preflight](../scripts/release_preflight.sh) |
+| Language designer | [Traits/composition RFC](TRAITS_RFC_EN.md) | [Language specification](LANGUAGE_SPEC_EN.md), [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) |
 
 ## M3-DOC-01 checked surfaces
 

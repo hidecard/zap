@@ -46,6 +46,7 @@ pairs=(
   'docs/MEMORY_BUDGET_OBJECT_STORE_EN.md:docs/MEMORY_BUDGET_OBJECT_STORE_MM.md'
   'docs/P0_FOUNDATION_STATUS_EN.md:docs/P0_FOUNDATION_STATUS_MM.md'
   'docs/STDLIB_POLICY_EN.md:docs/STDLIB_POLICY_MM.md'
+  'docs/TRAITS_RFC_EN.md:docs/TRAITS_RFC_MM.md'
   'docs/P2_PROGRESS.md:docs/P2_PROGRESS_MM.md'
   'docs/RELEASE_2.1.14_EN.md:docs/RELEASE_2.1.14_MM.md'
 )
@@ -85,6 +86,7 @@ for file in \
   docs/MEMORY_BUDGET_OBJECT_STORE_EN.md docs/MEMORY_BUDGET_OBJECT_STORE_MM.md \
   docs/P0_FOUNDATION_STATUS_EN.md docs/P0_FOUNDATION_STATUS_MM.md \
   docs/STDLIB_POLICY_EN.md docs/STDLIB_POLICY_MM.md \
+  docs/TRAITS_RFC_EN.md docs/TRAITS_RFC_MM.md \
   docs/RELEASE_2.1.14_EN.md docs/RELEASE_2.1.14_MM.md; do
   require_text "$file" "v$VERSION"
   if grep -Eq 'v2\.1\.(0|6|7|8)([^0-9]|$)' "$file"; then

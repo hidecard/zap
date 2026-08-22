@@ -204,6 +204,8 @@ check_release_files() {
     docs/SPEC_OWNERSHIP_MM.md
     docs/COMPATIBILITY_CHANGE_TEMPLATE_EN.md
     docs/COMPATIBILITY_CHANGE_TEMPLATE_MM.md
+    docs/TRAITS_RFC_EN.md
+    docs/TRAITS_RFC_MM.md
     docs/RELEASE_VERSION_POLICY_EN.md
     docs/RELEASE_VERSION_POLICY_MM.md
     docs/P001_PARITY_MATRIX_EN.md
