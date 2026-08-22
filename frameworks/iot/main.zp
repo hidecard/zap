@@ -1,7 +1,20 @@
-use iot
+# Framework IoT contract starter
+# This sample simulates telemetry and does not connect to MQTT or hardware.
 
-device = iot.device "temperature-node"
-device.sensor "temperature" on_read(value):
-    say value
-device.connect "mqtt://localhost:1883"
-device.run
+fn accept_reading(device_id, sensor, value):
+    return {"device_id": device_id, "sensor": sensor, "value": value, "accepted": true}
+
+fn summarize(readings):
+    let accepted = 0
+    for reading in readings:
+        if reading["accepted"]:
+            accepted = accepted + 1
+    return {"accepted": accepted, "total": len(readings), "status": "online"}
+
+let readings = [accept_reading("temperature-node", "temperature", 24), accept_reading("temperature-node", "temperature", 25)]
+let state = summarize(readings)
+
+assert(state["accepted"] == 2, "all bounded sample readings must be accepted")
+assert(state["total"] == 2, "sample must contain two readings")
+
+say json({"framework": "iot", "contract": "telemetry-device-state", "readings": readings, "state": state})

@@ -34,6 +34,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Runtime-state contract | [English](docs/RUNTIME_STATE_EN.md) · [မြန်မာ](docs/RUNTIME_STATE_MM.md) |
 | Memory budget/object store contract | [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) · [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) |
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
+| Framework Foundation | [English guide](docs/FRAMEWORK_EN.md) · [မြန်မာ guide](docs/FRAMEWORK_MM.md) · [starter projects](frameworks) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, M3-LSP-01 semantic-parity/editor validation, and post-release LSP protocol synchronization evidence |

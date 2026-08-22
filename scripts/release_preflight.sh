@@ -204,6 +204,26 @@ check_release_files() {
     vscode-extension/README_MM.md
     docs/ASYNC_LSP_EN.md
     docs/ASYNC_LSP_MM.md
+    docs/FRAMEWORK_EN.md
+    docs/FRAMEWORK_MM.md
+    scripts/validate_framework_starters.sh
+    frameworks/README.md
+    frameworks/web/README.md
+    frameworks/web/zap.toml
+    frameworks/web/zap.lock
+    frameworks/web/main.zp
+    frameworks/mobile/README.md
+    frameworks/mobile/zap.toml
+    frameworks/mobile/zap.lock
+    frameworks/mobile/main.zp
+    frameworks/ai/README.md
+    frameworks/ai/zap.toml
+    frameworks/ai/zap.lock
+    frameworks/ai/main.zp
+    frameworks/iot/README.md
+    frameworks/iot/zap.toml
+    frameworks/iot/zap.lock
+    frameworks/iot/main.zp
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -252,6 +272,7 @@ check_documentation_pairs() {
     'docs/REGISTRY_AUTH_EN.md:docs/REGISTRY_AUTH_MM.md'
     'docs/V2.1_ROADMAP_EN.md:docs/V2.1_ROADMAP_MM.md'
     'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
+    'docs/FRAMEWORK_EN.md:docs/FRAMEWORK_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
@@ -351,6 +372,10 @@ run_contract_validation() {
 
   bash scripts/test_validate_documentation_consistency.sh
   pass "documentation consistency regression validation passed"
+
+  ZAP_FRAMEWORK_DOCS_ONLY=1 \
+    bash scripts/validate_framework_starters.sh
+  pass "Framework starter static contract validation passed"
 
   ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/spec-ownership.tsv" \
     bash scripts/validate_spec_ownership.sh

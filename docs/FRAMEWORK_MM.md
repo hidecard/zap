@@ -1,0 +1,146 @@
+# Zap Framework လမ်းညွှန်
+
+**အတည်ပြုထားသော baseline:** Zap v2.2.3
+**Framework branch:** `Framework`
+**အခြေအနေ:** Framework Foundation v0.1 — run လို့ရသော contract starter များ၊ production adapter မဟုတ်သေး
+
+## ရည်ရွယ်ချက်
+
+`frameworks/` directory သည် Web, App, IoT နှင့် AI integration များအတွက် domain contract ကို သတ်မှတ်ပေးသော run လို့ရသည့် Zap program အသေးစားများကို ပေးပါသည်။ Starter များကို လက်ရှိ stable Zap syntax ဖြင့် ရေးထားပြီး request/response model၊ application state၊ telemetry record နှင့် bounded validation များကို ပြသပါသည်။ လက်ရှိ interpreter သည် HTTP server၊ native mobile UI runtime၊ MCU firmware runtime သို့မဟုတ် AI provider client ဖြစ်ပြီးသားဟု မဆိုပါ။
+
+Framework layer သည် **contract-first adapter boundary** ဖြစ်ပါသည်။ Zap က domain logic၊ validation၊ deterministic transformation နှင့် application policy ကို ပိုင်ဆိုင်ပါသည်။ Host adapter က socket၊ native window၊ mobile lifecycle၊ device driver၊ MQTT session၊ process supervision၊ credential နှင့် platform-specific scheduling တို့ကို ပိုင်ဆိုင်ရမည်။
+
+> Framework starter တစ်ခုသည် published Zap runtime ဖြင့် run လို့ရခြင်း၊ valid manifest နှင့် lockfile ရှိခြင်း၊ host boundary ကို ရှင်းလင်းစွာရေးထားခြင်းနှင့် invalid input အတွက် negative case ရှိခြင်းတို့ ပြည့်စုံမှ complete ဖြစ်သည်။ Aspirational DSL စာသားများ ပါရုံဖြင့် complete မဖြစ်ပါ။
+
+## လက်ရှိ starter matrix
+
+| Starter | လက်ရှိ deliverable | ထပ်လိုအပ်မည့် host integration | Production အခြေအနေ |
+|---|---|---|---|
+| `frameworks/web` | Deterministic route/request/response contract | HTTP listener, TLS, middleware, body limit, deployment supervision | Contract prototype |
+| `frameworks/mobile` | Portable app model, screen နှင့် action contract | Tauri, Flutter, React Native/Expo သို့မဟုတ် native shell | Contract prototype |
+| `frameworks/iot` | Bounded sensor event နှင့် device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr သို့မဟုတ် Embassy host | Contract prototype |
+| `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential နှင့် quota adapter | Contract prototype |
+
+Starter များသည် parser syntax အသစ် မထည့်ပါ။ Function၊ map၊ list၊ loop၊ `assert` နှင့် `json()` ကို အသုံးပြုသဖြင့် ယနေ့ `zap main.zp` ဖြင့် run နိုင်ပါသည်။
+
+## Quick start
+
+Repository root မှ starter တစ်ခုချင်းစီကို အောက်ပါအတိုင်း run ပါ။
+
+```bash
+cd frameworks/web
+zap lock
+zap check
+zap run main.zp
+```
+
+`frameworks/mobile`, `frameworks/iot` နှင့် `frameworks/ai` အတွက်လည်း အတူတူ command ကို သုံးနိုင်ပါသည်။ `zap.lock` သည် generated output ဖြစ်သော်လည်း project နှင့်အတူ commit လုပ်သင့်ပါသည်။ နောက်ပိုင်း adapter dependency ထည့်ပါက lockfile ပြန်ထုတ်ပြီး `zap install --locked` ဖြင့် စစ်ဆေးပါ။
+
+Starter program များသည် deterministic JSON သို့မဟုတ် text output ပြီးနောက် socket၊ native window၊ device connection သို့မဟုတ် external model session မဖွင့်ဘဲ ပြီးဆုံးပါသည်။ ထို့ကြောင့် CI smoke test နှင့် learning example အတွက် သင့်တော်ပါသည်။
+
+## Package boundaries
+
+Framework layer ၏ dependency direction သည် အောက်ပါအတိုင်း ဖြစ်ရမည်။
+
+```text
+Zap source နှင့် domain contract
+          ↓
+framework starter package
+          ↓
+zap-host capability နှင့် DTO boundary
+          ↓
+platform adapter
+          ↓
+OS, network, native UI, device SDK သို့မဟုတ် provider
+```
+
+Starter တစ်ခုသည် undeclared provider package ကို import မလုပ်ရ၊ credential ကို မသိမသာ မဖတ်ရ၊ unrestricted process/socket မဖွင့်ရ၊ operating system တစ်ခုတည်းကို မယူဆရပါ။ Platform behavior သည် သီးခြား versioned adapter package ထဲတွင်သာ ရှိရမည်။
+
+| Layer | ပိုင်ဆိုင်ရမည့်အရာ | မပိုင်ဆိုင်ရမည့်အရာ |
+|---|---|---|
+| Zap core | Parsing, evaluation, diagnostics, deterministic values | HTTP, mobile renderer, MCU driver |
+| Framework contract | Domain record, validation, route/state/telemetry policy | OS handle, credential, native thread |
+| `zap-host` boundary | Capability name, typed DTO, limit, error, trace | Hidden global state, unrestricted authority |
+| Platform adapter | HTTP/TLS, native UI lifecycle, MQTT, board SDK, provider API | RFC မရှိဘဲ language semantic အသစ် |
+| Deployment | Identity, sandbox, egress, quota, supervision, secret | Runtime limit = OS isolation ဟူသောယူဆချက် |
+
+## Web starter
+
+`frameworks/web/main.zp` သည် pure function အဖြစ် route table အသေးစားတစ်ခုကို model လုပ်ပါသည်။ `route(path, method)` သည် `status`, `content_type`, `body` ပါသော response map ကို ပြန်ပေးပါသည်။ Root route၊ health route နှင့် deterministic not-found response များကို စမ်းသပ်ထားပါသည်။
+
+နောက်ပိုင်း `zap-web` adapter သည် incoming HTTP request ကို bounded Zap request map အဖြစ် ပြောင်းပြီး response map ကို HTTP response အဖြစ် ပြောင်းနိုင်ပါသည်။ ထို adapter တွင် method/path normalization၊ maximum header/body bytes၊ timeout၊ cancellation၊ error mapping၊ log redaction နှင့် connection shutdown ကို သတ်မှတ်ရမည်။ Starter ကိုယ်တိုင် network operation မလုပ်ပါ။
+
+ပထမဆုံး implementation ကို Zap interpreter ထဲတွင် HTTP runtime အသစ်ရေးမည့်အစား [Axum](https://docs.rs/axum/latest/axum/) နှင့် Tower middleware ကဲ့သို့ ရှိပြီးသား Rust HTTP stack အပေါ် host adapter အဖြစ် တည်ဆောက်ရန် အကြံပြုပါသည်။ Real listener မဖွင့်မီ fake-host contract test pass ဖြစ်ရမည်။
+
+## App starter
+
+`frameworks/mobile/main.zp` သည် application name၊ initial route၊ screen နှင့် action ပါသော app manifest ကို model လုပ်ပါသည်။ Native shell တစ်ခုရွေးချယ်ခြင်းမပြုမီ navigation နှင့် action policy ကို data အဖြစ် သတ်မှတ်နိုင်ကြောင်း ပြပါသည်။
+
+ပထမဆုံး App implementation သည် custom renderer မရေးဘဲ shell တစ်ခုကို generate/consume လုပ်သင့်ပါသည်။ Rust/native-web shell အတွက် [Tauri](https://v2.tauri.app/), widget-based multiplatform UI အတွက် [Flutter](https://docs.flutter.dev/), JavaScript/native ecosystem လိုအပ်ပါက [React Native with Expo](https://reactnative.dev/docs/environment-setup) တို့ကို host option အဖြစ် အသုံးပြုနိုင်ပါသည်။ Zap contract သည် renderer ရွေးချယ်မှုနှင့် မချိတ်ထားသင့်ပါ။
+
+App adapter တွင် lifecycle events၊ foreground/background behavior၊ offline storage၊ IPC authentication၊ permission prompt၊ deep link၊ update/rollback နှင့် crash reporting တို့ကို သတ်မှတ်ရမည်။ Screen map တစ်ခုရှိရုံဖြင့် mobile runtime မဖြစ်ပါ။
+
+## IoT starter
+
+`frameworks/iot/main.zp` သည် device identity၊ bounded sensor sample၊ accepted-reading count နှင့် device state record ကို model လုပ်ပါသည်။ GPIO၊ serial၊ Bluetooth၊ Wi-Fi သို့မဟုတ် real broker ကို မထိဘဲ reading များကို simulate လုပ်ပါသည်။
+
+ပထမဆုံး IoT implementation ကို Linux/SBC gateway သို့မဟုတ် host process အဖြစ် စတင်ရန် အကြံပြုပါသည်။ MQTT အတွက် [Eclipse Paho](https://eclipse.dev/paho/) ကဲ့သို့ established client ကို သုံးနိုင်ပြီး topic policy၊ payload size၊ QoS၊ retained message၊ reconnect၊ duplicate handling နှင့် offline replay ကို ရှင်းလင်းစွာ သတ်မှတ်ရမည်။ Firmware အတွက် Zap သည် [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) သို့မဟုတ် [Zephyr](https://docs.zephyrproject.org/latest/) component နှင့် binding ထုတ်ခြင်း သို့မဟုတ် ဆက်သွယ်ခြင်းကို ဦးစားပေးသင့်ပါသည်။ MCU သေးသေးပေါ်တွင် Zap interpreter အပြည့်ထည့်ခြင်းသည် interrupt၊ DMA၊ `no_std`၊ flash/RAM budget၊ watchdog နှင့် board support လိုအပ်ချက်များကြောင့် ယခု scope အပြင်တွင် ရှိပါသည်။ [Embassy](https://embassy.dev/book/) ကို embedded constraint reference အဖြစ် သုံးနိုင်ပါသည်။
+
+IoT adapter သည် malformed/oversized telemetry ကို reject လုပ်ရမည်၊ device identity authenticate လုပ်ရမည်၊ command များကို idempotent ဖြစ်စေရမည်၊ correlation identifier ထည့်ရမည်၊ reconnect ကို safe ဖြစ်စေရမည်၊ reset/brownout ပြီးနောက် behavior ကို သတ်မှတ်ရမည်။ Simulated loop အောင်မြင်ခြင်းသည် hardware-in-the-loop evidence မဟုတ်ပါ။
+
+## AI starter
+
+AI starter သည် contract example သာဖြစ်ပါသည်။ Prompt နှင့် response record ကို model လုပ်ပြီး provider သို့ မဆက်သွယ်ပါ၊ credential မသိမ်းပါ။ နောက်ပိုင်း provider adapter တွင် model selection၊ timeout၊ request/response size၊ retry၊ quota error၊ prompt/response redaction နှင့် audit retention ကို သတ်မှတ်ရမည်။
+
+## Capability နှင့် security contract
+
+Real adapter တစ်ခုချင်းစီသည် ambient access မသုံးဘဲ explicit host capability object ရရှိရမည်။ အနည်းဆုံး အောက်ပါ field များ ပါဝင်သင့်ပါသည်။
+
+| Field | လိုအပ်ချက် |
+|---|---|
+| `capability` | `web.listen`, `iot.publish`, `app.storage.read` ကဲ့သို့ stable name |
+| `identity` | Authenticated caller/device/app identity; string field တစ်ခုတည်းမှ မယူဆရ |
+| `limits` | Input, output, task, timeout, queue, payload bounds |
+| `deadline` | Monotonic deadline သို့မဟုတ် documented poll budget |
+| `cancellation` | Cooperative cancellation နှင့် resource-close behavior |
+| `idempotency_key` | Retry ဖြစ်နိုင်သော command အတွက် လိုအပ် |
+| `trace_id` | Domain result, host operation နှင့် audit record ကို ချိတ်ရန် |
+| `redaction` | Secret/token/password field များ diagnostics ထဲ မပါစေရ |
+| `error` | Unstructured provider string မဟုတ်ဘဲ stable typed category |
+| `replay_class` | Pure, input-deterministic, runtime-dependent, external I/O ခွဲခြားချက် |
+
+Host သည် default deny ဖြစ်ရမည်။ Denied capability သည် external side effect မဖြစ်မီ deterministic typed error ပြန်ပေးရမည်။ Runtime logical budget သည် OS sandbox၊ network egress policy၊ process identity သို့မဟုတ် secret manager ကို အစားမထိုးပါ။
+
+## Testing နှင့် acceptance
+
+Framework starter တစ်ခုချင်းစီတွင် evidence လေးမျိုး ရှိရမည်။
+
+1. **Executable smoke:** Clean directory နှင့် committed lockfile ဖြင့် `zap check`, `zap build`, `zap run main.zp` အောင်မြင်ရမည်။
+2. **Contract assertions:** Valid output shape၊ deterministic ordering နှင့် representative edge/error behavior ကို Zap source သို့မဟုတ် host tests ထဲတွင် assert လုပ်ရမည်။
+3. **Negative security cases:** Oversized input၊ unsupported capability၊ malformed route/topic/action နှင့် missing identity များကို side effect မဖြစ်မီ reject လုပ်ရမည်။
+4. **Adapter parity:** Fixture တစ်ခုတည်းအတွက် fake host နှင့် real host သည် normalized domain result တူရမည်။ External error များသည် typed နှင့် traceable ဖြစ်ရမည်။
+
+CI gate သည် undeclared dependency၊ missing lockfile၊ unresolved placeholder import၊ unsupported aspirational syntax သို့မဟုတ် contract prototype ကို production runtime ဟု ခေါ်သော documentation claim ရှိပါက fail ဖြစ်ရမည်။
+
+## v0.1 တွင် မပါသေးသောအရာများ
+
+Framework branch တွင် native HTTP server၊ custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ ORM သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထိုအရာများကို language core ထဲ တိုက်ရိုက်ထည့်ခြင်းသည် mature ecosystem များကို ထပ်ရေးရပြီး host contract မတည်ငြိမ်မီ security surface တိုးစေပါသည်။
+
+နောက်ထပ် milestone သည် `zap-host` ဖြစ်ပါသည်။ Capability registration၊ typed DTO၊ bounded request/response adapter၊ deterministic fake-host test၊ structured error၊ redaction နှင့် replay fixture များကို အရင်တည်ဆောက်ရမည်။ ထို contract တည်ငြိမ်ပြီးမှ Web သို့မဟုတ် Linux/SBC IoT gateway တစ်ခုကို contract prototype မှ adapter prototype အဖြစ် တိုးမြှင့်သင့်ပါသည်။
+
+## Framework Foundation v0.1 Definition of Done
+
+Starter လေးခုလုံးတွင် valid manifest နှင့် lockfile ရှိရမည်၊ current Zap syntax သာ သုံးရမည်၊ clean smoke validation pass ဖြစ်ရမည်၊ non-production boundary ကို ရှင်းလင်းစွာ ဖော်ပြရမည်၊ deterministic domain record များ ရှိရမည်၊ secret/unrestricted host access မရှိရမည်၊ bilingual documentation navigation မှ link ချိတ်ထားရမည်။ Real platform adapter များသည် သီးခြား milestone များဖြစ်ပြီး starter directory တစ်ခုတည်းကြောင့် ရှိပြီးသားဟု မယူဆရပါ။
+
+## ကိုးကားချက်များ
+
+[1]: https://docs.rs/axum/latest/axum/ — Axum HTTP routing နှင့် request handling documentation
+[2]: https://v2.tauri.app/ — Tauri desktop/mobile application shell documentation
+[3]: https://docs.flutter.dev/ — Flutter multiplatform UI toolkit documentation
+[4]: https://reactnative.dev/docs/environment-setup — React Native နှင့် Expo environment guidance
+[5]: https://eclipse.dev/paho/ — Eclipse Paho MQTT client project
+[6]: https://docs.zephyrproject.org/latest/ — Zephyr RTOS နှင့် embedded platform documentation
+[7]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/ — Espressif ESP-IDF documentation
+[8]: https://embassy.dev/book/ — Embassy embedded async framework documentation
+[9]: https://github.com/hidecard/zap/blob/master/docs/ASYNC_BOUNDARIES_MM.md — Zap async boundary contract
+[10]: https://github.com/hidecard/zap/blob/master/SECURITY.md — Zap security policy နှင့် untrusted execution boundary

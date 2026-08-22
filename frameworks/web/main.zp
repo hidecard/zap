@@ -1,5 +1,22 @@
-use web
+# Framework Web contract starter
+# This sample is deterministic and does not open a network socket.
 
-app = web.app "hello-web"
-app.get "/" => "Hello from Zap Web"
-app.listen 8080
+fn response(status, body):
+    return {"status": status, "content_type": "text/plain", "body": body}
+
+fn route(path, method):
+    if method == "GET" and path == "/":
+        return response(200, "Hello from Zap Web")
+    if method == "GET" and path == "/health":
+        return response(200, "ok")
+    return response(404, "not found")
+
+let home = route("/", "GET")
+let health = route("/health", "GET")
+let missing = route("/missing", "GET")
+
+assert(home["status"] == 200, "root route must return 200")
+assert(health["body"] == "ok", "health route must return ok")
+assert(missing["status"] == 404, "unknown route must return 404")
+
+say json({"framework": "web", "contract": "route-response", "home": home, "health": health, "missing": missing})

@@ -134,6 +134,20 @@ jobs:
           test "$(awk -F '\t' 'NR > 1 { seen[$1]++ } END { if (seen["schema_version"] != 1 || seen["status"] != 1 || seen["git_commit"] != 1 || seen["target_triple"] != 1 || seen["binary_sha256"] != 1 || seen["repeats"] != 1 || seen["warmups"] != 1) exit 1; print "ok" }' benchmark-results/native.provenance.tsv)" = ok
           scripts/check_benchmark_regression.sh benchmark-results/native-summary.csv benchmark-results/native-summary-current.csv "$ZAP_BENCH_MAX_REGRESSION_PERCENT" 2>&1 | tee benchmark-results/regression.txt
 
+      - name: Validate Framework starter runtime contracts
+        env:
+          ZAP_BIN: native/target/release/zap
+          ZAP_FRAMEWORK_REPORT: target/framework-starters.tsv
+        run: scripts/validate_framework_starters.sh
+
+      - name: Upload Framework starter evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-framework-starters-${{ github.sha }}
+          path: target/framework-starters.tsv
+          if-no-files-found: error
+
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
         with:
