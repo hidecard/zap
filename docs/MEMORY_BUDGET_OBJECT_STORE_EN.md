@@ -2,7 +2,7 @@
 
 **Design status:** M2-MEM-01 foundation design
 
-**Verified baseline:** Zap v2.2.0.
+**Verified baseline:** Zap v2.2.1.
 
 ## Purpose
 

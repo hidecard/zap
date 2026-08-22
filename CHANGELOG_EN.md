@@ -7,6 +7,13 @@
 - Completed API-301 on post-release `master`: added schema-2 `determinism_class` values (`pure`, `input-deterministic`, `runtime-dependent`, and `external-io`) with explicit domain/builtin coverage and a compatibility-preserving legacy `deterministic` boolean.
 - DOC-401 records the provenance boundary: v2.2.0 remains immutable at tag commit [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb), and the corrected behavior is planned for the new v2.2.1 patch. See [`POST_V2.2.0_REMEDIATION_EN.md`](docs/POST_V2.2.0_REMEDIATION_EN.md).
 
+## [2.2.1] — 2026-08-22
+
+### Corrective release
+- Published the post-v2.2.0 LSP synchronization, scope-aware file-local rename, URI/position/workspace-boundary hardening, canonical VS Code package, and schema-2 standard-library determinism taxonomy.
+- Preserved the explicit limitations: full-text LSP synchronization only, no cross-file rename, bounded async foundation rather than a full production reactor, and design-only traits/composition.
+- See [`RELEASE_2.2.1_EN.md`](docs/RELEASE_2.2.1_EN.md) and [`POST_V2.2.0_REMEDIATION_EN.md`](docs/POST_V2.2.0_REMEDIATION_EN.md) for release scope and provenance.
+
 ## [2.2.0] — 2026-08-22
 
 ### Release engineering

@@ -18,11 +18,11 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, workspace symbols, parser/lexer-backed rename, didClose cleanup, nested/module-aware indexing, and async builtin metadata. M4-RFC-01 records the reviewed design direction for traits and composition without enabling the proposed syntax. Post-v2.2.0 LSP hardening now consumes standard full-sync `didChange` content from `params.contentChanges`, tracks document versions, publishes diagnostics from the accepted buffer, and safely rejects stale or unsupported range edits. Scope-aware semantic rename now resolves file-local bindings, including shadowing, closures, parameters, and import aliases; cross-file rename remains unsupported. These corrections are on `master` after the immutable v2.2.0 tag and are planned for v2.2.1.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, workspace symbols, parser/lexer-backed rename, didClose cleanup, nested/module-aware indexing, and async builtin metadata. M4-RFC-01 records the reviewed design direction for traits and composition without enabling the proposed syntax. Post-v2.2.0 LSP hardening now consumes standard full-sync `didChange` content from `params.contentChanges`, tracks document versions, publishes diagnostics from the accepted buffer, and safely rejects stale or unsupported range edits. Scope-aware semantic rename now resolves file-local bindings, including shadowing, closures, parameters, and import aliases; cross-file rename remains unsupported. These corrections landed on `master` after the immutable v2.2.0 tag and are included in the v2.2.1 corrective release.
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.2.0` |
+| Current release line | `v2.2.1` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -37,13 +37,13 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, M3-LSP-01 semantic-parity/editor validation, and post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.0 |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.1 |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
-| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0 tag remains immutable; v2.2.1 is planned |
+| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0 remains immutable; v2.2.1 contains the corrections |
 
 ## Release provenance
 
-The installation links and archive names in this README intentionally point to the published [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0). That tag and its signed assets remain immutable. The corrected LSP, editor-package, and standard-library taxonomy work was completed later on `master` and is documented in the [post-v2.2.0 remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) for the planned v2.2.1 patch.
+The installation links and archive names in this README point to the published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), its tag, and its signed assets remain immutable. The corrected LSP, editor-package, and standard-library taxonomy work was completed later on `master` and is documented in the [post-v2.2.0 remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md).
 
 ## Learning Guide
 
@@ -83,7 +83,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.0 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.0), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.1 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.1), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -93,7 +93,7 @@ Zap is distributed as a standalone native executable. No separate language runti
 | Windows | x86_64 | `.zip` | Extract and run `install_windows.bat` from Command Prompt |
 | macOS | ARM64 | `.tar.gz` | Extract, make the installer executable, and run `./install.sh` |
 
-For the current v2.2.0 release, the platform assets are `zap-2.2.0-linux-x86_64.tar.gz`, `zap-2.2.0-macos-arm64.tar.gz`, and `zap-2.2.0-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
+For the current v2.2.1 release, the platform assets are `zap-2.2.1-linux-x86_64.tar.gz`, `zap-2.2.1-macos-arm64.tar.gz`, and `zap-2.2.1-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
 
 ### Linux Installation
 
@@ -102,7 +102,7 @@ For the current v2.2.0 release, the platform assets are `zap-2.2.0-linux-x86_64.
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.2.0-linux-x86_64.tar.gz
+tar -xzf zap-2.2.1-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -118,11 +118,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.2.0-macos-arm64.tar.gz
+tar -xzf zap-2.2.1-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -144,7 +144,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0).
+1. Download the Windows x86_64 `.zip` archive from the [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

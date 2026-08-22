@@ -7,6 +7,13 @@
 - API-301 ကို post-release `master` တွင် ပြီးစီးထားသည်။ Schema-2 `determinism_class` (`pure`၊ `input-deterministic`၊ `runtime-dependent` နှင့် `external-io`)၊ explicit domain/builtin coverage နှင့် compatibility-preserving legacy `deterministic` boolean ကို ထည့်သွင်းထားသည်။
 - DOC-401 သည် provenance boundary ကို မှတ်တမ်းတင်သည်။ v2.2.0 သည် [`7a2269b`](https://github.com/hidecard/zap/commit/7a2269bfb70863608156484453576cbbe4376deb) tag commit တွင် immutable ဖြစ်ပြီး ပြင်ဆင်ထားသော behavior ကို v2.2.1 patch အသစ်တွင် ထုတ်ဝေရန် စီစဉ်ထားသည်။ [`POST_V2.2.0_REMEDIATION_MM.md`](docs/POST_V2.2.0_REMEDIATION_MM.md) ကို ကြည့်ပါ။
 
+## [2.2.1] — 2026-08-22
+
+### Corrective release
+- v2.2.0 နောက်ပိုင်း LSP synchronization၊ scope-aware file-local rename၊ URI/position/workspace-boundary hardening၊ canonical VS Code package နှင့် schema-2 standard-library determinism taxonomy များကို ထုတ်ဝေထားသည်။
+- Explicit limitation များကို ဆက်လက်ထိန်းသိမ်းထားသည်။ LSP synchronization သည် full-text only ဖြစ်ပြီး cross-file rename မရှိပါ။ Async သည် full production reactor မဟုတ်ဘဲ bounded foundation ဖြစ်ပြီး traits/composition သည် design-only ဖြစ်သည်။
+- Release scope နှင့် provenance အတွက် [`RELEASE_2.2.1_MM.md`](docs/RELEASE_2.2.1_MM.md) နှင့် [`POST_V2.2.0_REMEDIATION_MM.md`](docs/POST_V2.2.0_REMEDIATION_MM.md) ကို ကြည့်ပါ။
+
 ## [2.2.0] — 2026-08-22
 
 ### Release engineering
