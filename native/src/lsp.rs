@@ -738,7 +738,13 @@ fn rename_model(source: &str, tokens: &[crate::lexer::SpannedToken]) -> RenameMo
             continue;
         }
         let indent = indentation_width(line_text);
-        while scope_stack.len() > 1 && indent <= model.scopes[*scope_stack.last().unwrap()].indent {
+        while scope_stack.len() > 1 {
+            let Some(&current_scope) = scope_stack.last() else {
+                break;
+            };
+            if indent > model.scopes[current_scope].indent {
+                break;
+            }
             scope_stack.pop();
         }
         let current = *scope_stack.last().unwrap_or(&0);
