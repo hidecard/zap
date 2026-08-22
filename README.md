@@ -36,7 +36,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| P3 status | P3.3 production standard library and cross-platform hardening complete; v2.1 package reliability work in progress |
+| Verification status | M2-VERIFY-01 bounded 12-round replay job with fail-closed corpus limits and CI/release-preflight evidence |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 
 ## Learning Guide
@@ -191,7 +191,7 @@ Alternatively, open the [Zap Language Support Marketplace page](https://marketpl
 | Type annotations | `text`, `number`, `bool`, `list`, `map`, `none`, and `any` |
 | Operators | arithmetic, comparison, `and`, `or`, and `not` |
 | Control flow | `if`, `else`, `for`, `while`, `break`, and `continue` |
-| Functions | parameters, return values, local scope, nested functions, closures, `async fn`, `Future`, and `await` |
+| Functions and async tasks | parameters, return values, local scope, nested functions, closures, `async fn`, context-owned `ScheduledFuture`, `await`, `spawn`, `task_join`, `task_is_ready`, `task_cancel`, and `task_join_timeout` |
 | Classes | classes, constructors, methods, properties, inheritance, `self`, public/private/protected visibility, and `super` delegation |
 | Collections | indexing, keys, contains, join, get, sum, reverse, sort, and emptiness checks |
 | Text | upper, lower, trim, split, string conversion, and length |
@@ -200,4 +200,4 @@ Alternatively, open the [Zap Language Support Marketplace page](https://marketpl
 | System helpers | paths, time, sleep, environment variables, and math helpers |
 | Modules | explicit `import`/`export`, local search paths, cache, cycle detection, module-aware private access, deterministic package lockfiles, nested local dependency graphs, and cycle validation |
 | Error values | `ok`, `err`, `some`, `option_none`, `unwrap`, `unwrap_or`, typed `result<T>`/`option<T>`, and `?` |
-| Diagnostics | human-readable errors, source locations, secret redaction, structured JSON diagnostics, and static type-narrowing errors |
+| Diagnostics and verification | human-readable errors, source locations, secret redaction, structured JSON diagnostics, static type-narrowing errors, fixed-seed replay, bounded repeated outcome digests, and durable CI evidence |

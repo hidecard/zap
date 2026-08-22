@@ -171,6 +171,8 @@ check_release_files() {
     scripts/test_p001_parity.sh
     scripts/test_p105_layers.sh
     scripts/test_p105_replay.sh
+    scripts/test_m2_verify_replay.sh
+    scripts/test_m2_verify_replay_contract.sh
     scripts/test_p005c_async_matrix.sh
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
@@ -330,6 +332,16 @@ run_contract_validation() {
     ZAP_CORPUS_REPLAY_LOG="$report_dir/p105-replay.log" \
     bash scripts/test_p105_replay.sh
   pass "fixed-seed replay validation passed with seed $seed"
+
+  ZAP_CORPUS_SEED="$seed" \
+    ZAP_CORPUS_ROUNDS="${ZAP_CORPUS_ROUNDS:-12}" \
+    ZAP_BOUNDED_REPLAY_REPORT="$report_dir/m2-verify-replay.tsv" \
+    ZAP_BOUNDED_REPLAY_LOG="$report_dir/m2-verify-replay.log" \
+    bash scripts/test_m2_verify_replay.sh
+  pass "bounded replay validation passed with seed $seed"
+
+  bash scripts/test_m2_verify_replay_contract.sh
+  pass "bounded replay contract regression passed"
 
   ZAP_ASYNC_LOG="$report_dir/p005c-async.log" \
     bash scripts/test_p005c_async_matrix.sh

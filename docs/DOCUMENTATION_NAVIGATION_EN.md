@@ -28,7 +28,7 @@
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_EN.md) | Async runtime and adapter tests |
 | Standard library | [Stdlib index](STDLIB_INDEX_EN.md) | Builtin catalog and security corpus |
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_EN.md) | `scripts/test_p001_parity.sh` |
-| Verification/replay | [P1-05 replay contract](P105_REPLAY_EN.md) | `scripts/test_p105_replay.sh` |
+| Verification/replay | [P1-05 replay and M2-VERIFY-01 bounded replay contract](P105_REPLAY_EN.md) | `scripts/test_p105_replay.sh` and `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_EN.md) | Checked-in `benchmark-results/native-summary.csv` and CI threshold gate |
 | Releases | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | `scripts/validate_release_version.sh` and release preflight |
 

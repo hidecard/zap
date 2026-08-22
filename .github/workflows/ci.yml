@@ -165,6 +165,27 @@ jobs:
           path: target/p105-replay.log
           if-no-files-found: error
 
+      - name: Run M2-VERIFY-01 bounded replay job
+        env:
+          ZAP_CORPUS_SEED: 20260821
+          ZAP_CORPUS_ROUNDS: 12
+          ZAP_BOUNDED_REPLAY_REPORT: target/m2-verify-replay.tsv
+          ZAP_BOUNDED_REPLAY_LOG: target/m2-verify-replay.log
+        run: scripts/test_m2_verify_replay.sh
+
+      - name: Run M2-VERIFY-01 contract regression
+        run: scripts/test_m2_verify_replay_contract.sh
+
+      - name: Upload M2-VERIFY-01 replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-m2-verify-replay-${{ github.sha }}
+          path: |
+            target/m2-verify-replay.tsv
+            target/m2-verify-replay.log
+          if-no-files-found: error
+
       - name: Run P0-01 native/legacy parity matrix
         env:
           ZAP_PARITY_REPORT: target/p001-parity-report.tsv

@@ -37,10 +37,22 @@ Script သည် `target/p105-replay.log` ကိုရေးပြီး seed၊
 
 Security၊ parser၊ memory သို့မဟုတ် async regression အသစ်တစ်ခု ဖြစ်ပါက owner category အောက်တွင် fixture အသစ်ထည့်ရမည်၊ replay test သို့မဟုတ် သက်ဆိုင်ရာ domain test တွင် focused assertion ထည့်ရမည်၊ public contract ပြောင်းလဲပါက bilingual changelog entry ထည့်ရမည်။ Fixture များတွင် secret၊ host-specific absolute path၊ timestamp၊ memory address သို့မဟုတ် nondeterministic network data မပါရပါ။
 
+## M2-VERIFY-01 bounded replay job
+
+Bounded verification job သည် single replay pass ကို အကြိမ်ရေကန့်သတ်ထားသော repeatable CI workload အဖြစ် တိုးချဲ့ထားပါသည်။ Entry point သည် အောက်ပါအတိုင်း ဖြစ်ပါသည်။
+
+```text
+ZAP_CORPUS_SEED=20260821 ZAP_CORPUS_ROUNDS=12 scripts/test_m2_verify_replay.sh
+```
+
+`ZAP_CORPUS_ROUNDS` ၏ default သည် 12 ဖြစ်ပြီး 1–64 အတွင်းသာ ခွင့်ပြုကာ အပြင်ဘက်တန်ဖိုးများကို fail-closed ပြုလုပ်ပါသည်။ Round တစ်ခုစီတွင် category ခြောက်မျိုးလုံးပါသော corpus ကို native replay test မှတစ်ဆင့် run လုပ်ပြီး SHA-256 outcome digest တစ်ခု ထုတ်ပေးပါသည်။ Fixture တစ်ခုချင်းစီသည် default အားဖြင့် 64 KiB ထက် မကျော်ရ၊ corpus အားလုံး၏ စုစုပေါင်းသည် 8 MiB ထက် မကျော်ရပါ။ ထို limit များကို `ZAP_CORPUS_MAX_FIXTURE_BYTES` နှင့် `ZAP_CORPUS_MAX_TOTAL_BYTES` မှတစ်ဆင့် explicit ပြောင်းလဲမှသာ ခွင့်ပြုပါသည်။ Missing/empty corpus directory၊ မမှန်ကန်သော numeric setting၊ မပြည့်စုံသော round marker၊ fixture count ပြောင်းလဲမှု၊ မမှန်သော digest နှင့် ထပ်ခါတလဲလဲ outcome digest ကွာခြားမှုများကို job က reject လုပ်ပါသည်။
+
+Job သည် seed၊ round count၊ fixture count/bytes၊ configured bounds၊ fixture-manifest digest၊ round တစ်ခုချင်းစီ၏ outcome digest နှင့် final status ပါသော `target/m2-verify-replay.tsv` ကို ရေးပါသည်။ Raw native test output ကို `target/m2-verify-replay.log` တွင် ထိန်းသိမ်းပါသည်။ CI သည် file နှစ်ခုလုံးကို `zap-m2-verify-replay-<commit>` artifact အဖြစ် upload လုပ်ပြီး release preflight သည်လည်း contract-report directory တစ်ခုတည်းအောက်တွင် bounded gate ကို run လုပ်ပါသည်။ ထိုနည်းဖြင့် unbounded fuzzing service အသစ် မထည့်ဘဲ long-running verification ကို ပြန်လည်ဖန်တီးနိုင်ပါသည်။
+
 ## Boundary နှင့် နောက်မှလုပ်မည့် scope
 
-ဤ slice သည် deterministic bounded replay နှင့် durable regression input များကို ပေးသော်လည်း unbounded fuzzing service၊ allocator-level telemetry၊ arbitrary-cycle reclamation သို့မဟုတ် language-level async cancellation ရှိသည်ဟု မဆိုလိုပါ။ ထိုအရာများသည် roadmap တွင် သီးခြားပိုင်ဆိုင်သည့် item များအဖြစ် ဆက်လက်ရှိပါမည်။ Replay layer သည် လက်ရှိ Rust 1.75 toolchain နှင့် ကိုက်ညီပြီး third-party fuzzing runtime အသစ် မထည့်သွင်းပါ။
+ဤ verification slice သည် deterministic bounded replay၊ ထပ်ခါတလဲလဲ semantic outcome comparison၊ durable regression input နှင့် fail-closed corpus-size control များကို ပေးသော်လည်း unbounded fuzzing service၊ allocator-level telemetry၊ arbitrary-cycle reclamation သို့မဟုတ် သီးခြား document လုပ်ထားသော cooperative task control များအပြင် အခြား language-level async feature များ ရှိသည်ဟု မဆိုလိုပါ။ ထိုအရာများသည် roadmap တွင် သီးခြားပိုင်ဆိုင်သည့် item များအဖြစ် ဆက်လက်ရှိပါမည်။ Replay layer သည် လက်ရှိ Rust 1.75 toolchain နှင့် ကိုက်ညီပြီး third-party fuzzing runtime အသစ် မထည့်သွင်းပါ။
 
 ## Acceptance evidence
 
-Milestone ကို လက်ခံရန် category ခြောက်မျိုးလုံး repository မှ load လုပ်နိုင်ရမည်၊ seed တူလျှင် repeated result တူညီရမည်၊ seed အခြားတစ်ခုသုံးလျှင် deterministic အစဉ်ပြောင်းရမည်၊ malformed input များသည် panic မဖြစ်ဘဲ fail-closed ဖြစ်ရမည်၊ replay log တွင် input evidence ပါရမည်၊ script သည် P1-05 layer runner ထဲတွင် ပါရမည်၊ full repository quality gates အားလုံး အောင်မြင်ရမည်။
+Milestone ကို လက်ခံရန် category ခြောက်မျိုးလုံး repository မှ load လုပ်နိုင်ရမည်၊ seed တူလျှင် repeated result တူညီရမည်၊ seed အခြားတစ်ခုသုံးလျှင် deterministic အစဉ်ပြောင်းရမည်၊ malformed input များသည် panic မဖြစ်ဘဲ fail-closed ဖြစ်ရမည်၊ replay log တွင် input evidence ပါရမည်၊ bounded job သည် သတ်မှတ်ထားသော round အားလုံးကို run ပြီး outcome digest တူညီရမည်၊ မမှန်သော round/corpus-size setting များ fail-closed ဖြစ်ရမည်၊ CI နှင့် release preflight က TSV/log evidence ကို archive လုပ်ရမည်၊ full repository quality gates အားလုံး အောင်မြင်ရမည်။

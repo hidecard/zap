@@ -28,7 +28,7 @@
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_MM.md) | Async runtime နှင့် adapter tests |
 | Standard library | [Stdlib index](STDLIB_INDEX_MM.md) | Builtin catalog နှင့် security corpus |
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_MM.md) | `scripts/test_p001_parity.sh` |
-| Verification/replay | [P1-05 replay contract](P105_REPLAY_MM.md) | `scripts/test_p105_replay.sh` |
+| Verification/replay | [P1-05 replay နှင့် M2-VERIFY-01 bounded replay contract](P105_REPLAY_MM.md) | `scripts/test_p105_replay.sh` နှင့် `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_MM.md) | Checked-in `benchmark-results/native-summary.csv` နှင့် CI threshold gate |
 | Releases | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | `scripts/validate_release_version.sh` နှင့် release preflight |
 
