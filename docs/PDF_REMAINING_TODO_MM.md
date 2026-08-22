@@ -43,7 +43,7 @@
 |---|---|---|---|
 | P2-01 | Composition နှင့် traits/interfaces | Deferred | Inheritance မှ migration၊ composition၊ trait/protocol rules နှင့် method resolution အတွက် RFC ကို implementation မစမီ ရေးသား/သုံးသပ်ရမည်။ |
 | P2-02 | Standard-library API stability policy | M3-STDLIB-01 အဖြစ် ပြီးစီး | Public domain နှင့် builtin တစ်ခုချင်းစီတွင် machine-readable stability label၊ introduction release၊ deprecation window၊ semver rule၊ platform support matrix၊ input/output limit၊ timeout/error contract နှင့် determinism field ရှိပြီး bilingual policy documentation နှင့် catalog/policy regression gate များ ပါဝင်ရမည်။ |
-| P2-03 | LSP/VS Code semantic parity | Partial | Rename၊ nested/module-aware indexing၊ async-aware completion/hover နှင့် canonical parser/AST coverage ကို test လုပ်ရမည်။ |
+| P2-03 | LSP/VS Code semantic parity | M3-LSP-01 အဖြစ် ပြီးစီး | Parser/lexer-backed rename edit၊ didClose workspace cleanup၊ nested/module-aware indexing၊ catalog-driven completion၊ async builtin hover/signature metadata၊ checked-in VS Code grammar/configuration နှင့် CI/release-preflight semantic-parity validation များကို test လုပ်ပြီးဖြစ်သည်။ |
 | P2-04 | Learning/reference documentation ခွဲခြားခြင်း | Partial | Beginner guide၊ syntax reference၊ specification၊ stdlib reference၊ package author guide၊ runtime internals နှင့် deployment/security docs များ navigation နှင့် verified-version metadata ပါရမည်။ |
 
 ## လုပ်ဆောင်မည့်အစီအစဉ်
@@ -61,8 +61,8 @@
 ၁၁။ **P1-01/P1-04:** ပြီးစီးပြီး။ ဘာသာနှစ်မျိုး gradual-typing baseline ကို မှတ်တမ်းတင်ပြီး clean-machine locked install/build verifier ကို executable နှင့် deterministic အဖြစ် ပြီးစီးထားသည်။
 ၁၂။ **M2-ASYNC-02:** ပြီးစီးပြီး။ Cooperative language task cancellation၊ poll-budget timeout join၊ deterministic `Cancelled`/`TimedOut` diagnostic၊ bilingual contract update နှင့် end-to-end regression coverage များကို အကောင်အထည်ဖော်ပြီးဖြစ်သည်။
 ၁၃။ **M3-STDLIB-01:** ပြီးစီးပြီး။ Machine-readable twelve-domain catalog နှင့် bilingual stability policy သည် label၊ introduction release၊ deprecation window၊ semver rule၊ release-target platform၊ limit၊ timeout/error contract၊ determinism metadata နှင့် policy regression များကို သတ်မှတ်ထားသည်။
-၁၄။ **P2-03:** LSP/VS Code semantic parity နှင့် editor validation ကို ဆက်လက်လုပ်ဆောင်ရန်။
-၁၅။ **P2-04:** Learner/reference documentation split နှင့် verified-version navigation ကို ပြီးစီးရန်။
+၁၄။ **M3-LSP-01:** ပြီးစီးပြီး။ Parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware symbol indexing၊ catalog-driven completion၊ async hover/signature metadata၊ VS Code assets နှင့် semantic-parity contract များကို CI နှင့် release preflight တွင် ချိတ်ဆက်ထားသည်။
+၁၅။ **P2-04 / M3-DOC-01:** Learner/reference documentation split နှင့် verified-version navigation ကို ပြီးစီးရန်။
 ၁၆။ **P2-01:** Parser/runtime မပြောင်းမီ traits/composition RFC ကို ရေးသားပြီး review လုပ်ရန်။
 
 ## Release policy

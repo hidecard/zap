@@ -131,6 +131,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                     "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
                     "hoverProvider": true,
                     "definitionProvider": true,
+                    "renameProvider": true,
                     "workspaceSymbolProvider": true,
                     "documentSymbolProvider": true,
                     "documentFormattingProvider": true
@@ -147,6 +148,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
         "textDocument/signatureHelp" => Some(signature_help_response(message, state)),
         "textDocument/hover" => Some(hover_response(message, state)),
         "textDocument/definition" => Some(definition_response(message, state)),
+        "textDocument/rename" => Some(rename_response(message, state)),
         "textDocument/formatting" => Some(formatting_response(message, state)),
         "workspace/symbol" => Some(workspace_symbol_response(message, state)),
         "textDocument/documentSymbol" => Some(document_symbol_response(message, state)),
@@ -157,6 +159,11 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
             let text = document.get("text").and_then(Value::as_str).unwrap_or("");
             state.documents.insert(uri.to_string(), text.to_string());
             Some(publish_diagnostics(uri, text))
+        }
+        "textDocument/didClose" => {
+            let uri = message["params"]["textDocument"]["uri"].as_str()?;
+            state.documents.remove(uri);
+            None
         }
         _ => message.get("id").map(|id| {
             json!({
@@ -205,12 +212,12 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
         ("return", "Return a value from a function"),
         ("async", "Declare an asynchronous function"),
         ("await", "Await a Future value"),
-        ("spawn", "Create a task from a Future"),
-        ("task_join", "Join a spawned task"),
-        ("task_is_ready", "Check task readiness without polling"),
-        ("task_cancel", "Request cooperative task cancellation"),
-        ("task_join_timeout", "Join a task with a poll budget"),
     ];
+    candidates.extend(
+        crate::stdlib_catalog::PUBLIC_BUILTINS
+            .iter()
+            .map(|builtin| (builtin.name, builtin.domain)),
+    );
     for line in source.lines() {
         let declaration = line.trim();
         if let Some(name) = declaration
@@ -280,29 +287,32 @@ fn signature_help_response(message: &Value, state: &LspState) -> Value {
         .chars()
         .filter(|value| *value == ',')
         .count();
-    let signature = source.lines().find_map(|line| {
-        let trimmed = line.trim();
-        let declaration = trimmed
-            .strip_prefix("fn ")
-            .or_else(|| trimmed.strip_prefix("async fn "))?;
-        let name_end = declaration.find('(')?;
-        if declaration[..name_end].trim() != callee {
-            return None;
-        }
-        let close = declaration[name_end + 1..].find(')')? + name_end + 1;
-        let parameters = declaration[name_end + 1..close]
-            .split(',')
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| json!({"label": value}))
-            .collect::<Vec<_>>();
-        let label = trimmed.trim_end_matches(':').to_string();
-        Some(json!({
-            "label": label,
-            "documentation": format!("Zap function `{callee}`"),
-            "parameters": parameters
-        }))
-    });
+    let signature = source
+        .lines()
+        .find_map(|line| {
+            let trimmed = line.trim();
+            let declaration = trimmed
+                .strip_prefix("fn ")
+                .or_else(|| trimmed.strip_prefix("async fn "))?;
+            let name_end = declaration.find('(')?;
+            if declaration[..name_end].trim() != callee {
+                return None;
+            }
+            let close = declaration[name_end + 1..].find(')')? + name_end + 1;
+            let parameters = declaration[name_end + 1..close]
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(|value| json!({"label": value}))
+                .collect::<Vec<_>>();
+            let label = trimmed.trim_end_matches(':').to_string();
+            Some(json!({
+                "label": label,
+                "documentation": format!("Zap function `{callee}`"),
+                "parameters": parameters
+            }))
+        })
+        .or_else(|| async_builtin_signature(callee));
     let result = signature.map(|signature| {
         let parameter_count = signature["parameters"].as_array().map_or(0, Vec::len);
         json!({
@@ -312,6 +322,153 @@ fn signature_help_response(message: &Value, state: &LspState) -> Value {
         })
     });
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result.unwrap_or(Value::Null)})
+}
+
+fn async_builtin_signature(callee: &str) -> Option<Value> {
+    let (label, documentation, parameters) = match callee {
+        "spawn" => (
+            "spawn(future)",
+            "Create an executor-backed ScheduledFuture task.",
+            vec![json!({"label": "future"})],
+        ),
+        "task_join" => (
+            "task_join(future)",
+            "Poll a ScheduledFuture until it completes and consume its result.",
+            vec![json!({"label": "future"})],
+        ),
+        "task_is_ready" => (
+            "task_is_ready(future)",
+            "Inspect readiness without polling the task.",
+            vec![json!({"label": "future"})],
+        ),
+        "task_cancel" => (
+            "task_cancel(future)",
+            "Request cooperative cancellation of a language task.",
+            vec![json!({"label": "future"})],
+        ),
+        "task_join_timeout" => (
+            "task_join_timeout(future, poll_budget)",
+            "Poll a task up to the supplied budget before returning a TimedOut diagnostic.",
+            vec![json!({"label": "future"}), json!({"label": "poll_budget"})],
+        ),
+        "async_capabilities" => (
+            "async_capabilities()",
+            "Report the deterministic async scheduling and production-I/O boundaries.",
+            Vec::new(),
+        ),
+        _ => return None,
+    };
+    Some(json!({
+        "label": label,
+        "documentation": documentation,
+        "parameters": parameters
+    }))
+}
+
+fn async_builtin_hover(name: &str) -> Option<String> {
+    async_builtin_signature(name).map(|signature| {
+        format!(
+            "async builtin `{name}`: {}",
+            signature["documentation"]
+                .as_str()
+                .unwrap_or("async operation")
+        )
+    })
+}
+
+fn is_valid_identifier(name: &str) -> bool {
+    let mut characters = name.chars();
+    let Some(first) = characters.next() else {
+        return false;
+    };
+    (first.is_ascii_alphabetic() || first == '_')
+        && characters.all(|character| character.is_ascii_alphanumeric() || character == '_')
+}
+
+fn rename_response(message: &Value, state: &LspState) -> Value {
+    let id = message.get("id").cloned().unwrap_or(Value::Null);
+    let uri = message["params"]["textDocument"]["uri"]
+        .as_str()
+        .unwrap_or("");
+    let new_name = message["params"]["newName"].as_str().unwrap_or("");
+    let source = state.documents.get(uri).cloned().unwrap_or_default();
+    if !is_valid_identifier(new_name) {
+        return json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {"code": -32602, "message": "rename newName must be an identifier"}
+        });
+    }
+    let line = message["params"]["position"]["line"].as_u64().unwrap_or(0) as usize;
+    let character = message["params"]["position"]["character"]
+        .as_u64()
+        .unwrap_or(0) as usize;
+    let tokens = match crate::lexer::tokenize_with_spans(&source) {
+        Ok(tokens) => tokens,
+        Err(error) => {
+            return json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": {"code": -32602, "message": format!("rename requires a valid document: {error}")}
+            });
+        }
+    };
+    let Some(old_name) = tokens.iter().find_map(|token| {
+        let crate::lexer::Token::Name(name) = &token.token else {
+            return None;
+        };
+        let start_line = token.span.line.saturating_sub(1);
+        let start_character = token.span.column.saturating_sub(1);
+        (start_line == line
+            && character >= start_character
+            && character <= start_character.saturating_add(token.span.length))
+        .then(|| name.clone())
+    }) else {
+        return json!({"jsonrpc": "2.0", "id": id, "result": Value::Null});
+    };
+    if crate::stdlib_catalog::contains(&old_name)
+        || matches!(
+            old_name.as_str(),
+            "let"
+                | "fn"
+                | "async"
+                | "if"
+                | "else"
+                | "for"
+                | "while"
+                | "class"
+                | "module"
+                | "import"
+                | "return"
+                | "true"
+                | "false"
+                | "none"
+        )
+    {
+        return json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {"code": -32602, "message": "built-in names and language keywords cannot be renamed"}
+        });
+    }
+    let edits = tokens
+        .into_iter()
+        .filter_map(|token| match token.token {
+            crate::lexer::Token::Name(name) if name == old_name => Some(json!({
+                "range": {
+                    "start": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1)},
+                    "end": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1).saturating_add(token.span.length)}
+                },
+                "newText": new_name
+            })),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {"changes": {(uri): edits}}
+    })
 }
 
 fn hover_response(message: &Value, state: &LspState) -> Value {
@@ -365,6 +522,7 @@ fn hover_response(message: &Value, state: &LspState) -> Value {
                 _ => None,
             })
     });
+    let description = description.or_else(|| async_builtin_hover(&word));
     let result = description
         .map(|value| json!({"contents": {"kind": "markdown", "value": value}}))
         .unwrap_or(Value::Null);
@@ -737,7 +895,7 @@ fn diagnostic_line(message: &str) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::{decode_messages, handle_message, handle_message_with_state, LspState};
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     #[test]
     fn decodes_content_length_framed_json() {
@@ -822,7 +980,10 @@ mod tests {
                 "missing completion item: {expected}"
             );
         }
-        assert_eq!(labels.len(), 17);
+        assert_eq!(
+            labels.len(),
+            12 + crate::stdlib_catalog::PUBLIC_BUILTINS.len()
+        );
     }
 
     #[test]
@@ -838,7 +999,13 @@ mod tests {
             "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 2}}
         }))
         .unwrap();
-        assert_eq!(response["result"]["items"][0]["label"], "load");
+        let completion_labels = response["result"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|item| item["label"].as_str())
+            .collect::<Vec<_>>();
+        assert!(completion_labels.contains(&"load"));
     }
 
     #[test]
@@ -1099,6 +1266,152 @@ mod tests {
         .expect("second state should respond");
         assert!(!first_symbols["result"].as_array().unwrap().is_empty());
         assert!(second_symbols["result"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn rename_returns_span_edits_without_rewriting_string_literals() {
+        let uri = "file:///rename.zp";
+        let source =
+            "fn greet(name):\n    let copy = name\n    return name\nlet label = \"greet\"\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "id": 40,
+                "method": "textDocument/rename",
+                "params": {
+                    "textDocument": {"uri": uri},
+                    "position": {"line": 1, "character": 8},
+                    "newName": "value"
+                }
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"]
+            .get(uri)
+            .and_then(Value::as_array)
+            .unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0]["newText"], "value");
+        assert_eq!(edits[0]["range"]["start"]["line"], 1);
+        assert_eq!(edits[0]["range"]["start"]["character"], 8);
+        assert_eq!(response["id"], 40);
+    }
+
+    #[test]
+    fn rename_rejects_invalid_names_and_builtin_targets() {
+        let uri = "file:///rename-errors.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": "let value = task_join(1)\n"}}
+            }),
+            &mut state,
+        );
+        let invalid = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 41, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 4}, "newName": "bad-name"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(invalid["error"]["code"], -32602);
+        let builtin = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 42, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 16}, "newName": "join"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(builtin["error"]["code"], -32602);
+    }
+
+    #[test]
+    fn async_builtins_have_hover_and_signature_metadata() {
+        let uri = "file:///async-lsp.zp";
+        let source = "task_join_timeout(handle, 1)\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let hover = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 43, "method": "textDocument/hover",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 17}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert!(hover["result"]["contents"]["value"]
+            .as_str()
+            .unwrap()
+            .contains("async builtin `task_join_timeout`"));
+        let signature = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 44, "method": "textDocument/signatureHelp",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 28}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(
+            signature["result"]["signatures"][0]["label"],
+            "task_join_timeout(future, poll_budget)"
+        );
+        assert_eq!(signature["result"]["activeParameter"], 1);
+    }
+
+    #[test]
+    fn did_close_removes_document_from_workspace_symbols() {
+        let uri = "file:///close.zp";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": "fn close_me():\n    return 1\n"}}
+            }),
+            &mut state,
+        );
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didClose",
+                "params": {"textDocument": {"uri": uri}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({"jsonrpc": "2.0", "id": 45, "method": "workspace/symbol", "params": {"query": "close_me"}}),
+            &mut state,
+        )
+        .unwrap();
+        assert!(response["result"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn initialize_advertises_rename_provider() {
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 46, "method": "initialize", "params": {}
+        }))
+        .unwrap();
+        assert_eq!(response["result"]["capabilities"]["renameProvider"], true);
     }
 
     #[test]

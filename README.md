@@ -18,7 +18,7 @@ Zap is designed to make programming approachable while providing a clear path fr
 
 ## Project Status
 
-Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, and workspace symbols.
+Zap is actively evolving toward a production-ready language ecosystem. The stable P1 language core includes a native Rust runtime, direct AST execution, static checks for current type annotations, structured JSON diagnostics, a dedicated `ZapError` diagnostic boundary including stable memory-limit code `ZAP-MEMORY-001`, Result/Option foundations, complex control-flow narrowing, module-aware visibility, OOP field and method visibility, constructor delegation rules, module caching, circular-import detection, deterministic dependency lockfiles, and Result error propagation with `?`. P2 now provides deterministic registry resolution with exact and compatible version ranges, HTTPS transport, signed-index verification, content-addressed caching with integrity enforcement and deterministic pruning, authenticated local registry persistence, checksum-verified publishing, a deterministic single-thread async runtime with executor-backed language scheduling, context-owned `ScheduledFuture` handles, `async fn`, `Future`, `await`, timers, cooperative `task_cancel`, poll-budget `task_join_timeout`, task budgets, and suspension controls, plus a stdio LSP/editor integration with diagnostics, hover, completion, formatting, definitions, workspace symbols, parser/lexer-backed rename, didClose cleanup, nested/module-aware indexing, and async builtin metadata.
 
 | Item | Current status |
 |---|---|
@@ -36,7 +36,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, and M3-STDLIB-01 policy evidence |
+| Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, and M3-LSP-01 semantic-parity/editor validation evidence |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 
 ## Learning Guide
@@ -172,7 +172,7 @@ zap.exe main.zp
 
 ## VS Code Extension
 
-Zap has an official VS Code extension, **Zap Language Support v0.5.0**, published on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). It provides syntax highlighting, snippets, diagnostics, autocomplete, signature help, hover, go-to-definition, formatting, workspace symbols, and run support through the native Zap CLI/LSP.
+Zap has an official VS Code extension, **Zap Language Support v0.5.0**, published on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ArkarYan.zap-language-support). It provides syntax highlighting, snippets, diagnostics, autocomplete, signature help, hover, go-to-definition, formatting, workspace symbols, rename support, and run support through the native Zap CLI/LSP. The repository also checks in a catalog-aligned TextMate grammar and language configuration under `editors/vscode/`; validate them with `scripts/validate_vscode_assets.py`.
 
 Install it from the command line:
 

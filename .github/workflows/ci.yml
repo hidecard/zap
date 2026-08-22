@@ -99,6 +99,9 @@ jobs:
       - name: Run CLI/LSP diagnostic parity regression
         run: cargo test --manifest-path native/Cargo.toml --bin zap lsp_diagnostics_match_cli_type_error_contract --all-features -- --nocapture
 
+      - name: Run M3-LSP-01 semantic parity contract
+        run: scripts/test_lsp_semantic_parity.sh
+
       - name: Run security property corpus
         run: cargo test --manifest-path native/Cargo.toml security_property --all-features
 

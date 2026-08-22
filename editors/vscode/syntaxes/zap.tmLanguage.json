@@ -1,0 +1,48 @@
+{
+  "name": "Zap",
+  "scopeName": "source.zap",
+  "fileTypes": ["zp"],
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#numbers"},
+    {"include": "#keywords"},
+    {"include": "#builtins"},
+    {"include": "#functions"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {"match": "#.*$", "name": "comment.line.number-sign.zap"}
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.zap",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {"match": "\\\\[nrt\\\"\\\\]", "name": "constant.character.escape.zap"}
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {"match": "\\b-?[0-9]+\\b", "name": "constant.numeric.zap"}
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {"match": "\\b(?:let|fn|async|await|if|else|for|while|class|module|import|return|true|false|none|and|or)\\b", "name": "keyword.control.zap"}
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {"match": "\\b(?:len|str|type|memory_stats|upper|lower|trim|split|join|contains|replace|abs|min|max|pow|sum|range|keys|entries|enumerate|count|reverse|read_text|write_text|read_lines|write_lines|file_metadata|atomic_write|json|from_json|from_json_typed|char_at|substring|codepoints|path_join|now|utc_now|duration_parts|duration_between|spawn|task_join|task_is_ready|task_cancel|task_join_timeout|async_capabilities|log_record|log_json|env|has_env|env_get|config_dir|config_path|basename|dirname|url_parse|url_encode|url_decode|http_get|http_request|http_serve_once|process_run)(?=\\s*\\()", "name": "support.function.builtin.zap"}
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {"match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()", "name": "entity.name.function.zap"}
+      ]
+    }
+  }
+}

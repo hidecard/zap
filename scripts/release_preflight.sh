@@ -178,6 +178,13 @@ check_release_files() {
     scripts/test_benchmark_regression.sh
     scripts/test_benchmark_provenance.sh
     scripts/test_stdlib_policy.sh
+    scripts/test_lsp_semantic_parity.sh
+    scripts/validate_vscode_assets.py
+    editors/vscode/package.json
+    editors/vscode/language-configuration.json
+    editors/vscode/syntaxes/zap.tmLanguage.json
+    docs/ASYNC_LSP_EN.md
+    docs/ASYNC_LSP_MM.md
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -366,7 +373,10 @@ run_contract_validation() {
   bash scripts/test_stdlib_policy.sh
   pass "standard-library stability policy contract passed"
 
-  ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/benchmark-raw.csv"
+  bash scripts/test_lsp_semantic_parity.sh
+  pass "LSP and VS Code semantic-parity contract passed"
+
+  local benchmark_raw="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"
   local benchmark_provenance="$report_dir/benchmark-provenance.tsv"
   ZAP_BENCH_REPEATS="${ZAP_BENCH_REPEATS:-5}" \

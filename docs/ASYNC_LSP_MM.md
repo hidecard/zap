@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap P2 တွင် deterministic async language layer၊ bounded threaded I/O adapter နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Deterministic executor သည် stable Rust နှင့် ကိုက်ညီပြီး Language အနေဖြင့် `async fn`၊ context-owned `ScheduledFuture` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover နှင့် context-aware completion များကို ပေးပါသည်။
+Zap P2 တွင် deterministic async language layer၊ bounded threaded I/O adapter နှင့် editor protocol foundation ကို ထည့်သွင်းပြီးဖြစ်ပါသည်။ Deterministic executor သည် stable Rust နှင့် ကိုက်ညီပြီး Language အနေဖြင့် `async fn`၊ context-owned `ScheduledFuture` value နှင့် `await` expression များကို support လုပ်ပါသည်။ LSP server သည် JSON-RPC initialization၊ document synchronization၊ diagnostics၊ parser-backed hover၊ semantic rename edit နှင့် context-aware completion များကို ပေးပါသည်။ M3-LSP-01 သည် editor surface များကို canonical AST၊ lexer span၊ async facade နှင့် standard-library catalog တို့နှင့် တစ်ပြေးညီ ထိန်းသိမ်းပါသည်။
 
 Deterministic language scheduling နှင့် production-oriented blocking adapter များကို သီးခြားခွဲထားပါသည်။ Async call သည် caller ၏ `RuntimeState` ထဲတွင် result ကို schedule လုပ်ပြီး context-owned `ScheduledFuture` ပြန်ပေးသည်။ `await` သည် executor ကို drive လုပ်ပြီး ထို value ကို unwrap လုပ်သည်။ `delay_ticks`၊ `yield_now`၊ poll budget နှင့် runtime task limit များသည် deterministic scheduling control များကို ပေးပြီး `CancellationToken`၊ `Cancellable` နှင့် language `task_cancel` API သည် cooperative cancellation ပေးပါသည်။ `ThreadedRuntime` သည် explicitly submit လုပ်ထားသော blocking work နှင့် asynchronous file read များအတွက် bounded fixed worker set ကို ပေးပြီး deterministic language executor ကို အစားမထိုးပါ။
 
@@ -87,17 +87,19 @@ Server သည် standard input/output မှတစ်ဆင့် `Content-Leng
 
 | Message | အပြုအမူ |
 |---|---|
-| `initialize` | Zap server information ကို ပြန်ပေးပြီး text synchronization၊ completion၊ diagnostics၊ hover၊ definition နှင့် workspace-symbol capabilities များကို ကြေညာသည်။ |
+| `initialize` | Zap server information ကို ပြန်ပေးပြီး text synchronization၊ completion၊ diagnostics၊ hover၊ definition၊ rename နှင့် workspace-symbol capabilities များကို ကြေညာသည်။ |
 | `shutdown` | အောင်မြင်သော null result ကို ပြန်ပေးသည်။ |
 | `textDocument/didOpen` | Document ကို သိမ်းဆည်းပြီး deterministic source ranges ပါသော lint diagnostics ထုတ်ပေးသည်။ |
 | `textDocument/didChange` | သိမ်းဆည်းထားသော document ကို အစားထိုးပြီး diagnostics အသစ် ထုတ်ပေးသည်။ |
-| `textDocument/completion` | လက်ရှိ source prefix အပေါ်မူတည်၍ keyword များကို filter လုပ်ပြီး document ထဲမှ top-level `let` နှင့် function declaration များကို ထည့်ပေးသည်။ |
-| `textDocument/hover` | သိမ်းဆည်းထားသော document ကို parse လုပ်ပြီး top-level function၊ class နှင့် declaration များအတွက် parser-owned metadata ပြသည်။ |
+| `textDocument/didClose` | Per-session workspace index မှ document ကို ဖယ်ရှားပြီး အခြား LSP session များကို မထိခိုက်စေပါ။ |
+| `textDocument/completion` | လက်ရှိ source prefix အပေါ်မူတည်၍ language keyword၊ catalog ထဲရှိ standard-library builtin အားလုံးနှင့် document ထဲမှ top-level `let`/function declaration များကို filter လုပ်သည်။ |
+| `textDocument/hover` | သိမ်းဆည်းထားသော document ကို parse လုပ်ပြီး top-level function၊ class နှင့် declaration များအတွက် parser-owned metadata ပြသည်။ Async builtin များအတွက် stable scheduling documentation ကို ပြသည်။ |
 | `textDocument/definition` | Referenced top-level declaration ကို parser-span source range သို့ resolve လုပ်သည်။ |
+| `textDocument/rename` | ရွေးချယ်ထားသော identifier အတွက် lexer-span `WorkspaceEdit` ထုတ်ပေးပြီး string literal များကို မပြောင်းလဲစေဘဲ invalid name၊ keyword နှင့် standard-library builtin များကို reject လုပ်သည်။ |
 | `workspace/symbol` | In-memory indexed documents များထဲမှ deterministic symbol များကို ရှာဖွေပြီး editor တွင် မဖွင့်ထားသော package module များကို explicit local import အတိုင်း လုံခြုံစွာ လိုက်လံရှာဖွေသည်။ |
 | `textDocument/formatting` | Line ending၊ tab၊ trailing space နှင့် နောက်ဆုံး newline များကို normalize လုပ်သော full-document edit တစ်ခု ပြန်ပေးသည်။ |
 
-Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ context-aware ဖြစ်ပါသည်။ ဥပမာ `async fn load():` ပါသော document ထဲတွင် `lo` ရိုက်ထားပါက completion response တွင် `load` ကို function item အဖြစ် ပြန်ပေးပါသည်။ Hover သည် source position မှ active word ကို ရှာပြီး parser ၏ `SourceSpan` ပါသော AST မှ declaration အချက်အလက်ကို ပြန်ထုတ်ပါသည်။
+Completion သည် fixed unfiltered list မဟုတ်တော့ဘဲ context-aware ဖြစ်ပါသည်။ Language keyword၊ machine-readable standard-library catalog နှင့် active document ထဲမှ declaration များကို ပေါင်းစပ်ပေးပါသည်။ ဥပမာ `async fn load():` ပါသော document ထဲတွင် `lo` ရိုက်ထားပါက completion response တွင် `load` ကို function item အဖြစ် ပြန်ပေးပါသည်။ Hover သည် source position မှ active word ကို ရှာပြီး parser ၏ `SourceSpan` ပါသော AST မှ declaration အချက်အလက်ကို ပြန်ထုတ်ပါသည်။ `spawn`၊ `task_join`၊ `task_is_ready`၊ `task_cancel`၊ `task_join_timeout` နှင့် `async_capabilities` တို့သည် သက်ဆိုင်ရာ async-boundary text ကို ပြသပြီး signature help တွင် တည်ငြိမ်သော parameter label များကို ပေးပါသည်။
 
 Workspace symbol indexing သည် ဖွင့်ထားသော file ၏ directory မှ `import app.util as util` ကဲ့သို့သော explicit local import များကို လိုက်လံရှာဖွေပြီး dotted path ကို `app/util.zp` အဖြစ် ပြောင်းလဲပါသည်။ Imported file များကို indexing မပြုမီ canonicalize လုပ်ပြီး importing directory အတွင်းတွင်သာ ရှိရမည်ဖြစ်ကာ 8 MiB အထိသာ ခွင့်ပြုပါသည်။ Invalid၊ မတွေ့ရှိသော၊ အရွယ်အစားကျော်လွန်သော၊ ဖတ်မရသော သို့မဟုတ် traversal ဆန်သော module များကို editor သို့မဟုတ် filesystem escape မဖြစ်စေရန် deterministic အတိုင်း ကျော်လွှားပါသည်။ ရှာဖွေတွေ့ရှိသော module URI များကို open document များနှင့်အတူ sorted index တစ်ခုတည်းထဲ ထည့်သွင်းသဖြင့် nested import များကို တစ်ကြိမ်သာ လိုက်လံပြီး ရလဒ်များ တည်ငြိမ်နေပါသည်။
 
@@ -105,7 +107,7 @@ Diagnostics များကို Zap ၏ ရှိပြီးသား lint im
 
 ## Tooling Synchronization
 
-Formatter နှင့် LSP တို့သည် finalized async vocabulary တစ်ခုတည်းကို အသုံးပြုပါသည်။ Completion တွင် `spawn`၊ `task_join`၊ `task_is_ready`၊ `task_cancel` နှင့် `task_join_timeout` ကို stable description များဖြင့် ပြသပြီး VS Code TextMate grammar တွင်လည်း ထို builtins များကို callable Zap function များအဖြစ် highlight လုပ်ပါသည်။ Extension validation script သည် grammar ကို parse လုပ်ပြီး async builtin တစ်ခုခုပျောက်ဆုံးပါက package ကို reject လုပ်သဖြင့် language facade နှင့် editor asset များကြား drift မဖြစ်စေရန် ကာကွယ်ပေးပါသည်။
+Formatter နှင့် LSP တို့သည် finalized async vocabulary တစ်ခုတည်းကို အသုံးပြုပါသည်။ Completion တွင် catalog ထဲရှိ public builtin အားလုံးကို domain ကို deterministic detail အဖြစ် ပြသပြီး `spawn`၊ `task_join`၊ `task_is_ready`၊ `task_cancel` နှင့် `task_join_timeout` တို့လည်း ပါဝင်ပါသည်။ VS Code TextMate grammar တွင် catalog vocabulary တစ်ခုလုံးကို callable Zap function များအဖြစ် highlight လုပ်ပါသည်။ Editor parity validation script သည် grammar တွင် catalog builtin နှင့် async keyword များ အားလုံးပါဝင်မှုကို စစ်ဆေးပြီး language facade၊ catalog နှင့် editor asset များကြား drift မဖြစ်စေရန် ကာကွယ်ပေးပါသည်။
 
 ## Production Deployment Boundaries
 

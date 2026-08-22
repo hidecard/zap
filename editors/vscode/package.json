@@ -1,0 +1,28 @@
+{
+  "name": "zap-language-support",
+  "displayName": "Zap Language Support",
+  "description": "Syntax and language configuration support for the Zap programming language.",
+  "version": "2.1.14",
+  "publisher": "hidecard",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "zap",
+        "aliases": ["Zap", "zap"],
+        "extensions": [".zp"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "zap",
+        "scopeName": "source.zap",
+        "path": "./syntaxes/zap.tmLanguage.json"
+      }
+    ]
+  }
+}

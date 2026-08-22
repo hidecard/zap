@@ -20,7 +20,7 @@ Zap ကို စတင်လေ့လာသူများအတွက် ရ�
 
 ## Project Status
 
-Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ cooperative `task_cancel`၊ poll-budget `task_join_timeout` ပါသော async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။ M2-VERIFY-01 တွင် fixed-seed bounded replay၊ repeated semantic outcome digest နှင့် CI/release-preflight evidence များကို ထည့်သွင်းထားပါသည်။ M3-STDLIB-01 တွင် public standard-library domain နှင့် builtin တစ်ခုချင်းစီအတွက် stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout/error နှင့် determinism metadata ပါသော catalog နှင့် bilingual policy ကို ထည့်သွင်းထားပါသည်။
+Zap သည် production-ready language ecosystem တစ်ခုအဖြစ် တိုးတက်နေပါသည်။ Native Rust runtime၊ direct AST execution၊ structured diagnostics၊ `ZAP-MEMORY-001` stable memory-limit diagnostic၊ control-flow type narrowing၊ module visibility၊ OOP rules၊ deterministic dependency lockfiles၊ registry resolution၊ checksum verification၊ offline package reuse၊ executor-backed context-owned language scheduling၊ `ScheduledFuture` handle၊ cooperative `task_cancel`၊ poll-budget `task_join_timeout` ပါသော async runtime နှင့် stdio LSP/editor integration များကို ထည့်သွင်းထားပါသည်။ M2-VERIFY-01 တွင် fixed-seed bounded replay၊ repeated semantic outcome digest နှင့် CI/release-preflight evidence များကို ထည့်သွင်းထားပါသည်။ M3-STDLIB-01 တွင် public standard-library domain နှင့် builtin တစ်ခုချင်းစီအတွက် stability၊ deprecation၊ semver၊ platform၊ limit၊ timeout/error နှင့် determinism metadata ပါသော catalog နှင့် bilingual policy ကို ထည့်သွင်းထားပါသည်။ M3-LSP-01 တွင် parser/lexer-backed rename၊ didClose cleanup၊ nested/module-aware indexing၊ catalog-driven completion နှင့် async builtin hover/signature metadata ပါသော LSP/editor semantic parity ကို ထည့်သွင်းထားပါသည်။
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|
@@ -36,7 +36,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
 | Runtime architecture | `runtime_state.rs` နှင့် `value.rs` တွင် per-run `RuntimeState`၊ `MemoryBudget`၊ `ObjectStore`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking၊ execution-depth accounting၊ reset-detached lifecycle statistics နှင့် parent-linked `EnvFrame` closure များကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
-| Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport နှင့် M3-STDLIB-01 policy evidence |
+| Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence နှင့် M3-LSP-01 semantic-parity/editor validation evidence |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
@@ -98,9 +98,9 @@ zap.exe main.zp
 
 Package project များတွင် `zap.toml` manifest နှင့် canonical `zap.lock` lockfile ကို အသုံးပြုပါသည်။ Local path dependencies များကို deterministic order ဖြင့် recursive validation လုပ်ပြီး registry artifacts များကို SHA-256 checksum ဖြင့် စစ်ဆေးပါသည်။ Offline reuse အတွက် `ZAP_OFFLINE=1` ကို အသုံးပြုနိုင်ပါသည်။
 
-## VS Code Extension
+## VS Code extension
 
-Official **Zap Language Support v0.5.0** extension သည် syntax highlighting၊ snippets၊ diagnostics၊ autocomplete၊ signature help၊ hover၊ go-to-definition၊ formatting၊ workspace symbols နှင့် run support များကို ပေးပါသည်။
+Official **Zap Language Support v0.5.0** extension သည် syntax highlighting၊ snippets၊ diagnostics၊ autocomplete၊ signature help၊ hover၊ go-to-definition၊ formatting၊ workspace symbols၊ rename နှင့် run support များကို ပေးပါသည်။ Repository ထဲတွင် catalog နှင့်ကိုက်ညီသော TextMate grammar နှင့် language configuration ကို `editors/vscode/` အောက်တွင် ထည့်သွင်းထားပြီး `scripts/validate_vscode_assets.py` ဖြင့် စစ်ဆေးနိုင်ပါသည်။
 
 ```bash
 code --install-extension ArkarYan.zap-language-support

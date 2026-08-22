@@ -2,7 +2,7 @@
 
 ## Status
 
-Zap P2 now includes a deterministic async language layer, a bounded threaded I/O adapter, and an editor protocol foundation. The deterministic executor remains stable-Rust compatible, while the language supports `async fn`, context-owned `ScheduledFuture` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, and context-aware completion.
+Zap P2 now includes a deterministic async language layer, a bounded threaded I/O adapter, and an editor protocol foundation. The deterministic executor remains stable-Rust compatible, while the language supports `async fn`, context-owned `ScheduledFuture` values, and `await` expressions. The LSP server provides JSON-RPC initialization, document synchronization, diagnostics, parser-backed hover, semantic rename edits, and context-aware completion. M3-LSP-01 keeps these editor surfaces aligned with the canonical AST, lexer spans, async facade, and standard-library catalog.
 
 The implementation separates deterministic language scheduling from production-oriented blocking adapters. An async call schedules its result in the caller's `RuntimeState` and returns a context-owned `ScheduledFuture`; `await` drives the executor and unwraps that value. `delay_ticks`, `yield_now`, poll budgets, and runtime task limits provide deterministic scheduling controls, while `CancellationToken`, `Cancellable`, and the language `task_cancel` API provide cooperative cancellation. `ThreadedRuntime` supplies a bounded fixed worker set for explicitly submitted blocking work and asynchronous file reads; it does not replace the deterministic language executor.
 
@@ -87,13 +87,15 @@ The server communicates over standard input and output using JSON-RPC messages f
 
 | Message | Behavior |
 |---|---|
-| `initialize` | Returns Zap server information and advertises text synchronization, completion, diagnostics, hover, definition, and workspace-symbol capabilities. |
+| `initialize` | Returns Zap server information and advertises text synchronization, completion, diagnostics, hover, definition, rename, and workspace-symbol capabilities. |
 | `shutdown` | Returns a successful null result. |
 | `textDocument/didOpen` | Stores the document and publishes lint diagnostics with deterministic source ranges. |
 | `textDocument/didChange` | Replaces the stored document and publishes updated diagnostics. |
-| `textDocument/completion` | Filters deterministic keywords by the active source prefix and adds top-level `let` and function declarations from the document. |
-| `textDocument/hover` | Parses the stored document and reports parser-owned metadata for top-level functions, classes, and declarations. |
+| `textDocument/didClose` | Removes the document from the per-session workspace index without affecting other LSP sessions. |
+| `textDocument/completion` | Filters deterministic language keywords, all cataloged standard-library builtins, and top-level `let` and function declarations by the active source prefix. |
+| `textDocument/hover` | Parses the stored document and reports parser-owned metadata for top-level functions, classes, and declarations; async builtins expose stable scheduling documentation. |
 | `textDocument/definition` | Resolves a referenced top-level declaration to its parser-span source range. |
+| `textDocument/rename` | Produces a `WorkspaceEdit` containing lexer-span edits for the selected identifier, protects string literals, and rejects invalid names, keywords, and standard-library builtins. |
 | `workspace/symbol` | Searches indexed in-memory documents and safely follows explicit local imports to discover deterministic symbols from package modules that are not open in the editor. |
 | `textDocument/formatting` | Returns one deterministic full-document edit that normalizes line endings, tabs, trailing spaces, and the final newline. |
 
@@ -105,7 +107,7 @@ Content-Length: 67\r\n
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
 ```
 
-Completion is context-aware rather than a fixed unfiltered list. For example, after typing `lo` in a document containing `async fn load():`, the completion response includes `load` as a function item. Hover uses the source position to identify the active word and the parser’s `SourceSpan`-carrying AST to describe the matching declaration.
+Completion is context-aware rather than a fixed unfiltered list. It combines language keywords, the machine-readable standard-library catalog, and declarations discovered in the active document. For example, after typing `lo` in a document containing `async fn load():`, the completion response includes `load` as a function item. Hover uses the source position to identify the active word and the parser’s `SourceSpan`-carrying AST to describe the matching declaration; `spawn`, `task_join`, `task_is_ready`, `task_cancel`, `task_join_timeout`, and `async_capabilities` expose matching async-boundary text. Signature help provides the same stable parameter labels for these builtins.
 
 Workspace symbol indexing follows explicit local imports such as `import app.util as util` from the opened file’s directory and maps the dotted path to `app/util.zp`. Imported files are canonicalized before indexing, must remain under the importing directory, and are bounded to 8 MiB. Invalid, missing, oversized, unreadable, or traversal-like modules are skipped deterministically rather than becoming an editor or filesystem escape. Discovered module URIs are inserted into the same sorted index as open documents, so nested imports are traversed once and results remain stable.
 
@@ -113,7 +115,7 @@ Diagnostics continue to reuse Zap’s existing lint implementation. This keeps c
 
 ## Tooling Synchronization
 
-The formatter and LSP now share the finalized async vocabulary. Completion advertises `spawn`, `task_join`, `task_is_ready`, `task_cancel`, and `task_join_timeout` with stable descriptions, while the VS Code TextMate grammar highlights the same builtins as callable Zap functions. The extension validation script parses the grammar and rejects a package when any async builtin is missing, preventing drift between the language facade and editor assets.
+The formatter and LSP now share the finalized async vocabulary. Completion advertises every cataloged public builtin with its domain as deterministic detail, including `spawn`, `task_join`, `task_is_ready`, `task_cancel`, and `task_join_timeout`. The VS Code TextMate grammar highlights the same catalog vocabulary as callable Zap functions. The editor parity validation script parses the grammar and rejects a package when any catalog builtin or async keyword is missing, preventing drift between the language facade, catalog, and editor assets.
 
 ## Production Deployment Boundaries
 
