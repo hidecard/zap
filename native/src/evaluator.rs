@@ -976,6 +976,23 @@ pub(crate) fn direct_builtin_with_context(
                 _ => Value::OptionSome(Box::new(args[0].clone())),
             }))
         }
+        "unwrap" => {
+            expect(1)?;
+            match &args[0] {
+                Value::ResultOk(value) | Value::OptionSome(value) => Ok(Some((**value).clone())),
+                Value::ResultErr(value) => Err(format!("unwrap failed: {}", value.show())),
+                Value::OptionNone => Err("unwrap failed: option is none".into()),
+                _ => Err("unwrap expects a result or option".into()),
+            }
+        }
+        "unwrap_or" => {
+            expect(2)?;
+            match &args[0] {
+                Value::ResultOk(value) | Value::OptionSome(value) => Ok(Some((**value).clone())),
+                Value::ResultErr(_) | Value::OptionNone => Ok(Some(args[1].clone())),
+                _ => Err("unwrap_or expects a result or option".into()),
+            }
+        }
         "option_none" => {
             expect(0)?;
             Ok(Some(Value::OptionNone))
@@ -2321,6 +2338,20 @@ fn ast_expression_with_context(
                 .collect::<Result<Vec<_>, String>>()?;
             match &callee.node {
                 Expr::Name(name) => {
+                    if name == "new" {
+                        if values.iter().any(|argument| argument.name.is_some()) {
+                            return Err(
+                                "named arguments are not supported for built-in function: new"
+                                    .into(),
+                            );
+                        }
+                        return construct_object_with_context(
+                            values.into_iter().map(|argument| argument.value).collect(),
+                            vars,
+                            funcs,
+                            context,
+                        );
+                    }
                     if let Some(function) = funcs.get(name) {
                         return call_function_with_arguments(function, values, funcs, context);
                     }
@@ -2355,7 +2386,7 @@ fn ast_expression_with_context(
                     {
                         Ok(value)
                     } else {
-                        expression_with_context(&ast_expr_source(node), vars, funcs, context)
+                        Err(format!("undefined function: {name}"))
                     }
                 }
                 Expr::Member { target, member } => {
@@ -2440,6 +2471,16 @@ fn ast_expression_with_context(
     }
 }
 
+fn ast_default_with_context(
+    source: &str,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<Value, String> {
+    let expression = crate::ast::parse_expression(source)?;
+    ast_expression_with_context(&expression, vars, funcs, context)
+}
+
 pub(crate) fn call_function_with_context(
     f: &Function,
     args: Vec<Value>,
@@ -2510,7 +2551,7 @@ fn call_function_with_arguments(
         let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
-            expression_with_context(default, &local, funcs, context)?
+            ast_default_with_context(default, &local, funcs, context)?
         } else {
             return Err(format!("missing required argument: {}", param.name));
         };
@@ -2639,7 +2680,7 @@ fn call_method_with_arguments(
         let v = if let Some(value) = named.remove(&param.name) {
             value
         } else if let Some(default) = &param.default {
-            expression_with_context(default, &local, funcs, context)?
+            ast_default_with_context(default, &local, funcs, context)?
         } else {
             return Err(format!("missing required argument: {}", param.name));
         };
@@ -2842,99 +2883,70 @@ pub(crate) fn check_annotation(name: &str, annotation: &str, value: &Value) -> R
     }
 }
 
-fn ast_expr_source(expression: &crate::ast::Spanned<Expr>) -> String {
-    match &expression.node {
-        Expr::Literal(Literal::Number(value)) => value.to_string(),
-        Expr::Literal(Literal::Text(value)) => format!(
-            "\"{}\"",
-            value
-                .replace('\\', "\\\\")
-                .replace('"', "\\\"")
-                .replace('\n', "\\n")
-                .replace('\r', "\\r")
-                .replace('\t', "\\t")
-        ),
-        Expr::Literal(Literal::Bool(value)) => value.to_string(),
-        Expr::Literal(Literal::None) => "none".into(),
-        Expr::Name(name) => name.clone(),
-        Expr::List(items) => format!(
-            "[{}]",
-            items
-                .iter()
-                .map(ast_expr_source)
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        Expr::Map(items) => format!(
-            "{{{}}}",
-            items
-                .iter()
-                .map(|(key, value)| format!("{}: {}", ast_expr_source(key), ast_expr_source(value)))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        Expr::Unary {
-            op: UnaryOp::Negate,
-            value,
-        } => format!("(-{})", ast_expr_source(value)),
-        Expr::Unary {
-            op: UnaryOp::Not,
-            value,
-        } => format!("(not {})", ast_expr_source(value)),
-        Expr::Binary { left, op, right } => {
-            let operator = match op {
-                BinaryOp::Add => "+",
-                BinaryOp::Subtract => "-",
-                BinaryOp::Multiply => "*",
-                BinaryOp::Divide => "/",
-                BinaryOp::Remainder => "%",
-                BinaryOp::Equal => "==",
-                BinaryOp::NotEqual => "!=",
-                BinaryOp::Less => "<",
-                BinaryOp::Greater => ">",
-                BinaryOp::LessEqual => "<=",
-                BinaryOp::GreaterEqual => ">=",
-                BinaryOp::And => "and",
-                BinaryOp::Or => "or",
-            };
-            format!(
-                "({} {} {})",
-                ast_expr_source(left),
-                operator,
-                ast_expr_source(right)
-            )
+fn construct_object_with_context(
+    args: Vec<Value>,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<Value, String> {
+    let mut values = args.into_iter();
+    let class = values
+        .next()
+        .ok_or_else(|| "new expects a text class name".to_string())?;
+    let mut ctor_args = Vec::new();
+    let mut explicit_fields = HashMap::new();
+    for value in values {
+        if ctor_args.is_empty() {
+            if let Value::Map(fields) = value {
+                explicit_fields = fields;
+                continue;
+            }
         }
-        Expr::Conditional {
-            condition,
-            then_branch,
-            else_branch,
-        } => format!(
-            "if {} then {} else {}",
-            ast_expr_source(condition),
-            ast_expr_source(then_branch),
-            ast_expr_source(else_branch)
-        ),
-        Expr::Call { callee, args } => format!(
-            "{}({})",
-            ast_expr_source(callee),
-            args.iter()
-                .map(|argument| match argument {
-                    CallArg::Positional(value) => ast_expr_source(value),
-                    CallArg::Named { name, value } =>
-                        format!("{} = {}", name, ast_expr_source(value)),
-                })
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        Expr::Member { target, member } => {
-            format!("{}.{}", ast_expr_source(target), member)
-        }
-        Expr::Index { target, index } => {
-            format!("{}[{}]", ast_expr_source(target), ast_expr_source(index))
-        }
-        Expr::Await(value) => format!("await {}", ast_expr_source(value)),
-        Expr::Propagate(value) => format!("{}?", ast_expr_source(value)),
+        ctor_args.push(value);
     }
+    let Value::Text(class_name) = class else {
+        return Err("new expects a text class name".into());
+    };
+    if !funcs.contains_key(&format!("{class_name}.__class__")) {
+        return Err(format!("unknown class: {class_name}"));
+    }
+    context
+        .state_mut()
+        .memory_budget_mut()
+        .reserve_object(class_name.len(), explicit_fields.len())?;
+    let object = Value::object_with_store(
+        class_name.clone(),
+        Some(context.state().object_store().clone()),
+    );
+    initialize_object_fields(&class_name, &object, vars, funcs, context)?;
+    if let Value::Object { fields, .. } = &object {
+        fields.try_borrow_mut()?.extend(explicit_fields);
+    }
+    if funcs
+        .get(&format!("{class_name}.init"))
+        .is_some_and(|init| !constructor_delegates_to_parent(init))
+        && funcs.contains_key(&format!("{class_name}.__own_init__"))
+    {
+        if let Some(parent_meta) = funcs.get(&format!("{class_name}.__parent__")) {
+            if let Some(parent_name) = parent_meta.body.first() {
+                if let Some(parent_init) = funcs.get(&format!("{parent_name}.init")).cloned() {
+                    check_method_visibility(&parent_init, parent_name, vars, funcs)?;
+                    call_method_with_context(
+                        &parent_init,
+                        ctor_args.clone(),
+                        object.clone(),
+                        funcs,
+                        context,
+                    )?;
+                }
+            }
+        }
+    }
+    if let Some(init) = funcs.get(&format!("{class_name}.init")).cloned() {
+        check_method_visibility(&init, &class_name, vars, funcs)?;
+        call_method_with_context(&init, ctor_args, object.clone(), funcs, context)?;
+    }
+    Ok(object)
 }
 
 /// Reports whether a parsed program can use the canonical AST executor.
@@ -4337,6 +4349,60 @@ mod tests {
     }
 
     #[test]
+    fn ast_new_constructs_objects_without_legacy_reparse() {
+        let program = parse_program(
+            "class Box:\n    let value = 7\n\nlet box = new(\"Box\", {\"value\": 9})\n",
+        )
+        .expect("class construction program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("native AST object construction should execute");
+        let Value::Object { class_name, fields } = vars.get("box").expect("constructed object")
+        else {
+            panic!("new should return an object");
+        };
+        assert_eq!(class_name, "Box");
+        assert_eq!(
+            fields.try_borrow().unwrap().get("value"),
+            Some(&Value::Number(9))
+        );
+    }
+
+    #[test]
+    fn ast_new_rejects_named_arguments_deterministically() {
+        let program =
+            parse_program("class Box:\n    let value = 7\n\nlet box = new(\"Box\", value = 9)\n")
+                .expect("named constructor program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        let error = match execute_ast_program(&program, &mut vars, &mut funcs, Path::new(".")) {
+            Ok(_) => panic!("named constructor arguments must be rejected"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error,
+            "named arguments are not supported for built-in function: new"
+        );
+    }
+
+    #[test]
+    fn unknown_ast_calls_fail_without_legacy_reparse() {
+        let program = parse_program("let result = missing_function(1)\n")
+            .expect("unknown call program should parse");
+        let result = execute_ast_program(
+            &program,
+            &mut HashMap::<String, Value>::new(),
+            &mut HashMap::<String, Rc<Function>>::new(),
+            Path::new("."),
+        );
+        assert!(matches!(
+            result,
+            Err(error) if error == "undefined function: missing_function"
+        ));
+    }
+
+    #[test]
     fn json_conversion_propagates_borrow_error_without_panic() {
         let value = Value::object("Borrowed");
         let Value::Object { fields, .. } = &value else {
@@ -4502,6 +4568,19 @@ mod tests {
         assert_eq!(vars.get("joined"), Some(&Value::Text("a-b".into())));
         assert_eq!(vars.get("present"), Some(&Value::Bool(true)));
         assert_eq!(vars.get("value"), Some(&Value::Number(7)));
+    }
+
+    #[test]
+    fn ast_function_defaults_use_native_expression_evaluation() {
+        let program = parse_program(
+            "fn defaulted(value = unwrap(ok(7))):\n    return value\nlet result = defaulted()\n",
+        )
+        .expect("function default program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("AST function defaults should execute");
+        assert_eq!(vars.get("result"), Some(&Value::Number(7)));
     }
 
     #[test]

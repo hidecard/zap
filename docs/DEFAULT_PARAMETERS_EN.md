@@ -93,7 +93,7 @@ say welcome()
 say welcome("Mingalaba", "Zap")
 ```
 
-Default expressions are evaluated in the function call's local environment. Defaults should therefore be kept simple and deterministic. A default can refer to values already available to the function's closure, but it should not depend on a later parameter that has not been bound yet.
+Default expressions are evaluated in the function call's local environment. Defaults should therefore be kept simple and deterministic. A default can refer to values already available to the function's closure, but it should not depend on a later parameter that has not been bound yet. Omitted defaults are parsed and evaluated as canonical AST expressions, including nested built-in calls; they do not re-enter the legacy line-expression parser.
 
 ## Methods and constructors
 
@@ -113,7 +113,7 @@ say guest.label()
 say developer.label("Account")
 ```
 
-For methods, the runtime checks the arguments after `self`. Constructor and method defaults follow the same omission and override rules as ordinary functions.
+For methods, the runtime checks the arguments after `self`. Constructor and method defaults follow the same omission and override rules as ordinary functions. The built-in `new(...)` call is a separate constructor boundary: it accepts a text class name, positional constructor arguments, and an optional positional map of explicit fields. Named arguments are intentionally rejected with a deterministic diagnostic; named binding remains supported for user-defined functions and methods.
 
 ## Return types and defaults
 
@@ -141,6 +141,7 @@ say port_or_default(3000)
 | Duplicate names are rejected | `f(a = 1, a = 2)` | Duplicate named-argument error |
 | Positional-after-named is rejected | `f(a = 1, 2)` | Binding-order error |
 | Named binding selects parameters directly | `f(second = 20, first = 10)` | Values bind by name |
+| Built-in constructor names are rejected | `new("User", name = "Guest")` | Deterministic unsupported-named-argument error |
 
 A typical missing-argument diagnostic for a function with two required parameters is similar to:
 
@@ -180,7 +181,7 @@ Run it with:
 zap examples/default_parameters.zp
 ```
 
-The current implementation supports **positional and named arguments together with default parameters**. Named calls such as `greet(name = "Zap")` are supported for user-defined functions and methods through the structured AST call path.
+The current implementation supports **positional and named arguments together with default parameters**. Named calls such as `greet(name = "Zap")` are supported for user-defined functions and methods through the structured AST call path. Built-in calls, including `new(...)`, reject named arguments unless a built-in contract explicitly adds support. Native `new(...)` construction, default expressions, and unsupported-call diagnostics now stay on the canonical AST execution path without hidden legacy reparsing.
 
 ## Related references
 

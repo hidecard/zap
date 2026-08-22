@@ -93,7 +93,7 @@ say welcome()
 say welcome("Mingalaba", "Zap")
 ```
 
-Default expression သည် function call ၏ local environment အတွင်း evaluate လုပ်သည်။ ထို့ကြောင့် default များကို ရိုးရှင်းပြီး ခန့်မှန်းရလွယ်သော expression များအဖြစ်ထားသင့်သည်။ နောက်ပိုင်းတွင် bind လုပ်မည့် parameter ကို အစောပိုင်း default expression ထဲတွင် မမှီခိုသင့်ပါ။
+Default expression သည် function call ၏ local environment အတွင်း evaluate လုပ်သည်။ ထို့ကြောင့် default များကို ရိုးရှင်းပြီး ခန့်မှန်းရလွယ်သော expression များအဖြစ်ထားသင့်သည်။ နောက်ပိုင်းတွင် bind လုပ်မည့် parameter ကို အစောပိုင်း default expression ထဲတွင် မမှီခိုသင့်ပါ။ မပေးထားသော default များကို canonical AST expression အဖြစ် parse/evaluate လုပ်ပြီး nested builtin call များပါ legacy line-expression parser သို့ ပြန်မဝင်တော့ပါ။
 
 ## Method နှင့် constructor များ
 
@@ -113,7 +113,7 @@ say guest.label()
 say developer.label("Account")
 ```
 
-Method များတွင် runtime သည် `self` နောက်မှ ကျန်ရှိသော argument များကို စစ်ဆေးသည်။ Constructor နှင့် method များ၏ default value များသည် ordinary function များကဲ့သို့ ချန်ထားနိုင်ပြီး caller value ဖြင့် override လုပ်နိုင်သည်။
+Method များတွင် runtime သည် `self` နောက်မှ ကျန်ရှိသော argument များကို စစ်ဆေးသည်။ Constructor နှင့် method များ၏ default value များသည် ordinary function များကဲ့သို့ ချန်ထားနိုင်ပြီး caller value ဖြင့် override လုပ်နိုင်သည်။ Built-in `new(...)` call သည် သီးခြား constructor boundary ဖြစ်ပြီး text class name၊ positional constructor argument များနှင့် positional explicit-field map တစ်ခုကို လက်ခံသည်။ Named argument များကို ရည်ရွယ်ချက်ရှိရှိ reject လုပ်ပြီး deterministic diagnostic ထုတ်ပေးသည်။ Named binding ကို user-defined function နှင့် method များအတွက် ဆက်လက်အသုံးပြုနိုင်သည်။
 
 ## Return type နှင့် default parameter
 
@@ -141,6 +141,7 @@ say port_or_default(3000)
 | Named name ထပ်မရေးရ | `f(a = 1, a = 2)` | Duplicate named-argument error |
 | Named နောက်တွင် positional မရေးရ | `f(a = 1, 2)` | Binding-order error |
 | Named binding သည် parameter name အတိုင်းချိတ်သည် | `f(second = 20, first = 10)` | Value များကို name အတိုင်း ချိတ်သည် |
+| Built-in constructor name များကို reject လုပ်သည် | `new("User", name = "Guest")` | Deterministic unsupported-named-argument error |
 
 Required parameter နှစ်ခုရှိသော function ကို argument တစ်ခုတည်းဖြင့် ခေါ်ပါက diagnostic သည် အောက်ပါပုံစံနှင့် ဆင်တူမည်—
 
@@ -180,7 +181,7 @@ Run လုပ်ရန်—
 zap examples/default_parameters.zp
 ```
 
-လက်ရှိ implementation သည် **positional နှင့် named arguments** နှစ်မျိုးလုံးကို default parameters နှင့်အတူ support လုပ်ထားသည်။ `greet(name = "Zap")` ကဲ့သို့သော named call များကို user-defined function နှင့် method များအတွက် structured AST call path မှတစ်ဆင့် အသုံးပြုနိုင်သည်။
+လက်ရှိ implementation သည် **positional နှင့် named arguments** နှစ်မျိုးလုံးကို default parameters နှင့်အတူ support လုပ်ထားသည်။ `greet(name = "Zap")` ကဲ့သို့သော named call များကို user-defined function နှင့် method များအတွက် structured AST call path မှတစ်ဆင့် အသုံးပြုနိုင်သည်။ `new(...)` အပါအဝင် built-in call များသည် built-in contract က သီးခြားခွင့်ပြုထားခြင်း မရှိလျှင် named argument များကို reject လုပ်သည်။ Native `new(...)` construction၊ default expression နှင့် unsupported-call diagnostic များသည် hidden legacy reparse မရှိဘဲ canonical AST execution path ပေါ်တွင်သာ ဆက်လက်လုပ်ဆောင်သည်။
 
 ## ဆက်လက်ဖတ်ရှုရန်
 
