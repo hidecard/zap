@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::runtime_state::ObjectStore;
+use crate::runtime_state::{MemoryBudget, MemoryBudgetStats, ObjectStore};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Param {
@@ -176,13 +176,22 @@ impl Value {
     /// Return the stable, bounded memory-statistics record exposed by the runtime.
     #[cfg(test)]
     pub(crate) fn memory_stats_value() -> Self {
-        Self::memory_stats_value_for_store(None)
+        Self::memory_stats_value_for_store(None, None)
     }
 
-    pub(crate) fn memory_stats_value_for_store(store: Option<&Rc<RefCell<ObjectStore>>>) -> Self {
+    pub(crate) fn memory_stats_value_for_store(
+        store: Option<&Rc<RefCell<ObjectStore>>>,
+        budget: Option<&MemoryBudgetStats>,
+    ) -> Self {
         let (live_objects, object_allocations, object_deallocations) = store
             .map(|store| store.borrow().stats())
             .unwrap_or_default();
+        let (cleanup_attempts, cleanup_successes, cleanup_failures, validation_runs) = store
+            .map(|store| store.borrow().lifecycle_stats())
+            .unwrap_or_default();
+        let budget = budget
+            .copied()
+            .unwrap_or_else(|| MemoryBudget::new().stats());
         let mut values = HashMap::new();
         values.insert("live_objects".into(), Self::Number(live_objects as i64));
         values.insert(
@@ -213,12 +222,48 @@ impl Value {
             "tracing_collector".into(),
             Self::Text("not_implemented".into()),
         );
+        values.insert(
+            "cleanup_attempts".into(),
+            Self::Number(cleanup_attempts as i64),
+        );
+        values.insert(
+            "cleanup_successes".into(),
+            Self::Number(cleanup_successes as i64),
+        );
+        values.insert(
+            "cleanup_failures".into(),
+            Self::Number(cleanup_failures as i64),
+        );
+        values.insert(
+            "validation_runs".into(),
+            Self::Number(validation_runs as i64),
+        );
+        values.insert("max_bytes".into(), Self::Number(budget.max_bytes as i64));
+        values.insert("used_bytes".into(), Self::Number(budget.used_bytes as i64));
+        values.insert("max_tasks".into(), Self::Number(budget.max_tasks as i64));
+        values.insert(
+            "admitted_tasks".into(),
+            Self::Number(budget.admitted_tasks as i64),
+        );
+        values.insert(
+            "max_output_bytes".into(),
+            Self::Number(budget.max_output_bytes as i64),
+        );
+        values.insert(
+            "used_output_bytes".into(),
+            Self::Number(budget.used_output_bytes as i64),
+        );
         Self::Map(values)
     }
 
     /// Validate a value at a public runtime boundary without recursing forever
     /// through cyclic object graphs.
     pub(crate) fn validate_memory_limits(&self) -> Result<(), String> {
+        if let Self::Object { fields, .. } = self {
+            if let Some(store) = &fields.store {
+                store.borrow_mut().record_validation();
+            }
+        }
         let mut visited_objects = HashSet::new();
         let mut nodes = 0usize;
         validate_value(
@@ -235,8 +280,26 @@ impl Value {
     #[allow(dead_code)]
     pub(crate) fn clear_object_fields(&self) -> Result<bool, String> {
         if let Self::Object { fields, .. } = self {
-            fields.try_borrow_mut()?.clear();
-            Ok(true)
+            let store = fields.store.clone();
+            if let Some(store) = &store {
+                store.borrow_mut().record_cleanup_attempt();
+            }
+            let result = fields.try_borrow_mut();
+            match result {
+                Ok(mut fields) => {
+                    fields.clear();
+                    if let Some(store) = store {
+                        store.borrow_mut().record_cleanup_success();
+                    }
+                    Ok(true)
+                }
+                Err(error) => {
+                    if let Some(store) = store {
+                        store.borrow_mut().record_cleanup_failure();
+                    }
+                    Err(error)
+                }
+            }
         } else {
             Ok(false)
         }
@@ -356,6 +419,7 @@ fn validate_value(
 #[cfg(test)]
 mod tests {
     use super::{memory_stats, Value, MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
+    use crate::runtime_state::ExecutionContext;
     use std::rc::Rc;
 
     #[test]
@@ -421,6 +485,29 @@ mod tests {
             object.clear_object_fields().unwrap_err(),
             "BorrowError: object fields are already borrowed"
         );
+    }
+
+    #[test]
+    fn context_object_store_reports_validation_and_cleanup_lifecycle() {
+        let context = ExecutionContext::new();
+        let store = context.state().object_store().clone();
+        let object = Value::object_with_store("Tracked", Some(store.clone()));
+
+        object
+            .validate_memory_limits()
+            .expect("a small object should validate");
+        assert_eq!(store.borrow().lifecycle_stats(), (0, 0, 0, 1));
+        assert!(object
+            .clear_object_fields()
+            .expect("cleanup should succeed"));
+        assert_eq!(store.borrow().lifecycle_stats(), (1, 1, 0, 1));
+
+        let _active_borrow = match &object {
+            Value::Object { fields, .. } => fields.try_borrow_mut().unwrap(),
+            _ => panic!("object constructor must create an object value"),
+        };
+        assert!(object.clear_object_fields().is_err());
+        assert_eq!(store.borrow().lifecycle_stats(), (2, 1, 1, 1));
     }
 
     #[test]

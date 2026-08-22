@@ -12,8 +12,10 @@ pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<F
 pub(crate) const DEFAULT_MEMORY_BUDGET_BYTES: u64 = 64 * 1024 * 1024;
 pub(crate) const DEFAULT_MEMORY_BUDGET_TASKS: u64 = 1_024;
 pub(crate) const DEFAULT_MEMORY_BUDGET_OUTPUT_BYTES: u64 = 8 * 1024 * 1024;
+pub(crate) const LOGICAL_OBJECT_BASE_BYTES: u64 = 64;
+pub(crate) const LOGICAL_OBJECT_FIELD_BYTES: u64 = 32;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct MemoryBudget {
     max_bytes: u64,
     used_bytes: u64,
@@ -23,6 +25,16 @@ pub(crate) struct MemoryBudget {
     used_output_bytes: u64,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct MemoryBudgetStats {
+    pub(crate) max_bytes: u64,
+    pub(crate) used_bytes: u64,
+    pub(crate) max_tasks: u64,
+    pub(crate) admitted_tasks: u64,
+    pub(crate) max_output_bytes: u64,
+    pub(crate) used_output_bytes: u64,
+}
+
 #[allow(dead_code)]
 impl MemoryBudget {
     pub(crate) fn new() -> Self {
@@ -30,8 +42,29 @@ impl MemoryBudget {
             max_bytes: DEFAULT_MEMORY_BUDGET_BYTES,
             max_tasks: DEFAULT_MEMORY_BUDGET_TASKS,
             max_output_bytes: DEFAULT_MEMORY_BUDGET_OUTPUT_BYTES,
-            ..Self::default()
+            used_bytes: 0,
+            admitted_tasks: 0,
+            used_output_bytes: 0,
         }
+    }
+
+    pub(crate) fn reserve_object(
+        &mut self,
+        class_name_bytes: usize,
+        field_count: usize,
+    ) -> Result<(), String> {
+        let class_name_bytes = u64::try_from(class_name_bytes)
+            .map_err(|_| "memory budget exceeded: object class name is too large".to_string())?;
+        let field_count = u64::try_from(field_count)
+            .map_err(|_| "memory budget exceeded: object field count is too large".to_string())?;
+        let field_bytes = field_count
+            .checked_mul(LOGICAL_OBJECT_FIELD_BYTES)
+            .ok_or_else(|| "memory budget exceeded: object field charge overflow".to_string())?;
+        let charge = LOGICAL_OBJECT_BASE_BYTES
+            .checked_add(class_name_bytes)
+            .and_then(|value| value.checked_add(field_bytes))
+            .ok_or_else(|| "memory budget exceeded: object charge overflow".to_string())?;
+        self.reserve_bytes(charge)
     }
 
     pub(crate) fn reserve_bytes(&mut self, bytes: u64) -> Result<(), String> {
@@ -88,6 +121,17 @@ impl MemoryBudget {
         (self.used_bytes, self.admitted_tasks, self.used_output_bytes)
     }
 
+    pub(crate) fn stats(&self) -> MemoryBudgetStats {
+        MemoryBudgetStats {
+            max_bytes: self.max_bytes,
+            used_bytes: self.used_bytes,
+            max_tasks: self.max_tasks,
+            admitted_tasks: self.admitted_tasks,
+            max_output_bytes: self.max_output_bytes,
+            used_output_bytes: self.used_output_bytes,
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn set_limits(&mut self, max_bytes: u64, max_tasks: u64, max_output_bytes: u64) {
         self.max_bytes = max_bytes;
@@ -96,11 +140,21 @@ impl MemoryBudget {
     }
 }
 
+impl Default for MemoryBudget {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct ObjectStore {
     live_objects: usize,
     object_allocations: u64,
     object_deallocations: u64,
+    cleanup_attempts: u64,
+    cleanup_successes: u64,
+    cleanup_failures: u64,
+    validation_runs: u64,
 }
 
 impl ObjectStore {
@@ -114,6 +168,22 @@ impl ObjectStore {
         self.object_deallocations = self.object_deallocations.saturating_add(1);
     }
 
+    pub(crate) fn record_cleanup_attempt(&mut self) {
+        self.cleanup_attempts = self.cleanup_attempts.saturating_add(1);
+    }
+
+    pub(crate) fn record_cleanup_success(&mut self) {
+        self.cleanup_successes = self.cleanup_successes.saturating_add(1);
+    }
+
+    pub(crate) fn record_cleanup_failure(&mut self) {
+        self.cleanup_failures = self.cleanup_failures.saturating_add(1);
+    }
+
+    pub(crate) fn record_validation(&mut self) {
+        self.validation_runs = self.validation_runs.saturating_add(1);
+    }
+
     pub(crate) fn stats(&self) -> (usize, u64, u64) {
         (
             self.live_objects,
@@ -122,8 +192,13 @@ impl ObjectStore {
         )
     }
 
-    pub(crate) fn reset(&mut self) {
-        *self = Self::default();
+    pub(crate) fn lifecycle_stats(&self) -> (u64, u64, u64, u64) {
+        (
+            self.cleanup_attempts,
+            self.cleanup_successes,
+            self.cleanup_failures,
+            self.validation_runs,
+        )
     }
 }
 
@@ -131,7 +206,7 @@ impl ObjectStore {
 ///
 /// The first runtime-state migration slice owns module caching, import-cycle
 /// tracking, and execution-depth accounting instead of process-global state.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct RuntimeState {
     workspace_root: Option<PathBuf>,
     memory_budget: MemoryBudget,
@@ -139,6 +214,12 @@ pub(crate) struct RuntimeState {
     module_loading: Vec<PathBuf>,
     module_cache: HashMap<PathBuf, ModuleCacheEntry>,
     execution_depth: Rc<Cell<usize>>,
+}
+
+impl Default for RuntimeState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RuntimeState {
@@ -156,7 +237,9 @@ impl RuntimeState {
     pub(crate) fn reset_for_run(&mut self) {
         self.workspace_root = None;
         self.memory_budget = MemoryBudget::new();
-        self.object_store.borrow_mut().reset();
+        // Detach the old store so objects retained by the previous run cannot
+        // mutate the counters belonging to the reset run when they are dropped.
+        self.object_store = Rc::new(RefCell::new(ObjectStore::default()));
         self.module_loading.clear();
         self.module_cache.clear();
         self.execution_depth.set(0);
@@ -182,6 +265,10 @@ impl RuntimeState {
 
     pub(crate) fn object_store(&self) -> &Rc<RefCell<ObjectStore>> {
         &self.object_store
+    }
+
+    pub(crate) fn memory_budget_stats(&self) -> MemoryBudgetStats {
+        self.memory_budget.stats()
     }
 
     pub(crate) fn module_loading(&self) -> &[PathBuf] {
@@ -297,9 +384,42 @@ mod tests {
         let store = first.state().object_store().clone();
         store.borrow_mut().record_allocation();
         assert_eq!(store.borrow().stats(), (1, 1, 0));
+        assert_eq!(
+            first.state().memory_budget_stats(),
+            super::MemoryBudgetStats {
+                max_bytes: 10,
+                used_bytes: 2,
+                max_tasks: 1,
+                admitted_tasks: 0,
+                max_output_bytes: 5,
+                used_output_bytes: 5,
+            }
+        );
         first.reset_for_run();
         assert_eq!(first.state().memory_budget().usage(), (0, 0, 0));
-        assert_eq!(store.borrow().stats(), (0, 0, 0));
+        assert_eq!(first.state().object_store().borrow().stats(), (0, 0, 0));
+        assert_eq!(store.borrow().stats(), (1, 1, 0));
+    }
+
+    #[test]
+    fn logical_object_charge_is_bounded_and_deterministic() {
+        let mut context = ExecutionContext::new();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(100, 1, 100);
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .reserve_object(4, 1)
+            .expect("the deterministic object charge should fit");
+        assert_eq!(context.state().memory_budget().usage(), (100, 0, 0));
+        assert!(context
+            .state_mut()
+            .memory_budget_mut()
+            .reserve_object(1, 0)
+            .is_err());
+        assert_eq!(context.state().memory_budget().usage(), (100, 0, 0));
     }
 
     #[test]

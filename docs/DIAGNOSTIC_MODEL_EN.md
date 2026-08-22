@@ -32,6 +32,7 @@ The CLI JSON mode emits `notes` as an array and `help` as either a string or `nu
 | `ZAP-OVERFLOW-001` | `OverflowError` | A bounded numeric or resource operation overflowed. |
 | `ZAP-RUNTIME-001` | `Error` | Stable uncaught runtime failure. |
 | `ZAP-BORROW-001` | `BorrowError` | Checked object-field read/write conflict; the runtime returns an error instead of panicking. |
+| `ZAP-MEMORY-001` | `MemoryError` | Run-owned logical byte, object, task, output, or bounded value-lifecycle limit was exceeded. |
 | `ZAP-PROJECT-001` | `ProjectError` | Project, manifest, or dependency validation failure. |
 
 Codes are additive compatibility identifiers. A diagnostic kind or message may become more specific in a future release, but an existing code must not be silently reused for a different failure category.
@@ -40,7 +41,7 @@ Codes are additive compatibility identifiers. A diagnostic kind or message may b
 
 Diagnostic codes, field names, severity values, and message normalization are part of the tooling contract. New fields may be added without removing existing fields. Human-readable rendering may evolve, but CLI JSON and LSP snapshots must remain deterministic and must not include secrets or environment-specific paths unless the source itself contains them.
 
-Type diagnostics currently include the note `Check the expression type and the expected annotation.` and the help text `Use a compatible value or update the type annotation.` Borrow diagnostics use the note `Avoid reading and mutating the same object fields at the same time.` and the help text `Finish the active object-field access before mutating the object.` Syntax and name diagnostics provide analogous deterministic guidance.
+Type diagnostics currently include the note `Check the expression type and the expected annotation.` and the help text `Use a compatible value or update the type annotation.` Borrow diagnostics use the note `Avoid reading and mutating the same object fields at the same time.` and the help text `Finish the active object-field access before mutating the object.` Memory diagnostics use deterministic guidance to reduce the value, task, or output admission, or clear cyclic object fields before retrying. Syntax and name diagnostics provide analogous deterministic guidance.
 
 ## Verification
 

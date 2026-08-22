@@ -21,9 +21,9 @@ Each `ExecutionContext` owns one `MemoryBudget` and one `ObjectStore` through `R
 
 ## Logical accounting units
 
-The budget uses logical byte units: UTF-8 payload length for text, a fixed per-entry charge for list/map slots, and a fixed object-field charge for object entries. The charge constants are deterministic implementation constants, not measurements of Rust heap layout. A request that would overflow an accounting counter or exceed a configured limit is rejected before admission with a stable error. Accounting is saturating internally and never wraps into an apparently available budget.
+The budget uses logical byte units: UTF-8 payload length for text, a fixed per-entry charge for list/map slots, a fixed object base charge, and a fixed object-field charge for object entries. The charge constants are deterministic implementation constants, not measurements of Rust heap layout. A request that would overflow an accounting counter or exceed a configured limit is rejected before admission with a stable error. Accounting never wraps into an apparently available budget, and failed reservations do not consume the resource whose reservation failed.
 
-The first foundation exposes explicit methods for reserving and releasing logical bytes, admitting and completing tasks, and reserving output. Later value constructors may add precise charges at their public boundaries; they must not bypass the budget by silently converting overflow into success.
+The runtime exposes explicit methods for reserving logical bytes and object charges, admitting and completing logical tasks, and reserving output. Canonical AST object construction charges the current context before allocation, while text-producing builtin results charge the output budget after successful evaluation. These charges are logical accounting units and must not be interpreted as allocator-size measurements.
 
 ## Default limits
 
@@ -37,13 +37,13 @@ The initial defaults remain conservative and compatible with existing limits. Th
 
 ## Object lifecycle
 
-Production object construction receives the current context-owned object store. Allocation increments `object_allocations` and `live_objects`; dropping the tracked field storage decrements `live_objects` and increments `object_deallocations`. Test-only or compatibility constructors may create an untracked standalone object, but they must not reintroduce process-global production statistics. `memory_stats()` reports the current execution store when called through an execution context and reports stable zero counters for a context that has not allocated objects.
+Production object construction receives the current context-owned object store. Allocation increments `object_allocations` and `live_objects`; dropping the tracked field storage decrements `live_objects` and increments `object_deallocations`. Explicit cleanup records attempts, successes, and borrow failures; bounded validation records validation runs. Reset replaces the active store, so objects retained from a prior run cannot mutate the next run's counters. Test-only or compatibility constructors may create an untracked standalone object, but they must not reintroduce process-global production statistics. `memory_stats()` reports the current execution store and budget when called through an execution context and reports stable zero counters and default budget fields for a context-free compatibility call.
 
 Object counters are diagnostic evidence, not a reclamation guarantee. Cycles remain explicitly breakable through the existing checked field APIs. Public weak references and automatic tracing collection remain deferred and must continue to be reported as unsupported/not implemented.
 
 ## Errors and determinism
 
-Budget failures use stable, operation-specific text and must propagate through CLI and LSP diagnostic boundaries without panic. The same sequence of admissions must produce the same counters and failure point on repeated runs. A failed reservation does not consume budget. A release cannot underflow usage. Reset returns all counters and usage to their initial state.
+Budget failures use stable, operation-specific text and map to `ZAP-MEMORY-001` through the structured diagnostic boundary. The same sequence of admissions must produce the same counters and failure point on repeated runs. A failed reservation does not consume the resource whose reservation failed. A release cannot underflow usage. Reset returns all active counters and usage to their initial state while detaching the old object store.
 
 ## Compatibility boundary
 
@@ -51,7 +51,7 @@ This slice does not add first-class callable values, parent-linked `EnvFrame` bi
 
 ## Acceptance evidence
 
-The milestone is complete when independent contexts have isolated budgets and object stores; reset clears every counter; object allocation/deallocation diagnostics are deterministic; byte/task/output over-limit cases fail closed; nested AST/module execution charges the same context; JSON/LSP/CLI error propagation remains panic-free; and the full native suite plus cross-platform CI remain green.
+M2-MEM-02 is complete when independent contexts have isolated budgets and object stores; reset detaches old stores and clears active counters; object allocation/deallocation, validation, and cleanup diagnostics are deterministic; byte/object/task/output over-limit cases fail closed; repeated module execution reuses one context cache; JSON/LSP/CLI error propagation remains panic-free; and the full native suite plus cross-platform CI remain green.
 
 ## References
 

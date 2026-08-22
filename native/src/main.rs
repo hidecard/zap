@@ -823,6 +823,10 @@ impl<'a> ExprParser<'a> {
                             return Err(format!("unknown class: {class_name}"));
                         }
                         let explicit_fields = fields;
+                        self.context
+                            .state_mut()
+                            .memory_budget_mut()
+                            .reserve_object(class_name.len(), explicit_fields.len())?;
                         let object = Value::object_with_store(
                             class_name.clone(),
                             Some(self.context.state().object_store().clone()),

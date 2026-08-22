@@ -17,14 +17,14 @@ Each source execution receives its own `ExecutionContext`. The context owns muta
 | Execution depth | `RuntimeState` | Nested AST and legacy execution share one bounded counter for the context. |
 | Source workspace confinement | `RuntimeState` | The canonical workspace root is fixed for the context, inherited by nested module/function calls, and cleared on run reset. |
 | LSP open documents | `LspState` | Each LSP server session owns its document map; independent server states do not share open-document contents. |
-| Heap statistics and object ownership | `ObjectStore` in `RuntimeState` | Production object allocation/deallocation counters are per-run; no raw addresses or tracing-collector guarantee is exposed. |
-| Logical memory/task/output budget | `MemoryBudget` in `RuntimeState` | Deterministic reserve/release and fail-closed admission APIs are available to context-aware runtime boundaries. |
+| Heap statistics and object ownership | `ObjectStore` in `RuntimeState` | Production allocation/deallocation, validation, and cleanup counters are per-run; no raw addresses or tracing-collector guarantee is exposed. |
+| Logical memory/task/output budget | `MemoryBudget` in `RuntimeState` | Deterministic byte/object/task/output admission and fail-closed reserve/release APIs are available to context-aware runtime boundaries. |
 
 ## ExecutionContext flow
 
 The native entrypoint creates an `ExecutionContext` at the beginning of a run and resets it before evaluating source. The context is passed through the expression parser, AST evaluator, legacy evaluator, function and method calls, object-field initialization, and module loading. Imported modules therefore use the caller's context rather than a process-global cache. The first AST execution that establishes a workspace records its canonical root in `RuntimeState`; nested execution retains that root instead of replacing it with the process working directory. Filesystem built-ins receive the same context-aware boundary.
 
-A context can be created independently of another context. Mutating one context's module stack or execution-depth counter does not mutate another context. Resetting a context clears its module cache, import stack, and depth counter before it is reused.
+A context can be created independently of another context. Mutating one context's module stack or execution-depth counter does not mutate another context. Resetting a context clears its module cache, import stack, depth counter, budget, and active object-store counters before it is reused. The active object store is replaced on reset, so objects retained from the previous run cannot mutate the new run's statistics.
 
 ## Safety boundaries
 
@@ -32,7 +32,7 @@ The migrated state is intentionally single-threaded and owned by an execution in
 
 ## Regression evidence
 
-The runtime-state module includes workspace, budget, object-store isolation, and reset regressions. The evaluator also verifies that context-aware `memory_stats()` reads the current run's object store. The LSP module includes independent-server document isolation coverage. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, filesystem confinement, and bounded execution depth through the context-aware call graph.
+The runtime-state module includes workspace, budget, object-store isolation, stable snapshot, and reset-detachment regressions. The evaluator verifies context-aware `memory_stats()` fields, output/task admission, validation and cleanup lifecycle counters, and current-run object-store reads. The LSP module includes independent-server document isolation coverage. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, filesystem confinement, and bounded execution depth through the context-aware call graph.
 
 The acceptance criterion for this migration slice is that module, depth, and workspace state are instance-owned and do not leak across execution contexts, while LSP document maps are session-owned and do not leak across server states. Existing language and editor behavior must remain unchanged. Later slices may move capability, diagnostics, memory, and cancellation state into additional explicit boundaries.
 

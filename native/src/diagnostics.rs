@@ -68,6 +68,12 @@ pub(crate) enum ZapError {
         line: usize,
         column: usize,
     },
+    Memory {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
     Project {
         message: String,
         file: String,
@@ -101,6 +107,13 @@ impl ZapError {
             "FileNotFound"
         } else if message.contains("permission denied") || message.contains("Permission denied") {
             "PermissionError"
+        } else if message.starts_with("MemoryError")
+            || message.contains("memory budget")
+            || message.contains("output budget")
+            || message.contains("task budget")
+            || message.contains("memory limit exceeded")
+        {
+            "MemoryError"
         } else if message.contains("overflow") || message.contains("exceeded") {
             "OverflowError"
         } else if message.starts_with("Error:")
@@ -191,6 +204,12 @@ impl ZapError {
                 line,
                 column,
             },
+            "MemoryError" => Self::Memory {
+                message,
+                file,
+                line,
+                column,
+            },
             _ => Self::Project {
                 message,
                 file,
@@ -222,6 +241,7 @@ impl ZapError {
             Self::Overflow { .. } => "ZAP-OVERFLOW-001",
             Self::Runtime { .. } => "ZAP-RUNTIME-001",
             Self::Borrow { .. } => "ZAP-BORROW-001",
+            Self::Memory { .. } => "ZAP-MEMORY-001",
             Self::Project { .. } => "ZAP-PROJECT-001",
         }
     }
@@ -268,6 +288,10 @@ impl ZapError {
                         .to_string(),
                 ]
             }
+            Self::Memory { .. } => vec![
+                "Reduce the value, task, or output admission, or clear cyclic object fields before retrying."
+                    .to_string(),
+            ],
             _ => Vec::new(),
         }
     }
@@ -279,6 +303,9 @@ impl ZapError {
             Self::Name { .. } => Some("Declare the name before using it, or correct its spelling."),
             Self::Borrow { .. } => {
                 Some("Finish the active object-field access before mutating the object.")
+            }
+            Self::Memory { .. } => {
+                Some("Stay within the run-owned logical memory and lifecycle limits.")
             }
             _ => None,
         }
@@ -297,6 +324,7 @@ impl ZapError {
             Self::Overflow { .. } => "OverflowError",
             Self::Runtime { .. } => "Error",
             Self::Borrow { .. } => "BorrowError",
+            Self::Memory { .. } => "MemoryError",
             Self::Project { .. } => "ProjectError",
         }
     }
@@ -376,6 +404,12 @@ impl ZapError {
                 column,
             }
             | Self::Borrow {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Memory {
                 message,
                 file,
                 line,
@@ -539,6 +573,18 @@ mod tests {
             error.json_fields(),
             "\"code\":\"ZAP-TYPE-001\",\"kind\":\"TypeError\",\"severity\":\"error\",\"file\":\"main.zp\",\"line\":4,\"column\":12,\"message\":\"expected number, got text\",\"notes\":[\"Check the expression type and the expected annotation.\"],\"help\":\"Use a compatible value or update the type annotation.\",\"error\":\"TypeError at main.zp:4:12: expected number, got text\""
         );
+    }
+
+    #[test]
+    fn memory_limit_diagnostic_has_stable_code_and_help() {
+        let error = ZapError::from_message("memory budget exceeded: requested 9 bytes");
+        assert_eq!(error.code(), "ZAP-MEMORY-001");
+        assert_eq!(error.kind(), "MemoryError");
+        assert_eq!(
+            error.help(),
+            Some("Stay within the run-owned logical memory and lifecycle limits.")
+        );
+        assert!(error.json_fields().contains("\"code\":\"ZAP-MEMORY-001\""));
     }
 
     #[test]

@@ -17,14 +17,14 @@ Source execution တစ်ကြိမ်စီတွင် ကိုယ်ပ�
 | Execution depth | `RuntimeState` | Nested AST နှင့် legacy execution များသည် context တစ်ခုအတွက် bounded counter တစ်ခုကို မျှဝေသုံးရမည်။ |
 | Source workspace confinement | `RuntimeState` | Canonical workspace root ကို context အတွက် တစ်ကြိမ်သတ်မှတ်ပြီး nested module/function call များက အတူတူအသုံးပြုရမည်။ Run reset တွင် ရှင်းလင်းရမည်။ |
 | LSP open documents | `LspState` | LSP server session တစ်ခုချင်းစီတွင် ကိုယ်ပိုင် document map ရှိပြီး independent server state များအကြား open-document content မရောနှောရပါ။ |
-| Heap statistics နှင့် object ownership | `RuntimeState` ထဲရှိ `ObjectStore` | Production object allocation/deallocation counter များသည် per-run ဖြစ်ပြီး raw address သို့မဟုတ် tracing-collector guarantee မဖော်ပြပါ။ |
-| Logical memory/task/output budget | `RuntimeState` ထဲရှိ `MemoryBudget` | Context-aware runtime boundary များအတွက် deterministic reserve/release နှင့် fail-closed admission API များ ရှိပါသည်။ |
+| Heap statistics နှင့် object ownership | `RuntimeState` ထဲရှိ `ObjectStore` | Production allocation/deallocation၊ validation နှင့် cleanup counter များသည် per-run ဖြစ်ပြီး raw address သို့မဟုတ် tracing-collector guarantee မဖော်ပြပါ။ |
+| Logical memory/task/output budget | `RuntimeState` ထဲရှိ `MemoryBudget` | Context-aware runtime boundary များအတွက် deterministic byte/object/task/output admission နှင့် fail-closed reserve/release API များ ရှိပါသည်။ |
 
 ## ExecutionContext လည်ပတ်ပုံ
 
 Native entrypoint သည် run စတင်ချိန်တွင် `ExecutionContext` ဖန်တီးပြီး source မ evaluate မီ reset ပြုလုပ်ပါသည်။ Context ကို expression parser၊ AST evaluator၊ legacy evaluator၊ function နှင့် method call၊ object-field initialization နှင့် module loading များမှတစ်ဆင့် ဖြန့်ဝေထားပါသည်။ ထို့ကြောင့် imported module များသည် process-global cache အစား caller ၏ context ကို အသုံးပြုပါသည်။ Workspace သတ်မှတ်သည့် ပထမ AST execution က canonical root ကို `RuntimeState` တွင် သိမ်းထားပြီး nested execution များသည် process working directory ဖြင့် အစားထိုးခြင်းမပြုဘဲ ထို root ကို ဆက်အသုံးပြုပါသည်။ Filesystem builtin များသည် context-aware boundary တစ်ခုတည်းကို အသုံးပြုပါသည်။
 
-Context တစ်ခုကို အခြား context တစ်ခုနှင့် သီးခြားဖန်တီးနိုင်ပါသည်။ Context တစ်ခု၏ module stack သို့မဟုတ် execution-depth counter ကို ပြောင်းလဲခြင်းသည် အခြား context ကို မပြောင်းလဲစေပါ။ Context ကို ပြန်အသုံးပြုမည်ဆိုပါက reset ပြုလုပ်ခြင်းဖြင့် module cache၊ import stack နှင့် depth counter များကို ရှင်းလင်းနိုင်ပါသည်။
+Context တစ်ခုကို အခြား context တစ်ခုနှင့် သီးခြားဖန်တီးနိုင်ပါသည်။ Context တစ်ခု၏ module stack သို့မဟုတ် execution-depth counter ကို ပြောင်းလဲခြင်းသည် အခြား context ကို မပြောင်းလဲစေပါ။ Context ကို ပြန်အသုံးပြုမည်ဆိုပါက reset ပြုလုပ်ခြင်းဖြင့် module cache၊ import stack၊ depth counter၊ budget နှင့် active object-store counter များကို ရှင်းလင်းနိုင်ပါသည်။ Reset တွင် active object store ကို အသစ်လဲလှယ်သဖြင့် ယခင် run မှ ထိန်းထားသော object များသည် run အသစ်၏ statistics ကို မပြောင်းလဲနိုင်ပါ။
 
 ## လုံခြုံရေး boundary များ
 
@@ -32,7 +32,7 @@ Context တစ်ခုကို အခြား context တစ်ခုနှ�
 
 ## Regression evidence
 
-Runtime-state module တွင် workspace၊ budget၊ object-store isolation နှင့် reset regression များ ပါဝင်ပါသည်။ Evaluator သည် context-aware `memory_stats()` က လက်ရှိ run ၏ object store မှ ဖတ်ကြောင်းကိုလည်း စစ်ဆေးပါသည်။ LSP module တွင် independent-server document isolation coverage ပါဝင်ပါသည်။ Native suite သည် context-aware call graph မှတစ်ဆင့် AST execution၊ legacy compatibility၊ module import၊ circular-import diagnostic၊ function call၊ method call၊ filesystem confinement နှင့် bounded execution depth များကိုလည်း စစ်ဆေးပါသည်။
+Runtime-state module တွင် workspace၊ budget၊ object-store isolation၊ stable snapshot နှင့် reset-detachment regression များ ပါဝင်ပါသည်။ Evaluator သည် context-aware `memory_stats()` field များ၊ output/task admission၊ validation နှင့် cleanup lifecycle counter များ၊ လက်ရှိ run ၏ object store မှ ဖတ်ခြင်းတို့ကို စစ်ဆေးပါသည်။ LSP module တွင် independent-server document isolation coverage ပါဝင်ပါသည်။ Native suite သည် context-aware call graph မှတစ်ဆင့် AST execution၊ legacy compatibility၊ module import၊ circular-import diagnostic၊ function call၊ method call၊ filesystem confinement နှင့် bounded execution depth များကိုလည်း စစ်ဆေးပါသည်။
 
 ဤ migration slice ၏ acceptance criterion မှာ module၊ depth နှင့် workspace state များသည် execution context ပိုင်ဆိုင်မှုဖြစ်ပြီး context များအကြား မပေါက်ကြားစေရန် ဖြစ်ပါသည်။ LSP document map များသည် server session ပိုင်ဆိုင်မှုဖြစ်ပြီး server state များအကြား မပေါက်ကြားရပါ။ ရှိပြီးသား language နှင့် editor behavior မပြောင်းလဲရပါ။ နောက်ပိုင်း slice များတွင် capability၊ diagnostics၊ memory နှင့် cancellation state များကို explicit boundary များအဖြစ် ဆက်ရွှေ့နိုင်ပါသည်။
 

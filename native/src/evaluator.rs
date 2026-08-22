@@ -470,30 +470,45 @@ pub(crate) fn direct_builtin_with_context(
             ))
         }
     };
-    match name {
+    let result = match name {
         "async_capabilities" => {
             expect(0)?;
             Ok(Some(async_capabilities_value()))
         }
         "memory_stats" => {
             expect(0)?;
+            let store = context
+                .as_deref()
+                .map(|context| context.state().object_store());
+            let budget = context
+                .as_deref()
+                .map(|context| context.state().memory_budget_stats());
             Ok(Some(Value::memory_stats_value_for_store(
-                context
-                    .as_deref()
-                    .map(|context| context.state().object_store()),
+                store,
+                budget.as_ref(),
             )))
         }
         "spawn" => {
             expect(1)?;
             match &args[0] {
-                Value::Future(value) => Ok(Some(Value::Future(value.clone()))),
+                Value::Future(value) => {
+                    if let Some(context) = context.as_deref_mut() {
+                        context.state_mut().memory_budget_mut().admit_task()?;
+                    }
+                    Ok(Some(Value::Future(value.clone())))
+                }
                 _ => Err("spawn expects a future value".into()),
             }
         }
         "task_join" => {
             expect(1)?;
             match &args[0] {
-                Value::Future(value) => Ok(Some((**value).clone())),
+                Value::Future(value) => {
+                    if let Some(context) = context.as_deref_mut() {
+                        context.state_mut().memory_budget_mut().complete_task();
+                    }
+                    Ok(Some((**value).clone()))
+                }
                 _ => Err("task_join expects a future value".into()),
             }
         }
@@ -910,7 +925,16 @@ pub(crate) fn direct_builtin_with_context(
             Ok(Some(Value::Bool(result)))
         }
         _ => Ok(None),
+    };
+    if let Ok(Some(Value::Text(text))) = &result {
+        if let Some(context) = context {
+            context
+                .state_mut()
+                .memory_budget_mut()
+                .reserve_output(text.len() as u64)?;
+        }
     }
+    result
 }
 
 fn untrusted_mode() -> bool {
@@ -3901,6 +3925,62 @@ mod tests {
     }
 
     #[test]
+    fn repeated_module_execution_reuses_cache_until_context_reset() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-module-reset-{}-{}",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).expect("temporary module workspace should be created");
+        let module_path = root.join("library.zp");
+        fs::write(&module_path, "export let marker = \"first\"\n")
+            .expect("initial module fixture should be written");
+        let program = parse_program("import \"library.zp\"\nlet result = marker\n")
+            .expect("module import program should parse");
+        let mut context = ExecutionContext::new();
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+
+        super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            &root,
+        )
+        .expect("initial module execution should succeed");
+        assert_eq!(vars.get("result"), Some(&Value::Text("first".into())));
+
+        fs::write(&module_path, "export let marker = \"second\"\n")
+            .expect("updated module fixture should be written");
+        vars.clear();
+        funcs.clear();
+        super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            &root,
+        )
+        .expect("cached module execution should succeed");
+        assert_eq!(vars.get("result"), Some(&Value::Text("first".into())));
+
+        context.reset_for_run();
+        vars.clear();
+        funcs.clear();
+        super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            &root,
+        )
+        .expect("reset module execution should succeed");
+        assert_eq!(vars.get("result"), Some(&Value::Text("second".into())));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn executes_function_and_method_bodies_from_native_ast() {
         let program = parse_program(
             "fn add(a: number, b: number) -> number:\n    return a + b\nfn twice(value: number) -> number:\n    return add(value, value)\nlet result: number = twice(3)\n",
@@ -4108,6 +4188,72 @@ mod tests {
             panic!("memory_stats should return a map");
         };
         assert_eq!(stats["live_objects"], Value::Number(0));
+    }
+
+    #[test]
+    fn context_budget_tracks_output_and_task_lifecycle() {
+        let mut context = ExecutionContext::new();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(1_000, 1, 2);
+
+        super::direct_builtin_with_context(
+            "spawn",
+            vec![Value::Future(Box::new(Value::Number(7)))],
+            Some(&mut context),
+        )
+        .expect("one task should be admitted");
+        assert_eq!(context.state().memory_budget().usage().1, 1);
+        super::direct_builtin_with_context(
+            "task_join",
+            vec![Value::Future(Box::new(Value::Number(7)))],
+            Some(&mut context),
+        )
+        .expect("task join should complete the task");
+        assert_eq!(context.state().memory_budget().usage().1, 0);
+
+        super::direct_builtin_with_context(
+            "str",
+            vec![Value::Text("ok".into())],
+            Some(&mut context),
+        )
+        .expect("small output should fit");
+        assert_eq!(context.state().memory_budget().usage().2, 2);
+        assert!(super::direct_builtin_with_context(
+            "str",
+            vec![Value::Text("too-large".into())],
+            Some(&mut context),
+        )
+        .is_err());
+        assert_eq!(context.state().memory_budget().usage().2, 2);
+    }
+
+    #[test]
+    fn memory_stats_builtin_exposes_context_budget_and_lifecycle_fields() {
+        let mut context = ExecutionContext::new();
+        let object =
+            Value::object_with_store("Stats", Some(context.state().object_store().clone()));
+        object
+            .validate_memory_limits()
+            .expect("object should validate");
+        object
+            .clear_object_fields()
+            .expect("object cleanup should succeed");
+        let Value::Map(stats) =
+            super::direct_builtin_with_context("memory_stats", Vec::new(), Some(&mut context))
+                .expect("memory_stats should succeed")
+                .expect("memory_stats should return a value")
+        else {
+            panic!("memory_stats should return a map");
+        };
+        assert_eq!(stats["live_objects"], Value::Number(1));
+        assert_eq!(stats["cleanup_attempts"], Value::Number(1));
+        assert_eq!(stats["cleanup_successes"], Value::Number(1));
+        assert_eq!(stats["cleanup_failures"], Value::Number(0));
+        assert_eq!(stats["validation_runs"], Value::Number(1));
+        assert!(matches!(stats["max_bytes"], Value::Number(value) if value > 0));
+        assert!(matches!(stats["max_tasks"], Value::Number(value) if value > 0));
     }
 
     #[test]
