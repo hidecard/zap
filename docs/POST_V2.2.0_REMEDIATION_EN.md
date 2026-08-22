@@ -40,11 +40,11 @@ The standard-library catalog now reports a determinism class rather than making 
 
 Each corrective milestone is required to pass the pinned Rust formatting check, strict Clippy, the complete native test suite, focused LSP protocol and semantic-parity tests, the canonical VS Code package contract, the standard-library policy contract, release-version validation, bilingual documentation consistency, specification ownership, and `git diff --check` before its focused commit is pushed. API-301 passed these gates while the authoritative version remained 2.2.0, so the taxonomy commit is a post-release master correction rather than a modification of the v2.2.0 artifact.
 
-The v2.2.1 release must be prepared from a clean commit with Cargo, the manually patched package lock entry, CLI output, both VS Code manifests, changelogs, bilingual README/archive links, security metadata, documentation, and release notes in agreement. Release preflight must run with `EXPECTED_VERSION=2.2.1` and verify all platform, signing, checksum, provenance, and publication conditions. The v2.2.0 tag and release assets must remain untouched throughout that process.
+The v2.2.1 release was prepared from the clean commit with Cargo, the manually patched package lock entry, CLI output, both VS Code manifests, changelogs, bilingual README/archive links, security metadata, documentation, and release notes in agreement. Release preflight ran with `EXPECTED_VERSION=2.2.1` and the GitHub Actions workflow verified all platform, signing, checksum, provenance, and publication conditions. The v2.2.0 tag and release assets remained untouched throughout that process.
 
 ## Next release boundary
 
-The planned v2.2.1 notes will summarize the corrected LSP synchronization, file-local rename, position/URI/workspace bounds, canonical VS Code package, and determinism taxonomy. They will also state the full-sync-only and file-local-only limitations and link back to this record. The release will be a new patch tag, not a retagging or rewrite of v2.2.0.
+The published v2.2.1 notes summarize the corrected LSP synchronization, file-local rename, position/URI/workspace bounds, canonical VS Code package, and determinism taxonomy. They state the full-sync-only and file-local-only limitations and link back to this record. v2.2.1 is a new patch release; v2.2.0 was not retagged or rewritten.
 
 ## References
 
@@ -53,3 +53,4 @@ The planned v2.2.1 notes will summarize the corrected LSP synchronization, file-
 3. [LSP synchronization contract](ASYNC_LSP_EN.md) and [protocol regression harness](../scripts/test_lsp_protocol_sync.sh).
 4. [Standard-library stability and determinism policy](STDLIB_POLICY_EN.md).
 5. [v2.2.0 historical release notes](RELEASE_2.2.0_EN.md); this record does not rewrite them.
+6. [Published v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), [v2.2.1 release workflow](https://github.com/hidecard/zap/actions/runs/32575824809), and [v2.2.1 release notes](RELEASE_2.2.1_EN.md).

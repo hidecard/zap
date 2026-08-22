@@ -40,11 +40,11 @@ Standard-library catalog သည် coarse claim တစ်ခုတည်း မ�
 
 Corrective milestone တစ်ခုစီကို focused commit အဖြစ် push မလုပ်မီ pinned Rust formatting check၊ strict Clippy၊ complete native test suite၊ focused LSP protocol နှင့် semantic-parity test၊ canonical VS Code package contract၊ standard-library policy contract၊ release-version validation၊ bilingual documentation consistency၊ specification ownership နှင့် `git diff --check` အားလုံး အောင်မြင်ရမည်။ API-301 သည် authoritative version 2.2.0 ရှိနေစဉ် ထို gates အားလုံးကို pass လုပ်ခဲ့သောကြောင့် taxonomy commit သည် v2.2.0 artifact ကို ပြင်ဆင်ခြင်းမဟုတ်ဘဲ post-release `master` correction ဖြစ်သည်။
 
-v2.2.1 release ကို clean commit မှ ပြင်ဆင်ရမည်ဖြစ်ပြီး Cargo၊ manually patched package lock entry၊ CLI output၊ VS Code manifest နှစ်ခု၊ changelog၊ bilingual README/archive link၊ security metadata၊ documentation နှင့် release note များသည် တစ်ပြေးညီဖြစ်ရမည်။ Release preflight ကို `EXPECTED_VERSION=2.2.1` ဖြင့် run လုပ်ကာ platform၊ signing၊ checksum၊ provenance နှင့် publication condition များကို စစ်ဆေးရမည်။ ထိုလုပ်ငန်းစဉ်အတွင်း v2.2.0 tag နှင့် release asset များကို မထိရပါ။
+v2.2.1 release ကို clean commit မှ ပြင်ဆင်ပြီး Cargo၊ manually patched package lock entry၊ CLI output၊ VS Code manifest နှစ်ခု၊ changelog၊ bilingual README/archive link၊ security metadata၊ documentation နှင့် release note များသည် တစ်ပြေးညီဖြစ်ခဲ့သည်။ Release preflight ကို `EXPECTED_VERSION=2.2.1` ဖြင့် run လုပ်ပြီး GitHub Actions workflow က platform၊ signing၊ checksum၊ provenance နှင့် publication condition များအားလုံးကို စစ်ဆေးအတည်ပြုခဲ့သည်။ ထိုလုပ်ငန်းစဉ်အတွင်း v2.2.0 tag နှင့် release asset များကို မထိခဲ့ပါ။
 
 ## Next release boundary
 
-စီစဉ်ထားသော v2.2.1 note များတွင် ပြင်ဆင်ပြီးသော LSP synchronization၊ file-local rename၊ position/URI/workspace bounds၊ canonical VS Code package နှင့် determinism taxonomy တို့ကို အကျဉ်းချုပ်ဖော်ပြမည်။ Full-sync-only နှင့် file-local-only limitation များကိုလည်း ရှင်းလင်းဖော်ပြပြီး ဤမှတ်တမ်းသို့ link ချိတ်မည်။ Release သည် v2.2.0 ကို retag သို့မဟုတ် rewrite မလုပ်ဘဲ patch tag အသစ်အဖြစ် ထုတ်ဝေမည်။
+ထုတ်ဝေပြီးသော v2.2.1 note များတွင် ပြင်ဆင်ပြီးသော LSP synchronization၊ file-local rename၊ position/URI/workspace bounds၊ canonical VS Code package နှင့် determinism taxonomy တို့ကို အကျဉ်းချုပ်ဖော်ပြထားသည်။ Full-sync-only နှင့် file-local-only limitation များကိုလည်း ရှင်းလင်းဖော်ပြပြီး ဤမှတ်တမ်းသို့ link ချိတ်ထားသည်။ v2.2.1 သည် patch release အသစ်ဖြစ်ပြီး v2.2.0 ကို retag သို့မဟုတ် rewrite မလုပ်ထားပါ။
 
 ## References
 
@@ -53,3 +53,4 @@ v2.2.1 release ကို clean commit မှ ပြင်ဆင်ရမည်�
 3. [LSP synchronization contract](ASYNC_LSP_MM.md) နှင့် [protocol regression harness](../scripts/test_lsp_protocol_sync.sh)။
 4. [Standard-library stability and determinism policy](STDLIB_POLICY_MM.md)။
 5. [v2.2.0 historical release notes](RELEASE_2.2.0_MM.md) — ဤ record သည် ၎င်းကို ပြန်မရေးပါ။
+6. [Published v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1)၊ [v2.2.1 release workflow](https://github.com/hidecard/zap/actions/runs/32575824809) နှင့် [v2.2.1 release notes](RELEASE_2.2.1_MM.md)။
