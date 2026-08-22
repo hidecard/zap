@@ -2,6 +2,7 @@ use std::{
     cell::{Ref, RefCell, RefMut},
     collections::{HashMap, HashSet},
     ops::Deref,
+    path::{Path, PathBuf},
     rc::Rc,
 };
 
@@ -88,10 +89,22 @@ impl Drop for TrackedObjectFields {
 pub(crate) struct EnvFrame {
     values: RefCell<HashMap<String, Rc<RefCell<Value>>>>,
     parent: Option<Rc<EnvFrame>>,
+    base_path: Option<PathBuf>,
 }
 
 impl EnvFrame {
     pub(crate) fn from_map(values: &HashMap<String, Value>) -> Rc<Self> {
+        Self::from_map_with_base_option(values, None)
+    }
+
+    pub(crate) fn from_map_with_base(values: &HashMap<String, Value>, base: &Path) -> Rc<Self> {
+        Self::from_map_with_base_option(values, Some(base.to_path_buf()))
+    }
+
+    fn from_map_with_base_option(
+        values: &HashMap<String, Value>,
+        base_path: Option<PathBuf>,
+    ) -> Rc<Self> {
         Rc::new(Self {
             values: RefCell::new(
                 values
@@ -100,6 +113,7 @@ impl EnvFrame {
                     .collect(),
             ),
             parent: None,
+            base_path,
         })
     }
 
@@ -107,7 +121,14 @@ impl EnvFrame {
         Rc::new(Self {
             values: RefCell::new(HashMap::new()),
             parent: Some(parent),
+            base_path: None,
         })
+    }
+
+    pub(crate) fn base_path(&self) -> Option<PathBuf> {
+        self.base_path
+            .clone()
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.base_path()))
     }
 
     pub(crate) fn get_local(&self, name: &str) -> Option<Value> {

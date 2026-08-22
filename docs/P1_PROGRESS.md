@@ -46,7 +46,7 @@ The native Rust suite currently passes its full unit and integration test baseli
 
 | Priority | Work item | Current state | Next acceptance criteria |
 |---:|---|---|---|
-| 1 | Direct AST call evaluation | Completed for the current runtime call set | Native AST directly evaluates functions, methods, closures, indexing, pure built-ins, filesystem I/O, environment, path, time helpers, native `new(...)`, and default expressions; unsupported named built-in calls fail deterministically and the edge-case regression suite guards against hidden reparsing |
+| 1 | Direct AST call evaluation | Completed for the current runtime call set | Native AST directly evaluates functions, methods, closures, indexing, pure built-ins, filesystem I/O, environment, path, time helpers, native `new(...)`, and default expressions; callable frames inherit their defining module base for nested relative imports; unsupported named built-in calls fail deterministically and the edge-case regression suite guards against hidden reparsing |
 | 2 | Named arguments | Implemented with explicit builtin boundary | Named arguments remain supported for user-defined functions, methods, and closures; built-in calls reject them unless a future builtin contract explicitly adds support |
 | 3 | Control-flow type narrowing | Implemented | Continue broader nested-flow analysis and negative narrowing diagnostics for additional guard forms |
 | 4 | OOP visibility and initialization rules | Implemented | Continue broader module-aware field coverage and constructor diagnostic refinement |

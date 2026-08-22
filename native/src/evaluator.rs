@@ -2504,7 +2504,8 @@ fn execute_ast_body_with_frame(
     context: &mut ExecutionContext,
     frame: &Rc<EnvFrame>,
 ) -> Result<Flow, String> {
-    execute_ast_program_with_frame(body, local, local_funcs, context, Path::new("."), frame)
+    let base = frame.base_path().unwrap_or_else(|| PathBuf::from("."));
+    execute_ast_program_with_frame(body, local, local_funcs, context, &base, frame)
 }
 
 fn call_function_with_arguments(
@@ -3201,7 +3202,7 @@ pub(crate) fn execute_ast_program_with_context(
     context: &mut ExecutionContext,
     base: &Path,
 ) -> Result<Flow, String> {
-    let frame = EnvFrame::from_map(vars);
+    let frame = EnvFrame::from_map_with_base(vars, base);
     let result = execute_ast_program_with_frame(program, vars, funcs, context, base, &frame);
     let snapshot = frame.snapshot();
     vars.clear();
@@ -4081,6 +4082,32 @@ mod tests {
         assert!(funcs
             .get("greet")
             .is_some_and(|function| function.ast_body.is_some()));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn function_calls_preserve_module_base_for_nested_relative_imports() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-nested-module-{}-{}",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
+        let nested = root.join("nested");
+        fs::create_dir_all(&nested).expect("nested module workspace should be created");
+        fs::write(
+            root.join("library.zp"),
+            "export fn greet(name):\n    import \"nested/helper.zp\"\n    return name + suffix\n",
+        )
+        .expect("outer module fixture should be written");
+        fs::write(nested.join("helper.zp"), "export let suffix = \"!\"\n")
+            .expect("nested module fixture should be written");
+        let program = parse_program("import \"library.zp\"\nlet result = greet(\"Zap\")\n")
+            .expect("nested module program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, &root)
+            .expect("nested relative import should use the defining module base");
+        assert_eq!(vars.get("result"), Some(&Value::Text("Zap!".into())));
         let _ = fs::remove_dir_all(root);
     }
 
