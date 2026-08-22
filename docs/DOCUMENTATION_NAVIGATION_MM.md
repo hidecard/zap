@@ -26,7 +26,7 @@
 | Runtime state | [Runtime state and execution context](RUNTIME_STATE_MM.md) | Runtime-state isolation၊ workspace နှင့် reset regressions |
 | AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_MM.md) | Canonical AST၊ export နှင့် compatibility-boundary regressions |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_MM.md) | Async runtime နှင့် adapter tests |
-| Standard library | [Stdlib index](STDLIB_INDEX_MM.md) | Builtin catalog နှင့် security corpus |
+| Standard library | [Stdlib index](STDLIB_INDEX_MM.md) · [Stability policy](STDLIB_POLICY_MM.md) | Machine-readable builtin catalog၊ stability/deprecation metadata နှင့် security corpus |
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_MM.md) | `scripts/test_p001_parity.sh` |
 | Verification/replay | [P1-05 replay နှင့် M2-VERIFY-01 bounded replay contract](P105_REPLAY_MM.md) | `scripts/test_p105_replay.sh` နှင့် `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_MM.md) | Checked-in `benchmark-results/native-summary.csv` နှင့် CI threshold gate |
@@ -34,6 +34,6 @@
 
 ## Version နှင့် contribution စည်းမျဉ်းများ
 
-Authoritative package version သည် `native/Cargo.toml` ဖြစ်ပါသည်။ Release-facing surface များအားလုံးသည် ထို version နှင့် ကိုက်ညီရမည်ဖြစ်ပြီး CI က ထို consistency ကို စစ်ဆေးပါသည်။ Normative rule ပြောင်းလဲပါက English/Burmese contract နှစ်ခုလုံးကို တစ်ပြိုင်တည်း update လုပ်ရမည်။ `SPEC_OWNERSHIP_INDEX.tsv` တွင် fixture owner ထည့်/ပြင်ရမည်၊ bilingual compatibility template ဖြင့် compatibility impact မှတ်တမ်းတင်ရမည်၊ merge မလုပ်မီ regression evidence ထည့်ရမည်။
+Authoritative package version သည် `native/Cargo.toml` ဖြစ်ပါသည်။ Release-facing surface များအားလုံးသည် ထို version နှင့် ကိုက်ညီရမည်ဖြစ်ပြီး CI က ထို consistency ကို စစ်ဆေးပါသည်။ Normative rule ပြောင်းလဲပါက English/Burmese contract နှစ်ခုလုံးကို တစ်ပြိုင်တည်း update လုပ်ရမည်။ `SPEC_OWNERSHIP_INDEX.tsv` တွင် fixture owner ထည့်/ပြင်ရမည်၊ bilingual compatibility template ဖြင့် compatibility impact မှတ်တမ်းတင်ရမည်၊ merge မလုပ်မီ regression evidence ထည့်ရမည်။ Public standard-library change များတွင် catalog နှင့် stability policy pair ကိုလည်း update လုပ်ရမည်။
 
 Documentation ပြောင်းလဲမှုများသည် English/Burmese pair ကို ထိန်းသိမ်းရမည်၊ repository-relative links သုံးရမည်၊ deferred behavior ကို explicit ဖော်ပြရမည်၊ executable gate မရှိသေးသော production scheduling၊ cancellation၊ sandbox သို့မဟုတ် performance guarantee များကို မဆိုရပါ။ လက်ရှိအလုပ်များအတွက် [remaining TODO register](PDF_REMAINING_TODO_MM.md) နှင့် [next-step plan](NEXT_TODO_PLAN_MM.md) ကို ကြည့်ရှုနိုင်ပါသည်။

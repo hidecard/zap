@@ -42,7 +42,7 @@
 | ID | Work item | Status | Acceptance criteria |
 |---|---|---|---|
 | P2-01 | Composition and traits/interfaces | Deferred | A design RFC defines composition, trait/protocol rules, method resolution, diagnostics, and migration from inheritance before implementation. |
-| P2-02 | Standard-library API stability policy | Partial | Every public module has stability label, deprecation period, semantic-versioning rule, and platform support matrix. |
+| P2-02 | Standard-library API stability policy | Completed as M3-STDLIB-01 | Every public domain and builtin has machine-readable stability label, introduction release, deprecation window, semver rule, platform support matrix, input/output limits, timeout/error contract, determinism field, bilingual policy documentation, and catalog/policy regression gates. |
 | P2-03 | LSP/VS Code semantic parity | Partial | Rename, nested/module-aware indexing, async-aware completion/hover, and canonical parser/AST coverage are tested. |
 | P2-04 | Learning/reference documentation split | Partial | Beginner guide, syntax reference, specification, stdlib reference, package author guide, runtime internals, and deployment/security docs have navigation and verified-version metadata. |
 
@@ -60,8 +60,10 @@
 10. **P0-04/P0-RS-01:** The checked-borrow and first explicit runtime-state slices are implemented. M2-MEM-01 and M2-MEM-02 add run-owned logical byte/task/output budget APIs, deterministic object charges, lifecycle counters, reset detachment, and `ObjectStore` counters without allocator/tracing claims. Continue only the remaining public weak-reference, closure/process-wide telemetry, allocator-level measurement, arbitrary-cycle reclamation, tracing-collector design, and broader hidden-state migration work.
 11. **P1-01/P1-04:** Completed. The bilingual gradual-typing baseline is documented and the clean-machine locked-install/build verifier is executable and deterministic.
 12. **M2-ASYNC-02:** Completed. Cooperative language task cancellation, poll-budget timeout joins, deterministic `Cancelled`/`TimedOut` diagnostics, bilingual contract updates, and end-to-end regression coverage are implemented.
-13. **P2-02/P2-03/P2-04:** Finish stdlib policy, tooling parity, and documentation navigation.
-14. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.
+13. **M3-STDLIB-01:** Completed. The machine-readable twelve-domain catalog and bilingual stability policy define labels, introduction releases, deprecation windows, semver rules, release-target platforms, limits, timeout/error contracts, determinism metadata, and policy regressions.
+14. **P2-03:** Continue LSP/VS Code semantic parity and editor validation.
+15. **P2-04:** Complete the learner/reference documentation split and verified-version navigation.
+16. **P2-01:** Write and review the traits/composition RFC before changing the parser or runtime.
 
 ## Release policy
 

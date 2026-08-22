@@ -140,6 +140,8 @@ jobs:
 
       - name: Run standard-library security corpus
         run: cargo test --manifest-path native/Cargo.toml stdlib_security_corpus --all-features
+      - name: Run standard-library stability policy contract
+        run: scripts/test_stdlib_policy.sh
 
       - name: Run threaded async I/O and scheduler tests
         run: "cargo test --manifest-path native/Cargo.toml async_runtime --all-features"

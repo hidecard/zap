@@ -177,6 +177,7 @@ check_release_files() {
     scripts/test_platform_archive.sh
     scripts/test_benchmark_regression.sh
     scripts/test_benchmark_provenance.sh
+    scripts/test_stdlib_policy.sh
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -362,7 +363,10 @@ run_contract_validation() {
   bash scripts/test_benchmark_provenance.sh
   pass "benchmark provenance contract passed"
 
-  local benchmark_raw="$report_dir/benchmark-raw.csv"
+  bash scripts/test_stdlib_policy.sh
+  pass "standard-library stability policy contract passed"
+
+  ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/benchmark-raw.csv"
   local benchmark_summary="$report_dir/benchmark-summary.csv"
   local benchmark_provenance="$report_dir/benchmark-provenance.tsv"
   ZAP_BENCH_REPEATS="${ZAP_BENCH_REPEATS:-5}" \

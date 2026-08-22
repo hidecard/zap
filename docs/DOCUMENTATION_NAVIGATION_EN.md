@@ -26,7 +26,7 @@
 | Runtime state | [Runtime state and execution context](RUNTIME_STATE_EN.md) | Runtime-state isolation, workspace, and reset regressions |
 | AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_EN.md) | Canonical AST, export, and compatibility-boundary regressions |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_EN.md) | Async runtime and adapter tests |
-| Standard library | [Stdlib index](STDLIB_INDEX_EN.md) | Builtin catalog and security corpus |
+| Standard library | [Stdlib index](STDLIB_INDEX_EN.md) · [Stability policy](STDLIB_POLICY_EN.md) | Machine-readable builtin catalog, stability/deprecation metadata, and security corpus |
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_EN.md) | `scripts/test_p001_parity.sh` |
 | Verification/replay | [P1-05 replay and M2-VERIFY-01 bounded replay contract](P105_REPLAY_EN.md) | `scripts/test_p105_replay.sh` and `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_EN.md) | Checked-in `benchmark-results/native-summary.csv` and CI threshold gate |
@@ -34,6 +34,6 @@
 
 ## Version and contribution rules
 
-The authoritative package version is `native/Cargo.toml`. Release-facing surfaces must agree with it, and CI validates the agreement. When a normative rule changes, update the English and Burmese contract together, add or update its fixture owner in `SPEC_OWNERSHIP_INDEX.tsv`, record compatibility impact using the bilingual compatibility template, and include regression evidence before merging.
+The authoritative package version is `native/Cargo.toml`. Release-facing surfaces must agree with it, and CI validates the agreement. When a normative rule changes, update the English and Burmese contract together, add or update its fixture owner in `SPEC_OWNERSHIP_INDEX.tsv`, record compatibility impact using the bilingual compatibility template, and include regression evidence before merging. Public standard-library changes must also update the catalog and its stability policy pair.
 
 Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. See the [remaining TODO register](PDF_REMAINING_TODO_EN.md) and [next-step plan](NEXT_TODO_PLAN_EN.md) for tracked work.

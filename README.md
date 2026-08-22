@@ -36,7 +36,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
-| Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, and M2-REG-01 transport evidence |
+| Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, and M3-STDLIB-01 policy evidence |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 
 ## Learning Guide
@@ -62,7 +62,7 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `async_runtime.rs` | Stable-Rust-compatible deterministic single-thread future executor foundation | Implemented foundation |
 | `lsp.rs` | Content-Length JSON-RPC server, per-session `LspState`, diagnostics, hover, and context-aware completion | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains. The native runtime includes async foundations, stdio LSP/editor integration, explicit runtime-state ownership for per-run workspace/module/execution state, run-owned logical budget/object counters with stable `memory_stats()` lifecycle fields, first-class callable values with parent-linked `EnvFrame` closures, per-session LSP document state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, `system`, `time`, `logging`, `runtime`, `async`, `network`, and `process` domains. M3-STDLIB-01 records stability, deprecation, semver, platform, limit, timeout/error, and determinism metadata in a machine-readable catalog and bilingual policy pair. The native runtime includes async foundations, stdio LSP/editor integration, explicit runtime-state ownership for per-run workspace/module/execution state, run-owned logical budget/object counters with stable `memory_stats()` lifecycle fields, first-class callable values with parent-linked `EnvFrame` closures, per-session LSP document state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
 Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and registry artifacts are checksum-verified with offline reuse through `ZAP_OFFLINE=1`. The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?
