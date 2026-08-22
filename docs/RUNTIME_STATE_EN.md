@@ -22,7 +22,7 @@ Each source execution receives its own `ExecutionContext`. The context owns muta
 
 ## ExecutionContext flow
 
-The native entrypoint creates an `ExecutionContext` at the beginning of a run and resets it before evaluating source. The context is passed through the expression parser, AST evaluator, legacy evaluator, function and method calls, object-field initialization, and module loading. Imported modules therefore use the caller's context rather than a process-global cache. The first AST execution that establishes a workspace records its canonical root in `RuntimeState`; nested execution retains that root instead of replacing it with the process working directory. Filesystem built-ins receive the same context-aware boundary.
+The native entrypoint creates an `ExecutionContext` at the beginning of a run and resets it before evaluating source. The context is passed through the expression parser, AST evaluator, legacy evaluator, function and method calls, object-field initialization, and module loading. Function values retain parent-linked `EnvFrame` capture chains so nested functions can outlive their defining call while preserving deterministic lexical lookup and mutation. Imported modules therefore use the caller's context rather than a process-global cache. The first AST execution that establishes a workspace records its canonical root in `RuntimeState`; nested execution retains that root instead of replacing it with the process working directory. Filesystem built-ins receive the same context-aware boundary.
 
 A context can be created independently of another context. Mutating one context's module stack or execution-depth counter does not mutate another context. Resetting a context clears its module cache, import stack, depth counter, budget, and active object-store counters before it is reused. The active object store is replaced on reset, so objects retained from the previous run cannot mutate the new run's statistics.
 
@@ -38,7 +38,7 @@ The acceptance criterion for this migration slice is that module, depth, and wor
 
 ## Deferred roadmap
 
-The following work remains separate: first-class function values and `EnvFrame`, allocator-level measurement, public weak references, automatic tracing collection, typed source-span propagation, and full language-level async task semantics.
+The following work remains separate: allocator-level measurement, public weak references, automatic tracing collection, typed source-span propagation, executor-backed language scheduling, and full language-level async task semantics.
 
 See the [English documentation navigation hub](DOCUMENTATION_NAVIGATION_EN.md), the [next-step plan](NEXT_TODO_PLAN_EN.md), and the [language specification](LANGUAGE_SPEC_EN.md) for the maintained contracts.
 

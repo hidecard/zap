@@ -84,6 +84,109 @@ impl Drop for TrackedObjectFields {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub(crate) struct EnvFrame {
+    values: RefCell<HashMap<String, Value>>,
+    parent: Option<Rc<EnvFrame>>,
+}
+
+impl EnvFrame {
+    pub(crate) fn from_map(values: &HashMap<String, Value>) -> Rc<Self> {
+        Rc::new(Self {
+            values: RefCell::new(values.clone()),
+            parent: None,
+        })
+    }
+
+    pub(crate) fn child(parent: Rc<Self>) -> Rc<Self> {
+        Rc::new(Self {
+            values: RefCell::new(HashMap::new()),
+            parent: Some(parent),
+        })
+    }
+
+    pub(crate) fn get(&self, name: &str) -> Option<Value> {
+        self.values
+            .borrow()
+            .get(name)
+            .cloned()
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.get(name)))
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn insert_local(&self, name: String, value: Value) {
+        self.values.borrow_mut().insert(name, value);
+    }
+
+    pub(crate) fn assign(&self, name: &str, value: Value) {
+        if self.values.borrow().contains_key(name) {
+            self.values.borrow_mut().insert(name.to_string(), value);
+        } else if let Some(parent) = &self.parent {
+            if parent.get(name).is_some() {
+                parent.assign(name, value);
+                return;
+            }
+            self.values.borrow_mut().insert(name.to_string(), value);
+        } else {
+            self.values.borrow_mut().insert(name.to_string(), value);
+        }
+    }
+
+    pub(crate) fn snapshot(&self) -> HashMap<String, Value> {
+        let mut values = self
+            .parent
+            .as_ref()
+            .map(|parent| parent.snapshot())
+            .unwrap_or_default();
+        values.extend(
+            self.values
+                .borrow()
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone())),
+        );
+        values
+    }
+
+    pub(crate) fn capture_keys(&self) -> Vec<String> {
+        self.snapshot().into_keys().collect()
+    }
+
+    pub(crate) fn sync_captured(&self, keys: &[String], values: &HashMap<String, Value>) {
+        for key in keys {
+            if let Some(value) = values.get(key) {
+                self.assign(key, value.clone());
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn sync_from_snapshot(&self, values: &HashMap<String, Value>) {
+        let local_keys = self.values.borrow().keys().cloned().collect::<Vec<_>>();
+        for key in local_keys {
+            if let Some(value) = values.get(&key) {
+                self.insert_local(key, value.clone());
+            }
+        }
+        for (key, value) in values {
+            if self.values.borrow().contains_key(key) {
+                continue;
+            }
+            if self
+                .parent
+                .as_ref()
+                .is_some_and(|parent| parent.get(key).is_some())
+            {
+                self.parent
+                    .as_ref()
+                    .expect("parent checked")
+                    .assign(key, value.clone());
+            } else {
+                self.insert_local(key.clone(), value.clone());
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Function {
     pub(crate) visibility: String,
@@ -94,7 +197,7 @@ pub(crate) struct Function {
     pub(crate) body: Vec<String>,
     /// Native AST body used by the migration path when available.
     pub(crate) ast_body: Option<crate::ast::Program>,
-    pub(crate) closure: Rc<RefCell<HashMap<String, Value>>>,
+    pub(crate) closure: Rc<EnvFrame>,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Value {

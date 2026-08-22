@@ -11,7 +11,7 @@ use diagnostics::ZapError;
 use lexer::Token;
 mod value;
 
-use value::{Function, Param, StaticSignature, Value};
+use value::{EnvFrame, Function, Param, StaticSignature, Value};
 mod project;
 mod registry;
 
@@ -2054,7 +2054,6 @@ fn main() {
 #[cfg(test)]
 mod zap_error_tests {
     use super::*;
-    use std::cell::RefCell;
 
     #[test]
     fn classifies_type_errors_and_preserves_location() {
@@ -2124,7 +2123,7 @@ mod zap_error_tests {
                 is_async: false,
                 body: vec!["return value + 1".into()],
                 ast_body: None,
-                closure: Rc::new(RefCell::new(HashMap::new())),
+                closure: EnvFrame::from_map(&HashMap::new()),
             }),
         );
         let alias_tokens = lexer::tokenize("increment").expect("alias expression should tokenize");

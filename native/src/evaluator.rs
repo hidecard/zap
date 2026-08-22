@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::{
     collections::HashMap,
     fs::{self, OpenOptions},
@@ -17,8 +17,8 @@ use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::ExprParser;
 use crate::{
-    parse_signature, read_limited_text, resolve_module, write_limited_text, ExecutionContext,
-    Function, Param, Value, MAX_FILE_BYTES,
+    parse_signature, read_limited_text, resolve_module, write_limited_text, EnvFrame,
+    ExecutionContext, Function, Param, Value, MAX_FILE_BYTES,
 };
 
 const MAX_EXECUTION_DEPTH: usize = 256;
@@ -2007,15 +2007,13 @@ pub(crate) fn check_field_visibility(
         Value::Text(module) => Some(module.as_str()),
         _ => None,
     });
-    let owner_module =
-        metadata
-            .closure
-            .borrow()
-            .get("__zap_module")
-            .and_then(|value| match value {
-                Value::Text(module) => Some(module.clone()),
-                _ => None,
-            });
+    let owner_module = metadata
+        .closure
+        .get("__zap_module")
+        .and_then(|value| match value {
+            Value::Text(module) => Some(module.clone()),
+            _ => None,
+        });
     let allowed = match (metadata.visibility.as_str(), caller) {
         ("private", Some(class)) => class == owner && caller_module == owner_module.as_deref(),
         ("protected", Some(class)) => is_same_or_subclass(class, &owner, funcs),
@@ -2408,8 +2406,8 @@ fn call_function_with_arguments(
             args.len()
         ));
     }
-    let mut local = f.closure.borrow().clone();
-    let captured_keys = local.keys().cloned().collect::<Vec<_>>();
+    let mut local = f.closure.snapshot();
+    let captured_keys = f.closure.capture_keys();
     let mut positional_index = 0usize;
     let mut named = HashMap::new();
     let mut saw_named = false;
@@ -2477,14 +2475,7 @@ fn call_function_with_arguments(
         }
         Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
-    {
-        let mut captured = f.closure.borrow_mut();
-        for key in &captured_keys {
-            if let Some(value) = local.get(key) {
-                captured.insert(key.clone(), value.clone());
-            }
-        }
-    }
+    f.closure.sync_captured(&captured_keys, &local);
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -2532,8 +2523,8 @@ fn call_method_with_arguments(
             args.len()
         ));
     }
-    let mut local = f.closure.borrow().clone();
-    let captured_keys = local.keys().cloned().collect::<Vec<_>>();
+    let mut local = f.closure.snapshot();
+    let captured_keys = f.closure.capture_keys();
     local.insert("self".into(), self_value);
     if let Some(Value::Text(owner_class)) = local.get("__zap_owner_class").cloned() {
         if let Some(Value::Text(parent_class)) = funcs
@@ -2612,16 +2603,11 @@ fn call_method_with_arguments(
         }
         Flow::Raise(value) => return Err(format!("raised error: {}", value.show())),
     };
-    {
-        let mut captured = f.closure.borrow_mut();
-        for key in &captured_keys {
-            if key != "self" {
-                if let Some(value) = local.get(key) {
-                    captured.insert(key.clone(), value.clone());
-                }
-            }
-        }
-    }
+    let captured_keys = captured_keys
+        .into_iter()
+        .filter(|key| key != "self")
+        .collect::<Vec<_>>();
+    f.closure.sync_captured(&captured_keys, &local);
     if let Some(annotation) = &f.return_annotation {
         check_annotation("return", annotation, &value)?;
     }
@@ -2920,7 +2906,7 @@ fn register_ast_function(
         is_async: spec.is_async,
         body: Vec::new(),
         ast_body: Some(spec.body.clone()),
-        closure: Rc::new(RefCell::new(vars.clone())),
+        closure: EnvFrame::child(EnvFrame::from_map(vars)),
     });
     funcs.insert(spec.name.to_string(), function.clone());
     if spec.exported {
@@ -2944,7 +2930,7 @@ fn register_ast_class(
             is_async: false,
             body: Vec::new(),
             ast_body: None,
-            closure: Rc::new(RefCell::new(vars.clone())),
+            closure: EnvFrame::child(EnvFrame::from_map(vars)),
         }),
     );
     if let Some(parent) = base {
@@ -2961,7 +2947,7 @@ fn register_ast_class(
                 body: vec![parent.clone()],
 
                 ast_body: None,
-                closure: Rc::new(RefCell::new(vars.clone())),
+                closure: EnvFrame::child(EnvFrame::from_map(vars)),
             }),
         );
     }
@@ -2988,7 +2974,7 @@ fn register_ast_class(
                     is_async: false,
                     body: Vec::new(),
                     ast_body: Some(default_body),
-                    closure: Rc::new(RefCell::new(vars.clone())),
+                    closure: EnvFrame::child(EnvFrame::from_map(vars)),
                 }),
             );
         } else if let Stmt::Function {
@@ -3011,7 +2997,7 @@ fn register_ast_class(
                         is_async: false,
                         body: Vec::new(),
                         ast_body: None,
-                        closure: Rc::new(RefCell::new(vars.clone())),
+                        closure: EnvFrame::child(EnvFrame::from_map(vars)),
                     }),
                 );
             }
@@ -3044,7 +3030,7 @@ fn register_ast_class(
                     is_async: *is_async,
                     body: Vec::new(),
                     ast_body: Some(body.clone()),
-                    closure: Rc::new(RefCell::new(method_closure)),
+                    closure: EnvFrame::child(EnvFrame::from_map(&method_closure)),
                 }),
             );
         }
@@ -3526,7 +3512,7 @@ pub(crate) fn execute_lines_with_context(
                     is_async: false,
                     body: Vec::new(),
                     ast_body: None,
-                    closure: Rc::new(RefCell::new(vars.clone())),
+                    closure: EnvFrame::child(EnvFrame::from_map(vars)),
                 }),
             );
             if let Some(parent_name) = parent.clone() {
@@ -3543,7 +3529,7 @@ pub(crate) fn execute_lines_with_context(
                         body: vec![parent_name],
 
                         ast_body: None,
-                        closure: Rc::new(RefCell::new(vars.clone())),
+                        closure: EnvFrame::child(EnvFrame::from_map(vars)),
                     }),
                 );
             }
@@ -3577,7 +3563,7 @@ pub(crate) fn execute_lines_with_context(
                                 is_async: false,
                                 body: Vec::new(),
                                 ast_body: None,
-                                closure: Rc::new(RefCell::new(vars.clone())),
+                                closure: EnvFrame::child(EnvFrame::from_map(vars)),
                             }),
                         );
                     }
@@ -3606,7 +3592,7 @@ pub(crate) fn execute_lines_with_context(
                             is_async: false,
                             body: method_body,
                             ast_body: None,
-                            closure: Rc::new(RefCell::new(method_closure)),
+                            closure: EnvFrame::child(EnvFrame::from_map(&method_closure)),
                         }),
                     );
                     j = method_end;
@@ -3654,7 +3640,7 @@ pub(crate) fn execute_lines_with_context(
                     is_async: false,
                     body,
                     ast_body: None,
-                    closure: Rc::new(RefCell::new(vars.clone())),
+                    closure: EnvFrame::child(EnvFrame::from_map(vars)),
                 }),
             );
             if is_export {
@@ -3667,7 +3653,7 @@ pub(crate) fn execute_lines_with_context(
                         is_async: false,
                         body: Vec::new(),
                         ast_body: None,
-                        closure: Rc::new(RefCell::new(HashMap::new())),
+                        closure: EnvFrame::from_map(&HashMap::new()),
                     }),
                 );
             }
@@ -4044,6 +4030,20 @@ mod tests {
             vars.get("encoded"),
             Some(&Value::Text("{\"__zap_variant\":\"callable\"}".into()))
         );
+    }
+
+    #[test]
+    fn parent_linked_closures_preserve_mutation_after_outer_return() {
+        let program = parse_program(
+            "fn make_counter() -> function:\n    let count = 0\n    fn next() -> number:\n        count = count + 1\n        return count\n    return next\nlet counter = make_counter()\nlet first = counter()\nlet second = counter()\n",
+        )
+        .expect("closure mutation program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("parent-linked closure should execute");
+        assert_eq!(vars.get("first"), Some(&Value::Number(1)));
+        assert_eq!(vars.get("second"), Some(&Value::Number(2)));
     }
 
     #[test]

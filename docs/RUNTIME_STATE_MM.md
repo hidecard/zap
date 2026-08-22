@@ -22,7 +22,7 @@ Source execution တစ်ကြိမ်စီတွင် ကိုယ်ပ�
 
 ## ExecutionContext လည်ပတ်ပုံ
 
-Native entrypoint သည် run စတင်ချိန်တွင် `ExecutionContext` ဖန်တီးပြီး source မ evaluate မီ reset ပြုလုပ်ပါသည်။ Context ကို expression parser၊ AST evaluator၊ legacy evaluator၊ function နှင့် method call၊ object-field initialization နှင့် module loading များမှတစ်ဆင့် ဖြန့်ဝေထားပါသည်။ ထို့ကြောင့် imported module များသည် process-global cache အစား caller ၏ context ကို အသုံးပြုပါသည်။ Workspace သတ်မှတ်သည့် ပထမ AST execution က canonical root ကို `RuntimeState` တွင် သိမ်းထားပြီး nested execution များသည် process working directory ဖြင့် အစားထိုးခြင်းမပြုဘဲ ထို root ကို ဆက်အသုံးပြုပါသည်။ Filesystem builtin များသည် context-aware boundary တစ်ခုတည်းကို အသုံးပြုပါသည်။
+Native entrypoint သည် run စတင်ချိန်တွင် `ExecutionContext` ဖန်တီးပြီး source မ evaluate မီ reset ပြုလုပ်ပါသည်။ Context ကို expression parser၊ AST evaluator၊ legacy evaluator၊ function နှင့် method call၊ object-field initialization နှင့် module loading များမှတစ်ဆင့် ဖြန့်ဝေထားပါသည်။ Function value များသည် parent-linked `EnvFrame` capture chain ကို ထိန်းထားသဖြင့် nested function များသည် defining call ပြီးနောက် ဆက်လက်အသက်ရှင်နိုင်ပြီး lexical lookup နှင့် mutation ကို deterministic အတိုင်း ထိန်းသိမ်းနိုင်ပါသည်။ ထို့ကြောင့် imported module များသည် process-global cache အစား caller ၏ context ကို အသုံးပြုပါသည်။ Workspace သတ်မှတ်သည့် ပထမ AST execution က canonical root ကို `RuntimeState` တွင် သိမ်းထားပြီး nested execution များသည် process working directory ဖြင့် အစားထိုးခြင်းမပြုဘဲ ထို root ကို ဆက်အသုံးပြုပါသည်။ Filesystem builtin များသည် context-aware boundary တစ်ခုတည်းကို အသုံးပြုပါသည်။
 
 Context တစ်ခုကို အခြား context တစ်ခုနှင့် သီးခြားဖန်တီးနိုင်ပါသည်။ Context တစ်ခု၏ module stack သို့မဟုတ် execution-depth counter ကို ပြောင်းလဲခြင်းသည် အခြား context ကို မပြောင်းလဲစေပါ။ Context ကို ပြန်အသုံးပြုမည်ဆိုပါက reset ပြုလုပ်ခြင်းဖြင့် module cache၊ import stack၊ depth counter၊ budget နှင့် active object-store counter များကို ရှင်းလင်းနိုင်ပါသည်။ Reset တွင် active object store ကို အသစ်လဲလှယ်သဖြင့် ယခင် run မှ ထိန်းထားသော object များသည် run အသစ်၏ statistics ကို မပြောင်းလဲနိုင်ပါ။
 
@@ -38,7 +38,7 @@ Runtime-state module တွင် workspace၊ budget၊ object-store isolation�
 
 ## Deferred roadmap
 
-အောက်ပါအလုပ်များသည် သီးခြားကျန်ရှိနေပါသည် — first-class function value နှင့် `EnvFrame`၊ allocator-level measurement၊ public weak reference၊ automatic tracing collection၊ typed source-span propagation နှင့် full language-level async task semantics တို့ ဖြစ်ပါသည်။
+အောက်ပါအလုပ်များသည် သီးခြားကျန်ရှိနေပါသည် — allocator-level measurement၊ public weak reference၊ automatic tracing collection၊ typed source-span propagation၊ executor-backed language scheduling နှင့် full language-level async task semantics တို့ ဖြစ်ပါသည်။
 
 ထိန်းသိမ်းထားသော contract များအတွက် [Burmese documentation navigation hub](DOCUMENTATION_NAVIGATION_MM.md)၊ [next-step plan](NEXT_TODO_PLAN_MM.md) နှင့် [language specification](LANGUAGE_SPEC_MM.md) ကို ကြည့်ရှုပါ။
 
