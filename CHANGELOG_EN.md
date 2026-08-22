@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.2] — 2026-08-22
+
+### Release engineering
+- Completed checked EnvFrame borrows and explicit cycle-policy reporting; restored canonical AST assert/sort/sqrt dispatch; synchronized standard-library metadata and VS Code grammars; and cleared the full serial native suite and CI gates.
+
 ### Post-v2.2.0 corrective cycle
 - Completed LSP-SYNC-01, LSP-REN-01, LSP-INTEROP-01, and EXT-201 on `master`: standard full-document synchronization with versioned state, file-local scope-aware rename, negotiated UTF-8/UTF-16/UTF-32 positions, strict file URIs, bounded workspace indexing, and canonical VS Code packaging. Incremental range changes and cross-file rename remain unsupported.
 - Completed API-301 on post-release `master`: added schema-2 `determinism_class` values (`pure`, `input-deterministic`, `runtime-dependent`, and `external-io`) with explicit domain/builtin coverage and a compatibility-preserving legacy `deterministic` boolean.

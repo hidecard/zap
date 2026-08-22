@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-22
+
+### Release summary
+- Completed the post-v2.2.1 runtime safety, canonical builtin, documentation, and editor-parity maintenance cycle.
+
 ### Post-v2.2.0 corrective cycle
 - LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01 နှင့် EXT-201 ကို post-release `master` တွင် ပြီးစီးထားသည်။ Standard full-document synchronization၊ versioned state၊ file-local scope-aware rename၊ negotiated positions၊ strict file URI၊ bounded workspace index နှင့် canonical VS Code package များ ပါဝင်ပြီး incremental range change နှင့် cross-file rename ကို support မလုပ်သေးပါ။
 - API-301 တွင် schema-2 `determinism_class` (`pure`၊ `input-deterministic`၊ `runtime-dependent` နှင့် `external-io`) နှင့် compatibility-preserving legacy `deterministic` boolean ကို ထည့်သွင်းထားသည်။

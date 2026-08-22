@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current verified baseline is the published v2.2.1 corrective release. The historical v2.2.0 tag and assets remain immutable; P2 package, async, registry, editor, and standard-library corrections completed later on `master` are now published in v2.2.1 with explicit production-boundary limitations.
+Zap's current verified baseline is the published v2.2.2 corrective release. The historical v2.2.0 tag and assets remain immutable; P2 package, async, registry, editor, and standard-library corrections completed later on `master` are now published in v2.2.2 with explicit production-boundary limitations.
 
 | Milestone | Status | Notes |
 |---|---|---|
@@ -19,7 +19,7 @@ Zap's current verified baseline is the published v2.2.1 corrective release. The 
 | Documentation navigation and audience split | Implemented as M3-DOC-01 | Learner, syntax/reference, specification, standard-library, package-author, runtime, deployment, security, tooling, and release paths have bilingual navigation, verified-version metadata, canonical companion links, and repository-relative entry points. |
 | Traits and composition design | Implemented as M4-RFC-01 design-only | The bilingual RFC defines composition versus single inheritance, method lookup and visibility, missing/conflicting implementation diagnostics, inheritance migration, hybrid static/dynamic dispatch, rejected alternatives, compatibility impact, and the explicit decision to defer syntax and runtime implementation beyond v2.2.0. |
 | v2.2.0 release | Published and verified as historical M4-REL-01 | The clean version-consistent release commit passed release preflight, the v2.2.0 tag triggered successful Linux x86_64, macOS ARM64, and Windows x86_64 builds, and signed archives, checksums, provenance, and published-release verification completed successfully. The tag and its assets remain immutable and do not include later corrective `master` commits. |
-| Post-v2.2.0 corrective cycle | Published as v2.2.1 | LSP-SYNC-01, LSP-REN-01, LSP-INTEROP-01, EXT-201, API-301, and DOC-401 are complete on `master`; the v2.2.1 release includes the corrected contracts, bilingual provenance documentation, and explicit limitations. |
+| Post-v2.2.0 corrective cycle | Published as v2.2.2 | LSP-SYNC-01, LSP-REN-01, LSP-INTEROP-01, EXT-201, API-301, and DOC-401 are complete on `master`; the v2.2.2 release includes the corrected contracts, bilingual provenance documentation, and explicit limitations. |
 
 ## Local install/update contract
 

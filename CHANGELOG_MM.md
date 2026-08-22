@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.2] — 2026-08-22
+
+### Release engineering
+- Checked EnvFrame borrow နှင့် explicit cycle policy reporting ကို ပြီးစီးစေပြီး canonical AST assert/sort/sqrt dispatch ကို ပြန်လည်ထည့်သွင်းကာ standard-library metadata နှင့် VS Code grammar များကို synchronize လုပ်ပြီး full serial native suite နှင့် CI gate များကို အောင်မြင်စေပါသည်။
+
 ### v2.2.0 နောက်ပိုင်း corrective cycle
 - LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01 နှင့် EXT-201 ကို `master` တွင် ပြီးစီးထားသည်။ Standard full-document synchronization နှင့် versioned state၊ file-local scope-aware rename၊ negotiated UTF-8/UTF-16/UTF-32 position၊ strict file URI၊ bounded workspace indexing နှင့် canonical VS Code packaging များ ပါဝင်သည်။ Incremental range change နှင့် cross-file rename ကို support မလုပ်သေးပါ။
 - API-301 ကို post-release `master` တွင် ပြီးစီးထားသည်။ Schema-2 `determinism_class` (`pure`၊ `input-deterministic`၊ `runtime-dependent` နှင့် `external-io`)၊ explicit domain/builtin coverage နှင့် compatibility-preserving legacy `deterministic` boolean ကို ထည့်သွင်းထားသည်။

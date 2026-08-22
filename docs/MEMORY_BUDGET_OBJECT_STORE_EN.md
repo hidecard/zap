@@ -2,7 +2,7 @@
 
 **Design status:** M2-MEM-02 logical accounting and rollback slice
 
-**Verified baseline:** Zap v2.2.1.
+**Verified baseline:** Zap v2.2.2.
 
 ## Purpose
 

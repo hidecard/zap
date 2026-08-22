@@ -1,6 +1,6 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.2.1
+**Verified baseline:** Zap v2.2.2
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path
@@ -20,11 +20,11 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.2.1 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
-| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.2.1 | [Language specification](LANGUAGE_SPEC_EN.md) |
-| Package author | [Package guide](PACKAGE_EN.md) — v2.2.1 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.2.1 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
-| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.2.1 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
+| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.2.2 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
+| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.2.2 | [Language specification](LANGUAGE_SPEC_EN.md) |
+| Package author | [Package guide](PACKAGE_EN.md) — v2.2.2 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.2.2 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.2.2 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
 
 ## Normative contract map
 
@@ -47,4 +47,4 @@
 
 The authoritative package version is `native/Cargo.toml`. Release-facing surfaces must agree with it, and CI validates the agreement. When a normative rule changes, update the English and Burmese contract together, add or update its fixture owner in `SPEC_OWNERSHIP_INDEX.tsv`, record compatibility impact using the bilingual compatibility template, and include regression evidence before merging. Public standard-library changes must also update the catalog and its stability policy pair.
 
-Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. The [post-v2.2.0 remediation/provenance record](POST_V2.2.0_REMEDIATION_EN.md) distinguishes immutable v2.2.0 assets from later `master` corrections now published in v2.2.1. See the [v2.2.1 release notes](RELEASE_2.2.1_EN.md), [remaining TODO register](PDF_REMAINING_TODO_EN.md), and [next-step plan](NEXT_TODO_PLAN_EN.md) for the current release boundary and tracked work.
+Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. The [post-v2.2.0 remediation/provenance record](POST_V2.2.0_REMEDIATION_EN.md) distinguishes immutable v2.2.0 assets from later `master` corrections now published in v2.2.2. See the [v2.2.2 release notes](RELEASE_2.2.1_EN.md), [remaining TODO register](PDF_REMAINING_TODO_EN.md), and [next-step plan](NEXT_TODO_PLAN_EN.md) for the current release boundary and tracked work.

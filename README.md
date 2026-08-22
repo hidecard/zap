@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.2.1` |
+| Current release line | `v2.2.2` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -37,13 +37,13 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, M3-LSP-01 semantic-parity/editor validation, and post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.1 |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.2 |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
-| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0 remains immutable; v2.2.1 contains the corrections |
+| Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0 and v2.2.1 remain immutable; v2.2.1 contains the LSP/editor corrections and v2.2.2 contains the subsequent runtime-safety/helper corrections |
 
 ## Release provenance
 
-The installation links and archive names in this README point to the published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), its tag, and its signed assets remain immutable. The corrected LSP, editor-package, and standard-library taxonomy work was completed later on `master` and is documented in the [post-v2.2.0 remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md).
+The installation links and archive names in this README point to the published [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) and published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the later runtime-safety corrections are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.2 release notes.
 
 ## Learning Guide
 
@@ -84,7 +84,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.1 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.1), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [v2.2.2 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.2), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`.
 
 ### Supported Release Targets
 
@@ -94,7 +94,7 @@ Zap is distributed as a standalone native executable. No separate language runti
 | Windows | x86_64 | `.zip` | Extract and run `install_windows.bat` from Command Prompt |
 | macOS | ARM64 | `.tar.gz` | Extract, make the installer executable, and run `./install.sh` |
 
-For the current v2.2.1 release, the platform assets are `zap-2.2.1-linux-x86_64.tar.gz`, `zap-2.2.1-macos-arm64.tar.gz`, and `zap-2.2.1-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
+For the current v2.2.2 release, the platform assets are `zap-2.2.2-linux-x86_64.tar.gz`, `zap-2.2.2-macos-arm64.tar.gz`, and `zap-2.2.2-windows-x86_64.zip`. The exact archive filename may change with each release. Select the asset whose platform and architecture match your computer; do not install a Linux archive on Windows or a macOS archive on Linux.
 
 ### Linux Installation
 
@@ -103,7 +103,7 @@ For the current v2.2.1 release, the platform assets are `zap-2.2.1-linux-x86_64.
 3. Enter the extracted directory and run the installer:
 
 ```bash
-tar -xzf zap-2.2.1-linux-x86_64.tar.gz
+tar -xzf zap-2.2.2-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 ```
@@ -119,11 +119,11 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1).
+1. Download the macOS ARM64 `.tar.gz` archive from the [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2).
 2. Extract it and enter the extracted directory:
 
 ```bash
-tar -xzf zap-2.2.1-macos-arm64.tar.gz
+tar -xzf zap-2.2.2-macos-arm64.tar.gz
 cd zap
 ```
 
@@ -145,7 +145,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1).
+1. Download the Windows x86_64 `.zip` archive from the [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 

@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ verified baseline သည် published v2.2.1 corrective release ဖြစ်ပါသည်။ Historical v2.2.0 tag နှင့် asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း `master` တွင် ပြီးစီးသော P2 package၊ async၊ registry၊ editor နှင့် standard-library correction များကို explicit production-boundary limitation များနှင့်အတူ v2.2.1 တွင် ထုတ်ဝေထားပါသည်။
+Zap ၏ လက်ရှိ verified baseline သည် published v2.2.2 corrective release ဖြစ်ပါသည်။ Historical v2.2.0 tag နှင့် asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း `master` တွင် ပြီးစီးသော P2 package၊ async၊ registry၊ editor နှင့် standard-library correction များကို explicit production-boundary limitation များနှင့်အတူ v2.2.2 တွင် ထုတ်ဝေထားပါသည်။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|
@@ -19,7 +19,7 @@ Zap ၏ လက်ရှိ verified baseline သည် published v2.2.1 correcti
 | Documentation navigation နှင့် audience split | M3-DOC-01 အဖြစ် အကောင်အထည်ဖော်ပြီး | Learner၊ syntax/reference၊ specification၊ standard-library၊ package-author၊ runtime၊ deployment၊ security၊ tooling နှင့် release လမ်းကြောင်းများအတွက် bilingual navigation၊ verified-version metadata၊ canonical companion link နှင့် repository-relative entry point များ ရှိသည်။ |
 | Traits နှင့် composition design | M4-RFC-01 design-only အဖြစ် ပြီးစီး | Bilingual RFC တွင် composition နှင့် single inheritance နှိုင်းယှဉ်ချက်၊ method lookup/visibility၊ missing/conflicting implementation diagnostic၊ inheritance migration၊ hybrid static/dynamic dispatch၊ rejected alternative၊ compatibility impact နှင့် v2.2.0 ထက်ကျော်လွန်သည်အထိ syntax/runtime implementation ကို deferred ထားသည့် explicit decision များ ပါဝင်သည်။ |
 | v2.2.0 release | Historical M4-REL-01 အဖြစ် published နှင့် verified | Clean version-consistent release commit သည် release preflight ကို pass ဖြစ်ပြီး v2.2.0 tag မှ Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 build များကို အောင်မြင်စွာ trigger လုပ်သည်။ Signed archive၊ checksum၊ provenance နှင့် published-release verification များလည်း ပြီးစီးသည်။ Tag နှင့် asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း corrective `master` commit များ မပါဝင်ပါ။ |
-| v2.2.0 နောက်ပိုင်း corrective cycle | v2.2.1 အဖြစ် ထုတ်ဝေပြီး | LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01၊ EXT-201၊ API-301 နှင့် DOC-401 များကို `master` တွင် ပြီးစီးထားပြီး v2.2.1 release တွင် corrected contract များ၊ bilingual provenance documentation နှင့် explicit limitation များ ပါဝင်သည်။ |
+| v2.2.0 နောက်ပိုင်း corrective cycle | v2.2.2 အဖြစ် ထုတ်ဝေပြီး | LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01၊ EXT-201၊ API-301 နှင့် DOC-401 များကို `master` တွင် ပြီးစီးထားပြီး v2.2.2 release တွင် corrected contract များ၊ bilingual provenance documentation နှင့် explicit limitation များ ပါဝင်သည်။ |
 
 ## Local install/update contract
 

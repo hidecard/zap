@@ -24,7 +24,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.2.1` |
+| လက်ရှိ release line | `v2.2.2` |
 | Runtime | Native Rust runtime |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
@@ -37,15 +37,15 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Runtime architecture | `runtime_state.rs` နှင့် `value.rs` တွင် per-run `RuntimeState`၊ `MemoryBudget`၊ `ObjectStore`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking၊ execution-depth accounting၊ reset-detached lifecycle statistics နှင့် parent-linked `EnvFrame` closure များကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence၊ M3-LSP-01 semantic-parity/editor validation နှင့် post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_MM.md) — design-only ဖြစ်ပြီး v2.2.1 အတွက် deferred |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_MM.md) — design-only ဖြစ်ပြီး v2.2.2 အတွက် deferred |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
-| v2.2.0 နောက်ပိုင်း remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_MM.md) — v2.2.0 သည် immutable ဖြစ်ပြီး correction များကို v2.2.1 တွင် ထုတ်ဝေထားသည် |
+| v2.2.0 နောက်ပိုင်း remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_MM.md) — v2.2.0 နှင့် v2.2.1 သည် immutable ဖြစ်ပြီး LSP/editor correction များကို v2.2.1၊ နောက်ဆက်တွဲ runtime-safety/helper correction များကို v2.2.2 တွင် ထုတ်ဝေထားသည် |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
 ## Release provenance
 
-ဤ README ထဲရှိ installation link နှင့် archive name များသည် published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1) ကို ရည်ညွှန်းထားခြင်း ဖြစ်ပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0)၊ ထို tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ ပြင်ဆင်ပြီးသော LSP၊ editor-package နှင့် standard-library taxonomy အလုပ်များကို နောက်ပိုင်း `master` တွင် ပြီးစီးခဲ့ပြီး [v2.2.0 နောက်ပိုင်း remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) တွင် မှတ်တမ်းတင်ထားပါသည်။
+ဤ README ထဲရှိ installation link နှင့် archive name များသည် published [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2) ကို ရည်ညွှန်းထားခြင်း ဖြစ်ပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) နှင့် published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1) တို့၏ tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ v2.2.0 နောက်ပိုင်း remediation history နှင့် နောက်ပိုင်း runtime-safety correction များကို [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) နှင့် v2.2.2 release note တွင် မှတ်တမ်းတင်ထားပါသည်။
 
 ## Learning Guide
 
@@ -62,9 +62,9 @@ Zap သည် language core ကို သေးငယ်၊ ရှင်းလ�
 
 ## Installation
 
-Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ v2.2.1 အတွက် မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.2.1 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.1) မှ download လုပ်ပြီး checksum ကို verify လုပ်ကာ extract လုပ်ပါ။
+Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ v2.2.2 အတွက် မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.2.2 GitHub Release](https://github.com/hidecard/zap/releases/tag/v2.2.2) မှ download လုပ်ပြီး checksum ကို verify လုပ်ကာ extract လုပ်ပါ။
 
-v2.2.1 official archive များမှာ `zap-2.2.1-linux-x86_64.tar.gz`၊ `zap-2.2.1-macos-arm64.tar.gz` နှင့် `zap-2.2.1-windows-x86_64.zip` ဖြစ်ပါသည်။
+v2.2.2 official archive များမှာ `zap-2.2.2-linux-x86_64.tar.gz`၊ `zap-2.2.2-macos-arm64.tar.gz` နှင့် `zap-2.2.2-windows-x86_64.zip` ဖြစ်ပါသည်။
 
 | Platform | Architecture | လုပ်ဆောင်ရန် |
 |---|---|---|
