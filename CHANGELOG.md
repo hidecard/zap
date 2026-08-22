@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.5] - 2026-08-23
+
+### Release summary
+- Hardened HTTP request URL invariant handling without changing parser/runtime syntax or framework scope.
+
 ## [2.2.4] - 2026-08-23
 
 ### Release summary

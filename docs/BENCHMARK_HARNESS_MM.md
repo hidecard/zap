@@ -1,6 +1,6 @@
 # Zap Native Benchmark Harness
 
-**အခြေအနေ:** Zap v2.2.4 အတွက် repeatable benchmark baseline နှင့် regression gate
+**အခြေအနေ:** Zap v2.2.5 အတွက် repeatable benchmark baseline နှင့် regression gate
 
 Repository တွင် native interpreter အတွက် dependency-free benchmark runner ဖြစ်သော `scripts/benchmark_native.sh` ကို ထည့်သွင်းထားပါသည်။ လိုအပ်ပါက locked dependency graph ဖြင့် `native/target/release/zap` ကို build လုပ်ပြီး temporary source fixture များ ဖန်တီးကာ fixture တစ်ခုချင်းစီကို သတ်မှတ်ထားသည့်အကြိမ်ရေဖြင့် run ပါသည်။ Raw CSV output တွင် `suite`၊ `iteration` နှင့် `elapsed_seconds` ဟူသော column များကို တည်ငြိမ်စွာ ထုတ်ပေးပါသည်။ M2-BENCH-01 တွင် `ZAP_BENCH_PROVENANCE` ဖြင့် သတ်မှတ်နိုင်သော provenance sidecar (default အနေဖြင့် raw CSV basename ၏ `.provenance.tsv`) ကိုလည်း ထုတ်ပေးပြီး run status၊ UTC timestamp၊ commit၊ target triple၊ operating-system/kernel/architecture၊ ရရှိနိုင်ပါက CPU description၊ Rust/Cargo version၊ binary နှင့် benchmark-script SHA-256 digest၊ repeat/warm-up count၊ suite list နှင့် raw-observation path များကို မှတ်တမ်းတင်ပါသည်။
 

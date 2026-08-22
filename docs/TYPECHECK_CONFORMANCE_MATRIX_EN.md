@@ -1,10 +1,10 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
 **Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** v2.2.4
+**Verified baseline:** v2.2.5
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
-This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its verified release metadata is v2.2.4; this release does not reopen the completed async runtime, registry, or release-engineering work.
+This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its verified release metadata is v2.2.5; this release does not reopen the completed async runtime, registry, or release-engineering work.
 
 ## Current baseline
 
@@ -81,4 +81,4 @@ The following work is intentionally outside this matrix because it is already im
 
 ## Definition of done for this workstream
 
-The v2.2.4 type-checking baseline is complete for TC-001 through TC-012 at the supported syntax boundary: P0 rows have L3 evidence, TC-006/TC-009/TC-010 have L3 evidence, diagnostics have stable file/line/column locations, accepted programs agree with runtime behavior, negative fixtures fail for their intended reasons, LSP consumes the shared diagnostic vocabulary, and the English/Burmese documentation pair is synchronized. Advanced generic declarations and inference remain outside this release boundary.
+The v2.2.5 type-checking baseline is complete for TC-001 through TC-012 at the supported syntax boundary: P0 rows have L3 evidence, TC-006/TC-009/TC-010 have L3 evidence, diagnostics have stable file/line/column locations, accepted programs agree with runtime behavior, negative fixtures fail for their intended reasons, LSP consumes the shared diagnostic vocabulary, and the English/Burmese documentation pair is synchronized. Advanced generic declarations and inference remain outside this release boundary.

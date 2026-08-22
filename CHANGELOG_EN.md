@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.5] — 2026-08-23
+
+### Release engineering
+- Hardened HTTP request URL invariant handling with deterministic errors while preserving parser/runtime syntax, eager async semantics, and the no-framework scope.
+
 ## [2.2.4] — 2026-08-23
 
 ### Release engineering

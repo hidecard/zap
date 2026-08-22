@@ -1,6 +1,6 @@
 # P0 AST Foundation Status
 
-**Verified against Zap v2.2.4.**
+**Verified against Zap v2.2.5.**
 
 ## AST migration status
 

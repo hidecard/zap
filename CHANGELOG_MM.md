@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.5] — 2026-08-23
+
+### Release engineering
+- HTTP request URL invariant များကို deterministic error ဖြင့် ပိုမိုခိုင်မာစေပြီး parser/runtime syntax၊ eager async semantics နှင့် framework မပါဝင်သည့် scope ကို မပြောင်းလဲထားပါ။
+
 ## [2.2.4] — 2026-08-23
 
 ### Release engineering
