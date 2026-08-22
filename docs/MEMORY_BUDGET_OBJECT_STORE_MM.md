@@ -1,6 +1,6 @@
 # MemoryBudget နှင့် ObjectStore Contract
 
-**Design status:** M2-MEM-01 foundation design
+**Design status:** M2-MEM-02 logical accounting နှင့် rollback slice
 
 **စစ်ဆေးထားသော baseline:** Zap v2.2.1။
 
@@ -21,9 +21,9 @@ Zap သည် လက်ရှိ `Rc<RefCell>` runtime သည် tracing garbage
 
 ## Logical accounting units
 
-Budget သည် logical byte unit များကို အသုံးပြုပါသည် — text အတွက် UTF-8 payload length၊ list/map slot အတွက် fixed per-entry charge၊ object အတွက် fixed base charge နှင့် object entry အတွက် fixed field charge ဖြစ်ပါသည်။ Charge constant များသည် Rust heap layout measurement မဟုတ်ဘဲ deterministic implementation constant များ ဖြစ်ပါသည်။ Counter overflow ဖြစ်စေမည့် သို့မဟုတ် configured limit ကျော်မည့် request ကို admission မလုပ်မီ stable error ဖြင့် ငြင်းပယ်ပါသည်။ Accounting သည် available budget ရှိနေသကဲ့သို့ မမှားယွင်းစွာ ပြန်မလည်ပါ။ Failed reservation သည် fail ဖြစ်သည့် resource ကို မစားသုံးရပါ။
+Budget သည် Rust heap-layout measurement မဟုတ်သော deterministic logical byte unit များကို အသုံးပြုပါသည်။ Scalar သို့မဟုတ် wrapper တစ်ခုစီတွင် fixed base charge ရှိပြီး text တွင် UTF-8 payload length၊ list/map တွင် fixed container/slot charge နှင့် map key byte များ၊ object တွင် fixed base၊ class-name byte နှင့် per-field storage၊ callable value တွင် function metadata၊ parameter/default metadata နှင့် reachable live closure-frame binding များကို ထည့်တွက်ပါသည်။ Nested value များကို object၊ frame နှင့် function identity guard များဖြင့် traverse လုပ်သဖြင့် cycle များကို bounded ထားပြီး charge calculation တစ်ကြိမ်အတွင်း shared reference များကို ထပ်မတွက်ပါ။ Counter overflow သို့မဟုတ် configured limit ကျော်မည့် request ကို admission မလုပ်မီ stable error ဖြင့် ငြင်းပယ်ပါသည်။ Accounting သည် available budget ရှိနေသကဲ့သို့ မမှားယွင်းစွာ ပြန်မလည်ပါ။
 
-Runtime တွင် logical byte နှင့် object charge reserve၊ logical task admit/complete နှင့် output reserve အတွက် explicit method များကို ပေးပါသည်။ Canonical AST object construction သည် allocation မပြုမီ လက်ရှိ context ကို charge လုပ်ပြီး text ထုတ်ပေးသော builtin result များသည် evaluation အောင်မြင်ပြီးနောက် output budget ကို charge လုပ်သည်။ ဤ charge များသည် logical accounting unit များသာဖြစ်ပြီး allocator-size measurement မဟုတ်ပါ။
+Runtime တွင် logical byte/object charge reserve၊ logical task admit/complete၊ output reserve နှင့် byte/output checkpoint ကို save/restore ပြုလုပ်ရန် explicit method များကို ပေးပါသည်။ Canonical AST literal၊ container၊ cloned access result၊ builtin result နှင့် registered callable capture များကို materialization boundary တွင် charge လုပ်ပါသည်။ Object construction သည် default၊ explicit field နှင့် initializer များ run ပြီးနောက် finalized field shape အပေါ် charge လုပ်သဖြင့် default/nested value များသည် မိမိ AST charge နှင့် object storage charge အသီးသီး ရရှိပါသည်။ AST expression၊ builtin dispatch သို့မဟုတ် constructor မအောင်မြင်ပါက byte/output checkpoint သို့ rollback ပြုလုပ်ပြီး task admission သည် သီးခြား task lifecycle contract အတိုင်း ဆောင်ရွက်ပါသည်။ ဤ charge များသည် logical accounting unit များသာဖြစ်ပြီး allocator-size measurement မဟုတ်ပါ။
 
 ## Default limits
 
@@ -47,11 +47,11 @@ Budget failure များသည် stable operation-specific text ကို �
 
 ## Compatibility boundary
 
-ဤ slice တွင် first-class callable value၊ parent-linked `EnvFrame` binding၊ executor-backed language scheduling၊ foreign blocking call ကို forced interrupt ပြုလုပ်ခြင်း သို့မဟုတ် tracing garbage collection မထည့်သွင်းပါ။ ရှိပြီးသား `read_lines`/`write_lines` compatibility behavior နှင့် canonical AST boundary မပြောင်းလဲပါ။
+ဤ slice တွင် executor-backed language scheduling၊ foreign blocking call ကို forced interrupt ပြုလုပ်ခြင်း၊ weak reference သို့မဟုတ် tracing garbage collection မထည့်သွင်းပါ။ ရှိပြီးသား first-class callable value နှင့် parent-linked `EnvFrame` binding များကို semantics မပြောင်းဘဲ accounting ပြုလုပ်ပါသည်။ ရှိပြီးသား `read_lines`/`write_lines` compatibility behavior နှင့် canonical AST boundary မပြောင်းလဲပါ။
 
 ## Acceptance evidence
 
-M2-MEM-02 အတွက် independent context များတွင် budget နှင့် object store isolation ရှိရမည်။ Reset သည် old store ကို detach လုပ်ပြီး active counter အားလုံးကို ရှင်းလင်းရမည်။ Object allocation/deallocation၊ validation နှင့် cleanup diagnostic များသည် deterministic ဖြစ်ရမည်။ Byte/object/task/output over-limit case များသည် fail closed ဖြစ်ရမည်။ Repeated module execution သည် context cache တစ်ခုကို ပြန်သုံးရမည်။ JSON/LSP/CLI error propagation သည် panic-free ဖြစ်ရမည်။ Full native suite နှင့် cross-platform CI သည် အောင်မြင်ရမည်။
+M2-MEM-02 implementation slice အတွက် independent context များတွင် budget နှင့် object store isolation ရှိရမည်။ Reset သည် old store ကို detach လုပ်ပြီး active counter အားလုံးကို ရှင်းလင်းရမည်။ Nested value၊ callable capture/default metadata၊ finalized object field နှင့် builtin output များတွင် deterministic logical charge ရှိရမည်။ Expression/builtin/constructor reservation မအောင်မြင်ပါက byte/output usage rollback ဖြစ်ရမည်။ Object allocation/deallocation၊ validation နှင့် cleanup diagnostic များသည် deterministic ဖြစ်ရမည်။ Byte/object/task/output over-limit case များသည် fail closed ဖြစ်ရမည်။ Repeated module execution သည် context cache တစ်ခုကို ပြန်သုံးရမည်။ JSON/LSP/CLI error propagation သည် panic-free ဖြစ်ရမည်။ Full native suite နှင့် cross-platform CI သည် အောင်မြင်ရမည်။ Focused evaluator/value regression များသည် accounting path အသစ်များကို cover လုပ်ပြီး repository-wide gate သည် နောက်ဆုံး acceptance check ဖြစ်သည်။
 
 ## ကိုးကားရန်
 

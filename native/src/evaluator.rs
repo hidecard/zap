@@ -459,6 +459,23 @@ pub(crate) fn direct_builtin_with_context(
     args: Vec<Value>,
     mut context: Option<&mut ExecutionContext>,
 ) -> Result<Option<Value>, String> {
+    let checkpoint = context
+        .as_deref()
+        .map(|context| context.state().memory_checkpoint());
+    let result = direct_builtin_with_context_inner(name, args, context.as_deref_mut());
+    if result.is_err() || matches!(&result, Ok(None)) {
+        if let (Some(context), Some(checkpoint)) = (context.as_mut(), checkpoint) {
+            context.state_mut().rollback_memory(checkpoint);
+        }
+    }
+    result
+}
+
+fn direct_builtin_with_context_inner(
+    name: &str,
+    args: Vec<Value>,
+    mut context: Option<&mut ExecutionContext>,
+) -> Result<Option<Value>, String> {
     if let Some(context) = context.as_deref_mut() {
         let logical_bytes = (name.len() as u64).saturating_add(args.len() as u64 * 8);
         context
@@ -750,6 +767,15 @@ pub(crate) fn direct_builtin_with_context(
             };
             Ok(Some(Value::Text(type_name.into())))
         }
+        "get" => {
+            expect(3)?;
+            let (Value::Map(values), Value::Text(key)) = (&args[0], &args[1]) else {
+                return Err("get expects a map, text key, and default value".into());
+            };
+            Ok(Some(
+                values.get(key).cloned().unwrap_or_else(|| args[2].clone()),
+            ))
+        }
         "keys" => {
             expect(1)?;
             match &args[0] {
@@ -1010,12 +1036,17 @@ pub(crate) fn direct_builtin_with_context(
         }
         _ => Ok(None),
     };
-    if let Ok(Some(Value::Text(text))) = &result {
-        if let Some(context) = context {
-            context
-                .state_mut()
-                .memory_budget_mut()
-                .reserve_output(text.len() as u64)?;
+    if let Ok(Some(value)) = &result {
+        if let Some(context) = context.as_mut() {
+            if !matches!(value, Value::ScheduledFuture(_)) {
+                context.state_mut().reserve_value(value)?;
+            }
+            if let Value::Text(text) = value {
+                context
+                    .state_mut()
+                    .memory_budget_mut()
+                    .reserve_output(text.len() as u64)?;
+            }
         }
     }
     result
@@ -2230,17 +2261,43 @@ fn ast_expression_with_propagation_context(
     )?))
 }
 
+fn charge_ast_value(value: Value, context: &mut ExecutionContext) -> Result<Value, String> {
+    context.state_mut().reserve_shallow_value(&value)?;
+    Ok(value)
+}
+
+fn charge_ast_cloned_value(value: Value, context: &mut ExecutionContext) -> Result<Value, String> {
+    context.state_mut().reserve_value(&value)?;
+    Ok(value)
+}
+
 fn ast_expression_with_context(
     node: &crate::ast::Spanned<Expr>,
     vars: &HashMap<String, Value>,
     funcs: &HashMap<String, Rc<Function>>,
     context: &mut ExecutionContext,
 ) -> Result<Value, String> {
+    let checkpoint = context.state().memory_checkpoint();
+    let result = ast_expression_with_context_inner(node, vars, funcs, context);
+    if result.is_err() {
+        context.state_mut().rollback_memory(checkpoint);
+    }
+    result
+}
+
+fn ast_expression_with_context_inner(
+    node: &crate::ast::Spanned<Expr>,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<Value, String> {
     match &node.node {
-        Expr::Literal(Literal::Number(value)) => Ok(Value::Number(*value)),
-        Expr::Literal(Literal::Text(value)) => Ok(Value::Text(value.clone())),
-        Expr::Literal(Literal::Bool(value)) => Ok(Value::Bool(*value)),
-        Expr::Literal(Literal::None) => Ok(Value::None),
+        Expr::Literal(Literal::Number(value)) => charge_ast_value(Value::Number(*value), context),
+        Expr::Literal(Literal::Text(value)) => {
+            charge_ast_value(Value::Text(value.clone()), context)
+        }
+        Expr::Literal(Literal::Bool(value)) => charge_ast_value(Value::Bool(*value), context),
+        Expr::Literal(Literal::None) => charge_ast_value(Value::None, context),
         Expr::Name(name) => vars
             .get(name)
             .cloned()
@@ -2254,7 +2311,8 @@ fn ast_expression_with_context(
             .iter()
             .map(|item| ast_expression_with_context(item, vars, funcs, context))
             .collect::<Result<Vec<_>, _>>()
-            .map(Value::List),
+            .map(Value::List)
+            .and_then(|value| charge_ast_value(value, context)),
         Expr::Map(items) => {
             let mut map = HashMap::new();
             for (key, value) in items {
@@ -2267,18 +2325,19 @@ fn ast_expression_with_context(
                     ast_expression_with_context(value, vars, funcs, context)?,
                 );
             }
-            Ok(Value::Map(map))
+            charge_ast_value(Value::Map(map), context)
         }
         Expr::Unary { op, value } => {
             let value = ast_expression_with_context(value, vars, funcs, context)?;
-            match (op, value) {
+            let result = match (op, value) {
                 (UnaryOp::Negate, Value::Number(value)) => value
                     .checked_neg()
                     .map(Value::Number)
                     .ok_or_else(|| "integer overflow".into()),
                 (UnaryOp::Not, value) => Ok(Value::Bool(!value.truthy())),
                 (UnaryOp::Negate, _) => Err("unary '-' expects a number".into()),
-            }
+            };
+            result.and_then(|value| charge_ast_value(value, context))
         }
         Expr::Binary { left, op, right } => {
             let left = ast_expression_with_context(left, vars, funcs, context)?;
@@ -2298,7 +2357,7 @@ fn ast_expression_with_context(
                 BinaryOp::And => Token::And,
                 BinaryOp::Or => Token::Or,
             };
-            operate(left, token, right)
+            operate(left, token, right).and_then(|value| charge_ast_value(value, context))
         }
         Expr::Conditional {
             condition,
@@ -2376,15 +2435,15 @@ fn ast_expression_with_context(
                     } else if let Some(value) =
                         direct_io_builtin_with_context(name, &positional, Some(context))?
                     {
-                        Ok(value)
+                        charge_ast_cloned_value(value, context)
                     } else if let Some(value) =
                         direct_system_builtin_with_context(name, &positional, Some(context))?
                     {
-                        Ok(value)
+                        charge_ast_cloned_value(value, context)
                     } else if let Some(value) =
                         direct_external_builtin_with_context(name, &positional, Some(context))?
                     {
-                        Ok(value)
+                        charge_ast_cloned_value(value, context)
                     } else {
                         Err(format!("undefined function: {name}"))
                     }
@@ -2437,7 +2496,7 @@ fn ast_expression_with_context(
         }
         Expr::Member { target, member } => {
             let value = ast_expression_with_context(target, vars, funcs, context)?;
-            match value {
+            let result = match value {
                 Value::Object { class_name, fields } => {
                     check_field_visibility(&class_name, member, vars, funcs)?;
                     fields
@@ -2451,12 +2510,13 @@ fn ast_expression_with_context(
                     .cloned()
                     .ok_or_else(|| format!("key not found: {member}")),
                 _ => Err("property access expects an object or map".into()),
-            }
+            }?;
+            charge_ast_cloned_value(result, context)
         }
         Expr::Index { target, index } => {
             let target = ast_expression_with_context(target, vars, funcs, context)?;
             let index = ast_expression_with_context(index, vars, funcs, context)?;
-            match (target, index) {
+            let result = match (target, index) {
                 (Value::List(values), Value::Number(index)) if index >= 0 => values
                     .get(index as usize)
                     .cloned()
@@ -2466,7 +2526,8 @@ fn ast_expression_with_context(
                     .cloned()
                     .ok_or_else(|| "key not found".to_string()),
                 _ => Err("invalid index operation".into()),
-            }
+            }?;
+            charge_ast_cloned_value(result, context)
         }
     }
 }
@@ -2934,6 +2995,20 @@ fn construct_object_with_context(
     funcs: &HashMap<String, Rc<Function>>,
     context: &mut ExecutionContext,
 ) -> Result<Value, String> {
+    let checkpoint = context.state().memory_checkpoint();
+    let result = construct_object_with_context_inner(args, vars, funcs, context);
+    if result.is_err() {
+        context.state_mut().rollback_memory(checkpoint);
+    }
+    result
+}
+
+fn construct_object_with_context_inner(
+    args: Vec<Value>,
+    vars: &HashMap<String, Value>,
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<Value, String> {
     let mut values = args.into_iter();
     let class = values
         .next()
@@ -2955,10 +3030,6 @@ fn construct_object_with_context(
     if !funcs.contains_key(&format!("{class_name}.__class__")) {
         return Err(format!("unknown class: {class_name}"));
     }
-    context
-        .state_mut()
-        .memory_budget_mut()
-        .reserve_object(class_name.len(), explicit_fields.len())?;
     let object = Value::object_with_store(
         class_name.clone(),
         Some(context.state().object_store().clone()),
@@ -2991,6 +3062,7 @@ fn construct_object_with_context(
         check_method_visibility(&init, &class_name, vars, funcs)?;
         call_method_with_context(&init, ctor_args, object.clone(), funcs, context)?;
     }
+    context.state_mut().reserve_shallow_value(&object)?;
     Ok(object)
 }
 
@@ -3014,11 +3086,25 @@ struct AstFunctionSpec<'a> {
     exported: bool,
 }
 
+fn insert_ast_function_with_charge(
+    name: String,
+    function: Rc<Function>,
+    funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<(), String> {
+    context
+        .state_mut()
+        .reserve_value(&Value::Callable(Rc::clone(&function)))?;
+    funcs.insert(name, function);
+    Ok(())
+}
+
 fn register_ast_function(
     spec: AstFunctionSpec<'_>,
     frame: &Rc<EnvFrame>,
     funcs: &mut HashMap<String, Rc<Function>>,
-) {
+    context: &mut ExecutionContext,
+) -> Result<(), String> {
     let function = Rc::new(Function {
         visibility: spec.visibility.to_string(),
         params: spec
@@ -3036,10 +3122,11 @@ fn register_ast_function(
         ast_body: Some(spec.body.clone()),
         closure: EnvFrame::child(Rc::clone(frame)),
     });
-    funcs.insert(spec.name.to_string(), function.clone());
+    insert_ast_function_with_charge(spec.name.to_string(), function.clone(), funcs, context)?;
     if spec.exported {
         funcs.insert(format!("__zap_export_fn__:{}", spec.name), function);
     }
+    Ok(())
 }
 
 fn register_ast_class(
@@ -3048,6 +3135,7 @@ fn register_ast_class(
     body: &Program,
     frame: &Rc<EnvFrame>,
     funcs: &mut HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
 ) -> Result<(), String> {
     funcs.insert(
         format!("{name}.__class__"),
@@ -3093,7 +3181,7 @@ fn register_ast_class(
                     value.span.clone(),
                 )],
             };
-            funcs.insert(
+            insert_ast_function_with_charge(
                 format!("{name}.__field__.{field}"),
                 Rc::new(Function {
                     visibility: visibility.clone(),
@@ -3104,7 +3192,9 @@ fn register_ast_class(
                     ast_body: Some(default_body),
                     closure: EnvFrame::child(Rc::clone(frame)),
                 }),
-            );
+                funcs,
+                context,
+            )?;
         } else if let Stmt::Function {
             name: method,
             params,
@@ -3116,7 +3206,7 @@ fn register_ast_class(
         } = &statement.node
         {
             if method == "init" {
-                funcs.insert(
+                insert_ast_function_with_charge(
                     format!("{name}.__own_init__"),
                     Rc::new(Function {
                         visibility: "public".into(),
@@ -3127,7 +3217,9 @@ fn register_ast_class(
                         ast_body: None,
                         closure: EnvFrame::child(Rc::clone(frame)),
                     }),
-                );
+                    funcs,
+                    context,
+                )?;
             }
             let mut method_params = params
                 .iter()
@@ -3149,7 +3241,7 @@ fn register_ast_class(
             }
             let method_closure = EnvFrame::child(Rc::clone(frame));
             method_closure.insert_local("__zap_owner_class".into(), Value::Text(name.to_string()));
-            funcs.insert(
+            insert_ast_function_with_charge(
                 format!("{name}.{method}"),
                 Rc::new(Function {
                     visibility: visibility.clone(),
@@ -3160,7 +3252,9 @@ fn register_ast_class(
                     ast_body: Some(body.clone()),
                     closure: method_closure,
                 }),
-            );
+                funcs,
+                context,
+            )?;
         }
     }
     if let Some(parent) = base {
@@ -3416,11 +3510,12 @@ fn execute_ast_program_with_frame(
                     },
                     frame,
                     funcs,
-                );
+                    context,
+                )?;
                 Flow::Continue
             }
             Stmt::Class { name, base, body } => {
-                register_ast_class(name, base, body, frame, funcs)?;
+                register_ast_class(name, base, body, frame, funcs, context)?;
                 Flow::Continue
             }
             Stmt::Module { .. } => Flow::Continue,
@@ -4481,6 +4576,52 @@ mod tests {
     }
 
     #[test]
+    fn native_constructor_charges_default_fields_and_rolls_back_failed_object_admission() {
+        let program = parse_program(
+            "class Box:\n    public let value = [\"default\"]\n\nlet box = new(\"Box\")\n",
+        )
+        .expect("default-field constructor program should parse");
+        let mut context = ExecutionContext::new();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(220, 1, 100);
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        let error = match super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            Path::new("."),
+        ) {
+            Ok(_) => panic!("object admission should exceed the deterministic byte budget"),
+            Err(error) => error,
+        };
+        assert!(error.contains("memory budget exceeded"));
+        assert!(vars.is_empty());
+        assert_eq!(context.state().memory_budget().usage().0, 134);
+
+        context.reset_for_run();
+        vars.clear();
+        funcs.clear();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(320, 1, 100);
+        super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            Path::new("."),
+        )
+        .expect("the finalized object should fit the larger budget");
+        assert!(matches!(vars.get("box"), Some(Value::Object { .. })));
+        assert!(context.state().memory_budget().usage().0 >= 305);
+    }
+
+    #[test]
     fn ast_new_rejects_named_arguments_deterministically() {
         let program =
             parse_program("class Box:\n    let value = 7\n\nlet box = new(\"Box\", value = 9)\n")
@@ -4616,6 +4757,69 @@ mod tests {
     }
 
     #[test]
+    fn logical_value_admission_covers_ast_collections_and_rolls_back_on_failure() {
+        let program = parse_program("let values = [\"hello\"]\n")
+            .expect("collection charge program should parse");
+        let mut context = ExecutionContext::new();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(52, 1, 100);
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        let error = match super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            Path::new("."),
+        ) {
+            Ok(_) => panic!("the collection should exceed the deterministic byte budget"),
+            Err(error) => error,
+        };
+        assert!(error.contains("memory budget exceeded"));
+        assert_eq!(context.state().memory_budget().usage(), (0, 0, 0));
+        assert!(vars.is_empty());
+
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(10_000, 1, 100);
+        super::execute_ast_program_with_context(
+            &program,
+            &mut vars,
+            &mut funcs,
+            &mut context,
+            Path::new("."),
+        )
+        .expect("the same collection should fit a larger budget");
+        assert!(context.state().memory_budget().usage().0 >= 53);
+    }
+
+    #[test]
+    fn failed_builtin_value_and_output_admission_rolls_back_both_counters() {
+        let mut context = ExecutionContext::new();
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .set_limits(1_000, 1, 2);
+        let before = context.state().memory_budget().usage();
+        assert!(super::direct_builtin_with_context(
+            "str",
+            vec![Value::Text("too-large".into())],
+            Some(&mut context),
+        )
+        .is_err());
+        assert_eq!(context.state().memory_budget().usage(), before);
+        assert_eq!(
+            super::direct_builtin_with_context("not_a_builtin", Vec::new(), Some(&mut context))
+                .expect("unknown builtins should be a non-match"),
+            None
+        );
+        assert_eq!(context.state().memory_budget().usage(), before);
+    }
+
+    #[test]
     fn memory_stats_builtin_exposes_context_budget_and_lifecycle_fields() {
         let mut context = ExecutionContext::new();
         let object =
@@ -4640,6 +4844,20 @@ mod tests {
         assert_eq!(stats["validation_runs"], Value::Number(1));
         assert!(matches!(stats["max_bytes"], Value::Number(value) if value > 0));
         assert!(matches!(stats["max_tasks"], Value::Number(value) if value > 0));
+    }
+
+    #[test]
+    fn evaluates_get_defaults_from_native_ast() {
+        let program = parse_program(
+            "let user = {\"name\": \"Zap\"}\nlet known = get(user, \"name\", \"unknown\")\nlet missing = get(user, \"email\", \"unknown\")\n",
+        )
+        .expect("get program should parse");
+        let mut vars = HashMap::<String, Value>::new();
+        let mut funcs = HashMap::<String, Rc<Function>>::new();
+        execute_ast_program(&program, &mut vars, &mut funcs, Path::new("."))
+            .expect("get should execute from native AST");
+        assert_eq!(vars.get("known"), Some(&Value::Text("Zap".into())));
+        assert_eq!(vars.get("missing"), Some(&Value::Text("unknown".into())));
     }
 
     #[test]

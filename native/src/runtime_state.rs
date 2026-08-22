@@ -18,6 +18,12 @@ pub(crate) const LOGICAL_OBJECT_BASE_BYTES: u64 = 64;
 pub(crate) const LOGICAL_OBJECT_FIELD_BYTES: u64 = 32;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct MemoryBudgetCheckpoint {
+    used_bytes: u64,
+    used_output_bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct MemoryBudget {
     max_bytes: u64,
     used_bytes: u64,
@@ -86,6 +92,22 @@ impl MemoryBudget {
 
     pub(crate) fn release_bytes(&mut self, bytes: u64) {
         self.used_bytes = self.used_bytes.saturating_sub(bytes);
+    }
+
+    pub(crate) fn release_output(&mut self, bytes: u64) {
+        self.used_output_bytes = self.used_output_bytes.saturating_sub(bytes);
+    }
+
+    pub(crate) fn checkpoint(&self) -> MemoryBudgetCheckpoint {
+        MemoryBudgetCheckpoint {
+            used_bytes: self.used_bytes,
+            used_output_bytes: self.used_output_bytes,
+        }
+    }
+
+    pub(crate) fn rollback_to(&mut self, checkpoint: MemoryBudgetCheckpoint) {
+        self.used_bytes = checkpoint.used_bytes;
+        self.used_output_bytes = checkpoint.used_output_bytes;
     }
 
     pub(crate) fn admit_task(&mut self) -> Result<(), String> {
@@ -379,6 +401,24 @@ impl RuntimeState {
 
     pub(crate) fn memory_budget_stats(&self) -> MemoryBudgetStats {
         self.memory_budget.stats()
+    }
+
+    pub(crate) fn reserve_value(&mut self, value: &Value) -> Result<(), String> {
+        let bytes = value.logical_size()?;
+        self.memory_budget.reserve_bytes(bytes)
+    }
+
+    pub(crate) fn reserve_shallow_value(&mut self, value: &Value) -> Result<(), String> {
+        let bytes = value.logical_shallow_size()?;
+        self.memory_budget.reserve_bytes(bytes)
+    }
+
+    pub(crate) fn memory_checkpoint(&self) -> MemoryBudgetCheckpoint {
+        self.memory_budget.checkpoint()
+    }
+
+    pub(crate) fn rollback_memory(&mut self, checkpoint: MemoryBudgetCheckpoint) {
+        self.memory_budget.rollback_to(checkpoint);
     }
 
     pub(crate) fn module_loading(&self) -> &[PathBuf] {

@@ -427,14 +427,70 @@ impl Value {
             }
         }
         let mut visited_objects = HashSet::new();
+        let mut visited_frames = HashSet::new();
+        let mut visited_functions = HashSet::new();
         let mut nodes = 0usize;
         validate_value(
             self,
             &mut visited_objects,
+            &mut visited_frames,
+            &mut visited_functions,
             &mut nodes,
             0,
             MAX_RUNTIME_VALUE_NODES,
         )
+    }
+
+    /// Return the deterministic logical charge for a fully materialized value.
+    /// This is a quota estimate, not an allocator or process-memory measurement.
+    pub(crate) fn logical_size(&self) -> Result<u64, String> {
+        self.validate_memory_limits()?;
+        let mut visited_objects = HashSet::new();
+        let mut visited_frames = HashSet::new();
+        let mut visited_functions = HashSet::new();
+        let mut nodes = 0usize;
+        logical_value_size(
+            self,
+            &mut visited_objects,
+            &mut visited_frames,
+            &mut visited_functions,
+            &mut nodes,
+        )
+    }
+
+    /// Return the charge for a container's own storage and metadata. Nested
+    /// values are charged when they are materialized or by `logical_size` for
+    /// values created atomically by a builtin such as JSON decoding.
+    pub(crate) fn logical_shallow_size(&self) -> Result<u64, String> {
+        self.validate_memory_limits()?;
+        let size = match self {
+            Self::Text(text) => logical_add(16, text.len()),
+            Self::List(values) => logical_add(24, values.len().saturating_mul(8)),
+            Self::Map(values) => {
+                let key_bytes = values
+                    .keys()
+                    .try_fold(0usize, |total, key| total.checked_add(key.len()))
+                    .ok_or_else(|| "memory budget exceeded: map key charge overflow".to_string())?;
+                logical_add(32, values.len().saturating_mul(8).saturating_add(key_bytes))
+            }
+            Self::Object { class_name, fields } => {
+                let field_count = fields.try_borrow()?.len();
+                logical_add(
+                    64u64.saturating_add(class_name.len() as u64),
+                    field_count.saturating_mul(32),
+                )
+            }
+            Self::Callable(function) => logical_function_shallow_size(function),
+            Self::ResultOk(_) | Self::ResultErr(_) | Self::OptionSome(_) | Self::Future(_) => {
+                Ok(16)
+            }
+            Self::Number(_)
+            | Self::Bool(_)
+            | Self::OptionNone
+            | Self::ScheduledFuture(_)
+            | Self::None => Ok(16),
+        }?;
+        Ok(size)
     }
 
     /// Remove all fields from an object, which is the explicit cycle-breaking
@@ -513,9 +569,254 @@ impl Value {
     }
 }
 
+fn logical_add(base: u64, extra: usize) -> Result<u64, String> {
+    let extra = u64::try_from(extra)
+        .map_err(|_| "memory budget exceeded: logical size conversion overflow".to_string())?;
+    base.checked_add(extra)
+        .ok_or_else(|| "memory budget exceeded: logical size overflow".to_string())
+}
+
+fn logical_value_size(
+    value: &Value,
+    visited_objects: &mut HashSet<usize>,
+    visited_frames: &mut HashSet<usize>,
+    visited_functions: &mut HashSet<usize>,
+    nodes: &mut usize,
+) -> Result<u64, String> {
+    *nodes = nodes
+        .checked_add(1)
+        .ok_or_else(|| "memory budget exceeded: logical node counter overflow".to_string())?;
+    if *nodes > MAX_RUNTIME_VALUE_NODES {
+        return Err(format!(
+            "memory limit exceeded: value graph contains more than {MAX_RUNTIME_VALUE_NODES} nodes"
+        ));
+    }
+    match value {
+        Value::Text(text) => logical_add(16, text.len()),
+        Value::Number(_)
+        | Value::Bool(_)
+        | Value::OptionNone
+        | Value::ScheduledFuture(_)
+        | Value::None => Ok(16),
+        Value::List(values) => {
+            let mut total = logical_add(24, values.len().saturating_mul(8))?;
+            for nested in values {
+                total = total
+                    .checked_add(logical_value_size(
+                        nested,
+                        visited_objects,
+                        visited_frames,
+                        visited_functions,
+                        nodes,
+                    )?)
+                    .ok_or_else(|| {
+                        "memory budget exceeded: logical list size overflow".to_string()
+                    })?;
+            }
+            Ok(total)
+        }
+        Value::Map(values) => {
+            let key_bytes = values
+                .keys()
+                .try_fold(0usize, |total, key| total.checked_add(key.len()))
+                .ok_or_else(|| "memory budget exceeded: map key charge overflow".to_string())?;
+            let mut total =
+                logical_add(32, values.len().saturating_mul(8).saturating_add(key_bytes))?;
+            for (key, nested) in values {
+                total = total
+                    .checked_add(logical_add(0, key.len())?)
+                    .ok_or_else(|| {
+                        "memory budget exceeded: logical map size overflow".to_string()
+                    })?;
+                total = total
+                    .checked_add(logical_value_size(
+                        nested,
+                        visited_objects,
+                        visited_frames,
+                        visited_functions,
+                        nodes,
+                    )?)
+                    .ok_or_else(|| {
+                        "memory budget exceeded: logical map size overflow".to_string()
+                    })?;
+            }
+            Ok(total)
+        }
+        Value::Object { class_name, fields } => {
+            let identity = Rc::as_ptr(fields) as usize;
+            if !visited_objects.insert(identity) {
+                return Ok(0);
+            }
+            let field_values = fields.try_borrow()?;
+            let mut total = logical_add(
+                64,
+                class_name
+                    .len()
+                    .checked_add(field_values.len().saturating_mul(32))
+                    .ok_or_else(|| "memory budget exceeded: object charge overflow".to_string())?,
+            )?;
+            for nested in field_values.values() {
+                total = total
+                    .checked_add(logical_value_size(
+                        nested,
+                        visited_objects,
+                        visited_frames,
+                        visited_functions,
+                        nodes,
+                    )?)
+                    .ok_or_else(|| {
+                        "memory budget exceeded: logical object size overflow".to_string()
+                    })?;
+            }
+            Ok(total)
+        }
+        Value::Callable(function) => {
+            let identity = Rc::as_ptr(function) as usize;
+            if !visited_functions.insert(identity) {
+                return Ok(0);
+            }
+            let mut total = logical_function_shallow_size(function)?;
+            total = total
+                .checked_add(logical_frame_size(
+                    &function.closure,
+                    visited_objects,
+                    visited_frames,
+                    visited_functions,
+                    nodes,
+                )?)
+                .ok_or_else(|| {
+                    "memory budget exceeded: logical closure size overflow".to_string()
+                })?;
+            Ok(total)
+        }
+        Value::ResultOk(nested)
+        | Value::ResultErr(nested)
+        | Value::OptionSome(nested)
+        | Value::Future(nested) => Ok(16u64
+            .checked_add(logical_value_size(
+                nested,
+                visited_objects,
+                visited_frames,
+                visited_functions,
+                nodes,
+            )?)
+            .ok_or_else(|| "memory budget exceeded: logical wrapper size overflow".to_string())?),
+    }
+}
+
+fn logical_frame_size(
+    frame: &EnvFrame,
+    visited_objects: &mut HashSet<usize>,
+    visited_frames: &mut HashSet<usize>,
+    visited_functions: &mut HashSet<usize>,
+    nodes: &mut usize,
+) -> Result<u64, String> {
+    let identity = frame as *const EnvFrame as usize;
+    if !visited_frames.insert(identity) {
+        return Ok(0);
+    }
+    let values = frame.values.borrow();
+    let mut total = logical_add(32, values.len().saturating_mul(8))?;
+    for (name, cell) in values.iter() {
+        total = total
+            .checked_add(logical_add(0, name.len())?)
+            .ok_or_else(|| "memory budget exceeded: logical frame size overflow".to_string())?;
+        total = total
+            .checked_add(logical_value_size(
+                &cell.borrow(),
+                visited_objects,
+                visited_frames,
+                visited_functions,
+                nodes,
+            )?)
+            .ok_or_else(|| "memory budget exceeded: logical frame size overflow".to_string())?;
+    }
+    if let Some(parent) = &frame.parent {
+        total = total
+            .checked_add(logical_frame_size(
+                parent,
+                visited_objects,
+                visited_frames,
+                visited_functions,
+                nodes,
+            )?)
+            .ok_or_else(|| {
+                "memory budget exceeded: logical parent-frame size overflow".to_string()
+            })?;
+    }
+    Ok(total)
+}
+
+fn logical_function_shallow_size(function: &Function) -> Result<u64, String> {
+    let mut total = 64u64;
+    total = total
+        .checked_add(function.visibility.len() as u64)
+        .and_then(|value| {
+            value.checked_add(function.body.iter().map(String::len).sum::<usize>() as u64)
+        })
+        .ok_or_else(|| "memory budget exceeded: logical function size overflow".to_string())?;
+    for parameter in &function.params {
+        total = total
+            .checked_add(parameter.name.len() as u64)
+            .and_then(|value| {
+                value.checked_add(parameter.annotation.as_deref().map_or(0, str::len) as u64)
+            })
+            .and_then(|value| {
+                value.checked_add(parameter.default.as_deref().map_or(0, str::len) as u64)
+            })
+            .ok_or_else(|| "memory budget exceeded: logical parameter size overflow".to_string())?;
+    }
+    if let Some(annotation) = &function.return_annotation {
+        total = total.checked_add(annotation.len() as u64).ok_or_else(|| {
+            "memory budget exceeded: logical return annotation size overflow".to_string()
+        })?;
+    }
+    Ok(total)
+}
+
+fn validate_frame(
+    frame: &EnvFrame,
+    visited_objects: &mut HashSet<usize>,
+    visited_frames: &mut HashSet<usize>,
+    visited_functions: &mut HashSet<usize>,
+    nodes: &mut usize,
+    depth: usize,
+    node_limit: usize,
+) -> Result<(), String> {
+    let identity = frame as *const EnvFrame as usize;
+    if !visited_frames.insert(identity) {
+        return Ok(());
+    }
+    for cell in frame.values.borrow().values() {
+        validate_value(
+            &cell.borrow(),
+            visited_objects,
+            visited_frames,
+            visited_functions,
+            nodes,
+            depth + 1,
+            node_limit,
+        )?;
+    }
+    if let Some(parent) = &frame.parent {
+        validate_frame(
+            parent,
+            visited_objects,
+            visited_frames,
+            visited_functions,
+            nodes,
+            depth + 1,
+            node_limit,
+        )?;
+    }
+    Ok(())
+}
+
 fn validate_value(
     value: &Value,
     visited_objects: &mut HashSet<usize>,
+    visited_frames: &mut HashSet<usize>,
+    visited_functions: &mut HashSet<usize>,
     nodes: &mut usize,
     depth: usize,
     node_limit: usize,
@@ -541,7 +842,15 @@ fn validate_value(
                 ));
             }
             for nested in values {
-                validate_value(nested, visited_objects, nodes, depth + 1, node_limit)?;
+                validate_value(
+                    nested,
+                    visited_objects,
+                    visited_frames,
+                    visited_functions,
+                    nodes,
+                    depth + 1,
+                    node_limit,
+                )?;
             }
             Ok(())
         }
@@ -557,7 +866,15 @@ fn validate_value(
                         "memory limit exceeded: map key exceeds {MAX_RUNTIME_TEXT_BYTES} bytes"
                     ));
                 }
-                validate_value(nested, visited_objects, nodes, depth + 1, node_limit)?;
+                validate_value(
+                    nested,
+                    visited_objects,
+                    visited_frames,
+                    visited_functions,
+                    nodes,
+                    depth + 1,
+                    node_limit,
+                )?;
             }
             Ok(())
         }
@@ -565,7 +882,15 @@ fn validate_value(
             let identity = Rc::as_ptr(fields) as usize;
             if visited_objects.insert(identity) {
                 for nested in fields.try_borrow()?.values() {
-                    validate_value(nested, visited_objects, nodes, depth + 1, node_limit)?;
+                    validate_value(
+                        nested,
+                        visited_objects,
+                        visited_frames,
+                        visited_functions,
+                        nodes,
+                        depth + 1,
+                        node_limit,
+                    )?;
                 }
             }
             Ok(())
@@ -573,12 +898,43 @@ fn validate_value(
         Value::ResultOk(nested)
         | Value::ResultErr(nested)
         | Value::OptionSome(nested)
-        | Value::Future(nested) => {
-            validate_value(nested, visited_objects, nodes, depth + 1, node_limit)
+        | Value::Future(nested) => validate_value(
+            nested,
+            visited_objects,
+            visited_frames,
+            visited_functions,
+            nodes,
+            depth + 1,
+            node_limit,
+        ),
+        Value::Callable(function) => {
+            let identity = Rc::as_ptr(function) as usize;
+            if visited_functions.insert(identity) {
+                for parameter in &function.params {
+                    if parameter
+                        .default
+                        .as_deref()
+                        .is_some_and(|default| default.len() > MAX_RUNTIME_TEXT_BYTES)
+                    {
+                        return Err(format!(
+                            "memory limit exceeded: function default exceeds {MAX_RUNTIME_TEXT_BYTES} bytes"
+                        ));
+                    }
+                }
+                validate_frame(
+                    &function.closure,
+                    visited_objects,
+                    visited_frames,
+                    visited_functions,
+                    nodes,
+                    depth + 1,
+                    node_limit,
+                )?;
+            }
+            Ok(())
         }
         Value::Bool(_)
         | Value::Number(_)
-        | Value::Callable(_)
         | Value::ScheduledFuture(_)
         | Value::OptionNone
         | Value::None => Ok(()),
@@ -587,9 +943,55 @@ fn validate_value(
 
 #[cfg(test)]
 mod tests {
-    use super::{memory_stats, Value, MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
+    use super::{
+        memory_stats, EnvFrame, Function, Param, Value, MAX_RUNTIME_COLLECTION_ITEMS,
+        MAX_RUNTIME_TEXT_BYTES,
+    };
     use crate::runtime_state::ExecutionContext;
-    use std::rc::Rc;
+    use std::{collections::HashMap, rc::Rc};
+
+    #[test]
+    fn logical_size_counts_nested_values_and_callable_captures() {
+        let mut captured = HashMap::new();
+        captured.insert(
+            "payload".into(),
+            Value::List(vec![Value::Text("captured".into()), Value::Number(7)]),
+        );
+        let callable = Value::Callable(Rc::new(Function {
+            visibility: "public".into(),
+            params: vec![Param {
+                name: "value".into(),
+                annotation: Some("text".into()),
+                default: Some("\"fallback\"".into()),
+            }],
+            return_annotation: Some("text".into()),
+            is_async: false,
+            body: Vec::new(),
+            ast_body: None,
+            closure: EnvFrame::from_map(&captured),
+        }));
+        let size = callable
+            .logical_size()
+            .expect("callable capture should have a deterministic logical size");
+        assert!(size > 16);
+        assert!(callable.validate_memory_limits().is_ok());
+
+        captured.insert(
+            "oversized".into(),
+            Value::Text("x".repeat(MAX_RUNTIME_TEXT_BYTES + 1)),
+        );
+        let oversized = Value::Callable(Rc::new(Function {
+            visibility: "public".into(),
+            params: Vec::new(),
+            return_annotation: None,
+            is_async: false,
+            body: Vec::new(),
+            ast_body: None,
+            closure: EnvFrame::from_map(&captured),
+        }));
+        assert!(oversized.validate_memory_limits().is_err());
+        assert!(oversized.logical_size().is_err());
+    }
 
     #[test]
     fn cyclic_object_graph_can_be_explicitly_broken() {

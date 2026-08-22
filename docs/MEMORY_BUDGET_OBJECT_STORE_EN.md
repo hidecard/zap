@@ -1,6 +1,6 @@
 # MemoryBudget and ObjectStore Contract
 
-**Design status:** M2-MEM-01 foundation design
+**Design status:** M2-MEM-02 logical accounting and rollback slice
 
 **Verified baseline:** Zap v2.2.1.
 
@@ -21,9 +21,9 @@ Each `ExecutionContext` owns one `MemoryBudget` and one `ObjectStore` through `R
 
 ## Logical accounting units
 
-The budget uses logical byte units: UTF-8 payload length for text, a fixed per-entry charge for list/map slots, a fixed object base charge, and a fixed object-field charge for object entries. The charge constants are deterministic implementation constants, not measurements of Rust heap layout. A request that would overflow an accounting counter or exceed a configured limit is rejected before admission with a stable error. Accounting never wraps into an apparently available budget, and failed reservations do not consume the resource whose reservation failed.
+The budget uses deterministic logical byte units rather than Rust heap-layout measurements. A scalar or wrapper has a fixed base charge; text adds its UTF-8 payload length; lists and maps add fixed container/slot charges, with map-key bytes included; objects add a fixed base, class-name bytes, and fixed per-field storage; callable values add function metadata, parameter/default metadata, and the reachable live closure-frame bindings. Nested values are traversed with object, frame, and function identity guards, so cycles are bounded and shared references are not counted repeatedly within one charge calculation. A request that would overflow an accounting counter or exceed a configured limit is rejected before admission with a stable error. Accounting never wraps into an apparently available budget.
 
-The runtime exposes explicit methods for reserving logical bytes and object charges, admitting and completing logical tasks, and reserving output. Canonical AST object construction charges the current context before allocation, while text-producing builtin results charge the output budget after successful evaluation. These charges are logical accounting units and must not be interpreted as allocator-size measurements.
+The runtime exposes explicit methods for reserving logical bytes and object charges, admitting and completing logical tasks, reserving output, and taking/restoring byte/output checkpoints. Canonical AST literals, containers, cloned access results, builtin results, and registered callable captures are charged at their materialization boundaries. Object construction charges its finalized field shape after defaults, explicit fields, and initializers have run, so default and nested values are covered by their own AST charges and object storage is charged by the final shape. A failed AST expression, builtin dispatch, or constructor restores its byte/output checkpoint; task admission remains governed by the separate task lifecycle contract. These charges are logical accounting units and must not be interpreted as allocator-size measurements.
 
 ## Default limits
 
@@ -47,11 +47,11 @@ Budget failures use stable, operation-specific text and map to `ZAP-MEMORY-001` 
 
 ## Compatibility boundary
 
-This slice does not add first-class callable values, parent-linked `EnvFrame` bindings, executor-backed language scheduling, forced interruption of foreign blocking calls, or tracing garbage collection. Existing `read_lines`/`write_lines` compatibility behavior and the canonical AST boundary remain unchanged.
+This slice does not add executor-backed language scheduling, forced interruption of foreign blocking calls, weak references, or tracing garbage collection. It accounts for the existing first-class callable values and parent-linked `EnvFrame` bindings without changing their semantics. Existing `read_lines`/`write_lines` compatibility behavior and the canonical AST boundary remain unchanged.
 
 ## Acceptance evidence
 
-M2-MEM-02 is complete when independent contexts have isolated budgets and object stores; reset detaches old stores and clears active counters; object allocation/deallocation, validation, and cleanup diagnostics are deterministic; byte/object/task/output over-limit cases fail closed; repeated module execution reuses one context cache; JSON/LSP/CLI error propagation remains panic-free; and the full native suite plus cross-platform CI remain green.
+The M2-MEM-02 implementation slice is complete when independent contexts have isolated budgets and object stores; reset detaches old stores and clears active counters; nested values, callable captures/default metadata, finalized object fields, and builtin outputs have deterministic logical charges; failed expression/builtin/constructor reservations roll back byte/output usage; object allocation/deallocation, validation, and cleanup diagnostics are deterministic; byte/object/task/output over-limit cases fail closed; repeated module execution reuses one context cache; JSON/LSP/CLI error propagation remains panic-free; and the full native suite plus cross-platform CI remain green. Focused evaluator and value regressions cover the new accounting paths; the repository-wide gate remains the final acceptance check.
 
 ## References
 
