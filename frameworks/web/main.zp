@@ -1,22 +1,22 @@
 # Framework Web contract starter
 # This sample is deterministic and does not open a network socket.
+# A host adapter may translate a bounded HTTP request into this contract.
 
-fn response(status, body):
-    return {"status": status, "content_type": "text/plain", "body": body}
+import "web_contract"
 
-fn route(path, method):
-    if method == "GET" and path == "/":
-        return response(200, "Hello from Zap Web")
-    if method == "GET" and path == "/health":
-        return response(200, "ok")
-    return response(404, "not found")
-
-let home = route("/", "GET")
-let health = route("/health", "GET")
-let missing = route("/missing", "GET")
+let home = route(normalize_request(" get ", "/", "", "req-home"))
+let health = route(normalize_request("GET", "/health", "", "req-health"))
+let echo = route(normalize_request("POST", "/echo", "hello", "req-echo"))
+let missing = route(normalize_request("GET", "/missing", "", "req-missing"))
+let traversal = route(normalize_request("GET", "/../secret", "", "req-bad-path"))
+let unsupported = route(normalize_request("DELETE", "/", "", "req-delete"))
 
 assert(home["status"] == 200, "root route must return 200")
-assert(health["body"] == "ok", "health route must return ok")
+assert(health["body"] == "{\"status\":\"ok\"}", "health response must be deterministic")
+assert(echo["status"] == 200, "echo route must return 200")
 assert(missing["status"] == 404, "unknown route must return 404")
+assert(traversal["status"] == 400, "path traversal must be rejected")
+assert(unsupported["status"] == 405, "unsupported method must be rejected")
+assert(home["headers"]["x-content-type-options"] == "nosniff", "security headers must be present")
 
-say json({"framework": "web", "contract": "route-response", "home": home, "health": health, "missing": missing})
+say json({"framework": "web", "contract": "request-response-router", "home": home, "health": health, "echo": echo, "missing": missing, "traversal": traversal, "unsupported": unsupported})

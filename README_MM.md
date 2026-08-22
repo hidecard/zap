@@ -34,7 +34,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Runtime-state contract | [မြန်မာ](docs/RUNTIME_STATE_MM.md) · [English](docs/RUNTIME_STATE_EN.md) |
 | Memory budget/object store contract | [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) · [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) |
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
-| Framework Foundation | [မြန်မာ guide](docs/FRAMEWORK_MM.md) · [English guide](docs/FRAMEWORK_EN.md) · [starter projects](frameworks) |
+| Framework Foundation | [မြန်မာ guide](docs/FRAMEWORK_MM.md) · [Web မြန်မာ guide](docs/WEB_FRAMEWORK_MM.md) · [English guide](docs/FRAMEWORK_EN.md) · [Web guide](docs/WEB_FRAMEWORK_EN.md) · [starter projects](frameworks) |
 | Runtime architecture | `runtime_state.rs` နှင့် `value.rs` တွင် per-run `RuntimeState`၊ `MemoryBudget`၊ `ObjectStore`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking၊ execution-depth accounting၊ reset-detached lifecycle statistics နှင့် parent-linked `EnvFrame` closure များကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence၊ M3-LSP-01 semantic-parity/editor validation နှင့် post-release LSP protocol synchronization evidence |

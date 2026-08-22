@@ -206,12 +206,16 @@ check_release_files() {
     docs/ASYNC_LSP_MM.md
     docs/FRAMEWORK_EN.md
     docs/FRAMEWORK_MM.md
+    docs/WEB_FRAMEWORK_EN.md
+    docs/WEB_FRAMEWORK_MM.md
     scripts/validate_framework_starters.sh
     frameworks/README.md
     frameworks/web/README.md
     frameworks/web/zap.toml
     frameworks/web/zap.lock
     frameworks/web/main.zp
+    frameworks/web/web_contract.zp
+    frameworks/web/web_contract_test.zp
     frameworks/mobile/README.md
     frameworks/mobile/zap.toml
     frameworks/mobile/zap.lock
@@ -273,6 +277,7 @@ check_documentation_pairs() {
     'docs/V2.1_ROADMAP_EN.md:docs/V2.1_ROADMAP_MM.md'
     'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
     'docs/FRAMEWORK_EN.md:docs/FRAMEWORK_MM.md'
+    'docs/WEB_FRAMEWORK_EN.md:docs/WEB_FRAMEWORK_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )

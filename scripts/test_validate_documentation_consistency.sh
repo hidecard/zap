@@ -26,6 +26,7 @@ pairs=(
   TRAITS_RFC_EN TRAITS_RFC_MM
   P2_PROGRESS P2_PROGRESS_MM
   FRAMEWORK_EN FRAMEWORK_MM
+  WEB_FRAMEWORK_EN WEB_FRAMEWORK_MM
   POST_V2.2.0_REMEDIATION_EN POST_V2.2.0_REMEDIATION_MM
   RELEASE_2.1.14_EN RELEASE_2.1.14_MM
 )
@@ -44,6 +45,8 @@ printf '%s\n' 'benchmark-results/native-summary.csv' >> "$TMP_DIR/docs/DOCUMENTA
 printf '%s\n' 'benchmark-results/native-summary.csv' >> "$TMP_DIR/docs/DOCUMENTATION_NAVIGATION_MM.md"
 printf '%s\n' 'FRAMEWORK_EN.md' >> "$TMP_DIR/docs/DOCUMENTATION_NAVIGATION_EN.md"
 printf '%s\n' 'FRAMEWORK_MM.md' >> "$TMP_DIR/docs/DOCUMENTATION_NAVIGATION_MM.md"
+printf '%s\n' 'WEB_FRAMEWORK_EN.md' >> "$TMP_DIR/docs/DOCUMENTATION_NAVIGATION_EN.md"
+printf '%s\n' 'WEB_FRAMEWORK_MM.md' >> "$TMP_DIR/docs/DOCUMENTATION_NAVIGATION_MM.md"
 printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_EN.md' >> "$TMP_DIR/README.md"
 printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_MM.md' >> "$TMP_DIR/README.md"
 printf '%s\n' 'docs/DOCUMENTATION_NAVIGATION_EN.md' >> "$TMP_DIR/README_MM.md"

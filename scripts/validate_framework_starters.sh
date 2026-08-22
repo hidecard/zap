@@ -86,12 +86,20 @@ for name in "${starters[@]}"; do
   fi
 done
 
+require_file frameworks/web/web_contract.zp
+require_file frameworks/web/web_contract_test.zp
 require_file docs/FRAMEWORK_EN.md
 require_file docs/FRAMEWORK_MM.md
+require_file docs/WEB_FRAMEWORK_EN.md
+require_file docs/WEB_FRAMEWORK_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
+require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
+require_text docs/WEB_FRAMEWORK_MM.md "Web Foundation v0.2"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "WEB_FRAMEWORK_MM.md"
 
 ZAP_BIN=${ZAP_BIN:-}
 if [[ -z "$ZAP_BIN" && -x "$ROOT_DIR/target/release/zap" ]]; then
@@ -103,9 +111,10 @@ fi
 
 if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
   record PASS "runtime-binary:$ZAP_BIN"
-  for name in "${starters[@]}"; do
+    for name in "${starters[@]}"; do
     dir="frameworks/$name"
     output=$(mktemp)
+
     cleanup() { rm -f "$output"; }
     trap cleanup RETURN
     if "$ZAP_BIN" check "$dir" >>"$output" 2>&1 && "$ZAP_BIN" build "$dir" >>"$output" 2>&1 && "$ZAP_BIN" run "$dir/main.zp" >>"$output" 2>&1; then
@@ -116,6 +125,13 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       fi
     else
       record FAIL "runtime-smoke:$dir"
+    fi
+    if [[ "$name" == "web" ]]; then
+      if "$ZAP_BIN" test "$dir" >>"$output" 2>&1; then
+        record PASS "runtime-test:$dir"
+      else
+        record FAIL "runtime-test:$dir"
+      fi
     fi
     trap - RETURN
     cleanup

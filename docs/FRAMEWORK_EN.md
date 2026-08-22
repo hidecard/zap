@@ -66,9 +66,11 @@ A starter must not import an undeclared provider package, silently read credenti
 
 ## Web starter
 
-`frameworks/web/main.zp` models a small route table as a pure function. `route(path, method)` returns a response map containing `status`, `content_type`, and `body`. The sample covers a successful root route, a health route, and a deterministic not-found response.
+`frameworks/web/web_contract.zp` is the reusable Web contract module. It exports `normalize_request`, `security_headers`, `response`, and `route`. The request contract normalizes `GET`/`POST`, rejects traversal-shaped paths, bounds paths to 2,048 bytes, bounds bodies to 65,536 bytes, and requires a request ID of 1–128 bytes. The response contract contains `status`, `content_type`, `headers`, and `body`.
 
-A future `zap-web` adapter may translate an incoming HTTP request into a bounded Zap request map and translate the returned response map into an HTTP response. That adapter must define method/path normalization, maximum headers and body bytes, timeout, cancellation, error mapping, logging redaction, and connection shutdown. The starter itself performs none of those network operations.
+`frameworks/web/main.zp` demonstrates root, health, echo, not-found, traversal-rejection, and unsupported-method cases. `web_contract_test.zp` tests the exported module directly. The detailed schema, threat controls, adapter pipeline, and Web-specific definition of done are documented in [`WEB_FRAMEWORK_EN.md`](WEB_FRAMEWORK_EN.md).
+
+A future `zap-web` adapter may translate an incoming HTTP request into the bounded Zap request map and translate the returned response map into an HTTP response. That adapter must define method/path normalization, maximum headers and body bytes, timeout, cancellation, error mapping, logging redaction, and connection shutdown. The starter itself performs none of those network operations.
 
 The recommended first implementation is a host adapter over an established Rust HTTP stack such as [Axum](https://docs.rs/axum/latest/axum/) and Tower middleware rather than a second HTTP runtime inside the Zap interpreter. The adapter should pass a fake-host contract test before a real listener is exposed.
 

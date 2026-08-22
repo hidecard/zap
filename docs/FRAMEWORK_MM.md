@@ -66,7 +66,9 @@ Starter တစ်ခုသည် undeclared provider package ကို import �
 
 ## Web starter
 
-`frameworks/web/main.zp` သည် pure function အဖြစ် route table အသေးစားတစ်ခုကို model လုပ်ပါသည်။ `route(path, method)` သည် `status`, `content_type`, `body` ပါသော response map ကို ပြန်ပေးပါသည်။ Root route၊ health route နှင့် deterministic not-found response များကို စမ်းသပ်ထားပါသည်။
+`frameworks/web/web_contract.zp` သည် reusable Web contract module ဖြစ်ပြီး `normalize_request`, `security_headers`, `response` နှင့် `route` functions များကို export လုပ်ထားပါသည်။ Request contract သည် `GET`/`POST` ကို normalize လုပ်၊ traversal ပုံစံ path များကို reject လုပ်၊ path ကို 2,048 bytes၊ body ကို 65,536 bytes အထိ bounded ထားပြီး request ID ကို 1–128 bytes လိုအပ်စေပါသည်။ Response contract တွင် `status`, `content_type`, `headers`, `body` fields များ ပါဝင်ပါသည်။
+
+`frameworks/web/main.zp` သည် root၊ health၊ echo၊ not-found၊ traversal-rejection နှင့် unsupported-method cases များကို ပြသပါသည်။ `web_contract_test.zp` သည် exported module ကို တိုက်ရိုက် test လုပ်ပါသည်။ Schema၊ threat control၊ adapter pipeline နှင့် Web-specific definition of done အသေးစိတ်ကို [`WEB_FRAMEWORK_MM.md`](WEB_FRAMEWORK_MM.md) တွင် ဖတ်ရှုပါ။
 
 နောက်ပိုင်း `zap-web` adapter သည် incoming HTTP request ကို bounded Zap request map အဖြစ် ပြောင်းပြီး response map ကို HTTP response အဖြစ် ပြောင်းနိုင်ပါသည်။ ထို adapter တွင် method/path normalization၊ maximum header/body bytes၊ timeout၊ cancellation၊ error mapping၊ log redaction နှင့် connection shutdown ကို သတ်မှတ်ရမည်။ Starter ကိုယ်တိုင် network operation မလုပ်ပါ။
 
