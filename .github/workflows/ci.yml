@@ -132,6 +132,9 @@ jobs:
           path: benchmark-results/*
           if-no-files-found: error
 
+      - name: Run registry transport edge-case corpus
+        run: cargo test --manifest-path native/Cargo.toml --bin zap registry_client --all-features -- --nocapture
+
       - name: Run filesystem confinement corpus
         run: cargo test --manifest-path native/Cargo.toml filesystem_builtins --all-features
 

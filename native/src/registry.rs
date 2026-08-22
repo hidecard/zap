@@ -1221,6 +1221,8 @@ pub fn persist_registry_package(
 /// Hard limits for the built-in registry service request parser.
 const REGISTRY_SERVICE_MAX_HEADERS: usize = 64 * 1024;
 const REGISTRY_SERVICE_MAX_BODY: usize = 16 * 1024 * 1024;
+const REGISTRY_CLIENT_MAX_RESPONSE: usize = 16 * 1024 * 1024;
+const REGISTRY_CLIENT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Serve a small authenticated HTTP registry endpoint using only the standard
 /// library. The listener is non-blocking and exits when `stop` is cancelled.
@@ -1535,6 +1537,15 @@ fn fetch_source_with_agent(
     source: &str,
     credentials: &RegistryCredentialStore,
 ) -> Result<Vec<u8>, String> {
+    fetch_source_with_agent_timeout(agent, source, credentials, REGISTRY_CLIENT_TIMEOUT)
+}
+
+fn fetch_source_with_agent_timeout(
+    agent: &ureq::Agent,
+    source: &str,
+    credentials: &RegistryCredentialStore,
+    timeout: Duration,
+) -> Result<Vec<u8>, String> {
     let untrusted = std::env::var("ZAP_UNTRUSTED").as_deref() == Ok("1");
     if let Some(path) = source.strip_prefix("file://") {
         if untrusted {
@@ -1548,7 +1559,7 @@ fn fetch_source_with_agent(
     if source.starts_with("http://") || source.starts_with("https://") {
         require_secure_transport(source)?;
         let token = resolve_registry_token(source, None, credentials)?;
-        let mut request = agent.get(source);
+        let mut request = agent.get(source).timeout(timeout);
         if let Some(token) = token.as_deref() {
             request = request.set("Authorization", &format!("Bearer {token}"));
         }
@@ -1558,15 +1569,59 @@ fn fetch_source_with_agent(
                     registry_auth_failure_message(status, source, token.as_deref())
                         .unwrap_or_else(|| format!("registry HTTP fetch failed with HTTP {status}"))
                 }
-                other => format!("registry HTTP fetch failed: {other}"),
+                other => normalize_registry_transport_error("fetch", &other.to_string()),
             };
             redact_registry_secret(&message, token.as_deref())
         })?;
+        let expected_length = response
+            .header("Content-Length")
+            .map(|value| {
+                value
+                    .parse::<usize>()
+                    .map_err(|_| "registry response content length is invalid".to_string())
+            })
+            .transpose()?;
+        if let Some(length) = expected_length {
+            if length > REGISTRY_CLIENT_MAX_RESPONSE {
+                return Err(format!(
+                    "registry response exceeds {} bytes",
+                    REGISTRY_CLIENT_MAX_RESPONSE
+                ));
+            }
+        }
+        let mut reader = response.into_reader();
         let mut bytes = Vec::new();
-        response
-            .into_reader()
-            .read_to_end(&mut bytes)
-            .map_err(|e| format!("registry response read failed: {e}"))?;
+        let mut buffer = [0_u8; 8192];
+        loop {
+            let count = reader.read(&mut buffer).map_err(|error| {
+                if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                    "registry response body truncated".to_string()
+                } else if error.kind() == std::io::ErrorKind::TimedOut {
+                    "registry response read timed out".to_string()
+                } else {
+                    format!("registry response read failed: {error}")
+                }
+            })?;
+            if count == 0 {
+                break;
+            }
+            if bytes.len().saturating_add(count) > REGISTRY_CLIENT_MAX_RESPONSE {
+                return Err(format!(
+                    "registry response exceeds {} bytes",
+                    REGISTRY_CLIENT_MAX_RESPONSE
+                ));
+            }
+            bytes.extend_from_slice(&buffer[..count]);
+        }
+        if let Some(expected_length) = expected_length {
+            if bytes.len() != expected_length {
+                return Err(format!(
+                    "registry response body truncated: expected {} bytes, got {}",
+                    expected_length,
+                    bytes.len()
+                ));
+            }
+        }
         return Ok(bytes);
     }
     if untrusted {
@@ -1576,6 +1631,15 @@ fn fetch_source_with_agent(
         );
     }
     fs::read(source).map_err(|e| format!("registry source read failed: {e}"))
+}
+
+fn normalize_registry_transport_error(operation: &str, message: &str) -> String {
+    let lower = message.to_ascii_lowercase();
+    if lower.contains("timed out") || lower.contains("timeout") {
+        format!("registry {operation} timed out")
+    } else {
+        format!("registry HTTP {operation} failed: {message}")
+    }
 }
 
 fn require_secure_transport(source: &str) -> Result<(), String> {
@@ -1753,13 +1817,14 @@ fn constant_time_equal(left: &[u8], right: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        cache_package, cache_package_source, fetch_source_with_agent, find_package,
-        hmac_sha256_hex, normalize_registry_origin, persist_registry_package, prune_cache,
-        publish_package, publish_package_with_agent, read_index, read_index_source,
-        read_signed_index, redact_registry_secret, registry_auth_failure_message,
-        resolve_dependency_graph, resolve_registry_token, sha256_hex, validate_package_name,
-        verify_cached_package, verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage,
-        RegistryScheme, RegistryService, TrustedRegistryPolicy,
+        cache_package, cache_package_source, fetch_source_with_agent,
+        fetch_source_with_agent_timeout, find_package, hmac_sha256_hex, normalize_registry_origin,
+        persist_registry_package, prune_cache, publish_package, publish_package_with_agent,
+        read_index, read_index_source, read_signed_index, redact_registry_secret,
+        registry_auth_failure_message, resolve_dependency_graph, resolve_registry_token,
+        sha256_hex, validate_package_name, verify_cached_package, verify_signed_index_bytes,
+        RegistryCredentialStore, RegistryPackage, RegistryScheme, RegistryService,
+        TrustedRegistryPolicy,
     };
     use std::collections::BTreeMap;
     use std::fs;
@@ -1768,6 +1833,7 @@ mod tests {
     use std::path::Path;
     use std::sync::{Arc, Mutex, OnceLock};
     use std::thread;
+    use std::time::Duration;
 
     fn authenticated_tls_fixture(
         method: &'static str,
@@ -2343,6 +2409,155 @@ mod tests {
             stream.write_all(&body).unwrap();
         });
         (format!("http://{address}"), handle)
+    }
+
+    fn chunked_http_response(body: &[u8]) -> (String, std::thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let body = body.to_vec();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request);
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
+                )
+                .unwrap();
+            for chunk in body.chunks(3) {
+                write!(stream, "{:X}\r\n", chunk.len()).unwrap();
+                stream.write_all(chunk).unwrap();
+                stream.write_all(b"\r\n").unwrap();
+            }
+            stream.write_all(b"0\r\n\r\n").unwrap();
+        });
+        (format!("http://{address}"), handle)
+    }
+
+    fn truncated_http_response(
+        declared_length: usize,
+        body: &[u8],
+    ) -> (String, std::thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let body = body.to_vec();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request);
+            let headers = format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {declared_length}\r\nConnection: close\r\n\r\n"
+            );
+            stream.write_all(headers.as_bytes()).unwrap();
+            stream.write_all(&body).unwrap();
+        });
+        (format!("http://{address}"), handle)
+    }
+
+    fn delayed_http_response(delay: Duration) -> (String, std::thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request);
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n")
+                .unwrap();
+            stream.flush().unwrap();
+            std::thread::sleep(delay);
+            let _ = stream.write_all(b"[]");
+            let _ = stream.flush();
+        });
+        (format!("http://{address}"), handle)
+    }
+
+    fn oversized_http_response(declared_length: usize) -> (String, std::thread::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request);
+            let headers = format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {declared_length}\r\nConnection: close\r\n\r\n"
+            );
+            let _ = stream.write_all(headers.as_bytes());
+            let _ = stream.flush();
+        });
+        (format!("http://{address}"), handle)
+    }
+
+    #[test]
+    fn registry_client_accepts_chunked_response_body() {
+        let body = b"{\"packages\":[]}".to_vec();
+        let (url, handle) = chunked_http_response(&body);
+        let result = with_insecure_http(|| {
+            let agent = ureq::builder().build();
+            fetch_source_with_agent_timeout(
+                &agent,
+                &format!("{url}/index.json"),
+                &RegistryCredentialStore::new(),
+                Duration::from_secs(1),
+            )
+        });
+        handle.join().unwrap();
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn registry_client_rejects_truncated_content_length_body() {
+        let (url, handle) = truncated_http_response(12, b"{}");
+        let result = with_insecure_http(|| {
+            let agent = ureq::builder().build();
+            fetch_source_with_agent_timeout(
+                &agent,
+                &format!("{url}/index.json"),
+                &RegistryCredentialStore::new(),
+                Duration::from_secs(1),
+            )
+        });
+        handle.join().unwrap();
+        assert_eq!(result.unwrap_err(), "registry response body truncated");
+    }
+
+    #[test]
+    fn registry_client_normalizes_slow_peer_timeout() {
+        let (url, handle) = delayed_http_response(Duration::from_millis(250));
+        let result = with_insecure_http(|| {
+            let agent = ureq::builder().build();
+            fetch_source_with_agent_timeout(
+                &agent,
+                &format!("{url}/index.json"),
+                &RegistryCredentialStore::new(),
+                Duration::from_millis(20),
+            )
+        });
+        handle.join().unwrap();
+        assert_eq!(result.unwrap_err(), "registry response read timed out");
+    }
+
+    #[test]
+    fn registry_client_rejects_oversized_content_length_before_reading_body() {
+        let declared_length = super::REGISTRY_CLIENT_MAX_RESPONSE + 1;
+        let (url, handle) = oversized_http_response(declared_length);
+        let result = with_insecure_http(|| {
+            let agent = ureq::builder().build();
+            fetch_source_with_agent_timeout(
+                &agent,
+                &format!("{url}/index.json"),
+                &RegistryCredentialStore::new(),
+                Duration::from_secs(1),
+            )
+        });
+        handle.join().unwrap();
+        assert_eq!(
+            result.unwrap_err(),
+            format!(
+                "registry response exceeds {} bytes",
+                super::REGISTRY_CLIENT_MAX_RESPONSE
+            )
+        );
     }
 
     #[test]

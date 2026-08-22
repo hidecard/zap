@@ -353,6 +353,9 @@ run_contract_validation() {
   bash scripts/test_platform_archive.sh
   pass "platform archive determinism regression passed"
 
+  cargo test --manifest-path native/Cargo.toml --bin zap registry_client --all-features -- --nocapture
+  pass "registry transport edge-case corpus passed"
+
   bash scripts/test_benchmark_regression.sh
   pass "benchmark schema and regression contract passed"
 
