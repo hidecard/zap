@@ -14,9 +14,59 @@ struct DocumentState {
     text: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum PositionEncoding {
+    Utf8,
+    #[default]
+    Utf16,
+    Utf32,
+}
+
+impl PositionEncoding {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Utf8 => "utf-8",
+            Self::Utf16 => "utf-16",
+            Self::Utf32 => "utf-32",
+        }
+    }
+
+    fn character_width(self, character: char) -> usize {
+        match self {
+            Self::Utf8 => character.len_utf8(),
+            Self::Utf16 => character.len_utf16(),
+            Self::Utf32 => 1,
+        }
+    }
+
+    fn encoded_column(self, line: &str, char_index: usize) -> usize {
+        line.chars()
+            .take(char_index)
+            .map(|character| self.character_width(character))
+            .sum()
+    }
+
+    fn char_index_for_column(self, line: &str, column: usize) -> usize {
+        let mut encoded: usize = 0;
+        for (index, character) in line.chars().enumerate() {
+            let width = self.character_width(character);
+            if encoded.saturating_add(width) > column {
+                return index;
+            }
+            encoded += width;
+        }
+        line.chars().count()
+    }
+}
+
+const MAX_WORKSPACE_DOCUMENTS: usize = 256;
+const MAX_IMPORT_DEPTH: usize = 32;
+const MAX_WORKSPACE_BYTES: usize = 32 * 1024 * 1024;
+
 #[derive(Debug, Default)]
 pub struct LspState {
     documents: BTreeMap<String, DocumentState>,
+    position_encoding: PositionEncoding,
 }
 
 impl LspState {
@@ -31,6 +81,42 @@ fn accepts_document_version(current: Option<i64>, incoming: Option<i64>) -> bool
         (Some(_), None) => false,
         (None, _) => true,
     }
+}
+
+fn negotiate_position_encoding(params: Option<&Value>) -> PositionEncoding {
+    params
+        .and_then(|params| params["capabilities"]["general"]["positionEncodings"].as_array())
+        .and_then(|encodings| {
+            encodings
+                .iter()
+                .find_map(|encoding| match encoding.as_str()? {
+                    "utf-8" => Some(PositionEncoding::Utf8),
+                    "utf-16" => Some(PositionEncoding::Utf16),
+                    "utf-32" => Some(PositionEncoding::Utf32),
+                    _ => None,
+                })
+        })
+        .unwrap_or_default()
+}
+
+fn workspace_bytes(state: &LspState) -> usize {
+    state
+        .documents
+        .values()
+        .map(|document| document.text.len())
+        .sum()
+}
+
+fn can_store_document(state: &LspState, uri: &str, text: &str) -> bool {
+    let existing_bytes = state
+        .documents
+        .get(uri)
+        .map_or(0, |document| document.text.len());
+    (state.documents.contains_key(uri) || state.documents.len() < MAX_WORKSPACE_DOCUMENTS)
+        && workspace_bytes(state)
+            .saturating_sub(existing_bytes)
+            .saturating_add(text.len())
+            <= MAX_WORKSPACE_BYTES
 }
 
 fn full_sync_text(changes: &[Value]) -> Option<String> {
@@ -149,25 +235,29 @@ pub fn encode_message<W: Write>(writer: &mut W, value: &Value) -> Result<(), Str
 pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Option<Value> {
     let method = message.get("method")?.as_str()?;
     match method {
-        "initialize" => Some(json!({
-            "jsonrpc": "2.0",
-            "id": message.get("id").cloned().unwrap_or(Value::Null),
-            "result": {
-                "capabilities": {
-                    "textDocumentSync": {"openClose": true, "change": 1},
-                    "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
-                    "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
-                    "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
-                    "hoverProvider": true,
-                    "definitionProvider": true,
-                    "renameProvider": true,
-                    "workspaceSymbolProvider": true,
-                    "documentSymbolProvider": true,
-                    "documentFormattingProvider": true
-                },
-                "serverInfo": {"name": "zap", "version": env!("CARGO_PKG_VERSION")}
-            }
-        })),
+        "initialize" => {
+            state.position_encoding = negotiate_position_encoding(message.get("params"));
+            Some(json!({
+                "jsonrpc": "2.0",
+                "id": message.get("id").cloned().unwrap_or(Value::Null),
+                "result": {
+                    "capabilities": {
+                        "textDocumentSync": {"openClose": true, "change": 1},
+                        "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
+                        "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
+                        "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
+                        "hoverProvider": true,
+                        "definitionProvider": true,
+                        "renameProvider": true,
+                        "workspaceSymbolProvider": true,
+                        "documentSymbolProvider": true,
+                        "documentFormattingProvider": true
+                    },
+                    "serverInfo": {"name": "zap", "version": env!("CARGO_PKG_VERSION")},
+                    "positionEncoding": state.position_encoding.as_str()
+                }
+            }))
+        }
         "shutdown" => Some(json!({
             "jsonrpc": "2.0",
             "id": message.get("id").cloned().unwrap_or(Value::Null),
@@ -187,6 +277,9 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
             let uri = document.get("uri")?.as_str()?;
             let text = document.get("text").and_then(Value::as_str).unwrap_or("");
             let version = document.get("version").and_then(Value::as_i64);
+            if !can_store_document(state, uri, text) {
+                return None;
+            }
             state.documents.insert(
                 uri.to_string(),
                 DocumentState {
@@ -194,7 +287,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                     text: text.to_string(),
                 },
             );
-            Some(publish_diagnostics(uri, text))
+            Some(publish_diagnostics(uri, text, state.position_encoding))
         }
         "textDocument/didChange" => {
             let params = message.get("params")?;
@@ -210,6 +303,9 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                 return None;
             }
             let text = full_sync_text(changes)?;
+            if !can_store_document(state, uri, &text) {
+                return None;
+            }
             state.documents.insert(
                 uri.to_string(),
                 DocumentState {
@@ -217,7 +313,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                     text: text.clone(),
                 },
             );
-            Some(publish_diagnostics(uri, &text))
+            Some(publish_diagnostics(uri, &text, state.position_encoding))
         }
         "textDocument/didClose" => {
             let uri = message["params"]["textDocument"]["uri"].as_str()?;
@@ -261,6 +357,7 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
         &source,
         position["line"].as_u64().unwrap_or(0) as usize,
         position["character"].as_u64().unwrap_or(0) as usize,
+        state.position_encoding,
     );
     let mut candidates = vec![
         ("let", "Declare a local binding"),
@@ -306,18 +403,39 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": {"isIncomplete": false, "items": items}})
 }
 
-fn source_prefix(source: &str, line: usize, character: usize) -> String {
-    source
-        .lines()
-        .nth(line)
-        .unwrap_or("")
+fn source_prefix(
+    source: &str,
+    line: usize,
+    character: usize,
+    encoding: PositionEncoding,
+) -> String {
+    let line_text = source.lines().nth(line).unwrap_or("");
+    line_text
         .chars()
-        .take(character)
+        .take(encoding.char_index_for_column(line_text, character))
         .collect::<String>()
         .rsplit(|value: char| !value.is_ascii_alphanumeric() && value != '_')
         .next()
         .unwrap_or("")
         .to_string()
+}
+
+fn encoded_span_range(
+    source: &str,
+    span: &crate::lexer::SourceSpan,
+    encoding: PositionEncoding,
+) -> Value {
+    let line_index = span.line.saturating_sub(1);
+    let line = source.lines().nth(line_index).unwrap_or("");
+    let start_character = encoding.encoded_column(line, span.column.saturating_sub(1));
+    let end_character = encoding.encoded_column(
+        line,
+        span.column.saturating_sub(1).saturating_add(span.length),
+    );
+    json!({
+        "start": {"line": line_index as u64, "character": start_character as u64},
+        "end": {"line": line_index as u64, "character": end_character as u64}
+    })
 }
 
 fn signature_help_response(message: &Value, state: &LspState) -> Value {
@@ -736,6 +854,30 @@ fn resolved_rename_binding(
     }
 }
 
+fn token_contains_position(
+    source: &str,
+    token: &crate::lexer::SpannedToken,
+    line: usize,
+    character: usize,
+    encoding: PositionEncoding,
+) -> bool {
+    let line_index = token.span.line.saturating_sub(1);
+    if line_index != line {
+        return false;
+    }
+    let line_text = source.lines().nth(line_index).unwrap_or("");
+    let start_character = encoding.encoded_column(line_text, token.span.column.saturating_sub(1));
+    let end_character = encoding.encoded_column(
+        line_text,
+        token
+            .span
+            .column
+            .saturating_sub(1)
+            .saturating_add(token.span.length),
+    );
+    character >= start_character && character <= end_character
+}
+
 fn rename_response(message: &Value, state: &LspState) -> Value {
     let id = message.get("id").cloned().unwrap_or(Value::Null);
     let uri = message["params"]["textDocument"]["uri"]
@@ -772,12 +914,8 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
         let crate::lexer::Token::Name(name) = &token.token else {
             return None;
         };
-        let start_line = token.span.line.saturating_sub(1);
-        let start_character = token.span.column.saturating_sub(1);
-        (start_line == line
-            && character >= start_character
-            && character <= start_character.saturating_add(token.span.length))
-        .then_some((index, name.clone()))
+        token_contains_position(&source, token, line, character, state.position_encoding)
+            .then_some((index, name.clone()))
     });
     let Some((target_index, old_name)) = target else {
         return json!({"jsonrpc": "2.0", "id": id, "result": Value::Null});
@@ -809,7 +947,8 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
             if name != &old_name || rename_keyword(name) {
                 return None;
             }
-            let previous_is_dot = index > 0 && matches!(tokens[index - 1].token, crate::lexer::Token::Dot);
+            let previous_is_dot =
+                index > 0 && matches!(tokens[index - 1].token, crate::lexer::Token::Dot);
             if previous_is_dot {
                 return None;
             }
@@ -821,10 +960,7 @@ fn rename_response(message: &Value, state: &LspState) -> Value {
                 .or_else(|| resolved_rename_binding(&model, name, scope, token.span.line));
             (binding == Some(target_binding)).then(|| {
                 json!({
-                    "range": {
-                        "start": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1)},
-                        "end": {"line": token.span.line.saturating_sub(1), "character": token.span.column.saturating_sub(1).saturating_add(token.span.length)}
-                    },
+                    "range": encoded_span_range(&source, &token.span, state.position_encoding),
                     "newText": new_name
                 })
             })
@@ -850,7 +986,7 @@ fn hover_response(message: &Value, state: &LspState) -> Value {
     let character = message["params"]["position"]["character"]
         .as_u64()
         .unwrap_or(0) as usize;
-    let word = source_prefix(&source, line, character);
+    let word = source_prefix(&source, line, character, state.position_encoding);
     let program = crate::ast::parse_program(&source).ok();
     let description = program.as_ref().and_then(|program| {
         program
@@ -913,8 +1049,9 @@ fn definition_response(message: &Value, state: &LspState) -> Value {
         &source,
         position["line"].as_u64().unwrap_or(0) as usize,
         position["character"].as_u64().unwrap_or(0) as usize,
+        state.position_encoding,
     );
-    let locations = declaration_symbols(uri, &source)
+    let locations = declaration_symbols(uri, &source, state.position_encoding)
         .into_iter()
         .filter(|(name, _, _, _)| name == &word)
         .map(|(_, _, range, _)| json!({"uri": uri, "range": range}))
@@ -941,7 +1078,11 @@ fn formatting_response(message: &Value, state: &LspState) -> Value {
     let end_character = source
         .lines()
         .last()
-        .map(|line| line.chars().count())
+        .map(|line| {
+            state
+                .position_encoding
+                .encoded_column(line, line.chars().count())
+        })
         .unwrap_or(0) as u64;
     let edits = if formatted == source {
         Vec::new()
@@ -981,7 +1122,7 @@ fn workspace_symbol_response(message: &Value, state: &LspState) -> Value {
     let symbols = documents
         .iter()
         .flat_map(|(uri, source)| {
-            declaration_symbols(uri, source)
+            declaration_symbols(uri, source, state.position_encoding)
                 .into_iter()
                 .map(|(name, kind, range, detail)| (uri.clone(), name, kind, range, detail))
                 .collect::<Vec<_>>()
@@ -997,11 +1138,18 @@ fn workspace_symbol_response(message: &Value, state: &LspState) -> Value {
 fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
     const MAX_MODULE_BYTES: u64 = 8 * 1024 * 1024;
     let mut documents = state.documents.clone();
-    let mut pending = documents.keys().cloned().collect::<Vec<_>>();
+    let mut pending = documents
+        .keys()
+        .cloned()
+        .map(|uri| (uri, 0usize))
+        .collect::<Vec<_>>();
     let mut cursor = 0;
     while cursor < pending.len() {
-        let uri = pending[cursor].clone();
+        let (uri, depth) = pending[cursor].clone();
         cursor += 1;
+        if depth >= MAX_IMPORT_DEPTH {
+            continue;
+        }
         let Some(source) = documents.get(&uri).map(|document| document.text.clone()) else {
             continue;
         };
@@ -1045,18 +1193,24 @@ fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
                 continue;
             };
             let module_uri = path_to_file_uri(&canonical);
-            if documents
-                .insert(
-                    module_uri.clone(),
-                    DocumentState {
-                        version: None,
-                        text: module_source,
-                    },
-                )
-                .is_none()
-            {
-                pending.push(module_uri);
+            if documents.contains_key(&module_uri) || documents.len() >= MAX_WORKSPACE_DOCUMENTS {
+                continue;
             }
+            let indexed_bytes = documents
+                .values()
+                .map(|document| document.text.len())
+                .sum::<usize>();
+            if indexed_bytes.saturating_add(module_source.len()) > MAX_WORKSPACE_BYTES {
+                continue;
+            }
+            documents.insert(
+                module_uri.clone(),
+                DocumentState {
+                    version: None,
+                    text: module_source,
+                },
+            );
+            pending.push((module_uri, depth + 1));
         }
     }
     documents
@@ -1065,16 +1219,64 @@ fn workspace_documents(state: &LspState) -> Vec<(String, String)> {
         .collect()
 }
 
+fn percent_decode_uri_path(encoded: &str) -> Option<String> {
+    let bytes = encoded.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            if index + 2 >= bytes.len() {
+                return None;
+            }
+            let high = (bytes[index + 1] as char).to_digit(16)? as u8;
+            let low = (bytes[index + 2] as char).to_digit(16)? as u8;
+            decoded.push(high * 16 + low);
+            index += 3;
+        } else {
+            decoded.push(bytes[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8(decoded).ok()
+}
+
 fn file_uri_path(uri: &str) -> Option<PathBuf> {
-    uri.strip_prefix("file://").map(PathBuf::from)
+    let path = uri.strip_prefix("file://")?;
+    if !path.starts_with('/') || path.starts_with("//") {
+        return None;
+    }
+    let decoded = percent_decode_uri_path(path)?;
+    if decoded.contains('\0') || decoded.split('/').any(|component| component == "..") {
+        return None;
+    }
+    #[cfg(windows)]
+    if decoded.len() >= 3
+        && decoded.as_bytes()[0] == b'/'
+        && decoded.as_bytes()[2] == b':'
+        && decoded.as_bytes()[1].is_ascii_alphabetic()
+    {
+        return Some(PathBuf::from(&decoded[1..]));
+    }
+    Some(PathBuf::from(decoded))
+}
+
+fn percent_encode_uri_path(path: &str) -> String {
+    path.bytes()
+        .map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'/' | b':' => {
+                (byte as char).to_string()
+            }
+            other => format!("%{other:02X}"),
+        })
+        .collect()
 }
 
 fn path_to_file_uri(path: &Path) -> String {
     let rendered = path.to_string_lossy().replace('\\', "/");
     if rendered.starts_with('/') {
-        format!("file://{rendered}")
+        format!("file://{}", percent_encode_uri_path(&rendered))
     } else {
-        format!("file:///{rendered}")
+        format!("file:///{}", percent_encode_uri_path(&rendered))
     }
 }
 
@@ -1097,7 +1299,11 @@ fn module_import_path(path: &str) -> Result<PathBuf, String> {
 }
 
 /// Return `(name, kind, range, detail)` for top-level declarations.
-fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, String)> {
+fn declaration_symbols(
+    uri: &str,
+    source: &str,
+    encoding: PositionEncoding,
+) -> Vec<(String, u32, Value, String)> {
     let Ok(program) = crate::ast::parse_program(source) else {
         return Vec::new();
     };
@@ -1131,11 +1337,12 @@ fn declaration_symbols(uri: &str, source: &str) -> Vec<(String, u32, Value, Stri
                 .find(&name)
                 .unwrap_or(statement.span.column.saturating_sub(1));
             let start_line = line_index as u64;
-            let start_character = column as u64;
-            let end_character = start_character + name.chars().count() as u64;
+            let start_character = encoding.encoded_column(line, column);
+            let end_character =
+                encoding.encoded_column(line, column.saturating_add(name.chars().count()));
             let range = json!({
-                "start": {"line": start_line, "character": start_character},
-                "end": {"line": start_line, "character": end_character}
+                "start": {"line": start_line, "character": start_character as u64},
+                "end": {"line": start_line, "character": end_character as u64}
             });
             Some((name, kind, range, format!("{detail} in {uri}")))
         })
@@ -1152,7 +1359,9 @@ fn document_symbol_response(message: &Value, state: &LspState) -> Value {
         .map(|document| document.text.clone())
         .unwrap_or_default();
     let symbols = crate::ast::parse_program(&source)
-        .map(|program| document_symbols_for_program(uri, &source, &program))
+        .map(|program| {
+            document_symbols_for_program(uri, &source, &program, state.position_encoding)
+        })
         .unwrap_or_default();
     json!({
         "jsonrpc": "2.0",
@@ -1165,11 +1374,12 @@ fn document_symbols_for_program(
     uri: &str,
     source: &str,
     program: &crate::ast::Program,
+    encoding: PositionEncoding,
 ) -> Vec<Value> {
     program
         .statements
         .iter()
-        .filter_map(|statement| document_symbol_for_statement(uri, source, statement))
+        .filter_map(|statement| document_symbol_for_statement(uri, source, statement, encoding))
         .collect()
 }
 
@@ -1177,6 +1387,7 @@ fn document_symbol_for_statement(
     uri: &str,
     source: &str,
     statement: &crate::ast::Spanned<crate::ast::Stmt>,
+    encoding: PositionEncoding,
 ) -> Option<Value> {
     let (name, kind, detail) = match &statement.node {
         crate::ast::Stmt::Function { name, is_async, .. } => (
@@ -1198,10 +1409,10 @@ fn document_symbol_for_statement(
         } => (alias.clone().unwrap_or_else(|| path.clone()), 9, "import"),
         _ => return None,
     };
-    let range = symbol_range(source, &statement.span, &name);
+    let range = symbol_range(source, &statement.span, &name, encoding);
     let children = match &statement.node {
         crate::ast::Stmt::Function { body, .. } | crate::ast::Stmt::Class { body, .. } => {
-            document_symbols_for_program(uri, source, body)
+            document_symbols_for_program(uri, source, body, encoding)
         }
         _ => Vec::new(),
     };
@@ -1218,22 +1429,27 @@ fn document_symbol_for_statement(
     Some(symbol)
 }
 
-fn symbol_range(source: &str, span: &crate::lexer::SourceSpan, name: &str) -> Value {
+fn symbol_range(
+    source: &str,
+    span: &crate::lexer::SourceSpan,
+    name: &str,
+    encoding: PositionEncoding,
+) -> Value {
     let line_index = span.line.saturating_sub(1);
     let line = source.lines().nth(line_index).unwrap_or("");
     let column = line.find(name).unwrap_or(span.column.saturating_sub(1));
     let start = json!({
         "line": line_index as u64,
-        "character": column as u64
+        "character": encoding.encoded_column(line, column) as u64
     });
     let end = json!({
         "line": line_index as u64,
-        "character": (column + name.chars().count()) as u64
+        "character": encoding.encoded_column(line, column + name.chars().count()) as u64
     });
     json!({"start": start, "end": end})
 }
 
-fn publish_diagnostics(uri: &str, source: &str) -> Value {
+fn publish_diagnostics(uri: &str, source: &str, encoding: PositionEncoding) -> Value {
     let file = file_uri_path(uri).unwrap_or_else(|| PathBuf::from("<lsp>"));
     let diagnostics = crate::source_diagnostics(source, &file)
         .into_iter()
@@ -1247,12 +1463,13 @@ fn publish_diagnostics(uri: &str, source: &str) -> Value {
             };
             let column_number = if parsed_column == 0 { 1 } else { parsed_column };
             let line = line_number.saturating_sub(1);
-            let character = column_number.saturating_sub(1);
-            let width = source
-                .lines()
-                .nth(line)
-                .map(|value| value.chars().count())
-                .unwrap_or(character + 1)
+            let line_text = source.lines().nth(line).unwrap_or("");
+            let char_index = column_number
+                .saturating_sub(1)
+                .min(line_text.chars().count());
+            let character = encoding.encoded_column(line_text, char_index);
+            let width = encoding
+                .encoded_column(line_text, line_text.chars().count())
                 .max(character + 1);
             json!({
                 "range": {"start": {"line": line, "character": character}, "end": {"line": line, "character": width}},
@@ -1285,7 +1502,10 @@ fn diagnostic_line(message: &str) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_messages, handle_message, handle_message_with_state, LspState};
+    use super::{
+        can_store_document, decode_messages, file_uri_path, handle_message,
+        handle_message_with_state, LspState, MAX_WORKSPACE_BYTES, MAX_WORKSPACE_DOCUMENTS,
+    };
     use serde_json::{json, Value};
 
     #[test]
@@ -2082,6 +2302,103 @@ mod tests {
             &mut state,
         )
         .is_none());
+    }
+
+    #[test]
+    fn initialize_negotiates_supported_position_encoding() {
+        let mut state = LspState::new();
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0",
+                "id": 54,
+                "method": "initialize",
+                "params": {"capabilities": {"general": {"positionEncodings": ["utf-8", "utf-16"]}}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(response["result"]["positionEncoding"], "utf-8");
+    }
+
+    #[test]
+    fn file_uri_path_decodes_safe_paths_and_rejects_unsafe_forms() {
+        assert_eq!(
+            file_uri_path("file:///tmp/Zap%20source.zp")
+                .unwrap()
+                .to_string_lossy(),
+            "/tmp/Zap source.zp"
+        );
+        assert!(file_uri_path("file:///tmp/%2E%2E/secret.zp").is_none());
+        assert!(file_uri_path("file://host/tmp/source.zp").is_none());
+        assert!(file_uri_path("file:///tmp/%GG").is_none());
+    }
+
+    #[test]
+    fn utf16_position_encoding_is_used_for_unicode_rename_ranges() {
+        let uri = "file:///unicode-rename.zp";
+        let source = "let value = 1\nsay \"😀\" + value\n";
+        let mut state = LspState::new();
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 55, "method": "initialize",
+                "params": {"capabilities": {"general": {"positionEncodings": ["utf-16"]}}}
+            }),
+            &mut state,
+        );
+        let _ = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "text": source}}
+            }),
+            &mut state,
+        );
+        let response = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 56, "method": "textDocument/rename",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 0, "character": 5}, "newName": "renamed"}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        let edits = response["result"]["changes"][uri].as_array().unwrap();
+        assert_eq!(edits.len(), 2);
+        assert_eq!(edits[1]["range"]["start"]["character"], 11);
+    }
+
+    #[test]
+    fn workspace_document_cap_rejects_new_open_documents() {
+        let mut state = LspState::new();
+        for index in 0..MAX_WORKSPACE_DOCUMENTS {
+            let uri = format!("file:///bounded-{index}.zp");
+            assert!(handle_message_with_state(
+                &json!({
+                    "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                    "params": {"textDocument": {"uri": uri, "text": "let value = 1\n"}}
+                }),
+                &mut state,
+            )
+            .is_some());
+        }
+        assert!(handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": "file:///bounded-overflow.zp", "text": "let value = 1\n"}}
+            }),
+            &mut state,
+        )
+        .is_none());
+        assert_eq!(state.documents.len(), MAX_WORKSPACE_DOCUMENTS);
+    }
+
+    #[test]
+    fn workspace_byte_cap_rejects_oversized_document() {
+        let state = LspState::new();
+        let oversized = "x".repeat(MAX_WORKSPACE_BYTES + 1);
+        assert!(!can_store_document(
+            &state,
+            "file:///oversized.zp",
+            &oversized
+        ));
     }
 
     #[test]

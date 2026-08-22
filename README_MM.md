@@ -48,7 +48,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 ### LSP editor hardening အတွင်း limitation
 
-လက်ရှိ server သည် full document synchronization ကို ကြေညာပြီး လက်ခံထားသော newer document version များအတွက် standard `contentChanges` ကို မှန်ကန်စွာ အသုံးပြုသည်။ Position-aware application မတည်ဆောက်မချင်း range-based incremental change များကို reject လုပ်ထားသည်။ Rename သည် string၊ comment၊ keyword နှင့် builtin များကို မပြောင်းလဲစေသော်လည်း shadowed binding များအတွက် scope-aware မဖြစ်သေးသဖြင့် automated refactoring အတွက် မယုံကြည်သင့်ပါ။ Protocol regression ကို `scripts/test_lsp_protocol_sync.sh` ဖြင့် စစ်ဆေးနိုင်သည်။
+လက်ရှိ server သည် full document synchronization ကို ကြေညာပြီး လက်ခံထားသော newer document version များအတွက် standard `contentChanges` ကို မှန်ကန်စွာ အသုံးပြုသည်။ Position-aware application မတည်ဆောက်မချင်း range-based incremental change များကို reject လုပ်ထားသည်။ Server သည် UTF-8၊ UTF-16 သို့မဟုတ် UTF-32 position column များကို negotiate လုပ်နိုင်ပြီး malformed/host/traversal file URI များကို reject လုပ်ကာ session index ကို document ၂၅၆ ခု၊ import level ၃၂ နှင့် source text ၃၂ MiB အထိ ကန့်သတ်ထားသည်။ Rename သည် shadowing၊ closure၊ parameter နှင့် import alias အပါအဝင် file-local lexical binding များကို resolve လုပ်သည်။ Cross-file rename ကို support မလုပ်သေးသဖြင့် automated refactoring မလုပ်မီ ရလဒ်ကို ပြန်လည်စစ်ဆေးရမည်။ Protocol regression ကို `scripts/test_lsp_protocol_sync.sh` ဖြင့် စစ်ဆေးနိုင်သည်။
 
 ## Why Zap?
 

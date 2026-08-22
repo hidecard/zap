@@ -46,7 +46,7 @@ Start with the [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_
 
 ### LSP editor limitation during post-release hardening
 
-The current server advertises full document synchronization and correctly consumes standard `contentChanges` for accepted newer document versions. Range-based incremental changes are rejected until position-aware application is implemented. Rename currently returns lexer-span edits and is protected from strings, comments, keywords, and builtins, but it is not yet scope-aware for shadowed bindings; review rename results manually and do not rely on it for automated refactoring until the semantic rename milestone is complete. The protocol regression can be reproduced with `scripts/test_lsp_protocol_sync.sh`.
+The current server advertises full document synchronization and correctly consumes standard `contentChanges` for accepted newer document versions. Range-based incremental changes are rejected until position-aware application is implemented. The server negotiates UTF-8, UTF-16, or UTF-32 position columns, rejects malformed/host/traversal file URIs, and bounds the session index to 256 documents, 32 import levels, and 32 MiB of source text. Rename now resolves file-local lexical bindings, including shadowing, closures, parameters, and import aliases; cross-file rename remains unsupported and results should be reviewed before automated refactoring. The protocol regression can be reproduced with `scripts/test_lsp_protocol_sync.sh`.
 
 ## Native Runtime Architecture
 
