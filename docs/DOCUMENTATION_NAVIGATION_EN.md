@@ -22,6 +22,7 @@
 | Language semantics | [Language specification](LANGUAGE_SPEC_EN.md) | [Specification ownership index](SPEC_OWNERSHIP_INDEX.tsv) |
 | Diagnostics | [Diagnostic model](DIAGNOSTIC_MODEL_EN.md) | Native diagnostic tests |
 | Memory and borrowing | [Memory model](MEMORY_MODEL_EN.md) | Borrow and memory-limit regressions |
+| Memory budget/object store | [MemoryBudget and ObjectStore contract](MEMORY_BUDGET_OBJECT_STORE_EN.md) | Run-owned budget and object-store isolation regressions |
 | Runtime state | [Runtime state and execution context](RUNTIME_STATE_EN.md) | Runtime-state isolation, workspace, and reset regressions |
 | AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_EN.md) | Canonical AST, export, and compatibility-boundary regressions |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_EN.md) | Async runtime and adapter tests |

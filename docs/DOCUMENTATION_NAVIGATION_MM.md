@@ -22,6 +22,7 @@
 | Language semantics | [Language specification](LANGUAGE_SPEC_MM.md) | [Specification ownership index](SPEC_OWNERSHIP_INDEX.tsv) |
 | Diagnostics | [Diagnostic model](DIAGNOSTIC_MODEL_MM.md) | Native diagnostic tests |
 | Memory and borrowing | [Memory model](MEMORY_MODEL_MM.md) | Borrow နှင့် memory-limit regressions |
+| Memory budget/object store | [MemoryBudget and ObjectStore contract](MEMORY_BUDGET_OBJECT_STORE_MM.md) | Run-owned budget နှင့် object-store isolation regressions |
 | Runtime state | [Runtime state and execution context](RUNTIME_STATE_MM.md) | Runtime-state isolation၊ workspace နှင့် reset regressions |
 | AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_MM.md) | Canonical AST၊ export နှင့် compatibility-boundary regressions |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_MM.md) | Async runtime နှင့် adapter tests |

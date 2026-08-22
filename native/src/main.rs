@@ -31,7 +31,7 @@ mod stdlib_catalog;
 
 use evaluator::{
     call_function_with_context, call_method_with_context, check_method_visibility,
-    constructor_delegates_to_parent, direct_builtin, duration_value,
+    constructor_delegates_to_parent, direct_builtin_with_context, duration_value,
     execute_ast_program_with_context, initialize_object_fields, json_to_value, operate,
     utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
 };
@@ -198,8 +198,12 @@ impl<'a> ExprParser<'a> {
                 if self.take() != Token::RParen {
                     return Err(format!("expected ) after {n}"));
                 }
-                direct_builtin(n.as_str(), vec![level, message, fields])?
-                    .ok_or_else(|| format!("unknown standard function: {n}"))?
+                direct_builtin_with_context(
+                    n.as_str(),
+                    vec![level, message, fields],
+                    Some(&mut *self.context),
+                )?
+                .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
             Token::Name(n)
                 if (n == "spawn" || n == "task_join" || n == "task_is_ready")
@@ -210,7 +214,7 @@ impl<'a> ExprParser<'a> {
                 if self.take() != Token::RParen {
                     return Err(format!("expected ) after {n}"));
                 }
-                direct_builtin(n.as_str(), vec![value])?
+                direct_builtin_with_context(n.as_str(), vec![value], Some(&mut *self.context))?
                     .ok_or_else(|| format!("unknown standard function: {n}"))?
             }
             Token::Name(n) if n == "sleep" && *self.peek() == Token::LParen => {
@@ -819,7 +823,10 @@ impl<'a> ExprParser<'a> {
                             return Err(format!("unknown class: {class_name}"));
                         }
                         let explicit_fields = fields;
-                        let object = Value::object(class_name.clone());
+                        let object = Value::object_with_store(
+                            class_name.clone(),
+                            Some(self.context.state().object_store().clone()),
+                        );
                         initialize_object_fields(
                             &class_name,
                             &object,
@@ -1077,7 +1084,9 @@ impl<'a> ExprParser<'a> {
                     }
                 }
                 self.take();
-                if let Some(value) = direct_builtin(&n, args.clone())? {
+                if let Some(value) =
+                    direct_builtin_with_context(&n, args.clone(), Some(&mut *self.context))?
+                {
                     value
                 } else if let Some(value) =
                     evaluator::direct_external_builtin_with_context(&n, &args, Some(self.context))?

@@ -32,6 +32,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation hub | [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) · [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) |
 | Runtime-state contract | [English](docs/RUNTIME_STATE_EN.md) · [မြန်မာ](docs/RUNTIME_STATE_MM.md) |
+| Memory budget/object store contract | [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) · [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) |
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
@@ -53,7 +54,7 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `ast.rs` | Source-span AST, canonical source dispatch, exports, and native module execution | Implemented |
 | `value.rs` | Runtime values, functions, classes, and object model | Implemented |
 | `evaluator.rs` | Evaluation, functions, methods, modules, and control flow | Implemented |
-| `runtime_state.rs` | Per-run `RuntimeState`, workspace-root ownership, module-cache isolation, import-cycle tracking, and execution-depth accounting | Implemented migration slice |
+| `runtime_state.rs` | Per-run `RuntimeState`, `MemoryBudget`, `ObjectStore`, workspace-root ownership, module-cache isolation, import-cycle tracking, and execution-depth accounting | Implemented migration foundation |
 | `stdlib.rs` | Text, math, collection, filesystem, JSON, environment, path, and time built-in operations | Stabilized initial API surface |
 | `diagnostics.rs` | `ZapError`, source-aware diagnostics, and secret redaction | Implemented |
 | `project.rs` | Project, manifest, lockfile, dependency graph, metadata, and module validation | Implemented |
@@ -61,7 +62,7 @@ The native runtime is maintained as focused Rust modules rather than a single im
 | `async_runtime.rs` | Stable-Rust-compatible deterministic single-thread future executor foundation | Implemented foundation |
 | `lsp.rs` | Content-Length JSON-RPC server, per-session `LspState`, diagnostics, hover, and context-aware completion | Implemented foundation |
 
-The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains. The native runtime includes async foundations, stdio LSP/editor integration, explicit runtime-state ownership for per-run workspace/module/execution state, per-session LSP document state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
+The standard-library public surface is organized into deterministic `text`, `math`, `collections`, `filesystem`, `json`, and `system` domains. The native runtime includes async foundations, stdio LSP/editor integration, explicit runtime-state ownership for per-run workspace/module/execution state, run-owned logical budget/object counters, per-session LSP document state, and a canonical AST-only path for parser-owned programs. Current project status and usage guidance are maintained in the [English README](README.md), [မြန်မာ README](README_MM.md), the [runtime-state contract](docs/RUNTIME_STATE_EN.md), and the [AST foundation status](docs/P0_FOUNDATION_STATUS_EN.md).
 Package projects use `zap.toml` and canonical `zap.lock` files. Local path dependencies are recursively validated in deterministic order, cycles are rejected, and registry artifacts are checksum-verified with offline reuse through `ZAP_OFFLINE=1`. The modular architecture preserves existing language behavior. Runtime execution applies source-size, loop, and execution-depth limits. Token diagnostics retain one-based source locations, sensitive diagnostic values are redacted, and malformed input is handled through typed diagnostics instead of uncontrolled panics.
 
 ## Why Zap?

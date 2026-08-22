@@ -1,6 +1,6 @@
 # Runtime State and Execution Context
 
-**Status:** Implemented first slice for Zap v2.1.14
+**Status:** Implemented migration foundation for Zap v2.1.14
 
 This document defines the first explicit runtime-state boundary. It does not claim that every evaluator concern has already moved into one object; it records the state that has been migrated and the boundaries that remain deferred.
 
@@ -17,7 +17,8 @@ Each source execution receives its own `ExecutionContext`. The context owns muta
 | Execution depth | `RuntimeState` | Nested AST and legacy execution share one bounded counter for the context. |
 | Source workspace confinement | `RuntimeState` | The canonical workspace root is fixed for the context, inherited by nested module/function calls, and cleared on run reset. |
 | LSP open documents | `LspState` | Each LSP server session owns its document map; independent server states do not share open-document contents. |
-| Heap statistics and object ownership | Existing value boundary | Memory accounting remains governed by the existing bounded memory contract. |
+| Heap statistics and object ownership | `ObjectStore` in `RuntimeState` | Production object allocation/deallocation counters are per-run; no raw addresses or tracing-collector guarantee is exposed. |
+| Logical memory/task/output budget | `MemoryBudget` in `RuntimeState` | Deterministic reserve/release and fail-closed admission APIs are available to context-aware runtime boundaries. |
 
 ## ExecutionContext flow
 
@@ -27,17 +28,17 @@ A context can be created independently of another context. Mutating one context'
 
 ## Safety boundaries
 
-The migrated state is intentionally single-threaded and owned by an execution instance or LSP server session. The implementation does not add `Send`/`Sync` claims, worker sharing, tracing garbage collection, weak references, cumulative byte accounting, or a language-level task scheduler. The current execution-depth limit remains bounded. Parser-owned source uses canonical AST execution; the line interpreter remains explicit and compatibility-only for older line-bodied function records.
+The migrated state is intentionally single-threaded and owned by an execution instance or LSP server session. The implementation does not add `Send`/`Sync` claims, worker sharing, tracing garbage collection, or weak references. `MemoryBudget` provides logical byte/task/output accounting; it is not an allocator measurement. A language-level task scheduler remains deferred. The current execution-depth limit remains bounded. Parser-owned source uses canonical AST execution; the line interpreter remains explicit and compatibility-only for older line-bodied function records.
 
 ## Regression evidence
 
-The runtime-state module includes workspace, isolation, and reset regressions. The LSP module includes independent-server document isolation coverage. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, filesystem confinement, and bounded execution depth through the context-aware call graph.
+The runtime-state module includes workspace, budget, object-store isolation, and reset regressions. The evaluator also verifies that context-aware `memory_stats()` reads the current run's object store. The LSP module includes independent-server document isolation coverage. The native suite also exercises AST execution, legacy compatibility, module imports, circular-import diagnostics, function calls, method calls, filesystem confinement, and bounded execution depth through the context-aware call graph.
 
 The acceptance criterion for this migration slice is that module, depth, and workspace state are instance-owned and do not leak across execution contexts, while LSP document maps are session-owned and do not leak across server states. Existing language and editor behavior must remain unchanged. Later slices may move capability, diagnostics, memory, and cancellation state into additional explicit boundaries.
 
 ## Deferred roadmap
 
-The following work remains separate: complete `RuntimeState`/`ExecutionContext` migration for all remaining hidden state, first-class function values and `EnvFrame`, object-store and weak-reference policy, per-run memory budgets, typed source-span propagation, and full language-level async task semantics.
+The following work remains separate: first-class function values and `EnvFrame`, allocator-level measurement, public weak references, automatic tracing collection, typed source-span propagation, and full language-level async task semantics.
 
 See the [English documentation navigation hub](DOCUMENTATION_NAVIGATION_EN.md), the [next-step plan](NEXT_TODO_PLAN_EN.md), and the [language specification](LANGUAGE_SPEC_EN.md) for the maintained contracts.
 

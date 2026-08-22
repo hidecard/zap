@@ -5,6 +5,8 @@ use std::{
     rc::Rc,
 };
 
+use crate::runtime_state::ObjectStore;
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Param {
     pub(crate) name: String,
@@ -24,16 +26,29 @@ pub(crate) const MAX_RUNTIME_COLLECTION_ITEMS: usize = 100_000;
 /// Maximum number of reachable runtime values visited during one boundary check.
 pub(crate) const MAX_RUNTIME_VALUE_NODES: usize = 100_000;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) struct TrackedObjectFields {
     fields: RefCell<HashMap<String, Value>>,
+    store: Option<Rc<RefCell<ObjectStore>>>,
+}
+
+impl PartialEq for TrackedObjectFields {
+    fn eq(&self, other: &Self) -> bool {
+        self.fields.borrow().eq(&other.fields.borrow())
+    }
 }
 
 impl TrackedObjectFields {
-    fn new() -> Rc<Self> {
-        record_object_allocation();
+    fn new(store: Option<Rc<RefCell<ObjectStore>>>) -> Rc<Self> {
+        if let Some(store_ref) = &store {
+            store_ref.borrow_mut().record_allocation();
+        } else {
+            #[cfg(test)]
+            record_object_allocation();
+        }
         Rc::new(Self {
             fields: RefCell::new(HashMap::new()),
+            store,
         })
     }
 
@@ -60,7 +75,12 @@ impl Deref for TrackedObjectFields {
 
 impl Drop for TrackedObjectFields {
     fn drop(&mut self) {
-        record_object_deallocation();
+        if let Some(store) = &self.store {
+            store.borrow_mut().record_deallocation();
+        } else {
+            #[cfg(test)]
+            record_object_deallocation();
+        }
     }
 }
 
@@ -95,6 +115,7 @@ pub(crate) enum Value {
     None,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct MemoryStats {
     pub(crate) live_objects: usize,
@@ -102,59 +123,75 @@ pub(crate) struct MemoryStats {
     pub(crate) object_deallocations: u64,
 }
 
+#[cfg(test)]
 thread_local! {
-    static MEMORY_STATS: RefCell<MemoryStats> = const { RefCell::new(MemoryStats {
+    static TEST_MEMORY_STATS: RefCell<MemoryStats> = const { RefCell::new(MemoryStats {
         live_objects: 0,
         object_allocations: 0,
         object_deallocations: 0,
     }) };
 }
 
+#[cfg(test)]
 fn record_object_allocation() {
-    MEMORY_STATS.with(|stats| {
+    TEST_MEMORY_STATS.with(|stats| {
         let mut stats = stats.borrow_mut();
         stats.live_objects = stats.live_objects.saturating_add(1);
         stats.object_allocations = stats.object_allocations.saturating_add(1);
     });
 }
 
+#[cfg(test)]
 fn record_object_deallocation() {
-    let _ = MEMORY_STATS.try_with(|stats| {
+    TEST_MEMORY_STATS.with(|stats| {
         let mut stats = stats.borrow_mut();
         stats.live_objects = stats.live_objects.saturating_sub(1);
         stats.object_deallocations = stats.object_deallocations.saturating_add(1);
     });
 }
 
+#[cfg(test)]
 pub(crate) fn memory_stats() -> MemoryStats {
-    MEMORY_STATS.with(|stats| *stats.borrow())
+    TEST_MEMORY_STATS.with(|stats| *stats.borrow())
 }
 
 impl Value {
     /// Construct an object whose fields are reference-counted independently from
     /// the value handle. This keeps object ownership explicit at runtime.
+    #[cfg(test)]
     pub(crate) fn object(class_name: impl Into<String>) -> Self {
+        Self::object_with_store(class_name, None)
+    }
+
+    pub(crate) fn object_with_store(
+        class_name: impl Into<String>,
+        store: Option<Rc<RefCell<ObjectStore>>>,
+    ) -> Self {
         Self::Object {
             class_name: class_name.into(),
-            fields: TrackedObjectFields::new(),
+            fields: TrackedObjectFields::new(store),
         }
     }
 
     /// Return the stable, bounded memory-statistics record exposed by the runtime.
+    #[cfg(test)]
     pub(crate) fn memory_stats_value() -> Self {
-        let stats = memory_stats();
+        Self::memory_stats_value_for_store(None)
+    }
+
+    pub(crate) fn memory_stats_value_for_store(store: Option<&Rc<RefCell<ObjectStore>>>) -> Self {
+        let (live_objects, object_allocations, object_deallocations) = store
+            .map(|store| store.borrow().stats())
+            .unwrap_or_default();
         let mut values = HashMap::new();
-        values.insert(
-            "live_objects".into(),
-            Self::Number(stats.live_objects as i64),
-        );
+        values.insert("live_objects".into(), Self::Number(live_objects as i64));
         values.insert(
             "object_allocations".into(),
-            Self::Number(stats.object_allocations.min(i64::MAX as u64) as i64),
+            Self::Number(object_allocations.min(i64::MAX as u64) as i64),
         );
         values.insert(
             "object_deallocations".into(),
-            Self::Number(stats.object_deallocations.min(i64::MAX as u64) as i64),
+            Self::Number(object_deallocations.min(i64::MAX as u64) as i64),
         );
         values.insert(
             "max_text_bytes".into(),

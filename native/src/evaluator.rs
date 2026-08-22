@@ -438,7 +438,23 @@ fn async_capabilities_value() -> Value {
     Value::Map(values)
 }
 
+#[cfg(test)]
 pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Value>, String> {
+    direct_builtin_with_context(name, args, None)
+}
+
+pub(crate) fn direct_builtin_with_context(
+    name: &str,
+    args: Vec<Value>,
+    mut context: Option<&mut ExecutionContext>,
+) -> Result<Option<Value>, String> {
+    if let Some(context) = context.as_deref_mut() {
+        let logical_bytes = (name.len() as u64).saturating_add(args.len() as u64 * 8);
+        context
+            .state_mut()
+            .memory_budget_mut()
+            .reserve_bytes(logical_bytes)?;
+    }
     if name != "memory_stats" {
         for value in &args {
             value.validate_memory_limits()?;
@@ -461,7 +477,11 @@ pub(crate) fn direct_builtin(name: &str, args: Vec<Value>) -> Result<Option<Valu
         }
         "memory_stats" => {
             expect(0)?;
-            Ok(Some(Value::memory_stats_value()))
+            Ok(Some(Value::memory_stats_value_for_store(
+                context
+                    .as_deref()
+                    .map(|context| context.state().object_store()),
+            )))
         }
         "spawn" => {
             expect(1)?;
@@ -2215,7 +2235,9 @@ fn ast_expression_with_context(
                         .iter()
                         .map(|argument| argument.value.clone())
                         .collect::<Vec<_>>();
-                    if let Some(value) = direct_builtin(name, positional.clone())? {
+                    if let Some(value) =
+                        direct_builtin_with_context(name, positional.clone(), Some(&mut *context))?
+                    {
                         Ok(value)
                     } else if let Some(value) =
                         direct_io_builtin_with_context(name, &positional, Some(context))?
@@ -4061,6 +4083,31 @@ mod tests {
                 .expect_err("memory_stats must reject arguments"),
             "memory_stats expects 0 arguments, got 1"
         );
+    }
+
+    #[test]
+    fn memory_stats_builtin_reads_the_context_object_store() {
+        let mut context = ExecutionContext::new();
+        let object =
+            Value::object_with_store("Scoped", Some(context.state().object_store().clone()));
+        let Value::Map(stats) =
+            super::direct_builtin_with_context("memory_stats", Vec::new(), Some(&mut context))
+                .expect("memory_stats should succeed")
+                .expect("memory_stats should return a map")
+        else {
+            panic!("memory_stats should return a map");
+        };
+        assert_eq!(stats["live_objects"], Value::Number(1));
+        assert_eq!(stats["object_allocations"], Value::Number(1));
+        drop(object);
+        let Value::Map(stats) =
+            super::direct_builtin_with_context("memory_stats", Vec::new(), Some(&mut context))
+                .expect("memory_stats should succeed")
+                .expect("memory_stats should return a map")
+        else {
+            panic!("memory_stats should return a map");
+        };
+        assert_eq!(stats["live_objects"], Value::Number(0));
     }
 
     #[test]

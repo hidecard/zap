@@ -1,6 +1,6 @@
 # Runtime State နှင့် Execution Context
 
-**အခြေအနေ:** Zap v2.1.14 အတွက် first slice ကို အကောင်အထည်ဖော်ပြီး
+**အခြေအနေ:** Zap v2.1.14 အတွက် migration foundation ကို အကောင်အထည်ဖော်ပြီး
 
 ဤစာတမ်းသည် explicit runtime-state boundary ၏ ပထမဆုံးအပိုင်းကို သတ်မှတ်ပါသည်။ Evaluator ဆိုင်ရာ state အားလုံးကို object တစ်ခုတည်းသို့ ရွှေ့ပြီးပြီဟု မဆိုလိုဘဲ လက်ရှိရွှေ့ပြီးသော state နှင့် နောက်ပိုင်းလုပ်ရမည့် boundary များကို မှတ်တမ်းတင်ထားပါသည်။
 
@@ -17,7 +17,8 @@ Source execution တစ်ကြိမ်စီတွင် ကိုယ်ပ�
 | Execution depth | `RuntimeState` | Nested AST နှင့် legacy execution များသည် context တစ်ခုအတွက် bounded counter တစ်ခုကို မျှဝေသုံးရမည်။ |
 | Source workspace confinement | `RuntimeState` | Canonical workspace root ကို context အတွက် တစ်ကြိမ်သတ်မှတ်ပြီး nested module/function call များက အတူတူအသုံးပြုရမည်။ Run reset တွင် ရှင်းလင်းရမည်။ |
 | LSP open documents | `LspState` | LSP server session တစ်ခုချင်းစီတွင် ကိုယ်ပိုင် document map ရှိပြီး independent server state များအကြား open-document content မရောနှောရပါ။ |
-| Heap statistics နှင့် object ownership | ရှိပြီးသား value boundary | Memory accounting သည် ရှိပြီးသား bounded memory contract အတိုင်း ဆက်လက်ထိန်းချုပ်သည်။ |
+| Heap statistics နှင့် object ownership | `RuntimeState` ထဲရှိ `ObjectStore` | Production object allocation/deallocation counter များသည် per-run ဖြစ်ပြီး raw address သို့မဟုတ် tracing-collector guarantee မဖော်ပြပါ။ |
+| Logical memory/task/output budget | `RuntimeState` ထဲရှိ `MemoryBudget` | Context-aware runtime boundary များအတွက် deterministic reserve/release နှင့် fail-closed admission API များ ရှိပါသည်။ |
 
 ## ExecutionContext လည်ပတ်ပုံ
 
@@ -27,17 +28,17 @@ Context တစ်ခုကို အခြား context တစ်ခုနှ�
 
 ## လုံခြုံရေး boundary များ
 
-ရွှေ့ပြောင်းထားသော state သည် execution instance သို့မဟုတ် LSP server session တစ်ခုက ပိုင်ဆိုင်သော single-threaded state ဖြစ်ပါသည်။ `Send`/`Sync` claim၊ worker sharing၊ tracing garbage collection၊ weak reference၊ cumulative byte accounting၊ သို့မဟုတ် language-level task scheduler အသစ်များကို ဤ implementation တွင် မထည့်သွင်းပါ။ လက်ရှိ execution-depth limit သည် bounded ဖြစ်ပါသည်။ Parser ပိုင် source များသည် canonical AST execution ကို အသုံးပြုပြီး line interpreter သည် legacy line-bodied function record များအတွက် explicit compatibility-only အဖြစ်သာ ရှိပါသည်။
+ရွှေ့ပြောင်းထားသော state သည် execution instance သို့မဟုတ် LSP server session တစ်ခုက ပိုင်ဆိုင်သော single-threaded state ဖြစ်ပါသည်။ `Send`/`Sync` claim၊ worker sharing၊ tracing garbage collection သို့မဟုတ် weak reference များကို ဤ implementation တွင် မထည့်သွင်းပါ။ `MemoryBudget` သည် logical byte/task/output accounting ကို ပေးသော်လည်း allocator measurement မဟုတ်ပါ။ Language-level task scheduler သည် deferred ဖြစ်နေဆဲ ဖြစ်ပါသည်။ လက်ရှိ execution-depth limit သည် bounded ဖြစ်ပါသည်။ Parser ပိုင် source များသည် canonical AST execution ကို အသုံးပြုပြီး line interpreter သည် legacy line-bodied function record များအတွက် explicit compatibility-only အဖြစ်သာ ရှိပါသည်။
 
 ## Regression evidence
 
-Runtime-state module တွင် workspace၊ isolation နှင့် reset regression များ ပါဝင်ပါသည်။ LSP module တွင် independent-server document isolation coverage ပါဝင်ပါသည်။ Native suite သည် context-aware call graph မှတစ်ဆင့် AST execution၊ legacy compatibility၊ module import၊ circular-import diagnostic၊ function call၊ method call၊ filesystem confinement နှင့် bounded execution depth များကိုလည်း စစ်ဆေးပါသည်။
+Runtime-state module တွင် workspace၊ budget၊ object-store isolation နှင့် reset regression များ ပါဝင်ပါသည်။ Evaluator သည် context-aware `memory_stats()` က လက်ရှိ run ၏ object store မှ ဖတ်ကြောင်းကိုလည်း စစ်ဆေးပါသည်။ LSP module တွင် independent-server document isolation coverage ပါဝင်ပါသည်။ Native suite သည် context-aware call graph မှတစ်ဆင့် AST execution၊ legacy compatibility၊ module import၊ circular-import diagnostic၊ function call၊ method call၊ filesystem confinement နှင့် bounded execution depth များကိုလည်း စစ်ဆေးပါသည်။
 
 ဤ migration slice ၏ acceptance criterion မှာ module၊ depth နှင့် workspace state များသည် execution context ပိုင်ဆိုင်မှုဖြစ်ပြီး context များအကြား မပေါက်ကြားစေရန် ဖြစ်ပါသည်။ LSP document map များသည် server session ပိုင်ဆိုင်မှုဖြစ်ပြီး server state များအကြား မပေါက်ကြားရပါ။ ရှိပြီးသား language နှင့် editor behavior မပြောင်းလဲရပါ။ နောက်ပိုင်း slice များတွင် capability၊ diagnostics၊ memory နှင့် cancellation state များကို explicit boundary များအဖြစ် ဆက်ရွှေ့နိုင်ပါသည်။
 
 ## Deferred roadmap
 
-အောက်ပါအလုပ်များသည် သီးခြားကျန်ရှိနေပါသည် — ကျန်ရှိသော hidden state များကို `RuntimeState`/`ExecutionContext` သို့ ပြောင်းခြင်း၊ first-class function value နှင့် `EnvFrame`၊ object-store နှင့် weak-reference policy၊ per-run memory budget၊ typed source-span propagation နှင့် full language-level async task semantics တို့ ဖြစ်ပါသည်။
+အောက်ပါအလုပ်များသည် သီးခြားကျန်ရှိနေပါသည် — first-class function value နှင့် `EnvFrame`၊ allocator-level measurement၊ public weak reference၊ automatic tracing collection၊ typed source-span propagation နှင့် full language-level async task semantics တို့ ဖြစ်ပါသည်။
 
 ထိန်းသိမ်းထားသော contract များအတွက် [Burmese documentation navigation hub](DOCUMENTATION_NAVIGATION_MM.md)၊ [next-step plan](NEXT_TODO_PLAN_MM.md) နှင့် [language specification](LANGUAGE_SPEC_MM.md) ကို ကြည့်ရှုပါ။
 
