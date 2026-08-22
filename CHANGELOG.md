@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.4] - 2026-08-23
+
+### Release summary
+- Post-v2.2.3 active-baseline documentation synchronization for the language specification and generic type-check decision records.
+
 ## [2.2.3] - 2026-08-22
 
 ### Release summary

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.4] — 2026-08-23
+
+### Release engineering
+- Synchronize the active v2.2.3 language-specification and generic type-check release-gate references after the post-release audit; no parser, runtime, or generic-syntax behavior changes.
+
 ## [2.2.3] — 2026-08-22
 
 ### Release engineering

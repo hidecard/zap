@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.4] — 2026-08-23
+
+### Release engineering
+- Post-v2.2.3 audit အပြီး language specification နှင့် generic type-check release-gate ရှိ active v2.2.3 references များကို synchronize လုပ်ထားပြီး parser၊ runtime သို့မဟုတ် generic syntax behavior ပြောင်းလဲမှု မရှိပါ။
+
 ## [2.2.3] — 2026-08-22
 
 ### Release engineering
