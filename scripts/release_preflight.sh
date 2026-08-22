@@ -24,6 +24,13 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# Local shells may not inherit Cargo's user-level bin directory; CI setup steps
+# already provide it, while this fallback keeps the preflight command reproducible.
+if [[ -f "${HOME}/.cargo/env" ]]; then
+  # shellcheck disable=SC1091
+  source "${HOME}/.cargo/env"
+fi
+
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [[ -z "$ROOT_DIR" ]]; then
   echo "release preflight: must run inside the Zap Git repository" >&2
