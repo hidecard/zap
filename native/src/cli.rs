@@ -27,8 +27,14 @@ Usage:
   zap install [dir]    Validate and install dependencies from zap.lock
   zap install --locked [dir]             Require and validate the existing zap.lock
   zap update [dir]     Regenerate zap.lock from zap.toml
+  zap registry check <index.json>      Validate a local registry index
+  zap registry fetch <index-url>       Validate a trusted remote index
+  zap registry cache <index> <source> <name> <ver> [cache]
+                                      Cache a checksum-verified package
   zap registry gc [--dry-run] [dir]     Remove unreferenced registry cache files
   zap registry serve <root> [bind]     Serve an authenticated local registry
+  zap registry publish <url> <archive> <name> <ver> <sha256>
+                                      Publish a verified package archive
   zap registry trust list              List trusted registry origins
   zap registry trust add <url>         Add a trusted registry origin
   zap registry trust remove <url>      Remove a trusted registry origin
