@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.4.0] — 2026-08-23
+
+### Release engineering
+- Added a complete installation-to-advanced Language Guide with executable examples, refreshed the README, and removed a stale duplicate package note.
+
 ## [2.3.0] — 2026-08-23
 
 ### LSP diagnostics and code actions

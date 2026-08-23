@@ -53,6 +53,8 @@ zap --version
 
 ### Windows
 
+The expected archive is `zap-2.4.0-windows-x86_64.zip`.
+
 ```bat
 cd C:\Zap
 install_windows.bat

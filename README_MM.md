@@ -53,6 +53,8 @@ zap --version
 
 ### Windows
 
+မျှော်မှန်းထားသော archive သည် `zap-2.4.0-windows-x86_64.zip` ဖြစ်ပါသည်။
+
 ```bat
 cd C:\Zap
 install_windows.bat

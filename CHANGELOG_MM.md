@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.4.0] — 2026-08-23
+
+### Release engineering
+- Installation မှ Advanced အထိ bilingual Zap Language Guide အသစ်၊ README ရှင်းလင်းမှုနှင့် stale package note ဖယ်ရှားမှုကို ထည့်သွင်းထားပါသည်။
+
 ## [2.3.0] — 2026-08-23
 
 ### LSP diagnostics နှင့် code actions
