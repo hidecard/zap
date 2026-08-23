@@ -165,6 +165,40 @@ async fn health_is_public_and_security_headers_are_present() {
 }
 
 #[tokio::test]
+async fn metrics_is_public_and_emits_bounded_counters() {
+    let state = AppState::new(
+        config(),
+        Arc::new(ContractGateway::new(
+            Arc::new(CountingRepository::default()),
+        )),
+        Arc::new(TestAuth {
+            mode: AuthMode::Missing,
+        }),
+    )
+    .expect("valid state");
+    let response = build_router(state)
+        .oneshot(request(Method::GET, "/metrics", "metrics-1", Body::empty()))
+        .await
+        .expect("router response");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers()["content-type"],
+        "text/plain; version=0.0.4"
+    );
+    let body = response
+        .into_body()
+        .collect()
+        .await
+        .expect("metrics body must be readable")
+        .to_bytes();
+    let body = String::from_utf8(body.to_vec()).expect("metrics body must be UTF-8");
+    assert!(body.contains("zap_requests_total 1"));
+    assert!(body.contains("zap_in_flight_requests 1"));
+    assert!(!body.contains("metrics-1"));
+}
+
+#[tokio::test]
 async fn readiness_is_public_and_reports_dependency_state() {
     let ready_state = AppState::new(
         config(),

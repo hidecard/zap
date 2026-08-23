@@ -48,6 +48,7 @@ Process သည် `127.0.0.1:3000` တွင် bind လုပ်ပြီး li
 curl -i http://127.0.0.1:3000/
 curl -i http://127.0.0.1:3000/health
 curl -i http://127.0.0.1:3000/ready
+curl -i http://127.0.0.1:3000/metrics
 curl -i -H 'x-request-id: quickstart-get' \
   http://127.0.0.1:3000/api/users/1
 curl -i -H 'x-request-id: quickstart-list' \
@@ -58,7 +59,7 @@ curl -i -H 'content-type: application/json' \
   http://127.0.0.1:3000/api/users
 ```
 
-Root၊ health နှင့် readiness routes များသည် public ဖြစ်သည်။ Health သည် lightweight liveness response ဖြစ်ပြီး readiness သည် injected dependency probe ကို ခေါ်သည်။ Demo authenticator သည် fixed identity ကို ပေးသောကြောင့် local တွင် user routes များကို စမ်းနိုင်သည်။ Create request အောင်မြင်လျှင် `201 Created`၊ read/list အောင်မြင်လျှင် `200 OK` ပြန်မည်။ Response တွင် public user DTO နှင့် request ID ပါမည်။ Process ကို `Ctrl-C` ဖြင့် ရပ်နိုင်ပြီး executable သည် Ctrl-C နှင့် SIGTERM ကို လက်ခံကာ Axum graceful shutdown ပြုလုပ်သည်။
+Root၊ health၊ readiness နှင့် metrics routes များသည် public ဖြစ်သည်။ Health သည် lightweight liveness response ဖြစ်ပြီး readiness သည် injected dependency probe ကို ခေါ်သည်။ Metrics သည် path၊ identity၊ request ID သို့မဟုတ် user-controlled label များမပါသော bounded Prometheus-style process counter များကို ထုတ်ပေးသည်။ Demo authenticator သည် fixed identity ကို ပေးသောကြောင့် local တွင် user routes များကို စမ်းနိုင်သည်။ Create request အောင်မြင်လျှင် `201 Created`၊ read/list အောင်မြင်လျှင် `200 OK` ပြန်မည်။ Response တွင် public user DTO နှင့် request ID ပါမည်။ Process ကို `Ctrl-C` ဖြင့် ရပ်နိုင်ပြီး executable သည် Ctrl-C နှင့် SIGTERM ကို လက်ခံကာ Axum graceful shutdown ပြုလုပ်သည်။
 
 Port သို့မဟုတ် local limit ပြောင်းရန် `cargo run` မတိုင်မီ environment variables export လုပ်ပါ။
 

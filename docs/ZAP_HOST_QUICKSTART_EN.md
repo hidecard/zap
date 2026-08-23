@@ -48,6 +48,7 @@ The process binds to `127.0.0.1:3000` and logs that it is listening. Keep this t
 curl -i http://127.0.0.1:3000/
 curl -i http://127.0.0.1:3000/health
 curl -i http://127.0.0.1:3000/ready
+curl -i http://127.0.0.1:3000/metrics
 curl -i -H 'x-request-id: quickstart-get' \
   http://127.0.0.1:3000/api/users/1
 curl -i -H 'x-request-id: quickstart-list' \
@@ -58,7 +59,7 @@ curl -i -H 'content-type: application/json' \
   http://127.0.0.1:3000/api/users
 ```
 
-The root, health, and readiness routes are public. Health is a lightweight liveness response, while readiness calls the injected dependency probe. The demo authenticator supplies a fixed identity so the user routes can be exercised locally. A successful create request returns `201 Created`; a successful read/list request returns `200 OK`. The response contains a public user DTO and the request ID. Stop the process with `Ctrl-C`; the executable listens for Ctrl-C and SIGTERM and completes Axum graceful shutdown.
+The root, health, readiness, and metrics routes are public. Health is a lightweight liveness response, readiness calls the injected dependency probe, and metrics emits bounded Prometheus-style process counters without paths, identities, request IDs, or user-controlled labels. The demo authenticator supplies a fixed identity so the user routes can be exercised locally. A successful create request returns `201 Created`; a successful read/list request returns `200 OK`. The response contains a public user DTO and the request ID. Stop the process with `Ctrl-C`; the executable listens for Ctrl-C and SIGTERM and completes Axum graceful shutdown.
 
 To use another port or a smaller local limit, export configuration before `cargo run`:
 

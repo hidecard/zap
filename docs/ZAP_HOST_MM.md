@@ -15,7 +15,7 @@
 | နယ်ပယ် | `zap-host` တွင် ပါဝင်ပြီးသည် | Production တွင် အစားထိုး/ထပ်ဖြည့်ရမည့်အရာ |
 |---|---|---|
 | HTTP listener | Tokio `TcpListener` နှင့် `axum::serve` | TLS termination၊ proxy policy၊ deployment health နှင့် socket hardening |
-| Routing | `/`၊ `/health`၊ `/api/users`၊ `/api/users/:id` | Versioning၊ API compatibility policy နှင့် application routes အပြည့်အစုံ |
+| Routing | `/`၊ `/health`၊ `/ready`၊ `/metrics`၊ `/api/users`၊ `/api/users/:id` | Versioning၊ API compatibility policy နှင့် application routes အပြည့်အစုံ |
 | Request bounds | Path 2,048 bytes၊ body 65,536 bytes၊ request ID 128 bytes | Edge/proxy limits၊ multipart policy၊ decompression limits နှင့် per-route budgets |
 | Timeout | Tower `TimeoutLayer`၊ default 10 seconds | Operation-specific deadlines၊ cancellation propagation နှင့် downstream budgets |
 | Authentication | `Authenticator` trait နှင့် identity extension | JWT/OIDC/API-key verification၊ key rotation၊ issuer/audience စစ်ဆေးမှုနှင့် revocation policy |
@@ -89,13 +89,14 @@ Default bind address သည် demo adapter ကို မတော်တဆ publ
 | `GET` | `/` | None | `200` | Root response နှင့် correlation ID |
 | `GET` | `/health` | None | `200` | Liveness-style response သာ; database readiness မသက်သေပြ |
 | `GET` | `/ready` | None | `200`/`503` | Readiness probe result; public နှင့် dependency-aware |
+| `GET` | `/metrics` | None | `200` | Bounded Prometheus-style process counter; user-controlled label မပါ |
 | `GET` | `/api/users` | `users:read` | `200` | Public DTO list |
 | `GET` | `/api/users/:id` | `users:read` | `200` | User မရှိလျှင် `404` |
 | `POST` | `/api/users` | `users:write` | `201` | String `name` နှင့် `email` ပါသော JSON body |
 
 JSON response အားလုံးတွင် `x-content-type-options: nosniff`၊ `cache-control: no-store` နှင့် validate/generate လုပ်ထားသော `x-request-id` ပါသည်။ Authorization နှင့် cookie headers များကို Tower diagnostics အတွက် sensitive အဖြစ် mark လုပ်ထားသည်။ Error response များတွင် stable error code သာ ပါပြီး driver message၊ SQL၊ credential၊ token သို့မဟုတ် internal row field များ မပါပါ။
 
-`GET /health` သည် public ဖြစ်ပြီး lightweight response သာ ပြန်သည်။ `GET /ready` သည် public ဖြစ်ပြီး injected readiness probe ကို ခေါ်ကာ dependency မ ready ဖြစ်လျှင် `503` ပြန်သည်။ Readiness နှင့် liveness ကို သီးခြားထားရမည်ဖြစ်ပြီး deployment မတိုင်မီ real dependency checks ဖြင့် ချိတ်ဆက်ရမည်။
+`GET /health` သည် public ဖြစ်ပြီး lightweight response သာ ပြန်သည်။ `GET /ready` သည် public ဖြစ်ပြီး injected readiness probe ကို ခေါ်ကာ dependency မ ready ဖြစ်လျှင် `503` ပြန်သည်။ `GET /metrics` သည် public ဖြစ်ပြီး path၊ identity၊ request ID သို့မဟုတ် client-controlled label များမပါသော total request၊ 5xx response နှင့် in-flight request process counter များကိုသာ ထုတ်ပေးသည်။ Readiness နှင့် liveness ကို သီးခြားထားရမည်ဖြစ်ပြီး deployment မတိုင်မီ real dependency checks ဖြင့် ချိတ်ဆက်ရမည်။
 
 ## Database adapter checklist
 
