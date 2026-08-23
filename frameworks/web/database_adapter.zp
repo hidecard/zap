@@ -1,0 +1,31 @@
+# Provider-neutral database contract.
+# This module describes safe query intent and DTO mapping; the native SQLite
+# migration adapter is separate from request-time repository execution.
+
+export fn adapter_info():
+    return {"driver": "provider-neutral", "query_mode": "parameterized", "mapping": "dto-only", "transaction": "adapter-owned", "status": "contract"}
+
+export fn user_lookup_spec(user_id):
+    if type(user_id) != "number":
+        return {"ok": false, "error_code": "invalid_id", "error": "user id must be numeric"}
+    return {"ok": true, "operation": "select_one", "table": "users", "fields": ["id", "name", "email"], "where": {"id": "?"}, "parameters": [user_id], "sql_shape": "SELECT id, name, email FROM users WHERE id = ?"}
+
+export fn insert_user_spec(name, email):
+    if type(name) != "text" or type(email) != "text":
+        return {"ok": false, "error_code": "invalid_record", "error": "user fields must be text"}
+    let normalized_name = trim(name)
+    let normalized_email = lower(trim(email))
+    if len(normalized_name) == 0 or len(normalized_name) > 120:
+        return {"ok": false, "error_code": "invalid_record", "error": "name length is outside the allowed range"}
+    if len(normalized_email) == 0 or len(normalized_email) > 254 or not contains(normalized_email, "@"):
+        return {"ok": false, "error_code": "invalid_record", "error": "email format is not accepted"}
+    return {"ok": true, "operation": "insert", "table": "users", "fields": ["name", "email"], "parameters": [normalized_name, normalized_email], "sql_shape": "INSERT INTO users (name, email) VALUES (?, ?)"}
+
+export fn user_row_dto(row):
+    if type(row) != "map":
+        return {"valid": false, "error_code": "invalid_record", "error": "database row must be a map"}
+    if not contains(keys(row), "id") or not contains(keys(row), "name") or not contains(keys(row), "email"):
+        return {"valid": false, "error_code": "invalid_record", "error": "database row is missing public fields"}
+    if type(row["id"]) != "number" or type(row["name"]) != "text" or type(row["email"]) != "text":
+        return {"valid": false, "error_code": "invalid_record", "error": "database row has an invalid field type"}
+    return {"valid": true, "value": {"id": row["id"], "name": row["name"], "email": lower(trim(row["email"]))}}

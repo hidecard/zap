@@ -6,6 +6,7 @@ import "web_contract"
 import "api_contract"
 import "dto_contract"
 import "database_contract"
+import "database_adapter"
 import "auth_contract"
 import "rate_limit_contract"
 
@@ -27,6 +28,10 @@ let unauthenticated = get_user_api({"request_id": "api-unauth", "user_id": 1}, n
 let forbidden = create_user_api({"request_id": "api-forbidden", "body": {"name": "Eve", "email": "eve@example.com"}}, read_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
 let invalid_body = create_user_api({"request_id": "api-invalid", "body": {"name": 7, "email": "bad"}}, write_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
 let missing_user = get_user_api({"request_id": "api-missing", "user_id": 99}, read_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
+let database = adapter_info()
+let lookup_spec = user_lookup_spec(1)
+let insert_spec = insert_user_spec(" Bob ", "BOB@EXAMPLE.COM")
+let user_dto = user_row_dto({"id": 1, "name": "Ada", "email": "ADA@EXAMPLE.COM", "internal": "hidden"})
 
 assert(home["status"] == 200, "root route must return 200")
 assert(health["body"] == "{\"status\":\"ok\"}", "health response must be deterministic")
@@ -42,5 +47,10 @@ assert(unauthenticated["response"]["status"] == 401, "missing identity must retu
 assert(forbidden["response"]["status"] == 403, "missing scope must return 403")
 assert(invalid_body["response"]["status"] == 400, "invalid DTO must return 400")
 assert(missing_user["response"]["status"] == 404, "missing database row must return 404")
+assert(database["query_mode"] == "parameterized", "database adapter must be parameterized")
+assert(lookup_spec["parameters"][0] == 1, "lookup parameters must be explicit")
+assert(insert_spec["parameters"][1] == "bob@example.com", "insert DTO must normalize email")
+assert(user_dto["value"]["email"] == "ada@example.com", "row DTO must normalize public email")
+assert(not contains(keys(user_dto["value"]), "internal"), "row DTO must not expose internal fields")
 
-say json({"framework": "web", "contract": "api-dto-database-auth-rate-limit", "home": home, "get_user": get_user["response"], "create_user": create_user["response"], "limited": limited["response"], "unauthenticated": unauthenticated["response"], "forbidden": forbidden["response"], "invalid_body": invalid_body["response"], "missing_user": missing_user["response"]})
+say json({"framework": "web", "contract": "api-dto-database-query-dto-auth-rate-limit", "home": home, "get_user": get_user["response"], "create_user": create_user["response"], "limited": limited["response"], "unauthenticated": unauthenticated["response"], "forbidden": forbidden["response"], "invalid_body": invalid_body["response"], "missing_user": missing_user["response"]})

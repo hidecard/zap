@@ -155,12 +155,12 @@ Request DTO validator သည် text ဖြစ်သော `name` နှင့�
 
 ## Database integration boundary
 
-`database_contract.zp` သည် `repository_info`, `find_user`, `insert_user`, `list_users` functions များဖြင့် repository boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိ implementation သည် deterministic fake repository ဖြစ်သောကြောင့် credential၊ network၊ database process သို့မဟုတ် mutable global state မလိုဘဲ API ကို test လုပ်နိုင်သည်။
+`database_contract.zp` သည် `repository_info`, `find_user`, `insert_user`, `list_users` functions များဖြင့် repository boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိ implementation သည် deterministic fake repository ဖြစ်သောကြောင့် credential၊ network၊ database process သို့မဟုတ် mutable global state မလိုဘဲ API ကို test လုပ်နိုင်သည်။ ထပ်တိုး `database_adapter.zp` သည် user lookup/insert အတွက် provider-neutral parameterized query descriptor နှင့် public field များသာ ထုတ်ပေးသည့် `user_row_dto` mapping ကို သတ်မှတ်ထားသည်။ ၎င်းသည် adapter intent ကိုသာ ဖော်ပြပြီး connection ဖွင့်ခြင်း သို့မဟုတ် request-time query execute လုပ်ခြင်း မပြုပါ။
 
 | Database boundary | Contract requirement |
 |---|---|
 | Driver selection | PostgreSQL၊ SQLite၊ MySQL သို့မဟုတ် အခြား driver ကို host adapter က ရွေးရမည်။ Zap code သည် driver တစ်ခုကို မယူဆရ |
-| Query arguments | Validated DTO fields ကို bound parameters အဖြစ် ပေးရမည်။ User text နှင့် SQL ကို string concatenate မလုပ်ရ |
+| Query arguments | Validated DTO fields ကို bound parameters အဖြစ် ပေးရမည်။ User text နှင့် SQL ကို string concatenate မလုပ်ရ။ `database_adapter.zp` query descriptor ကို အသုံးပြုရမည် |
 | Transactions | Transaction begin/commit/rollback ကို adapter က ပိုင်ဆိုင်ပြီး typed success/failure DTO သာ ပြန်ပေးရမည် |
 | Connection pool | Pool size၊ acquisition timeout၊ idle timeout နှင့် shutdown ကို adapter က ပိုင်ဆိုင်ရမည် |
 | Failure mapping | Not-found သည် domain result ဖြစ်ရမည်။ Connection/timeout/pool failure ကို repository-unavailable result အဖြစ် map လုပ်ရမည် |

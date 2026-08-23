@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, OpenFlags};
+use rusqlite::{params, Connection, OpenFlags, Row};
 use serde_json::{json, Value as JsonValue};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -22,6 +22,20 @@ const MAX_SQL_BYTES: usize = 1024 * 1024;
 pub(crate) struct DatabaseConfig {
     pub(crate) driver: String,
     pub(crate) url: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct UserRecord {
+    pub(crate) id: i64,
+    pub(crate) name: String,
+    pub(crate) email: String,
+}
+
+pub(crate) trait DatabaseAdapter {
+    fn driver(&self) -> &str;
+    fn database_path(&self) -> &str;
+    fn find_user(&self, id: i64) -> Result<Option<UserRecord>, String>;
+    fn insert_user(&mut self, name: &str, email: &str) -> Result<UserRecord, String>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -666,6 +680,134 @@ fn open_connection(
     Ok((connection, database_path))
 }
 
+fn normalize_user_input(name: &str, email: &str) -> Result<(String, String), String> {
+    let name = name.trim().to_string();
+    let email = email.trim().to_lowercase();
+    if name.is_empty() || name.chars().count() > 120 {
+        return Err("user name length is outside the allowed range".into());
+    }
+    if email.is_empty() || email.chars().count() > 254 || !email.contains('@') {
+        return Err("user email format is not accepted".into());
+    }
+    Ok((name, email))
+}
+
+fn user_record_from_row(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
+    Ok(UserRecord {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        email: row.get(2)?,
+    })
+}
+
+pub(crate) struct SqliteDatabaseAdapter {
+    connection: Connection,
+    database_path: String,
+}
+
+pub(crate) struct SqliteTransaction<'connection> {
+    transaction: Option<rusqlite::Transaction<'connection>>,
+}
+
+impl SqliteDatabaseAdapter {
+    #[allow(dead_code)]
+    pub(crate) fn open(dir: &Path) -> Result<Self, String> {
+        let config = database_config(dir)?;
+        let (connection, database_path) = open_connection(dir, &config, false)?;
+        Ok(Self {
+            connection,
+            database_path,
+        })
+    }
+
+    pub(crate) fn begin(&mut self) -> Result<SqliteTransaction<'_>, String> {
+        let transaction = self
+            .connection
+            .transaction()
+            .map_err(|error| format!("SQLite transaction begin failed: {error}"))?;
+        Ok(SqliteTransaction {
+            transaction: Some(transaction),
+        })
+    }
+}
+
+impl DatabaseAdapter for SqliteDatabaseAdapter {
+    fn driver(&self) -> &str {
+        "sqlite"
+    }
+
+    fn database_path(&self) -> &str {
+        &self.database_path
+    }
+
+    fn find_user(&self, id: i64) -> Result<Option<UserRecord>, String> {
+        if id <= 0 {
+            return Err("user id must be positive".into());
+        }
+        match self.connection.query_row(
+            "SELECT id, name, email FROM users WHERE id = ?1",
+            params![id],
+            user_record_from_row,
+        ) {
+            Ok(record) => Ok(Some(record)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(error) => Err(format!("SQLite user lookup failed: {error}")),
+        }
+    }
+
+    fn insert_user(&mut self, name: &str, email: &str) -> Result<UserRecord, String> {
+        let mut transaction = self.begin()?;
+        let record = transaction.insert_user(name, email)?;
+        transaction.commit()?;
+        Ok(record)
+    }
+}
+
+impl<'connection> SqliteTransaction<'connection> {
+    pub(crate) fn insert_user(&mut self, name: &str, email: &str) -> Result<UserRecord, String> {
+        let (name, email) = normalize_user_input(name, email)?;
+        let transaction = self
+            .transaction
+            .as_mut()
+            .ok_or_else(|| "SQLite transaction is already closed".to_string())?;
+        transaction
+            .execute(
+                "INSERT INTO users (name, email) VALUES (?1, ?2)",
+                params![name, email],
+            )
+            .map_err(|error| format!("SQLite user insert failed: {error}"))?;
+        let id = transaction.last_insert_rowid();
+        transaction
+            .query_row(
+                "SELECT id, name, email FROM users WHERE id = ?1",
+                params![id],
+                user_record_from_row,
+            )
+            .map_err(|error| format!("SQLite inserted-user read failed: {error}"))
+    }
+
+    pub(crate) fn commit(mut self) -> Result<(), String> {
+        let transaction = self
+            .transaction
+            .take()
+            .ok_or_else(|| "SQLite transaction is already closed".to_string())?;
+        transaction
+            .commit()
+            .map_err(|error| format!("SQLite transaction commit failed: {error}"))
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn rollback(mut self) -> Result<(), String> {
+        let transaction = self
+            .transaction
+            .take()
+            .ok_or_else(|| "SQLite transaction is already closed".to_string())?;
+        transaction
+            .rollback()
+            .map_err(|error| format!("SQLite transaction rollback failed: {error}"))
+    }
+}
+
 fn read_applied(connection: &Connection) -> Result<BTreeMap<String, String>, String> {
     let exists: i64 = connection
         .query_row(
@@ -956,6 +1098,49 @@ mod tests {
         ]);
         let error = database_plan(project.path(), true).expect_err("cycle must be rejected");
         assert!(error.contains("circular migration dependency"));
+    }
+
+    #[test]
+    fn sqlite_adapter_maps_rows_and_controls_transactions() {
+        let project = write_project(&[(
+            "migrations/0001_initial.zp",
+            "export fn migration():\n    return {\"id\": \"0001_initial\", \"depends_on\": [], \"operations\": [{\"kind\": \"create_table\", \"table\": \"users\", \"columns\": {\"id\": \"integer primary key\", \"name\": \"text not null\", \"email\": \"text not null unique\"}}]}\n",
+        )]);
+        apply_migrations(project.path()).expect("schema should apply");
+        let mut adapter = SqliteDatabaseAdapter::open(project.path()).expect("adapter should open");
+        assert_eq!(adapter.driver(), "sqlite");
+        assert!(
+            adapter.database_path().ends_with("data/test.sqlite3"),
+            "unexpected database path: {}",
+            adapter.database_path()
+        );
+
+        let inserted = adapter
+            .insert_user("  Ada  ", " ADA@EXAMPLE.COM ")
+            .expect("user should insert");
+        assert_eq!(inserted.name, "Ada");
+        assert_eq!(inserted.email, "ada@example.com");
+        assert_eq!(
+            adapter.find_user(inserted.id).unwrap(),
+            Some(inserted.clone())
+        );
+        assert_eq!(adapter.find_user(99_999).unwrap(), None);
+        assert!(adapter.insert_user("", "bad").is_err());
+        assert!(adapter
+            .insert_user("Other", "ADA@example.com")
+            .expect_err("duplicate email must fail")
+            .contains("user insert failed"));
+
+        let rolled_back_id = {
+            let mut transaction = adapter.begin().expect("transaction should begin");
+            let record = transaction
+                .insert_user("Rollback", "rollback@example.com")
+                .expect("transaction insert should succeed");
+            let id = record.id;
+            transaction.rollback().expect("rollback should succeed");
+            id
+        };
+        assert_eq!(adapter.find_user(rolled_back_id).unwrap(), None);
     }
 
     #[test]

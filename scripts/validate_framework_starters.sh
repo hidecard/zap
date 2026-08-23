@@ -92,6 +92,8 @@ require_file frameworks/web/api_contract.zp
 require_file frameworks/web/api_contract_test.zp
 require_file frameworks/web/dto_contract.zp
 require_file frameworks/web/database_contract.zp
+require_file frameworks/web/database_adapter.zp
+require_file frameworks/web/database_adapter_test.zp
 require_file frameworks/web/auth_contract.zp
 require_file frameworks/web/rate_limit_contract.zp
 require_file docs/FRAMEWORK_EN.md
@@ -112,6 +114,8 @@ require_text docs/WEB_FRAMEWORK_EN.md "api_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "api_contract.zp"
 require_text docs/WEB_FRAMEWORK_EN.md "database_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "database_contract.zp"
+require_text docs/WEB_FRAMEWORK_EN.md "database_adapter.zp"
+require_text docs/WEB_FRAMEWORK_MM.md "database_adapter.zp"
 require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
@@ -130,8 +134,12 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db plan"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db plan"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap db inspect"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap db inspect"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db migrate"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db migrate"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap db migrate --check"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap db migrate --check"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_EN.md "ZAP_WEB_PORT"
@@ -236,9 +244,11 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db inspect --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db migrate --dry-run "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db migrate "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db migrate --check --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db plan --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then

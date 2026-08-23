@@ -20,14 +20,16 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db inspect --json
 zap db plan
 zap db migrate --dry-run
+zap db migrate --check
 zap db migrate
 zap test tests
 zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `server.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap db plan` သည် pending SQL ကို read-only ပြပြီး `zap db migrate --dry-run` သည် apply မလုပ်ဘဲ ထို plan ကို ပြပါသည်။ `zap db migrate` သည် SQLite database ကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် bounded loopback development/reference server ကို run ပါသည်။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `server.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `frameworks/web/database_adapter.zp` သည် provider-neutral parameterized query descriptor နှင့် DTO mapping contract ကို ပြသပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap db plan` သည် pending SQL ကို read-only ပြပြီး `zap db migrate --dry-run` သည် apply မလုပ်ဘဲ ထို plan ကို ပြပါသည်။ `zap db migrate` သည် SQLite database ကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် bounded loopback development/reference server ကို run ပါသည်။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
 
 ## Run a starter
 

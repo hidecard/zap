@@ -154,12 +154,12 @@ The request DTO validator accepts only text `name` and `email`, trims the name, 
 
 ## Database integration boundary
 
-`database_contract.zp` defines the repository boundary with `repository_info`, `find_user`, `insert_user`, and `list_users`. The current implementation is a deterministic fake repository so the API can be tested without credentials, network access, a database process, or mutable global state.
+`database_contract.zp` defines the repository boundary with `repository_info`, `find_user`, `insert_user`, and `list_users`. The current implementation is a deterministic fake repository so the API can be tested without credentials, network access, a database process, or mutable global state. The companion `database_adapter.zp` defines provider-neutral parameterized query descriptors for user lookup and insert plus an explicit `user_row_dto` mapping that exposes only public fields. It describes adapter intent; it does not open a connection or execute request-time queries.
 
 | Database boundary | Contract requirement |
 |---|---|
 | Driver selection | The host adapter selects PostgreSQL, SQLite, MySQL, or another driver; Zap code must not assume one driver |
-| Query arguments | Pass validated DTO fields as bound parameters; never construct SQL by concatenating user text |
+| Query arguments | Pass validated DTO fields as bound parameters; never construct SQL by concatenating user text; use `database_adapter.zp` query descriptors |
 | Transactions | The adapter owns transaction begin/commit/rollback and exposes only typed success/failure DTOs |
 | Connection pool | The adapter owns pool size, acquisition timeout, idle timeout, and shutdown |
 | Failure mapping | Not-found is a domain result; connection, timeout, and pool failures map to an explicit repository-unavailable result |

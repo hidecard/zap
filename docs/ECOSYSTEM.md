@@ -16,7 +16,7 @@ Zap သည် language core တစ်ခုအပေါ်တွင် domain-sp
 
 ### Zap Web
 
-Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ SQLite-first database adapter နှင့် structured migration workflow ကို Framework branch တွင် စတင်ပေးထားသည်။ TLS၊ production concurrency၊ middleware execution၊ body limits beyond the bounded native path၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
+Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ SQLite-first database adapter၊ structured migration workflow နှင့် provider-neutral parameterized query/DTO contract ကို Framework branch တွင် စတင်ပေးထားသည်။ TLS၊ production concurrency၊ middleware execution၊ body limits beyond the bounded native path၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
 
 ### Zap Mobile
 
@@ -49,20 +49,24 @@ zap lsp
 zap new shop
 zap dev shop
 zap db check shop
+zap db inspect --json shop
 zap db plan shop
 zap db migrate --dry-run shop
+zap db migrate --check shop
 zap db migrate shop
 ```
 
-Zap Web အတွက် `zap new <dir>` သည် generator command အဖြစ် ရှိပြီး `zap check`, `zap web check`, `zap db check`, `zap db plan`, `zap db migrate`, `zap test` နှင့် `zap dev` workflow ကို အသုံးပြုနိုင်သည်။ အခြား Framework starter project များကို repository ၏ `frameworks/` directory မှ copy/clone လုပ်ပြီး `zap lock`, `zap check`, `zap build`, `zap run main.zp` ဖြင့် စစ်နိုင်သည်။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
+Zap Web အတွက် `zap new <dir>` သည် generator command အဖြစ် ရှိပြီး `zap check`, `zap web check`, `zap db check`, `zap db inspect`, `zap db plan`, `zap db migrate --check`, `zap db migrate`, `zap test` နှင့် `zap dev` workflow ကို အသုံးပြုနိုင်သည်။ အခြား Framework starter project များကို repository ၏ `frameworks/` directory မှ copy/clone လုပ်ပြီး `zap lock`, `zap check`, `zap build`, `zap run main.zp` ဖြင့် စစ်နိုင်သည်။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
 
 ```text
 zap new my-app
 zap new shop
 zap dev shop
 zap web check shop
+zap db inspect --json shop
 zap db plan shop
 zap db migrate --dry-run shop
+zap db migrate --check shop
 zap db migrate shop
 zap mobile new android-app
 zap ai new assistant

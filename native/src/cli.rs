@@ -42,7 +42,9 @@ Usage:
   zap web check [dir]                   Validate a Zap Web project
   zap db check [dir]                    Validate Web migration layout and SQL plan
   zap db plan [dir] [--json]            Show the read-only SQLite migration plan
+  zap db inspect [dir] [--json]         Inspect SQLite adapter and migration status
   zap db migrate [dir] [--dry-run]      Apply SQLite migrations transactionally
+  zap db migrate [dir] [--check]       Verify migrations are up to date without applying
   zap init <dir>                        Create a generic Zap project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
@@ -175,9 +177,72 @@ fn print_database_plan(dir: &Path, json_output: bool) {
     }
 }
 
-fn run_database_migrate(dir: &Path, json_output: bool, dry_run: bool) {
-    if dry_run {
-        print_database_plan(dir, json_output);
+fn print_database_inspect(dir: &Path, json_output: bool) {
+    match database_plan(dir, true) {
+        Ok(plan) if json_output => {
+            let mut output = plan_to_json(&plan);
+            if let Some(object) = output.as_object_mut() {
+                object.insert("mode".into(), serde_json::Value::String("inspect".into()));
+                object.insert("read_only".into(), serde_json::Value::Bool(true));
+                object.insert(
+                    "ledger".into(),
+                    serde_json::Value::String("__zap_migrations".into()),
+                );
+            }
+            println!("{output}");
+        }
+        Ok(plan) => println!(
+            "SQLite database inspection: driver={}, url={}, database={}, applied={}, pending={}, ledger=__zap_migrations",
+            plan.config.driver,
+            plan.config.url,
+            plan.database_path,
+            plan.applied_count,
+            plan.pending.len()
+        ),
+        Err(error) => {
+            eprintln!("Zap DB inspect error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+    }
+}
+
+fn run_database_migrate(dir: &Path, json_output: bool, dry_run: bool, check_only: bool) {
+    if dry_run || check_only {
+        match database_plan(dir, true) {
+            Ok(plan) => {
+                let up_to_date = plan.pending.is_empty();
+                if json_output {
+                    let mut output = plan_to_json(&plan);
+                    if check_only {
+                        if let Some(object) = output.as_object_mut() {
+                            object.insert("ok".into(), serde_json::Value::Bool(up_to_date));
+                            object.insert(
+                                "check".into(),
+                                serde_json::Value::String("migrations_up_to_date".into()),
+                            );
+                        }
+                    }
+                    println!("{output}");
+                } else if dry_run {
+                    print!("{}", plan_to_text(&plan));
+                } else if up_to_date {
+                    println!(
+                        "SQLite migration check passed: {} applied migration(s) at {}",
+                        plan.applied_count, plan.database_path
+                    );
+                } else {
+                    print!("{}", plan_to_text(&plan));
+                }
+                if check_only && !up_to_date {
+                    eprintln!("Zap DB migrate check failed: pending migrations exist");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+            }
+            Err(error) => {
+                eprintln!("Zap DB migrate check error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
         return;
     }
     match apply_migrations(dir) {
@@ -193,14 +258,16 @@ fn run_database_migrate(dir: &Path, json_output: bool, dry_run: bool) {
     }
 }
 
-fn parse_database_command(args: &[String]) -> Result<(PathBuf, bool, bool), String> {
+fn parse_database_command(args: &[String]) -> Result<(PathBuf, bool, bool, bool), String> {
     let mut dir = PathBuf::from(".");
     let mut json_output = false;
     let mut dry_run = false;
+    let mut check_only = false;
     for argument in args.iter().skip(3) {
         match argument.as_str() {
             "--json" => json_output = true,
             "--dry-run" => dry_run = true,
+            "--check" => check_only = true,
             value if value.starts_with('-') => {
                 return Err(format!("unknown database option: {value}"))
             }
@@ -210,7 +277,10 @@ fn parse_database_command(args: &[String]) -> Result<(PathBuf, bool, bool), Stri
             value => dir = PathBuf::from(value),
         }
     }
-    Ok((dir, json_output, dry_run))
+    if dry_run && check_only {
+        return Err("--dry-run and --check cannot be combined".into());
+    }
+    Ok((dir, json_output, dry_run, check_only))
 }
 
 fn create_web_project(dir: &Path) -> Result<(), String> {
@@ -351,22 +421,31 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
-    if args.len() >= 3 && args[1] == "db" && matches!(args[2].as_str(), "plan" | "migrate") {
-        let (dir, json_output, dry_run) = match parse_database_command(args) {
+    if args.len() >= 3
+        && args[1] == "db"
+        && matches!(args[2].as_str(), "inspect" | "plan" | "migrate")
+    {
+        let (dir, json_output, dry_run, check_only) = match parse_database_command(args) {
             Ok(value) => value,
             Err(error) => {
                 eprintln!("Zap DB usage error: {error}");
                 process::exit(EXIT_USAGE_ERROR);
             }
         };
-        if args[2] == "plan" {
-            if dry_run {
-                eprintln!("Zap DB usage error: --dry-run is only valid with `db migrate`");
+        if args[2] == "inspect" {
+            if dry_run || check_only {
+                eprintln!("Zap DB usage error: `db inspect` accepts only `--json`");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+            print_database_inspect(&dir, json_output);
+        } else if args[2] == "plan" {
+            if dry_run || check_only {
+                eprintln!("Zap DB usage error: `db plan` accepts only `--json`");
                 process::exit(EXIT_USAGE_ERROR);
             }
             print_database_plan(&dir, json_output);
         } else {
-            run_database_migrate(&dir, json_output, dry_run);
+            run_database_migrate(&dir, json_output, dry_run, check_only);
         }
         return;
     }
@@ -1010,6 +1089,7 @@ mod tests {
             "zap web check",
             "zap db check",
             "zap db plan",
+            "zap db inspect",
             "zap db migrate",
             "zap init",
             "zap lsp",

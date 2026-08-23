@@ -22,8 +22,10 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db inspect --json
 zap db plan
 zap db migrate --dry-run
+zap db migrate --check
 zap db migrate
 zap test tests
 zap run main.zp
@@ -191,15 +193,17 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db inspect --json
 zap db plan
 zap db migrate --dry-run
+zap db migrate --check
 zap db migrate
 zap test tests
 zap run main.zp
 zap dev
 ```
 
-`zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact and `:parameter` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
+`zap db inspect` is a read-only adapter/status view; it does not create the SQLite file when it is absent. `zap db migrate --check` is a deployment-friendly check: it validates the migration ledger and exits successfully only when no migration is pending. With `--json`, the check includes `ok: true` or `ok: false` for automation. `zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact and `:parameter` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
 
 The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks. The current `zap db migrate` implementation is SQLite-first and additive; it must not be mistaken for a provider-neutral production migration system.
 

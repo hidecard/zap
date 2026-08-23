@@ -5859,6 +5859,22 @@ fn creates_and_checks_zap_web_project() {
     assert!(migrations.status.success());
     assert!(String::from_utf8_lossy(&migrations.stdout).contains("migration layout"));
 
+    let inspect = Command::new(binary())
+        .args(["db", "inspect", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        inspect.status.success(),
+        "{}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    let inspect_json = String::from_utf8_lossy(&inspect.stdout);
+    assert!(inspect_json.contains("\"driver\":\"sqlite\""));
+    assert!(inspect_json.contains("\"mode\":\"inspect\""));
+    assert!(inspect_json.contains("\"read_only\":true"));
+    assert!(inspect_json.contains("\"ledger\":\"__zap_migrations\""));
+    assert!(!root.join("data/zap.sqlite3").exists());
+
     let plan = Command::new(binary())
         .args(["db", "plan", root.to_str().unwrap()])
         .output()
@@ -5880,6 +5896,13 @@ fn creates_and_checks_zap_web_project() {
         String::from_utf8_lossy(&dry_run.stderr)
     );
     assert!(String::from_utf8_lossy(&dry_run.stdout).contains("pending migration"));
+
+    let pending_check = Command::new(binary())
+        .args(["db", "migrate", "--check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!pending_check.status.success());
+    assert!(String::from_utf8_lossy(&pending_check.stderr).contains("pending migrations exist"));
 
     let migrate = Command::new(binary())
         .args(["db", "migrate", root.to_str().unwrap()])
@@ -5903,6 +5926,17 @@ fn creates_and_checks_zap_web_project() {
         String::from_utf8_lossy(&applied.stderr)
     );
     assert!(String::from_utf8_lossy(&applied.stdout).contains("\"pending\":[]"));
+
+    let applied_check = Command::new(binary())
+        .args(["db", "migrate", "--check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        applied_check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&applied_check.stderr)
+    );
+    assert!(String::from_utf8_lossy(&applied_check.stdout).contains("\"ok\":true"));
 
     let tests = Command::new(binary())
         .args(["test", root.join("tests").to_str().unwrap()])
@@ -5934,5 +5968,7 @@ fn web_cli_commands_are_documented_in_help() {
     assert!(help.contains("zap web check [dir]"));
     assert!(help.contains("zap db check [dir]"));
     assert!(help.contains("zap db plan [dir] [--json]"));
+    assert!(help.contains("zap db inspect [dir] [--json]"));
     assert!(help.contains("zap db migrate [dir] [--dry-run]"));
+    assert!(help.contains("zap db migrate [dir] [--check]"));
 }
