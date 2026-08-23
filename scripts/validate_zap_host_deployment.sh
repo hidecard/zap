@@ -34,7 +34,7 @@ require_exact "$unit" 'IPAddressAllow=::1/128'
 grep -Eq '^[[:space:]]*ssl_protocols[[:space:]]+TLSv1\.2 TLSv1\.3;' "$ingress" || { echo "missing TLS protocol policy in $ingress" >&2; exit 1; }
 grep -Eq '^[[:space:]]*client_max_body_size[[:space:]]+64k;' "$ingress" || { echo "missing request-size policy in $ingress" >&2; exit 1; }
 grep -Eq '^[[:space:]]*client_body_timeout[[:space:]]+10s;' "$ingress" || { echo "missing client-body timeout policy in $ingress" >&2; exit 1; }
-grep -Eq '^[[:space:]]*proxy_pass[[:space:]]+http://127\.0\.0\.1:3000;' "$ingress" || { echo "missing loopback upstream policy in $ingress" >&2; exit 1; }
+grep -Eq '^[[:space:]]*proxy_pass[[:space:]]+http://127\.0\.0\.1:3000;' "$ingress" || { echo "missing loopback upstream policy in $ingress" >&2; exit 1; } # NOSONAR: public ingress is TLS-terminated and this upstream is loopback-only
 grep -Eq '^[[:space:]]*proxy_read_timeout[[:space:]]+15s;' "$ingress" || { echo "missing upstream read timeout policy in $ingress" >&2; exit 1; }
 grep -Eq '^[[:space:]]*proxy_send_timeout[[:space:]]+15s;' "$ingress" || { echo "missing upstream send timeout policy in $ingress" >&2; exit 1; }
 grep -Fq 'limit_except GET POST' "$ingress" || { echo "missing HTTP method allowlist in $ingress" >&2; exit 1; }
