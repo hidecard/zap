@@ -446,6 +446,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("http_get", "network"),
     stable_builtin!("http_request", "network"),
     stable_builtin!("http_serve_once", "network"),
+    stable_builtin!("web_serve", "network"),
     stable_builtin!("process_run", "process"),
 ];
 

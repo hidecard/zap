@@ -46,6 +46,6 @@ The native suite covers valid nested collection and variant annotations, incompa
 
 TC-012 is **implemented baseline** for v2.2.3. The next generic milestone is a separate design and implementation phase for generic declarations and inference; it is not part of the current release gate.
 
-**Author:** Manus AI
+**Author:** Zap project maintainers
 **Version:** v2.2.3 design gate
 **Status:** Accepted

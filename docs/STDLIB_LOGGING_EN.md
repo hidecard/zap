@@ -55,7 +55,7 @@ Use `utc_now()` for explicit UTC event timestamps, `json()` for general JSON ser
 
 ---
 
-Author: **Manus AI**  
+Author: **Zap project maintainers**
 _Last updated: 2026-08-21._
 
 ## References

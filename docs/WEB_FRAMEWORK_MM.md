@@ -205,7 +205,7 @@ Fixed-window algorithm သည် foundation သာဖြစ်ပြီး abuse
 | Reliability | Repository timeout၊ cancellation၊ pool exhaustion၊ retry/insert idempotency၊ shutdown | Bounded deadline ပါသော fault-injection report |
 | Security | Header redaction၊ body cap၊ path normalization၊ response validation၊ log ထဲ raw credential မပါခြင်း | Golden logs နှင့် malformed-input corpus |
 
-လက်ရှိ contract test layer သည် database/network မပါဘဲ run လုပ်သည်။ Production promotion မလုပ်မီ fake-host adapter suite နှင့် injected listener၊ bounded payload၊ deterministic clock၊ explicit cleanup ပါသော loopback integration suite တို့ကို ထည့်ရမည်။
+ပြန်လည်အသုံးပြုနိုင်သော contract test layer သည် database/network မပါဘဲ run လုပ်သည်။ Zap-native Web slice တွင် bounded၊ single-threaded development server အတွက် loopback integration test လည်း ရှိလာပါပြီ။ Production promotion မလုပ်မီ fake-host adapter suite နှင့် injected listener၊ bounded payload၊ deterministic clock၊ cancellation၊ explicit cleanup ပါသော production-oriented loopback suite တို့ကို ထည့်ရမည်။
 
 ## Route တိုးချဲ့နည်း
 
@@ -215,7 +215,7 @@ Route တစ်ခုထည့်ရန် `web_contract.zp` ၏ route table/log
 
 ## မလုပ်သေးသည့်အရာများ
 
-လက်ရှိ Web Foundation သည် production HTTP server ဖြစ်ကြောင်း မဆိုထားပါ။ API၊ database၊ authentication နှင့် rate-limit files များသည် contract prototype နှင့် deterministic test double များသာဖြစ်ပြီး multi-request reactor၊ TLS၊ HTTP/2/HTTP/3 policy၊ WebSocket၊ real database connectivity၊ credential verification၊ distributed quota storage၊ template၊ static-file serving၊ background jobs၊ cloud deployment နှင့် automatic code generation မပေးသေးပါ။ Production feature တစ်ခုချင်းစီအတွက် host adapter contract နှင့် evidence သီးခြားလိုအပ်သည်။
+လက်ရှိ Web Foundation သည် production HTTP server ဖြစ်ကြောင်း မဆိုထားပါ။ Zap-native slice သည် bounded၊ loopback-only၊ single-threaded development/reference server ကို ပေးထားသော်လည်း concurrent production reactor မဟုတ်ပါ။ API၊ database၊ authentication နှင့် rate-limit files များသည် contract prototype နှင့် deterministic test double များအဖြစ် ဆက်ရှိနေပြီး TLS၊ HTTP/2/HTTP/3 policy၊ WebSocket၊ real database connectivity၊ credential verification၊ distributed quota storage၊ template၊ static-file serving၊ background jobs၊ cloud deployment နှင့် automatic code generation မပေးသေးပါ။ Production feature တစ်ခုချင်းစီအတွက် host adapter contract နှင့် evidence သီးခြားလိုအပ်သည်။
 
 ## References
 

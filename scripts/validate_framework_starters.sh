@@ -102,6 +102,8 @@ require_file docs/ZAP_HOST_EN.md
 require_file docs/ZAP_HOST_MM.md
 require_file docs/ZAP_HOST_QUICKSTART_EN.md
 require_file docs/ZAP_HOST_QUICKSTART_MM.md
+require_file docs/ZAP_WEB_NATIVE_EN.md
+require_file docs/ZAP_WEB_NATIVE_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
@@ -120,6 +122,16 @@ require_text docs/ZAP_HOST_EN.md "ZAP_HOST_SHUTDOWN_TIMEOUT_MS"
 require_text docs/ZAP_HOST_MM.md "ZAP_HOST_SHUTDOWN_TIMEOUT_MS"
 require_text docs/ZAP_HOST_QUICKSTART_EN.md "cargo run"
 require_text docs/ZAP_HOST_QUICKSTART_MM.md "cargo run"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap new"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap new"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap web check"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap web check"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap db check"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap db check"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap dev"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap dev"
+require_text docs/ZAP_WEB_NATIVE_EN.md "ZAP_WEB_PORT"
+require_text docs/ZAP_WEB_NATIVE_MM.md "ZAP_WEB_PORT"
 require_text docs/ZAP_HOST_QUICKSTART_EN.md "/ready"
 require_text docs/ZAP_HOST_QUICKSTART_MM.md "/ready"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
@@ -128,6 +140,15 @@ require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "WEB_FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_HOST_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_HOST_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_WEB_NATIVE_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_WEB_NATIVE_MM.md"
+for native_web_file in \
+  docs/ZAP_WEB_NATIVE_EN.md \
+  docs/ZAP_WEB_NATIVE_MM.md \
+  native/src/cli.rs \
+  native/src/project.rs; do
+  require_file "$native_web_file"
+done
 for host_file in \
   host/zap-host/.env.example \
   host/zap-host/Cargo.toml \
@@ -203,6 +224,20 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       else
         record FAIL "runtime-test:$dir"
       fi
+      scaffold_dir=$(mktemp -d)
+      scaffold_output=$(mktemp)
+      if "$ZAP_BIN" new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && test -f "$scaffold_dir/project/server.zp" \
+        && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
+        record PASS "runtime-smoke:zap-new-web"
+      else
+        record FAIL "runtime-smoke:zap-new-web"
+      fi
+      rm -rf "$scaffold_dir" "$scaffold_output"
     fi
     trap - RETURN
     cleanup

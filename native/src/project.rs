@@ -24,6 +24,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
     validate_package_metadata(&text, "zap.toml")?;
+    validate_web_manifest(dir, &text)?;
     validate_module_manifest(dir, &text)?;
     let main = manifest_value(&text, "main").unwrap_or_else(|| "main.zp".into());
     let main_path = dir.join(&main);
@@ -373,8 +374,100 @@ fn parse_dependencies(manifest: &str) -> Result<BTreeMap<String, DependencySpec>
     Ok(dependencies)
 }
 
+fn validate_web_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
+    let known = [
+        "routes",
+        "models",
+        "middleware",
+        "migrations",
+        "admin",
+        "server",
+        "serialization",
+    ];
+    let mut in_web = false;
+    let mut saw_web = false;
+    let mut values = BTreeMap::new();
+    for raw_line in manifest.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            in_web = line == "[web]";
+            saw_web |= in_web;
+            continue;
+        }
+        if !in_web {
+            continue;
+        }
+        let Some((key, raw_value)) = line.split_once('=') else {
+            return Err(format!("zap.toml: invalid Web entry `{line}`"));
+        };
+        let key = key.trim();
+        let value = raw_value.trim();
+        if !known.contains(&key) {
+            return Err(format!("zap.toml: unknown Web field `{key}`"));
+        }
+        if values.insert(key.to_string(), value.to_string()).is_some() {
+            return Err(format!("zap.toml: duplicate Web field `{key}`"));
+        }
+        if value.len() < 2 || !value.starts_with('"') || !value.ends_with('"') {
+            return Err(format!(
+                "zap.toml: Web field `{key}` must be a quoted string"
+            ));
+        }
+        if key != "serialization" {
+            let path = value.trim_matches('"');
+            let candidate = Path::new(path);
+            if path.is_empty()
+                || candidate.is_absolute()
+                || candidate
+                    .components()
+                    .any(|component| component == std::path::Component::ParentDir)
+            {
+                return Err(format!(
+                    "zap.toml: Web field `{key}` must be a safe relative path"
+                ));
+            }
+        } else if value.trim_matches('"') != "json-by-default" {
+            return Err(
+                "zap.toml: Web serialization must be `json-by-default` for the first Web profile"
+                    .into(),
+            );
+        }
+    }
+    if !saw_web {
+        return Ok(());
+    }
+    for key in [
+        "routes",
+        "models",
+        "middleware",
+        "migrations",
+        "admin",
+        "server",
+    ] {
+        let Some(raw_value) = values.get(key) else {
+            return Err(format!("zap.toml: Web field `{key}` is required"));
+        };
+        let path = dir.join(raw_value.trim_matches('"'));
+        let valid = if key == "models" || key == "migrations" {
+            path.is_dir()
+        } else {
+            path.is_file()
+        };
+        if !valid {
+            return Err(format!(
+                "zap.toml: Web {key} path not found: {}",
+                path.display()
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn validate_manifest_syntax(manifest: &str) -> Result<(), String> {
-    let allowed_sections = ["package", "dependencies", "module"];
+    let allowed_sections = ["package", "dependencies", "module", "web"];
     let mut section = "package";
     let mut keys = HashSet::new();
     for (index, raw_line) in manifest.lines().enumerate() {
@@ -1164,6 +1257,24 @@ fn print_test_report(results: &[TestResult], skipped: usize, json: bool) {
     }
 }
 
+fn test_module_base(path: &Path) -> PathBuf {
+    let starting = path.parent().unwrap_or(Path::new("."));
+    let mut current = if starting.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        starting
+    };
+    loop {
+        if current.join("zap.toml").is_file() {
+            return current.to_path_buf();
+        }
+        match current.parent() {
+            Some(parent) if parent != current && !parent.as_os_str().is_empty() => current = parent,
+            _ => return Path::new(".").to_path_buf(),
+        }
+    }
+}
+
 pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_test_files(dir, &mut files)?;
@@ -1191,8 +1302,8 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
     let selected_count = selected.len();
     let mut results = Vec::new();
     for path in selected {
-        let outcome = read_limited_text(&path, "test read")
-            .and_then(|source| run(&source, path.parent().unwrap_or(Path::new("."))));
+        let base = test_module_base(&path);
+        let outcome = read_limited_text(&path, "test read").and_then(|source| run(&source, &base));
         match outcome {
             Ok(()) => {
                 if !options.json {

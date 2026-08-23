@@ -2,15 +2,23 @@
 
 **အတည်ပြုထားသော baseline:** Zap v2.2.3
 **Framework branch:** `Framework`
-**အခြေအနေ:** Framework Foundation v0.1 — run လို့ရသော contract starter များ၊ production adapter မဟုတ်သေး
+**အခြေအနေ:** Framework Foundation v0.1 — Zap-native Web project scaffold နှင့် contract starter များ၊ full native runtime integration များသည် gate ချထားသော milestone များအဖြစ် ဆက်လက်ရှိနေသေး
 
 ## ရည်ရွယ်ချက်
 
 `frameworks/` directory သည် Web, App, IoT နှင့် AI integration များအတွက် domain contract ကို သတ်မှတ်ပေးသော run လို့ရသည့် Zap program အသေးစားများကို ပေးပါသည်။ Starter များကို လက်ရှိ stable Zap syntax ဖြင့် ရေးထားပြီး request/response model၊ application state၊ telemetry record နှင့် bounded validation များကို ပြသပါသည်။ လက်ရှိ interpreter သည် HTTP server၊ native mobile UI runtime၊ MCU firmware runtime သို့မဟုတ် AI provider client ဖြစ်ပြီးသားဟု မဆိုပါ။
 
-Framework layer သည် **contract-first adapter boundary** ဖြစ်ပါသည်။ Zap က domain logic၊ validation၊ deterministic transformation နှင့် application policy ကို ပိုင်ဆိုင်ပါသည်။ Host adapter က socket၊ native window၊ mobile lifecycle၊ device driver၊ MQTT session၊ process supervision၊ credential နှင့် platform-specific scheduling တို့ကို ပိုင်ဆိုင်ရမည်။
+Framework layer သည် **Zap-first application boundary** ဖြစ်ပါသည်။ Zap က Web project model၊ routing metadata၊ request/response policy၊ DTO validation၊ service composition၊ model/migration intent၊ authentication policy၊ admin registration နှင့် test workflow ကို ပိုင်ဆိုင်သင့်ပါသည်။ External adapter များသည် socket၊ TLS၊ database driver၊ identity verification၊ process supervision၊ credential နှင့် platform-specific scheduling ကဲ့သို့ OS/provider capability များကိုသာ ပိုင်ဆိုင်ရမည်။ ရည်ရွယ်ချက်မှာ unsupported syntax သို့မဟုတ် ambient global state မဖုံးကွယ်ဘဲ Django ကဲ့သို့ coherent developer experience ရရှိစေရန် ဖြစ်ပါသည်။
 
 > Framework starter တစ်ခုသည် published Zap runtime ဖြင့် run လို့ရခြင်း၊ valid manifest နှင့် lockfile ရှိခြင်း၊ host boundary ကို ရှင်းလင်းစွာရေးထားခြင်းနှင့် invalid input အတွက် negative case ရှိခြင်းတို့ ပြည့်စုံမှ complete ဖြစ်သည်။ Aspirational DSL စာသားများ ပါရုံဖြင့် complete မဖြစ်ပါ။
+
+## Zap-native Web direction
+
+Web roadmap ကို အခြား starter domain များထက် ဦးစားပေးထားပါသည်။ Web project အသစ်ကို `zap new <dir>` ဖြင့် ဖန်တီးပြီး `zap check`၊ `zap web check`၊ `zap db check` နှင့် `zap test tests` ဖြင့် စစ်နိုင်ပါသည်။ Generated project သည် routes၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များအတွက် ရိုးရိုး Zap module များကို အသုံးပြုပါသည်။ Nested test များ၏ import ကိုလည်း `zap.toml` ရှိသော အနီးဆုံး project root မှ resolve လုပ်ပေးပါသည်။
+
+ဤအရာသည် Django ကဲ့သို့ framework အတွက် ပထမအဆင့် ဖြစ်ပါသည်။ လက်ရှိ parser တွင် first-class route/model declaration၊ persistent native development server၊ database driver၊ session system သို့မဟုတ် built-in admin UI မရှိသေးပါ။ ထို feature များအတွက် explicit language/runtime contract နှင့် security test လိုအပ်သဖြင့် scaffold က ရှိပြီးသားဟု မဆိုရပါ။
+
+ယခင် `host/zap-host` package သည် လက်ရှိ contract layer အတွက် reference HTTP adapter အဖြစ် ဆက်ရှိနေပါမည်။ ၎င်းသည် primary application model မဟုတ်ပါ။ Zap-native server capability တိုးလာသည်နှင့် adapter သည် platform boundary အဖြစ် သေးသွားပြီး route၊ DTO၊ auth၊ migration၊ admin နှင့် application policy များကို Zap ထဲတွင် ရေးသားသင့်ပါသည်။
 
 ## လက်ရှိ starter matrix
 
@@ -70,9 +78,9 @@ Starter တစ်ခုသည် undeclared provider package ကို import �
 
 `frameworks/web/main.zp` သည် root၊ health၊ echo၊ not-found၊ traversal-rejection နှင့် unsupported-method cases များကို ပြသပါသည်။ Web API layer တွင် reusable `api_contract.zp`, `dto_contract.zp`, `database_contract.zp`, `auth_contract.zp`, `rate_limit_contract.zp` modules များ ပါဝင်ပြီး `api_contract_test.zp` သည် 200/201/400/401/403/404/429 behavior၊ DTO mapping၊ quota transition နှင့် policy failure များကို cover လုပ်ပါသည်။ Schema၊ threat control၊ database boundary၊ authentication policy၊ rate-limit semantics၊ adapter pipeline နှင့် Web-specific definition of done အသေးစိတ်ကို [`WEB_FRAMEWORK_MM.md`](WEB_FRAMEWORK_MM.md) တွင် ဖတ်ရှုပါ။
 
-နောက်ပိုင်း `zap-web` adapter သည် incoming HTTP request ကို bounded Zap request map အဖြစ် ပြောင်းပြီး response map ကို HTTP response အဖြစ် ပြောင်းနိုင်ပါသည်။ ထို adapter တွင် method/path normalization၊ maximum header/body bytes၊ timeout၊ cancellation၊ error mapping၊ log redaction နှင့် connection shutdown ကို သတ်မှတ်ရမည်။ Starter ကိုယ်တိုင် network operation မလုပ်ပါ။
+Web starter နှင့် Zap-native scaffold တို့က request၊ response၊ DTO၊ database၊ authentication၊ rate-limit၊ migration နှင့် admin contract များကို သတ်မှတ်ပေးပါသည်။ လက်ရှိ `host/zap-host` package သည် ဤ contract များကို operational Axum/Tower boundary သို့ ပြောင်းပေးနိုင်သော်လည်း adapter အဖြစ်သာ ရှိရမည်။ Long-term direction တွင် native Zap Web runtime က project lifecycle ကို ပိုင်ဆိုင်ပြီး provider-neutral capability interface များမှတစ်ဆင့် external service များကို ခေါ်ရမည်။
 
-ပထမဆုံး implementation ကို Zap interpreter ထဲတွင် HTTP runtime အသစ်ရေးမည့်အစား [Axum](https://docs.rs/axum/latest/axum/) နှင့် Tower middleware ကဲ့သို့ ရှိပြီးသား Rust HTTP stack အပေါ် host adapter အဖြစ် တည်ဆောက်ရန် အကြံပြုပါသည်။ Real listener မဖွင့်မီ fake-host contract test pass ဖြစ်ရမည်။
+Production native server တစ်ခုတွင် method/path normalization၊ maximum header/body bytes၊ timeout၊ cancellation၊ error mapping၊ log redaction၊ connection shutdown၊ readiness နှင့် backpressure ကို သတ်မှတ်ရမည်။ Production claim မပြုမီ ထို runtime responsibility များအတွက် သီးခြား implementation နှင့် test gate များ လိုအပ်ပါသည်။
 
 ## App starter
 
@@ -126,9 +134,9 @@ CI gate သည် undeclared dependency၊ missing lockfile၊ unresolved placeh
 
 ## v0.1 တွင် မပါသေးသောအရာများ
 
-Framework branch တွင် native HTTP server၊ custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ ORM သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထိုအရာများကို language core ထဲ တိုက်ရိုက်ထည့်ခြင်းသည် mature ecosystem များကို ထပ်ရေးရပြီး host contract မတည်ငြိမ်မီ security surface တိုးစေပါသည်။
+Framework branch တွင် Zap-native Web project scaffold နှင့် CLI validation command များ ပါဝင်လာပြီဖြစ်သော်လည်း persistent native HTTP server၊ custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ real ORM/database driver၊ session store၊ built-in admin UI သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထို feature များသည် aspirational syntax မဟုတ်ဘဲ explicit contract နှင့် security evidence လိုအပ်ပါသည်။
 
-ပထမဆုံး `zap-host` adapter prototype ကို `host/zap-host` အောက်တွင် ထည့်သွင်းပြီးပါပြီ။ ၎င်းတွင် Axum/Tower HTTP boundary၊ capability-facing trait များ၊ typed DTO mapping၊ bounded request/response handling၊ deterministic in-process test၊ structured error၊ sensitive header redaction နှင့် graceful shutdown ပါဝင်ပါသည်။ Setup နှင့် production checklist အသေးစိတ်ကို [`ZAP_HOST_MM.md`](ZAP_HOST_MM.md) တွင် ဖတ်နိုင်ပါသည်။ Real Zap runtime embedding၊ database/authentication provider၊ shared quota storage၊ TLS နှင့် deployment-specific evidence များသည် နောက်ဆက်တွဲအလုပ်များ ဖြစ်နေသေးပါသည်။
+`zap-host` adapter ကို `host/zap-host` အောက်တွင် operational reference boundary အဖြစ် ဆက်အသုံးပြုနိုင်ပါသည်။ ၎င်းတွင် Axum/Tower HTTP handling၊ capability-facing trait များ၊ typed DTO mapping၊ bounded request/response handling၊ deterministic test၊ structured error၊ sensitive-header redaction နှင့် graceful shutdown ပါဝင်ပါသည်။ အသေးစိတ် setup ကို [`ZAP_HOST_MM.md`](ZAP_HOST_MM.md) နှင့် Zap-first project workflow ကို [`ZAP_WEB_NATIVE_MM.md`](ZAP_WEB_NATIVE_MM.md) တွင် ဖတ်နိုင်ပါသည်။ Real native runtime embedding၊ database/authentication provider၊ shared quota storage၊ TLS နှင့် deployment-specific evidence များသည် နောက်ဆက်တွဲအလုပ်များ ဖြစ်နေသေးပါသည်။
 
 ## Framework Foundation v0.1 Definition of Done
 

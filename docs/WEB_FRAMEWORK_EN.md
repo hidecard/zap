@@ -204,7 +204,7 @@ The fixed-window algorithm is a foundation, not a universal abuse-control soluti
 | Reliability | Repository timeout, cancellation, pool exhaustion, retry/insert idempotency, shutdown | Fault-injection report with bounded deadlines |
 | Security | Header redaction, body cap, path normalization, response validation, no raw credential in logs | Golden logs and malformed-input corpus |
 
-The current contract test layer runs without a database or network. Before production promotion, add a fake-host adapter suite and then a loopback integration suite with injected listeners, bounded payloads, deterministic clocks, and explicit cleanup.
+The reusable contract test layer runs without a database or network. The native Zap Web slice now also has a loopback integration test for its bounded, single-threaded development server. Before production promotion, add a fake-host adapter suite and then a production-oriented loopback suite with injected listeners, bounded payloads, deterministic clocks, cancellation, and explicit cleanup.
 
 ## Extension procedure
 
@@ -214,7 +214,7 @@ A future adapter package should be introduced only after its capability list, DT
 
 ## Explicit non-goals
 
-The current Web Foundation does not claim to be a production HTTP server. The API, database, authentication, and rate-limit files are contract prototypes and deterministic test doubles; they do not provide a multi-request reactor, TLS, HTTP/2 or HTTP/3 policy, WebSocket, real database connectivity, credential verification, distributed quota storage, templates, static-file serving, background jobs, cloud deployment, or automatic code generation. Each production feature requires a separate host adapter contract and evidence.
+The current Web Foundation does not claim to be a production HTTP server. The Zap-native slice provides a bounded, loopback-only, single-threaded development/reference server; it is not a concurrent production reactor. The API, database, authentication, and rate-limit files remain contract prototypes and deterministic test doubles; the repository still does not provide TLS, HTTP/2 or HTTP/3 policy, WebSocket, real database connectivity, credential verification, distributed quota storage, templates, static-file serving, background jobs, cloud deployment, or automatic code generation. Each production feature requires a separate host adapter contract and evidence.
 
 ## References
 

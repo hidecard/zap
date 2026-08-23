@@ -46,6 +46,6 @@ Native suite သည် valid nested collection နှင့် variant annotatio
 
 TC-012 ကို v2.2.3 အတွက် **implemented baseline** အဖြစ် သတ်မှတ်ပါသည်။ နောက်လာမည့် generic milestone သည် generic declaration နှင့် inference အတွက် သီးခြား design နှင့် implementation phase ဖြစ်ပြီး လက်ရှိ release gate ၏ အစိတ်အပိုင်း မဟုတ်ပါ။
 
-**Author:** Manus AI  
+**Author:** Zap project maintainers
 **Version:** v2.2.3 design gate
 **Status:** Accepted

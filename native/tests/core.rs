@@ -5829,3 +5829,63 @@ fn language_level_task_facade_preserves_function_argument_validation() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("spawn expects 1 argument"));
 }
+
+#[test]
+fn creates_and_checks_zap_web_project() {
+    let root = std::env::temp_dir().join("zap_web_scaffold_cli_test");
+    let _ = std::fs::remove_dir_all(&root);
+    let created = Command::new(binary())
+        .args(["new", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        created.status.success(),
+        "{}",
+        String::from_utf8_lossy(&created.stderr)
+    );
+    assert!(root.join("server.zp").is_file());
+
+    let check = Command::new(binary())
+        .args(["web", "check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(check.status.success());
+    assert!(String::from_utf8_lossy(&check.stdout).contains("valid Zap Web project"));
+
+    let migrations = Command::new(binary())
+        .args(["db", "check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(migrations.status.success());
+    assert!(String::from_utf8_lossy(&migrations.stdout).contains("migration layout"));
+
+    let tests = Command::new(binary())
+        .args(["test", root.join("tests").to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        tests.status.success(),
+        "{}",
+        String::from_utf8_lossy(&tests.stderr)
+    );
+    assert!(String::from_utf8_lossy(&tests.stdout).contains("1 passed"));
+
+    let run = Command::new(binary())
+        .arg(root.join("main.zp"))
+        .output()
+        .unwrap();
+    assert!(run.status.success());
+    assert!(String::from_utf8_lossy(&run.stdout).contains("zap-web"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn web_cli_commands_are_documented_in_help() {
+    let output = Command::new(binary()).arg("--help").output().unwrap();
+    assert!(output.status.success());
+    let help = String::from_utf8_lossy(&output.stdout);
+    assert!(help.contains("zap new <dir>"));
+    assert!(help.contains("zap dev [dir]"));
+    assert!(help.contains("zap web check [dir]"));
+    assert!(help.contains("zap db check [dir]"));
+}

@@ -34,7 +34,11 @@ Usage:
   zap registry credential remove <url> Remove a configured credential
   zap build [dir]                       Validate and prepare a project
   zap build --locked [dir]              Require and validate the existing zap.lock
-  zap init <dir>                        Create a new project
+  zap new <dir>                         Create a Zap-first Web project
+  zap dev [dir]                         Run the Zap-native Web server entrypoint
+  zap web check [dir]                   Validate a Zap Web project
+  zap db check [dir]                    Validate Web migration layout
+  zap init <dir>                        Create a generic Zap project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
   zap --version                         Show the version
@@ -86,6 +90,216 @@ fn run_test_command(args: &[String]) {
     }
 }
 
+fn scaffold_package_name(dir: &Path) -> String {
+    let raw = dir
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("zap-app");
+    let name: String = raw
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || character == '-' || character == '_' {
+                character
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    if name.is_empty() {
+        "zap-app".to_string()
+    } else {
+        name
+    }
+}
+
+fn write_scaffold_file(dir: &Path, relative: &str, content: &str) -> Result<(), String> {
+    let path = dir.join(relative);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("cannot create {}: {error}", parent.display()))?;
+    }
+    fs::write(&path, content).map_err(|error| format!("cannot write {}: {error}", path.display()))
+}
+
+fn manifest_has_section(dir: &Path, section: &str) -> Result<bool, String> {
+    let text = read_limited_text(&dir.join("zap.toml"), "manifest read")?;
+    Ok(text
+        .lines()
+        .any(|line| line.trim() == format!("[{section}]")))
+}
+
+fn web_manifest_path(dir: &Path, key: &str) -> Result<PathBuf, String> {
+    let text = read_limited_text(&dir.join("zap.toml"), "manifest read")?;
+    if !manifest_has_section(dir, "web")? {
+        return Err(format!("{} is not a Zap Web project", dir.display()));
+    }
+    let value = manifest_value(&text, key)
+        .ok_or_else(|| format!("zap.toml: Web field `{key}` is missing"))?;
+    let path = Path::new(&value);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| component == std::path::Component::ParentDir)
+    {
+        return Err(format!(
+            "zap.toml: Web field `{key}` must be a safe relative path"
+        ));
+    }
+    Ok(dir.join(path))
+}
+
+fn validate_web_command(dir: &Path) -> Result<String, String> {
+    if !manifest_has_section(dir, "web")? {
+        return Err(format!("{} is not a Zap Web project", dir.display()));
+    }
+    validate_project(dir).map(|info| format!("valid Zap Web project: {info}"))
+}
+
+fn validate_migration_layout(dir: &Path) -> Result<String, String> {
+    let migration_dir = web_manifest_path(dir, "migrations")?;
+    if !migration_dir.is_dir() {
+        return Err(format!(
+            "migration directory not found: {}",
+            migration_dir.display()
+        ));
+    }
+    let mut files = fs::read_dir(&migration_dir)
+        .map_err(|error| format!("cannot read migrations: {error}"))?
+        .map(|entry| {
+            entry
+                .map(|item| item.path())
+                .map_err(|error| error.to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    files.sort();
+    let mut count = 0usize;
+    for path in files {
+        if path.extension().and_then(|value| value.to_str()) != Some("zp") {
+            continue;
+        }
+        let source = read_limited_text(&path, "migration read")?;
+        if !source
+            .lines()
+            .any(|line| line.trim_start().starts_with("export fn migration("))
+        {
+            return Err(format!(
+                "{}: migration must export fn migration()",
+                path.display()
+            ));
+        }
+        count += 1;
+    }
+    if count == 0 {
+        return Err(format!(
+            "no .zp migrations found in {}",
+            migration_dir.display()
+        ));
+    }
+    Ok(format!(
+        "valid Zap Web migration layout: {count} migration file(s) in {}",
+        migration_dir.display()
+    ))
+}
+
+fn create_web_project(dir: &Path) -> Result<(), String> {
+    if dir.exists() {
+        return Err(format!(
+            "cannot initialize existing path: {}",
+            dir.display()
+        ));
+    }
+    fs::create_dir_all(dir).map_err(|error| format!("cannot create {}: {error}", dir.display()))?;
+    for directory in [
+        "models",
+        "services",
+        "views",
+        "public",
+        "migrations",
+        "tests",
+    ] {
+        fs::create_dir_all(dir.join(directory))
+            .map_err(|error| format!("cannot create {}: {error}", dir.join(directory).display()))?;
+    }
+    let name = scaffold_package_name(dir);
+    let manifest = format!(
+        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n"
+    );
+    write_scaffold_file(dir, "zap.toml", &manifest)?;
+    write_scaffold_file(
+        dir,
+        "web.zp",
+        "# Zap-native Web primitives for this project.\nexport fn web_app(name):\n    return {\"name\": name, \"serialization\": \"json\", \"error_mode\": \"centralized\"}\n\nexport fn web_route(method, path, handler, scope):\n    return {\"method\": method, \"path\": path, \"handler\": handler, \"scope\": scope}\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "routes.zp",
+        "export fn routes():\n    return [{\"method\": \"GET\", \"path\": \"/\", \"handler\": \"home\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/health\", \"handler\": \"health\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/users/:id\", \"handler\": \"get_user\", \"scope\": \"users:read\"}, {\"method\": \"POST\", \"path\": \"/users\", \"handler\": \"create_user\", \"scope\": \"users:write\"}]\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "models/user.zp",
+        "export fn user_model():\n    return {\"name\": \"User\", \"table\": \"users\", \"fields\": {\"id\": \"number primary_key\", \"name\": \"text required\", \"email\": \"email unique\"}}\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "services/user_service.zp",
+        "export fn home(request):\n    return {\"status\": 200, \"body\": json({\"message\": \"Hello from Zap Web\", \"request_id\": request[\"request_id\"]})}\n\nexport fn health(request):\n    return {\"status\": 200, \"body\": json({\"status\": \"ok\"})}\n\nexport fn get_user(request):\n    return {\"status\": 200, \"body\": json({\"id\": request[\"params\"][\"id\"], \"request_id\": request[\"request_id\"]})}\n\nexport fn create_user(request):\n    return {\"status\": 201, \"body\": json({\"created\": true, \"body\": request[\"body\"], \"request_id\": request[\"request_id\"]})}\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "middleware.zp",
+        "export fn middleware_stack():\n    return [{\"name\": \"request_id\", \"stage\": \"before\", \"order\": 10}, {\"name\": \"security_headers\", \"stage\": \"after\", \"order\": 90}, {\"name\": \"auth\", \"stage\": \"before_handler\", \"order\": 40}]\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "admin.zp",
+        "export fn admin_registry():\n    return [{\"model\": \"User\", \"list\": [\"id\", \"name\", \"email\"], \"permissions\": [\"admin:read\", \"admin:write\"]}]\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "migrations/0001_initial.zp",
+        "export fn migration():\n    return {\"id\": \"0001_initial\", \"depends_on\": [], \"operations\": [\"create_table users\"]}\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "main.zp",
+        "# Zap-first Web project entrypoint.\nimport \"web\"\nimport \"routes\"\nimport \"models/user\"\nimport \"services/user_service\"\nimport \"middleware\"\nimport \"admin\"\nlet app = web_app(\"APP_NAME\")\nlet route_table = routes()\nlet model = user_model()\nlet middleware_table = middleware_stack()\nlet admin_table = admin_registry()\nsay json({\"framework\": \"zap-web\", \"app\": app, \"routes\": route_table, \"model\": model, \"middleware\": middleware_table, \"admin\": admin_table})\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "server.zp",
+        "# Zap-native Web development server.\nimport \"web\"\nimport \"routes\"\nimport \"services/user_service\"\nlet port = from_json(env_get(\"ZAP_WEB_PORT\", \"3000\"))\nlet result = web_serve(routes(), port, 0)\nsay json(result)\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "tests/web_test.zp",
+        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 4, \"web scaffold must contain four starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[3][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nsay \"Zap Web scaffold test passed\"\n",
+    )?;
+    Ok(())
+}
+
+fn run_dev_command(dir: &Path) {
+    if let Err(error) = validate_web_command(dir) {
+        eprintln!("Zap dev error: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+    let server = match web_manifest_path(dir, "server") {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("Zap dev error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+    };
+    let source = read_limited_text(&server, "Web server source read").unwrap_or_else(|error| {
+        eprintln!("Zap dev error: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    });
+    if let Err(error) = run_checked(&source, dir) {
+        eprintln!("Zap dev error: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+}
+
 /// Dispatches Zap command-line arguments and owns CLI exit behavior.
 pub fn run_cli(args: &[String]) {
     if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
@@ -94,6 +308,55 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
         println!("{CLI_HELP}");
+        return;
+    }
+    if args.len() == 3 && args[1] == "new" {
+        let dir = Path::new(&args[2]);
+        if let Err(error) = create_web_project(dir) {
+            eprintln!("Zap new error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        println!("Created Zap Web project: {}", dir.display());
+        return;
+    }
+    if args.len() == 3 && args[1] == "web" && args[2] == "check" {
+        match validate_web_command(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(error) => {
+                eprintln!("Zap Web check error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 4 && args[1] == "web" && args[2] == "check" {
+        match validate_web_command(Path::new(&args[3])) {
+            Ok(info) => println!("{info}"),
+            Err(error) => {
+                eprintln!("Zap Web check error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 3 && args[1] == "db" && args[2] == "check" {
+        match validate_migration_layout(Path::new(".")) {
+            Ok(info) => println!("{info}"),
+            Err(error) => {
+                eprintln!("Zap DB check error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
+    if args.len() == 4 && args[1] == "db" && args[2] == "check" {
+        match validate_migration_layout(Path::new(&args[3])) {
+            Ok(info) => println!("{info}"),
+            Err(error) => {
+                eprintln!("Zap DB check error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
         return;
     }
     if args.len() == 3 && args[1] == "init" {
@@ -618,6 +881,14 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if args.len() == 2 && args[1] == "dev" {
+        run_dev_command(Path::new("."));
+        return;
+    }
+    if args.len() == 3 && args[1] == "dev" {
+        run_dev_command(Path::new(&args[2]));
+        return;
+    }
     if args.len() == 3 && args[1] == "run" {
         let source = read_limited_text(Path::new(&args[2]), "source read").unwrap_or_else(|e| {
             eprintln!("{e}");
@@ -704,6 +975,9 @@ mod tests {
             "zap update",
             "zap registry serve",
             "zap build",
+            "zap new",
+            "zap web check",
+            "zap db check",
             "zap init",
             "zap lsp",
             "zap async-check",

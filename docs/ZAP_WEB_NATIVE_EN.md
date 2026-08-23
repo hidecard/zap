@@ -1,0 +1,227 @@
+# Zap-first Web Framework Guide
+
+**Verified baseline:** Zap v2.2.3 on the `Framework` branch.
+
+## Purpose
+
+Zap Web is being designed as a **Zap-native full-stack Web framework**. The goal is similar to the developer experience Django provides—one coherent project structure, routing, application modules, models, migrations, authentication, administration, testing, and deployment checks—without turning Zap into Python syntax or reproducing Django's implementation.
+
+The guiding principle is:
+
+> **Write less. Understand more. Deploy safely.**
+
+The framework should provide safe defaults and integrated tooling while keeping the behavior visible in ordinary Zap modules. Convention is welcome; hidden magic is not.
+
+## What is runnable today
+
+The current repository contains a runnable Web project scaffold. It uses Zap source files and the native Zap project checker; it does not require a Python or JavaScript application layer.
+
+```text
+zap new shop
+cd shop
+zap check
+zap web check
+zap db check
+zap test tests
+zap run main.zp
+zap dev
+```
+
+`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated entrypoint prints a deterministic application description, route table, model metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
+
+The native CLI now understands a constrained `[web]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates migration exports, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
+
+## Project and app model
+
+A Zap Web project is the deployable site boundary. A Web app is a directory or module group that owns a cohesive feature such as accounts, catalog, billing, or devices. A project may compose several apps, but each app should expose a small explicit surface rather than registering hidden global state.
+
+The scaffold uses a deliberately readable layout:
+
+```text
+shop/
+├── zap.toml
+├── main.zp
+├── web.zp
+├── routes.zp
+├── middleware.zp
+├── admin.zp
+├── server.zp
+├── models/
+│   └── user.zp
+├── services/
+│   └── user_service.zp
+├── migrations/
+│   └── 0001_initial.zp
+├── views/
+├── public/
+└── tests/
+    └── web_test.zp
+```
+
+`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. This structure is a convention backed by the `[web]` manifest and the project checker.
+
+## Current route declaration contract
+
+The current language parser does not yet implement a first-class `route GET "/..." fn(req)` statement. The scaffold therefore uses an ordinary exported Zap function that returns a route table:
+
+```zap
+export fn routes():
+    return [{"method": "GET", "path": "/", "handler": "home", "scope": ""}, {"method": "GET", "path": "/users/:id", "handler": "get_user", "scope": "users:read"}]
+```
+
+This is intentional. It makes the current project runnable and inspectable while reserving a future parser/AST change for a compatibility-reviewed RFC. A future concise route form may look like the following, but it is **design notation and must not be copied into a current project until the parser contract is implemented**:
+
+```zap
+route GET "/users/:id" handler get_user scope "users:read"
+```
+
+The long-term design should support ordered matching, typed path parameters, route names, reverse URL generation, conflict detection, method policy, and centralized `400/404/405/500` handling. The route catalog must remain inspectable through tooling so framework defaults never become invisible behavior.
+
+## Request and response model
+
+JSON is the default API representation for map and list values. HTML rendering should be explicit through a future standard template surface, not inferred from an ambiguous return value. The current Web contract already enforces path length, body length, request-ID bounds, method policy, traversal rejection, security headers, and stable error shapes.
+
+A production route pipeline should follow this order:
+
+| Order | Boundary | Responsibility |
+|---:|---|---|
+| 1 | Transport | Parse HTTP, enforce protocol and connection limits |
+| 2 | Request policy | Normalize method/path, reject traversal, enforce request ID and body bounds |
+| 3 | Correlation | Create or validate a request ID without echoing invalid untrusted values |
+| 4 | Middleware | Apply security headers, trusted proxy policy, rate limit, session, and identity context |
+| 5 | Router | Match an ordered route and convert path parameters |
+| 6 | Authorization | Enforce scopes/permissions before application data access |
+| 7 | Validation | Convert bounded JSON input to a typed DTO and return field errors |
+| 8 | Service | Execute business policy and transaction boundary |
+| 9 | Repository | Execute parameterized database operations through an injected adapter |
+| 10 | Response | Serialize an explicit DTO and redact internal fields |
+
+The current `frameworks/web` contract and `host/zap-host` adapter implement a safe subset of these boundaries. The Zap-first project scaffold records the same boundaries as ordinary Zap data so the project can be inspected before a full native server exists.
+
+## Middleware design
+
+Middleware is an ordered request/response pipeline, not a collection of decorators. Each middleware entry should identify its name, stage, order, and short-circuit behavior. A middleware may reject a request before the handler, enrich the request context, or add response headers on the way out.
+
+The scaffold demonstrates request-ID handling, authentication placement, and security headers:
+
+```zap
+export fn middleware_stack():
+    return [{"name": "request_id", "stage": "before", "order": 10}, {"name": "auth", "stage": "before_handler", "order": 40}, {"name": "security_headers", "stage": "after", "order": 90}]
+```
+
+The framework should reject duplicate names, invalid order values, impossible dependencies, and unsafe placement such as authorization after a database operation. Middleware order must be shown by `zap web check` or a future `zap routes`/`zap explain` command.
+
+## Models, DTOs, and ORM direction
+
+A model is the source of database schema intent. A DTO is the boundary for request and response data. These concepts must not be collapsed: accepting a model directly from an untrusted request can expose fields, bypass validation, or make a schema change an accidental API change.
+
+The current scaffold records model metadata in ordinary Zap functions:
+
+```zap
+export fn user_model():
+    return {"name": "User", "table": "users", "fields": {"id": "number primary_key", "name": "text required", "email": "email unique"}}
+```
+
+The planned ORM direction is deliberately smaller than a general-purpose dynamic ORM. It should provide typed model metadata, explicit field nullability and uniqueness, relationships, parameterized query construction, transaction handles, bounded pool acquisition, cancellation/deadlines, and stable database error classification. Query construction should be inspectable and should never concatenate untrusted values into SQL.
+
+A production repository must be injected behind a provider-neutral interface. The current deterministic `database_contract.zp` and `WebGateway` seam remain useful for contract tests, but they are not a real database driver. PostgreSQL, SQLite, or another backend should be added as explicit adapters with separate capability and migration tests.
+
+## Migrations
+
+Migrations are versioned schema intent committed with the application. The scaffold begins with:
+
+```zap
+export fn migration():
+    return {"id": "0001_initial", "depends_on": [], "operations": ["create_table users"]}
+```
+
+`zap db check` verifies that the configured migration directory contains `.zp` files exporting `migration()`. It does not apply SQL. A real `zap db migrate` command must be added only when a reviewed database adapter, transaction policy, lock strategy, rollback behavior, and dry-run SQL output exist.
+
+The production migration workflow should be: generate or write a migration, inspect its dependency graph and SQL plan, apply it in an isolated environment, run compatibility checks, deploy application code that supports both schema versions during rolling updates, and record the applied migration atomically. Destructive operations require an explicit confirmation or preflight policy.
+
+## Authentication and authorization
+
+Authentication answers “who is this?” Authorization answers “what may this identity do?” Zap Web should keep them separate. The host or a standard identity adapter verifies a credential and passes a small verified identity object into the application. Raw bearer tokens, cookies, passwords, or private keys must not be exposed to arbitrary handlers or written to logs.
+
+The application contract should support users, groups or roles, scopes/permissions, session or token identity, password hashing through a reviewed standard library, CSRF policy for cookie sessions, login throttling, and audit events. Authorization must run before repository access, and admin routes must require an explicit administrative permission plus a secure session policy.
+
+The current scaffold only records a scope in a route table, and `web_serve` treats that field as metadata rather than enforcing authorization. The earlier Web contracts implement deterministic `401` and `403` decisions; a real identity backend and session store remain provider-specific work. Applications must perform explicit authorization before protected operations.
+
+## Admin direction
+
+Admin is an internal, model-centric management surface. It should be opt-in and explicit, never automatically expose every database column. The scaffold records a User registration with public fields and separate admin permissions:
+
+```zap
+export fn admin_registry():
+    return [{"model": "User", "list": ["id", "name", "email"], "permissions": ["admin:read", "admin:write"]}]
+```
+
+A future built-in admin package should use the same model/DTO/authorization boundaries as public APIs. Secret hashes, credentials, internal flags, and audit internals must be excluded by default. The admin is not a replacement for a product front end.
+
+## Testing model
+
+`zap test tests` discovers nested `*_test.zp` files and resolves imports from the nearest project root containing `zap.toml`. This makes the generated project layout usable without copying shared modules into the test directory.
+
+The test layers should grow in this order:
+
+| Layer | Evidence |
+|---|---|
+| Language | Parser, type, memory, and deterministic runtime tests |
+| Contract | Route catalog, DTO, auth, rate-limit, and migration metadata tests |
+| Handler | Request/response tests with injected fake repositories and identities |
+| Database | Adapter tests against an isolated test database and rollback fixtures |
+| HTTP | Loopback end-to-end tests for headers, status, limits, and graceful shutdown |
+| Security | Invalid input, credential leakage, CSRF, SSRF, traversal, timing, and permission corpus |
+| Operations | Readiness, drain, restart, migration lock, log redaction, and resource-boundary tests |
+
+Tests that use a database must use a disposable isolated database. Production credentials and production data must never be used by the test runner.
+
+## CLI workflow
+
+The current supported workflow is:
+
+```bash
+zap new shop
+cd shop
+zap check
+zap web check
+zap db check
+zap test tests
+zap run main.zp
+zap dev
+```
+
+`zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact and `:parameter` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
+
+The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap db migrate` for an actual configured backend, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks.
+
+`zap run main.zp` remains a contract preview. `zap dev` is the first Zap-native HTTP execution path, while `host/zap-host` remains the operational Axum/Tower reference adapter. Neither should be described as a complete production Web platform until the production rule below is satisfied.
+
+## Difference from Django
+
+Zap adopts the useful full-stack workflow idea: a project contains apps, URL declarations, model metadata, migrations, auth, admin, tests, and an integrated command line. It intentionally differs in several ways.
+
+| Concern | Django-inspired idea | Zap-native choice |
+|---|---|---|
+| Syntax | Python modules, classes, decorators | Plain Zap modules first; new syntax only through parser/AST RFCs |
+| Defaults | Convention over configuration | Safe conventions with inspectable manifest and route metadata |
+| ORM | Broad dynamic model/query API | Smaller typed boundary with explicit DTO and adapter capabilities |
+| Async | Framework adapts sync/async callables | Zap must expose I/O boundaries and avoid hiding blocking behavior |
+| Errors | Exceptions mapped by framework | Result/Option and centralized response mapping, with explicit error classification |
+| Admin | Model-centric internal interface | Explicit registration, least-privilege fields, and permission policy |
+| Deployment | External WSGI/ASGI server choices | Native Zap server target, but only after runtime and operational gates pass |
+
+## Production rule
+
+A Zap Web project becomes production-ready only when the native runtime, HTTP server, database adapter, identity system, rate-limit store, migrations, admin, observability, deployment, and security test evidence are all versioned and verified together. The current scaffold is the first Zap-native project layer; it is not yet that complete platform.
+
+## References
+
+[1]: https://docs.djangoproject.com/en/6.1/intro/tutorial01/ "Django first-app tutorial"
+[2]: https://docs.djangoproject.com/en/6.1/topics/http/urls/ "Django URL dispatcher"
+[3]: https://docs.djangoproject.com/en/6.1/topics/http/middleware/ "Django middleware"
+[4]: https://docs.djangoproject.com/en/6.1/topics/db/models/ "Django models"
+[5]: https://docs.djangoproject.com/en/6.1/topics/migrations/ "Django migrations"
+[6]: https://docs.djangoproject.com/en/6.1/topics/auth/ "Django authentication"
+[7]: https://docs.djangoproject.com/en/6.1/ref/contrib/admin/ "Django admin"
+[8]: https://docs.djangoproject.com/en/6.1/topics/testing/overview/ "Django testing"

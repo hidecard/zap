@@ -1,6 +1,6 @@
 # Zap Framework Foundation
 
-ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Starter များသည် current Zap v2.2.3 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ HTTP server၊ native mobile UI၊ real MQTT/device connection သို့မဟုတ် external AI provider ကို ယခု branch တွင် မဖွင့်သေးပါ။
+ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Web ကို ယခု Framework ၏ ဦးစားပေး direction အဖြစ် Zap ကိုယ်တိုင်ပေါ်တွင် project/app structure၊ route metadata၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များ တည်ဆောက်နိုင်ရန် ပြင်ဆင်နေပါသည်။ Starter များသည် current Zap v2.2.3 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ Native HTTP server၊ real database driver၊ identity provider သို့မဟုတ် external platform runtime များကို ယခုအဆင့်တွင် explicit capability နှင့် security gates မပြည့်မီ မဖွင့်သေးပါ။
 
 ```text
 frameworks/
@@ -9,6 +9,22 @@ frameworks/
   ai/        provider request/response contract
   iot/       telemetry/device-state contract
 ```
+
+## Create a Zap-native Web project
+
+Django-like Web workflow ကို စတင်ရန် repository root မှ အောက်ပါအတိုင်း run ပါ။
+
+```bash
+zap new shop
+cd shop
+zap check
+zap web check
+zap db check
+zap test tests
+zap run main.zp
+```
+
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က migration file contract ကို စစ်ပါသည်။ ဤ command များသည် project metadata/contract validation ဖြစ်ပြီး real database migration apply သို့မဟုတ် persistent HTTP listener မဖွင့်သေးပါ။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
 
 ## Run a starter
 
@@ -45,6 +61,6 @@ Real adapter များတွင် capability ကို default-deny ထာ�
 
 ## Development rule
 
-Framework syntax အသစ်ကို language core ထဲသို့ အလျင်မထည့်ရပါ။ Real Web/App/IoT integration မစခင် `docs/FRAMEWORK_EN.md` နှင့် `docs/FRAMEWORK_MM.md` ထဲက capability, error, limit, replay နှင့် security contract များကို အရင်အတည်ပြုရမည်။ Existing host ecosystem များကို အသုံးပြုရန် အကြံပြုပါသည်။ Web အတွက် Axum/Tower, App အတွက် Tauri/Flutter/React Native/Expo, IoT အတွက် MQTT/Paho နှင့် ESP-IDF/Zephyr စသည့် adapter boundary များကို သီးခြား package အဖြစ် ထားရမည်။
+Framework syntax အသစ်ကို language core ထဲသို့ အလျင်မထည့်ရပါ။ Real Web/App/IoT integration မစခင် `docs/FRAMEWORK_EN.md` နှင့် `docs/FRAMEWORK_MM.md` ထဲက capability, error, limit, replay နှင့် security contract များကို အရင်အတည်ပြုရမည်။ Zap-first Web အတွက် လက်ရှိ project scaffold နှင့် contract validation ကို ဦးစားပေးပြီး persistent native server၊ ORM၊ session/admin UI နှင့် provider integration များကို executable contract မရှိဘဲ မဆိုရပါ။
 
-Web contract ကို [English Web guide](../docs/WEB_FRAMEWORK_EN.md) နှင့် [Burmese Web guide](../docs/WEB_FRAMEWORK_MM.md) တွင် ဖတ်ပါ။ Host ကို စတင်အသုံးပြုရန် [English zap-host quickstart](../docs/ZAP_HOST_QUICKSTART_EN.md) နှင့် [Burmese zap-host quickstart](../docs/ZAP_HOST_QUICKSTART_MM.md) ကို ကြည့်ပါ။ Framework အကျဉ်းချုပ်ကို [English Framework Guide](../docs/FRAMEWORK_EN.md) နှင့် [Burmese Framework Guide](../docs/FRAMEWORK_MM.md) တွင် ဖတ်ပါ။
+Web contract ကို [English Web guide](../docs/WEB_FRAMEWORK_EN.md) နှင့် [Burmese Web guide](../docs/WEB_FRAMEWORK_MM.md) တွင် ဖတ်ပါ။ Zap ကိုယ်တိုင်အပေါ် Web project တည်ဆောက်ပုံကို [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) နှင့် [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) တွင် ဖတ်ပါ။ လက်ရှိ operational reference host ကို စတင်အသုံးပြုရန် [English zap-host quickstart](../docs/ZAP_HOST_QUICKSTART_EN.md) နှင့် [Burmese zap-host quickstart](../docs/ZAP_HOST_QUICKSTART_MM.md) ကို ကြည့်ပါ။ Framework အကျဉ်းချုပ်ကို [English Framework Guide](../docs/FRAMEWORK_EN.md) နှင့် [Burmese Framework Guide](../docs/FRAMEWORK_MM.md) တွင် ဖတ်ပါ။

@@ -55,7 +55,7 @@ Explicit UTC event timestamp အတွက် `utc_now()`၊ အထွေထွ�
 
 ---
 
-Author: **Manus AI**  
+Author: **Zap project maintainers**
 _Last updated: 2026-08-21._
 
 ## References
