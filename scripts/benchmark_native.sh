@@ -142,7 +142,7 @@ sanitize_value() {
   printf '%s' "$1" | tr '\r\n\t' '   '
 }
 
-host_target=$(rustc -vV | awk '/^host: / {print $2; exit}')
+host_target=$(rustc -vV | sed -n 's/^host: //p')
 runner_os=$(uname -s)
 kernel=$(uname -r)
 architecture=$(uname -m)
