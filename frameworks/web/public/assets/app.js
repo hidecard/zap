@@ -23,24 +23,20 @@ function render(tasks, summary) {
   count.textContent = `${summary.completed} of ${summary.total} complete`;
 }
 
-async function loadTasks() {
-  try {
-    const response = await fetch("/api/tasks", {
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
-    }
-    const payload = await response.json();
-    render(payload.tasks, payload.summary ?? {
-      total: payload.tasks.length,
-      completed: payload.tasks.filter((task) => task.done).length,
-    });
-  } catch (cause) {
-    count.textContent = "Unavailable";
-    error.hidden = false;
-    error.textContent = `Could not load tasks: ${cause.message}`;
+try {
+  const response = await fetch("/api/tasks", {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`API returned ${response.status}`);
   }
+  const payload = await response.json();
+  render(payload.tasks, payload.summary ?? {
+    total: payload.tasks.length,
+    completed: payload.tasks.filter((task) => task.done).length,
+  });
+} catch (cause) {
+  count.textContent = "Unavailable";
+  error.hidden = false;
+  error.textContent = `Could not load tasks: ${cause.message}`;
 }
-
-loadTasks();

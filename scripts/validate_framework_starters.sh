@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 VERSION=${EXPECTED_VERSION:-$(sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' native/Cargo.toml | head -n 1)}
 REPORT=${ZAP_FRAMEWORK_REPORT:-$ROOT_DIR/target/framework-starters.tsv}
+READY_PATH="/ready"
 mkdir -p "$(dirname "$REPORT")"
 : > "$REPORT"
 
@@ -155,8 +156,8 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_EN.md "ZAP_WEB_PORT"
 require_text docs/ZAP_WEB_NATIVE_MM.md "ZAP_WEB_PORT"
-require_text docs/ZAP_HOST_QUICKSTART_EN.md "/ready"
-require_text docs/ZAP_HOST_QUICKSTART_MM.md "/ready"
+require_text docs/ZAP_HOST_QUICKSTART_EN.md "$READY_PATH"
+require_text docs/ZAP_HOST_QUICKSTART_MM.md "$READY_PATH"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
