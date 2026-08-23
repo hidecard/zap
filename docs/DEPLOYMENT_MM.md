@@ -1,8 +1,8 @@
 # Zap Registry Production Deployment Boundaries
 
-**Verified baseline:** Zap v2.2.0
+**Verified baseline:** Zap v2.2.6 maintenance branch
 **ရည်ရွယ်ချက်:** Local နှင့် public registry deployment boundary၊ validation၊ TLS၊ supervision၊ credential၊ quota နှင့် egress control များအတွက် operator reference ဖြစ်သည်။
-**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Package author guide](PACKAGE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Security policy](../SECURITY.md) · [Release policy](RELEASE_VERSION_POLICY_MM.md)
+**လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Package author guide](PACKAGE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Security policy](../SECURITY.md) · [Production operations](PRODUCTION_OPERATIONS_MM.md) · [Release policy](RELEASE_VERSION_POLICY_MM.md)
 
 ## အကျယ်အဝန်း
 
@@ -22,7 +22,9 @@ Zap တွင် controlled local registry service ပါဝင်သော်�
 
 Registry process သည် `127.0.0.1:8787` တွင်သာ bind လုပ်ပြီး public traffic ကို တိုက်ရိုက်လက်ခံရန် မရည်ရွယ်ပါ။ Reference nginx configuration သည် TLS 1.2 သို့မဟုတ် TLS 1.3 ဖြင့် TLS termination ပြုလုပ်သည်၊ cleartext HTTP ကို HTTPS သို့ redirect လုပ်သည်၊ request body ကို 1 MiB အထိ ကန့်သတ်သည်၊ `GET` နှင့် `POST` ကိုသာ ခွင့်ပြုသည်၊ ထို့နောက် bounded proxy timeout များဖြင့် loopback service သို့ forward လုပ်သည်။ Operator သည် example hostname နှင့် certificate path များကို မိမိ platform မှ စီမံထားသော certificate များဖြင့် အစားထိုးရမည်။ Private key များကို repository အပြင်တွင်သာ ထားရမည်။
 
-Backend သည် loopback traffic ကိုသာ လက်ခံသည်။ Public DNS၊ certificate renewal၊ external rate limiting နှင့် organization-specific WAF policy များကို ingress layer က စီမံရမည်။ ဤ control များသည် runtime assumption မဟုတ်ဘဲ deployment provider ၏ တာဝန်အဖြစ် သီးခြားထားရှိထားသည်။
+Backend သည် loopback traffic ကိုသာ လက်ခံသည်။ Systemd unit သည် `zap registry serve /var/lib/zap-registry 127.0.0.1:8787` ဖြင့် start လုပ်ပြီး root directory ကို optional bind address မတိုင်မီ ထည့်ရသည်။ Service တွင် bounded request worker ၈ ခုနှင့် connection queue ၃၂ ခု ပါဝင်ပြီး queue ပြည့်ပါက work ကို အကန့်အသတ်မဲ့ လက်မခံဘဲ `503 Service Unavailable` ပြန်ပေးသည်။ Public DNS၊ certificate renewal၊ external rate limiting နှင့် organization-specific WAF policy များကို ingress layer က စီမံရမည်။ ဤ control များသည် runtime assumption မဟုတ်ဘဲ deployment provider ၏ တာဝန်အဖြစ် သီးခြားထားရှိထားသည်။
+
+Service တွင် local probe အတွက် `GET /healthz` နှင့် `GET /readyz` ပါဝင်သည်။ Local supervisor သည် liveness နှင့် data-directory readiness စစ်နိုင်ရန် bearer authentication မလိုဘဲ ပြန်ပေးထားခြင်းဖြစ်ပြီး reference nginx configuration သည် ထို path များကို loopback မှသာ ခွင့်ပြုထားသည်။ Public မဖြစ်စေရန် allow rule ကို fixed monitoring network အတွက် တိကျစွာ မပြင်ဆင်မချင်း မဖွင့်ပါနှင့်။
 
 ## Supervision နှင့် sandbox
 
@@ -41,6 +43,21 @@ Authenticated service အတွက် `ZAP_REGISTRY_TOKEN` နှင့် `ZAP_
 ## Egress control
 
 Registry backend သည် loopback-only ဖြစ်သည်။ Reference policy တွင် external egress ကို ပိတ်ထားပြီး service သည် registry data directory သို့သာ ရေးသားနိုင်သည်။ Package retrieval အတွက် outbound connection လိုအပ်ပါက registry service ၏ network permission ကို မသိမသာ ချဲ့ထွင်မည့်အစား သီးခြား allowlisted component တစ်ခုမှသာ ဆောင်ရွက်ရမည်။
+
+## Installation နှင့် operations
+
+Complete install၊ secret-management၊ TLS ingress၊ firewall၊ health-check၊ backup၊ rotation၊ rollback နှင့် incident-response procedure အတွက် [production operations guide](PRODUCTION_OPERATIONS_MM.md) ကို လိုက်နာပါ။ အနည်းဆုံး `/usr/local/bin/zap` သို့ binary ထည့်ပြီး service unit ကို `/etc/systemd/system/` အောက်တွင် install လုပ်ရမည်။ `/etc/zap/registry.env` ကို mode `0600` ဖြင့် ထားပြီး deployment artifacts ကို validate လုပ်ကာ service ကို `127.0.0.1:8787` တွင်သာ start လုပ်ပါ။
+
+Proxy ကို public မလုပ်မီ local verification ပြုလုပ်ပါ။
+
+```bash
+curl --fail http://127.0.0.1:8787/healthz
+curl --fail http://127.0.0.1:8787/readyz
+sudo systemctl status zap-registry
+sudo journalctl -u zap-registry --since '15 minutes ago'
+```
+
+Service တွင် built-in metrics endpoint မရှိပါ။ Systemd journal၊ nginx access/error log၊ host metrics၊ external uptime check နှင့် alerting တို့ကို အသုံးပြုပါ။ `/var/lib/zap-registry` ကို environment file နှင့် သီးခြား backup လုပ်ပြီး production traffic လက်မခံမီ restore drill စမ်းသပ်ပါ။
 
 ## Validation
 

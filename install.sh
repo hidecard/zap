@@ -11,7 +11,7 @@ BINARY="${SCRIPT_DIR}/bin/zap"
 if [ ! -x "$BINARY" ]; then
   if [ "${ZAP_BUILD_FROM_SOURCE:-0}" = "1" ] && command -v cargo >/dev/null 2>&1; then
     echo "Building Zap native runtime from source..."
-    cargo build --release --manifest-path "$SCRIPT_DIR/native/Cargo.toml"
+    cargo build --release --locked --manifest-path "$SCRIPT_DIR/native/Cargo.toml"
     BINARY="$SCRIPT_DIR/native/target/release/zap"
   else
     echo "Prebuilt Zap binary မတွေ့ပါ။ Official binary release archive ကို download လုပ်ပါ။" >&2

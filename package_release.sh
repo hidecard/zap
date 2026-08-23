@@ -2,7 +2,15 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:-x86_64-unknown-linux-gnu}"
-VERSION="${ZAP_VERSION:-2.0.4}"
+if [[ -n "${ZAP_VERSION:-}" ]]; then
+  VERSION="$ZAP_VERSION"
+else
+  VERSION="$(awk -F'"' '/^version = "/ { print $2; exit }' "$ROOT/native/Cargo.toml")"
+fi
+if [[ -z "$VERSION" ]]; then
+  echo "Could not determine the package version from native/Cargo.toml" >&2
+  exit 1
+fi
 case "$TARGET" in
   x86_64-unknown-linux-gnu) ARCHIVE="zap-$VERSION-linux-x86_64.tar.gz"; BINARY="zap" ;;
   aarch64-apple-darwin) ARCHIVE="zap-$VERSION-macos-arm64.tar.gz"; BINARY="zap" ;;

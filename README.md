@@ -31,6 +31,8 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Documentation hub | [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) · [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) |
+| Usage guides | [English usage](docs/USAGE_EN.md) · [မြန်မာ usage](docs/USAGE.md) |
+| Production operations | [English runbook](docs/PRODUCTION_OPERATIONS_EN.md) · [မြန်မာ runbook](docs/PRODUCTION_OPERATIONS_MM.md) |
 | Runtime-state contract | [English](docs/RUNTIME_STATE_EN.md) · [မြန်မာ](docs/RUNTIME_STATE_MM.md) |
 | Memory budget/object store contract | [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) · [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) |
 | AST foundation status | [English](docs/P0_FOUNDATION_STATUS_EN.md) · [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) |

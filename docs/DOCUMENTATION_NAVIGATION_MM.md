@@ -7,12 +7,12 @@
 
 | အသုံးပြုသူ | ဤနေရာမှ စတင်ရန် | ဆက်လက်ဖတ်ရှုရန် |
 |---|---|---|
-| အသစ်စတင်လေ့လာသူ | [Burmese learning guide](LEARN_ZAP_MM.md) | [Syntax guide](SYNTAX_GUIDE.md)၊ [examples](../examples) |
+| အသစ်စတင်လေ့လာသူ | [Burmese learning guide](LEARN_ZAP_MM.md) | [Usage guide](USAGE.md)၊ [Syntax guide](SYNTAX_GUIDE.md)၊ [examples](../examples) |
 | Language user | [Syntax guide](SYNTAX_GUIDE.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [type-check matrix](TYPECHECK_CONFORMANCE_MATRIX_MM.md) |
 | Package author | [Burmese package guide](PACKAGE.md) | [Stdlib index](STDLIB_INDEX_MM.md)၊ [registry/authentication contract](REGISTRY_AUTH_MM.md) |
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_MM.md) | [Memory model](MEMORY_MODEL_MM.md)၊ [diagnostics](DIAGNOSTIC_MODEL_MM.md)၊ [async boundaries](ASYNC_BOUNDARIES_MM.md) |
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_MM.md) | [LSP implementation](../native/src/lsp.rs)၊ [canonical VS Code extension](../vscode-extension)၊ [editor assets](../editors/vscode)၊ [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh)၊ [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
-| Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
+| Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
 | Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md)၊ [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md)၊ [release preflight](../scripts/release_preflight.sh) |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_MM.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) |
 
@@ -24,7 +24,7 @@
 | Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.2.6 | [Language specification](LANGUAGE_SPEC_MM.md) |
 | Package author | [Package guide](PACKAGE.md) — v2.2.6 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
 | Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.2.6 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
-| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_MM.md) — v2.2.6 | [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_MM.md) — v2.2.6 | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md) |
 
 ## Normative contract map
 

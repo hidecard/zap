@@ -31,6 +31,8 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | CLI | `zap` |
 | Platforms | Linux၊ Windows၊ macOS ARM64 |
 | Documentation hub | [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) · [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) |
+| Usage guides | [မြန်မာ usage](docs/USAGE.md) · [English usage](docs/USAGE_EN.md) |
+| Production operations | [မြန်မာ runbook](docs/PRODUCTION_OPERATIONS_MM.md) · [English runbook](docs/PRODUCTION_OPERATIONS_EN.md) |
 | Runtime-state contract | [မြန်မာ](docs/RUNTIME_STATE_MM.md) · [English](docs/RUNTIME_STATE_EN.md) |
 | Memory budget/object store contract | [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) · [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) |
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
