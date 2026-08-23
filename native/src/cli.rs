@@ -302,6 +302,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
         "models",
         "services",
         "views",
+        "ui",
         "public",
         "migrations",
         "tests",
@@ -318,6 +319,11 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
         dir,
         "web.zp",
         "# Zap-native Web primitives for this project.\nexport fn web_app(name):\n    return {\"name\": name, \"serialization\": \"json\", \"error_mode\": \"centralized\"}\n\nexport fn web_route(method, path, handler, scope):\n    return {\"method\": method, \"path\": path, \"handler\": handler, \"scope\": scope}\n",
+    )?;
+    write_scaffold_file(
+        dir,
+        "ui/ui.zp",
+        "# UI contract: browser-facing entrypoint and asset boundary.\nexport fn ui_manifest():\n    return {\"kind\": \"web-ui\", \"framework\": \"plain\", \"entry\": \"public/index.html\", \"assets\": \"public/assets\", \"runtime\": \"browser\", \"node_required_at_runtime\": false}\n",
     )?;
     write_scaffold_file(
         dir,
@@ -395,7 +401,7 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "main.zp",
-        "# Zap-first Web project entrypoint.\nimport \"web\"\nimport \"routes\"\nimport \"models/user\"\nimport \"services/user_service\"\nimport \"middleware\"\nimport \"admin\"\nlet app = web_app(\"APP_NAME\")\nlet route_table = routes()\nlet model = user_model()\nlet middleware_table = middleware_stack()\nlet admin_table = admin_registry()\nsay json({\"framework\": \"zap-web\", \"app\": app, \"routes\": route_table, \"model\": model, \"middleware\": middleware_table, \"admin\": admin_table})\n",
+        "# Zap-first Web project entrypoint.\nimport \"web\"\nimport \"routes\"\nimport \"models/user\"\nimport \"services/user_service\"\nimport \"middleware\"\nimport \"admin\"\nimport \"ui/ui\"\nlet app = web_app(\"APP_NAME\")\nlet route_table = routes()\nlet model = user_model()\nlet middleware_table = middleware_stack()\nlet admin_table = admin_registry()\nlet ui = ui_manifest()\nsay json({\"framework\": \"zap-web\", \"app\": app, \"routes\": route_table, \"model\": model, \"middleware\": middleware_table, \"admin\": admin_table, \"ui\": ui})\n",
     )?;
     write_scaffold_file(
         dir,
@@ -405,7 +411,7 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "tests/web_test.zp",
-        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 7, \"web scaffold must contain seven starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[2][\"path\"] == \"/assets/*path\", \"asset route must be present\")\nassert(route_table[3][\"path\"] == \"/api/tasks\", \"JSON API route must be present\")\nassert(route_table[5][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nassert(route_table[6][\"handler\"] == \"frontend_spa\", \"SPA fallback route must be present\")\nsay \"Zap Web scaffold test passed\"\n",
+        "import \"routes\"\nimport \"ui/ui\"\n\nlet route_table = routes()\nlet ui = ui_manifest()\nassert(len(route_table) == 7, \"web scaffold must contain seven starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[2][\"path\"] == \"/assets/*path\", \"asset route must be present\")\nassert(route_table[3][\"path\"] == \"/api/tasks\", \"JSON API route must be present\")\nassert(route_table[5][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nassert(route_table[6][\"handler\"] == \"frontend_spa\", \"SPA fallback route must be present\")\nassert(ui[\"node_required_at_runtime\"] == false, \"UI must not require Node at runtime\")\nsay \"Zap Web scaffold test passed\"\n",
     )?;
     Ok(())
 }

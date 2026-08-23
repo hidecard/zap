@@ -32,7 +32,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `ui/ui.zp`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated `ui/ui.zp` သည် browser entrypoint၊ asset root၊ frontend mode နှင့် runtime တွင် Node မလိုကြောင်း သတ်မှတ်ပေးသော သီးခြား UI boundary ဖြစ်ပါသည်။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ UI metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
 
 Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
 
@@ -55,6 +55,8 @@ shop/
 │   └── user.zp
 ├── services/
 │   └── user_service.zp
+├── ui/
+│   └── ui.zp
 ├── migrations/
 │   └── 0001_initial.zp
 ├── views/
@@ -67,7 +69,7 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
+`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation နှင့် request handler၊ `ui/ui.zp` သည် browser-facing UI metadata၊ `public/` သည် HTML/CSS/JavaScript asset များ၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
 
 ## Runtime independence နှင့် frontend integration
 
