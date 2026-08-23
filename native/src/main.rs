@@ -12,6 +12,7 @@ use lexer::Token;
 mod value;
 
 use value::{EnvFrame, Function, Param, StaticSignature, Value};
+mod database;
 mod project;
 mod registry;
 

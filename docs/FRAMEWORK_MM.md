@@ -14,9 +14,9 @@ Framework layer သည် **Zap-first application boundary** ဖြစ်ပါ�
 
 ## Zap-native Web direction
 
-Web roadmap ကို အခြား starter domain များထက် ဦးစားပေးထားပါသည်။ Web project အသစ်ကို `zap new <dir>` ဖြင့် ဖန်တီးပြီး `zap check`၊ `zap web check`၊ `zap db check` နှင့် `zap test tests` ဖြင့် စစ်နိုင်ပါသည်။ Generated project သည် routes၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များအတွက် ရိုးရိုး Zap module များကို အသုံးပြုပါသည်။ Nested test များ၏ import ကိုလည်း `zap.toml` ရှိသော အနီးဆုံး project root မှ resolve လုပ်ပေးပါသည်။
+Web roadmap ကို အခြား starter domain များထက် ဦးစားပေးထားပါသည်။ Web project အသစ်ကို `zap new <dir>` ဖြင့် ဖန်တီးပြီး `zap check`၊ `zap web check`၊ `zap db check`၊ `zap db plan` နှင့် `zap test tests` ဖြင့် စစ်နိုင်ပါသည်။ Generated project သည် routes၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များအတွက် ရိုးရိုး Zap module များကို အသုံးပြုပါသည်။ `zap db migrate --dry-run` သည် read-only SQLite plan ကို ပြပြီး `zap db migrate` သည် additive migration များကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် manifest ထဲက native server ကို run ပါသည်။ Nested test များ၏ import ကိုလည်း `zap.toml` ရှိသော အနီးဆုံး project root မှ resolve လုပ်ပေးပါသည်။
 
-ဤအရာသည် Django ကဲ့သို့ framework အတွက် ပထမအဆင့် ဖြစ်ပါသည်။ လက်ရှိ parser တွင် first-class route/model declaration၊ persistent native development server၊ database driver၊ session system သို့မဟုတ် built-in admin UI မရှိသေးပါ။ ထို feature များအတွက် explicit language/runtime contract နှင့် security test လိုအပ်သဖြင့် scaffold က ရှိပြီးသားဟု မဆိုရပါ။
+ဤအရာသည် Django ကဲ့သို့ framework အတွက် ပထမအဆင့် ဖြစ်ပါသည်။ လက်ရှိ parser တွင် first-class route/model declaration၊ concurrent production server၊ SQLite-first adapter ထက်ကျော်သော provider-neutral database driver၊ session system သို့မဟုတ် built-in admin UI မရှိသေးပါ။ ထို feature များအတွက် explicit language/runtime contract နှင့် security test လိုအပ်သဖြင့် scaffold က ရှိပြီးသားဟု မဆိုရပါ။
 
 ယခင် `host/zap-host` package သည် လက်ရှိ contract layer အတွက် reference HTTP adapter အဖြစ် ဆက်ရှိနေပါမည်။ ၎င်းသည် primary application model မဟုတ်ပါ။ Zap-native server capability တိုးလာသည်နှင့် adapter သည် platform boundary အဖြစ် သေးသွားပြီး route၊ DTO၊ auth၊ migration၊ admin နှင့် application policy များကို Zap ထဲတွင် ရေးသားသင့်ပါသည်။
 
@@ -24,7 +24,7 @@ Web roadmap ကို အခြား starter domain များထက် ဦ�
 
 | Starter | လက်ရှိ deliverable | ထပ်လိုအပ်မည့် host integration | Production အခြေအနေ |
 |---|---|---|---|
-| `frameworks/web` | Deterministic route/request/response contract | HTTP listener, TLS, middleware, body limit, deployment supervision | Contract prototype |
+| `frameworks/web` | Deterministic route/request/response contract နှင့် Zap-native loopback dev server၊ SQLite-first migration path | TLS၊ concurrent production listener၊ full middleware pipeline၊ provider-neutral database driver၊ deployment supervision | Development/reference slice |
 | `frameworks/mobile` | Portable app model, screen နှင့် action contract | Tauri, Flutter, React Native/Expo သို့မဟုတ် native shell | Contract prototype |
 | `frameworks/iot` | Bounded sensor event နှင့် device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr သို့မဟုတ် Embassy host | Contract prototype |
 | `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential နှင့် quota adapter | Contract prototype |

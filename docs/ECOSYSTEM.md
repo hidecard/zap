@@ -1,6 +1,6 @@
 # Zap Ecosystem Architecture
 
-Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ v2.2.3 အပြီးတွင် Framework Foundation v0.1 သည် Web၊ App၊ AI နှင့် IoT အတွက် current Zap syntax ဖြင့် run လို့ရသော contract starter များကို ပေးထားပြီ။ Real platform adapters များကို `zap-host` capability/DTO boundary ပြီးစီးပြီးနောက် သီးခြား package များအဖြစ် ဆက်တိုးမည်။
+Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ v2.2.3 အပြီးတွင် Framework Foundation v0.1 သည် Web၊ App၊ AI နှင့် IoT အတွက် current Zap syntax ဖြင့် run လို့ရသော contract starter များကို ပေးထားပြီ။ Web အတွက် Zap-native loopback server နှင့် SQLite-first migration adapter ကို စတင်ထားပြီး production-grade platform adapters များကို သီးခြား capability boundary၊ security policy နှင့် deployment evidence ဖြင့် ဆက်တိုးမည်။
 
 ## Layers
 
@@ -9,14 +9,14 @@ Zap သည် language core တစ်ခုအပေါ်တွင် domain-sp
 | Zap Core | syntax၊ parser၊ values၊ functions၊ modules၊ runtime | လက်ရှိတည်ဆောက်နေသည် |
 | Standard Library | collections၊ JSON၊ file၊ time၊ networking၊ process နှင့် testing APIs | တစ်စိတ်တစ်ပိုင်းရှိသည် |
 | Package Tooling | `zap.toml`၊ local modules၊ dependencies၊ lockfile၊ registry | manifest၊ deterministic lockfile၊ nested local graph/cycle validation နှင့် registry-ready metadata ရှိသည်; remote registry roadmap |
-| Domain Frameworks | Web၊ App/Mobile၊ AI နှင့် IoT contract starters | Framework Foundation v0.1 implemented; real adapters deferred |
+| Domain Frameworks | Web၊ App/Mobile၊ AI နှင့် IoT contract starters | Web native dev/SQLite migration slice implemented; production adapters deferred |
 | Platform Runtimes | native OS၊ browser/WASM၊ Android၊ GPU နှင့် microcontroller | Host adapters and target runtimes are roadmap work |
 
 ## Future frameworks
 
 ### Zap Web
 
-Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားသည်။ HTTP listener၊ TLS၊ middleware၊ body limits၊ WebSocket နှင့် database adapter များသည် `zap-host` အပြီးတွင် Axum/Tower ကဲ့သို့ existing host stack အပေါ် သီးခြား adapter အဖြစ် တည်ဆောက်ရမည့်အရာများ ဖြစ်သည်။
+Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ SQLite-first database adapter နှင့် structured migration workflow ကို Framework branch တွင် စတင်ပေးထားသည်။ TLS၊ production concurrency၊ middleware execution၊ body limits beyond the bounded native path၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
 
 ### Zap Mobile
 
@@ -46,13 +46,24 @@ zap --version
 zap --help
 zap async-check
 zap lsp
+zap new shop
+zap dev shop
+zap db check shop
+zap db plan shop
+zap db migrate --dry-run shop
+zap db migrate shop
 ```
 
-Framework starter commands များသည် ယခု branch တွင် သီးခြား generator command အဖြစ် မရှိသေးပါ။ Starter project များကို repository ၏ `frameworks/` directory မှ copy/clone လုပ်ပြီး `zap lock`, `zap check`, `zap build`, `zap run main.zp` ဖြင့် စစ်နိုင်သည်။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
+Zap Web အတွက် `zap new <dir>` သည် generator command အဖြစ် ရှိပြီး `zap check`, `zap web check`, `zap db check`, `zap db plan`, `zap db migrate`, `zap test` နှင့် `zap dev` workflow ကို အသုံးပြုနိုင်သည်။ အခြား Framework starter project များကို repository ၏ `frameworks/` directory မှ copy/clone လုပ်ပြီး `zap lock`, `zap check`, `zap build`, `zap run main.zp` ဖြင့် စစ်နိုင်သည်။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
 
 ```text
 zap new my-app
-zap web new website
+zap new shop
+zap dev shop
+zap web check shop
+zap db plan shop
+zap db migrate --dry-run shop
+zap db migrate shop
 zap mobile new android-app
 zap ai new assistant
 zap iot new sensor-node

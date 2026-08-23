@@ -1,6 +1,6 @@
 # Zap Framework Foundation
 
-ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Web ကို ယခု Framework ၏ ဦးစားပေး direction အဖြစ် Zap ကိုယ်တိုင်ပေါ်တွင် project/app structure၊ route metadata၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များ တည်ဆောက်နိုင်ရန် ပြင်ဆင်နေပါသည်။ Starter များသည် current Zap v2.2.3 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ Native HTTP server၊ real database driver၊ identity provider သို့မဟုတ် external platform runtime များကို ယခုအဆင့်တွင် explicit capability နှင့် security gates မပြည့်မီ မဖွင့်သေးပါ။
+ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Web ကို ယခု Framework ၏ ဦးစားပေး direction အဖြစ် Zap ကိုယ်တိုင်ပေါ်တွင် project/app structure၊ route metadata၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များ တည်ဆောက်နိုင်ရန် ပြင်ဆင်ထားပါသည်။ Starter များသည် current Zap v2.2.3 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ Zap-native loopback development server နှင့် SQLite-first database adapter/migration workflow ကို စတင်ထားပြီး production concurrency၊ identity provider နှင့် external platform runtime များသည် explicit capability နှင့် security gates မပြည့်မီ မဖွင့်သေးပါ။
 
 ```text
 frameworks/
@@ -20,11 +20,14 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db plan
+zap db migrate --dry-run
+zap db migrate
 zap test tests
-zap run main.zp
+zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က migration file contract ကို စစ်ပါသည်။ ဤ command များသည် project metadata/contract validation ဖြစ်ပြီး real database migration apply သို့မဟုတ် persistent HTTP listener မဖွင့်သေးပါ။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `server.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap db plan` သည် pending SQL ကို read-only ပြပြီး `zap db migrate --dry-run` သည် apply မလုပ်ဘဲ ထို plan ကို ပြပါသည်။ `zap db migrate` သည် SQLite database ကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် bounded loopback development/reference server ကို run ပါသည်။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
 
 ## Run a starter
 

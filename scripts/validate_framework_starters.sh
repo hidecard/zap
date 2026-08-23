@@ -128,6 +128,10 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap web check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap web check"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db check"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap db plan"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap db plan"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap db migrate"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap db migrate"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap dev"
 require_text docs/ZAP_WEB_NATIVE_EN.md "ZAP_WEB_PORT"
@@ -146,6 +150,7 @@ for native_web_file in \
   docs/ZAP_WEB_NATIVE_EN.md \
   docs/ZAP_WEB_NATIVE_MM.md \
   native/src/cli.rs \
+  native/src/database.rs \
   native/src/project.rs; do
   require_file "$native_web_file"
 done
@@ -231,6 +236,10 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db migrate --dry-run "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db migrate "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" db plan --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
         record PASS "runtime-smoke:zap-new-web"

@@ -22,6 +22,9 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db plan
+zap db migrate --dry-run
+zap db migrate
 zap test tests
 zap run main.zp
 zap dev
@@ -29,7 +32,7 @@ zap dev
 
 `zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
 
-Native CLI သည် ယခု constrained `[web]` manifest section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် migration export ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
+Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
 
 ## Project နှင့် app model
 
@@ -58,7 +61,7 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
+`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
 
 ## လက်ရှိ route declaration contract
 
@@ -124,7 +127,7 @@ export fn user_model():
 
 စီစဉ်ထားသည့် ORM သည် dynamic ORM အလွန်ကြီးတစ်ခုမဟုတ်ဘဲ typed model metadata၊ nullability/uniqueness၊ relationship၊ parameterized query၊ transaction handle၊ pool timeout၊ cancellation/deadline နှင့် stable database error classification ကို ဦးစားပေးသင့်ပါသည်။ Query construction သည် inspectable ဖြစ်ရပြီး untrusted value ကို SQL ထဲ တိုက်ရိုက် string concatenate မလုပ်ရပါ။
 
-Production repository ကို provider-neutral interface နောက်ကွယ်တွင် inject လုပ်ရမည်။ လက်ရှိ `database_contract.zp` နှင့် `WebGateway` သည် contract test အတွက် အသုံးဝင်သော်လည်း real database driver မဟုတ်ပါ။ PostgreSQL၊ SQLite သို့မဟုတ် အခြား backend များကို explicit adapter အဖြစ် ထည့်ပြီး backend-specific migration test ပြုလုပ်ရမည်။
+Production repository ကို provider-neutral interface နောက်ကွယ်တွင် inject လုပ်ရမည်။ Deterministic `database_contract.zp` နှင့် `WebGateway` သည် contract test အတွက် အသုံးဝင်သော်လည်း real database driver မဟုတ်ပါ။ Native runtime တွင် structured migration workflow အတွက် SQLite-first adapter ကို ထည့်သွင်းထားပါသည်။ PostgreSQL၊ MySQL နှင့် အခြား backend များအတွက် capability၊ query၊ transaction နှင့် migration test သီးခြားပါသော explicit adapter များ လိုအပ်ပါသည်။
 
 ## Migrations
 
@@ -132,12 +135,14 @@ Migration သည် code နှင့်အတူ version-control ထဲ commit 
 
 ```zap
 export fn migration():
-    return {"id": "0001_initial", "depends_on": [], "operations": ["create_table users"]}
+    return {"id": "0001_initial", "depends_on": [], "operations": [{"kind": "create_table", "table": "users", "columns": {"id": "integer primary key", "name": "text not null", "email": "text not null unique"}}]}
 ```
 
-`zap db check` သည် migration directory ထဲ `.zp` files ရှိပြီး `migration()` export လုပ်ထား/မထားကို စစ်ပါသည်။ SQL ကို apply မလုပ်ပါ။ Reviewed database adapter၊ transaction policy၊ migration lock၊ rollback behavior နှင့် dry-run SQL output မရှိသေးသရွေ့ `zap db migrate` ကို application လုပ်မည့် command အဖြစ် မဖော်ပြသင့်ပါ။
+ပထမဆုံး native adapter သည် **SQLite-first** ဖြစ်ပါသည်။ Migration file တစ်ခုစီတွင် exported၊ parameter မပါသော `migration()` function တစ်ခုသာ ပါရမည်ဖြစ်ပြီး return value သည် literal map/list tree ဖြစ်ရပါမည်။ ပထမအဆင့်တွင် `create_table` နှင့် `add_column` operation များကိုသာ support လုပ်ထားပါသည်။ Identifier များကို allow-list လုပ်ထားပြီး column type/modifier များကို bounded ထားပါသည်။ Arbitrary SQL၊ function call၊ variable name နှင့် interpolation များကို reject လုပ်ပါသည်။
 
-Production migration workflow သည် migration ရေးခြင်း၊ dependency/SQL plan စစ်ခြင်း၊ isolated environment တွင် apply လုပ်ခြင်း၊ compatibility check လုပ်ခြင်း၊ rolling update အတွင်း schema version နှစ်ခုလုံးကို support လုပ်ခြင်းနှင့် applied migration ကို atomic မှတ်တမ်းတင်ခြင်းတို့ ဖြစ်သင့်ပါသည်။ Destructive operation များအတွက် explicit confirmation သို့မဟုတ် preflight policy လိုအပ်ပါသည်။
+`zap db check` သည် migration declaration များကို validate လုပ်ပြီး database မဖွင့်ဘဲ deterministic SQL plan ကို compile လုပ်ပါသည်။ `zap db plan` သည် SQLite migration ledger ရှိလျှင် ဖတ်ကာ pending SQL ကို ပြပါသည်။ `zap db plan --json` သည် machine-readable output ထုတ်ပေးပါသည်။ `zap db migrate --dry-run` သည် read-only plan ကိုသာ run ပါသည်။ `zap db migrate` သည် SQLite database ကို ဖန်တီးပြီး pending migration များကို transaction တစ်ခုအတွင်း apply လုပ်ကာ foreign key ကို enable လုပ်ပြီး `__zap_migrations` ledger ထဲ migration တစ်ခုစီ၏ checksum ကို မှတ်တမ်းတင်ပါသည်။ Apply ပြီးသား migration ကို မသိမသာ edit လုပ်၍ မရဘဲ command က fail ဖြစ်ပြီး migration အသစ်ရေးရန် လိုအပ်ပါသည်။ Controlled deployment သို့မဟုတ် test environment အတွက် manifest URL ကို `ZAP_DATABASE_URL` ဖြင့် override လုပ်နိုင်ပါသည်။
+
+Production migration workflow သည် migration ရေးခြင်း၊ dependency/SQL plan စစ်ခြင်း၊ isolated environment တွင် apply လုပ်ခြင်း၊ compatibility check လုပ်ခြင်း၊ rolling update အတွင်း schema version နှစ်ခုလုံးကို support လုပ်ခြင်းနှင့် applied migration ကို atomic မှတ်တမ်းတင်ခြင်းတို့ ဖြစ်နေဆဲဖြစ်ပါသည်။ လက်ရှိ native slice သည် additive table/column operation များကိုသာ ရည်ရွယ်ထားပါသည်။ Destructive operation၊ PostgreSQL/MySQL adapter၊ distributed migration lock၊ rollback orchestration၊ connection pool နှင့် production deployment policy များသည် နောက်အဆင့်လုပ်ငန်းများ ဖြစ်ပါသည်။
 
 ## Authentication နှင့် authorization
 
@@ -186,6 +191,9 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db plan
+zap db migrate --dry-run
+zap db migrate
 zap test tests
 zap run main.zp
 zap dev
@@ -193,7 +201,7 @@ zap dev
 
 `zap dev` သည် manifest ထဲက `server.zp` ကို run ပါသည်။ Scaffold ထဲရှိ server သည် `ZAP_WEB_PORT` ကိုဖတ်ပြီး မသတ်မှတ်လျှင် `3000` ကို အသုံးပြုပါသည်။ လက်ရှိ native server သည် loopback ပေါ်တွင် bounded HTTP/1.0 သို့မဟုတ် HTTP/1.1 request များကို လက်ခံပြီး exact path နှင့် `:parameter` segment များကို match လုပ်ကာ request map ကို Zap handler ထံ ပေးပြီး security header ပါသော framed response ပြန်ပေးပါသည်။ Port ပြောင်းလိုပါက `ZAP_WEB_PORT=3100 zap dev` ဟု run နိုင်ပါသည်။ ၎င်းသည် single-threaded နှင့် blocking ဖြစ်သော development/reference server ဖြစ်သဖြင့် concurrency၊ cancellation၊ TLS/edge policy၊ readiness integration နှင့် production operation evidence များ မပြည့်မီ production server ဟု မဆိုရပါ။
 
-နောက်ထပ် CLI command များကို semantics အမှန်နှင့် test evidence ရှိမှသာ ထည့်သင့်ပါသည်။ Roadmap တွင် resolved route/middleware table အတွက် `zap routes`၊ execution flow အတွက် `zap explain route <path>`၊ configured backend အတွက် `zap db migrate`၊ API documentation အတွက် `zap docs` နှင့် production config/security policy အတွက် `zap deploy preflight` တို့ ပါဝင်ပါသည်။
+နောက်ထပ် CLI command များကို semantics အမှန်နှင့် test evidence ရှိမှသာ ထည့်သင့်ပါသည်။ Roadmap တွင် resolved route/middleware table အတွက် `zap routes`၊ execution flow အတွက် `zap explain route <path>`၊ API documentation အတွက် `zap docs` နှင့် production config/security policy အတွက် `zap deploy preflight` တို့ ပါဝင်ပါသည်။ လက်ရှိ `zap db migrate` implementation သည် SQLite-first နှင့် additive operation များအတွက်သာ ဖြစ်ပြီး provider-neutral production migration system ဟု မယူဆရပါ။
 
 `zap run main.zp` သည် contract preview အဖြစ် ဆက်ရှိနေပါမည်။ `zap dev` သည် ပထမဆုံး Zap-native HTTP execution path ဖြစ်ပြီး `host/zap-host` သည် operational Axum/Tower reference adapter ဖြစ်ပါသည်။ Production rule ပြည့်မီသည်အထိ နှစ်ခုလုံးကို complete production Web platform ဟု မဖော်ပြရပါ။
 

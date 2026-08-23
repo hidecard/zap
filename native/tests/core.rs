@@ -5859,6 +5859,51 @@ fn creates_and_checks_zap_web_project() {
     assert!(migrations.status.success());
     assert!(String::from_utf8_lossy(&migrations.stdout).contains("migration layout"));
 
+    let plan = Command::new(binary())
+        .args(["db", "plan", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        plan.status.success(),
+        "{}",
+        String::from_utf8_lossy(&plan.stderr)
+    );
+    assert!(String::from_utf8_lossy(&plan.stdout).contains("CREATE TABLE"));
+
+    let dry_run = Command::new(binary())
+        .args(["db", "migrate", "--dry-run", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        dry_run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&dry_run.stderr)
+    );
+    assert!(String::from_utf8_lossy(&dry_run.stdout).contains("pending migration"));
+
+    let migrate = Command::new(binary())
+        .args(["db", "migrate", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        migrate.status.success(),
+        "{}",
+        String::from_utf8_lossy(&migrate.stderr)
+    );
+    assert!(String::from_utf8_lossy(&migrate.stdout).contains("migrations applied"));
+    assert!(root.join("data/zap.sqlite3").is_file());
+
+    let applied = Command::new(binary())
+        .args(["db", "plan", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        applied.status.success(),
+        "{}",
+        String::from_utf8_lossy(&applied.stderr)
+    );
+    assert!(String::from_utf8_lossy(&applied.stdout).contains("\"pending\":[]"));
+
     let tests = Command::new(binary())
         .args(["test", root.join("tests").to_str().unwrap()])
         .output()
@@ -5888,4 +5933,6 @@ fn web_cli_commands_are_documented_in_help() {
     assert!(help.contains("zap dev [dir]"));
     assert!(help.contains("zap web check [dir]"));
     assert!(help.contains("zap db check [dir]"));
+    assert!(help.contains("zap db plan [dir] [--json]"));
+    assert!(help.contains("zap db migrate [dir] [--dry-run]"));
 }

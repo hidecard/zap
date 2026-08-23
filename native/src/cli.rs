@@ -2,6 +2,9 @@ use super::project::{
     install_dependencies, migrate_lockfile, update_dependencies, write_lockfile, TestOptions,
 };
 use super::*;
+use crate::database::{
+    apply_migrations, database_plan, plan_to_json, plan_to_text, validate_project_database,
+};
 use crate::project::{add_dependency, registry_packages_from_lockfile};
 
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
@@ -37,7 +40,9 @@ Usage:
   zap new <dir>                         Create a Zap-first Web project
   zap dev [dir]                         Run the Zap-native Web server entrypoint
   zap web check [dir]                   Validate a Zap Web project
-  zap db check [dir]                    Validate Web migration layout
+  zap db check [dir]                    Validate Web migration layout and SQL plan
+  zap db plan [dir] [--json]            Show the read-only SQLite migration plan
+  zap db migrate [dir] [--dry-run]      Apply SQLite migrations transactionally
   zap init <dir>                        Create a generic Zap project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
@@ -156,49 +161,56 @@ fn validate_web_command(dir: &Path) -> Result<String, String> {
 }
 
 fn validate_migration_layout(dir: &Path) -> Result<String, String> {
-    let migration_dir = web_manifest_path(dir, "migrations")?;
-    if !migration_dir.is_dir() {
-        return Err(format!(
-            "migration directory not found: {}",
-            migration_dir.display()
-        ));
-    }
-    let mut files = fs::read_dir(&migration_dir)
-        .map_err(|error| format!("cannot read migrations: {error}"))?
-        .map(|entry| {
-            entry
-                .map(|item| item.path())
-                .map_err(|error| error.to_string())
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    files.sort();
-    let mut count = 0usize;
-    for path in files {
-        if path.extension().and_then(|value| value.to_str()) != Some("zp") {
-            continue;
+    validate_project_database(dir)
+}
+
+fn print_database_plan(dir: &Path, json_output: bool) {
+    match database_plan(dir, true) {
+        Ok(plan) if json_output => println!("{}", plan_to_json(&plan)),
+        Ok(plan) => print!("{}", plan_to_text(&plan)),
+        Err(error) => {
+            eprintln!("Zap DB plan error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
         }
-        let source = read_limited_text(&path, "migration read")?;
-        if !source
-            .lines()
-            .any(|line| line.trim_start().starts_with("export fn migration("))
-        {
-            return Err(format!(
-                "{}: migration must export fn migration()",
-                path.display()
-            ));
+    }
+}
+
+fn run_database_migrate(dir: &Path, json_output: bool, dry_run: bool) {
+    if dry_run {
+        print_database_plan(dir, json_output);
+        return;
+    }
+    match apply_migrations(dir) {
+        Ok(plan) if json_output => println!("{}", plan_to_json(&plan)),
+        Ok(plan) => println!(
+            "SQLite migrations applied: {} applied migration(s) at {}",
+            plan.applied_count, plan.database_path
+        ),
+        Err(error) => {
+            eprintln!("Zap DB migrate error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
         }
-        count += 1;
     }
-    if count == 0 {
-        return Err(format!(
-            "no .zp migrations found in {}",
-            migration_dir.display()
-        ));
+}
+
+fn parse_database_command(args: &[String]) -> Result<(PathBuf, bool, bool), String> {
+    let mut dir = PathBuf::from(".");
+    let mut json_output = false;
+    let mut dry_run = false;
+    for argument in args.iter().skip(3) {
+        match argument.as_str() {
+            "--json" => json_output = true,
+            "--dry-run" => dry_run = true,
+            value if value.starts_with('-') => {
+                return Err(format!("unknown database option: {value}"))
+            }
+            _value if dir != Path::new(".") => {
+                return Err("database command accepts only one directory".into())
+            }
+            value => dir = PathBuf::from(value),
+        }
     }
-    Ok(format!(
-        "valid Zap Web migration layout: {count} migration file(s) in {}",
-        migration_dir.display()
-    ))
+    Ok((dir, json_output, dry_run))
 }
 
 fn create_web_project(dir: &Path) -> Result<(), String> {
@@ -222,7 +234,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     }
     let name = scaffold_package_name(dir);
     let manifest = format!(
-        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n"
+        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n\n[database]\ndriver = \"sqlite\"\nurl = \"data/zap.sqlite3\"\n"
     );
     write_scaffold_file(dir, "zap.toml", &manifest)?;
     write_scaffold_file(
@@ -258,7 +270,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     write_scaffold_file(
         dir,
         "migrations/0001_initial.zp",
-        "export fn migration():\n    return {\"id\": \"0001_initial\", \"depends_on\": [], \"operations\": [\"create_table users\"]}\n",
+        "export fn migration():\n    return {\"id\": \"0001_initial\", \"depends_on\": [], \"operations\": [{\"kind\": \"create_table\", \"table\": \"users\", \"columns\": {\"id\": \"integer primary key\", \"name\": \"text not null\", \"email\": \"text not null unique\"}}]}\n",
     )?;
     write_scaffold_file(
         dir,
@@ -336,6 +348,25 @@ pub fn run_cli(args: &[String]) {
                 eprintln!("Zap Web check error: {error}");
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
+        }
+        return;
+    }
+    if args.len() >= 3 && args[1] == "db" && matches!(args[2].as_str(), "plan" | "migrate") {
+        let (dir, json_output, dry_run) = match parse_database_command(args) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("Zap DB usage error: {error}");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        };
+        if args[2] == "plan" {
+            if dry_run {
+                eprintln!("Zap DB usage error: --dry-run is only valid with `db migrate`");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+            print_database_plan(&dir, json_output);
+        } else {
+            run_database_migrate(&dir, json_output, dry_run);
         }
         return;
     }
@@ -978,6 +1009,8 @@ mod tests {
             "zap new",
             "zap web check",
             "zap db check",
+            "zap db plan",
+            "zap db migrate",
             "zap init",
             "zap lsp",
             "zap async-check",

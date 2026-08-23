@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::ast::{parse_program, Stmt};
+use crate::database::validate_database_manifest;
 use crate::registry::{
     cache_package, cache_package_source_with_credentials, load_registry_credentials,
     package_cache_path, read_index, read_index_source_with_credentials, resolve_dependency_graph,
@@ -20,6 +21,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     let manifest = dir.join("zap.toml");
     let text = read_limited_text(&manifest, "manifest read")?;
     validate_manifest_syntax(&text)?;
+    validate_database_manifest(&text)?;
     let name = manifest_value(&text, "name").ok_or("zap.toml: missing package name".to_string())?;
     let version =
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
@@ -467,7 +469,7 @@ fn validate_web_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
 }
 
 fn validate_manifest_syntax(manifest: &str) -> Result<(), String> {
-    let allowed_sections = ["package", "dependencies", "module", "web"];
+    let allowed_sections = ["package", "dependencies", "module", "web", "database"];
     let mut section = "package";
     let mut keys = HashSet::new();
     for (index, raw_line) in manifest.lines().enumerate() {

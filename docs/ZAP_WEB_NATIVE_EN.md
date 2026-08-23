@@ -22,6 +22,9 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db plan
+zap db migrate --dry-run
+zap db migrate
 zap test tests
 zap run main.zp
 zap dev
@@ -29,7 +32,7 @@ zap dev
 
 `zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated entrypoint prints a deterministic application description, route table, model metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
 
-The native CLI now understands a constrained `[web]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates migration exports, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
+The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
 
 ## Project and app model
 
@@ -58,7 +61,7 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. This structure is a convention backed by the `[web]` manifest and the project checker.
+`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
 
 ## Current route declaration contract
 
@@ -124,7 +127,7 @@ export fn user_model():
 
 The planned ORM direction is deliberately smaller than a general-purpose dynamic ORM. It should provide typed model metadata, explicit field nullability and uniqueness, relationships, parameterized query construction, transaction handles, bounded pool acquisition, cancellation/deadlines, and stable database error classification. Query construction should be inspectable and should never concatenate untrusted values into SQL.
 
-A production repository must be injected behind a provider-neutral interface. The current deterministic `database_contract.zp` and `WebGateway` seam remain useful for contract tests, but they are not a real database driver. PostgreSQL, SQLite, or another backend should be added as explicit adapters with separate capability and migration tests.
+A production repository must be injected behind a provider-neutral interface. The deterministic `database_contract.zp` and `WebGateway` seam remain useful for contract tests, but they are not a real database driver. The native runtime now includes a SQLite-first adapter for the structured migration workflow; PostgreSQL, MySQL, and other backends still require explicit adapters with separate capability, query, transaction, and migration tests.
 
 ## Migrations
 
@@ -132,12 +135,14 @@ Migrations are versioned schema intent committed with the application. The scaff
 
 ```zap
 export fn migration():
-    return {"id": "0001_initial", "depends_on": [], "operations": ["create_table users"]}
+    return {"id": "0001_initial", "depends_on": [], "operations": [{"kind": "create_table", "table": "users", "columns": {"id": "integer primary key", "name": "text not null", "email": "text not null unique"}}]}
 ```
 
-`zap db check` verifies that the configured migration directory contains `.zp` files exporting `migration()`. It does not apply SQL. A real `zap db migrate` command must be added only when a reviewed database adapter, transaction policy, lock strategy, rollback behavior, and dry-run SQL output exist.
+The first native adapter is **SQLite-first**. Migration files must contain one exported, zero-argument `migration()` function whose return value is a literal map/list tree. The supported first operations are `create_table` and `add_column`; identifiers are allow-listed, column types/modifiers are bounded, and arbitrary SQL, function calls, names, and interpolation are rejected.
 
-The production migration workflow should be: generate or write a migration, inspect its dependency graph and SQL plan, apply it in an isolated environment, run compatibility checks, deploy application code that supports both schema versions during rolling updates, and record the applied migration atomically. Destructive operations require an explicit confirmation or preflight policy.
+`zap db check` validates the migration declarations and compiles their deterministic SQL plan without opening a database. `zap db plan` reads the SQLite migration ledger when present and prints pending SQL; `zap db plan --json` emits machine-readable output. `zap db migrate --dry-run` performs the same read-only plan, while `zap db migrate` creates the SQLite database, applies pending migrations inside one transaction, enables foreign keys, and records each applied migration in the `__zap_migrations` ledger with a checksum. A previously applied migration cannot be edited silently; the command fails and requires a new migration. `ZAP_DATABASE_URL` may override the manifest URL for a controlled deployment or test environment.
+
+The production migration workflow should still be: generate or write a migration, inspect its dependency graph and SQL plan, apply it in an isolated environment, run compatibility checks, deploy application code that supports both schema versions during rolling updates, and record the applied migration atomically. The current native slice deliberately supports only additive table/column operations; destructive operations, PostgreSQL/MySQL adapters, distributed migration locks, rollback orchestration, connection pools, and production deployment policy remain future work.
 
 ## Authentication and authorization
 
@@ -186,6 +191,9 @@ cd shop
 zap check
 zap web check
 zap db check
+zap db plan
+zap db migrate --dry-run
+zap db migrate
 zap test tests
 zap run main.zp
 zap dev
@@ -193,7 +201,7 @@ zap dev
 
 `zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact and `:parameter` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
 
-The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap db migrate` for an actual configured backend, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks.
+The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks. The current `zap db migrate` implementation is SQLite-first and additive; it must not be mistaken for a provider-neutral production migration system.
 
 `zap run main.zp` remains a contract preview. `zap dev` is the first Zap-native HTTP execution path, while `host/zap-host` remains the operational Axum/Tower reference adapter. Neither should be described as a complete production Web platform until the production rule below is satisfied.
 

@@ -80,7 +80,7 @@ ZAP_CORPUS_SEED="$SEED" ZAP_CORPUS_ROUNDS="$ROUNDS" cargo test \
     exit 1
   }
 
-mapfile -t markers < <(grep '^M2_VERIFY_REPLAY ' "$LOG" || true)
+mapfile -t markers < <(grep -oE 'M2_VERIFY_REPLAY round=[0-9]+ seed=[0-9]+ cases=[0-9]+ digest=[0-9a-f]{64}' "$LOG" || true)
 if (( ${#markers[@]} != ROUNDS )); then
   cat "$LOG" >&2
   fail "expected $ROUNDS deterministic replay markers, got ${#markers[@]}"

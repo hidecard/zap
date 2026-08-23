@@ -14,9 +14,9 @@ The Framework layer is therefore a **Zap-first application boundary**. Zap shoul
 
 ## Zap-native Web direction
 
-The Web roadmap is now prioritized over the other starter domains. A new Web project is created with `zap new <dir>` and validated through `zap check`, `zap web check`, `zap db check`, and `zap test tests`. The generated project uses ordinary Zap modules for routes, models, services, middleware, migrations, admin registration, and tests. The native CLI also resolves imports for nested tests from the nearest project root containing `zap.toml`.
+The Web roadmap is now prioritized over the other starter domains. A new Web project is created with `zap new <dir>` and validated through `zap check`, `zap web check`, `zap db check`, `zap db plan`, and `zap test tests`. The generated project uses ordinary Zap modules for routes, models, services, middleware, migrations, admin registration, and tests. `zap db migrate --dry-run` shows a read-only SQLite plan, while `zap db migrate` applies additive migrations transactionally and records checksums in a migration ledger. `zap dev` runs the manifest-declared native server, and the CLI resolves imports for nested tests from the nearest project root containing `zap.toml`.
 
-This is the first step toward a Django-like framework. The current parser does not yet support first-class route/model declarations, a persistent native development server, a database driver, a session system, or a built-in admin UI. Those features require explicit language/runtime contracts and executable security tests; the scaffold must not pretend they already exist.
+This is the first step toward a Django-like framework. The current parser does not yet support first-class route/model declarations, a concurrent production server, provider-neutral database drivers beyond the SQLite-first adapter, a session system, or a built-in admin UI. Those features require explicit language/runtime contracts and executable security tests; the scaffold must not pretend they already exist.
 
 The former `host/zap-host` package remains a reference HTTP adapter for the current contract layer. It is not the primary application model. As Zap-native server capabilities mature, the adapter should shrink to a platform boundary while route, DTO, auth, migration, admin, and application policy remain authored in Zap.
 
@@ -24,7 +24,7 @@ The former `host/zap-host` package remains a reference HTTP adapter for the curr
 
 | Starter | Current deliverable | Host integration still required | Production status |
 |---|---|---|---|
-| `frameworks/web` | Deterministic route/request/response contract | HTTP listener, TLS, middleware, body limits, deployment supervision | Contract prototype |
+| `frameworks/web` | Deterministic route/request/response contract plus Zap-native loopback dev server and SQLite-first migration path | TLS, concurrent production listener, full middleware pipeline, provider-neutral database drivers, deployment supervision | Development/reference slice |
 | `frameworks/mobile` | Portable app model, screens, and actions | Tauri, Flutter, React Native/Expo, or another native shell | Contract prototype |
 | `frameworks/iot` | Bounded sensor-event and device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr, or Embassy host | Contract prototype |
 | `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential and quota adapter | Contract prototype |
