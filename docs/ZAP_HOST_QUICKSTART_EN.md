@@ -1,6 +1,6 @@
 # zap-host Quickstart and Integration Guide
 
-**Verified baseline:** Zap v2.2.6
+**Verified baseline:** Zap v2.2.7
 **Branch:** `Framework`
 **Adapter:** `host/zap-host`
 

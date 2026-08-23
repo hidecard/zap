@@ -1,6 +1,6 @@
 # Zap Generic Type Syntax Decision Record
 
-**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.2.6 type-checking contract. No new parser or runtime change is required for this design gate.
+**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.2.7 type-checking contract. No new parser or runtime change is required for this design gate.
 
 ## Scope
 
@@ -14,12 +14,12 @@ The existing parser splits nested type arguments deterministically and rejects e
 | `map<K, V>` | Implemented baseline | Exactly two recursively valid arguments; key type must be `text` or `any` when matched against a concrete value. |
 | `option<T>` | Implemented baseline | Exactly one recursively valid payload type; `option<any>` remains compatible with a concrete option payload. |
 | `result<T>` | Implemented baseline | Exactly one recursively valid payload type. |
-| User-defined generic declarations | Deferred | No generic class, function, or type-parameter declaration syntax is introduced in v2.2.6. |
+| User-defined generic declarations | Deferred | No generic class, function, or type-parameter declaration syntax is introduced in v2.2.7. |
 | Generic inference from unannotated expressions | Deferred | Inference remains conservative and must not manufacture a generic type from insufficient evidence. |
 
 ## Syntax and validation rules
 
-The grammar decision for v2.2.6 is intentionally small:
+The grammar decision for v2.2.7 is intentionally small:
 
 ```text
 Type        := Primitive | "list<" Type ">"
@@ -34,18 +34,18 @@ Whitespace around nested arguments is accepted after trimming. Generic forms mus
 
 ## Compatibility and rollout
 
-This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The v2.2.6 release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
+This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The v2.2.7 release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
 
 Future work may add generic function parameters, user-defined generic declarations, variance rules, and stronger collection-element inference. Those features require a separate design record because they would affect declaration parsing, symbol binding, call-site inference, diagnostics, and LSP synchronization.
 
 ## Conformance evidence
 
-The native suite covers valid nested collection and variant annotations, incompatible generic assignments, malformed forms such as `list<>`, and nested generic matching. These tests are the required TC-012 non-regression boundary for v2.2.6. Generic declaration syntax and advanced inference remain explicitly deferred and must not be inferred from this baseline.
+The native suite covers valid nested collection and variant annotations, incompatible generic assignments, malformed forms such as `list<>`, and nested generic matching. These tests are the required TC-012 non-regression boundary for v2.2.7. Generic declaration syntax and advanced inference remain explicitly deferred and must not be inferred from this baseline.
 
 ## Acceptance decision
 
-TC-012 is **implemented baseline** for v2.2.6. The next generic milestone is a separate design and implementation phase for generic declarations and inference; it is not part of the current release gate.
+TC-012 is **implemented baseline** for v2.2.7. The next generic milestone is a separate design and implementation phase for generic declarations and inference; it is not part of the current release gate.
 
 **Author:** Manus AI
-**Version:** v2.2.6 design gate
+**Version:** v2.2.7 design gate
 **Status:** Accepted
