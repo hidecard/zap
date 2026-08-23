@@ -1,6 +1,6 @@
 use std::cell::Cell;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, TcpListener, ToSocketAddrs},
@@ -16,7 +16,7 @@ use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, Unary
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::stdlib::{checked_integer_pow, MAX_SLEEP_MILLISECONDS};
-use crate::value::try_values_equal;
+use crate::value::{try_values_equal, MAX_RUNTIME_VALUE_NODES};
 use crate::ExprParser;
 use crate::{
     parse_signature, read_limited_text, resolve_module, write_limited_text, EnvFrame,
@@ -27,6 +27,7 @@ const MAX_EXECUTION_DEPTH: usize = 256;
 const MAX_SOURCE_LINES: usize = 100_000;
 const MAX_LOOP_ITERATIONS: usize = 100_000;
 const MAX_JSON_BYTES: usize = 8 * 1024 * 1024;
+const MAX_JSON_DEPTH: usize = MAX_EXECUTION_DEPTH;
 const MAX_LOG_MESSAGE_BYTES: usize = 8 * 1024;
 const MAX_LOG_FIELDS: usize = 64;
 const MAX_LOG_FIELD_KEY_BYTES: usize = 256;
@@ -232,50 +233,92 @@ pub(crate) fn operate(a: Value, op: Token, b: Value) -> Result<Value, String> {
         _ => Err("invalid operation".into()),
     }
 }
-pub(crate) fn value_to_json(v: &Value) -> Result<serde_json::Value, String> {
-    match v {
+#[derive(Default)]
+struct JsonEncodeState {
+    active_objects: HashSet<usize>,
+    nodes: usize,
+}
+
+pub(crate) fn value_to_json(value: &Value) -> Result<serde_json::Value, String> {
+    let mut state = JsonEncodeState::default();
+    value_to_json_inner(value, 0, &mut state)
+}
+
+fn value_to_json_inner(
+    value: &Value,
+    depth: usize,
+    state: &mut JsonEncodeState,
+) -> Result<serde_json::Value, String> {
+    if depth > MAX_JSON_DEPTH {
+        return Err(format!(
+            "json encode failed: value graph exceeds {MAX_JSON_DEPTH} levels"
+        ));
+    }
+    state.nodes = state
+        .nodes
+        .checked_add(1)
+        .ok_or_else(|| "json encode failed: value graph node counter overflow".to_string())?;
+    if state.nodes > MAX_RUNTIME_VALUE_NODES {
+        return Err(format!(
+            "json encode failed: value graph exceeds {MAX_RUNTIME_VALUE_NODES} nodes"
+        ));
+    }
+
+    match value {
         Value::None => Ok(serde_json::Value::Null),
-        Value::Bool(x) => Ok(serde_json::Value::Bool(*x)),
-        Value::Number(x) => Ok(serde_json::Value::Number((*x).into())),
-        Value::Text(x) => Ok(serde_json::Value::String(x.clone())),
-        Value::List(xs) => Ok(serde_json::Value::Array(
-            xs.iter()
-                .map(value_to_json)
+        Value::Bool(value) => Ok(serde_json::Value::Bool(*value)),
+        Value::Number(value) => Ok(serde_json::Value::Number((*value).into())),
+        Value::Text(value) => Ok(serde_json::Value::String(value.clone())),
+        Value::List(values) => Ok(serde_json::Value::Array(
+            values
+                .iter()
+                .map(|value| value_to_json_inner(value, depth + 1, state))
                 .collect::<Result<Vec<_>, _>>()?,
         )),
-        Value::Map(m) => Ok(serde_json::Value::Object(
-            m.iter()
-                .map(|(k, v)| value_to_json(v).map(|value| (k.clone(), value)))
+        Value::Map(values) => Ok(serde_json::Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| {
+                    value_to_json_inner(value, depth + 1, state).map(|value| (key.clone(), value))
+                })
                 .collect::<Result<serde_json::Map<_, _>, _>>()?,
         )),
         Value::Object { class_name, fields } => {
-            let mut object = serde_json::Map::new();
-            object.insert(
-                "__class".into(),
-                serde_json::Value::String(class_name.clone()),
-            );
-            for (k, v) in fields.try_borrow()?.iter() {
-                object.insert(k.clone(), value_to_json(v)?);
+            let identity = Rc::as_ptr(fields) as usize;
+            if !state.active_objects.insert(identity) {
+                return Err("json encode failed: cyclic object reference".into());
             }
-            Ok(serde_json::Value::Object(object))
+            let result = (|| {
+                let mut object = serde_json::Map::new();
+                object.insert(
+                    "__class".into(),
+                    serde_json::Value::String(class_name.clone()),
+                );
+                for (key, value) in fields.try_borrow()?.iter() {
+                    object.insert(key.clone(), value_to_json_inner(value, depth + 1, state)?);
+                }
+                Ok(serde_json::Value::Object(object))
+            })();
+            state.active_objects.remove(&identity);
+            result
         }
-        Value::ResultOk(x) => Ok(serde_json::json!({
+        Value::ResultOk(value) => Ok(serde_json::json!({
             "__zap_variant":"ok",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
-        Value::ResultErr(x) => Ok(serde_json::json!({
+        Value::ResultErr(value) => Ok(serde_json::json!({
             "__zap_variant":"err",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
-        Value::OptionSome(x) => Ok(serde_json::json!({
+        Value::OptionSome(value) => Ok(serde_json::json!({
             "__zap_variant":"some",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
         Value::OptionNone => Ok(serde_json::json!({"__zap_variant":"none"})),
         Value::Callable(_) => Ok(serde_json::json!({"__zap_variant":"callable"})),
         Value::Future(value) => Ok(serde_json::json!({
             "__zap_variant":"future",
-            "value":value_to_json(value)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
         Value::ScheduledFuture(id) => Ok(serde_json::json!({
             "__zap_variant":"future",
@@ -4812,6 +4855,33 @@ mod tests {
             value_to_json(&value).unwrap_err(),
             "BorrowError: object fields are already borrowed"
         );
+    }
+
+    #[test]
+    fn json_conversion_rejects_cyclic_object_without_panicking() {
+        let value = Value::object("Node");
+        let Value::Object { fields, .. } = &value else {
+            panic!("object constructor must create an object value");
+        };
+        {
+            let mut fields = fields.try_borrow_mut().unwrap();
+            fields.insert("self".into(), value.clone());
+        }
+        assert_eq!(
+            value_to_json(&value).unwrap_err(),
+            "json encode failed: cyclic object reference"
+        );
+    }
+
+    #[test]
+    fn json_conversion_rejects_excessive_graph_depth() {
+        let mut value = Value::None;
+        for _ in 0..=super::MAX_JSON_DEPTH {
+            value = Value::List(vec![value]);
+        }
+        let error = value_to_json(&value).unwrap_err();
+        assert!(error.contains("json encode failed: value graph exceeds"));
+        assert!(error.ends_with("levels"));
     }
 
     #[test]
