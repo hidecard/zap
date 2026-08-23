@@ -4963,7 +4963,7 @@ mod tests {
         collections::HashMap,
         fs,
         io::{Read, Write},
-        net::{TcpListener, TcpStream},
+        net::{Shutdown, TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
         process::Command,
@@ -6255,6 +6255,9 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             stream
                 .write_all(raw.as_bytes())
                 .expect("test request should be written");
+            stream
+                .shutdown(Shutdown::Write)
+                .expect("test request write side should shut down");
             let mut response = String::new();
             stream
                 .read_to_string(&mut response)
