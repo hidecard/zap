@@ -1,5 +1,6 @@
 use super::project::{
-    install_dependencies, migrate_lockfile, update_dependencies, write_lockfile, TestOptions,
+    install_dependencies, migrate_lockfile, update_dependencies, validate_project_locked,
+    write_lockfile, TestOptions,
 };
 use super::*;
 use crate::project::{add_dependency, registry_packages_from_lockfile};
@@ -587,7 +588,7 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() == 3 && args[1] == "build" && args[2] == "--locked" {
-        match validate_project(Path::new(".")) {
+        match validate_project_locked(Path::new(".")) {
             Ok(info) => println!("built Zap project: {info}"),
             Err(e) => {
                 eprintln!("Zap build error: {e}");
@@ -598,7 +599,7 @@ pub fn run_cli(args: &[String]) {
     }
     if args.len() == 4 && args[1] == "build" && args[2] == "--locked" {
         let dir = Path::new(&args[3]);
-        match validate_project(dir) {
+        match validate_project_locked(dir) {
             Ok(info) => println!("built Zap project: {info}"),
             Err(e) => {
                 eprintln!("Zap build error: {e}");

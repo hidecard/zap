@@ -245,6 +245,12 @@ impl<'a> ExprParser<'a> {
                 }
                 match v {
                     Value::Number(ms) if ms >= 0 => {
+                        if ms > stdlib::MAX_SLEEP_MILLISECONDS {
+                            return Err(format!(
+                                "sleep exceeds the {} millisecond limit",
+                                stdlib::MAX_SLEEP_MILLISECONDS
+                            ));
+                        }
                         thread::sleep(Duration::from_millis(ms as u64));
                         Value::None
                     }
@@ -935,7 +941,14 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after read_text".into());
                 }
                 match path {
-                    Value::Text(p) => Value::Text(read_limited_text(Path::new(&p), "read_text")?),
+                    Value::Text(p) => Value::Text(read_limited_text(
+                        &evaluator::confined_path(
+                            Path::new(&p),
+                            "read_text",
+                            Some(&*self.context),
+                        )?,
+                        "read_text",
+                    )?),
                     _ => return Err("read_text expects a text path".into()),
                 }
             }
@@ -951,7 +964,15 @@ impl<'a> ExprParser<'a> {
                 }
                 match (path, content) {
                     (Value::Text(p), Value::Text(c)) => {
-                        write_limited_text(Path::new(&p), &c, "write_text")?;
+                        write_limited_text(
+                            &evaluator::confined_path(
+                                Path::new(&p),
+                                "write_text",
+                                Some(&*self.context),
+                            )?,
+                            &c,
+                            "write_text",
+                        )?;
                         Value::None
                     }
                     _ => return Err("write_text expects text path and content".into()),
@@ -965,10 +986,17 @@ impl<'a> ExprParser<'a> {
                 }
                 match path {
                     Value::Text(p) => Value::List(
-                        read_limited_text(Path::new(&p), "read_lines")?
-                            .lines()
-                            .map(|line| Value::Text(line.to_string()))
-                            .collect(),
+                        read_limited_text(
+                            &evaluator::confined_path(
+                                Path::new(&p),
+                                "read_lines",
+                                Some(&*self.context),
+                            )?,
+                            "read_lines",
+                        )?
+                        .lines()
+                        .map(|line| Value::Text(line.to_string()))
+                        .collect(),
                     ),
                     _ => return Err("read_lines expects a text path".into()),
                 }
@@ -996,7 +1024,15 @@ impl<'a> ExprParser<'a> {
                                 return Err("write_lines expects a list of text".into());
                             }
                         }
-                        write_limited_text(Path::new(&p), &out, "write_lines")?;
+                        write_limited_text(
+                            &evaluator::confined_path(
+                                Path::new(&p),
+                                "write_lines",
+                                Some(&*self.context),
+                            )?,
+                            &out,
+                            "write_lines",
+                        )?;
                         Value::None
                     }
                     _ => return Err("write_lines expects a text path and list".into()),

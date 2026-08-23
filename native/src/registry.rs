@@ -1835,6 +1835,8 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
     fn authenticated_tls_fixture(
         method: &'static str,
         expected_token: &'static str,
@@ -2353,7 +2355,6 @@ mod tests {
     }
 
     fn with_insecure_http<T>(operation: impl FnOnce() -> T) -> T {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         std::env::set_var("ZAP_ALLOW_INSECURE_HTTP", "1");
         let result = operation();
@@ -2362,7 +2363,6 @@ mod tests {
     }
 
     fn with_secure_http<T>(operation: impl FnOnce() -> T) -> T {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
         operation()

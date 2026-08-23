@@ -17,6 +17,14 @@ use super::{
 };
 
 pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
+    validate_project_with_lock_mode(dir, false)
+}
+
+pub(crate) fn validate_project_locked(dir: &Path) -> Result<String, String> {
+    validate_project_with_lock_mode(dir, true)
+}
+
+fn validate_project_with_lock_mode(dir: &Path, require_lockfile: bool) -> Result<String, String> {
     let manifest = dir.join("zap.toml");
     let text = read_limited_text(&manifest, "manifest read")?;
     validate_manifest_syntax(&text)?;
@@ -33,7 +41,7 @@ pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
             main_path.display()
         ));
     }
-    validate_lockfile(dir, &text)?;
+    validate_lockfile(dir, &text, require_lockfile)?;
     let source = read_limited_text(&main_path, "source read")?;
     validate_explicit_imports(dir, &text, &source, &main_path)?;
     validate_function_signatures(&source, &main_path)?;
@@ -641,11 +649,18 @@ pub(crate) fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPa
     Ok(resolved)
 }
 
-fn validate_lockfile(dir: &Path, manifest: &str) -> Result<Vec<LockedRegistryPackage>, String> {
+fn validate_lockfile(
+    dir: &Path,
+    manifest: &str,
+    require_lockfile: bool,
+) -> Result<Vec<LockedRegistryPackage>, String> {
     let dependencies = parse_dependencies(manifest)?;
     validate_dependency_graph(dir, &dependencies)?;
     let lock_path = dir.join("zap.lock");
     if dependencies.is_empty() && !lock_path.exists() {
+        if require_lockfile {
+            return Err("zap.lock: missing lockfile; run `zap lock` to generate it".into());
+        }
         return Ok(Vec::new());
     }
     let name = manifest_value(manifest, "name").unwrap_or_default();
@@ -667,7 +682,7 @@ fn validate_lockfile(dir: &Path, manifest: &str) -> Result<Vec<LockedRegistryPac
 pub(crate) fn registry_packages_from_lockfile(dir: &Path) -> Result<Vec<RegistryPackage>, String> {
     let manifest = fs::read_to_string(dir.join("zap.toml"))
         .map_err(|_| "zap.toml: missing manifest".to_string())?;
-    validate_lockfile(dir, &manifest).map(|packages| {
+    validate_lockfile(dir, &manifest, false).map(|packages| {
         packages
             .into_iter()
             .map(LockedRegistryPackage::into_registry)
@@ -876,7 +891,7 @@ pub(crate) fn install_dependencies(dir: &Path) -> Result<String, String> {
     manifest_value(&manifest, "name").ok_or("zap.toml: missing package name".to_string())?;
     manifest_value(&manifest, "version").ok_or("zap.toml: missing package version".to_string())?;
     let dependencies = parse_dependencies(&manifest)?;
-    let locked = validate_lockfile(dir, &manifest)?;
+    let locked = validate_lockfile(dir, &manifest, false)?;
     let resolved = resolve_registry_dependencies(dir, &dependencies, false, Some(&locked))?;
     Ok(format_install_report(&resolved, dependencies.len()))
 }
@@ -1089,15 +1104,36 @@ pub(crate) fn resolve_module(base: &Path, raw: &str) -> Option<PathBuf> {
 }
 
 pub(crate) fn collect_test_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+    let mut visited = HashSet::new();
+    collect_test_files_inner(dir, files, &mut visited)
+}
+
+fn collect_test_files_inner(
+    dir: &Path,
+    files: &mut Vec<PathBuf>,
+    visited: &mut HashSet<PathBuf>,
+) -> Result<(), String> {
+    let canonical_dir = fs::canonicalize(dir)
+        .map_err(|e| format!("cannot resolve test directory {}: {e}", dir.display()))?;
+    if !visited.insert(canonical_dir) {
+        return Ok(());
+    }
     for entry in fs::read_dir(dir)
         .map_err(|e| format!("cannot read test directory {}: {e}", dir.display()))?
     {
         let path = entry
             .map_err(|e| format!("cannot inspect test directory {}: {e}", dir.display()))?
             .path();
-        if path.is_dir() {
-            collect_test_files(&path, files)?;
-        } else if path.extension().and_then(|x| x.to_str()) == Some("zp")
+        let metadata = fs::symlink_metadata(&path)
+            .map_err(|e| format!("cannot inspect test path {}: {e}", path.display()))?;
+        let file_type = metadata.file_type();
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
+            collect_test_files_inner(&path, files, visited)?;
+        } else if file_type.is_file()
+            && path.extension().and_then(|x| x.to_str()) == Some("zp")
             && path
                 .file_stem()
                 .and_then(|x| x.to_str())
@@ -1233,11 +1269,12 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
 #[cfg(test)]
 mod lockfile_security_tests {
     use super::{
-        package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile, validate_locked_cache,
-        validate_locked_registry_set, DependencySpec, LockedRegistryPackage,
+        collect_test_files, package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile,
+        validate_locked_cache, validate_locked_registry_set, validate_project,
+        validate_project_locked, DependencySpec, LockedRegistryPackage,
     };
     use crate::registry::sha256_hex;
-    use std::{collections::BTreeMap, fs};
+    use std::{collections::BTreeMap, fs, path::Path};
 
     #[test]
     fn malformed_lockfile_corpus_is_deterministic_and_panic_free() {
@@ -1324,5 +1361,41 @@ mod lockfile_security_tests {
                 "accepted {raw:?}"
             );
         }
+    }
+
+    #[test]
+    fn strict_project_validation_requires_a_lockfile() {
+        let root = std::env::temp_dir().join(format!("zap-strict-build-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("temporary project directory");
+        fs::write(
+            root.join("zap.toml"),
+            "[package]\nname = \"strict-build\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n",
+        )
+        .expect("manifest");
+        fs::write(root.join("main.zp"), "say 1\n").expect("main source");
+        assert!(validate_project(&root).is_ok());
+        let error =
+            validate_project_locked(&root).expect_err("locked validation must require zap.lock");
+        assert!(error.contains("zap.lock: missing lockfile"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_discovery_skips_symlink_directory_cycles() {
+        use std::os::unix::fs::symlink;
+        let root = std::env::temp_dir().join(format!("zap-test-discovery-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let tests = root.join("tests");
+        let nested = tests.join("nested");
+        fs::create_dir_all(&nested).expect("test directories");
+        fs::write(nested.join("smoke_test.zp"), "say 1\n").expect("test fixture");
+        symlink(&tests, nested.join("loop")).expect("cycle symlink");
+        let mut files = Vec::new();
+        collect_test_files(Path::new(&tests), &mut files).expect("test discovery should finish");
+        assert_eq!(files.len(), 1);
+        assert!(files[0].ends_with("smoke_test.zp"));
+        let _ = fs::remove_dir_all(root);
     }
 }
