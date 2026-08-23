@@ -168,7 +168,7 @@ M4-RFC-01 သည် reviewed design-only RFC အဖြစ် ပြီးစီ�
 | Static quality | `-D warnings` ပါသော strict Clippy pass ဖြစ်ရမည် |
 | Tests | Full native unit/integration suite နှင့် သက်ဆိုင်ရာ focused fixtures များ pass ဖြစ်ရမည် |
 | Determinism | Repeated run များတွင် output၊ ordering၊ diagnostics နှင့် archive များ တည်ငြိမ်ရမည် |
-| Security | Malformed၊ oversized၊ traversal၊ secret-redaction နှင့် checksum cases များ fail-closed ဖြစ်ရမည် |
+| Security | Malformed၊ oversized၊ traversal၊ secret-redaction နှင့် checksum cases များ fail-closed ဖြစ်ရမည်။ Modern `cargo-audit` တွင် unresolved advisory မရှိရ |
 | Documentation | English/Burmese public contract များ တစ်ပြေးညီဖြစ်ရမည် |
 | Compatibility | Version impact၊ migration path၊ deprecation status နှင့် changelog entry များ explicit ဖြစ်ရမည် |
 | Release version | Cargo-authoritative version၊ CLI output၊ tag၊ README/archive၊ security၊ release-note၊ template နှင့် installer surface များ ကိုက်ညီရမည် |

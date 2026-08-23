@@ -168,7 +168,7 @@ No parser or runtime implementation is enabled by this milestone. Traits, interf
 | Static quality | Strict Clippy passes with `-D warnings` |
 | Tests | Full native unit/integration suite and relevant focused fixtures pass |
 | Determinism | Repeated runs produce stable output, ordering, diagnostics, and archives |
-| Security | Malformed, oversized, traversal, secret-redaction, and checksum cases remain fail-closed |
+| Security | Malformed, oversized, traversal, secret-redaction, and checksum cases remain fail-closed; modern `cargo-audit` reports no unresolved advisories |
 | Documentation | English/Burmese public contracts remain synchronized |
 | Compatibility | Version impact, migration path, deprecation status, and changelog entry are explicit |
 | Release version | Cargo-authoritative version, CLI output, tag, README/archive, security, release-note, template, and installer surfaces agree |
