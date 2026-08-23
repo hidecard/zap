@@ -18,7 +18,7 @@ set +a
 cargo run
 ```
 
-The executable binds to `127.0.0.1:3000` by default. Configuration is read from `ZAP_HOST_ADDR`, `ZAP_HOST_MAX_BODY_BYTES`, `ZAP_HOST_REQUEST_TIMEOUT_MS`, `ZAP_HOST_RATE_LIMIT`, `ZAP_HOST_RATE_WINDOW_MS`, and `ZAP_HOST_RATE_KEY`.
+The executable binds to `127.0.0.1:3000` by default. Configuration is read from `ZAP_HOST_ADDR`, `ZAP_HOST_MAX_BODY_BYTES`, `ZAP_HOST_REQUEST_TIMEOUT_MS`, `ZAP_HOST_SHUTDOWN_TIMEOUT_MS`, `ZAP_HOST_RATE_LIMIT`, `ZAP_HOST_RATE_WINDOW_MS`, and `ZAP_HOST_RATE_KEY`. The public `/health` route is liveness-only; `/ready` reports the injected readiness probe.
 
 ```bash
 curl -i http://127.0.0.1:3000/health

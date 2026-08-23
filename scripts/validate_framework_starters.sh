@@ -114,8 +114,14 @@ require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
 require_text docs/ZAP_HOST_MM.md "host/zap-host"
+require_text docs/ZAP_HOST_EN.md "/ready"
+require_text docs/ZAP_HOST_MM.md "/ready"
+require_text docs/ZAP_HOST_EN.md "ZAP_HOST_SHUTDOWN_TIMEOUT_MS"
+require_text docs/ZAP_HOST_MM.md "ZAP_HOST_SHUTDOWN_TIMEOUT_MS"
 require_text docs/ZAP_HOST_QUICKSTART_EN.md "cargo run"
 require_text docs/ZAP_HOST_QUICKSTART_MM.md "cargo run"
+require_text docs/ZAP_HOST_QUICKSTART_EN.md "/ready"
+require_text docs/ZAP_HOST_QUICKSTART_MM.md "/ready"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
@@ -132,6 +138,19 @@ for host_file in \
   host/zap-host/tests/http_contract.rs; do
   require_file "$host_file"
 done
+for deployment_file in \
+  deploy/zap-host.service \
+  deploy/zap-host.nginx.conf \
+  deploy/zap-host-deployment-policy.toml \
+  deploy/zap-host.env.example \
+  scripts/validate_zap_host_deployment.sh; do
+  require_file "$deployment_file"
+done
+if [[ -x scripts/validate_zap_host_deployment.sh ]] && scripts/validate_zap_host_deployment.sh >/dev/null 2>&1; then
+  record PASS "host-deployment-policy:zap-host"
+else
+  record FAIL "host-deployment-policy:zap-host"
+fi
 
 if command -v cargo >/dev/null 2>&1; then
   if cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check >/dev/null 2>&1; then

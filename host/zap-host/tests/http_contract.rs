@@ -10,7 +10,8 @@ use tower::ServiceExt;
 
 use zap_host::{
     build_router, AppConfig, AppState, AuthFailure, Authenticator, ContractGateway, DatabaseError,
-    DbUser, GatewayError, Identity, NormalizedCreateUser, UserRepository, WebGateway,
+    DbUser, GatewayError, Identity, NormalizedCreateUser, ReadinessError, ReadinessProbe,
+    UserRepository, WebGateway,
 };
 
 #[derive(Clone)]
@@ -37,6 +38,15 @@ impl Authenticator for TestAuth {
             }
             AuthMode::Internal => Err(AuthFailure::Internal),
         }
+    }
+}
+
+struct FailingReadiness;
+
+#[async_trait]
+impl ReadinessProbe for FailingReadiness {
+    async fn check(&self) -> Result<(), ReadinessError> {
+        Err(ReadinessError::Unavailable)
     }
 }
 
@@ -153,6 +163,95 @@ async fn health_is_public_and_security_headers_are_present() {
 }
 
 #[tokio::test]
+async fn readiness_is_public_and_reports_dependency_state() {
+    let ready_state = AppState::new(
+        config(),
+        Arc::new(ContractGateway::new(
+            Arc::new(CountingRepository::default()),
+        )),
+        Arc::new(TestAuth {
+            mode: AuthMode::Missing,
+        }),
+    )
+    .expect("valid state");
+    let ready = build_router(ready_state)
+        .oneshot(request(Method::GET, "/ready", "ready-1", Body::empty()))
+        .await
+        .expect("router response");
+    assert_eq!(ready.status(), StatusCode::OK);
+    assert_eq!(ready.headers()["x-request-id"], "ready-1");
+    assert_eq!(json_body(ready).await, json!({"status": "ready"}));
+
+    let unavailable_state = AppState::with_readiness(
+        config(),
+        Arc::new(ContractGateway::new(
+            Arc::new(CountingRepository::default()),
+        )),
+        Arc::new(TestAuth {
+            mode: AuthMode::Missing,
+        }),
+        Arc::new(FailingReadiness),
+    )
+    .expect("valid state");
+    let unavailable = build_router(unavailable_state)
+        .oneshot(request(Method::GET, "/ready", "ready-2", Body::empty()))
+        .await
+        .expect("router response");
+    assert_eq!(unavailable.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(unavailable.headers()["cache-control"], "no-store");
+    assert_eq!(
+        json_body(unavailable).await,
+        json!({
+            "error": "not_ready",
+            "message": "host dependencies are not ready",
+            "request_id": "ready-2"
+        })
+    );
+}
+
+#[tokio::test]
+async fn graceful_drain_rejects_new_api_requests_but_keeps_liveness() {
+    let state = AppState::new(
+        config(),
+        Arc::new(ContractGateway::new(
+            Arc::new(CountingRepository::default()),
+        )),
+        Arc::new(TestAuth {
+            mode: AuthMode::Valid,
+        }),
+    )
+    .expect("valid state");
+    let lifecycle = state.lifecycle.clone();
+    let app = build_router(state);
+    lifecycle.begin_draining();
+
+    let api_response = app
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/api/users/1",
+            "drain-api",
+            Body::empty(),
+        ))
+        .await
+        .expect("router response");
+    assert_eq!(api_response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(api_response.headers()["x-request-id"], "drain-api");
+    assert_eq!(json_body(api_response).await["error"], "draining");
+
+    let liveness_response = app
+        .oneshot(request(
+            Method::GET,
+            "/health",
+            "drain-health",
+            Body::empty(),
+        ))
+        .await
+        .expect("router response");
+    assert_eq!(liveness_response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
 async fn authenticated_get_maps_public_user_and_request_id() {
     let state = AppState::new(
         config(),
@@ -230,6 +329,18 @@ async fn invalid_routes_and_payloads_are_rejected_before_gateway() {
     )
     .expect("valid state");
     let app = build_router(state);
+
+    let invalid_request_id = app
+        .clone()
+        .oneshot(request(Method::GET, "/health", "", Body::empty()))
+        .await
+        .expect("router response");
+    assert_eq!(invalid_request_id.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(
+        invalid_request_id.headers()["x-content-type-options"],
+        "nosniff"
+    );
+    assert_eq!(invalid_request_id.headers()["x-request-id"], "unassigned");
 
     let traversal = app
         .clone()

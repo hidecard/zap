@@ -219,6 +219,11 @@ check_release_files() {
     host/zap-host/src/lib.rs
     host/zap-host/src/main.rs
     host/zap-host/tests/http_contract.rs
+    deploy/zap-host.service
+    deploy/zap-host.nginx.conf
+    deploy/zap-host-deployment-policy.toml
+    deploy/zap-host.env.example
+    scripts/validate_zap_host_deployment.sh
     scripts/validate_framework_starters.sh
     frameworks/README.md
     frameworks/web/README.md

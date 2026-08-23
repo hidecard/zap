@@ -52,7 +52,7 @@ The last-added middleware is the outermost Tower layer. The code keeps rate limi
 
 ## Integration seams
 
-The adapter is designed around three replaceable traits. `WebGateway` is the application-facing seam used by Axum handlers. `ContractGateway<R>` maps a `UserRepository` row into the public DTO and translates database failures into stable gateway errors. `Authenticator` is intentionally given the HTTP request but returns only a verified `Identity`; raw credentials must not enter the Zap contract or application logs.
+The adapter is designed around replaceable `WebGateway`, `UserRepository`, `Authenticator`, and `ReadinessProbe` seams. `WebGateway` is the application-facing seam used by Axum handlers. `ContractGateway<R>` maps a `UserRepository` row into the public DTO and translates database failures into stable gateway errors. `Authenticator` is intentionally given the HTTP request but returns only a verified `Identity`; raw credentials must not enter the Zap contract or application logs. `ReadinessProbe` supplies dependency-aware readiness without forcing a particular database or provider into the host crate.
 
 A real application should provide an `AppState` similar to the following shape:
 
@@ -75,6 +75,7 @@ The executable reads the following environment variables. Invalid numeric values
 | `ZAP_HOST_ADDR` | `127.0.0.1:3000` | Must parse as a socket address |
 | `ZAP_HOST_MAX_BODY_BYTES` | `65536` | Must be between 1 and 65,536 |
 | `ZAP_HOST_REQUEST_TIMEOUT_MS` | `10000` | Must be greater than zero |
+| `ZAP_HOST_SHUTDOWN_TIMEOUT_MS` | `30000` | Maximum post-signal drain duration; must be greater than zero |
 | `ZAP_HOST_RATE_LIMIT` | `60` | Requests per fixed window; must be greater than zero |
 | `ZAP_HOST_RATE_WINDOW_MS` | `60000` | Fixed-window duration; must be greater than zero |
 | `ZAP_HOST_RATE_KEY` | `demo-host` | Must contain 1–256 bytes; replace with a trusted user/tenant key policy |
@@ -87,13 +88,14 @@ The default bind address is loopback to avoid accidentally exposing the demo ada
 |---|---|---|---:|---|
 | `GET` | `/` | None | `200` | Small root response and correlation ID |
 | `GET` | `/health` | None | `200` | Liveness-style response only; it does not prove database readiness |
+| `GET` | `/ready` | None | `200`/`503` | Readiness probe result; public and dependency-aware |
 | `GET` | `/api/users` | `users:read` | `200` | Public DTO list |
 | `GET` | `/api/users/:id` | `users:read` | `200` | `404` for an absent user |
 | `POST` | `/api/users` | `users:write` | `201` | JSON body with string `name` and `email` |
 
 All JSON responses include `x-content-type-options: nosniff`, `cache-control: no-store`, and the validated or generated `x-request-id`. Authorization and cookie headers are marked sensitive for Tower diagnostics. Error responses contain stable error codes and do not expose driver messages, SQL, credentials, tokens, or internal row fields.
 
-The `GET /health` route is public and intentionally lightweight. A future readiness endpoint should separately verify required downstream dependencies and should not be substituted for liveness.
+The `GET /health` route is public and intentionally lightweight. `GET /ready` is public and calls the injected readiness probe; it returns `503` when required dependencies are not ready. Readiness must remain distinct from liveness and should be wired to real dependency checks before deployment.
 
 ## Database adapter checklist
 
@@ -115,7 +117,7 @@ The production policy must document whether store failures fail open or fail clo
 
 ## Lifecycle and shutdown
 
-`main.rs` binds a Tokio TCP listener and uses Axum's graceful-shutdown future for Ctrl-C and SIGTERM. The Tower timeout ensures graceful shutdown does not wait forever for a request. A production supervisor still needs readiness removal before termination, connection-drain limits, downstream cancellation, bounded database-pool close, and an explicit exit status policy.
+`main.rs` binds a Tokio TCP listener and uses Axum's graceful-shutdown future for Ctrl-C and SIGTERM. The lifecycle state marks the host draining, `/ready` can be connected to deployment readiness, and the configured shutdown timeout bounds the post-signal drain. The Tower request timeout ensures individual requests do not wait forever. A production supervisor still needs readiness removal before termination, connection-drain limits, downstream cancellation, bounded database-pool close, and an explicit exit status policy.
 
 TLS is deliberately absent from this first crate. It should normally terminate at a controlled edge or be added through a reviewed host deployment configuration. HTTP/2, HTTP/3, WebSockets, compression, CORS, proxy headers, and tracing exporters each require an explicit policy and regression tests rather than being enabled by default.
 

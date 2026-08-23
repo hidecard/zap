@@ -47,6 +47,7 @@ Process သည် `127.0.0.1:3000` တွင် bind လုပ်ပြီး li
 ```bash
 curl -i http://127.0.0.1:3000/
 curl -i http://127.0.0.1:3000/health
+curl -i http://127.0.0.1:3000/ready
 curl -i -H 'x-request-id: quickstart-get' \
   http://127.0.0.1:3000/api/users/1
 curl -i -H 'x-request-id: quickstart-list' \
@@ -57,7 +58,7 @@ curl -i -H 'content-type: application/json' \
   http://127.0.0.1:3000/api/users
 ```
 
-Root နှင့် health routes များသည် public ဖြစ်သည်။ Demo authenticator သည် fixed identity ကို ပေးသောကြောင့် local တွင် user routes များကို စမ်းနိုင်သည်။ Create request အောင်မြင်လျှင် `201 Created`၊ read/list အောင်မြင်လျှင် `200 OK` ပြန်မည်။ Response တွင် public user DTO နှင့် request ID ပါမည်။ Process ကို `Ctrl-C` ဖြင့် ရပ်နိုင်ပြီး executable သည် Ctrl-C နှင့် SIGTERM ကို လက်ခံကာ Axum graceful shutdown ပြုလုပ်သည်။
+Root၊ health နှင့် readiness routes များသည် public ဖြစ်သည်။ Health သည် lightweight liveness response ဖြစ်ပြီး readiness သည် injected dependency probe ကို ခေါ်သည်။ Demo authenticator သည် fixed identity ကို ပေးသောကြောင့် local တွင် user routes များကို စမ်းနိုင်သည်။ Create request အောင်မြင်လျှင် `201 Created`၊ read/list အောင်မြင်လျှင် `200 OK` ပြန်မည်။ Response တွင် public user DTO နှင့် request ID ပါမည်။ Process ကို `Ctrl-C` ဖြင့် ရပ်နိုင်ပြီး executable သည် Ctrl-C နှင့် SIGTERM ကို လက်ခံကာ Axum graceful shutdown ပြုလုပ်သည်။
 
 Port သို့မဟုတ် local limit ပြောင်းရန် `cargo run` မတိုင်မီ environment variables export လုပ်ပါ။
 
@@ -65,6 +66,7 @@ Port သို့မဟုတ် local limit ပြောင်းရန် `car
 ZAP_HOST_ADDR=127.0.0.1:3100 \
 ZAP_HOST_MAX_BODY_BYTES=32768 \
 ZAP_HOST_REQUEST_TIMEOUT_MS=5000 \
+ZAP_HOST_SHUTDOWN_TIMEOUT_MS=30000 \
 RUST_LOG=zap_host=debug,tower_http=debug \
 cargo run
 ```
@@ -192,7 +194,7 @@ Rate gate ကို repository access မတိုင်မီ ထားရမ�
 
 ## ၉။ Deployment ပြင်ဆင်ခြင်း
 
-Local development တွင် `ZAP_HOST_ADDR=127.0.0.1:3000` ကို ဆက်ထားပါ။ Public deployment သည် address ပြောင်းရုံဖြင့် ပြီးစီးသည်ဟု မယူဆရ။ `0.0.0.0` သို့ bind မလုပ်မီ အောက်ပါ boundary work များကို ပြီးစီးရမည်။
+Local development တွင် `ZAP_HOST_ADDR=127.0.0.1:3000` ကို ဆက်ထားပါ။ Public deployment သည် address ပြောင်းရုံဖြင့် ပြီးစီးသည်ဟု မယူဆရ။ Repository တွင် host operational boundary အတွက် reference artifacts များ ပါဝင်သည်: [`deploy/zap-host.service`](../deploy/zap-host.service)၊ [`deploy/zap-host.nginx.conf`](../deploy/zap-host.nginx.conf)၊ [`deploy/zap-host-deployment-policy.toml`](../deploy/zap-host-deployment-policy.toml)၊ [`deploy/zap-host.env.example`](../deploy/zap-host.env.example) နှင့် [`scripts/validate_zap_host_deployment.sh`](../scripts/validate_zap_host_deployment.sh)။ ၎င်းတို့သည် template နှင့် validation evidence များသာဖြစ်ပြီး deployment-specific review အစား မသုံးရ။ `0.0.0.0` သို့ bind မလုပ်မီ အောက်ပါ boundary work များကို ပြီးစီးရမည်။
 
 | နယ်ပယ် | အနည်းဆုံး production work |
 |---|---|

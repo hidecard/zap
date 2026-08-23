@@ -52,7 +52,7 @@ Adapter သည် domain gateway ကို မခေါ်မီ boundary မျ
 
 ## Integration seams
 
-Adapter သည် အစားထိုးနိုင်သော trait သုံးခုအပေါ် တည်ဆောက်ထားသည်။ `WebGateway` သည် Axum handler အသုံးပြုသည့် application-facing seam ဖြစ်သည်။ `ContractGateway<R>` သည် `UserRepository` row ကို public DTO အဖြစ် map လုပ်ပြီး database failure များကို stable gateway errors အဖြစ် ပြောင်းသည်။ `Authenticator` သည် HTTP request ကို လက်ခံသော်လည်း verify လုပ်ပြီးသား `Identity` သာ ပြန်ပေးရမည်။ Raw credential ကို Zap contract သို့မဟုတ် application logs ထဲ မထည့်ရ။
+Adapter သည် အစားထိုးနိုင်သော `WebGateway`၊ `UserRepository`၊ `Authenticator` နှင့် `ReadinessProbe` seams များအပေါ် တည်ဆောက်ထားသည်။ `WebGateway` သည် Axum handler အသုံးပြုသည့် application-facing seam ဖြစ်သည်။ `ContractGateway<R>` သည် `UserRepository` row ကို public DTO အဖြစ် map လုပ်ပြီး database failure များကို stable gateway errors အဖြစ် ပြောင်းသည်။ `Authenticator` သည် HTTP request ကို လက်ခံသော်လည်း verify လုပ်ပြီးသား `Identity` သာ ပြန်ပေးရမည်။ `ReadinessProbe` သည် database သို့မဟုတ် provider တစ်ခုကို host crate ထဲ မချည်ဘဲ dependency-aware readiness ကို ပေးသည်။ Raw credential ကို Zap contract သို့မဟုတ် application logs ထဲ မထည့်ရ။
 
 Real application တစ်ခုသည် အောက်ပါပုံစံရှိ `AppState` ကို ပေးနိုင်သည်။
 
@@ -75,6 +75,7 @@ Executable သည် အောက်ပါ environment variables များက
 | `ZAP_HOST_ADDR` | `127.0.0.1:3000` | Socket address အဖြစ် parse ရမည် |
 | `ZAP_HOST_MAX_BODY_BYTES` | `65536` | 1 နှင့် 65,536 ကြား ဖြစ်ရမည် |
 | `ZAP_HOST_REQUEST_TIMEOUT_MS` | `10000` | Zero ထက် ကြီးရမည် |
+| `ZAP_HOST_SHUTDOWN_TIMEOUT_MS` | `30000` | Signal နောက်ပိုင်း drain အများဆုံးကြာချိန်; zero မဖြစ်ရ |
 | `ZAP_HOST_RATE_LIMIT` | `60` | Fixed window အတွင်း requests; zero မဖြစ်ရ |
 | `ZAP_HOST_RATE_WINDOW_MS` | `60000` | Fixed-window duration; zero မဖြစ်ရ |
 | `ZAP_HOST_RATE_KEY` | `demo-host` | 1–256 bytes; trusted user/tenant policy ဖြင့် အစားထိုးရမည် |
@@ -87,13 +88,14 @@ Default bind address သည် demo adapter ကို မတော်တဆ publ
 |---|---|---|---:|---|
 | `GET` | `/` | None | `200` | Root response နှင့် correlation ID |
 | `GET` | `/health` | None | `200` | Liveness-style response သာ; database readiness မသက်သေပြ |
+| `GET` | `/ready` | None | `200`/`503` | Readiness probe result; public နှင့် dependency-aware |
 | `GET` | `/api/users` | `users:read` | `200` | Public DTO list |
 | `GET` | `/api/users/:id` | `users:read` | `200` | User မရှိလျှင် `404` |
 | `POST` | `/api/users` | `users:write` | `201` | String `name` နှင့် `email` ပါသော JSON body |
 
 JSON response အားလုံးတွင် `x-content-type-options: nosniff`၊ `cache-control: no-store` နှင့် validate/generate လုပ်ထားသော `x-request-id` ပါသည်။ Authorization နှင့် cookie headers များကို Tower diagnostics အတွက် sensitive အဖြစ် mark လုပ်ထားသည်။ Error response များတွင် stable error code သာ ပါပြီး driver message၊ SQL၊ credential၊ token သို့မဟုတ် internal row field များ မပါပါ။
 
-`GET /health` သည် public ဖြစ်ပြီး lightweight response သာ ပြန်သည်။ နောက်ပိုင်း readiness endpoint သည် လိုအပ်သော downstream dependency များကို သီးခြားစစ်ဆေးရမည်ဖြစ်ပြီး liveness အစား မသုံးရ။
+`GET /health` သည် public ဖြစ်ပြီး lightweight response သာ ပြန်သည်။ `GET /ready` သည် public ဖြစ်ပြီး injected readiness probe ကို ခေါ်ကာ dependency မ ready ဖြစ်လျှင် `503` ပြန်သည်။ Readiness နှင့် liveness ကို သီးခြားထားရမည်ဖြစ်ပြီး deployment မတိုင်မီ real dependency checks ဖြင့် ချိတ်ဆက်ရမည်။
 
 ## Database adapter checklist
 
@@ -115,7 +117,7 @@ Production policy တွင် store failure တွင် fail-open/fail-closed 
 
 ## Lifecycle နှင့် shutdown
 
-`main.rs` သည် Tokio TCP listener bind လုပ်ပြီး Ctrl-C/SIGTERM အတွက် Axum graceful-shutdown future ကို အသုံးပြုသည်။ Tower timeout သည် graceful shutdown က request တစ်ခုအပေါ် အဆုံးမဲ့ စောင့်မနေစေရန် ကူညီသည်။ Production supervisor သည် termination မတိုင်မီ readiness remove၊ connection drain limit၊ downstream cancellation၊ bounded database-pool close နှင့် exit-status policy ကို ထပ်သတ်မှတ်ရမည်။
+`main.rs` သည် Tokio TCP listener bind လုပ်ပြီး Ctrl-C/SIGTERM အတွက် Axum graceful-shutdown future ကို အသုံးပြုသည်။ Lifecycle state သည် host ကို draining အဖြစ် mark လုပ်ပြီး `/ready` ကို deployment readiness နှင့် ချိတ်နိုင်သည်။ Configured shutdown timeout သည် signal နောက်ပိုင်း drain ကို bounded လုပ်ပေးပြီး Tower request timeout သည် request တစ်ခုချင်းစီ အဆုံးမဲ့မစောင့်စေရန် ကူညီသည်။ Production supervisor သည် termination မတိုင်မီ readiness remove၊ connection drain limit၊ downstream cancellation၊ bounded database-pool close နှင့် exit-status policy ကို ထပ်သတ်မှတ်ရမည်။
 
 ပထမ crate တွင် TLS မပါသေးပါ။ ပုံမှန်အားဖြင့် controlled edge တွင် TLS terminate လုပ်ခြင်း သို့မဟုတ် reviewed host deployment configuration ဖြင့် ထည့်သွင်းခြင်းကို ရွေးချယ်ရမည်။ HTTP/2၊ HTTP/3၊ WebSocket၊ compression၊ CORS၊ proxy headers နှင့် tracing exporters တစ်ခုချင်းစီတွင် explicit policy နှင့် regression tests လိုအပ်သည်။
 

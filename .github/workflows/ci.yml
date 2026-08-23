@@ -266,6 +266,9 @@ jobs:
       - name: Run zap-host tests
         run: cargo test --manifest-path host/zap-host/Cargo.toml --all-targets
 
+      - name: Validate zap-host deployment policy
+        run: scripts/validate_zap_host_deployment.sh
+
       - name: Check repository whitespace
         run: git diff --check
 

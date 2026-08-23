@@ -47,6 +47,7 @@ The process binds to `127.0.0.1:3000` and logs that it is listening. Keep this t
 ```bash
 curl -i http://127.0.0.1:3000/
 curl -i http://127.0.0.1:3000/health
+curl -i http://127.0.0.1:3000/ready
 curl -i -H 'x-request-id: quickstart-get' \
   http://127.0.0.1:3000/api/users/1
 curl -i -H 'x-request-id: quickstart-list' \
@@ -57,7 +58,7 @@ curl -i -H 'content-type: application/json' \
   http://127.0.0.1:3000/api/users
 ```
 
-The root and health routes are public. The demo authenticator supplies a fixed identity so the user routes can be exercised locally. A successful create request returns `201 Created`; a successful read/list request returns `200 OK`. The response contains a public user DTO and the request ID. Stop the process with `Ctrl-C`; the executable listens for Ctrl-C and SIGTERM and completes Axum graceful shutdown.
+The root, health, and readiness routes are public. Health is a lightweight liveness response, while readiness calls the injected dependency probe. The demo authenticator supplies a fixed identity so the user routes can be exercised locally. A successful create request returns `201 Created`; a successful read/list request returns `200 OK`. The response contains a public user DTO and the request ID. Stop the process with `Ctrl-C`; the executable listens for Ctrl-C and SIGTERM and completes Axum graceful shutdown.
 
 To use another port or a smaller local limit, export configuration before `cargo run`:
 
@@ -65,6 +66,7 @@ To use another port or a smaller local limit, export configuration before `cargo
 ZAP_HOST_ADDR=127.0.0.1:3100 \
 ZAP_HOST_MAX_BODY_BYTES=32768 \
 ZAP_HOST_REQUEST_TIMEOUT_MS=5000 \
+ZAP_HOST_SHUTDOWN_TIMEOUT_MS=30000 \
 RUST_LOG=zap_host=debug,tower_http=debug \
 cargo run
 ```
@@ -192,7 +194,7 @@ The rate gate must remain before repository access. A local mutex prevents only 
 
 ## 9. Deployment preparation
 
-For local development, keep `ZAP_HOST_ADDR=127.0.0.1:3000`. A public deployment must not simply change the address and call the demo complete. Before binding to `0.0.0.0`, complete the following boundary work:
+For local development, keep `ZAP_HOST_ADDR=127.0.0.1:3000`. A public deployment must not simply change the address and call the demo complete. The repository includes reference artifacts for the host-side operational boundary: [`deploy/zap-host.service`](../deploy/zap-host.service), [`deploy/zap-host.nginx.conf`](../deploy/zap-host.nginx.conf), [`deploy/zap-host-deployment-policy.toml`](../deploy/zap-host-deployment-policy.toml), [`deploy/zap-host.env.example`](../deploy/zap-host.env.example), and [`scripts/validate_zap_host_deployment.sh`](../scripts/validate_zap_host_deployment.sh). They are templates and validation evidence, not a substitute for deployment-specific review. Before binding to `0.0.0.0`, complete the following boundary work:
 
 | Area | Minimum production work |
 |---|---|

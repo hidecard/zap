@@ -18,7 +18,7 @@ use std::{
     fmt::{Display, Formatter},
     net::SocketAddr,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
     time::{Duration, Instant},
@@ -34,6 +34,7 @@ pub const CONTRACT_MAX_REQUEST_ID_BYTES: usize = 128;
 pub const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
 pub const DEFAULT_RATE_LIMIT: u64 = 60;
 pub const DEFAULT_RATE_WINDOW_MS: u64 = 60_000;
+pub const DEFAULT_SHUTDOWN_TIMEOUT_MS: u64 = 30_000;
 
 #[derive(Debug, Clone)]
 pub struct AppConfig {
@@ -42,6 +43,7 @@ pub struct AppConfig {
     pub max_path_bytes: usize,
     pub max_request_id_bytes: usize,
     pub request_timeout: Duration,
+    pub shutdown_timeout: Duration,
     pub rate_limit: u64,
     pub rate_window: Duration,
     pub rate_limit_key: String,
@@ -55,6 +57,7 @@ impl Default for AppConfig {
             max_path_bytes: CONTRACT_MAX_PATH_BYTES,
             max_request_id_bytes: CONTRACT_MAX_REQUEST_ID_BYTES,
             request_timeout: Duration::from_millis(DEFAULT_REQUEST_TIMEOUT_MS),
+            shutdown_timeout: Duration::from_millis(DEFAULT_SHUTDOWN_TIMEOUT_MS),
             rate_limit: DEFAULT_RATE_LIMIT,
             rate_window: Duration::from_millis(DEFAULT_RATE_WINDOW_MS),
             rate_limit_key: "demo-host".to_string(),
@@ -79,6 +82,8 @@ impl AppConfig {
             .unwrap_or(defaults.max_body_bytes);
         let request_timeout_ms =
             env_u64("ZAP_HOST_REQUEST_TIMEOUT_MS")?.unwrap_or(DEFAULT_REQUEST_TIMEOUT_MS);
+        let shutdown_timeout_ms =
+            env_u64("ZAP_HOST_SHUTDOWN_TIMEOUT_MS")?.unwrap_or(DEFAULT_SHUTDOWN_TIMEOUT_MS);
         let rate_limit = env_u64("ZAP_HOST_RATE_LIMIT")?.unwrap_or(DEFAULT_RATE_LIMIT);
         let rate_window_ms = env_u64("ZAP_HOST_RATE_WINDOW_MS")?.unwrap_or(DEFAULT_RATE_WINDOW_MS);
         let rate_limit_key = env::var("ZAP_HOST_RATE_KEY").unwrap_or(defaults.rate_limit_key);
@@ -88,6 +93,7 @@ impl AppConfig {
             max_path_bytes: CONTRACT_MAX_PATH_BYTES,
             max_request_id_bytes: CONTRACT_MAX_REQUEST_ID_BYTES,
             request_timeout: Duration::from_millis(request_timeout_ms),
+            shutdown_timeout: Duration::from_millis(shutdown_timeout_ms),
             rate_limit,
             rate_window: Duration::from_millis(rate_window_ms),
             rate_limit_key,
@@ -117,6 +123,11 @@ impl AppConfig {
         if self.request_timeout.is_zero() {
             return Err(ConfigError::message(
                 "request_timeout must be greater than zero",
+            ));
+        }
+        if self.shutdown_timeout.is_zero() {
+            return Err(ConfigError::message(
+                "shutdown_timeout must be greater than zero",
             ));
         }
         if self.rate_limit == 0 || self.rate_window.is_zero() {
@@ -208,6 +219,42 @@ pub struct DemoAuthenticator;
 impl Authenticator for DemoAuthenticator {
     async fn authenticate(&self, _request: &Request<Body>) -> Result<Identity, AuthFailure> {
         Ok(Identity::new("demo-subject", ["users:read", "users:write"]))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ReadinessError {
+    Unavailable,
+    Internal,
+}
+
+#[async_trait]
+pub trait ReadinessProbe: Send + Sync {
+    async fn check(&self) -> Result<(), ReadinessError>;
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct DemoReadiness;
+
+#[async_trait]
+impl ReadinessProbe for DemoReadiness {
+    async fn check(&self) -> Result<(), ReadinessError> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct LifecycleState {
+    draining: AtomicBool,
+}
+
+impl LifecycleState {
+    pub fn begin_draining(&self) {
+        self.draining.store(true, Ordering::Release);
+    }
+
+    pub fn is_draining(&self) -> bool {
+        self.draining.load(Ordering::Acquire)
     }
 }
 
@@ -494,6 +541,8 @@ pub struct AppState {
     pub config: AppConfig,
     pub gateway: Arc<dyn WebGateway>,
     pub authenticator: Arc<dyn Authenticator>,
+    pub readiness: Arc<dyn ReadinessProbe>,
+    pub lifecycle: Arc<LifecycleState>,
     pub rate_limiter: FixedWindowStore,
 }
 
@@ -503,11 +552,22 @@ impl AppState {
         gateway: Arc<dyn WebGateway>,
         authenticator: Arc<dyn Authenticator>,
     ) -> Result<Self, ConfigError> {
+        Self::with_readiness(config, gateway, authenticator, Arc::new(DemoReadiness))
+    }
+
+    pub fn with_readiness(
+        config: AppConfig,
+        gateway: Arc<dyn WebGateway>,
+        authenticator: Arc<dyn Authenticator>,
+        readiness: Arc<dyn ReadinessProbe>,
+    ) -> Result<Self, ConfigError> {
         config.validate()?;
         Ok(Self {
             config,
             gateway,
             authenticator,
+            readiness,
+            lifecycle: Arc::new(LifecycleState::default()),
             rate_limiter: FixedWindowStore::default(),
         })
     }
@@ -533,11 +593,16 @@ pub fn build_router(state: AppState) -> Router {
         .layer(middleware::from_fn_with_state(
             state.clone(),
             rate_limit_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            drain_middleware,
         ));
 
     Router::new()
         .route("/", get(root))
         .route("/health", get(health))
+        .route("/ready", get(ready))
         .merge(api)
         .layer(SetSensitiveHeadersLayer::new([
             header::AUTHORIZATION,
@@ -567,7 +632,7 @@ async fn request_policy_middleware(
                 value.to_string()
             }
             _ => {
-                return error_response(
+                return policy_error_response(
                     StatusCode::BAD_REQUEST,
                     "invalid_request",
                     "request ID is invalid",
@@ -703,6 +768,37 @@ async fn root(Extension(RequestId(request_id)): Extension<RequestId>) -> Respons
 
 async fn health() -> Response {
     json_response(StatusCode::OK, json!({"status": "ok"}))
+}
+
+async fn ready(
+    State(state): State<AppState>,
+    Extension(RequestId(request_id)): Extension<RequestId>,
+) -> Response {
+    match state.readiness.check().await {
+        Ok(()) => json_response(StatusCode::OK, json!({"status": "ready"})),
+        Err(ReadinessError::Unavailable | ReadinessError::Internal) => error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "not_ready",
+            "host dependencies are not ready",
+            &request_id,
+        ),
+    }
+}
+
+async fn drain_middleware(
+    State(state): State<AppState>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    if state.lifecycle.is_draining() {
+        return error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "draining",
+            "host is draining and is not accepting new API requests",
+            &request_id(&request),
+        );
+    }
+    next.run(request).await
 }
 
 async fn get_user(
