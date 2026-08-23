@@ -44,6 +44,20 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 | Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0, v2.2.1, and v2.2.2 remain immutable; v2.2.1 contains the LSP/editor corrections, v2.2.2 contains the subsequent runtime-safety/helper corrections, and v2.2.3 contains the post-v2.2.2 runtime, equality, borrow, and LSP hardening; v2.2.4 contains the active-baseline documentation synchronization; v2.2.5 contains the HTTP URL invariant hardening |
 
+## One-command project creation
+
+Create a complete user-managed Web project with one command:
+
+```bash
+zap new my_app
+cd my_app
+zap check
+zap test tests
+zap dev
+```
+
+The generated project contains `models/`, `functions/`, `ui/`, `routes/`, `middleware/`, `migrations/`, `admin/`, `public/`, `zap.toml`, and `zap.lock`. These are ordinary files and directories owned by the user. Zap intentionally does not add a Django-style `startapp` command or require a separate app registry; add and organize modules directly inside the project as the application grows. See the [native Web guide](docs/ZAP_WEB_NATIVE_EN.md) for the complete layout and frontend integration contract.
+
 ## Release provenance
 
 The current source baseline is v2.3.0 and is tracked at the [v2.3.0 release reference](https://github.com/hidecard/zap/releases/tag/v2.3.0). The v2.3.0 archive names below are release-contract examples; verify that the signed assets are published before distributing them. The published v2.2.7 release and its signed assets remain historical reference material. The published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) remains immutable. The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2), [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3), and [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.

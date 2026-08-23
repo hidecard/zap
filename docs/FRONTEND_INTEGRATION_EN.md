@@ -46,7 +46,7 @@ The supported `framework` values are `plain`, `react`, `vue`, `svelte`, and `oth
 
 ## Plain HTML/CSS/JavaScript
 
-Put the entry document at `public/index.html`, stylesheets and modules under `public/assets/`, and declare routes in `routes.zp`:
+Put the entry document at `public/index.html`, stylesheets and modules under `public/assets/`, and declare routes in `routes/routes.zp`:
 
 ```zap
 export fn home(request):

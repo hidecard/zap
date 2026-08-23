@@ -5842,13 +5842,36 @@ fn creates_and_checks_zap_web_project() {
         "{}",
         String::from_utf8_lossy(&created.stderr)
     );
+    for directory in [
+        "models",
+        "functions",
+        "ui",
+        "routes",
+        "middleware",
+        "migrations",
+        "admin",
+        "public",
+    ] {
+        assert!(
+            root.join(directory).is_dir(),
+            "missing generated directory: {directory}"
+        );
+    }
+    assert!(root.join("zap.lock").is_file());
     assert!(root.join("server.zp").is_file());
+    assert!(root.join("ui/ui.zp").is_file());
+    assert!(root.join("routes/routes.zp").is_file());
+    assert!(root.join("functions/user_functions.zp").is_file());
+    assert!(root.join("middleware/middleware.zp").is_file());
+    assert!(root.join("admin/admin.zp").is_file());
+    assert!(!root.join("services").exists());
+    assert!(!root.join("views").exists());
     assert!(root.join("public/index.html").is_file());
     assert!(root.join("public/assets/app.css").is_file());
     assert!(root.join("public/assets/app.js").is_file());
     let manifest = std::fs::read_to_string(root.join("zap.toml")).unwrap();
     assert!(manifest.contains("assets = \"public\""));
-    let routes = std::fs::read_to_string(root.join("routes.zp")).unwrap();
+    let routes = std::fs::read_to_string(root.join("routes/routes.zp")).unwrap();
     assert!(routes.contains("/assets/*path"));
     assert!(routes.contains("/api/tasks"));
 

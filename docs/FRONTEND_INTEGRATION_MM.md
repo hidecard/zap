@@ -43,7 +43,7 @@ spa_fallback = "index.html"
 
 ## Plain HTML/CSS/JavaScript
 
-Entry document ကို `public/index.html`၊ stylesheet နှင့် module များကို `public/assets/` အောက်တွင် ထားပြီး `routes.zp` တွင် route သတ်မှတ်ပါ။
+Entry document ကို `public/index.html`၊ stylesheet နှင့် module များကို `public/assets/` အောက်တွင် ထားပြီး `routes/routes.zp` တွင် route သတ်မှတ်ပါ။
 
 ```zap
 export fn home(request):
