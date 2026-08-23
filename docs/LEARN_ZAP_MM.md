@@ -715,7 +715,7 @@ say task_join_timeout(handle, 1)
 
 ## 20. LSP နှင့် Editor Workflow
 
-Zap တွင် stdio Language Server Protocol implementation ပါဝင်ပြီး diagnostics၊ hover၊ completion၊ signature help၊ definition၊ document/workspace symbols၊ formatting နှင့် documented boundary အတွင်း rename ကို support လုပ်ပါသည်။ LSP သည် full document synchronization ကို advertise လုပ်ပြီး unsupported incremental range edit ကို reject လုပ်ပါသည်။ Cross-file rename သည် complete refactoring feature မဟုတ်သေးပါ။
+Zap တွင် stdio Language Server Protocol implementation ပါဝင်ပြီး diagnostics၊ hover၊ completion၊ signature help၊ definition၊ document/workspace symbols၊ formatting နှင့် documented boundary အတွင်း rename ကို support လုပ်ပါသည်။ LSP သည် bounded incremental synchronization ကို advertise လုပ်ပါသည်။ Change notification တစ်ခုတွင် sequential full-document သို့မဟုတ် range edit အများဆုံး 128 ခု ပါနိုင်ပြီး negotiated UTF-8/UTF-16/UTF-32 position များကို character boundary အတိုင်း စစ်ဆေးပါသည်။ Version များသည် အစဉ်တိုးရမည်ဖြစ်ပြီး 32 MiB workspace byte cap ကို edit တစ်ခုချင်းစီပြီးတိုင်း enforce လုပ်ပါသည်။ Malformed၊ stale၊ oversized၊ out-of-range သို့မဟုတ် မဖွင့်ထားသော document အတွက် range edit များကို stored text မပြောင်းဘဲ reject လုပ်ပါသည်။ Cross-file rename သည် complete refactoring feature မဟုတ်သေးပါ။
 
 ```bash
 python3 scripts/validate_vscode_assets.py

@@ -200,6 +200,12 @@ The test layers should grow in this order:
 
 Tests that use a database must use a disposable isolated database. Production credentials and production data must never be used by the test runner.
 
+## LSP synchronization
+
+The native LSP now advertises incremental document synchronization (`textDocumentSync.change = 2`). A `didChange` notification may contain up to 128 sequential full-document or range edits. Range positions are validated against the negotiated UTF-8, UTF-16, or UTF-32 encoding, edits must land on character boundaries, document versions must increase monotonically, and the 32 MiB workspace byte cap is enforced after every edit. Malformed, out-of-range, oversized, unknown-document range edits, and stale updates are rejected without replacing the stored document.
+
+This is a bounded synchronization foundation, not a complete IDE refactoring system. Cross-file semantic rename, project-wide dependency invalidation, incremental compilation, debugging, and profiling remain separate milestones.
+
 ## CLI workflow
 
 The current supported workflow is:

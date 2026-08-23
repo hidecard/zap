@@ -62,6 +62,7 @@ impl PositionEncoding {
 const MAX_WORKSPACE_DOCUMENTS: usize = 256;
 const MAX_IMPORT_DEPTH: usize = 32;
 const MAX_WORKSPACE_BYTES: usize = 32 * 1024 * 1024;
+const MAX_CONTENT_CHANGES: usize = 128;
 
 #[derive(Debug, Default)]
 pub struct LspState {
@@ -119,19 +120,76 @@ fn can_store_document(state: &LspState, uri: &str, text: &str) -> bool {
             <= MAX_WORKSPACE_BYTES
 }
 
-fn full_sync_text(changes: &[Value]) -> Option<String> {
-    if changes.is_empty()
-        || changes
-            .iter()
-            .any(|change| change.get("range").is_some() || change.get("rangeLength").is_some())
-    {
+fn line_start(text: &str, target_line: usize) -> Option<usize> {
+    let mut line = 0;
+    let mut offset = 0;
+    for (index, byte) in text.bytes().enumerate() {
+        if line == target_line {
+            return Some(offset);
+        }
+        if byte == b'\n' {
+            line += 1;
+            offset = index + 1;
+        }
+    }
+    (line == target_line).then_some(offset)
+}
+
+fn position_to_byte_offset(
+    text: &str,
+    position: &Value,
+    encoding: PositionEncoding,
+) -> Option<usize> {
+    let line = usize::try_from(position.get("line")?.as_u64()?).ok()?;
+    let character = usize::try_from(position.get("character")?.as_u64()?).ok()?;
+    let start = line_start(text, line)?;
+    let remaining = &text[start..];
+    let line_length = remaining.find('\n').unwrap_or(remaining.len());
+    let line_text = &remaining[..line_length];
+    let char_index = encoding.char_index_for_column(line_text, character);
+    if encoding.encoded_column(line_text, char_index) != character {
         return None;
     }
-    changes
-        .last()
-        .and_then(|change| change.get("text"))
-        .and_then(Value::as_str)
-        .map(ToOwned::to_owned)
+    let byte_offset = line_text
+        .char_indices()
+        .nth(char_index)
+        .map_or(line_text.len(), |(offset, _)| offset);
+    Some(start + byte_offset)
+}
+
+fn apply_content_changes(
+    original: &str,
+    changes: &[Value],
+    encoding: PositionEncoding,
+) -> Option<String> {
+    if changes.is_empty() || changes.len() > MAX_CONTENT_CHANGES {
+        return None;
+    }
+    let mut text = original.to_owned();
+    for change in changes {
+        let replacement = change.get("text")?.as_str()?;
+        match change.get("range") {
+            None => {
+                if change.get("rangeLength").is_some() {
+                    return None;
+                }
+                text.clear();
+                text.push_str(replacement);
+            }
+            Some(range) => {
+                let start = position_to_byte_offset(&text, range.get("start")?, encoding)?;
+                let end = position_to_byte_offset(&text, range.get("end")?, encoding)?;
+                if start > end {
+                    return None;
+                }
+                text.replace_range(start..end, replacement);
+            }
+        }
+        if text.len() > MAX_WORKSPACE_BYTES {
+            return None;
+        }
+    }
+    Some(text)
 }
 
 pub fn run_stdio() -> Result<(), String> {
@@ -242,7 +300,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                 "id": message.get("id").cloned().unwrap_or(Value::Null),
                 "result": {
                     "capabilities": {
-                        "textDocumentSync": {"openClose": true, "change": 1},
+                        "textDocumentSync": {"openClose": true, "change": 2},
                         "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
                         "codeActionProvider": {"codeActionKinds": ["quickfix", "source", "source.organizeImports"], "resolveProvider": false},
                         "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
@@ -304,7 +362,19 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
             if !accepts_document_version(current_version, version) {
                 return None;
             }
-            let text = full_sync_text(changes)?;
+            let current_text = state
+                .documents
+                .get(uri)
+                .map(|document| document.text.as_str());
+            if current_text.is_none() && changes.iter().any(|change| change.get("range").is_some())
+            {
+                return None;
+            }
+            let text = apply_content_changes(
+                current_text.unwrap_or_default(),
+                changes,
+                state.position_encoding,
+            )?;
             if !can_store_document(state, uri, &text) {
                 return None;
             }
@@ -2607,7 +2677,7 @@ mod tests {
     }
 
     #[test]
-    fn did_change_rejects_incremental_payload_when_full_sync_is_advertised() {
+    fn did_change_applies_incremental_payload_and_updates_symbols() {
         let uri = "file:///sync-incremental.zp";
         let mut state = LspState::new();
         let _ = handle_message_with_state(
@@ -2617,7 +2687,7 @@ mod tests {
             }),
             &mut state,
         );
-        assert!(handle_message_with_state(
+        let change = handle_message_with_state(
             &json!({
                 "jsonrpc": "2.0", "method": "textDocument/didChange",
                 "params": {
@@ -2631,7 +2701,47 @@ mod tests {
             }),
             &mut state,
         )
-        .is_none());
+        .expect("incremental change should publish diagnostics");
+        assert_eq!(change["params"]["uri"], uri);
+        let symbols = handle_message_with_state(
+            &json!({
+                "jsonrpc": "2.0", "id": 49, "method": "textDocument/documentSymbol",
+                "params": {"textDocument": {"uri": uri}}
+            }),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(symbols["result"][0]["name"], "updated");
+    }
+
+    #[test]
+    fn incremental_changes_respect_utf16_boundaries_and_apply_sequentially() {
+        let source = "let value = \"😀\"\n";
+        let changes = vec![
+            json!({
+                "range": {"start": {"line": 0, "character": 13}, "end": {"line": 0, "character": 15}},
+                "rangeLength": 2,
+                "text": "ok"
+            }),
+            json!({
+                "range": {"start": {"line": 0, "character": 4}, "end": {"line": 0, "character": 9}},
+                "rangeLength": 5,
+                "text": "result"
+            }),
+        ];
+        let updated =
+            super::apply_content_changes(source, &changes, super::PositionEncoding::Utf16)
+                .expect("valid UTF-16 changes should apply");
+        assert_eq!(updated, "let result = \"ok\"\n");
+
+        let invalid = vec![json!({
+            "range": {"start": {"line": 0, "character": 14}, "end": {"line": 0, "character": 15}},
+            "text": "x"
+        })];
+        assert!(
+            super::apply_content_changes(source, &invalid, super::PositionEncoding::Utf16)
+                .is_none()
+        );
     }
 
     #[test]
@@ -2770,7 +2880,7 @@ mod tests {
         assert_eq!(response["result"]["serverInfo"]["name"], "zap");
         assert_eq!(
             response["result"]["capabilities"]["textDocumentSync"]["change"],
-            1
+            2
         );
         assert_eq!(
             response["result"]["capabilities"]["textDocumentSync"]["openClose"],

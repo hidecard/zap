@@ -826,7 +826,7 @@ Use `task_join` to consume a completed task, `task_cancel` for cooperative cance
 
 Zap includes a stdio Language Server Protocol implementation and a maintained VS Code asset set. The server supports diagnostics, hover, completion, signature help, definitions, document symbols, workspace symbols, formatting, and scope-aware rename within its documented boundaries.
 
-Use the extension assets from `vscode-extension/` or the canonical editor tree under `editors/vscode/`. The LSP currently advertises full document synchronization. Unsupported incremental range edits are rejected rather than guessed. Cross-file rename is not yet a complete refactoring feature.
+Use the extension assets from `vscode-extension/` or the canonical editor tree under `editors/vscode/`. The LSP advertises bounded incremental synchronization: each change notification may contain up to 128 sequential full-document or range edits, negotiated UTF-8/UTF-16/UTF-32 positions are validated at character boundaries, versions must increase monotonically, and the 32 MiB workspace byte cap is enforced after every edit. Malformed, stale, oversized, out-of-range, or unknown-document range edits are rejected without replacing stored text. Cross-file rename is not yet a complete refactoring feature.
 
 For repository development, validate editor parity with:
 
