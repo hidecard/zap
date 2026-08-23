@@ -44,6 +44,7 @@
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_MM.md) | `scripts/test_p001_parity.sh` |
 | Verification/replay | [P1-05 replay နှင့် M2-VERIFY-01 bounded replay contract](P105_REPLAY_MM.md) | `scripts/test_p105_replay.sh` နှင့် `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_MM.md) | Checked-in `benchmark-results/native-summary.csv` နှင့် CI threshold gate |
+| Security/dependencies | [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) · [Security policy](../SECURITY.md) | CI နှင့် release `cargo-audit` gates |
 | Releases | [Release version policy](RELEASE_VERSION_POLICY_MM.md) · [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md) | `scripts/validate_release_version.sh` နှင့် release preflight |
 
 ## Version နှင့် contribution စည်းမျဉ်းများ
