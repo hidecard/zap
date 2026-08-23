@@ -230,6 +230,14 @@ impl ZapError {
     /// editors and CI integrations.
     pub(crate) fn code(&self) -> &'static str {
         match self {
+            Self::Syntax { message, .. }
+                if message.contains("function signature requires parentheses") =>
+            {
+                "ZAP-SYNTAX-002"
+            }
+            Self::Syntax { message, .. } if message.contains("missing closing delimiter") => {
+                "ZAP-SYNTAX-003"
+            }
             Self::Syntax { .. } => "ZAP-SYNTAX-001",
             Self::Name { .. } => "ZAP-NAME-001",
             Self::Type { .. } => "ZAP-TYPE-001",

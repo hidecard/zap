@@ -244,6 +244,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
                     "capabilities": {
                         "textDocumentSync": {"openClose": true, "change": 1},
                         "diagnosticProvider": {"interFileDependencies": false, "workspaceDiagnostics": false},
+                        "codeActionProvider": {"codeActionKinds": ["quickfix", "source", "source.organizeImports"], "resolveProvider": false},
                         "completionProvider": {"resolveProvider": false, "triggerCharacters": ["."]},
                         "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
                         "hoverProvider": true,
@@ -268,6 +269,7 @@ pub fn handle_message_with_state(message: &Value, state: &mut LspState) -> Optio
         "textDocument/hover" => Some(hover_response(message, state)),
         "textDocument/definition" => Some(definition_response(message, state)),
         "textDocument/rename" => Some(rename_response(message, state)),
+        "textDocument/codeAction" => Some(code_action_response(message, state)),
         "textDocument/formatting" => Some(formatting_response(message, state)),
         "workspace/symbol" => Some(workspace_symbol_response(message, state)),
         "textDocument/documentSymbol" => Some(document_symbol_response(message, state)),
@@ -1068,6 +1070,197 @@ fn definition_response(message: &Value, state: &LspState) -> Value {
     json!({"jsonrpc": "2.0", "id": message.get("id").cloned().unwrap_or(Value::Null), "result": result})
 }
 
+fn code_action_allowed(params: &Value, kind: &str) -> bool {
+    params["context"]["only"]
+        .as_array()
+        .map(|only| only.iter().any(|value| value.as_str() == Some(kind)))
+        .unwrap_or(true)
+}
+
+fn unmatched_closing_delimiter(source: &str) -> Option<char> {
+    let mut stack = Vec::new();
+    let mut quote = None;
+    let mut escaped = false;
+    let mut comment = false;
+    for character in source.chars() {
+        if comment {
+            if character == '\n' {
+                comment = false;
+            }
+            continue;
+        }
+        if let Some(active_quote) = quote {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == active_quote {
+                quote = None;
+            }
+            continue;
+        }
+        match character {
+            '#' => comment = true,
+            '\'' | '"' => quote = Some(character),
+            '(' => stack.push(')'),
+            '[' => stack.push(']'),
+            '{' => stack.push('}'),
+            ')' | ']' | '}' => {
+                if stack.last() == Some(&character) {
+                    stack.pop();
+                } else if !stack.is_empty() {
+                    return None;
+                }
+            }
+            _ => {}
+        }
+    }
+    if stack.len() == 1 {
+        stack.pop()
+    } else {
+        None
+    }
+}
+
+fn insertion_edit_for_function_signature(
+    source: &str,
+    line_number: usize,
+    encoding: PositionEncoding,
+) -> Option<Value> {
+    let line = source.lines().nth(line_number)?;
+    let trimmed = line.trim_start();
+    let declaration = trimmed
+        .strip_prefix("fn ")
+        .or_else(|| trimmed.strip_prefix("def "))?;
+    let name_len = declaration
+        .chars()
+        .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
+        .count();
+    if name_len == 0 || declaration[name_len..].trim_start().starts_with('(') {
+        return None;
+    }
+    let name_start = line.len() - trimmed.len();
+    let insertion_char = name_start + trimmed.find(declaration)? + name_len;
+    let character = encoding.encoded_column(line, insertion_char) as u64;
+    Some(json!({
+        "range": {
+            "start": {"line": line_number as u64, "character": character},
+            "end": {"line": line_number as u64, "character": character}
+        },
+        "newText": "()"
+    }))
+}
+
+fn code_action_response(message: &Value, state: &LspState) -> Value {
+    let id = message.get("id").cloned().unwrap_or(Value::Null);
+    let params = &message["params"];
+    let uri = params["textDocument"]["uri"].as_str().unwrap_or("");
+    let source = state
+        .documents
+        .get(uri)
+        .map(|document| document.text.as_str())
+        .unwrap_or("");
+    let diagnostics = params["context"]["diagnostics"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let mut actions = Vec::new();
+    for diagnostic in diagnostics {
+        let code = diagnostic["code"].as_str().unwrap_or("");
+        let range = diagnostic.get("range").cloned().unwrap_or_else(|| {
+            json!({
+                "start": {"line": 0, "character": 0},
+                "end": {"line": 0, "character": 0}
+            })
+        });
+        let edit = |edits: Vec<Value>| {
+            let mut changes = serde_json::Map::new();
+            changes.insert(uri.to_string(), Value::Array(edits));
+            json!({"changes": changes})
+        };
+        match code {
+            "ZAP-STYLE-001" if code_action_allowed(params, "quickfix") => {
+                actions.push(json!({
+                    "title": "Replace tab with spaces",
+                    "kind": "quickfix",
+                    "isPreferred": true,
+                    "diagnostics": [diagnostic],
+                    "edit": edit(vec![json!({"range": range, "newText": "    "})])
+                }));
+            }
+            "ZAP-STYLE-002" if code_action_allowed(params, "quickfix") => {
+                actions.push(json!({
+                    "title": "Remove trailing whitespace",
+                    "kind": "quickfix",
+                    "isPreferred": true,
+                    "diagnostics": [diagnostic],
+                    "edit": edit(vec![json!({"range": range, "newText": ""})])
+                }));
+            }
+            "ZAP-SYNTAX-002" if code_action_allowed(params, "quickfix") => {
+                if let Some(line) = range["start"]["line"].as_u64() {
+                    if let Some(insert) = insertion_edit_for_function_signature(
+                        source,
+                        line as usize,
+                        state.position_encoding,
+                    ) {
+                        actions.push(json!({
+                            "title": "Add function parentheses",
+                            "kind": "quickfix",
+                            "isPreferred": true,
+                            "diagnostics": [diagnostic],
+                            "edit": edit(vec![insert])
+                        }));
+                    }
+                }
+            }
+            "ZAP-SYNTAX-001" if code_action_allowed(params, "quickfix") => {
+                if let Some(closing) = unmatched_closing_delimiter(source) {
+                    let line = range["end"]["line"].as_u64().unwrap_or(0);
+                    let character = range["end"]["character"].as_u64().unwrap_or(0);
+                    actions.push(json!({
+                        "title": format!("Insert missing `{closing}`"),
+                        "kind": "quickfix",
+                        "isPreferred": true,
+                        "diagnostics": [diagnostic],
+                        "edit": edit(vec![json!({
+                            "range": {
+                                "start": {"line": line, "character": character},
+                                "end": {"line": line, "character": character}
+                            },
+                            "newText": closing.to_string()
+                        })])
+                    }));
+                }
+            }
+            "ZAP-SYNTAX-003" if code_action_allowed(params, "quickfix") => {
+                let closing = diagnostic["data"]["expectedDelimiter"]
+                    .as_str()
+                    .unwrap_or("");
+                if [")", "]", "}"].contains(&closing) {
+                    let line = range["end"]["line"].as_u64().unwrap_or(0);
+                    let character = range["end"]["character"].as_u64().unwrap_or(0);
+                    actions.push(json!({
+                        "title": format!("Insert missing `{closing}`"),
+                        "kind": "quickfix",
+                        "isPreferred": true,
+                        "diagnostics": [diagnostic],
+                        "edit": edit(vec![json!({
+                            "range": {
+                                "start": {"line": line, "character": character},
+                                "end": {"line": line, "character": character}
+                            },
+                            "newText": closing
+                        })])
+                    }));
+                }
+            }
+            _ => {}
+        }
+    }
+    json!({"jsonrpc": "2.0", "id": id, "result": actions})
+}
+
 fn formatting_response(message: &Value, state: &LspState) -> Value {
     let uri = message["params"]["textDocument"]["uri"]
         .as_str()
@@ -1453,6 +1646,64 @@ fn symbol_range(
     json!({"start": start, "end": end})
 }
 
+fn quoted_token(message: &str) -> Option<&str> {
+    let start = message.find('\'')? + 1;
+    let rest = &message[start..];
+    let end = rest.find('\'')?;
+    Some(&rest[..end])
+}
+
+fn diagnostic_fix_ids(code: &str) -> Vec<&'static str> {
+    match code {
+        "ZAP-STYLE-001" => vec!["zap.replace-tabs"],
+        "ZAP-STYLE-002" => vec!["zap.remove-trailing-whitespace"],
+        "ZAP-SYNTAX-002" => vec!["zap.add-parentheses"],
+        "ZAP-SYNTAX-003" => vec!["zap.close-delimiter"],
+        _ => Vec::new(),
+    }
+}
+
+fn diagnostic_range(
+    source: &str,
+    raw: &str,
+    diagnostic: &crate::diagnostics::ZapError,
+    line_number: usize,
+    column_number: usize,
+    encoding: PositionEncoding,
+) -> Value {
+    let line = line_number.saturating_sub(1);
+    let line_text = source.lines().nth(line).unwrap_or("");
+    let line_chars = line_text.chars().count();
+    let mut start = column_number.saturating_sub(1).min(line_chars);
+    let mut length = 1usize;
+    if raw.starts_with("line ") && raw.contains("tabs are not allowed") {
+        start = line_text
+            .chars()
+            .position(|character| character == '\t')
+            .unwrap_or(start);
+    } else if raw.starts_with("line ") && raw.contains("trailing whitespace") {
+        start = line_text
+            .trim_end_matches(char::is_whitespace)
+            .chars()
+            .count();
+        length = line_chars.saturating_sub(start).max(1);
+    } else if raw.starts_with("line ") && raw.contains("line exceeds 120 characters") {
+        start = 120.min(line_chars);
+        length = line_chars.saturating_sub(start).max(1);
+    } else if let Some(token) = quoted_token(diagnostic.message()) {
+        if let Some(byte_index) = line_text.find(token) {
+            start = line_text[..byte_index].chars().count();
+            length = token.chars().count().max(1);
+        }
+    }
+    let character = encoding.encoded_column(line_text, start);
+    let end = encoding.encoded_column(line_text, (start + length).min(line_chars));
+    json!({
+        "start": {"line": line as u64, "character": character as u64},
+        "end": {"line": line as u64, "character": end.max(character + 1) as u64}
+    })
+}
+
 fn publish_diagnostics(uri: &str, source: &str, encoding: PositionEncoding) -> Value {
     let file = file_uri_path(uri).unwrap_or_else(|| PathBuf::from("<lsp>"));
     let diagnostics = crate::source_diagnostics(source, &file)
@@ -1466,27 +1717,29 @@ fn publish_diagnostics(uri: &str, source: &str, encoding: PositionEncoding) -> V
                 parsed_line
             };
             let column_number = if parsed_column == 0 { 1 } else { parsed_column };
-            let line = line_number.saturating_sub(1);
-            let line_text = source.lines().nth(line).unwrap_or("");
-            let char_index = column_number
-                .saturating_sub(1)
-                .min(line_text.chars().count());
-            let character = encoding.encoded_column(line_text, char_index);
-            let width = encoding
-                .encoded_column(line_text, line_text.chars().count())
-                .max(character + 1);
+            let (code, severity, severity_name) = if raw.starts_with("line ") && raw.contains("tabs are not allowed") {
+                ("ZAP-STYLE-001", 2, "warning")
+            } else if raw.starts_with("line ") && raw.contains("trailing whitespace") {
+                ("ZAP-STYLE-002", 2, "warning")
+            } else if raw.starts_with("line ") && raw.contains("line exceeds 120 characters") {
+                ("ZAP-STYLE-003", 2, "warning")
+            } else {
+                (diagnostic.code(), 1, diagnostic.severity())
+            };
+            let fix_ids = diagnostic_fix_ids(code);
             json!({
-                "range": {"start": {"line": line, "character": character}, "end": {"line": line, "character": width}},
-                "severity": 1,
+                "range": diagnostic_range(source, &raw, &diagnostic, line_number, column_number, encoding),
+                "severity": severity,
                 "source": "zap",
-                "code": diagnostic.code(),
+                "code": code,
                 "message": diagnostic.message(),
                 "data": {
                     "kind": diagnostic.kind(),
-                    "code": diagnostic.code(),
-                    "severity": diagnostic.severity(),
+                    "code": code,
+                    "severity": severity_name,
                     "notes": diagnostic.notes(),
-                    "help": diagnostic.help()
+                    "help": diagnostic.help(),
+                    "fixIds": fix_ids
                 }
             })
         })
@@ -1565,6 +1818,78 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("conditional branches must have compatible types"));
+    }
+
+    #[test]
+    fn code_actions_offer_safe_style_and_signature_fixes() {
+        let style_uri = "file:///code-actions-style.zp";
+        let style_response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": style_uri, "text": "let value = 1\t  \n"}}
+        }))
+        .unwrap();
+        assert_eq!(style_response["params"]["diagnostics"][0]["severity"], 2);
+        assert_eq!(
+            style_response["params"]["diagnostics"][0]["code"],
+            "ZAP-STYLE-001"
+        );
+        assert_eq!(
+            style_response["params"]["diagnostics"][0]["range"]["start"]["character"],
+            13
+        );
+        let style_actions = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "id": 61,
+            "method": "textDocument/codeAction",
+            "params": {
+                "textDocument": {"uri": style_uri},
+                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 20}},
+                "context": {"diagnostics": style_response["params"]["diagnostics"].clone(), "only": ["quickfix"]}
+            }
+        }))
+        .unwrap();
+        assert!(style_actions["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|action| action["title"] == "Replace tab with spaces"));
+        assert!(style_actions["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|action| action["title"] == "Remove trailing whitespace"));
+
+        let signature_uri = "file:///code-actions-signature.zp";
+        let signature_response = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": signature_uri, "text": "fn add:\n  say(1)\n"}}
+        }))
+        .unwrap();
+        assert_eq!(
+            signature_response["params"]["diagnostics"][0]["code"],
+            "ZAP-SYNTAX-002"
+        );
+        let signature_actions = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "id": 62,
+            "method": "textDocument/codeAction",
+            "params": {
+                "textDocument": {"uri": signature_uri},
+                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 8}},
+                "context": {"diagnostics": signature_response["params"]["diagnostics"].clone()}
+            }
+        }))
+        .unwrap();
+        assert_eq!(
+            signature_actions["result"][0]["title"],
+            "Add function parentheses"
+        );
+        assert_eq!(
+            signature_actions["result"][0]["edit"]["changes"][signature_uri][0]["newText"],
+            "()"
+        );
     }
 
     #[test]
@@ -2413,6 +2738,10 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(response["result"]["capabilities"]["renameProvider"], true);
+        assert_eq!(
+            response["result"]["capabilities"]["codeActionProvider"]["codeActionKinds"],
+            json!(["quickfix", "source", "source.organizeImports"])
+        );
     }
 
     #[test]

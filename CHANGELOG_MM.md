@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+## [2.3.0] — 2026-08-23
+
+### LSP diagnostics နှင့် code actions
+- Server-side `textDocument/codeAction` support ထည့်ပြီး `quickfix`၊ `source` နှင့် `source.organizeImports` capabilities ကို advertise လုပ်ထားပါသည်။
+- Tab၊ trailing whitespace နှင့် character 120 ကျော်သော line များအတွက် stable style diagnostic code နှင့် Warning severity ထည့်ထားပါသည်။
+- Diagnostic range များကို line တစ်ကြောင်းလုံးမဟုတ်ဘဲ tab၊ trailing whitespace၊ long-line overflow နှင့် quoted identifier ကို ပိုတိကျစွာညွှန်ပြစေပါသည်။
+- Tab ကို spaces ပြောင်းခြင်း၊ trailing whitespace ဖျက်ခြင်း၊ function parentheses ထည့်ခြင်းနှင့် တစ်ခုတည်းသာကျန်သော closing delimiter ထည့်ခြင်းတို့အတွက် safe server quick fixes ထည့်ထားပါသည်။
+- Diagnostic `fixIds` metadata နှင့် line-aware malformed function-signature error များ ထည့်ထားသော်လည်း CLI diagnostics compatibility ကို ထိန်းသိမ်းထားပါသည်။
+
 ## [2.2.6] — 2026-08-23
 
 ### Release engineering

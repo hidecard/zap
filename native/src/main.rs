@@ -1823,7 +1823,7 @@ fn narrowed_branch_types(condition: &str, vars: &HashMap<String, String>) -> Vec
 
 fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
     let mut signatures: HashMap<String, StaticSignature> = HashMap::new();
-    for line in source.lines() {
+    for (line_index, line) in source.lines().enumerate() {
         let trimmed = line.trim();
         if let Some(rest) = trimmed
             .strip_prefix("fn ")
@@ -1832,12 +1832,18 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
             let head = rest.trim_end_matches(':').trim();
             let (name, args) = head.split_once('(').ok_or_else(|| {
                 format!(
-                    "SyntaxError at {}: function signature requires parentheses",
-                    file.display()
+                    "SyntaxError at {}:{}:1: function signature requires parentheses",
+                    file.display(),
+                    line_index + 1
                 )
             })?;
-            let (params, return_annotation) = parse_signature(args)
-                .map_err(|error| format!("SyntaxError at {}: {error}", file.display()))?;
+            let (params, return_annotation) = parse_signature(args).map_err(|error| {
+                format!(
+                    "SyntaxError at {}:{}:1: {error}",
+                    file.display(),
+                    line_index + 1
+                )
+            })?;
             signatures.insert(
                 name.trim().to_string(),
                 StaticSignature {

@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+## [2.3.0] — 2026-08-23
+
+### LSP diagnostics and code actions
+- Added server-side `textDocument/codeAction` support with `quickfix`, `source`, and `source.organizeImports` capability advertisement.
+- Added stable style diagnostic codes and warning severity for tabs, trailing whitespace, and lines over 120 characters.
+- Improved diagnostic ranges to target tabs, trailing whitespace, long-line overflow, and quoted identifiers instead of highlighting the entire line.
+- Added safe server quick fixes for replacing tabs, removing trailing whitespace, adding missing function parentheses, and inserting a uniquely inferred unmatched closing delimiter.
+- Added diagnostic `fixIds` metadata and line-aware malformed function-signature errors while preserving CLI diagnostics compatibility.
+
 ## [2.2.6] — 2026-08-23
 
 ### Release engineering
