@@ -20,6 +20,12 @@ pub(crate) enum ZapError {
         line: usize,
         column: usize,
     },
+    Json {
+        message: String,
+        file: String,
+        line: usize,
+        column: usize,
+    },
     Value {
         message: String,
         file: String,
@@ -101,6 +107,11 @@ impl ZapError {
             || message.contains("expected ")
         {
             "TypeError"
+        } else if message.contains("json encode failed")
+            || message.contains("from_json failed")
+            || message.starts_with("JsonError")
+        {
+            "JsonError"
         } else if message.contains("key not found") || message.contains("property not found") {
             "KeyError"
         } else if message.contains("not found") || message.contains("No such file") {
@@ -151,6 +162,12 @@ impl ZapError {
                 column,
             },
             "TypeError" => Self::Type {
+                message,
+                file,
+                line,
+                column,
+            },
+            "JsonError" => Self::Json {
                 message,
                 file,
                 line,
@@ -241,6 +258,7 @@ impl ZapError {
             Self::Syntax { .. } => "ZAP-SYNTAX-001",
             Self::Name { .. } => "ZAP-NAME-001",
             Self::Type { .. } => "ZAP-TYPE-001",
+            Self::Json { .. } => "ZAP-JSON-001",
             Self::Value { .. } => "ZAP-VALUE-001",
             Self::Io { .. } => "ZAP-IO-001",
             Self::FileNotFound { .. } => "ZAP-FILE-001",
@@ -286,6 +304,9 @@ impl ZapError {
             Self::Type { .. } => {
                 vec!["Check the expression type and the expected annotation.".to_string()]
             }
+            Self::Json { .. } => {
+                vec!["Remove cyclic references or reduce the JSON value graph.".to_string()]
+            }
             Self::Syntax { .. } => vec!["Check the surrounding syntax and delimiters.".to_string()],
             Self::Name { .. } => {
                 vec!["Check that the name is declared in the current scope.".to_string()]
@@ -307,6 +328,9 @@ impl ZapError {
     pub(crate) fn help(&self) -> Option<&'static str> {
         match self {
             Self::Type { .. } => Some("Use a compatible value or update the type annotation."),
+            Self::Json { .. } => {
+                Some("Remove cyclic references or reduce the value graph before JSON encoding.")
+            }
             Self::Syntax { .. } => Some("Review the Zap syntax guide for the expected form."),
             Self::Name { .. } => Some("Declare the name before using it, or correct its spelling."),
             Self::Borrow { .. } => {
@@ -324,6 +348,7 @@ impl ZapError {
             Self::Syntax { .. } => "SyntaxError",
             Self::Name { .. } => "NameError",
             Self::Type { .. } => "TypeError",
+            Self::Json { .. } => "JsonError",
             Self::Value { .. } => "ValueError",
             Self::Io { .. } => "IOError",
             Self::FileNotFound { .. } => "FileNotFound",
@@ -364,6 +389,12 @@ impl ZapError {
                 column,
             }
             | Self::Type {
+                message,
+                file,
+                line,
+                column,
+            }
+            | Self::Json {
                 message,
                 file,
                 line,
@@ -593,6 +624,22 @@ mod tests {
             Some("Stay within the run-owned logical memory and lifecycle limits.")
         );
         assert!(error.json_fields().contains("\"code\":\"ZAP-MEMORY-001\""));
+    }
+
+    #[test]
+    fn json_diagnostic_has_stable_code_and_help() {
+        let error = ZapError::from_message("json encode failed: cyclic object reference");
+        assert_eq!(error.code(), "ZAP-JSON-001");
+        assert_eq!(error.kind(), "JsonError");
+        assert_eq!(
+            error.message(),
+            "json encode failed: cyclic object reference"
+        );
+        assert_eq!(
+            error.help(),
+            Some("Remove cyclic references or reduce the value graph before JSON encoding.")
+        );
+        assert!(error.json_fields().contains("\"code\":\"ZAP-JSON-001\""));
     }
 
     #[test]
