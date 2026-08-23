@@ -12,8 +12,8 @@
 | Package author | [Burmese package guide](PACKAGE.md) | [Stdlib index](STDLIB_INDEX_MM.md)၊ [registry/authentication contract](REGISTRY_AUTH_MM.md) |
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_MM.md) | [Memory model](MEMORY_MODEL_MM.md)၊ [diagnostics](DIAGNOSTIC_MODEL_MM.md)၊ [async boundaries](ASYNC_BOUNDARIES_MM.md) |
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_MM.md) | [LSP implementation](../native/src/lsp.rs)၊ [canonical VS Code extension](../vscode-extension)၊ [editor assets](../editors/vscode)၊ [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh)၊ [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
-| Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md) |
-| Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md)၊ [release preflight](../scripts/release_preflight.sh) |
+| Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
+| Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md)၊ [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md)၊ [release preflight](../scripts/release_preflight.sh) |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_MM.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) |
 
 ## M3-DOC-01 စစ်ဆေးပြီးသော documentation surface များ
@@ -41,6 +41,7 @@
 | Native/legacy compatibility | [P0-01 parity matrix](P001_PARITY_MATRIX_MM.md) | `scripts/test_p001_parity.sh` |
 | Verification/replay | [P1-05 replay နှင့် M2-VERIFY-01 bounded replay contract](P105_REPLAY_MM.md) | `scripts/test_p105_replay.sh` နှင့် `scripts/test_m2_verify_replay.sh` |
 | Performance | [Benchmark harness](BENCHMARK_HARNESS_MM.md) | Checked-in `benchmark-results/native-summary.csv` နှင့် CI threshold gate |
+| Security/dependencies | [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) · [Security policy](../SECURITY.md) | CI နှင့် release `cargo-audit` gates |
 | Releases | [Release version policy](RELEASE_VERSION_POLICY_MM.md) · [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md) | `scripts/validate_release_version.sh` နှင့် release preflight |
 
 ## Version နှင့် contribution စည်းမျဉ်းများ
