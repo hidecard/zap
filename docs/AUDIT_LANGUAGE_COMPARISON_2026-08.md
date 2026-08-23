@@ -9,7 +9,7 @@ This document records the current Zap capability baseline for the **v2.2.6** rel
 | Item | Current record |
 |---|---|
 | Repository | [hidecard/zap](https://github.com/hidecard/zap), default branch `master` |
-| Prepared baseline | [v2.2.6 release candidate commit](https://github.com/hidecard/zap/commit/efe44a621251a1d61e85480fced6593b9bd27941) — not yet published |
+| Prepared baseline | [v2.2.6 remediation merge commit](https://github.com/hidecard/zap/commit/8f47ebd) — not yet published |
 | Runtime | Native Rust executable with canonical AST execution and compatibility-only legacy line execution for retained legacy function records |
 | Language surface | Variables, functions, closures, classes, single inheritance, local modules, Result/Option, `?`, JSON, bounded filesystem/network/process helpers, and deterministic language tasks |
 | Memory/concurrency boundary | Single-threaded `Rc`/`RefCell` object model, run-owned logical budgets, explicit `clear_object_fields()` cycle policy, and eager scheduled-value async semantics |
