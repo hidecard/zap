@@ -3,7 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs::{self, OpenOptions},
     io::{Read, Write},
-    net::{IpAddr, TcpListener, ToSocketAddrs},
+    net::{IpAddr, SocketAddr, TcpListener, ToSocketAddrs},
     path::{Path, PathBuf},
     process::{Command, Stdio},
     rc::Rc,
@@ -2005,17 +2005,13 @@ fn read_process_output<R: Read>(mut reader: R) -> std::io::Result<(Vec<u8>, bool
     Ok((output, exceeded))
 }
 
-fn validate_network_destination(host: &str, port: u16) -> Result<(), String> {
-    validate_network_destination_for_mode(host, port, untrusted_mode())
-}
-
-fn validate_network_destination_for_mode(
+fn resolved_network_destination_for_mode(
     host: &str,
     port: u16,
     restricted: bool,
-) -> Result<(), String> {
+) -> Result<Option<Vec<SocketAddr>>, String> {
     if !restricted {
-        return Ok(());
+        return Ok(None);
     }
     let normalized = host.trim_start_matches('[').trim_end_matches(']');
     let addresses = (normalized, port)
@@ -2025,31 +2021,50 @@ fn validate_network_destination_for_mode(
     if addresses.is_empty() {
         return Err("network destination did not resolve to an address".into());
     }
-    for address in addresses {
-        let ip = address.ip();
-        let blocked = match ip {
-            IpAddr::V4(value) => {
-                value.is_loopback()
-                    || value.is_private()
-                    || value.is_link_local()
-                    || value.is_unspecified()
-                    || value.is_broadcast()
-            }
-            IpAddr::V6(value) => {
-                let segments = value.segments();
-                value.is_loopback()
-                    || value.is_unspecified()
-                    || (segments[0] & 0xfe00) == 0xfc00
-                    || (segments[0] & 0xffc0) == 0xfe80
-            }
-        };
-        if blocked {
+    for address in &addresses {
+        if blocked_network_ip(address.ip()) {
             return Err(format!(
-                "network destination is blocked in untrusted mode: {ip}"
+                "network destination is blocked in untrusted mode: {}",
+                address.ip()
             ));
         }
     }
-    Ok(())
+    Ok(Some(addresses))
+}
+
+fn blocked_network_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(value) => {
+            value.is_loopback()
+                || value.is_private()
+                || value.is_link_local()
+                || value.is_unspecified()
+                || value.is_broadcast()
+                || value.is_multicast()
+        }
+        IpAddr::V6(value) => {
+            let mapped_is_blocked = value
+                .to_ipv4_mapped()
+                .map(|mapped| blocked_network_ip(IpAddr::V4(mapped)))
+                .unwrap_or(false);
+            let segments = value.segments();
+            mapped_is_blocked
+                || value.is_loopback()
+                || value.is_unspecified()
+                || value.is_multicast()
+                || (segments[0] & 0xfe00) == 0xfc00
+                || (segments[0] & 0xffc0) == 0xfe80
+        }
+    }
+}
+
+#[cfg(test)]
+fn validate_network_destination_for_mode(
+    host: &str,
+    port: u16,
+    restricted: bool,
+) -> Result<(), String> {
+    resolved_network_destination_for_mode(host, port, restricted).map(|_| ())
 }
 
 fn http_request(args: &[Value]) -> Result<Value, String> {
@@ -2106,13 +2121,18 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
         Some(Value::Text(value)) => value,
         _ => return Err("http_request URL parser omitted the host".into()),
     };
-    validate_network_destination(host, port)?;
-    let agent = ureq::AgentBuilder::new()
+    let pinned_addresses = resolved_network_destination_for_mode(host, port, untrusted_mode())?;
+    let mut agent_builder = ureq::AgentBuilder::new()
         .redirects(0)
         .timeout_connect(Duration::from_secs(10))
         .timeout_read(Duration::from_secs(10))
-        .timeout_write(Duration::from_secs(10))
-        .build();
+        .timeout_write(Duration::from_secs(10));
+    if let Some(addresses) = pinned_addresses {
+        agent_builder = agent_builder.resolver(move |_netloc: &str| {
+            Ok::<Vec<SocketAddr>, std::io::Error>(addresses.clone())
+        });
+    }
+    let agent = agent_builder.build();
     let request = agent.request(method, url);
     let response = match body {
         Some(body) => request.send_string(body),
@@ -5587,6 +5607,8 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         assert!(require_capability_for_mode("network access", false).is_ok());
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("10.0.0.1", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("[::ffff:127.0.0.1]", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("ff02::1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, false).is_ok());
     }
 
