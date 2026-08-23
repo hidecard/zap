@@ -20,11 +20,19 @@ This is the first step toward a Django-like framework. The current parser does n
 
 The former `host/zap-host` package remains a reference HTTP adapter for the current contract layer. It is not the primary application model. As Zap-native server capabilities mature, the adapter should shrink to a platform boundary while route, DTO, auth, migration, admin, and application policy remain authored in Zap.
 
+## Self-contained runtime and browser boundary
+
+The target developer experience is that an installed Zap runtime can validate, build, test, and run a Zap project without requiring Python, Node.js, Rust, Java, or another language runtime on the deployment host. The native Zap executable is the execution boundary; Rust is a source/build implementation detail, not a project-user prerequisite. A distribution must therefore ship a pinned Zap binary or installer for each supported operating system and must not silently delegate server execution to a second language runtime.
+
+Browser code remains an interoperability boundary rather than a server dependency. HTML, CSS, and JavaScript are ordinary files under the declared `public` asset root. `frontend_contract.zp` and `web_static` provide a confined, typed response boundary for browser assets, while routes such as `/api/tasks` provide JSON data. React, Vue, Svelte, Alpine, or another JavaScript framework may be used optionally at build time; its emitted files are then served by Zap, and Node is not required at runtime. Zap does not claim to implement those JavaScript frameworks or to replace their build tools.
+
+This policy keeps the framework Zap-first without isolating it from the Web ecosystem: Zap owns project structure, routes, validation, application contracts, and server-side execution; browser frameworks own client rendering when a project chooses them; the integration is explicit through files, HTTP routes, and JSON DTOs.
+
 ## Current starter matrix
 
 | Starter | Current deliverable | Host integration still required | Production status |
 |---|---|---|---|
-| `frameworks/web` | Deterministic route/request/response contract plus Zap-native loopback dev server and SQLite-first migration path | TLS, concurrent production listener, full middleware pipeline, provider-neutral database drivers, deployment supervision | Development/reference slice |
+| `frameworks/web` | Deterministic route/request/response contract, Zap-native loopback dev server, bounded HTML/CSS/JS assets, JSON API boundary, and SQLite-first migration path | TLS, concurrent production listener, full middleware pipeline, provider-neutral database drivers, binary asset delivery, deployment supervision | Development/reference slice |
 | `frameworks/mobile` | Portable app model, screens, and actions | Tauri, Flutter, React Native/Expo, or another native shell | Contract prototype |
 | `frameworks/iot` | Bounded sensor-event and device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr, or Embassy host | Contract prototype |
 | `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential and quota adapter | Contract prototype |
@@ -78,7 +86,7 @@ A starter must not import an undeclared provider package, silently read credenti
 
 `frameworks/web/main.zp` demonstrates root, health, echo, not-found, traversal-rejection, and unsupported-method cases. The Web API layer now also includes reusable `api_contract.zp`, `dto_contract.zp`, `database_contract.zp`, `auth_contract.zp`, and `rate_limit_contract.zp` modules, with `api_contract_test.zp` covering 200/201/400/401/403/404/429 behavior, mapping, quota transitions, and policy failures. The detailed schema, threat controls, database boundary, authentication policy, rate-limit semantics, adapter pipeline, and Web-specific definition of done are documented in [`WEB_FRAMEWORK_EN.md`](WEB_FRAMEWORK_EN.md).
 
-The Web starter and the Zap-native scaffold define the request, response, DTO, database, authentication, rate-limit, migration, and admin contracts. The current `host/zap-host` package can translate these contracts to an operational Axum/Tower boundary, but it remains an adapter and must not become a second application framework. The long-term direction is for a native Zap Web runtime to own the project lifecycle and invoke provider-neutral capabilities through explicit interfaces.
+The Web starter and the Zap-native scaffold define the request, response, DTO, database, authentication, rate-limit, migration, admin, and browser asset contracts. The current `host/zap-host` package can translate these contracts to an operational Axum/Tower boundary, but it remains an adapter and must not become a second application framework. The long-term direction is for a native Zap Web runtime to own the project lifecycle and invoke provider-neutral capabilities through explicit interfaces. The current `web_static` slice serves bounded UTF-8 text assets only; binary media, cache manifests, server-side rendering, and production asset fingerprints remain separate work.
 
 A production native server must still define method/path normalization, maximum headers and body bytes, timeout, cancellation, error mapping, logging redaction, connection shutdown, readiness, and backpressure. These are runtime responsibilities and require dedicated implementation and test gates before a production claim is made.
 

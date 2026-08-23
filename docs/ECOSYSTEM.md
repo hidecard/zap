@@ -9,14 +9,14 @@ Zap သည် language core တစ်ခုအပေါ်တွင် domain-sp
 | Zap Core | syntax၊ parser၊ values၊ functions၊ modules၊ runtime | လက်ရှိတည်ဆောက်နေသည် |
 | Standard Library | collections၊ JSON၊ file၊ time၊ networking၊ process နှင့် testing APIs | တစ်စိတ်တစ်ပိုင်းရှိသည် |
 | Package Tooling | `zap.toml`၊ local modules၊ dependencies၊ lockfile၊ registry | manifest၊ deterministic lockfile၊ nested local graph/cycle validation နှင့် registry-ready metadata ရှိသည်; remote registry roadmap |
-| Domain Frameworks | Web၊ App/Mobile၊ AI နှင့် IoT contract starters | Web native dev/SQLite migration slice implemented; production adapters deferred |
+| Domain Frameworks | Web၊ App/Mobile၊ AI နှင့် IoT contract starters | Web native runtime/asset/API slice implemented; production adapters deferred |
 | Platform Runtimes | native OS၊ browser/WASM၊ Android၊ GPU နှင့် microcontroller | Host adapters and target runtimes are roadmap work |
 
 ## Future frameworks
 
 ### Zap Web
 
-Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ SQLite-first database adapter၊ structured migration workflow နှင့် provider-neutral parameterized query/DTO contract ကို Framework branch တွင် စတင်ပေးထားသည်။ TLS၊ production concurrency၊ middleware execution၊ body limits beyond the bounded native path၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
+Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ confined UTF-8 HTML/CSS/JavaScript asset serving၊ browser JSON API boundary၊ SQLite-first database adapter၊ structured migration workflow နှင့် provider-neutral parameterized query/DTO contract ကို Framework branch တွင် စတင်ပေးထားသည်။ Zap executable နှင့် project asset files သာဖြင့် runtime ကို run နိုင်ရန် ရည်ရွယ်ပြီး Node.js/အခြား language runtime များသည် optional build-time tool များသာ ဖြစ်သည်။ TLS၊ production concurrency၊ middleware execution၊ binary asset streaming၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
 
 ### Zap Mobile
 

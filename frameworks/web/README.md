@@ -20,6 +20,12 @@ zap test .
 
 Production သို့ မတင်မီ real driver adapter တွင် parameterized queries၊ transaction/pool timeout၊ credential redaction၊ subject binding၊ monotonic clock၊ atomic quota store၊ timeout/cancellation နှင့် duplicate-insert policy များကို ထည့်သွင်းစစ်ဆေးရမည်။
 
+## Frontend interoperability / Frontend ချိတ်ဆက်အသုံးပြုမှု
+
+`frontend_contract.zp` သည် browser boundary ကို သတ်မှတ်ထားသည်။ `public/index.html`, `public/assets/app.css` နှင့် `public/assets/app.js` သည် Node မလိုသော HTML/CSS/JavaScript reference UI ဖြစ်ပြီး `/api/tasks` JSON route ကို ခေါ်သုံးသည်။ `web_static(asset_path, root_dir)` သည် Zap runtime ထဲက capability-gated builtin ဖြစ်ပြီး `public` root အတွင်းရှိ bounded UTF-8 asset များကိုသာ serve လုပ်သည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JS framework များ၏ build output ကို `public/assets/` ထဲသို့ ထည့်နိုင်သော်လည်း browser build tool သည် optional ဖြစ်ပြီး deployed runtime တွင် မလိုပါ။
+
+Asset route သည် `/assets/*path` final wildcard ကို အသုံးပြုသဖြင့် `/assets/chunks/app.js` ကဲ့သို့ nested bundle များကို ရေးသားနိုင်သည်။ Absolute path၊ traversal၊ encoded traversal၊ unsupported extension နှင့် 2 MiB ထက်ကြီးသော file များကို reject လုပ်သည်။ ဤ slice သည် binary image/font streaming၊ JS bundling/hydration သို့မဟုတ် framework-specific server adapter မပေးသေးပါ။
+
 ## Host adapter boundary
 
 နောက်ပိုင်း Web adapter သည် incoming HTTP request ကို bounded Zap map အဖြစ် ပြောင်းပြီး returned response map ကို HTTP response အဖြစ် ပြောင်းရမည်။ Method/path normalization၊ header/body limits၊ timeout၊ cancellation၊ error mapping၊ redaction နှင့် shutdown ကို adapter က ပိုင်ဆိုင်ရမည်။

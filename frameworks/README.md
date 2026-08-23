@@ -29,7 +29,7 @@ zap test tests
 zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `server.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ `frameworks/web/database_adapter.zp` သည် provider-neutral parameterized query descriptor နှင့် DTO mapping contract ကို ပြသပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap db plan` သည် pending SQL ကို read-only ပြပြီး `zap db migrate --dry-run` သည် apply မလုပ်ဘဲ ထို plan ကို ပြပါသည်။ `zap db migrate` သည် SQLite database ကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် bounded loopback development/reference server ကို run ပါသည်။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `server.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp` နှင့် nested `tests/` ကို ဖန်တီးပေးပါသည်။ Generated `public/` ထဲတွင် Node မလိုသော HTML/CSS/JavaScript browser fixture ရှိပြီး `/assets/*path` wildcard နှင့် `/api/tasks` JSON route ကို ပြသပါသည်။ `frameworks/web/database_adapter.zp` သည် provider-neutral parameterized query descriptor နှင့် DTO mapping contract ကို ပြသပြီး `frontend_contract.zp` သည် browser asset boundary ကို ပြသပါသည်။ `zap web check` က `[web]` manifest path များကို စစ်ပြီး `zap db check` က structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap db plan` သည် pending SQL ကို read-only ပြပြီး `zap db migrate --dry-run` သည် apply မလုပ်ဘဲ ထို plan ကို ပြပါသည်။ `zap db migrate` သည် SQLite database ကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် bounded loopback development/reference server ကို run ပါသည်။ အသေးစိတ်ကို [Burmese Zap-first Web guide](../docs/ZAP_WEB_NATIVE_MM.md) နှင့် [English Zap-first Web guide](../docs/ZAP_WEB_NATIVE_EN.md) တွင် ဖတ်နိုင်ပါသည်။
 
 ## Run a starter
 
@@ -59,7 +59,7 @@ Real adapter များတွင် capability ကို default-deny ထာ�
 
 | Starter | ယခုလုပ်နိုင်သည့်အရာ | မလုပ်သေးသည့်အရာ |
 |---|---|---|
-| Web | Route table နှင့် response map ကို deterministic စစ်နိုင်; Axum/Tower host adapter ကို `host/zap-host` တွင် run/test နိုင် | TLS, real database/auth provider, shared rate-limit store, production deployment |
+| Web | Route table၊ JSON API နှင့် confined HTML/CSS/JS asset boundary ကို deterministic စစ်နိုင်; Axum/Tower host adapter ကို `host/zap-host` တွင် run/test နိုင် | TLS, binary asset streaming, real database/auth provider, shared rate-limit store, production deployment |
 | App | Screen/action/state model နှင့် navigation validation | Native renderer, lifecycle, IPC, store |
 | IoT | Bounded sensor records နှင့် device-state summary | MQTT, GPIO, serial, OTA, HIL |
 | AI | Prompt/request/response schema နှင့် usage record | Provider API, credential, quota, model runtime |

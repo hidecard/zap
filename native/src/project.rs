@@ -384,6 +384,7 @@ fn validate_web_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
         "migrations",
         "admin",
         "server",
+        "assets",
         "serialization",
     ];
     let mut in_web = false;
@@ -448,12 +449,13 @@ fn validate_web_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
         "migrations",
         "admin",
         "server",
+        "assets",
     ] {
         let Some(raw_value) = values.get(key) else {
             return Err(format!("zap.toml: Web field `{key}` is required"));
         };
         let path = dir.join(raw_value.trim_matches('"'));
-        let valid = if key == "models" || key == "migrations" {
+        let valid = if key == "models" || key == "migrations" || key == "assets" {
             path.is_dir()
         } else {
             path.is_file()

@@ -32,7 +32,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
 
 Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
 
@@ -59,11 +59,23 @@ shop/
 │   └── 0001_initial.zp
 ├── views/
 ├── public/
+│   ├── index.html
+│   └── assets/
+│       ├── app.css
+│       └── app.js
 └── tests/
     └── web_test.zp
 ```
 
 `routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
+
+## Runtime independence နှင့် frontend integration
+
+Installed Zap executable တစ်ခုရှိရုံဖြင့် project validation၊ testing နှင့် server execution လုပ်နိုင်ရန် ရည်ရွယ်ထားပါသည်။ Deployment host တွင် Python၊ Node.js၊ Rust၊ Java သို့မဟုတ် အခြား language runtime ထပ်မလိုသင့်ပါ။ Rust သည် native Zap executable ကို implement/distribute လုပ်ရန် အသုံးပြုသော source/build detail ဖြစ်ပြီး Zap project ၏ runtime dependency မဟုတ်ပါ။ Cross-platform release များတွင် support လုပ်သည့် operating system တစ်ခုချင်းစီအတွက် pinned executable သို့မဟုတ် installer ပေးရမည်။
+
+Browser boundary သည် ရိုးရိုး file များကိုသာ အသုံးပြုပါသည်။ `public` directory မှ HTML၊ CSS နှင့် JavaScript ကို `web_static` ဖြင့် serve လုပ်နိုင်ပြီး browser application က Zap JSON route များကို ခေါ်နိုင်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time toolchain အဖြစ် optional သုံးနိုင်ပြီး ထွက်လာသော file များကို `public/assets/` ထဲ ထည့်နိုင်ပါသည်။ ထို့နောက် deployed process အတွက် Zap နှင့် ထို browser output file များသာ လိုအပ်ပြီး Node သည် runtime prerequisite မဟုတ်ပါ။ Zap က npm package install၊ JavaScript framework execution သို့မဟုတ် compiler/bundler အစားထိုးခြင်း မလုပ်ပေးသေးပါ။
+
+လက်ရှိ `web_static` builtin သည် UTF-8 text asset နှင့် allow-listed extension များကိုသာ serve လုပ်ပြီး root confinement၊ traversal rejection၊ canonicalization နှင့် 2 MiB file limit ရှိပါသည်။ နောက်ဆုံး `*name` wildcard သည် `/assets/chunks/app.js` ကဲ့သို့ nested path များကို support လုပ်သော်လည်း binary image/font streaming၊ cache fingerprint၊ server-side rendering သို့မဟုတ် production static CDN မပါသေးပါ။
 
 ## လက်ရှိ route declaration contract
 
@@ -203,7 +215,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap db inspect` သည် read-only adapter/status view ဖြစ်ပြီး SQLite file မရှိသေးလျှင် file အသစ် မဖန်တီးပါ။ `zap db migrate --check` သည် deployment တွင် အသုံးပြုနိုင်သော check ဖြစ်ပြီး migration ledger ကို validate လုပ်ကာ pending migration မရှိမှသာ success exit ပြန်ပေးပါသည်။ `--json` သုံးလျှင် automation အတွက် `ok: true` သို့မဟုတ် `ok: false` ပါဝင်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို run ပါသည်။ Scaffold ထဲရှိ server သည် `ZAP_WEB_PORT` ကိုဖတ်ပြီး မသတ်မှတ်လျှင် `3000` ကို အသုံးပြုပါသည်။ လက်ရှိ native server သည် loopback ပေါ်တွင် bounded HTTP/1.0 သို့မဟုတ် HTTP/1.1 request များကို လက်ခံပြီး exact path နှင့် `:parameter` segment များကို match လုပ်ကာ request map ကို Zap handler ထံ ပေးပြီး security header ပါသော framed response ပြန်ပေးပါသည်။ Port ပြောင်းလိုပါက `ZAP_WEB_PORT=3100 zap dev` ဟု run နိုင်ပါသည်။ ၎င်းသည် single-threaded နှင့် blocking ဖြစ်သော development/reference server ဖြစ်သဖြင့် concurrency၊ cancellation၊ TLS/edge policy၊ readiness integration နှင့် production operation evidence များ မပြည့်မီ production server ဟု မဆိုရပါ။
+`zap db inspect` သည် read-only adapter/status view ဖြစ်ပြီး SQLite file မရှိသေးလျှင် file အသစ် မဖန်တီးပါ။ `zap db migrate --check` သည် deployment တွင် အသုံးပြုနိုင်သော check ဖြစ်ပြီး migration ledger ကို validate လုပ်ကာ pending migration မရှိမှသာ success exit ပြန်ပေးပါသည်။ `--json` သုံးလျှင် automation အတွက် `ok: true` သို့မဟုတ် `ok: false` ပါဝင်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို run ပါသည်။ Scaffold ထဲရှိ server သည် `ZAP_WEB_PORT` ကိုဖတ်ပြီး မသတ်မှတ်လျှင် `3000` ကို အသုံးပြုပါသည်။ လက်ရှိ native server သည် loopback ပေါ်တွင် bounded HTTP/1.0 သို့မဟုတ် HTTP/1.1 request များကို လက်ခံပြီး exact path၊ `:parameter` နှင့် နောက်ဆုံး `*wildcard` segment များကို match လုပ်ကာ request map ကို Zap handler ထံ ပေးပြီး security header ပါသော framed response ပြန်ပေးပါသည်။ Generated Web scaffold သည် `public/index.html`, `public/assets/app.css` နှင့် `public/assets/app.js` ကို `web_static` ဖြင့် serve လုပ်ပြီး browser module က `/api/tasks` ကို ခေါ်ပါသည်။ Port ပြောင်းလိုပါက `ZAP_WEB_PORT=3100 zap dev` ဟု run နိုင်ပါသည်။ ၎င်းသည် single-threaded နှင့် blocking ဖြစ်သော development/reference server ဖြစ်သဖြင့် concurrency၊ cancellation၊ TLS/edge policy၊ readiness integration နှင့် production operation evidence များ မပြည့်မီ production server ဟု မဆိုရပါ။
 
 နောက်ထပ် CLI command များကို semantics အမှန်နှင့် test evidence ရှိမှသာ ထည့်သင့်ပါသည်။ Roadmap တွင် resolved route/middleware table အတွက် `zap routes`၊ execution flow အတွက် `zap explain route <path>`၊ API documentation အတွက် `zap docs` နှင့် production config/security policy အတွက် `zap deploy preflight` တို့ ပါဝင်ပါသည်။ လက်ရှိ `zap db migrate` implementation သည် SQLite-first နှင့် additive operation များအတွက်သာ ဖြစ်ပြီး provider-neutral production migration system ဟု မယူဆရပါ။
 

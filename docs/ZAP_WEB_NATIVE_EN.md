@@ -32,7 +32,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated entrypoint prints a deterministic application description, route table, model metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
+`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated entrypoint prints a deterministic application description, route table, model metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
 
 The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
 
@@ -59,11 +59,23 @@ shop/
 │   └── 0001_initial.zp
 ├── views/
 ├── public/
+│   ├── index.html
+│   └── assets/
+│       ├── app.css
+│       └── app.js
 └── tests/
     └── web_test.zp
 ```
 
 `routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
+
+## Runtime independence and frontend integration
+
+An installed Zap executable is intended to be sufficient for project validation, testing, and server execution. Users should not need Python, Node.js, Rust, Java, or another language runtime on the deployment host. Rust is used to implement and distribute the native Zap executable; it is not a runtime dependency of a Zap project. Cross-platform releases must ship a pinned executable or installer for each supported operating system.
+
+The browser boundary is deliberately ordinary. A project can serve HTML, CSS, and JavaScript from the declared `public` directory through `web_static`, and a browser application can call Zap JSON routes. React, Vue, Svelte, Alpine, or another JavaScript framework may be used as an optional build-time toolchain; the emitted files can be copied into `public/assets/`, after which the deployed process needs only Zap and those emitted files. Zap does not install npm packages, execute a JavaScript framework, or replace its compiler/bundler.
+
+The current `web_static` builtin is constrained to UTF-8 text assets and safe allow-listed extensions, with root confinement, traversal rejection, canonicalization, and a 2 MiB file limit. The final `*name` route wildcard supports nested paths such as `/assets/chunks/app.js`; it does not provide binary image/font streaming, cache fingerprinting, server-side rendering, or a production static-file CDN.
 
 ## Current route declaration contract
 
@@ -203,7 +215,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap db inspect` is a read-only adapter/status view; it does not create the SQLite file when it is absent. `zap db migrate --check` is a deployment-friendly check: it validates the migration ledger and exits successfully only when no migration is pending. With `--json`, the check includes `ok: true` or `ok: false` for automation. `zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact and `:parameter` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
+`zap db inspect` is a read-only adapter/status view; it does not create the SQLite file when it is absent. `zap db migrate --check` is a deployment-friendly check: it validates the migration ledger and exits successfully only when no migration is pending. With `--json`, the check includes `ok: true` or `ok: false` for automation. `zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact, `:parameter`, and final `*wildcard` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. The generated Web scaffold serves `public/index.html`, `public/assets/app.css`, and `public/assets/app.js` through `web_static`; the browser module calls `/api/tasks`. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
 
 The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks. The current `zap db migrate` implementation is SQLite-first and additive; it must not be mistaken for a provider-neutral production migration system.
 

@@ -20,11 +20,19 @@ Web roadmap ကို အခြား starter domain များထက် ဦ�
 
 ယခင် `host/zap-host` package သည် လက်ရှိ contract layer အတွက် reference HTTP adapter အဖြစ် ဆက်ရှိနေပါမည်။ ၎င်းသည် primary application model မဟုတ်ပါ။ Zap-native server capability တိုးလာသည်နှင့် adapter သည် platform boundary အဖြစ် သေးသွားပြီး route၊ DTO၊ auth၊ migration၊ admin နှင့် application policy များကို Zap ထဲတွင် ရေးသားသင့်ပါသည်။
 
+## Self-contained runtime နှင့် browser boundary
+
+ရည်ရွယ်သော developer experience သည် installed Zap runtime တစ်ခုရှိရုံဖြင့် Python၊ Node.js၊ Rust၊ Java သို့မဟုတ် အခြား language runtime ကို deployment host တွင် ထပ်မလိုဘဲ Zap project ကို validate၊ build၊ test နှင့် run လုပ်နိုင်ခြင်း ဖြစ်ပါသည်။ Native Zap executable သည် execution boundary ဖြစ်ပြီး Rust သည် source/build implementation detail သာဖြစ်ကာ project user အတွက် prerequisite မဟုတ်ပါ။ ထို့ကြောင့် distribution တစ်ခုသည် support လုပ်သော operating system တစ်ခုချင်းစီအတွက် pinned Zap binary သို့မဟုတ် installer ကို ပေးရမည်။ Server execution ကို ဒုတိယ language runtime ထံ မသိမသာ လွှဲမပေးရပါ။
+
+Browser code သည် server dependency မဟုတ်ဘဲ interoperability boundary ဖြစ်ပါသည်။ HTML၊ CSS နှင့် JavaScript သည် သတ်မှတ်ထားသော `public` asset root အောက်ရှိ ရိုးရိုး file များဖြစ်ပါသည်။ `frontend_contract.zp` နှင့် `web_static` က browser asset အတွက် confined၊ typed response boundary ပေးပြီး `/api/tasks` ကဲ့သို့ route များက JSON data ပေးပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time တွင် optional အဖြစ် သုံးနိုင်ပြီး ထွက်လာသော file များကို Zap က serve လုပ်ပါသည်။ Runtime တွင် Node မလိုပါ။ Zap သည် အဆိုပါ JavaScript framework များကို implement လုပ်သည် သို့မဟုတ် ၎င်းတို့၏ build tool ကို အစားထိုးသည်ဟု မဆိုပါ။
+
+ဤ policy ကြောင့် framework သည် Zap-first ဖြစ်နေသော်လည်း Web ecosystem နှင့် မခွဲထွက်ပါ။ Zap သည် project structure၊ route၊ validation၊ application contract နှင့် server-side execution ကို ပိုင်ဆိုင်ပြီး browser framework က project ရွေးချယ်ပါက client rendering ကို ပိုင်ဆိုင်ပါသည်။ Integration သည် file၊ HTTP route နှင့် JSON DTO များမှတစ်ဆင့် explicit ဖြစ်ပါသည်။
+
 ## လက်ရှိ starter matrix
 
 | Starter | လက်ရှိ deliverable | ထပ်လိုအပ်မည့် host integration | Production အခြေအနေ |
 |---|---|---|---|
-| `frameworks/web` | Deterministic route/request/response contract နှင့် Zap-native loopback dev server၊ SQLite-first migration path | TLS၊ concurrent production listener၊ full middleware pipeline၊ provider-neutral database driver၊ deployment supervision | Development/reference slice |
+| `frameworks/web` | Deterministic route/request/response contract၊ Zap-native loopback dev server၊ bounded HTML/CSS/JS asset၊ JSON API boundary နှင့် SQLite-first migration path | TLS၊ concurrent production listener၊ full middleware pipeline၊ provider-neutral database driver၊ binary asset delivery၊ deployment supervision | Development/reference slice |
 | `frameworks/mobile` | Portable app model, screen နှင့် action contract | Tauri, Flutter, React Native/Expo သို့မဟုတ် native shell | Contract prototype |
 | `frameworks/iot` | Bounded sensor event နှင့် device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr သို့မဟုတ် Embassy host | Contract prototype |
 | `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential နှင့် quota adapter | Contract prototype |
@@ -78,7 +86,7 @@ Starter တစ်ခုသည် undeclared provider package ကို import �
 
 `frameworks/web/main.zp` သည် root၊ health၊ echo၊ not-found၊ traversal-rejection နှင့် unsupported-method cases များကို ပြသပါသည်။ Web API layer တွင် reusable `api_contract.zp`, `dto_contract.zp`, `database_contract.zp`, `auth_contract.zp`, `rate_limit_contract.zp` modules များ ပါဝင်ပြီး `api_contract_test.zp` သည် 200/201/400/401/403/404/429 behavior၊ DTO mapping၊ quota transition နှင့် policy failure များကို cover လုပ်ပါသည်။ Schema၊ threat control၊ database boundary၊ authentication policy၊ rate-limit semantics၊ adapter pipeline နှင့် Web-specific definition of done အသေးစိတ်ကို [`WEB_FRAMEWORK_MM.md`](WEB_FRAMEWORK_MM.md) တွင် ဖတ်ရှုပါ။
 
-Web starter နှင့် Zap-native scaffold တို့က request၊ response၊ DTO၊ database၊ authentication၊ rate-limit၊ migration နှင့် admin contract များကို သတ်မှတ်ပေးပါသည်။ လက်ရှိ `host/zap-host` package သည် ဤ contract များကို operational Axum/Tower boundary သို့ ပြောင်းပေးနိုင်သော်လည်း adapter အဖြစ်သာ ရှိရမည်။ Long-term direction တွင် native Zap Web runtime က project lifecycle ကို ပိုင်ဆိုင်ပြီး provider-neutral capability interface များမှတစ်ဆင့် external service များကို ခေါ်ရမည်။
+Web starter နှင့် Zap-native scaffold တို့က request၊ response၊ DTO၊ database၊ authentication၊ rate-limit၊ migration၊ admin နှင့် browser asset contract များကို သတ်မှတ်ပေးပါသည်။ လက်ရှိ `host/zap-host` package သည် ဤ contract များကို operational Axum/Tower boundary သို့ ပြောင်းပေးနိုင်သော်လည်း adapter အဖြစ်သာ ရှိရမည်။ Long-term direction တွင် native Zap Web runtime က project lifecycle ကို ပိုင်ဆိုင်ပြီး provider-neutral capability interface များမှတစ်ဆင့် external service များကို ခေါ်ရမည်။ လက်ရှိ `web_static` slice သည် bounded UTF-8 text asset များကိုသာ serve လုပ်နိုင်ပြီး binary media၊ cache manifest၊ server-side rendering နှင့် production asset fingerprinting များသည် သီးခြားအလုပ်များ ဖြစ်နေသေးပါသည်။
 
 Production native server တစ်ခုတွင် method/path normalization၊ maximum header/body bytes၊ timeout၊ cancellation၊ error mapping၊ log redaction၊ connection shutdown၊ readiness နှင့် backpressure ကို သတ်မှတ်ရမည်။ Production claim မပြုမီ ထို runtime responsibility များအတွက် သီးခြား implementation နှင့် test gate များ လိုအပ်ပါသည်။
 

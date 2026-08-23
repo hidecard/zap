@@ -19,6 +19,11 @@ The package is designed to let a host adapter reuse an established HTTP stack ra
 | `web_contract.zp` | Exported request, response, security-header, and router functions | Implemented |
 | `main.zp` | Deterministic end-to-end contract demonstration | Implemented |
 | `web_contract_test.zp` | Negative and positive contract regression suite | Implemented |
+| `frontend_contract.zp` | Browser asset manifest, HTML/CSS/JS routes, and JSON API integration contract | Implemented |
+| `frontend_contract_test.zp` | Asset content-type, traversal, and Node-free runtime regression suite | Implemented |
+| `public/index.html` | Reference browser entrypoint | Implemented |
+| `public/assets/app.css` | Reference stylesheet | Implemented |
+| `public/assets/app.js` | Reference browser ES module consuming the JSON API | Implemented |
 | `README.md` | Quick-start and package boundary | Implemented |
 
 Run the package from `frameworks/web`:
@@ -61,6 +66,14 @@ The current contract deliberately keeps query parsing, content negotiation, cook
 ```
 
 The starter always attaches `x-content-type-options: nosniff` and `cache-control: no-store`. These are conservative defaults for the contract demonstration, not a complete production security policy. A production adapter must add an explicit policy for TLS, CORS, CSP, HSTS, cookies, compression, access logging, and cache behavior rather than silently inheriting defaults.
+
+## Frontend asset and JavaScript interoperability
+
+`frontend_contract.zp` defines the Zap-owned browser boundary. `frontend_asset_manifest()` declares a `public` root and records that the browser runtime does not require Node. `web_static(asset_path, root_dir)` is a filesystem-capability-gated builtin that returns a normal response map for UTF-8 HTML, CSS, JavaScript/ES modules, JSON, SVG, or text files. It confines the root and resolved file to the Zap workspace, rejects absolute paths, traversal components, encoded traversal, backslashes, unsupported extensions, and files larger than 2 MiB. Missing or unsupported assets return a deterministic `404`; unsafe or unreadable paths fail closed.
+
+The route matcher supports a final `*name` wildcard, so `/assets/*path` can serve nested bundle paths such as `/assets/chunks/app.js`. The wildcard is only a route parameter; the static builtin still performs canonicalization and root confinement. It does not expose a raw file handle or arbitrary SQL/process capability, and it does not stream binary images or fonts in this slice.
+
+HTML, CSS, and JavaScript may be handwritten or produced by an optional frontend toolchain. React, Vue, Svelte, Alpine, or another JavaScript framework can compile its browser output into `public/assets/` and call a Zap JSON route such as `/api/tasks`; the deployed Zap process needs only the Zap runtime and the emitted browser files. Node is therefore an optional **build-time** tool, not a **run-time** prerequisite. Zap does not currently run an npm install, bundle JavaScript, hydrate a component tree, or provide a framework-specific adapter. The contract deliberately separates browser build choices from server execution.
 
 ## Route table
 
@@ -136,7 +149,7 @@ The Web package must keep four test layers separate:
 3. **Integration tests** run a loopback server only after the host adapter exists; they must use bounded payloads, fixed ports or injected listeners, and explicit cleanup.
 4. **Security and reliability tests** inject malformed paths, oversized headers/bodies, timeouts, cancellation, duplicate requests, log-redaction cases, and shutdown races.
 
-The current `web_contract_test.zp` covers positive routes, 400/405 rejection, request-ID validation, method normalization, JSON content type, and no-store policy. The `api_contract_test.zp` additionally covers DTO mapping, repository success/not-found behavior, 401/403 authorization, 429 quota exhaustion, window reset, clock reversal, and invalid policy. These tests are not evidence that TLS, production concurrency, or external network behavior is complete.
+The current `web_contract_test.zp` covers positive routes, 400/405 rejection, request-ID validation, method normalization, JSON content type, and no-store policy. The `api_contract_test.zp` additionally covers DTO mapping, repository success/not-found behavior, 401/403 authorization, 429 quota exhaustion, window reset, clock reversal, and invalid policy. The `frontend_contract_test.zp` covers the asset manifest, HTML/CSS/JavaScript response types, browser API wiring, and the no-Node runtime declaration. Native evaluator tests cover missing/unsupported assets, encoded traversal rejection, workspace confinement, and final-segment wildcard matching. These tests are not evidence that TLS, production concurrency, or external network behavior is complete.
 
 ## API and DTO contract
 
@@ -214,7 +227,7 @@ A future adapter package should be introduced only after its capability list, DT
 
 ## Explicit non-goals
 
-The current Web Foundation does not claim to be a production HTTP server. The Zap-native slice provides a bounded, loopback-only, single-threaded development/reference server; it is not a concurrent production reactor. The API, database, authentication, and rate-limit files remain contract prototypes and deterministic test doubles; the repository still does not provide TLS, HTTP/2 or HTTP/3 policy, WebSocket, real database connectivity, credential verification, distributed quota storage, templates, static-file serving, background jobs, cloud deployment, or automatic code generation. Each production feature requires a separate host adapter contract and evidence.
+The current Web Foundation does not claim to be a production HTTP server. The Zap-native slice provides a bounded, loopback-only, single-threaded development/reference server; it is not a concurrent production reactor. The API, database, authentication, and rate-limit files remain contract prototypes and deterministic test doubles; the repository still does not provide TLS, HTTP/2 or HTTP/3 policy, WebSocket, real database connectivity, credential verification, distributed quota storage, server-side templates, unrestricted/binary static-file streaming, background jobs, cloud deployment, or automatic code generation. Each production feature requires a separate host adapter contract and evidence.
 
 ## References
 

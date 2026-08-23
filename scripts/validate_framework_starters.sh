@@ -94,6 +94,11 @@ require_file frameworks/web/dto_contract.zp
 require_file frameworks/web/database_contract.zp
 require_file frameworks/web/database_adapter.zp
 require_file frameworks/web/database_adapter_test.zp
+require_file frameworks/web/frontend_contract.zp
+require_file frameworks/web/frontend_contract_test.zp
+require_file frameworks/web/public/index.html
+require_file frameworks/web/public/assets/app.css
+require_file frameworks/web/public/assets/app.js
 require_file frameworks/web/auth_contract.zp
 require_file frameworks/web/rate_limit_contract.zp
 require_file docs/FRAMEWORK_EN.md
@@ -116,6 +121,12 @@ require_text docs/WEB_FRAMEWORK_EN.md "database_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "database_contract.zp"
 require_text docs/WEB_FRAMEWORK_EN.md "database_adapter.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "database_adapter.zp"
+require_text docs/WEB_FRAMEWORK_EN.md "frontend_contract.zp"
+require_text docs/WEB_FRAMEWORK_MM.md "frontend_contract.zp"
+require_text docs/WEB_FRAMEWORK_EN.md "web_static"
+require_text docs/WEB_FRAMEWORK_MM.md "web_static"
+require_text docs/FRAMEWORK_EN.md "Self-contained runtime"
+require_text docs/FRAMEWORK_MM.md "Self-contained runtime"
 require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
@@ -241,6 +252,12 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       scaffold_output=$(mktemp)
       if "$ZAP_BIN" new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && test -f "$scaffold_dir/project/server.zp" \
+        && test -f "$scaffold_dir/project/public/index.html" \
+        && test -f "$scaffold_dir/project/public/assets/app.css" \
+        && test -f "$scaffold_dir/project/public/assets/app.js" \
+        && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
+        && grep -Fq '/assets/*path' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq '/api/tasks' "$scaffold_dir/project/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \

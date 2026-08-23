@@ -304,7 +304,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     }
     let name = scaffold_package_name(dir);
     let manifest = format!(
-        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n\n[database]\ndriver = \"sqlite\"\nurl = \"data/zap.sqlite3\"\n"
+        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nassets = \"public\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n\n[database]\ndriver = \"sqlite\"\nurl = \"data/zap.sqlite3\"\n"
     );
     write_scaffold_file(dir, "zap.toml", &manifest)?;
     write_scaffold_file(
@@ -314,8 +314,51 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     )?;
     write_scaffold_file(
         dir,
+        "public/index.html",
+        r#"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zap Web</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <main>
+    <h1>Zap Web</h1>
+    <p>A browser-native frontend running on a Zap JSON API.</p>
+    <ul id="tasks" aria-live="polite"></ul>
+  </main>
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>
+"#,
+    )?;
+    write_scaffold_file(
+        dir,
+        "public/assets/app.css",
+        r#"body { font-family: system-ui, sans-serif; margin: 3rem auto; max-width: 42rem; padding: 0 1rem; }
+li { margin: .5rem 0; }
+"#,
+    )?;
+    write_scaffold_file(
+        dir,
+        "public/assets/app.js",
+        r##"const list = document.querySelector("#tasks");
+const response = await fetch("/api/tasks", { headers: { Accept: "application/json" } });
+if (!response.ok) throw new Error(`API returned ${response.status}`);
+const payload = await response.json();
+for (const task of payload.tasks) {
+  const item = document.createElement("li");
+  item.textContent = `${task.done ? "✓" : "○"} ${task.title}`;
+  list.append(item);
+}
+"##,
+    )?;
+    write_scaffold_file(
+        dir,
         "routes.zp",
-        "export fn routes():\n    return [{\"method\": \"GET\", \"path\": \"/\", \"handler\": \"home\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/health\", \"handler\": \"health\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/users/:id\", \"handler\": \"get_user\", \"scope\": \"users:read\"}, {\"method\": \"POST\", \"path\": \"/users\", \"handler\": \"create_user\", \"scope\": \"users:write\"}]\n",
+        "export fn routes():\n    return [{\"method\": \"GET\", \"path\": \"/\", \"handler\": \"home\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/health\", \"handler\": \"health\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/assets/*path\", \"handler\": \"frontend_asset\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/api/tasks\", \"handler\": \"frontend_tasks_api\", \"scope\": \"tasks:read\"}, {\"method\": \"GET\", \"path\": \"/users/:id\", \"handler\": \"get_user\", \"scope\": \"users:read\"}, {\"method\": \"POST\", \"path\": \"/users\", \"handler\": \"create_user\", \"scope\": \"users:write\"}]\n",
     )?;
     write_scaffold_file(
         dir,
@@ -325,7 +368,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     write_scaffold_file(
         dir,
         "services/user_service.zp",
-        "export fn home(request):\n    return {\"status\": 200, \"body\": json({\"message\": \"Hello from Zap Web\", \"request_id\": request[\"request_id\"]})}\n\nexport fn health(request):\n    return {\"status\": 200, \"body\": json({\"status\": \"ok\"})}\n\nexport fn get_user(request):\n    return {\"status\": 200, \"body\": json({\"id\": request[\"params\"][\"id\"], \"request_id\": request[\"request_id\"]})}\n\nexport fn create_user(request):\n    return {\"status\": 201, \"body\": json({\"created\": true, \"body\": request[\"body\"], \"request_id\": request[\"request_id\"]})}\n",
+        "export fn home(request):\n    return web_static(\"index.html\", \"public\")\n\nexport fn health(request):\n    return {\"status\": 200, \"body\": json({\"status\": \"ok\", \"request_id\": request[\"request_id\"]})}\n\nexport fn frontend_asset(request):\n    return web_static(\"assets/\" + request[\"params\"][\"path\"], \"public\")\n\nexport fn frontend_tasks_api(request):\n    return {\"status\": 200, \"body\": json({\"tasks\": [{\"id\": 1, \"title\": \"Try the Zap API\", \"done\": false}], \"summary\": {\"total\": 1, \"completed\": 0, \"remaining\": 1}, \"request_id\": request[\"request_id\"]})}\n\nexport fn get_user(request):\n    return {\"status\": 200, \"body\": json({\"id\": request[\"params\"][\"id\"], \"request_id\": request[\"request_id\"]})}\n\nexport fn create_user(request):\n    return {\"status\": 201, \"body\": json({\"created\": true, \"body\": request[\"body\"], \"request_id\": request[\"request_id\"]})}\n",
     )?;
     write_scaffold_file(
         dir,
@@ -355,7 +398,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     write_scaffold_file(
         dir,
         "tests/web_test.zp",
-        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 4, \"web scaffold must contain four starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[3][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nsay \"Zap Web scaffold test passed\"\n",
+        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 6, \"web scaffold must contain six starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[2][\"path\"] == \"/assets/*path\", \"asset route must be present\")\nassert(route_table[3][\"path\"] == \"/api/tasks\", \"JSON API route must be present\")\nassert(route_table[5][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nsay \"Zap Web scaffold test passed\"\n",
     )?;
     Ok(())
 }

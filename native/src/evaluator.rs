@@ -4,7 +4,7 @@ use std::{
     fs::{self, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, TcpListener, ToSocketAddrs},
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     process::{Command, Stdio},
     rc::Rc,
     sync::atomic::{AtomicU64, Ordering},
@@ -1226,10 +1226,12 @@ fn direct_io_builtin_with_context(
             | "write_lines"
             | "file_metadata"
             | "atomic_write"
+            | "web_static"
     ) {
         require_capability("filesystem access")?;
     }
     match name {
+        "web_static" => Ok(Some(web_static_with_context(args, context)?)),
         "file_metadata" => {
             if args.len() != 1 {
                 return Err(format!(
@@ -1454,6 +1456,8 @@ const MAX_URL_BYTES: usize = 8 * 1024;
 const MAX_PROCESS_OUTPUT_BYTES: usize = 1024 * 1024;
 const MAX_HTTP_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 const MAX_HTTP_REQUEST_BYTES: usize = 64 * 1024;
+const MAX_STATIC_ASSET_BYTES: usize = 2 * 1024 * 1024;
+const MAX_STATIC_ASSET_PATH_BYTES: usize = 2 * 1024;
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(10);
 const SERVER_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -1725,11 +1729,27 @@ fn web_http_reason(status: i64) -> &'static str {
 fn web_path_matches(pattern: &str, path: &str) -> Option<HashMap<String, Value>> {
     let pattern_parts = pattern.split('/').collect::<Vec<_>>();
     let path_parts = path.split('/').collect::<Vec<_>>();
-    if pattern_parts.len() != path_parts.len() {
+    let has_wildcard = pattern_parts
+        .last()
+        .is_some_and(|segment| segment.starts_with('*'));
+    if has_wildcard {
+        if pattern_parts.len() > path_parts.len() {
+            return None;
+        }
+    } else if pattern_parts.len() != path_parts.len() {
         return None;
     }
     let mut params = HashMap::new();
-    for (expected, actual) in pattern_parts.iter().zip(path_parts.iter()) {
+    let fixed_count = if has_wildcard {
+        pattern_parts.len() - 1
+    } else {
+        pattern_parts.len()
+    };
+    for (expected, actual) in pattern_parts
+        .iter()
+        .take(fixed_count)
+        .zip(path_parts.iter().take(fixed_count))
+    {
         if let Some(name) = expected.strip_prefix(':') {
             if name.is_empty() || actual.is_empty() {
                 return None;
@@ -1738,6 +1758,14 @@ fn web_path_matches(pattern: &str, path: &str) -> Option<HashMap<String, Value>>
         } else if expected != actual {
             return None;
         }
+    }
+    if has_wildcard {
+        let name = pattern_parts.last()?.strip_prefix('*')?;
+        let value = path_parts.get(fixed_count..)?.join("/");
+        if name.is_empty() || value.is_empty() {
+            return None;
+        }
+        params.insert(name.to_string(), Value::Text(value));
     }
     Some(params)
 }
@@ -1838,6 +1866,108 @@ fn web_parse_request(
     Ok((method.to_string(), path.to_string(), headers, body))
 }
 
+fn web_static_content_type(path: &Path) -> Option<&'static str> {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some("html") => Some("text/html; charset=utf-8"),
+        Some("css") => Some("text/css; charset=utf-8"),
+        Some("js") | Some("mjs") => Some("text/javascript; charset=utf-8"),
+        Some("json") => Some("application/json; charset=utf-8"),
+        Some("svg") => Some("image/svg+xml"),
+        Some("txt") => Some("text/plain; charset=utf-8"),
+        _ => None,
+    }
+}
+
+fn web_static_not_found() -> Value {
+    map_value([
+        ("status".into(), Value::Number(404)),
+        (
+            "content_type".into(),
+            Value::Text("application/json; charset=utf-8".into()),
+        ),
+        (
+            "body".into(),
+            Value::Text(serde_json::json!({"error": "asset_not_found"}).to_string()),
+        ),
+    ])
+}
+
+fn web_static_with_context(
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err(format!(
+            "web_static expects asset path and root directory, got {} arguments",
+            args.len()
+        ));
+    }
+    let (Value::Text(asset), Value::Text(root)) = (&args[0], &args[1]) else {
+        return Err("web_static expects text asset path and root directory".into());
+    };
+    if root.is_empty() {
+        return Err("web_static root directory must not be empty".into());
+    }
+    let decoded = percent_decode(asset)
+        .map_err(|error| format!("web_static asset path is invalid: {error}"))?;
+    if decoded.is_empty()
+        || decoded.len() > MAX_STATIC_ASSET_PATH_BYTES
+        || decoded.contains('\0')
+        || decoded.contains('\\')
+    {
+        return Err("web_static asset path is invalid".into());
+    }
+    let relative = Path::new(&decoded);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err("web_static asset path must be a safe relative file path".into());
+    }
+    let Some(content_type) = web_static_content_type(relative) else {
+        return Ok(web_static_not_found());
+    };
+    let root = confined_path(Path::new(root), "web_static", context)?;
+    let root = fs::canonicalize(root)
+        .map_err(|error| format!("web_static root directory is not accessible: {error}"))?;
+    if !root.is_dir() {
+        return Err("web_static root directory must be a directory".into());
+    }
+    let candidate = root.join(relative);
+    let resolved = match fs::canonicalize(candidate) {
+        Ok(path) => path,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(web_static_not_found())
+        }
+        Err(error) => return Err(format!("web_static asset cannot be resolved: {error}")),
+    };
+    if !resolved.starts_with(&root) {
+        return Err("web_static asset path escapes the root directory".into());
+    }
+    let metadata = fs::metadata(&resolved)
+        .map_err(|error| format!("web_static asset metadata failed: {error}"))?;
+    if !metadata.is_file() {
+        return Ok(web_static_not_found());
+    }
+    if metadata.len() > MAX_STATIC_ASSET_BYTES as u64 {
+        return Err(format!(
+            "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
+        ));
+    }
+    let body = read_limited_text(&resolved, "web_static asset read")?;
+    if body.len() > MAX_STATIC_ASSET_BYTES {
+        return Err(format!(
+            "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
+        ));
+    }
+    Ok(map_value([
+        ("status".into(), Value::Number(200)),
+        ("content_type".into(), Value::Text(content_type.into())),
+        ("body".into(), Value::Text(body)),
+    ]))
+}
+
 fn web_response_header_is_reserved(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
@@ -1932,6 +2062,37 @@ fn web_error_response(status: i64, error: &str, request_id: &str) -> Vec<u8> {
     .into_bytes()
 }
 
+fn web_route_path_is_valid(value: &str) -> bool {
+    if value == "/" {
+        return true;
+    }
+    if value.is_empty() || !value.starts_with('/') || value.len() > MAX_STATIC_ASSET_PATH_BYTES {
+        return false;
+    }
+    let parts = value.split('/').collect::<Vec<_>>();
+    for (index, part) in parts.iter().enumerate() {
+        if part.is_empty() && index != 0 {
+            return false;
+        }
+        match part.strip_prefix(':') {
+            Some(name) if name.is_empty() || name.contains(':') || name.contains('*') => {
+                return false;
+            }
+            _ => {}
+        }
+        match part.strip_prefix('*') {
+            Some(name) if index != parts.len() - 1 || name.is_empty() || name.contains(':') => {
+                return false;
+            }
+            _ => {}
+        }
+        if part.contains("..") || (part.contains('*') && !part.starts_with('*')) {
+            return false;
+        }
+    }
+    true
+}
+
 fn web_validate_routes(
     routes: &[Value],
     funcs: &HashMap<String, Rc<Function>>,
@@ -1949,11 +2110,7 @@ fn web_validate_routes(
             _ => return Err("web_serve route method must be a valid non-empty token".into()),
         }
         match route.get("path") {
-            Some(Value::Text(value))
-                if !value.is_empty()
-                    && value.starts_with('/')
-                    && value.len() <= 2048
-                    && !value.contains("..") => {}
+            Some(Value::Text(value)) if web_route_path_is_valid(value) => {}
             _ => return Err("web_serve route path must be a safe absolute path".into()),
         }
         match route.get("handler") {
@@ -4614,7 +4771,8 @@ mod tests {
         configuration_path, direct_builtin, direct_external_builtin, direct_io_builtin,
         execute_ast_program, execute_ast_program_with_context, execute_lines, http_serve_once,
         json_to_value, require_capability_for_mode, validate_network_destination_for_mode,
-        value_to_json, web_serve_on_listener, web_validate_routes, MAX_HTTP_REQUEST_BYTES,
+        value_to_json, web_path_matches, web_route_path_is_valid, web_serve_on_listener,
+        web_validate_routes, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
@@ -5546,6 +5704,107 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
     }
 
     #[test]
+    fn web_static_assets_are_typed_and_confined() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-web-assets-{}-{}",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let assets = root.join("assets");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&assets).expect("asset fixture directory should be created");
+        fs::write(root.join("index.html"), "<h1>Zap</h1>").expect("HTML fixture should be written");
+        fs::write(assets.join("app.css"), ".app { color: blue; }")
+            .expect("CSS fixture should be written");
+        fs::write(assets.join("app.js"), "console.log('Zap');")
+            .expect("JavaScript fixture should be written");
+        fs::write(assets.join("secret.bin"), [0_u8, 1_u8, 2_u8])
+            .expect("unsupported fixture should be written");
+        let root_text = root.to_string_lossy().into_owned();
+        let value = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("index.html".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("static builtin should not fail")
+        .expect("static builtin should return a value");
+        let Value::Map(index) = value else {
+            panic!("web_static must return a response map");
+        };
+        assert_eq!(index.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            index.get("content_type"),
+            Some(&Value::Text("text/html; charset=utf-8".into()))
+        );
+        assert_eq!(index.get("body"), Some(&Value::Text("<h1>Zap</h1>".into())));
+
+        let css = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/app.css".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("CSS static builtin should not fail")
+        .expect("CSS static builtin should return a value");
+        let Value::Map(css) = css else {
+            panic!("CSS response must be a map");
+        };
+        assert_eq!(css.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            css.get("content_type"),
+            Some(&Value::Text("text/css; charset=utf-8".into()))
+        );
+
+        let missing = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/missing.js".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("missing asset should return a response")
+        .expect("missing asset response should exist");
+        let Value::Map(missing) = missing else {
+            panic!("missing asset response must be a map");
+        };
+        assert_eq!(missing.get("status"), Some(&Value::Number(404)));
+
+        let unsupported = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/secret.bin".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("unsupported asset should return a response")
+        .expect("unsupported asset response should exist");
+        let Value::Map(unsupported) = unsupported else {
+            panic!("unsupported asset response must be a map");
+        };
+        assert_eq!(unsupported.get("status"), Some(&Value::Number(404)));
+        assert!(direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("../outside.html".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .is_err());
+        assert!(direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/%2e%2e/outside.js".into()),
+                Value::Text(root_text),
+            ],
+        )
+        .is_err());
+        fs::remove_dir_all(root).expect("asset fixture should be removed");
+    }
+
+    #[test]
     fn evaluates_configuration_builtins_from_native_ast() {
         let program = parse_program(
             "let fallback: text = env_get(\"ZAP_TEST_MISSING_ENV\", \"fallback\")\nlet directory: text = config_dir()\nlet file: text = config_path(\"settings.json\")\n",
@@ -5594,6 +5853,16 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         assert!(web_validate_routes(&[route("GET", "/", "home")], &funcs).is_err());
         assert!(web_validate_routes(&[route("GET\n", "/", "home")], &funcs).is_err());
         assert!(web_validate_routes(&[route("GET", "/../secret", "home")], &funcs).is_err());
+        assert!(web_route_path_is_valid("/assets/*path"));
+        assert!(!web_route_path_is_valid("/assets/*path/more"));
+        assert!(!web_route_path_is_valid("/assets/*"));
+        let nested = web_path_matches("/assets/*path", "/assets/chunks/app.js")
+            .expect("wildcard asset path should match");
+        assert_eq!(
+            nested.get("path"),
+            Some(&Value::Text("chunks/app.js".into()))
+        );
+        assert!(web_path_matches("/assets/*path", "/assets").is_none());
 
         let home = Rc::new(Function {
             visibility: "public".into(),
@@ -5607,6 +5876,7 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         let funcs = [("home".into(), home)].into_iter().collect();
         assert!(web_validate_routes(&[route("GET", "/", "missing")], &funcs).is_err());
         assert!(web_validate_routes(&[route("GET", "/", "home")], &funcs).is_ok());
+        assert!(web_validate_routes(&[route("GET", "/assets/*path", "home")], &funcs).is_ok());
     }
 
     #[test]

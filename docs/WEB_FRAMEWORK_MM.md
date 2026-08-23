@@ -20,6 +20,11 @@ Host adapter သည် Zap runtime ကို network reactor အသစ်တစ�
 | `web_contract.zp` | Request, response, security-header နှင့် router functions | ပြီးစီး |
 | `main.zp` | Deterministic end-to-end contract demonstration | ပြီးစီး |
 | `web_contract_test.zp` | Positive/negative contract regression suite | ပြီးစီး |
+| `frontend_contract.zp` | Browser asset manifest၊ HTML/CSS/JS route နှင့် JSON API integration contract | ပြီးစီး |
+| `frontend_contract_test.zp` | Asset content-type၊ traversal နှင့် Node-free runtime regression suite | ပြီးစီး |
+| `public/index.html` | Browser entrypoint reference | ပြီးစီး |
+| `public/assets/app.css` | Reference stylesheet | ပြီးစီး |
+| `public/assets/app.js` | JSON API သုံးသော browser ES module | ပြီးစီး |
 | `README.md` | Quick-start နှင့် package boundary | ပြီးစီး |
 
 `frameworks/web` directory ထဲမှ run ပါ။
@@ -62,6 +67,14 @@ Query parsing၊ content negotiation၊ cookie parsing၊ multipart upload န�
 ```
 
 Starter သည် `x-content-type-options: nosniff` နှင့် `cache-control: no-store` ကို default အဖြစ် ထည့်ပေးသည်။ ဤ defaults များသည် contract demonstration အတွက် conservative policy သာဖြစ်ပြီး production security policy အပြည့်အစုံ မဟုတ်ပါ။ Production adapter တွင် TLS၊ CORS၊ CSP၊ HSTS၊ cookies၊ compression၊ access logging နှင့် cache behavior တို့ကို explicit policy အဖြစ် သတ်မှတ်ရမည်။
+
+## Frontend asset နှင့် JavaScript interoperability
+
+`frontend_contract.zp` သည် Zap ပိုင် browser boundary ဖြစ်ပါသည်။ `frontend_asset_manifest()` က `public` root နှင့် browser runtime အတွက် Node မလိုကြောင်း သတ်မှတ်ပါသည်။ `web_static(asset_path, root_dir)` သည် filesystem capability ဖြင့် ကာကွယ်ထားသော builtin ဖြစ်ပြီး UTF-8 HTML၊ CSS၊ JavaScript/ES module၊ JSON၊ SVG နှင့် text file များကို response map အဖြစ် ပြန်ပေးပါသည်။ Root နှင့် resolved file ကို Zap workspace အတွင်းမှာပဲ ထားပြီး absolute path၊ traversal component၊ encoded traversal၊ backslash၊ မထောက်ပံ့သော extension နှင့် 2 MiB ထက်ကြီးသော file များကို reject လုပ်ပါသည်။ မရှိသော သို့မဟုတ် မထောက်ပံ့သော asset သည် deterministic `404` ပြန်ပြီး unsafe/unreadable path သည် fail closed ဖြစ်ပါသည်။
+
+Route matcher သည် နောက်ဆုံး segment `*name` wildcard ကို support လုပ်သောကြောင့် `/assets/*path` ဖြင့် `/assets/chunks/app.js` ကဲ့သို့ nested bundle path များကို serve လုပ်နိုင်ပါသည်။ Wildcard သည် route parameter သာဖြစ်ပြီး static builtin က canonicalization နှင့် workspace confinement ကို ထပ်စစ်ပါသည်။ Raw file handle သို့မဟုတ် arbitrary SQL/process capability မပေးသည့်အပြင် binary image/font streaming မပါသေးပါ။
+
+HTML၊ CSS နှင့် JavaScript ကို လက်ရေးဖြင့်ရေးနိုင်သကဲ့သို့ optional frontend toolchain ဖြင့်လည်း build လုပ်နိုင်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework များသည် browser output ကို `public/assets/` ထဲသို့ compile လုပ်ပြီး `/api/tasks` ကဲ့သို့ Zap JSON route ကို ခေါ်နိုင်ပါသည်။ Deployed Zap process အတွက် Zap runtime နှင့် browser output files သာ လိုအပ်ပြီး Node သည် **build-time optional tool** ဖြစ်ကာ **run-time prerequisite မဟုတ်ပါ**။ Zap က npm install၊ JavaScript bundle၊ component hydration သို့မဟုတ် framework-specific adapter ကို ယခုမလုပ်ပေးသေးပါ။
 
 ## Route table
 
@@ -137,7 +150,7 @@ Web package သည် test layer လေးမျိုးကို ခွဲထ�
 3. **Integration tests** သည် host adapter ရှိလာပြီးမှ loopback server သုံးရမည်။ Payload bounded ဖြစ်ရမည်၊ fixed/injected listener သုံးရမည်၊ cleanup explicit လုပ်ရမည်။
 4. **Security/reliability tests** သည် malformed path၊ oversized header/body၊ timeout၊ cancellation၊ duplicate request၊ log redaction နှင့် shutdown race များကို inject လုပ်ရမည်။
 
-လက်ရှိ `web_contract_test.zp` သည် positive route များ၊ 400/405 rejection၊ request-ID validation၊ method normalization၊ JSON content type နှင့် no-store policy ကို cover လုပ်ထားသည်။ `api_contract_test.zp` သည် DTO mapping၊ repository success/not-found behavior၊ 401/403 authorization၊ 429 quota exhaustion၊ window reset၊ clock reversal နှင့် invalid policy ကို ထပ်မံ cover လုပ်ထားသည်။ ဤ test များသည် TLS၊ production concurrency သို့မဟုတ် external network behavior ပြီးစီးကြောင်း သက်သေမဟုတ်ပါ။
+လက်ရှိ `web_contract_test.zp` သည် positive route များ၊ 400/405 rejection၊ request-ID validation၊ method normalization၊ JSON content type နှင့် no-store policy ကို cover လုပ်ထားသည်။ `api_contract_test.zp` သည် DTO mapping၊ repository success/not-found behavior၊ 401/403 authorization၊ 429 quota exhaustion၊ window reset၊ clock reversal နှင့် invalid policy ကို ထပ်မံ cover လုပ်ထားသည်။ `frontend_contract_test.zp` သည် asset manifest၊ HTML/CSS/JavaScript response type၊ browser API wiring နှင့် no-Node runtime declaration ကို cover လုပ်ပါသည်။ Native evaluator tests များသည် missing/unsupported asset၊ encoded traversal rejection၊ workspace confinement နှင့် final-segment wildcard matching ကို cover လုပ်ပါသည်။ ဤ test များသည် TLS၊ production concurrency သို့မဟုတ် external network behavior ပြီးစီးကြောင်း သက်သေမဟုတ်ပါ။
 
 ## API နှင့် DTO contract
 

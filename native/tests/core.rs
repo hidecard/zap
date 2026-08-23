@@ -5844,6 +5844,14 @@ fn creates_and_checks_zap_web_project() {
         String::from_utf8_lossy(&created.stderr)
     );
     assert!(root.join("server.zp").is_file());
+    assert!(root.join("public/index.html").is_file());
+    assert!(root.join("public/assets/app.css").is_file());
+    assert!(root.join("public/assets/app.js").is_file());
+    let manifest = std::fs::read_to_string(root.join("zap.toml")).unwrap();
+    assert!(manifest.contains("assets = \"public\""));
+    let routes = std::fs::read_to_string(root.join("routes.zp")).unwrap();
+    assert!(routes.contains("/assets/*path"));
+    assert!(routes.contains("/api/tasks"));
 
     let check = Command::new(binary())
         .args(["web", "check", root.to_str().unwrap()])
@@ -5955,6 +5963,8 @@ fn creates_and_checks_zap_web_project() {
         .unwrap();
     assert!(run.status.success());
     assert!(String::from_utf8_lossy(&run.stdout).contains("zap-web"));
+    assert!(String::from_utf8_lossy(&run.stdout).contains("/assets/*path"));
+    assert!(String::from_utf8_lossy(&run.stdout).contains("/api/tasks"));
     let _ = std::fs::remove_dir_all(root);
 }
 

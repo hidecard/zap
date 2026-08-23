@@ -9,6 +9,7 @@ import "database_contract"
 import "database_adapter"
 import "auth_contract"
 import "rate_limit_contract"
+import "frontend_contract"
 
 let home = route(normalize_request(" get ", "/", "", "req-home"))
 let health = route(normalize_request("GET", "/health", "", "req-health"))
@@ -32,6 +33,10 @@ let database = adapter_info()
 let lookup_spec = user_lookup_spec(1)
 let insert_spec = insert_user_spec(" Bob ", "BOB@EXAMPLE.COM")
 let user_dto = user_row_dto({"id": 1, "name": "Ada", "email": "ADA@EXAMPLE.COM", "internal": "hidden"})
+let frontend_manifest = frontend_asset_manifest()
+let frontend_index = frontend_index({"request_id": "frontend-index"})
+let frontend_css = frontend_asset({"params": {"path": "app.css"}, "request_id": "frontend-css"})
+let frontend_js = frontend_asset({"params": {"path": "app.js"}, "request_id": "frontend-js"})
 
 assert(home["status"] == 200, "root route must return 200")
 assert(health["body"] == "{\"status\":\"ok\"}", "health response must be deterministic")
@@ -52,5 +57,9 @@ assert(lookup_spec["parameters"][0] == 1, "lookup parameters must be explicit")
 assert(insert_spec["parameters"][1] == "bob@example.com", "insert DTO must normalize email")
 assert(user_dto["value"]["email"] == "ada@example.com", "row DTO must normalize public email")
 assert(not contains(keys(user_dto["value"]), "internal"), "row DTO must not expose internal fields")
+assert(frontend_manifest["node_required"] == false, "browser integration must not require Node at runtime")
+assert(frontend_index["status"] == 200, "frontend HTML must be served")
+assert(frontend_css["content_type"] == "text/css; charset=utf-8", "frontend CSS content type must be explicit")
+assert(frontend_js["content_type"] == "text/javascript; charset=utf-8", "frontend JavaScript content type must be explicit")
 
-say json({"framework": "web", "contract": "api-dto-database-query-dto-auth-rate-limit", "home": home, "get_user": get_user["response"], "create_user": create_user["response"], "limited": limited["response"], "unauthenticated": unauthenticated["response"], "forbidden": forbidden["response"], "invalid_body": invalid_body["response"], "missing_user": missing_user["response"]})
+say json({"framework": "web", "contract": "api-dto-database-query-dto-auth-rate-limit-frontend", "frontend": frontend_manifest, "home": home, "get_user": get_user["response"], "create_user": create_user["response"], "limited": limited["response"], "unauthenticated": unauthenticated["response"], "forbidden": forbidden["response"], "invalid_body": invalid_body["response"], "missing_user": missing_user["response"]})

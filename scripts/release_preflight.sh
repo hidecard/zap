@@ -240,6 +240,11 @@ check_release_files() {
     frameworks/web/database_contract.zp
     frameworks/web/database_adapter.zp
     frameworks/web/database_adapter_test.zp
+    frameworks/web/frontend_contract.zp
+    frameworks/web/frontend_contract_test.zp
+    frameworks/web/public/index.html
+    frameworks/web/public/assets/app.css
+    frameworks/web/public/assets/app.js
     frameworks/web/auth_contract.zp
     frameworks/web/rate_limit_contract.zp
     frameworks/mobile/README.md
