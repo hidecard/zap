@@ -275,9 +275,9 @@ impl JwtAuthenticator {
         let jwk = keys.get(&kid).ok_or(AuthFailure::Invalid)?;
         if jwk
             .common
-            .algorithm
+            .key_algorithm
             .as_ref()
-            .is_some_and(|algorithm| *algorithm != header.alg)
+            .is_some_and(|algorithm| algorithm.to_string() != format!("{:?}", header.alg))
         {
             return Err(AuthFailure::Invalid);
         }
