@@ -35,6 +35,9 @@ jobs:
         with:
           workspaces: native
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
 
@@ -57,6 +60,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
           ALLOW_DIRTY: "0"
           RUN_CARGO_CHECKS: "0"
+          RUN_CARGO_AUDIT: "1"
           SKIP_DEPLOYMENT_VALIDATION: "0"
         run: bash scripts/release_preflight.sh
 

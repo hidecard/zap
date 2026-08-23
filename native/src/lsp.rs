@@ -853,9 +853,7 @@ fn resolved_rename_binding(
         }) {
             return Some(*binding);
         }
-        let Some(parent) = model.scopes[scope].parent else {
-            return None;
-        };
+        let parent = model.scopes[scope].parent?;
         scope = parent;
     }
 }

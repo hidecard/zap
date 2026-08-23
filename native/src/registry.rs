@@ -136,8 +136,7 @@ impl TrustedRegistryPolicy {
         let origin = normalize_registry_origin(source)?;
         if self.origins.len() >= MAX_TRUSTED_REGISTRIES && !self.origins.contains(&origin) {
             return Err(format!(
-                "trusted registry policy exceeds {} origins",
-                MAX_TRUSTED_REGISTRIES
+                "trusted registry policy exceeds {MAX_TRUSTED_REGISTRIES} origins"
             ));
         }
         Ok(self.origins.insert(origin))
@@ -1584,8 +1583,7 @@ fn fetch_source_with_agent_timeout(
         if let Some(length) = expected_length {
             if length > REGISTRY_CLIENT_MAX_RESPONSE {
                 return Err(format!(
-                    "registry response exceeds {} bytes",
-                    REGISTRY_CLIENT_MAX_RESPONSE
+                    "registry response exceeds {REGISTRY_CLIENT_MAX_RESPONSE} bytes"
                 ));
             }
         }
@@ -1607,8 +1605,7 @@ fn fetch_source_with_agent_timeout(
             }
             if bytes.len().saturating_add(count) > REGISTRY_CLIENT_MAX_RESPONSE {
                 return Err(format!(
-                    "registry response exceeds {} bytes",
-                    REGISTRY_CLIENT_MAX_RESPONSE
+                    "registry response exceeds {REGISTRY_CLIENT_MAX_RESPONSE} bytes"
                 ));
             }
             bytes.extend_from_slice(&buffer[..count]);
@@ -1835,16 +1832,18 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
     fn authenticated_tls_fixture(
         method: &'static str,
         expected_token: &'static str,
         response_body: &'static str,
         response_status: &'static str,
     ) -> (String, ureq::Agent, thread::JoinHandle<()>) {
-        let certificate =
+        let rcgen::CertifiedKey { cert, key_pair } =
             rcgen::generate_simple_self_signed(vec!["localhost".to_string()]).unwrap();
-        let certificate_der = certificate.cert.der().as_ref().to_vec();
-        let private_key = certificate.key_pair.serialize_der();
+        let certificate_der = cert.der().to_vec();
+        let private_key = key_pair.serialize_der();
         let server_certificate = rustls::pki_types::CertificateDer::from(certificate_der.clone());
         let server_key = rustls::pki_types::PrivateKeyDer::Pkcs8(
             rustls::pki_types::PrivatePkcs8KeyDer::from(private_key),
@@ -2353,7 +2352,6 @@ mod tests {
     }
 
     fn with_insecure_http<T>(operation: impl FnOnce() -> T) -> T {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         std::env::set_var("ZAP_ALLOW_INSECURE_HTTP", "1");
         let result = operation();
@@ -2362,7 +2360,6 @@ mod tests {
     }
 
     fn with_secure_http<T>(operation: impl FnOnce() -> T) -> T {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let _guard = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         std::env::remove_var("ZAP_ALLOW_INSECURE_HTTP");
         operation()

@@ -191,7 +191,7 @@ pub(crate) const PUBLIC_DOMAINS: &[PublicDomainPolicy] = &[
     ),
     stable_domain!(
         "math",
-        "bounded integer arguments",
+        "bounded integer arguments; pow exponent <= 1,000,000",
         "bounded integer result",
         "not applicable"
     ),
@@ -215,7 +215,7 @@ pub(crate) const PUBLIC_DOMAINS: &[PublicDomainPolicy] = &[
     ),
     stable_domain!(
         "system",
-        "8 KiB environment/path input",
+        "8 KiB environment/path input; sleep <= 60,000 ms",
         "8 KiB text or structured result",
         "not applicable"
     ),
@@ -423,6 +423,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("codepoints", "text"),
     stable_builtin!("path_join", "system"),
     stable_builtin!("now", "system"),
+    stable_builtin!("sleep", "system"),
     stable_builtin!("utc_now", "time"),
     stable_builtin!("duration_parts", "time"),
     stable_builtin!("duration_between", "time"),

@@ -35,7 +35,7 @@ pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>),
             if name.is_empty() {
                 Err("parameter name cannot be empty".to_string())
             } else if annotation.as_deref() == Some("") {
-                Err(format!("parameter '{}' annotation cannot be empty", name))
+                Err(format!("parameter '{name}' annotation cannot be empty"))
             } else {
                 Ok(Param {
                     name,

@@ -4,6 +4,21 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.2.6] - 2026-08-23
+
+### Release summary
+- Core reliability hardening: confined line I/O, strict locked builds, bounded operations, malformed-port rejection, cycle-safe test discovery, registry-test isolation, and cross-platform compatibility.
+
+## [2.2.5] - 2026-08-23
+
+### Release summary
+- Hardened HTTP request URL invariant handling without changing parser/runtime syntax or framework scope.
+
+## [2.2.4] - 2026-08-23
+
+### Release summary
+- Post-v2.2.3 active-baseline documentation synchronization for the language specification and generic type-check decision records.
+
 ## [2.2.3] - 2026-08-22
 
 ### Release summary

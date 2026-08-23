@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [2.2.6] — 2026-08-23
+
+### Release engineering
+- Hardens filesystem confinement, locked-build validation, bounded builtins, URL parsing, test discovery, registry-test isolation, and cross-platform compatibility without adding framework work.
+- Updates the authorized remediation branch to `ureq 2.12.1`, `url 2.5.8`, `idna 1.1.0`, `rustls 0.23.40`, `rustls-webpki 0.103.15`, `rcgen 0.13.2`, and development-only `time 0.3.47`; strict `cargo-audit 0.22.2` reports zero unresolved advisories across 87 locked crate dependencies.
+- Pins Rust 1.88.0 for the released source and CI quality job because `time 0.3.47` requires it; v2.2.6 was published only after clean-commit, GitHub CI, final preflight, and signed-artifact verification gates passed. See the [published release](https://github.com/hidecard/zap/releases/tag/v2.2.6) and [release workflow run](https://github.com/hidecard/zap/actions/runs/32638479414).
+
+## [2.2.5] — 2026-08-23
+
+### Release engineering
+- Hardened HTTP request URL invariant handling with deterministic errors while preserving parser/runtime syntax, eager async semantics, and the no-framework scope.
+
+## [2.2.4] — 2026-08-23
+
+### Release engineering
+- Synchronize the active v2.2.3 language-specification and generic type-check release-gate references after the post-release audit; no parser, runtime, or generic-syntax behavior changes.
+
 ## [2.2.3] — 2026-08-22
 
 ### Release engineering

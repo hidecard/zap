@@ -17,6 +17,8 @@
 #   ALLOW_DIRTY=1     Permit a dirty working tree. Never use for publishing.
 #   RUN_CARGO_CHECKS=1
 #                     Run fmt, clippy, check, and tests locally.
+#   RUN_CARGO_AUDIT=1
+#                     Run the modern cargo-audit gate against native/Cargo.lock.
 #   SKIP_DEPLOYMENT_VALIDATION=1
 #                     Skip the deployment-policy validator, intended only for
 #                     source-only development environments.
@@ -43,6 +45,7 @@ RELEASE_TAG="${RELEASE_TAG:-${GITHUB_REF_NAME:-}}"
 RELEASE_TARGETS="${RELEASE_TARGETS:-x86_64-unknown-linux-gnu,aarch64-apple-darwin,x86_64-pc-windows-msvc}"
 ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 RUN_CARGO_CHECKS="${RUN_CARGO_CHECKS:-0}"
+RUN_CARGO_AUDIT="${RUN_CARGO_AUDIT:-0}"
 SKIP_DEPLOYMENT_VALIDATION="${SKIP_DEPLOYMENT_VALIDATION:-0}"
 
 PASS_COUNT=0
@@ -262,6 +265,7 @@ check_release_files() {
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
+    scripts/check_rustsec_audit.sh
     scripts/validate_documentation_consistency.sh
     scripts/test_validate_documentation_consistency.sh
     scripts/check_benchmark_regression.sh
@@ -493,6 +497,22 @@ run_contract_validation() {
   pass "benchmark regression validation passed"
 }
 
+run_cargo_audit_gate() {
+  if [[ "$RUN_CARGO_AUDIT" != "1" ]]; then
+    warn "RUN_CARGO_AUDIT is not 1; modern RustSec audit was not run"
+    return
+  fi
+  if [[ ! -x scripts/check_rustsec_audit.sh ]]; then
+    fail "scripts/check_rustsec_audit.sh is missing or not executable"
+    return
+  fi
+  if bash scripts/check_rustsec_audit.sh; then
+    pass "modern RustSec audit passed"
+  else
+    fail "modern RustSec audit found advisories or could not complete"
+  fi
+}
+
 run_deployment_validation() {
   if [[ "$SKIP_DEPLOYMENT_VALIDATION" == "1" ]]; then
     warn "SKIP_DEPLOYMENT_VALIDATION=1; deployment-policy validation was skipped"
@@ -525,6 +545,8 @@ printf '%s\n' '--- target matrix'
 check_targets
 printf '%s\n' '--- P0/P1 contract validation'
 run_contract_validation
+printf '%s\n' '--- dependency security audit'
+run_cargo_audit_gate
 printf '%s\n' '--- deployment policy'
 run_deployment_validation
 printf '%s\n' '--- optional Rust gates'

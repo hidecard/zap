@@ -44,11 +44,11 @@ say join(["web", "ai", "iot"], ", ")
 | `abs` | `abs(value)` | `number` | Returns the absolute value; the minimum signed integer is rejected on overflow. |
 | `min` | `min(left, right)` | `number` | Returns the smaller number. |
 | `max` | `max(left, right)` | `number` | Returns the larger number. |
-| `pow` | `pow(base, exponent)` | `number` | Computes an integer power; the exponent must be non-negative. |
+| `pow` | `pow(base, exponent)` | `number` | Computes an integer power; the exponent must be non-negative and no greater than `1_000_000`. |
 | `sum` | `sum(values)` | `number` | Adds every number in a list using checked integer arithmetic. |
 | `range` | `range(end)` or `range(start, end)` | `list<number>` | Creates a half-open integer range: `start <= value < end`. |
 
-Math helpers accept integer `number` values. Overflow and invalid exponents produce runtime errors instead of wrapping.
+Math helpers accept integer `number` values. `pow` rejects negative or over-limit exponents before execution, uses checked exponentiation-by-squaring, and returns a deterministic overflow error instead of wrapping. Other overflow and invalid-exponent cases also produce runtime errors.
 
 ```zap
 say abs(-42)

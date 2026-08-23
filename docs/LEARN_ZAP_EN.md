@@ -1,6 +1,6 @@
 # Learn Zap — English Guide
 
-**Verified baseline:** Zap v2.2.3
+**Verified baseline:** Zap v2.2.6
 **Purpose:** A learner-first path from installation and core syntax to modules, typed results, testing, tooling, and small projects.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 
@@ -448,4 +448,4 @@ let invalid: result<number> = ok("wrong")
 Run `zap check --json .` to receive a machine-readable `TypeError`. `option_none()` is represented as `option<any>` and can be assigned to a typed Option because it carries no concrete payload.
 
 
-For the current roadmap and release details, see [`DOCUMENTATION_NAVIGATION_EN.md`](DOCUMENTATION_NAVIGATION_EN.md), [`TYPECHECK_CONFORMANCE_MATRIX_EN.md`](TYPECHECK_CONFORMANCE_MATRIX_EN.md), [`NEXT_TODO_PLAN_EN.md`](NEXT_TODO_PLAN_EN.md), and [`RELEASE_2.2.3_EN.md`](RELEASE_2.2.3_EN.md).
+For the current roadmap and release details, see [`DOCUMENTATION_NAVIGATION_EN.md`](DOCUMENTATION_NAVIGATION_EN.md), [`TYPECHECK_CONFORMANCE_MATRIX_EN.md`](TYPECHECK_CONFORMANCE_MATRIX_EN.md), [`NEXT_TODO_PLAN_EN.md`](NEXT_TODO_PLAN_EN.md), and [`RELEASE_2.2.5_EN.md`](RELEASE_2.2.5_EN.md).

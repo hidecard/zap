@@ -15,6 +15,7 @@ use std::{
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
+use crate::stdlib::{checked_integer_pow, MAX_SLEEP_MILLISECONDS};
 use crate::value::try_values_equal;
 use crate::ExprParser;
 use crate::{
@@ -54,7 +55,7 @@ fn enter_workspace(context: &mut ExecutionContext, base: &Path) -> Result<(), St
     Ok(())
 }
 
-fn confined_path(
+pub(crate) fn confined_path(
     path: &Path,
     operation: &str,
     context: Option<&ExecutionContext>,
@@ -974,11 +975,7 @@ fn direct_builtin_with_context_inner(
             if *exponent < 0 {
                 return Err("pow expects a non-negative exponent".into());
             }
-            let mut result = 1_i64;
-            for _ in 0..(*exponent as u64) {
-                result = result.checked_mul(*base).ok_or("integer overflow")?;
-            }
-            Ok(Some(Value::Number(result)))
+            Ok(Some(Value::Number(checked_integer_pow(*base, *exponent)?)))
         }
         "count" => {
             expect(2)?;
@@ -1294,10 +1291,13 @@ fn direct_io_builtin_with_context(
                 return Err("read_lines expects a text path".into());
             };
             Ok(Some(Value::List(
-                read_limited_text(Path::new(path), "read_lines")?
-                    .lines()
-                    .map(|line| Value::Text(line.to_string()))
-                    .collect(),
+                read_limited_text(
+                    &confined_path(Path::new(path), "read_lines", context)?,
+                    "read_lines",
+                )?
+                .lines()
+                .map(|line| Value::Text(line.to_string()))
+                .collect(),
             )))
         }
         "write_lines" => {
@@ -1320,7 +1320,11 @@ fn direct_io_builtin_with_context(
                 }
                 output.push_str(line);
             }
-            write_limited_text(Path::new(path), &output, "write_lines")?;
+            write_limited_text(
+                &confined_path(Path::new(path), "write_lines", context)?,
+                &output,
+                "write_lines",
+            )?;
             Ok(Some(Value::None))
         }
         _ => Ok(None),
@@ -1358,6 +1362,11 @@ fn direct_system_builtin_with_context(
             };
             if milliseconds < 0 {
                 return Err("sleep expects a non-negative number of milliseconds".into());
+            }
+            if milliseconds > MAX_SLEEP_MILLISECONDS {
+                return Err(format!(
+                    "sleep exceeds the {MAX_SLEEP_MILLISECONDS} millisecond limit"
+                ));
             }
             std::thread::sleep(std::time::Duration::from_millis(milliseconds as u64));
             Ok(Some(Value::None))
@@ -2360,11 +2369,17 @@ fn parse_url(value: &str) -> Result<Value, String> {
                     ),
                 )
             }
+            Some(_) => return Err("url_parse found an invalid port".into()),
             _ => (authority, None),
         }
     };
     if host.is_empty() {
         return Err("url_parse requires a host".into());
+    }
+    if let Some(port) = port {
+        if !(0..=u16::MAX as i64).contains(&port) {
+            return Err("url_parse found an invalid port".into());
+        }
     }
     let suffix = &remainder[authority_end..];
     let (without_fragment, fragment) = suffix
@@ -2411,6 +2426,11 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         };
         process.arg(argument);
     }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        process.process_group(0);
+    }
     let mut child = process
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -2432,8 +2452,7 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         match child.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) if Instant::now() >= deadline => {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 let _ = stdout_reader.join();
                 let _ = stderr_reader.join();
                 return Err(format!(
@@ -2471,6 +2490,23 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         ("stdout".into(), Value::Text(stdout)),
         ("stderr".into(), Value::Text(stderr)),
     ]))
+}
+
+fn terminate_process_tree(child: &mut std::process::Child) {
+    let pid = child.id().to_string();
+    #[cfg(unix)]
+    {
+        let group = format!("-{pid}");
+        let _ = Command::new("kill").args(["-KILL", "--", &group]).status();
+    }
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/PID", &pid, "/T", "/F"])
+            .status();
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn read_process_output<R: Read>(mut reader: R) -> std::io::Result<(Vec<u8>, bool)> {
@@ -2571,11 +2607,11 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     };
     let parsed = parse_url(url)?;
     let Value::Map(parts) = parsed else {
-        unreachable!()
+        return Err("http_request URL parser returned an invalid result".into());
     };
     let scheme = match parts.get("scheme") {
         Some(Value::Text(value)) => value,
-        _ => unreachable!(),
+        _ => return Err("http_request URL parser omitted the scheme".into()),
     };
     if scheme != "http" && scheme != "https" {
         return Err("http_request supports only http and https URLs".into());
@@ -2595,7 +2631,7 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
     };
     let host = match parts.get("host") {
         Some(Value::Text(value)) => value,
-        _ => unreachable!(),
+        _ => return Err("http_request URL parser omitted the host".into()),
     };
     validate_network_destination(host, port)?;
     let agent = ureq::AgentBuilder::new()
@@ -3124,7 +3160,7 @@ fn ast_expression_with_context_inner(
                         (class_name.clone(), receiver)
                     };
                     let function = funcs
-                        .get(&format!("{dispatch_class}.{}", member))
+                        .get(&format!("{dispatch_class}.{member}"))
                         .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
                     check_method_visibility(&function, &dispatch_class, vars, funcs)?;
@@ -4784,6 +4820,7 @@ mod tests {
         net::{TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
+        process::Command,
         rc::Rc,
         sync::atomic::Ordering,
         thread,
@@ -6564,8 +6601,8 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             let first_result = first.expect("first corpus result should be present");
             let second_result = second.expect("second corpus result should be present");
             assert_eq!(
-                format!("{:?}", first_result),
-                format!("{:?}", second_result),
+                format!("{first_result:?}"),
+                format!("{second_result:?}"),
                 "stdlib corpus result was nondeterministic: {name}"
             );
             assert!(
@@ -6588,5 +6625,107 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             Err(error) => assert!(error.contains("loop limit exceeded")),
             Ok(_) => panic!("loop limit should reject an unbounded loop"),
         }
+    }
+
+    #[test]
+    fn line_file_builtins_use_workspace_confinement() {
+        let workspace =
+            std::env::temp_dir().join(format!("zap-line-io-workspace-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&workspace);
+        fs::create_dir_all(&workspace).expect("workspace should be created");
+        let outside = workspace
+            .parent()
+            .expect("temporary directory parent")
+            .join("zap-line-io-secret.txt");
+        let _ = fs::remove_file(&outside);
+        fs::write(&outside, "secret\n").expect("outside fixture");
+        let mut context = ExecutionContext::new();
+        super::enter_workspace(&mut context, &workspace).expect("workspace should be accepted");
+        let write_error = super::direct_io_builtin_with_context(
+            "write_lines",
+            &[
+                Value::Text("../zap-line-io-escape.txt".into()),
+                Value::List(vec![Value::Text("blocked".into())]),
+            ],
+            Some(&context),
+        )
+        .expect_err("write_lines traversal must fail");
+        assert!(write_error.contains("write_lines failed: path escapes the workspace"));
+        let read_error = super::direct_io_builtin_with_context(
+            "read_lines",
+            &[Value::Text("../zap-line-io-secret.txt".into())],
+            Some(&context),
+        )
+        .expect_err("read_lines traversal must fail");
+        assert!(read_error.contains("read_lines failed: path escapes the workspace"));
+        assert!(!workspace
+            .parent()
+            .unwrap()
+            .join("zap-line-io-escape.txt")
+            .exists());
+        let _ = fs::remove_file(outside);
+        let _ = fs::remove_dir_all(workspace);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn direct_process_tree_termination_kills_the_process_group() {
+        use std::os::unix::process::CommandExt;
+
+        let mut process = Command::new("sh");
+        process.args(["-c", "sleep 5"]);
+        process.process_group(0);
+        let mut child = process.spawn().expect("process-group fixture should start");
+        super::terminate_process_tree(&mut child);
+        assert!(child
+            .try_wait()
+            .expect("terminated process should be waitable")
+            .is_some());
+    }
+
+    #[test]
+    fn rejects_malformed_and_out_of_range_url_ports() {
+        for url in [
+            "https://example.com:",
+            "https://example.com:abc",
+            "https://example.com:65536",
+        ] {
+            let error = direct_external_builtin("url_parse", &[Value::Text(url.into())])
+                .expect_err("malformed URL port must fail");
+            assert!(
+                error.contains("url_parse found an invalid port"),
+                "{url}: {error}"
+            );
+        }
+        assert!(direct_external_builtin(
+            "url_parse",
+            &[Value::Text("https://example.com:443/path".into())]
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn rejects_excessive_sleep_and_pow_bounds() {
+        let sleep_error = super::direct_system_builtin_with_context(
+            "sleep",
+            &[Value::Number(super::MAX_SLEEP_MILLISECONDS + 1)],
+            None,
+        )
+        .expect_err("oversized sleep must fail");
+        assert!(sleep_error.contains("sleep exceeds the"));
+        let pow_error = direct_builtin(
+            "pow",
+            vec![
+                Value::Number(1),
+                Value::Number(crate::stdlib::MAX_POW_EXPONENT + 1),
+            ],
+        )
+        .expect_err("oversized exponent must fail");
+        assert!(pow_error.contains("pow exponent exceeds the"));
+        assert_eq!(
+            direct_builtin("pow", vec![Value::Number(2), Value::Number(10)])
+                .expect("bounded pow should succeed"),
+            Some(Value::Number(1024))
+        );
     }
 }
