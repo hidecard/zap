@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-08-23
+
+### Release summary
+- Add bounded host metrics and strengthen Web observability evidence without exposing user-controlled labels.
+
 ## [2.5.0] - 2026-08-23
 
 ### Release summary

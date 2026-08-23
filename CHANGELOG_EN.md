@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.6.0] — 2026-08-23
+
+### Release engineering
+- Add bounded host metrics endpoint, integration evidence, and bilingual Web observability documentation while preserving explicit production boundaries.
+
 ## [2.5.0] — 2026-08-23
 
 ### Release engineering
