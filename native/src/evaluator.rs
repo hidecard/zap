@@ -6260,11 +6260,17 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
                 Err(error) if error.kind() == ErrorKind::NotConnected => {}
                 Err(error) => panic!("test request write side should shut down: {error}"),
             }
-            let mut response = String::new();
-            stream
-                .read_to_string(&mut response)
-                .expect("test response should be readable");
-            response
+            let mut response_bytes = Vec::new();
+            let mut buffer = [0_u8; 4096];
+            loop {
+                match stream.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(read) => response_bytes.extend_from_slice(&buffer[..read]),
+                    Err(error) if error.kind() == ErrorKind::ConnectionReset => break,
+                    Err(error) => panic!("test response should be readable: {error}"),
+                }
+            }
+            String::from_utf8(response_bytes).expect("test response should be valid UTF-8")
         };
 
         let root =
