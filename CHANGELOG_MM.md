@@ -7,7 +7,7 @@
 ### Release engineering
 - Filesystem confinement၊ locked-build validation၊ bounded builtin၊ URL parsing၊ test discovery၊ registry-test isolation နှင့် cross-platform compatibility များကို harden လုပ်ပြီး framework အလုပ်မထည့်သွင်းပါ။
 - ခွင့်ပြုထားသော remediation branch တွင် `ureq 2.12.1`၊ `url 2.5.8`၊ `idna 1.1.0`၊ `rustls 0.23.40`၊ `rustls-webpki 0.103.15`၊ `rcgen 0.13.2` နှင့် development-only `time 0.3.47` သို့ update လုပ်ထားပြီး strict `cargo-audit 0.22.2` သည် locked crate dependency ၈၇ ခုအပေါ် unresolved advisory သုညခုကို report လုပ်ပါသည်။
-- `time 0.3.47` လိုအပ်ချက်ကြောင့် remediation branch နှင့် CI quality job တွင် Rust 1.88.0 ကို pin လုပ်ထားပါသည်။ Clean commit၊ GitHub CI၊ final preflight နှင့် artifact verification gate များ pass မဖြစ်မချင်း candidate ကို မထုတ်ဝေသေးပါ။
+- `time 0.3.47` လိုအပ်ချက်ကြောင့် ထုတ်ဝေထားသော source နှင့် CI quality job တွင် Rust 1.88.0 ကို pin လုပ်ထားပါသည်။ Clean commit၊ GitHub CI၊ final preflight နှင့် signed-artifact verification gate များ အောင်မြင်ပြီးမှသာ v2.2.6 ကို ထုတ်ဝေခဲ့ပါသည်။ [Published release](https://github.com/hidecard/zap/releases/tag/v2.2.6) နှင့် [release workflow run](https://github.com/hidecard/zap/actions/runs/32638479414) ကို ကြည့်ရှုနိုင်ပါသည်။
 
 ## [2.2.5] — 2026-08-23
 

@@ -43,11 +43,11 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 ## Release provenance
 
-The installation links and archive names in this README describe the v2.2.6 release candidate. The candidate is not published yet; until publication, the [GitHub Releases page](https://github.com/hidecard/zap/releases) remains the source for the latest published archive. The published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) remains immutable. The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2), [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3), and [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
+The installation links and archive names in this README describe the published [v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6), sourced from tagged commit [`d1d6816`](https://github.com/hidecard/zap/commit/d1d6816d7d39198b4a9778d531e29cd7b4e1f38a). The published v2.2.6 release and its signed assets are now the latest official distribution. The published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) remains immutable. The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2), [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3), and [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
 
 ## v2.2.6 Dependency Remediation Status
 
-The isolated `chore/dependency-remediation-v2.2.6` branch updates the approved dependency graph and keeps the remediation separate from `master` until its final review and CI validation are complete.
+The approved dependency graph was developed on the isolated `chore/dependency-remediation-v2.2.6` branch, reviewed in [PR #2](https://github.com/hidecard/zap/pull/2), merged into `master`, and released as v2.2.6 after the final CI and release validations passed.
 
 | Area | Verified remediation state |
 |---|---|
@@ -56,7 +56,7 @@ The isolated `chore/dependency-remediation-v2.2.6` branch updates the approved d
 | Development-time time dependency | `time 0.3.47`, which requires Rust 1.88.0 |
 | Security evidence | `cargo-audit 0.22.2` reports zero unresolved advisories across the 87-crate locked graph |
 
-Because `time 0.3.47` declares Rust 1.88.0 as its minimum supported toolchain, the remediation branch pins Rust 1.88.0 in `rust-toolchain.toml` and in the CI quality job. This is a build/toolchain compatibility change only; the Zap language surface, runtime contract, and explicitly deferred Framework/Web/App/IoT scope are unchanged. The v2.2.6 candidate remains unpublished until the clean committed branch, GitHub CI, final release preflight, and published artifact verification all pass.
+Because `time 0.3.47` declares Rust 1.88.0 as its minimum supported toolchain, the released source pins Rust 1.88.0 in `rust-toolchain.toml` and in the CI quality job. This is a build/toolchain compatibility change only; the Zap language surface, runtime contract, and explicitly deferred Framework/Web/App/IoT scope are unchanged. The v2.2.6 release was published only after the clean committed source, GitHub CI, strict release preflight, and published artifact verification passed.
 
 ## Learning Guide
 
@@ -97,7 +97,7 @@ The project is intended as a foundation for future web, AI, mobile, and IoT libr
 
 ## Installation
 
-Zap is distributed as a standalone native executable. No separate language runtime is required. After publication, download the archive that matches your operating system and CPU architecture from the [future v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6) or the [GitHub Releases page](https://github.com/hidecard/zap/releases), verify the checksum when available, extract it, and make the `zap` executable available on your `PATH`. Until then, v2.2.5 remains the latest published release.
+Zap is distributed as a standalone native executable. No separate language runtime is required. Download the archive that matches your operating system and CPU architecture from the [published v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6) or the [GitHub Releases page](https://github.com/hidecard/zap/releases), verify its checksum and signature, extract it, and make the `zap` executable available on your `PATH`. The v2.2.6 release is the latest published release.
 
 ### Supported Release Targets
 
@@ -132,7 +132,7 @@ If you prefer a local installation, keep the extracted `zap` executable in a pro
 
 ### macOS Installation
 
-1. Download the macOS ARM64 `.tar.gz` archive from the GitHub Releases page after the v2.2.6 candidate is published.
+1. Download the macOS ARM64 `.tar.gz` archive from the [published v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6).
 2. Extract it and enter the extracted directory:
 
 ```bash
@@ -158,7 +158,7 @@ On Intel-based Macs, use a compatible release asset if one is published. Do not 
 
 ### Windows Installation
 
-1. Download the Windows x86_64 `.zip` archive from the GitHub Releases page after the v2.2.6 candidate is published.
+1. Download the Windows x86_64 `.zip` archive from the [published v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6).
 2. Extract the archive to a folder such as `C:\Zap`.
 3. Open **Command Prompt** as a normal user and run the installer batch file from the extracted directory:
 
