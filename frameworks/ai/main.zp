@@ -1,5 +1,16 @@
-use ai
+# Framework AI contract starter
+# This sample models a provider request and does not call an external model.
 
-assistant = ai.app "helper"
-answer = assistant.ask "Explain Zap in one sentence"
-say answer.text
+fn make_request(prompt, model):
+    return {"model": model, "prompt": prompt, "max_output_tokens": 64}
+
+fn provider_response(request):
+    return {"model": request["model"], "text": "Zap is a deterministic language with explicit host boundaries.", "usage": {"prompt_chars": len(request["prompt"])}}
+
+let request = make_request("Explain Zap in one sentence", "contract-demo")
+let response = provider_response(request)
+
+assert(response["model"] == "contract-demo", "response must preserve the requested model")
+assert(response["usage"]["prompt_chars"] > 0, "usage must report prompt size")
+
+say json({"framework": "ai", "contract": "provider-request-response", "request": request, "response": response})

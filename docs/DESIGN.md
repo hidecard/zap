@@ -1,7 +1,7 @@
 # Zap Programming Language — Initial Design
 
 **Version:** 0.6.0 design update  
-**Author:** Manus AI
+**Author:** Zap project maintainers
 
 ## ရည်ရွယ်ချက်
 

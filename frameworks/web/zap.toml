@@ -1,7 +1,8 @@
 [package]
-name = "web-app"
+name = "zap-framework-web-contract"
 version = "0.1.0"
-framework = "zap-web"
+main = "main.zp"
+framework = "Framework"
+status = "contract-prototype"
 
 [dependencies]
-zap-web = "0.1"

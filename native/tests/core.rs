@@ -5828,3 +5828,156 @@ fn language_level_task_facade_preserves_function_argument_validation() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("spawn expects 1 argument"));
 }
+
+#[test]
+fn creates_and_checks_zap_web_project() {
+    let root = std::env::temp_dir().join("zap_web_scaffold_cli_test");
+    let _ = std::fs::remove_dir_all(&root);
+    let created = Command::new(binary())
+        .args(["new", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        created.status.success(),
+        "{}",
+        String::from_utf8_lossy(&created.stderr)
+    );
+    assert!(root.join("server.zp").is_file());
+    assert!(root.join("public/index.html").is_file());
+    assert!(root.join("public/assets/app.css").is_file());
+    assert!(root.join("public/assets/app.js").is_file());
+    let manifest = std::fs::read_to_string(root.join("zap.toml")).unwrap();
+    assert!(manifest.contains("assets = \"public\""));
+    let routes = std::fs::read_to_string(root.join("routes.zp")).unwrap();
+    assert!(routes.contains("/assets/*path"));
+    assert!(routes.contains("/api/tasks"));
+
+    let check = Command::new(binary())
+        .args(["web", "check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(check.status.success());
+    assert!(String::from_utf8_lossy(&check.stdout).contains("valid Zap Web project"));
+
+    let migrations = Command::new(binary())
+        .args(["db", "check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(migrations.status.success());
+    assert!(String::from_utf8_lossy(&migrations.stdout).contains("migration layout"));
+
+    let inspect = Command::new(binary())
+        .args(["db", "inspect", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        inspect.status.success(),
+        "{}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    let inspect_json = String::from_utf8_lossy(&inspect.stdout);
+    assert!(inspect_json.contains("\"driver\":\"sqlite\""));
+    assert!(inspect_json.contains("\"mode\":\"inspect\""));
+    assert!(inspect_json.contains("\"read_only\":true"));
+    assert!(inspect_json.contains("\"ledger\":\"__zap_migrations\""));
+    assert!(!root.join("data/zap.sqlite3").exists());
+
+    let plan = Command::new(binary())
+        .args(["db", "plan", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        plan.status.success(),
+        "{}",
+        String::from_utf8_lossy(&plan.stderr)
+    );
+    assert!(String::from_utf8_lossy(&plan.stdout).contains("CREATE TABLE"));
+
+    let dry_run = Command::new(binary())
+        .args(["db", "migrate", "--dry-run", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        dry_run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&dry_run.stderr)
+    );
+    assert!(String::from_utf8_lossy(&dry_run.stdout).contains("pending migration"));
+
+    let pending_check = Command::new(binary())
+        .args(["db", "migrate", "--check", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!pending_check.status.success());
+    assert!(String::from_utf8_lossy(&pending_check.stderr).contains("pending migrations exist"));
+
+    let migrate = Command::new(binary())
+        .args(["db", "migrate", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        migrate.status.success(),
+        "{}",
+        String::from_utf8_lossy(&migrate.stderr)
+    );
+    assert!(String::from_utf8_lossy(&migrate.stdout).contains("migrations applied"));
+    assert!(root.join("data/zap.sqlite3").is_file());
+
+    let applied = Command::new(binary())
+        .args(["db", "plan", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        applied.status.success(),
+        "{}",
+        String::from_utf8_lossy(&applied.stderr)
+    );
+    assert!(String::from_utf8_lossy(&applied.stdout).contains("\"pending\":[]"));
+
+    let applied_check = Command::new(binary())
+        .args(["db", "migrate", "--check", "--json", root.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        applied_check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&applied_check.stderr)
+    );
+    assert!(String::from_utf8_lossy(&applied_check.stdout).contains("\"ok\":true"));
+
+    let tests = Command::new(binary())
+        .args(["test", root.join("tests").to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        tests.status.success(),
+        "{}",
+        String::from_utf8_lossy(&tests.stderr)
+    );
+    assert!(String::from_utf8_lossy(&tests.stdout).contains("1 passed"));
+
+    let run = Command::new(binary())
+        .arg(root.join("main.zp"))
+        .output()
+        .unwrap();
+    assert!(run.status.success());
+    assert!(String::from_utf8_lossy(&run.stdout).contains("zap-web"));
+    assert!(String::from_utf8_lossy(&run.stdout).contains("/assets/*path"));
+    assert!(String::from_utf8_lossy(&run.stdout).contains("/api/tasks"));
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn web_cli_commands_are_documented_in_help() {
+    let output = Command::new(binary()).arg("--help").output().unwrap();
+    assert!(output.status.success());
+    let help = String::from_utf8_lossy(&output.stdout);
+    assert!(help.contains("zap new <dir>"));
+    assert!(help.contains("zap dev [dir]"));
+    assert!(help.contains("zap web check [dir]"));
+    assert!(help.contains("zap db check [dir]"));
+    assert!(help.contains("zap db plan [dir] [--json]"));
+    assert!(help.contains("zap db inspect [dir] [--json]"));
+    assert!(help.contains("zap db migrate [dir] [--dry-run]"));
+    assert!(help.contains("zap db migrate [dir] [--check]"));
+}

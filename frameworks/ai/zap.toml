@@ -1,7 +1,8 @@
 [package]
-name = "ai-app"
+name = "zap-framework-ai-contract"
 version = "0.1.0"
-framework = "zap-ai"
+main = "main.zp"
+framework = "Framework"
+status = "contract-prototype"
 
 [dependencies]
-zap-ai = "0.1"

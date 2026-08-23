@@ -41,4 +41,3 @@ Download the archive matching the target platform from the [v2.2.4 GitHub releas
 [3]: https://github.com/hidecard/zap/releases/tag/v2.2.2 "Zap v2.2.2 release"
 [4]: https://github.com/hidecard/zap/releases/tag/v2.2.3 "Zap v2.2.3 release"
 [5]: https://github.com/hidecard/zap/commit/5cf2682 "Fix stale active documentation baselines"
-

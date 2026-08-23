@@ -3,7 +3,7 @@
 **ရည်ရွယ်ချက်:** Zap ၏ syntax၊ typing၊ runtime behavior၊ diagnostics၊ compatibility နှင့် version decision များအတွက် canonical normative owner ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Package author guide](PACKAGE.md) · [Runtime state](RUNTIME_STATE_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 
-**Specification အခြေအနေ:** Zap v2.2.6 အတွက် normative foundation
+**Specification အခြေအနေ:** Zap v2.2.7 အတွက် normative foundation
 
 ဤစာတမ်းသည် language semantics များအတွက် canonical index ဖြစ်သည်။ အဟောင်း guide တစ်ခုခုသည် ဤစာတမ်းနှင့် မကိုက်ညီပါက specification နှင့် ကိုက်ညီအောင် implementation/test များကို ပြင်ရမည်။ Legacy behavior ကို အလိုအလျောက် normative အဖြစ် မယူဆဘဲ compatibility exception အဖြစ် အတိအကျ မှတ်တမ်းတင်ရမည်။
 
@@ -53,7 +53,7 @@ Object field များသည် documented single-threaded `Rc<RefCell>` owne
 
 User-facing diagnostic တိုင်းတွင် severity၊ stable code၊ message၊ ရရှိနိုင်ပါက source location၊ notes နှင့် help တို့ကို ထိန်းသိမ်းရမည်။ CLI နှင့် LSP consumer များသည် semantic diagnostic field တစ်စုံတစ်ရာတည်းကို မျှဝေရမည်။ Compatibility behavior ကို **normative**၊ **compatibility**၊ **deprecated** သို့မဟုတ် **rejected** အဖြစ် အမည်တပ်ရမည်။ Fixture အဟောင်းတစ်ခုက လက်ခံသောကြောင့်သာ behavior တစ်ခုကို normative မသတ်မှတ်ရ။
 
-လက်ရှိ release line သည် v2.2.6 ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
+လက်ရှိ release line သည် v2.2.7 ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
 
 ## ၈။ Conformance ownership
 

@@ -1,0 +1,22 @@
+import "database_adapter"
+
+let info = adapter_info()
+let lookup = user_lookup_spec(7)
+let bad_lookup = user_lookup_spec("7")
+let insert = insert_user_spec("  Bob  ", " BOB@EXAMPLE.COM ")
+let bad_insert = insert_user_spec("", "not-an-email")
+let dto = user_row_dto({"id": 7, "name": "Ada", "email": "ADA@EXAMPLE.COM", "secret": "must-not-leak"})
+let bad_dto = user_row_dto({"id": "7", "name": "Ada", "email": "ada@example.com"})
+
+assert(info["query_mode"] == "parameterized", "query mode must be explicit")
+assert(lookup["parameters"][0] == 7, "lookup parameter must be bound")
+assert(bad_lookup["ok"] == false, "invalid lookup must be rejected")
+assert(insert["parameters"][0] == "Bob", "insert name must be normalized")
+assert(insert["parameters"][1] == "bob@example.com", "insert email must be normalized")
+assert(bad_insert["ok"] == false, "invalid insert must be rejected")
+assert(dto["valid"] == true, "valid row must map")
+assert(dto["value"]["email"] == "ada@example.com", "DTO email must be normalized")
+assert(not contains(keys(dto["value"]), "secret"), "private fields must not leak")
+assert(bad_dto["valid"] == false, "invalid row type must be rejected")
+
+say "Database adapter contract test passed"

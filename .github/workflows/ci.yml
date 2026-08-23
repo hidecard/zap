@@ -39,7 +39,9 @@ jobs:
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: native
+          workspaces: |
+            native
+            host/zap-host
 
       - name: Validate release version consistency
         env:
@@ -72,6 +74,15 @@ jobs:
 
       - name: Run documentation consistency regression
         run: scripts/test_validate_documentation_consistency.sh
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Run native RustSec audit
+        run: cargo audit --file native/Cargo.lock
+
+      - name: Run host RustSec audit
+        run: cargo audit --file host/zap-host/Cargo.lock
 
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
@@ -133,6 +144,20 @@ jobs:
           test "$(awk -F, 'NR == 1 { if ($0 != "suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds,stddev_seconds,variance_seconds,cv_percent") exit 1 } NR > 1 && NF != 9 { exit 1 } END { print "ok" }' benchmark-results/native-summary-current.csv)" = ok
           test "$(awk -F '\t' 'NR > 1 { seen[$1]++ } END { if (seen["schema_version"] != 1 || seen["status"] != 1 || seen["git_commit"] != 1 || seen["target_triple"] != 1 || seen["binary_sha256"] != 1 || seen["repeats"] != 1 || seen["warmups"] != 1) exit 1; print "ok" }' benchmark-results/native.provenance.tsv)" = ok
           scripts/check_benchmark_regression.sh benchmark-results/native-summary.csv benchmark-results/native-summary-current.csv "$ZAP_BENCH_MAX_REGRESSION_PERCENT" 2>&1 | tee benchmark-results/regression.txt
+
+      - name: Validate Framework starter runtime contracts
+        env:
+          ZAP_BIN: native/target/release/zap
+          ZAP_FRAMEWORK_REPORT: target/framework-starters.tsv
+        run: scripts/validate_framework_starters.sh
+
+      - name: Upload Framework starter evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-framework-starters-${{ github.sha }}
+          path: target/framework-starters.tsv
+          if-no-files-found: error
 
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
@@ -238,6 +263,21 @@ jobs:
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
 
+      - name: Check zap-host formatting
+        run: cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check
+
+      - name: Run zap-host Clippy
+        run: cargo clippy --manifest-path host/zap-host/Cargo.toml --all-targets --all-features -- -D warnings
+
+      - name: Run zap-host check
+        run: cargo check --manifest-path host/zap-host/Cargo.toml --all-targets --all-features
+
+      - name: Run zap-host tests
+        run: cargo test --manifest-path host/zap-host/Cargo.toml --all-targets
+
+      - name: Validate zap-host deployment policy
+        run: scripts/validate_zap_host_deployment.sh
+
       - name: Check repository whitespace
         run: git diff --check
 
@@ -271,7 +311,9 @@ jobs:
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: native
+          workspaces: |
+            native
+            host/zap-host
           key: ${{ matrix.target }}
 
       - name: Build native runtime

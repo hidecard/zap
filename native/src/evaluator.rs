@@ -1,10 +1,10 @@
 use std::cell::Cell;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, TcpListener, ToSocketAddrs},
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     process::{Command, Stdio},
     rc::Rc,
     sync::atomic::{AtomicU64, Ordering},
@@ -1223,10 +1223,12 @@ fn direct_io_builtin_with_context(
             | "write_lines"
             | "file_metadata"
             | "atomic_write"
+            | "web_static"
     ) {
         require_capability("filesystem access")?;
     }
     match name {
+        "web_static" => Ok(Some(web_static_with_context(args, context)?)),
         "file_metadata" => {
             if args.len() != 1 {
                 return Err(format!(
@@ -1463,6 +1465,8 @@ const MAX_URL_BYTES: usize = 8 * 1024;
 const MAX_PROCESS_OUTPUT_BYTES: usize = 1024 * 1024;
 const MAX_HTTP_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 const MAX_HTTP_REQUEST_BYTES: usize = 64 * 1024;
+const MAX_STATIC_ASSET_BYTES: usize = 2 * 1024 * 1024;
+const MAX_STATIC_ASSET_PATH_BYTES: usize = 2 * 1024;
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(10);
 const SERVER_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -1660,7 +1664,7 @@ fn http_serve_once(args: &[Value]) -> Result<Value, String> {
             break;
         }
         request.extend_from_slice(&buffer[..count]);
-        if request.windows(4).any(|window| window == b"\\r\\n\\r\\n") {
+        if request.windows(4).any(|window| window == b"\r\n\r\n") {
             break;
         }
         if request.len() > MAX_HTTP_REQUEST_BYTES {
@@ -1680,7 +1684,7 @@ fn http_serve_once(args: &[Value]) -> Result<Value, String> {
         return Err("http_serve_once received a malformed HTTP request".into());
     }
     let response = format!(
-        "HTTP/1.1 200 OK\\r\\nContent-Length: {}\\r\\nContent-Type: text/plain; charset=utf-8\\r\\nConnection: close\\r\\n\\r\\n{}",
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n{}",
         body.len(), body
     );
     stream
@@ -1692,6 +1696,594 @@ fn http_serve_once(args: &[Value]) -> Result<Value, String> {
         ("path".into(), Value::Text(path.into())),
         ("body".into(), Value::Text(body.clone())),
     ]))
+}
+
+static WEB_REQUEST_IDS: AtomicU64 = AtomicU64::new(1);
+
+fn web_request_id(headers: &HashMap<String, String>) -> String {
+    let candidate = headers
+        .get("x-request-id")
+        .map(String::as_str)
+        .unwrap_or("");
+    if !candidate.is_empty()
+        && candidate.len() <= 128
+        && candidate
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._:-".contains(&byte))
+    {
+        return candidate.to_string();
+    }
+    format!("zap-{}", WEB_REQUEST_IDS.fetch_add(1, Ordering::Relaxed))
+}
+
+fn web_http_reason(status: i64) -> &'static str {
+    match status {
+        200 => "OK",
+        201 => "Created",
+        204 => "No Content",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        403 => "Forbidden",
+        404 => "Not Found",
+        405 => "Method Not Allowed",
+        413 => "Payload Too Large",
+        415 => "Unsupported Media Type",
+        429 => "Too Many Requests",
+        500 => "Internal Server Error",
+        503 => "Service Unavailable",
+        _ => "OK",
+    }
+}
+
+fn web_path_matches(pattern: &str, path: &str) -> Option<HashMap<String, Value>> {
+    let pattern_parts = pattern.split('/').collect::<Vec<_>>();
+    let path_parts = path.split('/').collect::<Vec<_>>();
+    let has_wildcard = pattern_parts
+        .last()
+        .is_some_and(|segment| segment.starts_with('*'));
+    if has_wildcard {
+        if pattern_parts.len() > path_parts.len() {
+            return None;
+        }
+    } else if pattern_parts.len() != path_parts.len() {
+        return None;
+    }
+    let mut params = HashMap::new();
+    let fixed_count = if has_wildcard {
+        pattern_parts.len() - 1
+    } else {
+        pattern_parts.len()
+    };
+    for (expected, actual) in pattern_parts
+        .iter()
+        .take(fixed_count)
+        .zip(path_parts.iter().take(fixed_count))
+    {
+        if let Some(name) = expected.strip_prefix(':') {
+            if name.is_empty() || actual.is_empty() {
+                return None;
+            }
+            params.insert(name.to_string(), Value::Text((*actual).to_string()));
+        } else if expected != actual {
+            return None;
+        }
+    }
+    if has_wildcard {
+        let name = pattern_parts.last()?.strip_prefix('*')?;
+        let value = path_parts.get(fixed_count..)?.join("/");
+        if name.is_empty() || value.is_empty() {
+            return None;
+        }
+        params.insert(name.to_string(), Value::Text(value));
+    }
+    Some(params)
+}
+
+fn web_parse_request(
+    stream: &mut impl Read,
+) -> Result<(String, String, HashMap<String, String>, String), String> {
+    let mut raw = Vec::new();
+    let mut buffer = [0u8; 4096];
+    let header_end = loop {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("web_serve failed to read request: {error}"))?;
+        if count == 0 {
+            return Err("web_serve received an incomplete HTTP request".into());
+        }
+        raw.extend_from_slice(&buffer[..count]);
+        if raw.len() > MAX_HTTP_REQUEST_BYTES {
+            return Err(format!(
+                "web_serve request exceeds the {MAX_HTTP_REQUEST_BYTES} byte limit"
+            ));
+        }
+        if let Some(position) = raw.windows(4).position(|window| window == b"\r\n\r\n") {
+            break position + 4;
+        }
+    };
+    let header_text = String::from_utf8(raw[..header_end].to_vec())
+        .map_err(|_| "web_serve request headers are not UTF-8".to_string())?;
+    let mut lines = header_text.split("\r\n");
+    let request_line = lines.next().unwrap_or("");
+    let mut parts = request_line.split_whitespace();
+    let method = parts.next().unwrap_or("");
+    let target = parts.next().unwrap_or("");
+    let version = parts.next().unwrap_or("");
+    if method.is_empty() || target.is_empty() || !matches!(version, "HTTP/1.0" | "HTTP/1.1") {
+        return Err("web_serve received a malformed HTTP request line".into());
+    }
+    let mut headers = HashMap::new();
+    let mut content_length = 0usize;
+    for line in lines {
+        if line.is_empty() {
+            continue;
+        }
+        let Some((name, value)) = line.split_once(':') else {
+            return Err("web_serve received a malformed HTTP header".into());
+        };
+        let name = name.trim().to_ascii_lowercase();
+        let value = value.trim();
+        if name.is_empty()
+            || name
+                .bytes()
+                .any(|byte| !(byte.is_ascii_alphanumeric() || b"-".contains(&byte)))
+        {
+            return Err("web_serve received an invalid HTTP header name".into());
+        }
+        if value.bytes().any(|byte| byte == b'\r' || byte == b'\n') {
+            return Err("web_serve received an invalid HTTP header value".into());
+        }
+        if headers.contains_key(&name) {
+            return Err("web_serve received a duplicate HTTP header".into());
+        }
+        if name == "transfer-encoding" {
+            return Err("web_serve does not accept transfer-encoded request bodies".into());
+        }
+        if name == "content-length" {
+            content_length = value
+                .parse::<usize>()
+                .map_err(|_| "web_serve received an invalid content-length".to_string())?;
+            if content_length > MAX_HTTP_REQUEST_BYTES {
+                return Err(format!(
+                    "web_serve request body exceeds the {MAX_HTTP_REQUEST_BYTES} byte limit"
+                ));
+            }
+        }
+        headers.insert(name, value.to_string());
+    }
+    while raw.len() < header_end + content_length {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("web_serve failed to read request body: {error}"))?;
+        if count == 0 {
+            return Err("web_serve received an incomplete request body".into());
+        }
+        raw.extend_from_slice(&buffer[..count]);
+        if raw.len() > MAX_HTTP_REQUEST_BYTES + header_end {
+            return Err(format!(
+                "web_serve request exceeds the {MAX_HTTP_REQUEST_BYTES} byte limit"
+            ));
+        }
+    }
+    let body = raw[header_end..header_end + content_length].to_vec();
+    let body =
+        String::from_utf8(body).map_err(|_| "web_serve request body is not UTF-8".to_string())?;
+    let path = target.split('?').next().unwrap_or(target);
+    if path.is_empty() || path.len() > 2048 || !path.starts_with('/') || path.contains("..") {
+        return Err("web_serve received an invalid request path".into());
+    }
+    Ok((method.to_string(), path.to_string(), headers, body))
+}
+
+fn web_static_content_type(path: &Path) -> Option<&'static str> {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some("html") => Some("text/html; charset=utf-8"),
+        Some("css") => Some("text/css; charset=utf-8"),
+        Some("js") | Some("mjs") => Some("text/javascript; charset=utf-8"),
+        Some("json") => Some("application/json; charset=utf-8"),
+        Some("svg") => Some("image/svg+xml"),
+        Some("txt") => Some("text/plain; charset=utf-8"),
+        _ => None,
+    }
+}
+
+fn web_static_not_found() -> Value {
+    map_value([
+        ("status".into(), Value::Number(404)),
+        (
+            "content_type".into(),
+            Value::Text("application/json; charset=utf-8".into()),
+        ),
+        (
+            "body".into(),
+            Value::Text(serde_json::json!({"error": "asset_not_found"}).to_string()),
+        ),
+    ])
+}
+
+fn web_static_with_context(
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err(format!(
+            "web_static expects asset path and root directory, got {} arguments",
+            args.len()
+        ));
+    }
+    let (Value::Text(asset), Value::Text(root)) = (&args[0], &args[1]) else {
+        return Err("web_static expects text asset path and root directory".into());
+    };
+    if root.is_empty() {
+        return Err("web_static root directory must not be empty".into());
+    }
+    let decoded = percent_decode(asset)
+        .map_err(|error| format!("web_static asset path is invalid: {error}"))?;
+    if decoded.is_empty()
+        || decoded.len() > MAX_STATIC_ASSET_PATH_BYTES
+        || decoded.contains('\0')
+        || decoded.contains('\\')
+    {
+        return Err("web_static asset path is invalid".into());
+    }
+    let relative = Path::new(&decoded);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err("web_static asset path must be a safe relative file path".into());
+    }
+    let Some(content_type) = web_static_content_type(relative) else {
+        return Ok(web_static_not_found());
+    };
+    let root = confined_path(Path::new(root), "web_static", context)?;
+    let root = fs::canonicalize(root)
+        .map_err(|error| format!("web_static root directory is not accessible: {error}"))?;
+    if !root.is_dir() {
+        return Err("web_static root directory must be a directory".into());
+    }
+    let candidate = root.join(relative);
+    let resolved = match fs::canonicalize(candidate) {
+        Ok(path) => path,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(web_static_not_found())
+        }
+        Err(error) => return Err(format!("web_static asset cannot be resolved: {error}")),
+    };
+    if !resolved.starts_with(&root) {
+        return Err("web_static asset path escapes the root directory".into());
+    }
+    let metadata = fs::metadata(&resolved)
+        .map_err(|error| format!("web_static asset metadata failed: {error}"))?;
+    if !metadata.is_file() {
+        return Ok(web_static_not_found());
+    }
+    if metadata.len() > MAX_STATIC_ASSET_BYTES as u64 {
+        return Err(format!(
+            "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
+        ));
+    }
+    let body = read_limited_text(&resolved, "web_static asset read")?;
+    if body.len() > MAX_STATIC_ASSET_BYTES {
+        return Err(format!(
+            "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
+        ));
+    }
+    Ok(map_value([
+        ("status".into(), Value::Number(200)),
+        ("content_type".into(), Value::Text(content_type.into())),
+        ("body".into(), Value::Text(body)),
+    ]))
+}
+
+fn web_response_header_is_reserved(name: &str) -> bool {
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "cache-control"
+            | "connection"
+            | "content-length"
+            | "content-type"
+            | "transfer-encoding"
+            | "x-content-type-options"
+            | "x-request-id"
+    )
+}
+
+fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String> {
+    let Value::Map(fields) = value else {
+        return Err("web handler must return a response map".into());
+    };
+    let status = match fields.get("status") {
+        Some(Value::Number(value)) if (100..=599).contains(value) => *value,
+        _ => return Err("web handler response status must be a number from 100 to 599".into()),
+    };
+    let body = match fields.get("body") {
+        Some(Value::Text(value)) => value.clone(),
+        Some(value) => {
+            serde_json::to_string(&value_to_json(value)?).map_err(|error| error.to_string())?
+        }
+        None => String::new(),
+    };
+    if body.len() > MAX_HTTP_RESPONSE_BYTES {
+        return Err(format!(
+            "web handler response exceeds the {MAX_HTTP_RESPONSE_BYTES} byte limit"
+        ));
+    }
+    let content_type = match fields.get("content_type") {
+        Some(Value::Text(value)) if !value.is_empty() => value.clone(),
+        _ => "application/json; charset=utf-8".into(),
+    };
+    if content_type
+        .bytes()
+        .any(|byte| byte == b'\r' || byte == b'\n')
+    {
+        return Err("web handler response content type contains a forbidden newline".into());
+    }
+    let mut output = format!(
+        "HTTP/1.1 {status} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nCache-Control: no-store\r\nX-Request-Id: {}\r\n",
+        web_http_reason(status),
+        content_type,
+        body.len(),
+        request_id
+    );
+    let mut response_header_names = HashSet::new();
+    if let Some(Value::Map(headers)) = fields.get("headers") {
+        for (name, value) in headers {
+            let Value::Text(value) = value else {
+                return Err("web handler response headers must contain text values".into());
+            };
+            let normalized_name = name.to_ascii_lowercase();
+            if name.is_empty()
+                || name
+                    .bytes()
+                    .any(|byte| !(byte.is_ascii_alphanumeric() || b"-".contains(&byte)))
+                || web_response_header_is_reserved(name)
+                || !response_header_names.insert(normalized_name)
+                || value.bytes().any(|byte| byte == b'\r' || byte == b'\n')
+            {
+                return Err(
+                    "web handler response contains an invalid, reserved, or duplicate header"
+                        .into(),
+                );
+            }
+            output.push_str(name);
+            output.push_str(": ");
+            output.push_str(value);
+            output.push_str("\r\n");
+        }
+    }
+    output.push_str("\r\n");
+    let mut bytes = output.into_bytes();
+    bytes.extend_from_slice(body.as_bytes());
+    Ok(bytes)
+}
+
+fn web_error_response(status: i64, error: &str, request_id: &str) -> Vec<u8> {
+    let body = serde_json::json!({"error": error, "request_id": request_id}).to_string();
+    format!(
+        "HTTP/1.1 {status} {}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nCache-Control: no-store\r\nX-Request-Id: {}\r\n\r\n{}",
+        web_http_reason(status),
+        body.len(),
+        request_id,
+        body
+    )
+    .into_bytes()
+}
+
+fn web_route_path_is_valid(value: &str) -> bool {
+    if value == "/" {
+        return true;
+    }
+    if value.is_empty() || !value.starts_with('/') || value.len() > MAX_STATIC_ASSET_PATH_BYTES {
+        return false;
+    }
+    let parts = value.split('/').collect::<Vec<_>>();
+    for (index, part) in parts.iter().enumerate() {
+        if part.is_empty() && index != 0 {
+            return false;
+        }
+        match part.strip_prefix(':') {
+            Some(name) if name.is_empty() || name.contains(':') || name.contains('*') => {
+                return false;
+            }
+            _ => {}
+        }
+        match part.strip_prefix('*') {
+            Some(name) if index != parts.len() - 1 || name.is_empty() || name.contains(':') => {
+                return false;
+            }
+            _ => {}
+        }
+        if part.contains("..") || (part.contains('*') && !part.starts_with('*')) {
+            return false;
+        }
+    }
+    true
+}
+
+fn web_validate_routes(
+    routes: &[Value],
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    for route in routes {
+        let Value::Map(route) = route else {
+            return Err("web_serve route entries must be maps".into());
+        };
+        match route.get("method") {
+            Some(Value::Text(value))
+                if !value.is_empty()
+                    && value
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || b"-".contains(&byte)) => {}
+            _ => return Err("web_serve route method must be a valid non-empty token".into()),
+        }
+        match route.get("path") {
+            Some(Value::Text(value)) if web_route_path_is_valid(value) => {}
+            _ => return Err("web_serve route path must be a safe absolute path".into()),
+        }
+        match route.get("handler") {
+            Some(Value::Callable(_)) => {}
+            Some(Value::Text(name)) if funcs.contains_key(name) => {}
+            Some(Value::Text(name)) => {
+                return Err(format!("web_serve handler not found: {name}"));
+            }
+            _ => return Err("web_serve route handler must be a function or function name".into()),
+        }
+    }
+    Ok(())
+}
+
+fn web_serve_on_listener(
+    listener: TcpListener,
+    routes: &[Value],
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+    max_requests: Option<usize>,
+) -> Result<Value, String> {
+    web_validate_routes(routes, funcs)?;
+    listener
+        .set_nonblocking(true)
+        .map_err(|error| format!("web_serve failed to configure listener: {error}"))?;
+    let address = listener
+        .local_addr()
+        .map_err(|error| format!("web_serve failed to read bound address: {error}"))?;
+    let mut served = 0usize;
+    loop {
+        if let Some(limit) = max_requests {
+            if served >= limit {
+                break;
+            }
+        }
+        let (mut stream, _) = match listener.accept() {
+            Ok(connection) => connection,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(10));
+                continue;
+            }
+            Err(error) => return Err(format!("web_serve failed to accept: {error}")),
+        };
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("web_serve failed to set read timeout: {error}"))?;
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("web_serve failed to set write timeout: {error}"))?;
+        let response_bytes = match web_parse_request(&mut stream) {
+            Ok((method, path, headers, body)) => {
+                let request_id = web_request_id(&headers);
+                let mut matched_path = false;
+                let mut response = None;
+                for route in routes {
+                    let Value::Map(route) = route else {
+                        return Err("web_serve route entries must be maps".into());
+                    };
+                    let route_method = match route.get("method") {
+                        Some(Value::Text(value)) => value,
+                        _ => return Err("web_serve route method must be text".into()),
+                    };
+                    let route_path = match route.get("path") {
+                        Some(Value::Text(value)) => value,
+                        _ => return Err("web_serve route path must be text".into()),
+                    };
+                    let Some(params) = web_path_matches(route_path, &path) else {
+                        continue;
+                    };
+                    matched_path = true;
+                    if route_method != &method {
+                        continue;
+                    }
+                    let handler = match route.get("handler") {
+                        Some(Value::Callable(function)) => function.clone(),
+                        Some(Value::Text(name)) => funcs
+                            .get(name)
+                            .cloned()
+                            .ok_or_else(|| format!("web_serve handler not found: {name}"))?,
+                        _ => {
+                            return Err(
+                                "web_serve route handler must be a function or function name"
+                                    .into(),
+                            )
+                        }
+                    };
+                    let mut request = HashMap::new();
+                    request.insert("method".into(), Value::Text(method.clone()));
+                    request.insert("path".into(), Value::Text(path.clone()));
+                    request.insert("body".into(), Value::Text(body.clone()));
+                    request.insert("request_id".into(), Value::Text(request_id.clone()));
+                    request.insert(
+                        "headers".into(),
+                        Value::Map(
+                            headers
+                                .iter()
+                                .map(|(key, value)| (key.clone(), Value::Text(value.clone())))
+                                .collect(),
+                        ),
+                    );
+                    request.insert("params".into(), Value::Map(params));
+                    response = Some(
+                        match call_function_with_context(
+                            &handler,
+                            vec![Value::Map(request)],
+                            funcs,
+                            context,
+                        ) {
+                            Ok(result) => {
+                                web_response_value(result, &request_id).unwrap_or_else(|_| {
+                                    web_error_response(500, "handler_error", &request_id)
+                                })
+                            }
+                            Err(_) => web_error_response(500, "handler_error", &request_id),
+                        },
+                    );
+                    break;
+                }
+                response.unwrap_or_else(|| {
+                    if matched_path {
+                        web_error_response(405, "method_not_allowed", &request_id)
+                    } else {
+                        web_error_response(404, "not_found", &request_id)
+                    }
+                })
+            }
+            Err(_error) => web_error_response(400, "bad_request", &web_request_id(&HashMap::new())),
+        };
+        let _ = stream.write_all(&response_bytes);
+        served += 1;
+    }
+    Ok(map_value([
+        ("address".into(), Value::Text(address.to_string())),
+        ("served".into(), Value::Number(served as i64)),
+    ]))
+}
+
+fn web_serve_with_context(
+    args: &[Value],
+    funcs: &HashMap<String, Rc<Function>>,
+    context: &mut ExecutionContext,
+) -> Result<Value, String> {
+    if args.len() != 2 && args.len() != 3 {
+        return Err("web_serve expects routes, port, and optional max_requests".into());
+    }
+    let Value::List(routes) = &args[0] else {
+        return Err("web_serve expects a list of route maps".into());
+    };
+    if routes.is_empty() || routes.len() > 1024 {
+        return Err("web_serve expects between 1 and 1024 routes".into());
+    }
+    let port = match &args[1] {
+        Value::Number(value) if (0..=u16::MAX as i64).contains(value) => *value as u16,
+        _ => return Err("web_serve expects a numeric port from 0 to 65535".into()),
+    };
+    let max_requests = match args.get(2) {
+        None => None,
+        Some(Value::Number(value)) if *value > 0 => Some(*value as usize),
+        Some(Value::Number(0)) => None,
+        _ => return Err("web_serve max_requests must be a non-negative number".into()),
+    };
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .map_err(|error| format!("web_serve failed to bind: {error}"))?;
+    web_serve_on_listener(listener, routes, funcs, context, max_requests)
 }
 
 fn percent_encode(value: &str) -> String {
@@ -2515,6 +3107,9 @@ fn ast_expression_with_context_inner(
                         .iter()
                         .map(|argument| argument.value.clone())
                         .collect::<Vec<_>>();
+                    if name == "web_serve" {
+                        return web_serve_with_context(&positional, funcs, context);
+                    }
                     if let Some(value) = super::direct_builtin_with_context(
                         name,
                         positional.clone(),
@@ -4210,9 +4805,10 @@ pub(crate) fn execute_lines_with_context(
 mod tests {
     use super::{
         configuration_path, direct_builtin, direct_external_builtin, direct_io_builtin,
-        execute_ast_program, execute_lines, http_serve_once, json_to_value,
-        require_capability_for_mode, validate_network_destination_for_mode, value_to_json,
-        MAX_HTTP_REQUEST_BYTES,
+        execute_ast_program, execute_ast_program_with_context, execute_lines, http_serve_once,
+        json_to_value, require_capability_for_mode, validate_network_destination_for_mode,
+        value_to_json, web_path_matches, web_route_path_is_valid, web_serve_on_listener,
+        web_validate_routes, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
@@ -4220,11 +4816,15 @@ mod tests {
     use std::{
         collections::HashMap,
         fs,
+        io::{Read, Write},
+        net::{TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
         process::Command,
         rc::Rc,
         sync::atomic::Ordering,
+        thread,
+        time::Duration,
     };
 
     #[test]
@@ -5141,6 +5741,107 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
     }
 
     #[test]
+    fn web_static_assets_are_typed_and_confined() {
+        let root = std::env::temp_dir().join(format!(
+            "zap-web-assets-{}-{}",
+            std::process::id(),
+            super::ATOMIC_WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let assets = root.join("assets");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&assets).expect("asset fixture directory should be created");
+        fs::write(root.join("index.html"), "<h1>Zap</h1>").expect("HTML fixture should be written");
+        fs::write(assets.join("app.css"), ".app { color: blue; }")
+            .expect("CSS fixture should be written");
+        fs::write(assets.join("app.js"), "console.log('Zap');")
+            .expect("JavaScript fixture should be written");
+        fs::write(assets.join("secret.bin"), [0_u8, 1_u8, 2_u8])
+            .expect("unsupported fixture should be written");
+        let root_text = root.to_string_lossy().into_owned();
+        let value = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("index.html".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("static builtin should not fail")
+        .expect("static builtin should return a value");
+        let Value::Map(index) = value else {
+            panic!("web_static must return a response map");
+        };
+        assert_eq!(index.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            index.get("content_type"),
+            Some(&Value::Text("text/html; charset=utf-8".into()))
+        );
+        assert_eq!(index.get("body"), Some(&Value::Text("<h1>Zap</h1>".into())));
+
+        let css = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/app.css".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("CSS static builtin should not fail")
+        .expect("CSS static builtin should return a value");
+        let Value::Map(css) = css else {
+            panic!("CSS response must be a map");
+        };
+        assert_eq!(css.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            css.get("content_type"),
+            Some(&Value::Text("text/css; charset=utf-8".into()))
+        );
+
+        let missing = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/missing.js".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("missing asset should return a response")
+        .expect("missing asset response should exist");
+        let Value::Map(missing) = missing else {
+            panic!("missing asset response must be a map");
+        };
+        assert_eq!(missing.get("status"), Some(&Value::Number(404)));
+
+        let unsupported = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/secret.bin".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("unsupported asset should return a response")
+        .expect("unsupported asset response should exist");
+        let Value::Map(unsupported) = unsupported else {
+            panic!("unsupported asset response must be a map");
+        };
+        assert_eq!(unsupported.get("status"), Some(&Value::Number(404)));
+        assert!(direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("../outside.html".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .is_err());
+        assert!(direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/%2e%2e/outside.js".into()),
+                Value::Text(root_text),
+            ],
+        )
+        .is_err());
+        fs::remove_dir_all(root).expect("asset fixture should be removed");
+    }
+
+    #[test]
     fn evaluates_configuration_builtins_from_native_ast() {
         let program = parse_program(
             "let fallback: text = env_get(\"ZAP_TEST_MISSING_ENV\", \"fallback\")\nlet directory: text = config_dir()\nlet file: text = config_path(\"settings.json\")\n",
@@ -5170,6 +5871,164 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         assert!(http_serve_once(&[Value::Number(0), Value::Number(1)]).is_err());
         let oversized = "x".repeat(super::MAX_HTTP_RESPONSE_BYTES + 1);
         assert!(http_serve_once(&[Value::Number(0), Value::Text(oversized)]).is_err());
+    }
+
+    #[test]
+    fn native_web_route_validation_rejects_unsafe_definitions() {
+        let funcs = HashMap::<String, Rc<Function>>::new();
+        let route = |method: &str, path: &str, handler: &str| {
+            Value::Map(
+                [
+                    ("method".into(), Value::Text(method.into())),
+                    ("path".into(), Value::Text(path.into())),
+                    ("handler".into(), Value::Text(handler.into())),
+                ]
+                .into_iter()
+                .collect(),
+            )
+        };
+        assert!(web_validate_routes(&[route("GET", "/", "home")], &funcs).is_err());
+        assert!(web_validate_routes(&[route("GET\n", "/", "home")], &funcs).is_err());
+        assert!(web_validate_routes(&[route("GET", "/../secret", "home")], &funcs).is_err());
+        assert!(web_route_path_is_valid("/assets/*path"));
+        assert!(!web_route_path_is_valid("/assets/*path/more"));
+        assert!(!web_route_path_is_valid("/assets/*"));
+        let nested = web_path_matches("/assets/*path", "/assets/chunks/app.js")
+            .expect("wildcard asset path should match");
+        assert_eq!(
+            nested.get("path"),
+            Some(&Value::Text("chunks/app.js".into()))
+        );
+        assert!(web_path_matches("/assets/*path", "/assets").is_none());
+
+        let home = Rc::new(Function {
+            visibility: "public".into(),
+            params: Vec::new(),
+            return_annotation: None,
+            is_async: false,
+            body: Vec::new(),
+            ast_body: None,
+            closure: crate::EnvFrame::from_map(&HashMap::new()),
+        });
+        let funcs = [("home".into(), home)].into_iter().collect();
+        assert!(web_validate_routes(&[route("GET", "/", "missing")], &funcs).is_err());
+        assert!(web_validate_routes(&[route("GET", "/", "home")], &funcs).is_ok());
+        assert!(web_validate_routes(&[route("GET", "/assets/*path", "home")], &funcs).is_ok());
+    }
+
+    #[test]
+    fn native_web_server_handles_requests_and_isolates_handler_errors() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("test listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("test listener address should be available")
+            .port();
+        let server = thread::spawn(move || -> Result<(String, i64), String> {
+            let program = parse_program(
+                r#"fn home(request):
+    return {"status": 200, "body": json({"path": request["path"], "request_id": request["request_id"], "body": request["body"]})}
+fn user(request):
+    return {"status": 200, "body": json({"id": request["params"]["id"]})}
+fn boom(request):
+    raise "handler failure"
+fn reserved(request):
+    return {"status": 200, "headers": {"Content-Length": "1"}, "body": "unsafe"}
+let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET", "path": "/users/:id", "handler": "user"}, {"method": "GET", "path": "/boom", "handler": "boom"}, {"method": "GET", "path": "/reserved", "handler": "reserved"}]
+"#,
+            )
+            .expect("native Web test program should parse");
+            let mut vars = HashMap::<String, Value>::new();
+            let mut funcs = HashMap::<String, Rc<Function>>::new();
+            let mut context = ExecutionContext::new();
+            execute_ast_program_with_context(
+                &program,
+                &mut vars,
+                &mut funcs,
+                &mut context,
+                Path::new("."),
+            )
+            .expect("native Web test program should execute");
+            let Value::List(routes) = vars.remove("routes").expect("route table should exist")
+            else {
+                panic!("route table should be a list");
+            };
+            let result = web_serve_on_listener(listener, &routes, &funcs, &mut context, Some(8))
+                .map_err(|error| format!("native Web test server failed: {error}"))?;
+            let Value::Map(fields) = result else {
+                return Err("native Web test server result should be a map".into());
+            };
+            let Value::Text(address) = fields
+                .get("address")
+                .cloned()
+                .ok_or_else(|| "native Web result must contain address".to_string())?
+            else {
+                return Err("native Web result address should be text".into());
+            };
+            let Value::Number(served) = fields
+                .get("served")
+                .cloned()
+                .ok_or_else(|| "native Web result must contain served".to_string())?
+            else {
+                return Err("native Web result served should be numeric".into());
+            };
+            Ok((address, served))
+        });
+
+        let request = |raw: &str| {
+            let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("server should accept");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .expect("test response timeout should be configurable");
+            stream
+                .write_all(raw.as_bytes())
+                .expect("test request should be written");
+            let mut response = String::new();
+            stream
+                .read_to_string(&mut response)
+                .expect("test response should be readable");
+            response
+        };
+
+        let root =
+            request("GET / HTTP/1.1\r\nHost: localhost\r\nX-Request-Id: test-request\r\n\r\n");
+        assert!(root.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(root.contains("X-Request-Id: test-request\r\n"));
+        assert!(root.contains(r#""path":"/""#));
+        assert!(root.contains(r#""request_id":"test-request""#));
+
+        let user = request("GET /users/42?view=summary HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(user.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(user.contains(r#""id":"42""#));
+
+        let missing = request("GET /missing HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(missing.starts_with("HTTP/1.1 404 Not Found\r\n"));
+        assert!(missing.contains(r#""error":"not_found""#));
+
+        let method = request("POST / HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(method.starts_with("HTTP/1.1 405 Method Not Allowed\r\n"));
+
+        let traversal = request("GET /bad.. HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(traversal.starts_with("HTTP/1.1 400 Bad Request\r\n"));
+
+        let oversized = request(&format!(
+            "POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: {}\r\n\r\n",
+            MAX_HTTP_REQUEST_BYTES + 1
+        ));
+        assert!(oversized.starts_with("HTTP/1.1 400 Bad Request\r\n"));
+
+        let handler_error = request("GET /boom HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(handler_error.starts_with("HTTP/1.1 500 Internal Server Error\r\n"));
+        assert!(handler_error.contains(r#""error":"handler_error""#));
+
+        let reserved_header = request("GET /reserved HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(reserved_header.starts_with("HTTP/1.1 500 Internal Server Error\r\n"));
+        assert!(reserved_header.contains(r#""error":"handler_error""#));
+
+        let (_, served) = server
+            .join()
+            .expect("native Web test server should join")
+            .expect("native Web test server should complete");
+        assert_eq!(served, 8);
     }
 
     #[test]

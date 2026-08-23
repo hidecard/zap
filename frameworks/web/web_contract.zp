@@ -1,0 +1,30 @@
+# Reusable Framework Web contract module.
+# This module is deterministic and performs no network I/O.
+
+export fn response(status, body, headers):
+    return {"status": status, "content_type": "application/json", "headers": headers, "body": body}
+
+export fn security_headers():
+    return {"x-content-type-options": "nosniff", "cache-control": "no-store"}
+
+export fn normalize_request(method, path, body, request_id):
+    let normalized_method = upper(trim(method))
+    let path_ok = starts_with(path, "/") and not contains(path, "..") and len(path) <= 2048
+    let method_ok = normalized_method == "GET" or normalized_method == "POST"
+    let body_ok = len(body) <= 65536
+    let id_ok = len(request_id) > 0 and len(request_id) <= 128
+    return {"method": normalized_method, "path": path, "body": body, "request_id": request_id, "path_ok": path_ok, "method_ok": method_ok, "body_ok": body_ok, "id_ok": id_ok, "valid": path_ok and body_ok and id_ok}
+
+export fn route(request):
+    let headers = security_headers()
+    if not request["valid"]:
+        return response(400, json({"error": "invalid_request", "request_id": request["request_id"]}), headers)
+    if not request["method_ok"]:
+        return response(405, json({"error": "method_not_allowed", "request_id": request["request_id"]}), headers)
+    if request["method"] == "GET" and request["path"] == "/":
+        return response(200, json({"message": "Hello from Zap Web", "request_id": request["request_id"]}), headers)
+    if request["method"] == "GET" and request["path"] == "/health":
+        return response(200, json({"status": "ok"}), headers)
+    if request["method"] == "POST" and request["path"] == "/echo":
+        return response(200, json({"echo": request["body"], "request_id": request["request_id"]}), headers)
+    return response(404, json({"error": "not_found", "request_id": request["request_id"]}), headers)

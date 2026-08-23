@@ -1,6 +1,6 @@
 [package]
 name = "zap-native"
-version = "2.2.6"
+version = "2.2.7"
 edition = "2021"
 description = "Standalone native runtime for Zap"
 
@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 serde_json = "1"
 sha2 = "0.10"
+rusqlite = { version = "0.31", features = ["bundled"] }
 ureq = { version = "=2.12.1", default-features = false, features = ["tls"] }
 
 [dev-dependencies]

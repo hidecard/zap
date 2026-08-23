@@ -1,5 +1,65 @@
-use web
+# Framework Web API contract starter
+# This sample is deterministic and does not open a network socket.
+# A host adapter may translate a bounded HTTP request into this contract.
 
-app = web.app "hello-web"
-app.get "/" => "Hello from Zap Web"
-app.listen 8080
+import "web_contract"
+import "api_contract"
+import "dto_contract"
+import "database_contract"
+import "database_adapter"
+import "auth_contract"
+import "rate_limit_contract"
+import "frontend_contract"
+
+let home = route(normalize_request(" get ", "/", "", "req-home"))
+let health = route(normalize_request("GET", "/health", "", "req-health"))
+let echo = route(normalize_request("POST", "/echo", "hello", "req-echo"))
+let missing = route(normalize_request("GET", "/missing", "", "req-missing"))
+let traversal = route(normalize_request("GET", "/../secret", "", "req-bad-path"))
+let unsupported = route(normalize_request("DELETE", "/", "", "req-delete"))
+
+let read_auth = auth_context(true, "user-1", ["users:read"])
+let write_auth = auth_context(true, "user-1", ["users:write"])
+let no_auth = auth_context(false, "", [])
+let initial_limit = new_rate_limit("subject:user-1", 2, 1000, 1000, 0)
+let get_user = get_user_api({"request_id": "api-get", "user_id": 1}, read_auth, initial_limit, 1000)
+let create_user = create_user_api({"request_id": "api-create", "body": {"name": "Bob", "email": "BOB@EXAMPLE.COM"}}, write_auth, get_user["rate_state"], 1000)
+let limited = get_user_api({"request_id": "api-limited", "user_id": 1}, read_auth, create_user["rate_state"], 1000)
+let unauthenticated = get_user_api({"request_id": "api-unauth", "user_id": 1}, no_auth, new_rate_limit("guest", 5, 1000, 1000, 0), 1000)
+let forbidden = create_user_api({"request_id": "api-forbidden", "body": {"name": "Eve", "email": "eve@example.com"}}, read_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
+let invalid_body = create_user_api({"request_id": "api-invalid", "body": {"name": 7, "email": "bad"}}, write_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
+let missing_user = get_user_api({"request_id": "api-missing", "user_id": 99}, read_auth, new_rate_limit("subject:user-1", 5, 1000, 1000, 0), 1000)
+let database = adapter_info()
+let lookup_spec = user_lookup_spec(1)
+let insert_spec = insert_user_spec(" Bob ", "BOB@EXAMPLE.COM")
+let user_dto = user_row_dto({"id": 1, "name": "Ada", "email": "ADA@EXAMPLE.COM", "internal": "hidden"})
+let frontend_manifest = frontend_asset_manifest()
+let frontend_index = frontend_index({"request_id": "frontend-index"})
+let frontend_css = frontend_asset({"params": {"path": "app.css"}, "request_id": "frontend-css"})
+let frontend_js = frontend_asset({"params": {"path": "app.js"}, "request_id": "frontend-js"})
+
+assert(home["status"] == 200, "root route must return 200")
+assert(health["body"] == "{\"status\":\"ok\"}", "health response must be deterministic")
+assert(echo["status"] == 200, "echo route must return 200")
+assert(missing["status"] == 404, "unknown route must return 404")
+assert(traversal["status"] == 400, "path traversal must be rejected")
+assert(unsupported["status"] == 405, "unsupported method must be rejected")
+assert(home["headers"]["x-content-type-options"] == "nosniff", "security headers must be present")
+assert(get_user["response"]["status"] == 200, "database read API must return 200")
+assert(create_user["response"]["status"] == 201, "database insert API must return 201")
+assert(limited["response"]["status"] == 429, "rate limit must return 429")
+assert(unauthenticated["response"]["status"] == 401, "missing identity must return 401")
+assert(forbidden["response"]["status"] == 403, "missing scope must return 403")
+assert(invalid_body["response"]["status"] == 400, "invalid DTO must return 400")
+assert(missing_user["response"]["status"] == 404, "missing database row must return 404")
+assert(database["query_mode"] == "parameterized", "database adapter must be parameterized")
+assert(lookup_spec["parameters"][0] == 1, "lookup parameters must be explicit")
+assert(insert_spec["parameters"][1] == "bob@example.com", "insert DTO must normalize email")
+assert(user_dto["value"]["email"] == "ada@example.com", "row DTO must normalize public email")
+assert(not contains(keys(user_dto["value"]), "internal"), "row DTO must not expose internal fields")
+assert(frontend_manifest["node_required"] == false, "browser integration must not require Node at runtime")
+assert(frontend_index["status"] == 200, "frontend HTML must be served")
+assert(frontend_css["content_type"] == "text/css; charset=utf-8", "frontend CSS content type must be explicit")
+assert(frontend_js["content_type"] == "text/javascript; charset=utf-8", "frontend JavaScript content type must be explicit")
+
+say json({"framework": "web", "contract": "api-dto-database-query-dto-auth-rate-limit-frontend", "frontend": frontend_manifest, "home": home, "get_user": get_user["response"], "create_user": create_user["response"], "limited": limited["response"], "unauthenticated": unauthenticated["response"], "forbidden": forbidden["response"], "invalid_body": invalid_body["response"], "missing_user": missing_user["response"]})

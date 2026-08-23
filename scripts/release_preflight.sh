@@ -207,6 +207,61 @@ check_release_files() {
     vscode-extension/README_MM.md
     docs/ASYNC_LSP_EN.md
     docs/ASYNC_LSP_MM.md
+    docs/FRAMEWORK_EN.md
+    docs/FRAMEWORK_MM.md
+    docs/WEB_FRAMEWORK_EN.md
+    docs/WEB_FRAMEWORK_MM.md
+    docs/ZAP_HOST_EN.md
+    docs/ZAP_HOST_MM.md
+    docs/ZAP_HOST_QUICKSTART_EN.md
+    docs/ZAP_HOST_QUICKSTART_MM.md
+    docs/ZAP_WEB_NATIVE_EN.md
+    docs/ZAP_WEB_NATIVE_MM.md
+    host/zap-host/.env.example
+    host/zap-host/Cargo.toml
+    host/zap-host/Cargo.lock
+    host/zap-host/README.md
+    host/zap-host/src/lib.rs
+    host/zap-host/src/main.rs
+    host/zap-host/tests/http_contract.rs
+    deploy/zap-host.service
+    deploy/zap-host.nginx.conf
+    deploy/zap-host-deployment-policy.toml
+    deploy/zap-host.env.example
+    scripts/validate_zap_host_deployment.sh
+    scripts/validate_framework_starters.sh
+    frameworks/README.md
+    frameworks/web/README.md
+    frameworks/web/zap.toml
+    frameworks/web/zap.lock
+    frameworks/web/main.zp
+    frameworks/web/web_contract.zp
+    frameworks/web/web_contract_test.zp
+    frameworks/web/api_contract.zp
+    frameworks/web/api_contract_test.zp
+    frameworks/web/dto_contract.zp
+    frameworks/web/database_contract.zp
+    frameworks/web/database_adapter.zp
+    frameworks/web/database_adapter_test.zp
+    frameworks/web/frontend_contract.zp
+    frameworks/web/frontend_contract_test.zp
+    frameworks/web/public/index.html
+    frameworks/web/public/assets/app.css
+    frameworks/web/public/assets/app.js
+    frameworks/web/auth_contract.zp
+    frameworks/web/rate_limit_contract.zp
+    frameworks/mobile/README.md
+    frameworks/mobile/zap.toml
+    frameworks/mobile/zap.lock
+    frameworks/mobile/main.zp
+    frameworks/ai/README.md
+    frameworks/ai/zap.toml
+    frameworks/ai/zap.lock
+    frameworks/ai/main.zp
+    frameworks/iot/README.md
+    frameworks/iot/zap.toml
+    frameworks/iot/zap.lock
+    frameworks/iot/main.zp
     scripts/validate_spec_ownership.sh
     scripts/validate_release_version.sh
     scripts/test_validate_release_version.sh
@@ -256,6 +311,11 @@ check_documentation_pairs() {
     'docs/REGISTRY_AUTH_EN.md:docs/REGISTRY_AUTH_MM.md'
     'docs/V2.1_ROADMAP_EN.md:docs/V2.1_ROADMAP_MM.md'
     'docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md:docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md'
+    'docs/FRAMEWORK_EN.md:docs/FRAMEWORK_MM.md'
+    'docs/WEB_FRAMEWORK_EN.md:docs/WEB_FRAMEWORK_MM.md'
+    'docs/ZAP_HOST_EN.md:docs/ZAP_HOST_MM.md'
+    'docs/ZAP_HOST_QUICKSTART_EN.md:docs/ZAP_HOST_QUICKSTART_MM.md'
+    'docs/ZAP_WEB_NATIVE_EN.md:docs/ZAP_WEB_NATIVE_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
@@ -341,6 +401,14 @@ run_optional_cargo_checks() {
   pass "cargo check passed"
   cargo test --manifest-path native/Cargo.toml --all-targets --all-features
   pass "native test suite passed"
+  cargo fmt --manifest-path host/zap-host/Cargo.toml -- --check
+  pass "zap-host cargo fmt check passed"
+  cargo clippy --manifest-path host/zap-host/Cargo.toml --all-targets --all-features -- -D warnings
+  pass "zap-host strict cargo clippy passed"
+  cargo check --manifest-path host/zap-host/Cargo.toml --all-targets --all-features
+  pass "zap-host cargo check passed"
+  cargo test --manifest-path host/zap-host/Cargo.toml --all-targets
+  pass "zap-host test suite passed"
 }
 
 run_contract_validation() {
@@ -355,6 +423,10 @@ run_contract_validation() {
 
   bash scripts/test_validate_documentation_consistency.sh
   pass "documentation consistency regression validation passed"
+
+  ZAP_FRAMEWORK_DOCS_ONLY=1 \
+    bash scripts/validate_framework_starters.sh
+  pass "Framework starter static contract validation passed"
 
   ZAP_SPEC_OWNERSHIP_REPORT="$report_dir/spec-ownership.tsv" \
     bash scripts/validate_spec_ownership.sh

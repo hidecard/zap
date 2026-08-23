@@ -1,7 +1,8 @@
 [package]
-name = "iot-device"
+name = "zap-framework-iot-contract"
 version = "0.1.0"
-framework = "zap-iot"
+main = "main.zp"
+framework = "Framework"
+status = "contract-prototype"
 
 [dependencies]
-zap-iot = "0.1"

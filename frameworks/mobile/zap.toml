@@ -1,7 +1,8 @@
 [package]
-name = "mobile-app"
+name = "zap-framework-app-contract"
 version = "0.1.0"
-framework = "zap-mobile"
+main = "main.zp"
+framework = "Framework"
+status = "contract-prototype"
 
 [dependencies]
-zap-mobile = "0.1"

@@ -1,0 +1,44 @@
+[Unit]
+Description=Zap Web host adapter
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=zap-host
+Group=zap-host
+DynamicUser=yes
+EnvironmentFile=-/etc/zap/zap-host.env
+ExecStart=/usr/local/bin/zap-host
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=35s
+KillMode=control-group
+
+# Least privilege and filesystem confinement.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+UMask=0077
+
+# Bounded resource usage. Adjust only with measured evidence.
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=128
+LimitNOFILE=2048
+
+# The adapter listens on loopback; a controlled ingress proxy terminates TLS.
+# If a real repository uses a remote database, replace this loopback-only
+# egress policy with the exact database/service allowlist for that deployment.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+
+[Install]
+WantedBy=multi-user.target

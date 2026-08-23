@@ -1,7 +1,21 @@
-use mobile
+# Framework App contract starter
+# This sample models app state and navigation without opening a native window.
 
-app = mobile.app "hello-mobile"
-app.screen "Home" {
-    text "Hello from Zap Mobile"
-}
-app.start
+fn app_model(name, initial_route, screens, actions):
+    return {"name": name, "initial_route": initial_route, "screens": screens, "actions": actions}
+
+fn navigate(app, route):
+    if contains(app["screens"], route):
+        return {"ok": true, "route": route, "error": ""}
+    return {"ok": false, "route": app["initial_route"], "error": "route not found"}
+
+let app = app_model("hello-mobile", "Home", ["Home", "Settings"], ["open_settings", "close_settings"])
+let home = navigate(app, "Home")
+let unknown = navigate(app, "Missing")
+
+assert(home["ok"], "initial route must be available")
+assert(home["route"] == "Home", "initial route must be Home")
+assert(not unknown["ok"], "unknown route must be rejected")
+assert(unknown["route"] == "Home", "rejected navigation must keep the initial route")
+
+say json({"framework": "app", "contract": "app-state-navigation", "app": app, "home": home, "unknown": unknown})

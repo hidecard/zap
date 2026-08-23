@@ -1,3 +1,9 @@
+## v2.2.7
+
+- Remediated the six RustSec advisories present on the Framework branch by updating the native dependency graph to the clean v2.2.6 security baseline.
+- Updated the Framework branch to Rust 1.88.0, added native/host RustSec CI gates, and fixed rcgen 0.13 TLS test compatibility.
+- Added the Zap-native Framework starter validation and synchronized release-facing documentation.
+
 # Zap Changelog
 
 ## [Unreleased]

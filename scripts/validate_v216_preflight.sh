@@ -5,7 +5,7 @@ python3 - <<'PY'
 from pathlib import Path
 text = Path('.github/workflows/ci.yml').read_text()
 required = [
-    'toolchain: 1.75.0',
+    'toolchain: 1.88.0',
     'typecheck_p0_conformance_matrix_tc001_to_tc005',
     'typecheck_p1_conformance_tc006_to_tc008',
     'typecheck_p1_conformance_tc009_conditional_expression',
@@ -17,6 +17,8 @@ if missing:
     raise SystemExit(f'missing CI contract entries: {missing}')
 print('CI contract entries: passed')
 PY
+cargo audit --file native/Cargo.lock
+cargo audit --file host/zap-host/Cargo.lock
 cargo fmt --manifest-path native/Cargo.toml --all -- --check
 cargo test --manifest-path native/Cargo.toml --test core typecheck_p0_conformance_matrix_tc001_to_tc005 --all-features -- --exact --nocapture
 cargo test --manifest-path native/Cargo.toml --test core typecheck_p1_conformance_tc006_to_tc008 --all-features -- --exact --nocapture

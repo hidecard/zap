@@ -1,6 +1,6 @@
 # Zap Async Boundaries
 
-**Status:** Normative runtime-boundary guidance for Zap v2.2.6
+**Status:** Normative runtime-boundary guidance for Zap v2.2.7
 
 ## Purpose
 
@@ -46,7 +46,7 @@ The matrix also runs `scripts/test_platform_archive.sh` on every runner. That re
 
 ## Stability rules
 
-The deterministic executor, eager language async scheduled-value contract, and context-owned language scheduling boundary are the stable baseline for v2.2.6. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim lazy continuation, parallel scheduling, or production non-blocking I/O until the corresponding semantic and reactor/platform gates exist.
+The deterministic executor, eager language async scheduled-value contract, and context-owned language scheduling boundary are the stable baseline for v2.2.7. New APIs must identify whether they are deterministic-only, reactor-backed, or blocking-adapted. Documentation and diagnostics must use those same terms. No release note or benchmark may claim lazy continuation, parallel scheduling, or production non-blocking I/O until the corresponding semantic and reactor/platform gates exist.
 
 A future production implementation must add, at minimum:
 

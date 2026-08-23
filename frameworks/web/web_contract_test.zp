@@ -1,0 +1,21 @@
+import "web_contract"
+
+let root = route(normalize_request("GET", "/", "", "test-root"))
+let health = route(normalize_request("GET", "/health", "", "test-health"))
+let echo = route(normalize_request("POST", "/echo", "payload", "test-echo"))
+let bad_path = route(normalize_request("GET", "/../secret", "", "test-path"))
+let bad_method = route(normalize_request("PATCH", "/", "", "test-method"))
+let bad_id = route(normalize_request("GET", "/", "", ""))
+
+assert(root["status"] == 200, "root route contract failed")
+assert(health["status"] == 200, "health route contract failed")
+assert(echo["status"] == 200, "echo route contract failed")
+assert(bad_path["status"] == 400, "path traversal contract failed")
+assert(bad_method["status"] == 405, "method policy contract failed")
+assert(bad_id["status"] == 400, "request id validation contract failed")
+assert(root["content_type"] == "application/json", "response content type contract failed")
+assert(root["headers"]["cache-control"] == "no-store", "cache policy contract failed")
+let normalized = normalize_request(" get ", "/", "", "case")
+assert(normalized["method"] == "GET", "method normalization failed")
+
+say "Web contract test passed"

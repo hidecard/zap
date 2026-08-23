@@ -414,6 +414,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("write_lines", "filesystem"),
     stable_builtin!("file_metadata", "filesystem"),
     stable_builtin!("atomic_write", "filesystem"),
+    stable_builtin!("web_static", "filesystem"),
     stable_builtin!("json", "json"),
     stable_builtin!("from_json", "json"),
     stable_builtin!("from_json_typed", "json"),
@@ -447,6 +448,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("http_get", "network"),
     stable_builtin!("http_request", "network"),
     stable_builtin!("http_serve_once", "network"),
+    stable_builtin!("web_serve", "network"),
     stable_builtin!("process_run", "process"),
 ];
 
@@ -517,6 +519,9 @@ mod tests {
         }
 
         let mut builtin_names = BTreeSet::new();
+        assert!(PUBLIC_BUILTINS
+            .iter()
+            .any(|builtin| builtin.name == "web_static" && builtin.domain == "filesystem"));
         for builtin in PUBLIC_BUILTINS {
             assert!(
                 builtin_names.insert(builtin.name),

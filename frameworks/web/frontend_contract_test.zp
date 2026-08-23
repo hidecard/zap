@@ -1,0 +1,27 @@
+import "frontend_contract"
+
+let manifest = frontend_asset_manifest()
+let routes = frontend_routes()
+let index = frontend_index({"request_id": "frontend-index"})
+let css = frontend_asset({"params": {"path": "app.css"}, "request_id": "frontend-css"})
+let js = frontend_asset({"params": {"path": "app.js"}, "request_id": "frontend-js"})
+let api = frontend_tasks_api({"request_id": "frontend-api"})
+
+assert(manifest["runtime"] == "browser", "frontend assets must execute in the browser")
+assert(manifest["node_required"] == false, "Node must not be required at runtime")
+assert(manifest["root"] == "public", "asset root must be explicit")
+assert(len(manifest["files"]) == 3, "asset manifest must list HTML, CSS, and JS")
+assert(len(routes) == 3, "frontend contract must expose page, asset, and API routes")
+assert(routes[1]["path"] == "/assets/*path", "asset route must allow nested bundle paths")
+assert(index["status"] == 200, "HTML entrypoint must be served")
+assert(index["content_type"] == "text/html; charset=utf-8", "HTML content type must be explicit")
+assert(contains(index["body"], "Zap Web Tasks"), "HTML entrypoint must contain the app title")
+assert(css["status"] == 200, "CSS asset must be served")
+assert(css["content_type"] == "text/css; charset=utf-8", "CSS content type must be explicit")
+assert(contains(css["body"], ".task-list"), "CSS asset must contain task UI styles")
+assert(js["status"] == 200, "JavaScript asset must be served")
+assert(js["content_type"] == "text/javascript; charset=utf-8", "JavaScript content type must be explicit")
+assert(contains(js["body"], "fetch(\"/api/tasks\""), "JavaScript must consume the Zap JSON API")
+assert(api["status"] == 200, "frontend API must return 200")
+assert(len(api["body"]) > 0, "frontend API must return a JSON body")
+say "Zap frontend contract test passed"

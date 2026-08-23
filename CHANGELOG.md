@@ -1,3 +1,7 @@
+## v2.2.7
+
+- Framework dependency/security remediation, RustSec CI coverage, host adapter lint fixes, and release metadata synchronization.
+
 # Zap Change Log
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။

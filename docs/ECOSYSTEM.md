@@ -1,6 +1,6 @@
 # Zap Ecosystem Architecture
 
-Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ လက်ရှိ project ဦးစားပေးသည် **Zap native language core** ဖြစ်ပြီး Web၊ Mobile၊ AI နှင့် IoT frameworks များကို core နှင့် package tooling တည်ငြိမ်ပြီးနောက် စတင်မည်။
+Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ v2.2.3 အပြီးတွင် Framework Foundation v0.1 သည် Web၊ App၊ AI နှင့် IoT အတွက် current Zap syntax ဖြင့် run လို့ရသော contract starter များကို ပေးထားပြီ။ Web အတွက် Zap-native loopback server နှင့် SQLite-first migration adapter ကို စတင်ထားပြီး production-grade platform adapters များကို သီးခြား capability boundary၊ security policy နှင့် deployment evidence ဖြင့် ဆက်တိုးမည်။
 
 ## Layers
 
@@ -9,26 +9,26 @@ Zap သည် language core တစ်ခုအပေါ်တွင် domain-sp
 | Zap Core | syntax၊ parser၊ values၊ functions၊ modules၊ runtime | လက်ရှိတည်ဆောက်နေသည် |
 | Standard Library | collections၊ JSON၊ file၊ time၊ networking၊ process နှင့် testing APIs | တစ်စိတ်တစ်ပိုင်းရှိသည် |
 | Package Tooling | `zap.toml`၊ local modules၊ dependencies၊ lockfile၊ registry | manifest၊ deterministic lockfile၊ nested local graph/cycle validation နှင့် registry-ready metadata ရှိသည်; remote registry roadmap |
-| Domain Frameworks | Web၊ Android/Mobile၊ AI နှင့် IoT APIs | Roadmap |
-| Platform Runtimes | native OS၊ browser/WASM၊ Android၊ GPU နှင့် microcontroller | Roadmap |
+| Domain Frameworks | Web၊ App/Mobile၊ AI နှင့် IoT contract starters | Web native runtime/asset/API slice implemented; production adapters deferred |
+| Platform Runtimes | native OS၊ browser/WASM၊ Android၊ GPU နှင့် microcontroller | Host adapters and target runtimes are roadmap work |
 
 ## Future frameworks
 
 ### Zap Web
 
-Zap Web သည် routing၊ middleware၊ JSON API၊ HTML/template rendering၊ static files၊ WebSocket နှင့် database adapters များကို package အဖြစ် ပေးရန် ရည်ရွယ်သည်။ Browser-side target အတွက် Zap-to-JavaScript သို့မဟုတ် WASM backend ကို နောက်ပိုင်းတွင် လေ့လာမည်။
+Zap Web starter သည် routing/request/response contract ကို deterministic အဖြစ် သတ်မှတ်ထားပြီး Zap-native loopback development server၊ confined UTF-8 HTML/CSS/JavaScript asset serving၊ browser JSON API boundary၊ SQLite-first database adapter၊ structured migration workflow နှင့် provider-neutral parameterized query/DTO contract ကို Framework branch တွင် စတင်ပေးထားသည်။ Zap executable နှင့် project asset files သာဖြင့် runtime ကို run နိုင်ရန် ရည်ရွယ်ပြီး Node.js/အခြား language runtime များသည် optional build-time tool များသာ ဖြစ်သည်။ TLS၊ production concurrency၊ middleware execution၊ binary asset streaming၊ WebSocket၊ PostgreSQL/MySQL adapters နှင့် production database operations များသည် နောက်အဆင့်အလုပ်များ ဖြစ်သည်။ `zap-host` သည် application framework မဟုတ်ဘဲ operational Axum/Tower platform adapter boundary အဖြစ် ဆက်ရှိသည်။
 
 ### Zap Mobile
 
-Zap Mobile သည် Android/iOS UI components၊ navigation၊ state၊ device permissions၊ storage၊ notifications နှင့် native bridge APIs များကို ပေးရန် ရည်ရွယ်သည်။ Android အတွက် Kotlin/Java bridge သို့မဟုတ် WebView/WASM backend၊ iOS အတွက် Swift bridge တို့ကို platform adapter အဖြစ် ခွဲထားမည်။
+Zap App starter သည် app-state/navigation contract ကို deterministic အဖြစ် သတ်မှတ်ထားသည်။ Native renderer၊ lifecycle၊ permissions၊ storage၊ notifications နှင့် bridge APIs များကို Tauri၊ Flutter သို့မဟုတ် React Native/Expo shell များအပေါ် သီးခြား adapter အဖြစ် တည်ဆောက်ရမည်။
 
 ### Zap AI
 
-Zap AI သည် model client၊ prompt၊ structured output၊ embeddings၊ vector store၊ tool calling၊ streaming နှင့် local model adapters များကို ပေးရန် ရည်ရွယ်သည်။ API keys များကို source code ထဲ မရေးဘဲ environment/config secret အဖြစ်သာ စီမံမည်။
+Zap AI starter သည် provider request/response contract ကိုသာ model လုပ်သည်။ Provider client၊ structured output၊ embeddings၊ vector store၊ tool calling၊ streaming နှင့် secret/quota handling များသည် provider adapter အဖြစ် သီးခြားတည်ဆောက်ရမည်။ API key ကို source ထဲ မရေးရ။
 
 ### Zap IoT
 
-Zap IoT သည် GPIO၊ I2C၊ SPI၊ UART၊ sensors၊ actuators၊ MQTT၊ device configuration၊ OTA update နှင့် offline queue APIs များကို ပေးရန် ရည်ရွယ်သည်။ Microcontroller target အတွက် resource-constrained `zap-embedded` runtime profile လိုအပ်မည်။
+Zap IoT starter သည် bounded telemetry/device-state contract ကို simulate လုပ်သည်။ ပထမဆုံး real target ကို Linux/SBC gateway အဖြစ် စတင်ပြီး MQTT/Paho၊ device identity၊ payload limit၊ reconnect၊ duplicate handling နှင့် offline replay ကို adapter contract အဖြစ် သတ်မှတ်ရမည်။ Firmware အတွက် ESP-IDF/Zephyr/Embassy ကို host ecosystem အဖြစ် အသုံးပြုမည်။ Low-RAM MCU တွင် Zap interpreter အပြည့်ထည့်ခြင်း မစတင်သေးပါ။
 
 ## Current commands versus roadmap
 
@@ -46,21 +46,36 @@ zap --version
 zap --help
 zap async-check
 zap lsp
+zap new shop
+zap dev shop
+zap db check shop
+zap db inspect --json shop
+zap db plan shop
+zap db migrate --dry-run shop
+zap db migrate --check shop
+zap db migrate shop
 ```
 
-အောက်ပါ framework commands များသည် roadmap ဖြစ်ပြီး လက်ရှိ release တွင် မပါဝင်သေးပါ။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
+Zap Web အတွက် `zap new <dir>` သည် generator command အဖြစ် ရှိပြီး `zap check`, `zap web check`, `zap db check`, `zap db inspect`, `zap db plan`, `zap db migrate --check`, `zap db migrate`, `zap test` နှင့် `zap dev` workflow ကို အသုံးပြုနိုင်သည်။ အခြား Framework starter project များကို repository ၏ `frameworks/` directory မှ copy/clone လုပ်ပြီး `zap lock`, `zap check`, `zap build`, `zap run main.zp` ဖြင့် စစ်နိုင်သည်။ Registry publishing သည် `zap registry publish` command ဖြင့် ရရှိပြီးဖြစ်ပါသည်။
 
 ```text
 zap new my-app
-zap web new website
+zap new shop
+zap dev shop
+zap web check shop
+zap db inspect --json shop
+zap db plan shop
+zap db migrate --dry-run shop
+zap db migrate --check shop
+zap db migrate shop
 zap mobile new android-app
 zap ai new assistant
 zap iot new sensor-node
 zap registry publish
 ```
 
-P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry metadata validation၊ local/HTTPS registry transport၊ content-addressed cache၊ checksum enforcement၊ validated remote publishing၊ signed-index verification၊ deterministic cache pruning၊ authenticated local registry persistence၊ exact နှင့် version-range solving၊ `async fn`/`await` language syntax၊ deterministic single-thread async runtime၊ delay/cancellation၊ task limits၊ poll budgets၊ one-poll suspension နှင့် stdio LSP/editor features ဖြစ်သော hover၊ completion၊ definition၊ formatting နှင့် workspace symbols ပါဝင်သည်။ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များမှာ external registry-service deployment၊ external asynchronous I/O၊ multi-thread scheduling နှင့် richer nested/module-aware indexing ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
+P2 package-manager foundation အသေးစိတ်အခြေအနေကို [`P2_PROGRESS.md`](P2_PROGRESS.md) နှင့် [`P2_PROGRESS_MM.md`](P2_PROGRESS_MM.md) တွင် ဖတ်ရှုနိုင်သည်။ လက်ရှိ foundation တွင် deterministic manifest/lockfile၊ local path graph traversal၊ cycle detection၊ registry metadata validation၊ local/HTTPS registry transport၊ content-addressed cache၊ checksum enforcement၊ validated remote publishing၊ signed-index verification၊ deterministic cache pruning၊ authenticated local registry persistence၊ exact နှင့် version-range solving၊ `async fn`/`await` language syntax၊ deterministic single-thread async runtime၊ delay/cancellation၊ task limits၊ poll budgets နှင့် stdio LSP/editor features ပါဝင်သည်။ Framework Foundation v0.1 တွင် executable Web route/response၊ App state/navigation၊ AI provider request/response နှင့် IoT telemetry/device-state starters၊ manifests၊ lockfiles၊ bilingual guide နှင့် starter validator ပါဝင်သည်။ ဆက်လက်တိုးချဲ့နိုင်သော နယ်ပယ်များမှာ `zap-host` capability/DTO contract၊ external asynchronous I/O၊ multi-thread scheduling၊ OS deployment security နှင့် real platform adapters ဖြစ်သည်။ Framework packages များသည် Zap core syntax ကို မပြောင်းရပါ။ Domain APIs များကို module/package အဖြစ် ပေးပြီး platform-specific implementation များကို runtime adapters ဖြင့် ခွဲထားရမည်။
 
 ## Recommended implementation order
 
-ပထမဦးစွာ parser၊ runtime values၊ functions၊ lexical scopes၊ module system၊ diagnostics၊ formatter နှင့် package manager ကို တည်ငြိမ်အောင်လုပ်မည်။ ထို့နောက် desktop/server ပေါ်တွင် Zap Web နှင့် Zap AI ကို စတင်မည်။ Mobile နှင့် IoT frameworks များကို platform bridges နှင့် cross-compilation strategy တည်ငြိမ်လာသောအခါ တိုးချဲ့မည်။
+Framework implementation order သည် ပထမဦးစွာ current syntax ဖြင့် contract starters နှင့် smoke validation ကို တည်ငြိမ်စေရမည်။ ထို့နောက် `zap-host` capability၊ DTO၊ typed errors၊ limits၊ cancellation၊ idempotency၊ tracing၊ redaction နှင့် replay boundary ကို freeze လုပ်မည်။ ပြီးလျှင် Web သို့မဟုတ် Linux/SBC Edge adapter တစ်ခုကို စမ်းသပ်မည်။ App native shell နှင့် IoT firmware bindings များကို host adapter contract နှင့် target-specific tests အောင်မြင်ပြီးမှ တိုးချဲ့မည်။

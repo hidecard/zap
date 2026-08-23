@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zap Web Tasks</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <main class="shell">
+    <p class="eyebrow">Zap-first Web</p>
+    <h1>Mini Tasks</h1>
+    <p class="lede">A browser UI using plain HTML, CSS, and JavaScript against a Zap JSON API.</p>
+    <section aria-labelledby="tasks-heading" class="panel">
+      <div class="panel-heading">
+        <h2 id="tasks-heading">Tasks</h2>
+        <span id="task-count" class="count">Loading…</span>
+      </div>
+      <ul id="task-list" class="task-list" aria-live="polite"></ul>
+      <p id="task-error" class="error" role="alert" hidden></p>
+    </section>
+  </main>
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

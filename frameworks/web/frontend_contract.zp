@@ -1,0 +1,18 @@
+# Zap-owned frontend interoperability contract.
+# HTML, CSS, and JavaScript are ordinary browser assets. A Node-based build
+# tool may be used optionally, but it is not required to run this project.
+
+export fn frontend_routes():
+    return [{"method": "GET", "path": "/", "handler": "frontend_index", "scope": ""}, {"method": "GET", "path": "/assets/*path", "handler": "frontend_asset", "scope": ""}, {"method": "GET", "path": "/api/tasks", "handler": "frontend_tasks_api", "scope": "tasks:read"}]
+
+export fn frontend_asset_manifest():
+    return {"root": "public", "files": [{"path": "/", "source": "index.html", "content_type": "text/html"}, {"path": "/assets/app.css", "source": "assets/app.css", "content_type": "text/css"}, {"path": "/assets/app.js", "source": "assets/app.js", "content_type": "text/javascript"}], "runtime": "browser", "node_required": false}
+
+export fn frontend_index(request):
+    return web_static("index.html", "public")
+
+export fn frontend_asset(request):
+    return web_static("assets/" + request["params"]["path"], "public")
+
+export fn frontend_tasks_api(request):
+    return {"status": 200, "body": json({"tasks": [{"id": 1, "title": "Learn Zap Web", "done": true}, {"id": 2, "title": "Build with HTML, CSS, and JS", "done": false}], "request_id": request["request_id"]})}
