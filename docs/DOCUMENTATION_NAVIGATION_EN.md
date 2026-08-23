@@ -1,6 +1,6 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.2.6
+**Verified baseline:** Zap v2.2.7
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path
@@ -21,12 +21,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.2.6 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
-| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.2.6 | [Language specification](LANGUAGE_SPEC_EN.md) |
-| Package author | [Package guide](PACKAGE_EN.md) — v2.2.6 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
-| Framework contributor | [Framework guide](FRAMEWORK_EN.md) — v2.2.6 | [Zap-first Web guide](ZAP_WEB_NATIVE_EN.md), [Web Framework guide](WEB_FRAMEWORK_EN.md), [zap-host adapter](ZAP_HOST_EN.md), [zap-host quickstart](ZAP_HOST_QUICKSTART_EN.md), [Framework starters](../frameworks), [ecosystem roadmap](ECOSYSTEM.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.2.6 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
-| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.2.6 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
+| Learner | [Learning guide](LEARN_ZAP_EN.md) — v2.2.7 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
+| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.2.7 | [Language specification](LANGUAGE_SPEC_EN.md) |
+| Package author | [Package guide](PACKAGE_EN.md) — v2.2.7 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
+| Framework contributor | [Framework guide](FRAMEWORK_EN.md) — v2.2.7 | [Zap-first Web guide](ZAP_WEB_NATIVE_EN.md), [Web Framework guide](WEB_FRAMEWORK_EN.md), [zap-host adapter](ZAP_HOST_EN.md), [zap-host quickstart](ZAP_HOST_QUICKSTART_EN.md), [Framework starters](../frameworks), [ecosystem roadmap](ECOSYSTEM.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.2.7 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
+| Deployment/security operator | [Deployment boundaries](DEPLOYMENT_EN.md) — v2.2.7 | [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md) |
 
 ## Normative contract map
 
@@ -50,4 +50,4 @@
 
 The authoritative package version is `native/Cargo.toml`. Release-facing surfaces must agree with it, and CI validates the agreement. When a normative rule changes, update the English and Burmese contract together, add or update its fixture owner in `SPEC_OWNERSHIP_INDEX.tsv`, record compatibility impact using the bilingual compatibility template, and include regression evidence before merging. Public standard-library changes must also update the catalog and its stability policy pair.
 
-Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. Framework changes must update the Framework guide pair, starter manifests/lockfiles, and the host-adapter boundary without adding unsupported core syntax. The [post-v2.2.0 remediation/provenance record](POST_V2.2.0_REMEDIATION_EN.md) distinguishes immutable v2.2.0 assets from later `master` corrections published through v2.2.2, with the post-v2.2.2 hardening published in v2.2.3. See the [v2.2.6 release notes](RELEASE_2.2.6_EN.md), [remaining TODO register](PDF_REMAINING_TODO_EN.md), and [next-step plan](NEXT_TODO_PLAN_EN.md) for the current release boundary and tracked work.
+Documentation changes must preserve the English/Burmese pair, use repository-relative links, identify deferred behavior explicitly, and avoid claiming production scheduling, cancellation, sandboxing, or performance guarantees that are not covered by executable gates. Framework changes must update the Framework guide pair, starter manifests/lockfiles, and the host-adapter boundary without adding unsupported core syntax. The [post-v2.2.0 remediation/provenance record](POST_V2.2.0_REMEDIATION_EN.md) distinguishes immutable v2.2.0 assets from later `master` corrections published through v2.2.2, with the post-v2.2.2 hardening published in v2.2.3. See the [v2.2.7 release notes](RELEASE_2.2.7_EN.md), [remaining TODO register](PDF_REMAINING_TODO_EN.md), and [next-step plan](NEXT_TODO_PLAN_EN.md) for the current release boundary and tracked work.

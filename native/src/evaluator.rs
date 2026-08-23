@@ -2024,7 +2024,7 @@ fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String>
         "HTTP/1.1 {status} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nCache-Control: no-store\r\nX-Request-Id: {}\r\n",
         web_http_reason(status),
         content_type,
-        body.as_bytes().len(),
+        body.len(),
         request_id
     );
     let mut response_header_names = HashSet::new();

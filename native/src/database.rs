@@ -24,6 +24,7 @@ pub(crate) struct DatabaseConfig {
     pub(crate) url: String,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct UserRecord {
     pub(crate) id: i64,
@@ -31,6 +32,7 @@ pub(crate) struct UserRecord {
     pub(crate) email: String,
 }
 
+#[allow(dead_code)]
 pub(crate) trait DatabaseAdapter {
     fn driver(&self) -> &str;
     fn database_path(&self) -> &str;
@@ -680,6 +682,7 @@ fn open_connection(
     Ok((connection, database_path))
 }
 
+#[allow(dead_code)]
 fn normalize_user_input(name: &str, email: &str) -> Result<(String, String), String> {
     let name = name.trim().to_string();
     let email = email.trim().to_lowercase();
@@ -692,6 +695,7 @@ fn normalize_user_input(name: &str, email: &str) -> Result<(String, String), Str
     Ok((name, email))
 }
 
+#[allow(dead_code)]
 fn user_record_from_row(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
     Ok(UserRecord {
         id: row.get(0)?,
@@ -700,6 +704,7 @@ fn user_record_from_row(row: &Row<'_>) -> rusqlite::Result<UserRecord> {
     })
 }
 
+#[allow(dead_code)]
 pub(crate) struct SqliteDatabaseAdapter {
     connection: Connection,
     database_path: String,
@@ -720,6 +725,7 @@ impl SqliteDatabaseAdapter {
         })
     }
 
+    #[allow(dead_code)]
     pub(crate) fn begin(&mut self) -> Result<SqliteTransaction<'_>, String> {
         let transaction = self
             .connection
@@ -764,6 +770,7 @@ impl DatabaseAdapter for SqliteDatabaseAdapter {
 }
 
 impl<'connection> SqliteTransaction<'connection> {
+    #[allow(dead_code)]
     pub(crate) fn insert_user(&mut self, name: &str, email: &str) -> Result<UserRecord, String> {
         let (name, email) = normalize_user_input(name, email)?;
         let transaction = self
@@ -786,6 +793,7 @@ impl<'connection> SqliteTransaction<'connection> {
             .map_err(|error| format!("SQLite inserted-user read failed: {error}"))
     }
 
+    #[allow(dead_code)]
     pub(crate) fn commit(mut self) -> Result<(), String> {
         let transaction = self
             .transaction

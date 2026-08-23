@@ -1,3 +1,9 @@
+## v2.2.7
+
+- Framework branch တွင် ကျန်ရှိနေသော RustSec advisory ၆ ခုကို v2.2.6 security-clean dependency baseline သို့ update လုပ်၍ ဖြေရှင်းထားသည်။
+- Rust 1.88.0 သို့ align လုပ်ခြင်း၊ native/host RustSec CI gate ထည့်ခြင်းနှင့် rcgen 0.13 TLS test compatibility ပြင်ခြင်းများ ပါဝင်သည်။
+- Zap-native Framework starter validation နှင့် release-facing documentation များကို synchronize လုပ်ထားသည်။
+
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
 ## [Unreleased]
