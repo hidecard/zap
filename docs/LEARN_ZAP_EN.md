@@ -2,9 +2,9 @@
 
 > **Audience:** This is the complete path from installing Zap for the first time to writing structured, typed, modular, asynchronous, tested, and Web-enabled programs.
 
-**Verified baseline:** Zap v2.3.0  
-**Source extension:** `.zp`  
-**Runtime:** standalone native `zap` executable  
+**Verified baseline:** Zap v2.3.0
+**Source extension:** `.zp`
+**Runtime:** standalone native `zap` executable
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Standard-library index](STDLIB_INDEX_EN.md) · [Burmese guide](LEARN_ZAP_MM.md)
 
 ## 1. What Zap Is
