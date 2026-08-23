@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Framework branch Web runtime
+- Plain HTML/CSS/JavaScript နှင့် optional React, Vue, Svelte သို့မဟုတ် အခြား frontend build output များအတွက် language-independent `[frontend]` manifest contract ကို ထည့်သွင်းထားပါသည်။ Package manager ကို execute မလုပ်ဘဲ safe output directory နှင့် ရှိပြီးသား SPA fallback document ကို validation လုပ်ပါသည်။
+- Common image၊ font နှင့် Wasm အတွက် MIME type ပါသော binary-safe `web_static` response နှင့် client-side route fallback အတွက် `web_static_spa` ကို ထည့်သွင်းထားပါသည်။ Binary byte၊ SPA fallback၊ traversal rejection နှင့် generated Web project များအတွက် native regression coverage ပါဝင်ပါသည်။
+- Bilingual frontend integration documentation၊ root README navigation၊ stdlib catalog entry နှင့် CI starter check များကို ထည့်သွင်းထားပါသည်။ Build time ပြီးနောက် runtime artifact အတွက် Zap executable နှင့် emitted frontend files သာ လိုအပ်ပါသည်။
+
 ## [2.2.3] — 2026-08-22
 
 ### Release engineering

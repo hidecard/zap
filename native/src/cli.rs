@@ -304,7 +304,7 @@ fn create_web_project(dir: &Path) -> Result<(), String> {
     }
     let name = scaffold_package_name(dir);
     let manifest = format!(
-        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nassets = \"public\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n\n[database]\ndriver = \"sqlite\"\nurl = \"data/zap.sqlite3\"\n"
+        "# Zap-first Web project\n[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nmain = \"main.zp\"\n\n[web]\nroutes = \"routes.zp\"\nmodels = \"models\"\nmiddleware = \"middleware.zp\"\nmigrations = \"migrations\"\nassets = \"public\"\nadmin = \"admin.zp\"\nserver = \"server.zp\"\nserialization = \"json-by-default\"\n\n[frontend]\nframework = \"plain\"\noutput = \"public\"\nspa_fallback = \"index.html\"\n\n[database]\ndriver = \"sqlite\"\nurl = \"data/zap.sqlite3\"\n"
     );
     write_scaffold_file(dir, "zap.toml", &manifest)?;
     write_scaffold_file(
@@ -358,7 +358,7 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "routes.zp",
-        "export fn routes():\n    return [{\"method\": \"GET\", \"path\": \"/\", \"handler\": \"home\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/health\", \"handler\": \"health\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/assets/*path\", \"handler\": \"frontend_asset\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/api/tasks\", \"handler\": \"frontend_tasks_api\", \"scope\": \"tasks:read\"}, {\"method\": \"GET\", \"path\": \"/users/:id\", \"handler\": \"get_user\", \"scope\": \"users:read\"}, {\"method\": \"POST\", \"path\": \"/users\", \"handler\": \"create_user\", \"scope\": \"users:write\"}]\n",
+        "export fn routes():\n    return [{\"method\": \"GET\", \"path\": \"/\", \"handler\": \"home\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/health\", \"handler\": \"health\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/assets/*path\", \"handler\": \"frontend_asset\", \"scope\": \"\"}, {\"method\": \"GET\", \"path\": \"/api/tasks\", \"handler\": \"frontend_tasks_api\", \"scope\": \"tasks:read\"}, {\"method\": \"GET\", \"path\": \"/users/:id\", \"handler\": \"get_user\", \"scope\": \"users:read\"}, {\"method\": \"POST\", \"path\": \"/users\", \"handler\": \"create_user\", \"scope\": \"users:write\"}, {\"method\": \"GET\", \"path\": \"/*path\", \"handler\": \"frontend_spa\", \"scope\": \"\"}]\n",
     )?;
     write_scaffold_file(
         dir,
@@ -368,7 +368,7 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "services/user_service.zp",
-        "export fn home(request):\n    return web_static(\"index.html\", \"public\")\n\nexport fn health(request):\n    return {\"status\": 200, \"body\": json({\"status\": \"ok\", \"request_id\": request[\"request_id\"]})}\n\nexport fn frontend_asset(request):\n    return web_static(\"assets/\" + request[\"params\"][\"path\"], \"public\")\n\nexport fn frontend_tasks_api(request):\n    return {\"status\": 200, \"body\": json({\"tasks\": [{\"id\": 1, \"title\": \"Try the Zap API\", \"done\": false}], \"summary\": {\"total\": 1, \"completed\": 0, \"remaining\": 1}, \"request_id\": request[\"request_id\"]})}\n\nexport fn get_user(request):\n    return {\"status\": 200, \"body\": json({\"id\": request[\"params\"][\"id\"], \"request_id\": request[\"request_id\"]})}\n\nexport fn create_user(request):\n    return {\"status\": 201, \"body\": json({\"created\": true, \"body\": request[\"body\"], \"request_id\": request[\"request_id\"]})}\n",
+        "export fn home(request):\n    return web_static(\"index.html\", \"public\")\n\nexport fn health(request):\n    return {\"status\": 200, \"body\": json({\"status\": \"ok\", \"request_id\": request[\"request_id\"]})}\n\nexport fn frontend_asset(request):\n    return web_static(\"assets/\" + request[\"params\"][\"path\"], \"public\")\n\nexport fn frontend_spa(request):\n    return web_static_spa(request[\"params\"][\"path\"], \"public\", \"index.html\")\n\nexport fn frontend_tasks_api(request):\n    return {\"status\": 200, \"body\": json({\"tasks\": [{\"id\": 1, \"title\": \"Try the Zap API\", \"done\": false}], \"summary\": {\"total\": 1, \"completed\": 0, \"remaining\": 1}, \"request_id\": request[\"request_id\"]})}\n\nexport fn get_user(request):\n    return {\"status\": 200, \"body\": json({\"id\": request[\"params\"][\"id\"], \"request_id\": request[\"request_id\"]})}\n\nexport fn create_user(request):\n    return {\"status\": 201, \"body\": json({\"created\": true, \"body\": request[\"body\"], \"request_id\": request[\"request_id\"]})}\n",
     )?;
     write_scaffold_file(
         dir,
@@ -398,7 +398,7 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "tests/web_test.zp",
-        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 6, \"web scaffold must contain six starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[2][\"path\"] == \"/assets/*path\", \"asset route must be present\")\nassert(route_table[3][\"path\"] == \"/api/tasks\", \"JSON API route must be present\")\nassert(route_table[5][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nsay \"Zap Web scaffold test passed\"\n",
+        "import \"routes\"\n\nlet route_table = routes()\nassert(len(route_table) == 7, \"web scaffold must contain seven starter routes\")\nassert(route_table[0][\"path\"] == \"/\", \"root route must be present\")\nassert(route_table[2][\"path\"] == \"/assets/*path\", \"asset route must be present\")\nassert(route_table[3][\"path\"] == \"/api/tasks\", \"JSON API route must be present\")\nassert(route_table[5][\"scope\"] == \"users:write\", \"write scope must be explicit\")\nassert(route_table[6][\"handler\"] == \"frontend_spa\", \"SPA fallback route must be present\")\nsay \"Zap Web scaffold test passed\"\n",
     )?;
     Ok(())
 }

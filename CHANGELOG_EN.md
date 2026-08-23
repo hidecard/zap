@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Framework branch Web runtime
+- Added a language-independent `[frontend]` manifest contract for plain HTML/CSS/JavaScript and optional React, Vue, Svelte, or other frontend build outputs. Validation requires a safe output directory and an existing SPA fallback document without executing a package manager.
+- Added binary-safe `web_static` responses with MIME types for common images, fonts, and Wasm, plus `web_static_spa` for explicit client-side route fallback. Added native regression coverage for binary bytes, SPA fallback, traversal rejection, and generated Web projects.
+- Added bilingual frontend integration documentation, root README navigation, stdlib catalog entries, and CI starter checks. The runtime artifact remains self-contained: only the Zap executable and emitted frontend files are required after build time.
+
 ## [2.2.3] — 2026-08-22
 
 ### Release engineering

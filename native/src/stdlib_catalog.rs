@@ -415,6 +415,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("file_metadata", "filesystem"),
     stable_builtin!("atomic_write", "filesystem"),
     stable_builtin!("web_static", "filesystem"),
+    stable_builtin!("web_static_spa", "filesystem"),
     stable_builtin!("json", "json"),
     stable_builtin!("from_json", "json"),
     stable_builtin!("from_json_typed", "json"),

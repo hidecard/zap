@@ -111,6 +111,8 @@ require_file docs/ZAP_HOST_QUICKSTART_EN.md
 require_file docs/ZAP_HOST_QUICKSTART_MM.md
 require_file docs/ZAP_WEB_NATIVE_EN.md
 require_file docs/ZAP_WEB_NATIVE_MM.md
+require_file docs/FRONTEND_INTEGRATION_EN.md
+require_file docs/FRONTEND_INTEGRATION_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
@@ -127,6 +129,10 @@ require_text docs/WEB_FRAMEWORK_EN.md "web_static"
 require_text docs/WEB_FRAMEWORK_MM.md "web_static"
 require_text docs/FRAMEWORK_EN.md "Self-contained runtime"
 require_text docs/FRAMEWORK_MM.md "Self-contained runtime"
+require_text docs/FRAMEWORK_EN.md "web_static_spa"
+require_text docs/FRAMEWORK_MM.md "web_static_spa"
+require_text docs/FRONTEND_INTEGRATION_EN.md "React, Vue, and Svelte"
+require_text docs/FRONTEND_INTEGRATION_MM.md "React, Vue နှင့် Svelte"
 require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
@@ -165,6 +171,8 @@ require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_HOST_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_HOST_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_WEB_NATIVE_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_WEB_NATIVE_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRONTEND_INTEGRATION_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRONTEND_INTEGRATION_MM.md"
 for native_web_file in \
   docs/ZAP_WEB_NATIVE_EN.md \
   docs/ZAP_WEB_NATIVE_MM.md \
@@ -256,7 +264,11 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && test -f "$scaffold_dir/project/public/assets/app.css" \
         && test -f "$scaffold_dir/project/public/assets/app.js" \
         && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
+        && grep -Fq '[frontend]' "$scaffold_dir/project/zap.toml" \
+        && grep -Fq 'spa_fallback = "index.html"' "$scaffold_dir/project/zap.toml" \
         && grep -Fq '/assets/*path' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq '/*path' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq 'web_static_spa' "$scaffold_dir/project/services/user_service.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
