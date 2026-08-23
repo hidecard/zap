@@ -1843,8 +1843,8 @@ mod tests {
     ) -> (String, ureq::Agent, thread::JoinHandle<()>) {
         let certificate =
             rcgen::generate_simple_self_signed(vec!["localhost".to_string()]).unwrap();
-        let certificate_der = certificate.serialize_der().unwrap();
-        let private_key = certificate.serialize_private_key_der();
+        let certificate_der = certificate.cert.der().as_ref().to_vec();
+        let private_key = certificate.key_pair.serialize_der();
         let server_certificate = rustls::pki_types::CertificateDer::from(certificate_der.clone());
         let server_key = rustls::pki_types::PrivateKeyDer::Pkcs8(
             rustls::pki_types::PrivatePkcs8KeyDer::from(private_key),
