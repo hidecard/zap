@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+pub mod auth;
+
 use async_trait::async_trait;
 use axum::{
     body::{Body, Bytes},
@@ -313,12 +315,13 @@ pub enum AuthFailure {
     Missing,
     Forbidden,
     Invalid,
+    Unavailable,
     Internal,
 }
 
 #[async_trait]
 pub trait Authenticator: Send + Sync {
-    async fn authenticate(&self, request: &Request<Body>) -> Result<Identity, AuthFailure>;
+    async fn authenticate(&self, headers: &HeaderMap) -> Result<Identity, AuthFailure>;
 }
 
 #[derive(Debug, Default, Clone)]
@@ -326,7 +329,7 @@ pub struct DemoAuthenticator;
 
 #[async_trait]
 impl Authenticator for DemoAuthenticator {
-    async fn authenticate(&self, _request: &Request<Body>) -> Result<Identity, AuthFailure> {
+    async fn authenticate(&self, _headers: &HeaderMap) -> Result<Identity, AuthFailure> {
         Ok(Identity::new("demo-subject", ["users:read", "users:write"]))
     }
 }
@@ -687,6 +690,21 @@ impl AppState {
         let authenticator: Arc<dyn Authenticator> = Arc::new(DemoAuthenticator);
         Self::new(config, gateway, authenticator)
     }
+
+    pub fn from_env(config: AppConfig) -> Result<Self, ConfigError> {
+        let repository = Arc::new(MemoryRepository::demo());
+        let gateway: Arc<dyn WebGateway> = Arc::new(ContractGateway::new(repository));
+        let authenticator: Arc<dyn Authenticator> = match auth::JwtAuthConfig::from_env()
+            .map_err(|error| ConfigError::message(&error.to_string()))?
+        {
+            Some(auth_config) => Arc::new(
+                auth::JwtAuthenticator::new(auth_config)
+                    .map_err(|error| ConfigError::message(&error.to_string()))?,
+            ),
+            None => Arc::new(DemoAuthenticator),
+        };
+        Self::new(config, gateway, authenticator)
+    }
 }
 
 pub fn build_router(state: AppState) -> Router {
@@ -841,7 +859,7 @@ async fn auth_middleware(
     next: Next,
 ) -> Response {
     let request_id = request_id(&request);
-    match state.authenticator.authenticate(&request).await {
+    match state.authenticator.authenticate(request.headers()).await {
         Ok(identity) => {
             let mut request = request;
             request.extensions_mut().insert(identity);
@@ -857,6 +875,12 @@ async fn auth_middleware(
             StatusCode::FORBIDDEN,
             "forbidden",
             "authenticated identity is not permitted",
+            &request_id,
+        ),
+        Err(AuthFailure::Unavailable) => error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "authentication_unavailable",
+            "authentication service is temporarily unavailable",
             &request_id,
         ),
         Err(AuthFailure::Internal) => error_response(

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### OAuth2/JWT authentication နှင့် reliability testing
+- HTTPS-only JWKS fetch၊ explicit algorithm allowlist၊ issuer/audience/expiry/not-before validation၊ bounded token size၊ scope normalization၊ key-ID lookup၊ serialized rotation refresh နှင့် stable `401`/`503` error mapping ပါသော opt-in `JwtAuthenticator` resource-server implementation ကို ထည့်ထားပါသည်။
+- `ZAP_AUTH_*` environment နှင့် deployment-policy contract များကို ထည့်ထားပါသည်။ Production template များသည် JWT mode သုံးပြီး demo authentication နှင့် ID-token-as-access-token behavior ကို explicit reject လုပ်ပါသည်။
+- Redacted report၊ remote-target confirmation၊ invalid-JWT check၊ restart recovery နှင့် explicit stop/start confirmation ပါသော bounded `scripts/load_zap_host.py` နှင့် opt-in `scripts/chaos_zap_host.py` ကို ထည့်ထားပါသည်။
+- Bilingual OAuth2/JWT နှင့် load/chaos testing runbook များ၊ Framework validation gate များကို ထည့်ထားပါသည်။
+
 ### Production deployment နှင့် database operations
 - Hardened `zap-web.service` နှင့် manual lock-protected `zap-web-migrate.service` unit များကို loopback binding၊ systemd filesystem/resource control၊ migration preflight နှင့် explicit writable data path ဖြင့် ထည့်သွင်းထားပါသည်။
 - HTTPS redirect၊ method/request limit၊ forwarded-header policy၊ health/readiness route နှင့် deployment validation ပါသော TLS-terminating Nginx reverse-proxy template ကို ထည့်သွင်းထားပါသည်။

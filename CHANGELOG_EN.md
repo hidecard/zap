@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### OAuth2/JWT authentication and reliability testing
+- Added an opt-in `JwtAuthenticator` resource-server implementation with HTTPS-only JWKS fetching, explicit algorithm allowlist, issuer/audience/expiry/not-before validation, bounded token size, scope normalization, key-ID lookup, serialized rotation refresh, and stable `401`/`503` error mapping.
+- Added `ZAP_AUTH_*` environment and deployment-policy contracts; production templates use JWT mode and explicitly reject demo authentication and ID-token-as-access-token behavior.
+- Added bounded `scripts/load_zap_host.py` and opt-in `scripts/chaos_zap_host.py` tools with redacted reports, remote-target confirmation, invalid-JWT checks, restart recovery, and explicitly confirmed stop/start experiments.
+- Added bilingual OAuth2/JWT and load/chaos testing runbooks plus Framework validation gates.
+
 ### Production deployment and database operations
 - Added hardened `zap-web.service` and manual, lock-protected `zap-web-migrate.service` units with loopback binding, systemd filesystem/resource controls, migration preflight, and explicit writable data paths.
 - Added a TLS-terminating Nginx reverse-proxy template with HTTPS redirect, method/request limits, forwarded-header policy, health/readiness routes, and deployment validation.

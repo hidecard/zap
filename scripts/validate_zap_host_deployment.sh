@@ -53,6 +53,10 @@ require_exact "$policy" 'max_connections = 16'
 require_exact "$policy" 'acquire_timeout_ms = 1000'
 require_exact "$policy" 'query_timeout_ms = 5000'
 require_exact "$policy" 'migration_lock = "provider-orchestrator-required"'
+require_exact "$policy" 'mode = "jwt-bearer-resource-server"'
+require_exact "$policy" 'allowed_algorithms = ["RS256"]'
+require_exact "$policy" 'raw_access_token_logging = false'
+require_exact "$policy" 'id_token_as_api_access_token = false'
 require_exact "$policy" 'raw_credentials_enter_zap_contract = false'
 require_exact "$policy" 'state = "shared-atomic-store-required-for-multiple-instances"'
 require_exact "$policy" 'demo_repository_allowed = false'
@@ -65,8 +69,13 @@ require_exact "$env_example" 'ZAP_HOST_SHUTDOWN_TIMEOUT_MS=30000'
 require_exact "$env_example" 'ZAP_DB_MAX_CONNECTIONS=16'
 require_exact "$env_example" 'ZAP_DB_ACQUIRE_TIMEOUT_MS=1000'
 require_exact "$env_example" 'ZAP_DB_QUERY_TIMEOUT_MS=5000'
+require_exact "$env_example" 'ZAP_AUTH_MODE=jwt'
+require_exact "$env_example" 'ZAP_AUTH_ALLOWED_ALGORITHMS=RS256'
+require_exact "$env_example" 'ZAP_AUTH_CLOCK_SKEW_SECONDS=30'
+require_exact "$env_example" 'ZAP_AUTH_JWKS_CACHE_SECONDS=300'
+require_exact "$env_example" 'ZAP_AUTH_MAX_TOKEN_BYTES=16384'
 grep -Fq 'DATABASE_URL=<injected-by-secret-manager>' "$env_example" || { echo "missing database secret-source placeholder in $env_example" >&2; exit 1; }
-grep -Fq 'OIDC_ISSUER=<deployment-configured>' "$env_example" || { echo "missing identity-provider placeholder in $env_example" >&2; exit 1; }
+grep -Fq 'ZAP_AUTH_ISSUER=<https-issuer-url>' "$env_example" || { echo "missing JWT issuer placeholder in $env_example" >&2; exit 1; }
 
 if find "$root_dir/deploy" -type f \( -name 'zap-host.env' -o -name '*.key' -o -name '*.pem' \) -print -quit | grep -q .; then
     echo 'deployment tree contains a populated zap-host secret or private-key file' >&2

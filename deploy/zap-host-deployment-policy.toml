@@ -37,6 +37,19 @@ query_timeout_ms = 5000
 migration_lock = "provider-orchestrator-required"
 readiness_check = "bounded-database-health-check"
 
+[authentication]
+mode = "jwt-bearer-resource-server"
+issuer = "https-issuer-configured-at-deploy"
+audience = "api-audience-configured-at-deploy"
+jwks_url = "https-jwks-configured-at-deploy"
+allowed_algorithms = ["RS256"]
+clock_skew_seconds = 30
+jwks_cache_seconds = 300
+max_token_bytes = 16384
+key_rotation = "overlap-old-and-new-kids-with-bounded-refresh"
+raw_access_token_logging = false
+id_token_as_api_access_token = false
+
 [credentials]
 source = "deployment-secret-manager"
 file_mode = "0600"

@@ -111,6 +111,8 @@ Real authenticator သည် approved issuer၊ audience၊ algorithm၊ key rot
 
 Authentication နှင့် authorization သည် သီးခြားဆုံးဖြတ်ချက်များ ဖြစ်သည်။ ဥပမာသည် scope စစ်ဆေးမှုသာ လုပ်သော်လည်း production code တွင် resource ownership၊ tenant boundary၊ administrative exception၊ audit event နှင့် default-deny behavior ကို သတ်မှတ်ရမည်။ `401` သည် valid identity မတည်ဆောက်နိုင်ခြင်း ဖြစ်ပြီး `403` သည် identity ရှိသော်လည်း ခွင့်မပြုခြင်း ဖြစ်သည်။
 
+Production bearer-token implementation၊ key-rotation runbook နှင့် OAuth2 Authorization Code + PKCE boundary အပြည့်အစုံကို [`AUTH_OAUTH2_JWT_MM.md`](AUTH_OAUTH2_JWT_MM.md) တွင် ဖတ်နိုင်သည်။ Bounded load နှင့် service-recovery experiment များကို [`LOAD_CHAOS_TESTING_MM.md`](LOAD_CHAOS_TESTING_MM.md) တွင် ဖတ်နိုင်သည်။
+
 ## Rate-limit checklist
 
 Sample fixed-window store သည် state update ကို lock လုပ်ထားသောကြောင့် single process အတွင်း counter oversubscription မဖြစ်စေပါ။ Process တစ်ခုထက်ပိုသော production deployment တွင် key တစ်ခုတည်းကို check-and-increment atomic ပြုလုပ်ပေးနိုင်သော shared store operation သုံးရမည်။ Key ကို verified subject + tenant + route class ကဲ့သို့ trusted policy ဖြင့် ဖန်တီးရမည်။ Arbitrary client header ကို မျက်စိမှိတ်ယုံကြည်မထားရ။

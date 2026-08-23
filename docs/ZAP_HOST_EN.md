@@ -111,6 +111,8 @@ The real authenticator must validate the credential at the host boundary using a
 
 Authorization is a separate decision from authentication. The current example checks scopes, but production code must also define resource ownership, tenant boundaries, administrative exceptions, audit events, and a default-deny behavior. `401` means no valid identity was established; `403` means an identity exists but is not permitted.
 
+For the complete production bearer-token implementation, key-rotation runbook, and OAuth2 Authorization Code + PKCE boundary, see [`AUTH_OAUTH2_JWT_EN.md`](AUTH_OAUTH2_JWT_EN.md). For bounded load and service-recovery experiments, see [`LOAD_CHAOS_TESTING_EN.md`](LOAD_CHAOS_TESTING_EN.md).
+
 ## Rate-limit checklist
 
 The sample fixed-window store locks its state update so a single process cannot oversubscribe the counter. A production deployment with more than one process must use a shared store operation that atomically checks and increments the same key. The key must be derived from a trusted policy, such as a verified subject plus tenant and route class; it must not blindly trust an arbitrary client header.
