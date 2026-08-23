@@ -35,6 +35,11 @@ jobs:
         with:
           workspaces: native
 
+      - name: Audit locked dependencies
+        run: |
+          cargo install cargo-audit --locked --version 0.22.2
+          cargo audit --file native/Cargo.lock --deny warnings
+
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check
 

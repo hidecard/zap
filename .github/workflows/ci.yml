@@ -241,9 +241,25 @@ jobs:
       - name: Check repository whitespace
         run: git diff --check
 
+  security:
+    name: RustSec dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked --version 0.22.2
+
+      - name: Audit locked dependencies
+        run: cargo audit --file native/Cargo.lock --deny warnings
+
   build:
     name: Build ${{ matrix.name }}
-    needs: quality
+    needs: [quality, security]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
