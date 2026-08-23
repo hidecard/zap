@@ -54,6 +54,8 @@ pairs=(
   'docs/ZAP_HOST_QUICKSTART_EN.md:docs/ZAP_HOST_QUICKSTART_MM.md'
   'docs/ZAP_WEB_NATIVE_EN.md:docs/ZAP_WEB_NATIVE_MM.md'
   'docs/POST_V2.2.0_REMEDIATION_EN.md:docs/POST_V2.2.0_REMEDIATION_MM.md'
+  'docs/POST_V2.4.0_REMEDIATION_EN.md:docs/POST_V2.4.0_REMEDIATION_MM.md'
+  'docs/USAGE_EN.md:docs/USAGE.md'
   "docs/RELEASE_${VERSION}_EN.md:docs/RELEASE_${VERSION}_MM.md"
 )
 
@@ -98,6 +100,8 @@ for file in \
   docs/P0_FOUNDATION_STATUS_EN.md docs/P0_FOUNDATION_STATUS_MM.md \
   docs/STDLIB_POLICY_EN.md docs/STDLIB_POLICY_MM.md \
   docs/TRAITS_RFC_EN.md docs/TRAITS_RFC_MM.md \
+  docs/POST_V2.4.0_REMEDIATION_EN.md docs/POST_V2.4.0_REMEDIATION_MM.md \
+  docs/USAGE_EN.md docs/USAGE.md \
   "docs/RELEASE_${VERSION}_EN.md" "docs/RELEASE_${VERSION}_MM.md"; do
   require_text "$file" "v$VERSION"
   if grep -Eq 'v2\.1\.(0|6|7|8)([^0-9]|$)' "$file"; then

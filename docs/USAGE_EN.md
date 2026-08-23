@@ -1,98 +1,67 @@
 # Zap Usage Guide
 
-**Verified baseline:** Zap v2.2.6 maintenance branch
+**Verified baseline:** Zap v2.5.0 development line
 
-**Purpose:** This guide covers installation, project development, dependency locking, testing, registry use, and the production boundary. The v2.2.6 branch is a release candidate; use the latest published release from [GitHub Releases](https://github.com/hidecard/zap/releases) until the candidate is formally published.
+**Purpose:** This guide is a compact command and operations reference. For the complete installation-to-advanced learning path, use the [English Language Guide](LEARN_ZAP_EN.md). Normative behavior belongs to the [language specification](LANGUAGE_SPEC_EN.md).
 
-## 1. Install the native runtime
+## Install the native runtime
 
-Zap is distributed as a standalone native executable. End users should download the archive for the correct operating system and architecture, verify its checksum, and install the executable. Do not run an archive built for a different operating system or CPU architecture.
+Zap is distributed as a standalone native executable. Download the archive that matches the operating system and CPU architecture, verify its checksum and signature, extract it, and place the executable on `PATH`. The v2.5.0 release will publish only the targets listed on its release page; do not infer support for an unlisted target.
 
-| Platform | Release asset | Installation |
+| Platform | Archive pattern | Installation |
 |---|---|---|
-| Linux x86_64 | `zap-<version>-linux-x86_64.tar.gz` | Extract and run `bash install.sh` |
-| macOS ARM64 | `zap-<version>-macos-arm64.tar.gz` | Extract, run `chmod +x install.sh`, then `./install.sh` |
-| Windows x86_64 | `zap-<version>-windows-x86_64.zip` | Extract and run `install_windows.bat` from Command Prompt |
+| Linux x86_64 | `zap-<version>-linux-x86_64.tar.gz` | Extract and run `bash install.sh`. |
+| macOS ARM64 | `zap-<version>-macos-arm64.tar.gz` | Extract, run `chmod +x install.sh`, then `./install.sh`. |
+| Windows x86_64 | `zap-<version>-windows-x86_64.zip` | Extract and run `install_windows.bat` from Command Prompt. |
 
-On Linux or macOS, verify an archive before installation:
+A release archive containing `bin/zap` does not require Rust, Cargo, Python, Node.js, Java, or another language runtime on the application host. The installer uses a user-writable location by default; set `ZAP_INSTALL_DIR` when a different destination is required.
 
-```bash
-sha256sum -c zap-<version>-linux-x86_64.tar.gz.sha256
-# Replace the archive name above with the macOS asset when applicable.
-```
+## Create a project
 
-After extraction, install the user-level binary and verify it:
+Use the one-command, user-managed Web scaffold. Zap deliberately has no Django-style `startapp` command and no hidden application registry.
 
 ```bash
-cd zap
-bash install.sh
-zap --version
-zap --help
+zap new my_app
+cd my_app
+zap check
+zap build --locked
+zap test tests
+zap dev
 ```
 
-The installer places the executable in `~/.local/bin` by default. Set `ZAP_INSTALL_DIR` to choose another user-writable directory. The installer does not require root privileges. A release archive containing `bin/zap` does not require Rust or Cargo.
+The generated directories are ordinary user-owned files: `models/`, `functions/`, `ui/`, `routes/`, `middleware/`, `migrations/`, `admin/`, `public/`, and `tests/`. Add, remove, rename, and organize modules directly. The scaffold is a development/reference Web slice; it is not by itself a production server, ORM, admin UI, authentication system, or deployment supervisor.
 
-### Build from source
+For a small non-Web project, create a directory with `zap.toml` and `main.zp`, or use the compatibility `zap init <directory>` command. New documentation and new projects should prefer `zap new` for the complete user-managed workflow.
 
-A source build is an explicit developer or operator action. The repository pins Rust 1.75.0 in `rust-toolchain.toml`; use the locked build so the dependency graph cannot change during installation:
+## CLI workflow
 
-```bash
-ZAP_BUILD_FROM_SOURCE=1 bash install.sh
-```
-
-For a repository checkout, the equivalent reproducible build is:
-
-```bash
-cargo build --release --locked --manifest-path native/Cargo.toml
-./native/target/release/zap --version
-```
-
-## 2. Create and run a project
-
-A minimal project contains a `main.zp` source file and, when dependencies are used, a `zap.toml` manifest and a committed `zap.lock` lockfile:
-
-```bash
-mkdir hello-app
-cd hello-app
-cat > main.zp <<'EOF'
-say "Hello from Zap"
-EOF
-zap check .
-zap run main.zp
-```
-
-A project manifest can declare package identity and dependencies:
-
-```toml
-[package]
-name = "hello-app"
-version = "0.1.0"
-main = "main.zp"
-```
-
-Use `zap init <directory>` to create the standard scaffold. Use `zap check` before execution, and use `zap check --json .` when an editor or CI system needs structured diagnostics. Local modules are resolved from the main-file directory and the supported project module directories; module cycles and unsafe paths are rejected.
-
-## 3. CLI workflow
-
-| Command | Use |
+| Command | Purpose |
 |---|---|
-| `zap <file.zp>` | Run a source file through the canonical native AST runtime. |
-| `zap run <file.zp>` | Explicitly run a source file. |
-| `zap init <dir>` | Create a project scaffold. |
-| `zap fmt <file.zp>` | Format source code. |
-| `zap lint <file.zp>` | Check source formatting and style. |
-| `zap check [dir]` | Validate the manifest, modules, types, and project structure. |
-| `zap check --json [dir]` | Emit structured diagnostics for CI or editor integrations. |
-| `zap test [dir]` | Run `*_test.zp` files in deterministic path order. |
-| `zap test --fail-fast [dir]` | Stop after the first user-facing test failure. |
-| `zap lock [dir]` | Generate the canonical `zap.lock`. |
+| `zap <file.zp>` | Run a source file. |
+| `zap run <file.zp>` | Explicit source-file execution. |
+| `zap new <dir>` | Create the complete user-managed Web scaffold. |
+| `zap check [dir]` | Validate a Zap project directory, manifest, modules, and known types. |
+| `zap check --json [dir]` | Emit structured project diagnostics. |
+| `zap build [dir]` | Validate and prepare a project. |
+| `zap build --locked [dir]` | Require the existing lockfile and reject graph changes. |
+| `zap test [dir]` | Run `*_test.zp` files in deterministic order. |
+| `zap test --filter <value> [dir]` | Run matching tests. |
+| `zap test --fail-fast [dir]` | Stop after the first test failure. |
+| `zap test --json [dir]` | Emit machine-readable test results where supported. |
+| `zap fmt <file.zp>` | Format Zap source. |
+| `zap lint <file.zp>` | Report formatting and style issues. |
+| `zap lock [dir]` | Generate canonical `zap.lock`. |
 | `zap add <name> <version> [dir]` | Add a dependency and invalidate the old lockfile. |
-| `zap install [dir]` | Validate the project and install from its lockfile/cache. |
-| `zap install --locked [dir]` | Require an existing valid lockfile and refuse graph changes. |
-| `zap update [dir]` | Regenerate the lockfile from the manifest. |
-| `zap registry gc [--dry-run] [dir]` | Remove unreferenced cache artifacts, or preview the removal. |
-| `zap lsp` | Run the stdio language server for editor integration. |
-| `zap async-check` | Validate the deterministic async runtime foundation. |
+| `zap install [dir]` | Validate and install from the lockfile/cache. |
+| `zap install --locked [dir]` | Require a valid existing lockfile. |
+| `zap update [dir]` | Regenerate lock data after manifest changes. |
+| `zap web check [dir]` | Validate Web configuration and project structure. |
+| `zap db check [dir]` | Validate migration layout and database plan. |
+| `zap db plan [dir] --json` | Show a read-only SQLite migration plan. |
+| `zap db migrate [dir] --dry-run` | Preview migrations without applying them. |
+| `zap db migrate [dir] --check` | Fail when pending migrations exist. |
+| `zap dev [dir]` | Run the bounded native development server. |
+| `zap lsp` | Run the stdio language server. |
 
 A normal development loop is:
 
@@ -100,130 +69,25 @@ A normal development loop is:
 zap fmt main.zp
 zap lint main.zp
 zap check .
-zap test .
+zap test tests
 zap build --locked .
-zap install --locked .
+zap db check .
 ```
 
-The native runtime applies bounded source, execution-depth, loop, output, memory, task, and collection limits. These are runtime safety limits, not a replacement for OS-level isolation.
+## Packages and lockfiles
 
-## 4. Language examples
+Declare package identity and dependencies in `zap.toml`, commit the canonical `zap.lock`, and use `zap install --locked` in reproducible environments. Local path dependencies are validated recursively and dependency cycles are rejected. Registry operations enforce configured transport, checksums, signatures, cache bounds, and credential policy, but the registry foundation is not yet equivalent to the package volume and governance of npm, PyPI, crates.io, or Go modules.
 
-Zap uses indentation-based blocks and readable expressions:
+## Web and frontend boundary
 
-```zap
-fn greet(name):
-    return "Hello, " + name
+HTML, CSS, and JavaScript are ordinary files under `public/`. React, Vue, Svelte, Alpine, or another browser framework may be used as a separate build-time toolchain. Copy the generated output into the declared asset directory; the deployed Zap executable serves the files and does not execute npm or Node.js at runtime. See the [frontend integration guide](FRONTEND_INTEGRATION_EN.md) and [Zap Web guide](ZAP_WEB_NATIVE_EN.md).
 
-for item in ["language", "runtime", "tooling"]:
-    say greet(item)
-```
+The current Web runtime provides bounded request/response and static/SPA development behavior. TLS termination, production concurrency, WebSocket, streaming uploads, session persistence, provider-neutral database drivers, ORM behavior, SSR/template compilation, cache invalidation, observability, and process supervision remain explicit host/deployment work.
 
-A typed result can be checked and propagated with `?`:
+## Safety boundary
 
-```zap
-fn load_name(value: text) -> result<text>:
-    if value == "":
-        return err("name is empty")
-    return ok(value)
-```
+Runtime limits for source size, execution depth, loops, values, collections, files, process output, HTTP requests, and tasks are reliability controls. They are not an OS sandbox. Untrusted Zap code must run inside an operating-system isolation profile with an explicit filesystem, process, network, identity, and secret policy.
 
-The language includes functions, closures, classes, modules, collections, JSON values, `Result`/`Option` values, async task handles, and deterministic tests. Consult the [language specification](LANGUAGE_SPEC_EN.md) for normative behavior rather than relying on an older example.
+## Source development
 
-## 5. Files, JSON, and environment access
-
-The standard library includes bounded text and line-based file helpers, JSON encoding/decoding, path helpers, time helpers, logging, and environment access. Example:
-
-```zap
-let lines = ["one", "two"]
-write_lines("notes.txt", lines)
-let loaded = read_lines("notes.txt")
-say json({"lines": loaded})
-```
-
-When a run owns an `ExecutionContext`, relative file operations are confined to that run's workspace. Existing symlink and canonicalization checks are defensive controls; they do not make a process a kernel sandbox. For untrusted programs, use an isolated worker with a read-only source tree, a dedicated writable directory, minimal environment variables, quotas, and network egress restrictions.
-
-## 6. Dependency and registry workflow
-
-For a dependency-backed project, generate and commit the lockfile:
-
-```bash
-zap add utility 1.2.0 .
-zap lock .
-zap check .
-zap install --locked .
-```
-
-`zap install --locked` verifies that the manifest, lockfile, registry metadata, selected versions, yanked policy, and SHA-256 cache artifacts agree. `ZAP_OFFLINE=1 zap install --locked .` permits only already-cached, checksum-verified artifacts and performs no network retrieval.
-
-Configure a remote registry explicitly. A remote origin must be trusted before a request is made, and HTTP is disabled unless it is deliberately enabled for a controlled local fixture:
-
-```bash
-zap registry trust add https://registry.example/team
-export ZAP_REGISTRY_TOKEN_CI='read-token-from-your-secret-manager'
-zap registry credential set https://registry.example/team --token-env ZAP_REGISTRY_TOKEN_CI
-zap install --locked .
-```
-
-The credential list command prints origins, never token values. Credentials must be kept in a secret manager or protected environment variable; never commit them to `zap.toml`, `zap.lock`, source code, logs, or CI output.
-
-To publish a package, compute its checksum locally and send it through the HTTPS endpoint:
-
-```bash
-checksum="$(sha256sum ./demo.pkg | awk '{print $1}')"
-export ZAP_REGISTRY_TOKEN='publish-token-from-your-secret-manager'
-zap registry publish https://registry.example/team/publish ./demo.pkg demo 1.0.0 "$checksum"
-```
-
-The client verifies the package checksum before sending the body. Registry fetch/publish paths disable automatic redirects; in untrusted mode they resolve the registry host once, reject special/private destinations, and pin the connection to the validated address set. TLS certificate validation still uses the normal platform trust configuration.
-
-## 7. Testing and CI
-
-Application tests use `*_test.zp` names under `tests/` or a selected test directory:
-
-```bash
-zap test --fail-fast .
-```
-
-Runtime contributors should run the complete locked native gates:
-
-```bash
-cargo fmt --manifest-path native/Cargo.toml --all -- --check
-cargo check --manifest-path native/Cargo.toml --all-targets --all-features --locked
-cargo clippy --manifest-path native/Cargo.toml --all-targets --all-features --locked -- -D warnings
-cargo test --manifest-path native/Cargo.toml --all-targets --all-features --locked
-scripts/validate_registry_deployment.sh
-```
-
-The CI and release workflows also run RustSec auditing with `cargo-audit`, deployment-policy validation, deterministic replay, native/legacy parity, archive checks, and release provenance checks. Read [`RUSTSEC_AUDIT_EN.md`](RUSTSEC_AUDIT_EN.md) for the dependency evidence and known audit-tool compatibility boundary.
-
-## 8. Production security boundary
-
-`ZAP_UNTRUSTED=1` denies filesystem, environment, process, outbound network, and local-registry capabilities at the runtime boundary. It must be combined with OS-level controls for production use:
-
-```bash
-ZAP_UNTRUSTED=1 zap check --json .
-ZAP_UNTRUSTED=1 zap run main.zp
-```
-
-Do not expose the native process directly to the Internet. The production registry reference deployment binds the service to loopback, terminates TLS at an ingress proxy, uses a dedicated service identity, limits memory/CPU/tasks/open files, disables backend egress, and keeps credentials outside the repository. Follow the [production operations guide](PRODUCTION_OPERATIONS_EN.md) for the complete systemd/nginx runbook.
-
-The runtime is **not** a universal OS sandbox, does not provide kernel-enforced multi-tenant isolation, and does not provide built-in metrics or a durable backup system. Operators must provide isolation, monitoring, alerting, backups, restore drills, key rotation, firewall policy, certificate renewal, and incident response.
-
-## 9. VS Code and LSP
-
-Install the published extension when available:
-
-```bash
-code --install-extension ArkarYan.zap-language-support
-```
-
-The extension uses `zap lsp`. Ensure that `zap` is on `PATH` or configure `zap.executable` in VS Code settings. The LSP currently supports full document synchronization, diagnostics, hover, completion, formatting, definitions, workspace symbols, and file-local rename. Cross-file rename remains unsupported and should be reviewed before applying automated refactors.
-
-## 10. Uninstall
-
-The Unix installer uses a user-level directory. Run `uninstall.sh` or remove the installed binary and the Zap PATH line from the relevant shell profile. On Windows, run `uninstall_windows.bat` or remove the user-level `.zap\bin\zap.exe` and PATH entry. Uninstalling the CLI does not delete project files, registry data, or credentials.
-
-## References
-
-The normative references are the [language specification](LANGUAGE_SPEC_EN.md), [package guide](PACKAGE_EN.md), [registry authentication contract](REGISTRY_AUTH_EN.md), [deployment boundaries](DEPLOYMENT_EN.md), [production operations guide](PRODUCTION_OPERATIONS_EN.md), [security policy](../SECURITY.md), and [RustSec audit evidence](RUSTSEC_AUDIT_EN.md).
+The repository pins its Rust toolchain in `rust-toolchain.toml`. Source contributors should use the locked dependency graph and run the complete native tests, formatting, strict Clippy, documentation consistency, release-version, VS Code asset, LSP parity, framework, and release-preflight gates described in the [documentation navigation](DOCUMENTATION_NAVIGATION_EN.md).

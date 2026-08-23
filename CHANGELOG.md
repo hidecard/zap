@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-08-23
+
+### Release summary
+- Harden documentation integrity and strengthen the native project foundation.
+
 ## [2.4.0] - 2026-08-23
 
 ### Release summary

@@ -1,5 +1,7 @@
 # Zap Traits နှင့် Composition RFC
 
+**စစ်ဆေးထားသော baseline:** Zap v2.5.0
+
 **RFC အခြေအနေ:** Design-only proposal ဖြစ်ပြီး parser သို့မဟုတ် runtime implementation မပါဝင်ပါ။
 **စစ်ဆေးထားသော baseline:** Zap v2.4.0
 **ဆုံးဖြတ်မည့် version:** Future post-v2.2 language version အတွက် review ပြုလုပ်ရန်။ v2.2.0 တွင် traits၊ interfaces သို့မဟုတ် inheritance semantics အသစ်များကို enable မလုပ်ပါ။

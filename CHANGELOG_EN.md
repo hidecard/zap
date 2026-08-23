@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-08-23
+
+### Release engineering
+- Added repository-wide Markdown link validation, synchronized active bilingual operations guides, clarified the user-managed Web boundary, and improved release provenance records.
+
 ## [2.4.0] — 2026-08-23
 
 ### Release engineering

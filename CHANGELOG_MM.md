@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-08-23
+
+### Release engineering
+- Repository-wide Markdown link validation၊ bilingual operations guide synchronization၊ user-managed Web boundary ရှင်းလင်းချက်နှင့် release provenance record များကို ခိုင်မာစေပါသည်။
+
 ## [2.4.0] — 2026-08-23
 
 ### Release engineering

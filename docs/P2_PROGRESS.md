@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current verified baseline is the v2.4.0 release candidate for HTTP URL invariant reliability maintenance, following the published v2.4.0 documentation-maintenance release. The historical v2.4.0, v2.4.0, and v2.4.0 tags and assets remain immutable; P2 package, async, registry, editor, standard-library, and runtime corrections completed later on `master` are published through v2.4.0 with explicit production-boundary limitations.
+Zap's current development baseline is the v2.5.0 release line for HTTP URL invariant reliability maintenance, following the published v2.4.0 release. The v2.4.0 tag and assets remain immutable. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections are tracked on `master` with explicit production-boundary limitations and will be included in v2.5.0 only after the complete release gate passes.
 
 | Milestone | Status | Notes |
 |---|---|---|
@@ -22,7 +22,7 @@ Zap's current verified baseline is the v2.4.0 release candidate for HTTP URL inv
 | Post-v2.2.0 corrective cycle | Published through v2.2.2 | LSP-SYNC-01, LSP-REN-01, LSP-INTEROP-01, EXT-201, API-301, and DOC-401 are complete on `master`; the v2.2.2 release includes the corrected contracts, bilingual provenance documentation, and explicit limitations. |
 | Post-v2.2.2 runtime hardening | Published as v2.2.3 | Cycle-safe bounded equality, checked object/frame borrows through accounting and AST member reads, non-panicking task/frame invariants, and a checked LSP rename scope stack; no weak-reference API, automatic collector, or traits/parser/runtime syntax was added. |
 | Post-v2.4.0 documentation baseline maintenance | Published as v2.4.0 | Active language-specification, generic type-check, README, security, conformance, navigation, and package metadata references were synchronized after audit; no parser, runtime, or generic-syntax behavior changed. |
-| Post-v2.2.4 HTTP URL invariant hardening | Prepared for v2.2.7 release | `http_request` now returns deterministic errors for an invalid internal parser result or missing scheme/host instead of panicking through `unreachable!`; parser/runtime syntax, eager async semantics, and the no-framework boundary are unchanged. |
+| Post-v2.2.4 HTTP URL invariant hardening | Published in v2.2.7 | `http_request` now returns deterministic errors for an invalid internal parser result or missing scheme/host instead of panicking through `unreachable!`; parser/runtime syntax, eager async semantics, and the no-framework boundary are unchanged. |
 
 ## Local install/update contract
 
