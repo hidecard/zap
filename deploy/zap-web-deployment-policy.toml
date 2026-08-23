@@ -1,7 +1,8 @@
-# Reference policy for the zap-host adapter.
-# This is not a credential store and is not sufficient by itself for deployment.
+# Reference policy for a Zap-native Web application deployment.
+# This file contains no credentials and is not sufficient by itself for deployment.
 version = 1
-service = "zap-host"
+service = "zap-web"
+project_root = "/srv/zap/app"
 bind_address = "127.0.0.1:3000"
 public_ingress = "tls-terminating-proxy-only"
 http_redirect = true
@@ -13,29 +14,24 @@ upstream_timeout_seconds = 15
 readiness_path = "/ready"
 liveness_path = "/health"
 
-[sandbox]
-user = "zap-host"
-dynamic_user = true
-no_new_privileges = true
-private_tmp = true
-private_devices = true
-protect_system = "strict"
-protect_home = true
-writable_paths = []
-
-[quotas]
-memory_bytes = 268435456
-cpu_percent = 50
-tasks = 128
-open_files = 2048
+[filesystem]
+user = "zap"
+group = "zap"
+writable_paths = ["/srv/zap/app/data"]
+source_tree_read_only = true
 
 [database]
-pool_owner = "injected-user-repository"
+provider = "sqlite"
+url_source = "manifest-or-secret-manager"
+migration_command = "zap db migrate"
+migration_lock = "/run/zap/zap-web-migrate.lock"
+migration_mode = "manual-one-deployer-at-a-time"
+checksum_drift = "fail-closed"
+transactional_apply = true
+pool_owner = "host-adapter-repository"
 max_connections = 16
 acquire_timeout_ms = 1000
 query_timeout_ms = 5000
-migration_lock = "provider-orchestrator-required"
-readiness_check = "bounded-database-health-check"
 
 [authentication]
 mode = "jwt-bearer-resource-server"
@@ -53,21 +49,12 @@ id_token_as_api_access_token = false
 [credentials]
 source = "deployment-secret-manager"
 file_mode = "0600"
-required = []
-redacted_from_logs = true
 raw_credentials_enter_zap_contract = false
+redacted_from_logs = true
 
 [egress]
-backend_network = "deployment-specific-allowlist"
-allowed_cidrs = ["127.0.0.0/8", "::1/128"]
-external_egress = false
-
-[rate_limit]
-algorithm = "fixed-window"
-requests = 60
-window_seconds = 60
-state = "shared-atomic-store-required-for-multiple-instances"
-key = "verified-subject-tenant-route-class"
+web_service_external_egress = false
+external_database_egress = "provider-specific-allowlist"
 
 [supervision]
 restart = "on-failure"
@@ -78,5 +65,7 @@ readiness_removed_before_termination = true
 [production_gates]
 demo_repository_allowed = false
 demo_authenticator_allowed = false
-local_rate_limit_store_allowed = false
-runtime_cli_subprocess_per_request_allowed = false
+migration_check_before_start = true
+migration_lock_required = true
+pool_acquire_timeout_required = true
+query_timeout_required = true

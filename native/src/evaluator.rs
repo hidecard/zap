@@ -12,6 +12,8 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
@@ -1224,11 +1226,13 @@ fn direct_io_builtin_with_context(
             | "file_metadata"
             | "atomic_write"
             | "web_static"
+            | "web_static_spa"
     ) {
         require_capability("filesystem access")?;
     }
     match name {
         "web_static" => Ok(Some(web_static_with_context(args, context)?)),
+        "web_static_spa" => Ok(Some(web_static_spa_with_context(args, context)?)),
         "file_metadata" => {
             if args.len() != 1 {
                 return Err(format!(
@@ -1880,10 +1884,52 @@ fn web_static_content_type(path: &Path) -> Option<&'static str> {
         Some("html") => Some("text/html; charset=utf-8"),
         Some("css") => Some("text/css; charset=utf-8"),
         Some("js") | Some("mjs") => Some("text/javascript; charset=utf-8"),
-        Some("json") => Some("application/json; charset=utf-8"),
+        Some("json") | Some("map") => Some("application/json; charset=utf-8"),
         Some("svg") => Some("image/svg+xml"),
+        Some("png") => Some("image/png"),
+        Some("jpg") | Some("jpeg") => Some("image/jpeg"),
+        Some("gif") => Some("image/gif"),
+        Some("webp") => Some("image/webp"),
+        Some("ico") => Some("image/x-icon"),
+        Some("avif") => Some("image/avif"),
+        Some("woff") => Some("font/woff"),
+        Some("woff2") => Some("font/woff2"),
+        Some("ttf") => Some("font/ttf"),
+        Some("otf") => Some("font/otf"),
+        Some("wasm") => Some("application/wasm"),
         Some("txt") => Some("text/plain; charset=utf-8"),
         _ => None,
+    }
+}
+
+fn web_static_spa_with_context(
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Value, String> {
+    if args.len() != 3 {
+        return Err("web_static_spa expects asset path, root directory, and fallback path".into());
+    }
+    if !matches!(&args[0], Value::Text(_)) {
+        return Err("web_static_spa expects a text asset path".into());
+    }
+    let Value::Text(root) = &args[1] else {
+        return Err("web_static_spa expects a text root directory".into());
+    };
+    let Value::Text(fallback) = &args[2] else {
+        return Err("web_static_spa expects a text fallback path".into());
+    };
+    let response = web_static_with_context(&args[..2], context)?;
+    let is_not_found = matches!(
+        &response,
+        Value::Map(fields) if matches!(fields.get("status"), Some(Value::Number(404)))
+    );
+    if is_not_found {
+        web_static_with_context(
+            &[Value::Text(fallback.clone()), Value::Text(root.clone())],
+            context,
+        )
+    } else {
+        Ok(response)
     }
 }
 
@@ -1964,17 +2010,24 @@ fn web_static_with_context(
             "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
         ));
     }
-    let body = read_limited_text(&resolved, "web_static asset read")?;
-    if body.len() > MAX_STATIC_ASSET_BYTES {
+    let bytes =
+        fs::read(&resolved).map_err(|error| format!("web_static asset read failed: {error}"))?;
+    if bytes.len() > MAX_STATIC_ASSET_BYTES {
         return Err(format!(
             "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
         ));
     }
-    Ok(map_value([
+    let mut response = vec![
         ("status".into(), Value::Number(200)),
         ("content_type".into(), Value::Text(content_type.into())),
-        ("body".into(), Value::Text(body)),
-    ]))
+    ];
+    if let Ok(body) = String::from_utf8(bytes.clone()) {
+        response.push(("body".into(), Value::Text(body)));
+    } else {
+        response.push(("body_base64".into(), Value::Text(BASE64.encode(bytes))));
+        response.push(("body_encoding".into(), Value::Text("base64".into())));
+    }
+    Ok(Value::Map(response.into_iter().collect()))
 }
 
 fn web_response_header_is_reserved(name: &str) -> bool {
@@ -1998,12 +2051,19 @@ fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String>
         Some(Value::Number(value)) if (100..=599).contains(value) => *value,
         _ => return Err("web handler response status must be a number from 100 to 599".into()),
     };
-    let body = match fields.get("body") {
-        Some(Value::Text(value)) => value.clone(),
-        Some(value) => {
-            serde_json::to_string(&value_to_json(value)?).map_err(|error| error.to_string())?
+    let body = match (fields.get("body"), fields.get("body_base64")) {
+        (Some(_), Some(_)) => {
+            return Err("web handler response cannot contain both body and body_base64".into())
         }
-        None => String::new(),
+        (Some(Value::Text(value)), None) => value.as_bytes().to_vec(),
+        (Some(value), None) => serde_json::to_string(&value_to_json(value)?)
+            .map_err(|error| error.to_string())?
+            .into_bytes(),
+        (None, Some(Value::Text(encoded))) => BASE64
+            .decode(encoded)
+            .map_err(|_| "web handler response body_base64 is invalid".to_string())?,
+        (None, Some(_)) => return Err("web handler response body_base64 must be text".into()),
+        (None, None) => Vec::new(),
     };
     if body.len() > MAX_HTTP_RESPONSE_BYTES {
         return Err(format!(
@@ -2055,7 +2115,7 @@ fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String>
     }
     output.push_str("\r\n");
     let mut bytes = output.into_bytes();
-    bytes.extend_from_slice(body.as_bytes());
+    bytes.extend_from_slice(&body);
     Ok(bytes)
 }
 
@@ -4813,6 +4873,7 @@ mod tests {
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
     use crate::{ExecutionContext, Function, Value};
+    use base64::Engine as _;
     use std::{
         collections::HashMap,
         fs,
@@ -5757,6 +5818,8 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             .expect("JavaScript fixture should be written");
         fs::write(assets.join("secret.bin"), [0_u8, 1_u8, 2_u8])
             .expect("unsupported fixture should be written");
+        fs::write(assets.join("logo.png"), [0_u8, 159_u8, 146_u8, 150_u8])
+            .expect("binary fixture should be written");
         let root_text = root.to_string_lossy().into_owned();
         let value = direct_io_builtin(
             "web_static",
@@ -5794,6 +5857,46 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             css.get("content_type"),
             Some(&Value::Text("text/css; charset=utf-8".into()))
         );
+
+        let binary = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/logo.png".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("binary static builtin should not fail")
+        .expect("binary static builtin should return a value");
+        let Value::Map(binary) = binary else {
+            panic!("binary response must be a map");
+        };
+        assert_eq!(binary.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            binary.get("content_type"),
+            Some(&Value::Text("image/png".into()))
+        );
+        assert_eq!(
+            binary.get("body_base64"),
+            Some(&Value::Text(
+                super::BASE64.encode([0_u8, 159_u8, 146_u8, 150_u8])
+            ))
+        );
+
+        let spa = direct_io_builtin(
+            "web_static_spa",
+            &[
+                Value::Text("dashboard".into()),
+                Value::Text(root_text.clone()),
+                Value::Text("index.html".into()),
+            ],
+        )
+        .expect("SPA static builtin should not fail")
+        .expect("SPA static builtin should return a value");
+        let Value::Map(spa) = spa else {
+            panic!("SPA response must be a map");
+        };
+        assert_eq!(spa.get("status"), Some(&Value::Number(200)));
+        assert_eq!(spa.get("body"), Some(&Value::Text("<h1>Zap</h1>".into())));
 
         let missing = direct_io_builtin(
             "web_static",

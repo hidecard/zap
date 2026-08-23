@@ -29,7 +29,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = AppConfig::from_env()?;
     let address = config.bind_addr;
     let shutdown_timeout = config.shutdown_timeout;
-    let state = AppState::demo(config)?;
+    let state = AppState::from_env(config)?;
     let lifecycle = state.lifecycle.clone();
     let router = build_router(state);
     let listener = TcpListener::bind(address).await?;

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use axum::{
     body::Body,
-    http::{Method, Request, StatusCode},
+    http::{HeaderMap, Method, Request, StatusCode},
 };
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
@@ -25,11 +25,12 @@ enum AuthMode {
     Missing,
     MissingScope,
     Internal,
+    Unavailable,
 }
 
 #[async_trait]
 impl Authenticator for TestAuth {
-    async fn authenticate(&self, _request: &Request<Body>) -> Result<Identity, AuthFailure> {
+    async fn authenticate(&self, _headers: &HeaderMap) -> Result<Identity, AuthFailure> {
         match self.mode {
             AuthMode::Valid => Ok(Identity::new("test-subject", ["users:read", "users:write"])),
             AuthMode::Missing => Err(AuthFailure::Missing),
@@ -37,6 +38,7 @@ impl Authenticator for TestAuth {
                 Ok(Identity::new("test-subject", std::iter::empty::<String>()))
             }
             AuthMode::Internal => Err(AuthFailure::Internal),
+            AuthMode::Unavailable => Err(AuthFailure::Unavailable),
         }
     }
 }
@@ -288,6 +290,11 @@ async fn authentication_and_scope_failures_are_distinct() {
         (
             AuthMode::Internal,
             StatusCode::INTERNAL_SERVER_ERROR,
+            "authentication_unavailable",
+        ),
+        (
+            AuthMode::Unavailable,
+            StatusCode::SERVICE_UNAVAILABLE,
             "authentication_unavailable",
         ),
     ] {

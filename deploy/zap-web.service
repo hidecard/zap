@@ -1,0 +1,46 @@
+[Unit]
+Description=Zap Web application
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/srv/zap/app/zap.toml
+
+[Service]
+Type=simple
+User=zap
+Group=zap
+WorkingDirectory=/srv/zap/app
+EnvironmentFile=-/etc/zap/zap-web.env
+ExecStartPre=/usr/local/bin/zap build --locked /srv/zap/app
+ExecStartPre=/usr/local/bin/zap web check /srv/zap/app
+ExecStart=/usr/local/bin/zap dev /srv/zap/app
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=35s
+KillMode=control-group
+
+# Zap writes SQLite data only under the explicit application data directory.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadWritePaths=/srv/zap/app/data
+UMask=0077
+
+# The application listens on loopback; Nginx terminates public TLS.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+
+# Bounded resources; tune only after load evidence.
+MemoryMax=512M
+CPUQuota=100%
+TasksMax=256
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

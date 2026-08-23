@@ -112,6 +112,8 @@ require_file docs/ZAP_HOST_QUICKSTART_EN.md
 require_file docs/ZAP_HOST_QUICKSTART_MM.md
 require_file docs/ZAP_WEB_NATIVE_EN.md
 require_file docs/ZAP_WEB_NATIVE_MM.md
+require_file docs/FRONTEND_INTEGRATION_EN.md
+require_file docs/FRONTEND_INTEGRATION_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
@@ -128,6 +130,10 @@ require_text docs/WEB_FRAMEWORK_EN.md "web_static"
 require_text docs/WEB_FRAMEWORK_MM.md "web_static"
 require_text docs/FRAMEWORK_EN.md "Self-contained runtime"
 require_text docs/FRAMEWORK_MM.md "Self-contained runtime"
+require_text docs/FRAMEWORK_EN.md "web_static_spa"
+require_text docs/FRAMEWORK_MM.md "web_static_spa"
+require_text docs/FRONTEND_INTEGRATION_EN.md "React, Vue, and Svelte"
+require_text docs/FRONTEND_INTEGRATION_MM.md "React, Vue နှင့် Svelte"
 require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
@@ -166,6 +172,37 @@ require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_HOST_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_HOST_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_WEB_NATIVE_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_WEB_NATIVE_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRONTEND_INTEGRATION_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRONTEND_INTEGRATION_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "PRODUCTION_DEPLOYMENT_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "PRODUCTION_DEPLOYMENT_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "DATABASE_PRODUCTION_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "DATABASE_PRODUCTION_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "AUTH_OAUTH2_JWT_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "AUTH_OAUTH2_JWT_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "LOAD_CHAOS_TESTING_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "LOAD_CHAOS_TESTING_MM.md"
+require_file docs/PRODUCTION_DEPLOYMENT_EN.md
+require_file docs/PRODUCTION_DEPLOYMENT_MM.md
+require_file docs/DATABASE_PRODUCTION_EN.md
+require_file docs/DATABASE_PRODUCTION_MM.md
+require_file docs/AUTH_OAUTH2_JWT_EN.md
+require_file docs/AUTH_OAUTH2_JWT_MM.md
+require_file docs/LOAD_CHAOS_TESTING_EN.md
+require_file docs/LOAD_CHAOS_TESTING_MM.md
+require_text docs/AUTH_OAUTH2_JWT_EN.md "ZAP_AUTH_MODE=jwt"
+require_text docs/AUTH_OAUTH2_JWT_MM.md "ZAP_AUTH_MODE=jwt"
+require_text docs/LOAD_CHAOS_TESTING_EN.md "load_zap_host.py"
+require_text docs/LOAD_CHAOS_TESTING_MM.md "load_zap_host.py"
+require_text docs/PRODUCTION_DEPLOYMENT_EN.md "zap-web-migrate.service"
+require_text docs/PRODUCTION_DEPLOYMENT_MM.md "zap-web-migrate.service"
+require_text docs/DATABASE_PRODUCTION_EN.md "ZAP_DB_MAX_CONNECTIONS"
+require_text docs/DATABASE_PRODUCTION_MM.md "ZAP_DB_MAX_CONNECTIONS"
+require_text host/zap-host/.env.example "ZAP_DB_MAX_CONNECTIONS=16"
+require_text host/zap-host/.env.example "ZAP_DB_ACQUIRE_TIMEOUT_MS=1000"
+require_text host/zap-host/.env.example "ZAP_DB_QUERY_TIMEOUT_MS=5000"
+require_text host/zap-host/.env.example "ZAP_AUTH_MODE=jwt"
+require_text host/zap-host/.env.example "ZAP_AUTH_ALLOWED_ALGORITHMS=RS256"
 for native_web_file in \
   docs/ZAP_WEB_NATIVE_EN.md \
   docs/ZAP_WEB_NATIVE_MM.md \
@@ -189,13 +226,26 @@ for deployment_file in \
   deploy/zap-host.nginx.conf \
   deploy/zap-host-deployment-policy.toml \
   deploy/zap-host.env.example \
-  scripts/validate_zap_host_deployment.sh; do
+  deploy/zap-web.service \
+  deploy/zap-web-migrate.service \
+  deploy/zap-web.nginx.conf \
+  deploy/zap-web-deployment-policy.toml \
+  deploy/zap-web.env.example \
+  scripts/validate_zap_host_deployment.sh \
+  scripts/validate_zap_web_deployment.sh \
+  scripts/load_zap_host.py \
+  scripts/chaos_zap_host.py; do
   require_file "$deployment_file"
 done
 if [[ -x scripts/validate_zap_host_deployment.sh ]] && scripts/validate_zap_host_deployment.sh >/dev/null 2>&1; then
   record PASS "host-deployment-policy:zap-host"
 else
   record FAIL "host-deployment-policy:zap-host"
+fi
+if [[ -x scripts/validate_zap_web_deployment.sh ]] && scripts/validate_zap_web_deployment.sh >/dev/null 2>&1; then
+  record PASS "web-deployment-policy:zap-web"
+else
+  record FAIL "web-deployment-policy:zap-web"
 fi
 
 if command -v cargo >/dev/null 2>&1; then
@@ -257,7 +307,11 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && [[ -f "$scaffold_dir/project/public/assets/app.css" ]] \
         && [[ -f "$scaffold_dir/project/public/assets/app.js" ]] \
         && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
+        && grep -Fq '[frontend]' "$scaffold_dir/project/zap.toml" \
+        && grep -Fq 'spa_fallback = "index.html"' "$scaffold_dir/project/zap.toml" \
         && grep -Fq '/assets/*path' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq '/*path' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq 'web_static_spa' "$scaffold_dir/project/services/user_service.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
