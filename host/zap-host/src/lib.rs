@@ -370,6 +370,41 @@ impl LifecycleState {
     }
 }
 
+/// Low-cardinality process metrics for operator health checks.
+///
+/// The counters intentionally do not include paths, identities, request IDs, or
+/// user-controlled labels. This keeps the endpoint bounded and avoids turning
+/// observability into an unbounded memory or secret-leak surface.
+#[derive(Debug, Default)]
+pub struct Metrics {
+    requests_total: AtomicU64,
+    responses_5xx_total: AtomicU64,
+    in_flight_requests: AtomicU64,
+}
+
+impl Metrics {
+    fn request_started(&self) {
+        self.requests_total.fetch_add(1, Ordering::Relaxed);
+        self.in_flight_requests.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn response_finished(&self, status: StatusCode) {
+        if status.is_server_error() {
+            self.responses_5xx_total.fetch_add(1, Ordering::Relaxed);
+        }
+        self.in_flight_requests.fetch_sub(1, Ordering::Relaxed);
+    }
+
+    fn render(&self) -> String {
+        format!(
+            "# HELP zap_requests_total Total HTTP requests observed by the host adapter.\n# TYPE zap_requests_total counter\nzap_requests_total {}\n# HELP zap_responses_5xx_total Total HTTP responses with a 5xx status.\n# TYPE zap_responses_5xx_total counter\nzap_responses_5xx_total {}\n# HELP zap_in_flight_requests Current HTTP requests being processed.\n# TYPE zap_in_flight_requests gauge\nzap_in_flight_requests {}\n",
+            self.requests_total.load(Ordering::Relaxed),
+            self.responses_5xx_total.load(Ordering::Relaxed),
+            self.in_flight_requests.load(Ordering::Relaxed),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RateLimitError {
     InvalidPolicy,
@@ -656,6 +691,7 @@ pub struct AppState {
     pub readiness: Arc<dyn ReadinessProbe>,
     pub lifecycle: Arc<LifecycleState>,
     pub rate_limiter: FixedWindowStore,
+    pub metrics: Arc<Metrics>,
 }
 
 impl AppState {
@@ -681,6 +717,7 @@ impl AppState {
             readiness,
             lifecycle: Arc::new(LifecycleState::default()),
             rate_limiter: FixedWindowStore::default(),
+            metrics: Arc::new(Metrics::default()),
         })
     }
 
@@ -730,6 +767,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/", get(root))
         .route("/health", get(health))
         .route("/ready", get(ready))
+        .route("/metrics", get(metrics))
         .merge(api)
         .layer(SetSensitiveHeadersLayer::new([
             header::AUTHORIZATION,
@@ -741,6 +779,10 @@ pub fn build_router(state: AppState) -> Router {
         .layer(middleware::from_fn_with_state(
             state.clone(),
             request_policy_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            metrics_middleware,
         ))
         .with_state(state)
 }
@@ -882,6 +924,22 @@ async fn auth_middleware(
             "authentication_unavailable",
             "authentication service is unavailable",
             &request_id,
+        ),
+    }
+}
+
+async fn metrics(State(state): State<AppState>) -> Response {
+    match Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/plain; version=0.0.4")
+        .body(Body::from(state.metrics.render()))
+    {
+        Ok(response) => response,
+        Err(_) => error_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "metrics_unavailable",
+            "metrics response could not be rendered",
+            "unassigned",
         ),
     }
 }
@@ -1088,6 +1146,17 @@ fn gateway_error_response(error: GatewayError, request_id: &str) -> Response {
     }
 }
 
+async fn metrics_middleware(
+    State(state): State<AppState>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    state.metrics.request_started();
+    let response = next.run(request).await;
+    state.metrics.response_finished(response.status());
+    response
+}
+
 fn request_id(request: &Request<Body>) -> String {
     request
         .extensions()
@@ -1138,6 +1207,18 @@ fn apply_security_headers(response: &mut Response, request_id: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn metrics_render_is_stable_and_low_cardinality() {
+        let metrics = Metrics::default();
+        metrics.request_started();
+        metrics.response_finished(StatusCode::INTERNAL_SERVER_ERROR);
+        let rendered = metrics.render();
+        assert!(rendered.contains("zap_requests_total 1"));
+        assert!(rendered.contains("zap_responses_5xx_total 1"));
+        assert!(rendered.contains("zap_in_flight_requests 0"));
+        assert!(!rendered.contains("/api"));
+    }
 
     #[test]
     fn fixed_window_resets_and_rejects_clock_reversal() {

@@ -1,6 +1,6 @@
 # zap-host Axum/Tower Adapter
 
-**Verified baseline:** Zap v2.5.0
+**Verified baseline:** Zap v2.6.0
 **Branch:** `Framework`
 **Status:** adapter foundation v0.1, implemented under `host/zap-host` on the `Framework` branch.
 
@@ -15,7 +15,7 @@ The first crate is a runnable adapter skeleton rather than a complete production
 | Area | Implemented in `zap-host` | Production replacement required |
 |---|---|---|
 | HTTP listener | Tokio `TcpListener` and `axum::serve` | TLS termination, proxy policy, deployment health, and socket hardening |
-| Routing | `/`, `/health`, `/api/users`, `/api/users/:id` | Versioning, API compatibility policy, and the complete application route set |
+| Routing | `/`, `/health`, `/ready`, `/metrics`, `/api/users`, `/api/users/:id` | Versioning, API compatibility policy, and the complete application route set |
 | Request bounds | 2,048-byte path, 65,536-byte body, 128-byte request ID | Edge/proxy limits, multipart policy, decompression limits, and per-route budgets |
 | Timeout | Tower `TimeoutLayer`, default 10 seconds | Operation-specific deadlines, cancellation propagation, and downstream timeout budgets |
 | Authentication | `Authenticator` trait and identity extension | JWT/OIDC/API-key verification, key rotation, issuer/audience checks, and revocation policy |
@@ -89,13 +89,14 @@ The default bind address is loopback to avoid accidentally exposing the demo ada
 | `GET` | `/` | None | `200` | Small root response and correlation ID |
 | `GET` | `/health` | None | `200` | Liveness-style response only; it does not prove database readiness |
 | `GET` | `/ready` | None | `200`/`503` | Readiness probe result; public and dependency-aware |
+| `GET` | `/metrics` | None | `200` | Bounded Prometheus-style process counters; no user-controlled labels |
 | `GET` | `/api/users` | `users:read` | `200` | Public DTO list |
 | `GET` | `/api/users/:id` | `users:read` | `200` | `404` for an absent user |
 | `POST` | `/api/users` | `users:write` | `201` | JSON body with string `name` and `email` |
 
 All JSON responses include `x-content-type-options: nosniff`, `cache-control: no-store`, and the validated or generated `x-request-id`. Authorization and cookie headers are marked sensitive for Tower diagnostics. Error responses contain stable error codes and do not expose driver messages, SQL, credentials, tokens, or internal row fields.
 
-The `GET /health` route is public and intentionally lightweight. `GET /ready` is public and calls the injected readiness probe; it returns `503` when required dependencies are not ready. Readiness must remain distinct from liveness and should be wired to real dependency checks before deployment.
+The `GET /health` route is public and intentionally lightweight. `GET /ready` is public and calls the injected readiness probe; it returns `503` when required dependencies are not ready. `GET /metrics` is public and emits only bounded process counters for total requests, 5xx responses, and in-flight requests; it does not expose paths, identities, request IDs, or client-controlled labels. Readiness must remain distinct from liveness and should be wired to real dependency checks before deployment.
 
 ## Database adapter checklist
 
