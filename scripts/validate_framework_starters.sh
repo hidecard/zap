@@ -302,17 +302,33 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       scaffold_dir=$(mktemp -d)
       scaffold_output=$(mktemp)
       if "$ZAP_BIN" new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && [[ -f "$scaffold_dir/project/zap.lock" ]] \
+        && [[ -d "$scaffold_dir/project/models" ]] \
+        && [[ -d "$scaffold_dir/project/functions" ]] \
+        && [[ -d "$scaffold_dir/project/ui" ]] \
+        && [[ -d "$scaffold_dir/project/routes" ]] \
+        && [[ -d "$scaffold_dir/project/middleware" ]] \
+        && [[ -d "$scaffold_dir/project/migrations" ]] \
+        && [[ -d "$scaffold_dir/project/admin" ]] \
+        && [[ -d "$scaffold_dir/project/public" ]] \
+        && [[ ! -e "$scaffold_dir/project/services" ]] \
+        && [[ ! -e "$scaffold_dir/project/views" ]] \
         && [[ -f "$scaffold_dir/project/server.zp" ]] \
+        && [[ -f "$scaffold_dir/project/ui/ui.zp" ]] \
+        && [[ -f "$scaffold_dir/project/routes/routes.zp" ]] \
+        && [[ -f "$scaffold_dir/project/functions/user_functions.zp" ]] \
+        && [[ -f "$scaffold_dir/project/middleware/middleware.zp" ]] \
+        && [[ -f "$scaffold_dir/project/admin/admin.zp" ]] \
         && [[ -f "$scaffold_dir/project/public/index.html" ]] \
         && [[ -f "$scaffold_dir/project/public/assets/app.css" ]] \
         && [[ -f "$scaffold_dir/project/public/assets/app.js" ]] \
         && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
         && grep -Fq '[frontend]' "$scaffold_dir/project/zap.toml" \
         && grep -Fq 'spa_fallback = "index.html"' "$scaffold_dir/project/zap.toml" \
-        && grep -Fq '/assets/*path' "$scaffold_dir/project/routes.zp" \
-        && grep -Fq '/*path' "$scaffold_dir/project/routes.zp" \
-        && grep -Fq 'web_static_spa' "$scaffold_dir/project/services/user_service.zp" \
-        && grep -Fq '/api/tasks' "$scaffold_dir/project/routes.zp" \
+        && grep -Fq '/assets/*path' "$scaffold_dir/project/routes/routes.zp" \
+        && grep -Fq '/*path' "$scaffold_dir/project/routes/routes.zp" \
+        && grep -Fq 'web_static_spa' "$scaffold_dir/project/functions/user_functions.zp" \
+        && grep -Fq '/api/tasks' "$scaffold_dir/project/routes/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \

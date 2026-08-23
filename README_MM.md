@@ -46,6 +46,20 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 
+## Command တစ်ကြောင်းဖြင့် project ဆောက်ခြင်း
+
+Project တစ်ခုလုံးကို command တစ်ကြောင်းတည်းဖြင့် စတင်ဖန်တီးနိုင်ပါသည်။
+
+```bash
+zap new my_app
+cd my_app
+zap check
+zap test tests
+zap dev
+```
+
+ထုတ်ပေးသော project ထဲတွင် `models/`၊ `functions/`၊ `ui/`၊ `routes/`၊ `middleware/`၊ `migrations/`၊ `admin/`၊ `public/`၊ `zap.toml` နှင့် `zap.lock` ပါဝင်ပါသည်။ ၎င်းတို့သည် user ကိုယ်တိုင် ပိုင်ဆိုင်ပြီး တိုက်ရိုက်ပြင်ဆင်စီမံနိုင်သော ရိုးရိုး file/directory များ ဖြစ်ပါသည်။ Django-style `startapp` command သို့မဟုတ် သီးခြား app registry မထည့်ထားပါ။ Project ကြီးလာသည်နှင့်အမျှ module များကို project အတွင်း user ကိုယ်တိုင် ထည့်ခြင်း၊ ဖျက်ခြင်းနှင့် စီစဉ်ခြင်း ပြုလုပ်နိုင်ပါသည်။ အသေးစိတ် structure နှင့် frontend contract အတွက် [မြန်မာ native Web guide](docs/ZAP_WEB_NATIVE_MM.md) ကို ဖတ်ပါ။
+
 ## Release provenance
 
 ဤ README ထဲရှိ လက်ရှိ source baseline နှင့် archive contract များသည် v2.3.0 ကို ရည်ညွှန်းပါသည်။ အသေးစိတ်ကို [v2.3.0 release reference](https://github.com/hidecard/zap/releases/tag/v2.3.0) တွင် ကြည့်နိုင်ပြီး published asset များကို ဖြန့်ချိမီ checksum နှင့် signature ကို verify လုပ်ရမည်။ Published v2.2.7 release နှင့် signed asset များသည် historical reference အဖြစ် ဆက်ရှိပါသည်။ Published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) သည် immutable အဖြစ် ဆက်ရှိပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0)၊ [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1)၊ [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2)၊ [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3) နှင့် [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4) တို့၏ tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ v2.2.0 နောက်ပိုင်း remediation history နှင့် v2.2.3 အထိ runtime-safety/helper correction များကို [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) နှင့် v2.2.3 release note တွင် မှတ်တမ်းတင်ထားပါသည်။ post-v2.2.2 hardening ကို v2.2.3 တွင် ထည့်သွင်းထားပြီး v2.2.4 တွင် active-baseline documentation synchronization နှင့် v2.2.5 တွင် HTTP URL invariant hardening ပါဝင်သည်။

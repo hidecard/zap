@@ -32,34 +32,37 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `ui/ui.zp`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated `ui/ui.zp` is the explicit UI boundary: it describes the browser entrypoint, asset root, selected frontend mode, and the fact that Node is not required at runtime. The generated entrypoint prints a deterministic application description, route table, model metadata, UI metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
+`zap new <directory>` is the single canonical project generator. It creates a complete user-managed project with `zap.toml`, `zap.lock`, `main.zp`, `web.zp`, `models/`, `functions/`, `ui/`, `routes/`, `middleware/`, `migrations/`, `admin/`, `public/`, `server.zp`, and `tests/`. There is deliberately no Django-style `startapp` command: after generation, users own and manage the files and may add, remove, or reorganize modules according to their application needs. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated `ui/ui.zp` is the explicit UI boundary: it describes the browser entrypoint, asset root, selected frontend mode, and the fact that Node is not required at runtime. The generated entrypoint prints a deterministic application description, route table, model metadata, UI metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
 
 The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
 
 ## Project and app model
 
-A Zap Web project is the deployable site boundary. A Web app is a directory or module group that owns a cohesive feature such as accounts, catalog, billing, or devices. A project may compose several apps, but each app should expose a small explicit surface rather than registering hidden global state.
+A Zap Web project is the deployable site boundary. The generated directories are ordinary user-managed Zap modules, not hidden framework registrations. A project may organize cohesive features such as accounts, catalog, billing, or devices under any of these directories, and users can add or remove files without running a separate app-generation command.
 
 The scaffold uses a deliberately readable layout:
 
 ```text
-shop/
+my_app/
 ├── zap.toml
+├── zap.lock
 ├── main.zp
 ├── web.zp
-├── routes.zp
-├── middleware.zp
-├── admin.zp
 ├── server.zp
 ├── models/
 │   └── user.zp
-├── services/
-│   └── user_service.zp
+├── functions/
+│   └── user_functions.zp
 ├── ui/
 │   └── ui.zp
+├── routes/
+│   └── routes.zp
+├── middleware/
+│   └── middleware.zp
 ├── migrations/
 │   └── 0001_initial.zp
-├── views/
+├── admin/
+│   └── admin.zp
 ├── public/
 │   ├── index.html
 │   └── assets/
@@ -69,7 +72,7 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations and request handlers, `ui/ui.zp` owns browser-facing UI metadata, `public/` owns HTML/CSS/JavaScript assets, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
+`routes/routes.zp` owns the route catalog, `models/` owns data metadata, `functions/` owns business operations and request handlers, `ui/ui.zp` owns browser-facing UI metadata, `public/` owns HTML/CSS/JavaScript assets, `middleware/middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin/admin.zp` owns explicit management registration, and `tests/` owns project tests. The files are explicit source files that users can edit directly; Zap does not require a separate app registry or generator for them. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
 
 ## Runtime independence and frontend integration
 
