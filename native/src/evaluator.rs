@@ -1834,6 +1834,11 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         };
         process.arg(argument);
     }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        process.process_group(0);
+    }
     let mut child = process
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -1855,8 +1860,7 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         match child.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) if Instant::now() >= deadline => {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 let _ = stdout_reader.join();
                 let _ = stderr_reader.join();
                 return Err(format!(
@@ -1894,6 +1898,23 @@ fn process_run(args: &[Value]) -> Result<Value, String> {
         ("stdout".into(), Value::Text(stdout)),
         ("stderr".into(), Value::Text(stderr)),
     ]))
+}
+
+fn terminate_process_tree(child: &mut std::process::Child) {
+    let pid = child.id().to_string();
+    #[cfg(unix)]
+    {
+        let group = format!("-{pid}");
+        let _ = Command::new("kill").args(["-KILL", &group]).status();
+    }
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/PID", &pid, "/T", "/F"])
+            .status();
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn read_process_output<R: Read>(mut reader: R) -> std::io::Result<(Vec<u8>, bool)> {

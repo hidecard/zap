@@ -1,6 +1,6 @@
 # Learn Zap — English Guide
 
-**Verified baseline:** Zap v2.2.5
+**Verified baseline:** Zap v2.2.6
 **Purpose:** A learner-first path from installation and core syntax to modules, typed results, testing, tooling, and small projects.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 

@@ -17,6 +17,8 @@ This guide documents the stabilized filesystem and JSON APIs available through Z
 | `file_metadata` | `file_metadata(path: text)` | `map` | Returns `{kind, size, readonly}` from platform metadata. `kind` is one of `file`, `directory`, `symlink`, or `other`. |
 | `atomic_write` | `atomic_write(path: text, content: text)` | `none` | Writes through a same-directory temporary file, synchronizes it, and commits it with rename semantics. |
 
+In an active project execution, `read_text`, `read_lines`, `write_text`, and `write_lines` resolve paths through the context-owned workspace boundary. Relative paths are joined to the workspace, absolute paths must remain inside it, traversal is rejected, and symlink resolution may not leave it. The same rule applies to the retained legacy line-execution compatibility path. The check is a portable runtime boundary rather than an OS sandbox; descriptor-relative race-free opens require host-specific deployment controls.
+
 `file_metadata` uses symlink metadata rather than following a link, so a symlink is reported as `kind = "symlink"`. The `size` field is the platform-reported byte length and `readonly` reflects the host permission flag. These fields are intentionally limited to portable metadata rather than exposing OS-specific mode bits.
 
 `atomic_write` is bounded by the same **8 MiB** content limit as other text writes. It leaves the destination unchanged if temporary creation, writing, synchronization, or commit fails, and removes its temporary file during error cleanup. The temporary file is created beside the destination so a successful rename remains on the same filesystem.

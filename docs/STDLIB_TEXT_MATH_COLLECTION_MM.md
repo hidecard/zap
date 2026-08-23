@@ -44,11 +44,11 @@ say join(["web", "ai", "iot"], ", ")
 | `abs` | `abs(value)` | `number` | Number ၏ absolute value ကို ပြန်ပေးသည်။ အနည်းဆုံး signed integer ကို overflow ဖြစ်သောကြောင့် reject လုပ်သည်။ |
 | `min` | `min(left, right)` | `number` | Number နှစ်ခုထဲမှ ငယ်သောတန်ဖိုးကို ပြန်ပေးသည်။ |
 | `max` | `max(left, right)` | `number` | Number နှစ်ခုထဲမှ ကြီးသောတန်ဖိုးကို ပြန်ပေးသည်။ |
-| `pow` | `pow(base, exponent)` | `number` | Integer power တွက်သည်။ exponent သည် negative မဖြစ်ရပါ။ |
+| `pow` | `pow(base, exponent)` | `number` | Integer power တွက်သည်။ exponent သည် negative မဖြစ်ရဘဲ `1_000_000` ထက် မကျော်ရပါ။ |
 | `sum` | `sum(values)` | `number` | List ထဲရှိ number များကို checked integer arithmetic ဖြင့် ပေါင်းသည်။ |
 | `range` | `range(end)` သို့မဟုတ် `range(start, end)` | `list<number>` | `start <= value < end` ဖြစ်သော half-open integer range ကို ဖန်တီးသည်။ |
 
-Math helper များသည် integer `number` များကို အသုံးပြုပါသည်။ Overflow နှင့် မမှန်ကန်သော exponent များကို wrap မလုပ်ဘဲ runtime error ပြန်ပေးပါသည်။
+Math helper များသည် integer `number` များကို အသုံးပြုပါသည်။ `pow` သည် negative သို့မဟုတ် limit ကျော်သော exponent ကို execution မတိုင်မီ reject လုပ်ကာ checked exponentiation-by-squaring ကို အသုံးပြုပါသည်။ Overflow နှင့် မမှန်ကန်သော exponent များကို wrap မလုပ်ဘဲ deterministic runtime error ပြန်ပေးပါသည်။
 
 ```zap
 say abs(-42)

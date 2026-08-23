@@ -2,7 +2,7 @@
 
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Memory model](MEMORY_MODEL_MM.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_MM.md) · [Async/LSP guide](ASYNC_LSP_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 
-**အခြေအနေ:** Zap v2.2.5 အတွက် migration foundation ကို အကောင်အထည်ဖော်ပြီး
+**အခြေအနေ:** Zap v2.2.6 အတွက် migration foundation ကို အကောင်အထည်ဖော်ပြီး
 
 ဤစာတမ်းသည် explicit runtime-state boundary ၏ ပထမဆုံးအပိုင်းကို သတ်မှတ်ပါသည်။ Evaluator ဆိုင်ရာ state အားလုံးကို object တစ်ခုတည်းသို့ ရွှေ့ပြီးပြီဟု မဆိုလိုဘဲ လက်ရှိရွှေ့ပြီးသော state နှင့် နောက်ပိုင်းလုပ်ရမည့် boundary များကို မှတ်တမ်းတင်ထားပါသည်။
 

@@ -2,7 +2,7 @@
 
 **Design status:** M2-MEM-02 logical accounting နှင့် rollback slice
 
-**စစ်ဆေးထားသော baseline:** Zap v2.2.5။
+**စစ်ဆေးထားသော baseline:** Zap v2.2.6။
 
 ## ရည်ရွယ်ချက်
 

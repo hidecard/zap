@@ -1,6 +1,6 @@
 # Security Policy
 
-**Verified baseline:** Zap v2.2.5
+**Verified baseline:** Zap v2.2.6
 **Purpose:** Security-maintainer and release-operator reference for supported versions, reporting, provenance, and release-integrity controls.
 **Navigation:** [Documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md) · [Deployment boundaries](docs/DEPLOYMENT_EN.md) · [Release signing](docs/RELEASE_SIGNING_EN.md) · [Release version policy](docs/RELEASE_VERSION_POLICY_EN.md)
 
@@ -29,4 +29,4 @@ Zap is experimental software. Do not execute untrusted Zap programs with access 
 
 ## Release Integrity
 
-Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) or a later official release when distributing Zap. The historical v2.2.0 tag and assets remain immutable.
+Release artifacts are published through the repository's GitHub Actions workflow. Verify the published checksums and use the official [v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6) or a later official release when distributing Zap. The published v2.2.5 release and historical v2.2.0–v2.2.4 tags and assets remain immutable. v2.2.6 confines line-based file I/O to the active workspace, bounds synchronous sleep and exponentiation, validates strict locked builds, rejects malformed URL ports, skips symlink loops during test discovery, and uses best-effort platform process-tree termination on timeout/cancellation. These controls are not an OS sandbox: portable filesystem check/use races, complete DNS-to-connection pinning, and universal descendant cleanup remain host/deployment boundaries. The locked dependency graph also retains the recorded RustSec advisories until a separately approved dependency-maintenance pass can update it without violating the repository lockfile policy.

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.6] — 2026-08-23
+
+### Release engineering
+- Hardens filesystem confinement, locked-build validation, bounded builtins, URL parsing, test discovery, registry-test isolation, and cross-platform compatibility without adding framework work.
+
 ## [2.2.5] — 2026-08-23
 
 ### Release engineering

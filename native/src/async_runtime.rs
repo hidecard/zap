@@ -913,8 +913,14 @@ fn run_process_bounded_with_cancel(
     limits: AdapterLimits,
     token: &CancellationToken,
 ) -> Result<ProcessOutput, String> {
-    let mut child = Command::new(command)
-        .args(arguments)
+    let mut process = Command::new(command);
+    process.args(arguments);
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        process.process_group(0);
+    }
+    let mut child = process
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -937,15 +943,13 @@ fn run_process_bounded_with_cancel(
         match child.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) if token.is_cancelled() => {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 let _ = stdout_reader.join();
                 let _ = stderr_reader.join();
                 return Err("process cancelled and child terminated".to_owned());
             }
             Ok(None) if Instant::now() >= deadline => {
-                let _ = child.kill();
-                let _ = child.wait();
+                terminate_process_tree(&mut child);
                 let _ = stdout_reader.join();
                 let _ = stderr_reader.join();
                 return Err("process exceeded deadline".to_owned());
@@ -968,6 +972,23 @@ fn run_process_bounded_with_cancel(
         stdout,
         stderr,
     })
+}
+
+fn terminate_process_tree(child: &mut std::process::Child) {
+    let pid = child.id().to_string();
+    #[cfg(unix)]
+    {
+        let group = format!("-{pid}");
+        let _ = Command::new("kill").args(["-KILL", &group]).status();
+    }
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/PID", &pid, "/T", "/F"])
+            .status();
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn read_capped_output<R: Read>(mut reader: R, limit: usize) -> Result<Vec<u8>, String> {

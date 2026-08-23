@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.2.6] — 2026-08-23
+
+### Release engineering
+- Filesystem confinement၊ locked-build validation၊ bounded builtin၊ URL parsing၊ test discovery၊ registry-test isolation နှင့် cross-platform compatibility များကို harden လုပ်ပြီး framework အလုပ်မထည့်သွင်းပါ။
+
 ## [2.2.5] — 2026-08-23
 
 ### Release engineering

@@ -2,7 +2,7 @@
 
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Memory model](MEMORY_MODEL_EN.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_EN.md) · [Async/LSP guide](ASYNC_LSP_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 
-**Status:** Implemented migration foundation for Zap v2.2.5
+**Status:** Implemented migration foundation for Zap v2.2.6
 
 This document defines the first explicit runtime-state boundary. It does not claim that every evaluator concern has already moved into one object; it records the state that has been migrated and the boundaries that remain deferred.
 

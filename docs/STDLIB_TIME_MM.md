@@ -9,8 +9,11 @@
 | `utc_now()` | မရှိပါ | `unix_seconds` နှင့် `unix_millis` ပါသော map ကို ပြန်ပေးသည်။ |
 | `duration_parts(milliseconds)` | integer millisecond duration တစ်ခု | `milliseconds`၊ `days`၊ `hours`၊ `minutes`၊ `seconds` နှင့် `millis` ပါသော map ကို ပြန်ပေးသည်။ |
 | `duration_between(end_millis, start_millis)` | integer millisecond timestamp နှစ်ခု | စစ်ဆေးထားသော `end_millis - start_millis` ကွာခြားချက်အတွက် အထက်ပါ duration map ကို ပြန်ပေးသည်။ |
+| `sleep(milliseconds)` | non-negative integer duration တစ်ခု၊ `60_000` အထိ | bounded wall-clock delay ပြီးနောက် `none` ပြန်ပေးသည်။ |
 
 `utc_now()` သည် Unix time ကို UTC ဖြင့် အခြေခံပြီး local timezone ပေါ် မူတည်ခြင်းမရှိပါ။ Millisecond တန်ဖိုးသည် seconds တန်ဖိုးနှင့် ကိုက်ညီပြီး `unix_seconds * 1000` ထက် ကြီးသို့မဟုတ် ညီကာ `(unix_seconds + 1) * 1000` ထက် ငယ်ပါသည်။
+
+`sleep` သည် bounded system operation ဖြစ်ပါသည်။ Negative value သို့မဟုတ် `60_000` milliseconds ထက်ကျော်သော value များကို sleep မလုပ်မီ deterministic error ဖြင့် reject လုပ်သည်။ ၎င်းသည် scheduler၊ reactor သို့မဟုတ် lazy async continuation မဟုတ်ပါ။
 
 `duration_parts` သည် input ၏ sign ကို ထိန်းသိမ်းထားပါသည်။ Component field များကို unit boundary တစ်ခုစီတွင် သုညဘက်သို့ ဖြတ်တောက်သောကြောင့် တိကျသော signed value လိုပါက `milliseconds` ကို အသုံးပြုနိုင်ပါသည်။ `duration_between` သည် checked subtraction ကို အသုံးပြုပြီး timestamp နှစ်ခုကြောင့် signed integer range overflow ဖြစ်နိုင်ပါက runtime error ပြန်ပေးပါသည်။ လုံခြုံစွာ ကိုယ်စားမပြုနိုင်သော duration များကိုလည်း decomposition က ငြင်းပယ်ပါသည်။
 

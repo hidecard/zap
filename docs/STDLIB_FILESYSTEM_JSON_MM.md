@@ -17,6 +17,8 @@
 | `file_metadata` | `file_metadata(path: text)` | `map` | Platform metadata မှ `{kind, size, readonly}` ကို ပြန်ပေးသည်။ `kind` သည် `file`, `directory`, `symlink`, သို့မဟုတ် `other` ဖြစ်နိုင်သည်။ |
 | `atomic_write` | `atomic_write(path: text, content: text)` | `none` | File တည်နေရာတူ temporary file မှတစ်ဆင့် ရေးသား၊ sync ပြုလုပ်ပြီး rename ဖြင့် commit လုပ်သည်။ |
 
+Active project execution အတွင်း `read_text`၊ `read_lines`၊ `write_text` နှင့် `write_lines` တို့သည် context ပိုင် workspace boundary မှတစ်ဆင့် path ကို resolve လုပ်ပါသည်။ Relative path များကို workspace ထဲသို့ join လုပ်ပြီး absolute path များသည် workspace အတွင်းတွင်သာ ရှိရမည်။ Traversal ကို reject လုပ်ပြီး symlink resolution သည် workspace အပြင်သို့ မထွက်ရပါ။ ထို rule သည် retained legacy line-execution compatibility path တွင်လည်း အတူတူဖြစ်သည်။ ဤ check သည် portable runtime boundary ဖြစ်ပြီး OS sandbox မဟုတ်ပါ။ Race-free descriptor-relative open များအတွက် host-specific deployment control လိုအပ်ပါသည်။
+
 `file_metadata` သည် symlink ကို follow မလုပ်ဘဲ symlink metadata ကို ဖတ်သောကြောင့် link ဖြစ်ပါက `kind = "symlink"` ဟု ပြပါသည်။ `size` သည် platform က ပြန်ပေးသော byte length ဖြစ်ပြီး `readonly` သည် host permission flag ကို ပြပါသည်။ OS-specific mode bits များ မထည့်ဘဲ platform အားလုံးတွင် အသုံးပြုနိုင်သော metadata များကိုသာ ထားရှိထားပါသည်။
 
 `atomic_write` သည် အခြား text write များကဲ့သို့ **8 MiB** content limit ရှိပါသည်။ Temporary file ဖန်တီးခြင်း၊ ရေးသားခြင်း၊ sync သို့မဟုတ် commit တစ်ခုခု မအောင်မြင်ပါက destination ကို မပြောင်းလဲဘဲ error cleanup အတွင်း temporary file ကို ဖယ်ရှားပါသည်။ Temporary file ကို destination နှင့် directory တူတွင် ဖန်တီးသောကြောင့် successful rename သည် filesystem တစ်ခုတည်းအတွင်း ဖြစ်ပါသည်။
