@@ -1,13 +1,13 @@
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.3.0
+**Verified baseline:** Zap v2.4.0
 **ရည်ရွယ်ချက်:** ဤစာမျက်နှာသည် learner၊ language user၊ package author၊ runtime maintainer နှင့် release operator များအတွက် Burmese entry point ဖြစ်ပါသည်။ Normative behavior သည် canonical specification သို့မဟုတ် explicit linked contract တွင်သာ သတ်မှတ်ပါသည်။ ရှင်းလင်းဖော်ပြသည့် guide များသည် ထို contract များကို တိတ်တဆိတ် override မလုပ်ရပါ။
 
 ## လေ့လာမည့်လမ်းကြောင်း ရွေးချယ်ခြင်း
 
 | အသုံးပြုသူ | ဤနေရာမှ စတင်ရန် | ဆက်လက်ဖတ်ရှုရန် |
 |---|---|---|
-| အသစ်စတင်လေ့လာသူ | [Burmese learning guide](LEARN_ZAP_MM.md) | [Usage guide](USAGE.md)၊ [Syntax guide](SYNTAX_GUIDE.md)၊ [examples](../examples) |
+| အသစ်စတင်လေ့လာသူ | [Zap Language Guide](LEARN_ZAP_MM.md) | [Usage guide](USAGE.md)၊ [Syntax guide](SYNTAX_GUIDE.md)၊ [examples](../examples) |
 | Language user | [Syntax guide](SYNTAX_GUIDE.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [type-check matrix](TYPECHECK_CONFORMANCE_MATRIX_MM.md) |
 | Package author | [Burmese package guide](PACKAGE.md) | [Stdlib index](STDLIB_INDEX_MM.md)၊ [registry/authentication contract](REGISTRY_AUTH_MM.md) |
 | Framework contributor | [Framework guide](FRAMEWORK_MM.md) | [Zap-first Web guide](ZAP_WEB_NATIVE_MM.md)၊ [Web Framework guide](WEB_FRAMEWORK_MM.md)၊ [frontend integration guide](FRONTEND_INTEGRATION_MM.md)၊ [production deployment](PRODUCTION_DEPLOYMENT_MM.md)၊ [database operations](DATABASE_PRODUCTION_MM.md)၊ [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_MM.md)၊ [load/chaos testing](LOAD_CHAOS_TESTING_MM.md)၊ [zap-host adapter](ZAP_HOST_MM.md)၊ [zap-host quickstart](ZAP_HOST_QUICKSTART_MM.md)၊ [Framework starters](../frameworks)၊ [ecosystem roadmap](ECOSYSTEM.md)၊ [package guide](PACKAGE.md) |
@@ -21,12 +21,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [လေ့လာရေး guide](LEARN_ZAP_MM.md) — v2.2.7 | [Syntax guide](SYNTAX_GUIDE.md) |
-| Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.2.7 | [Language specification](LANGUAGE_SPEC_MM.md) |
-| Package author | [Package guide](PACKAGE.md) — v2.2.7 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
-| Framework contributor | [Framework guide](FRAMEWORK_MM.md) — v2.2.7 | [Zap-first Web guide](ZAP_WEB_NATIVE_MM.md)၊ [Web Framework guide](WEB_FRAMEWORK_MM.md)၊ [frontend integration guide](FRONTEND_INTEGRATION_MM.md)၊ [production deployment](PRODUCTION_DEPLOYMENT_MM.md)၊ [database operations](DATABASE_PRODUCTION_MM.md)၊ [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_MM.md)၊ [load/chaos testing](LOAD_CHAOS_TESTING_MM.md)၊ [zap-host adapter](ZAP_HOST_MM.md)၊ [zap-host quickstart](ZAP_HOST_QUICKSTART_MM.md)၊ [Framework starters](../frameworks)၊ [ecosystem roadmap](ECOSYSTEM.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.2.7 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
-| Deployment/security operator | [Deployment/security boundaries](DEPLOYMENT_MM.md) — v2.2.7 | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
+| Learner | [Zap Language Guide](LEARN_ZAP_MM.md) — v2.4.0 | [Syntax guide](SYNTAX_GUIDE.md) |
+| Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.4.0 | [Language specification](LANGUAGE_SPEC_MM.md) |
+| Package author | [Package guide](PACKAGE.md) — v2.4.0 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
+| Framework contributor | [Framework guide](FRAMEWORK_MM.md) — v2.4.0 | [Zap-first Web guide](ZAP_WEB_NATIVE_MM.md)၊ [Web Framework guide](WEB_FRAMEWORK_MM.md)၊ [frontend integration guide](FRONTEND_INTEGRATION_MM.md)၊ [production deployment](PRODUCTION_DEPLOYMENT_MM.md)၊ [database operations](DATABASE_PRODUCTION_MM.md)၊ [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_MM.md)၊ [load/chaos testing](LOAD_CHAOS_TESTING_MM.md)၊ [zap-host adapter](ZAP_HOST_MM.md)၊ [zap-host quickstart](ZAP_HOST_QUICKSTART_MM.md)၊ [Framework starters](../frameworks)၊ [ecosystem roadmap](ECOSYSTEM.md) |
+| Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.4.0 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
+| Deployment/security operator | [Deployment/security boundaries](DEPLOYMENT_MM.md) — v2.4.0 | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
 
 ## Normative contract map
 
@@ -51,4 +51,4 @@
 
 Authoritative package version သည် `native/Cargo.toml` ဖြစ်ပါသည်။ Release-facing surface များအားလုံးသည် ထို version နှင့် ကိုက်ညီရမည်ဖြစ်ပြီး CI က ထို consistency ကို စစ်ဆေးပါသည်။ Normative rule ပြောင်းလဲပါက English/Burmese contract နှစ်ခုလုံးကို တစ်ပြိုင်တည်း update လုပ်ရမည်။ `SPEC_OWNERSHIP_INDEX.tsv` တွင် fixture owner ထည့်/ပြင်ရမည်၊ bilingual compatibility template ဖြင့် compatibility impact မှတ်တမ်းတင်ရမည်၊ merge မလုပ်မီ regression evidence ထည့်ရမည်။ Public standard-library change များတွင် catalog နှင့် stability policy pair ကိုလည်း update လုပ်ရမည်။
 
-Documentation ပြောင်းလဲမှုများသည် English/Burmese pair ကို ထိန်းသိမ်းရမည်၊ repository-relative links သုံးရမည်၊ deferred behavior ကို explicit ဖော်ပြရမည်၊ executable gate မရှိသေးသော production scheduling၊ cancellation၊ sandbox သို့မဟုတ် performance guarantee များကို မဆိုရပါ။ Framework ပြောင်းလဲမှုများတွင် Framework guide pair၊ starter manifest/lockfile နှင့် host-adapter boundary ကို update လုပ်ရမည်ဖြစ်ပြီး မထောက်ပံ့သေးသော core syntax မထည့်ရပါ။ [v2.2.0 နောက်ပိုင်း remediation/provenance record](POST_V2.2.0_REMEDIATION_MM.md) တွင် immutable v2.2.0 asset များနှင့် နောက်ပိုင်း `master` correction များကို ခွဲခြားဖော်ပြထားပြီး ထို correction များကို v2.2.2 တွင် ထုတ်ဝေပြီး post-v2.2.2 hardening ကို v2.2.3 တွင် ထုတ်ဝေထားသည်။ လက်ရှိအလုပ်များအတွက် [v2.2.7 release notes](RELEASE_2.2.7_MM.md)၊ [remaining TODO register](PDF_REMAINING_TODO_MM.md) နှင့် [next-step plan](NEXT_TODO_PLAN_MM.md) ကို ကြည့်ရှုနိုင်ပါသည်။
+Documentation ပြောင်းလဲမှုများသည် English/Burmese pair ကို ထိန်းသိမ်းရမည်၊ repository-relative links သုံးရမည်၊ deferred behavior ကို explicit ဖော်ပြရမည်၊ executable gate မရှိသေးသော production scheduling၊ cancellation၊ sandbox သို့မဟုတ် performance guarantee များကို မဆိုရပါ။ Framework ပြောင်းလဲမှုများတွင် Framework guide pair၊ starter manifest/lockfile နှင့် host-adapter boundary ကို update လုပ်ရမည်ဖြစ်ပြီး မထောက်ပံ့သေးသော core syntax မထည့်ရပါ။ [v2.4.0 နောက်ပိုင်း remediation/provenance record](POST_V2.4.0_REMEDIATION_MM.md) တွင် immutable v2.4.0 asset များနှင့် နောက်ပိုင်း `master` correction များကို ခွဲခြားဖော်ပြထားပြီး ထို correction များကို v2.4.0 တွင် ထုတ်ဝေပြီး post-v2.4.0 hardening ကို v2.4.0 တွင် ထုတ်ဝေထားသည်။ လက်ရှိအလုပ်များအတွက် [v2.4.0 release notes](RELEASE_2.4.0_MM.md)၊ [language specification](LANGUAGE_SPEC_MM.md) နှင့် [release version policy](RELEASE_VERSION_POLICY_MM.md) ကို ကြည့်ရှုနိုင်ပါသည်။

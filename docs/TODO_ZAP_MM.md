@@ -368,4 +368,4 @@ Core language နှင့် package system တည်ငြိမ်ပြီ�
 
 **နောက်ဆုံးအဆင့်** တွင်သာ LSP၊ debugger၊ package registry နှင့် Web/AI/Mobile/IoT frameworks များကို တည်ဆောက်သင့်သည်။ ဤအစီအစဉ်သည် Zap ကို feature များပြားသော်လည်း မတည်ငြိမ်သော language မဖြစ်စေဘဲ သင်ယူရလွယ်ကူပြီး production အတွက် ယုံကြည်စိတ်ချရသော ecosystem ဖြစ်လာစေရန် ရည်ရွယ်ထားသည်။
 
-ဆက်စပ်စာရွက်စာတမ်းများ — [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md)၊ [`PACKAGES.md`](PACKAGES.md) နှင့် [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md)။
+ဆက်စပ်စာရွက်စာတမ်းများ — [`ROADMAP_0.8.0.md`](ROADMAP_0.8.0.md)၊ [`AUDIT_LANGUAGE_COMPARISON_2026-08.md`](AUDIT_LANGUAGE_COMPARISON_2026-08.md)၊ [`PACKAGE.md`](PACKAGE.md) နှင့် [`LEARN_ZAP_MM.md`](LEARN_ZAP_MM.md)။

@@ -1,7 +1,7 @@
 # Zap Traits and Composition RFC
 
 **RFC status:** Design-only proposal; no parser or runtime implementation is included.
-**Verified baseline:** Zap v2.3.0
+**Verified baseline:** Zap v2.4.0
 **Decision target:** Review for a future post-v2.2 language version; v2.2.0 does not enable traits, interfaces, or new inheritance semantics.
 **Audience:** Language designers, runtime maintainers, package authors, and reviewers of future compatibility changes.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package guide](PACKAGE_EN.md) · [Burmese RFC](TRAITS_RFC_MM.md)
@@ -33,7 +33,7 @@ The proposal addresses composition as a separate design problem. It does not cla
 
 ## 3. Current baseline
 
-The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line is v2.2.7, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
+The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line is v2.4.0, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
 
 The current baseline therefore remains unchanged by this RFC:
 

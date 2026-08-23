@@ -4,7 +4,7 @@
 
 ဤ policy သည် public standard-library domain တစ်ခုချင်းစီနှင့် တိုက်ရိုက်ဖော်ပြထားသော builtin များအတွက် compatibility contract ကို သတ်မှတ်သည်။ Machine-readable source သည် native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog ဖြစ်ပြီး ဤစာတမ်းက metadata ကို user နှင့် maintainer များ မည်သို့ဖတ်ရမည်ကို ရှင်းပြသည်။ Runtime dispatch ကို evaluator ထဲတွင် ဗဟိုပြုထားဆဲဖြစ်ပြီး catalog သည် ဒုတိယ implementation path တစ်ခု မဖန်တီးပါ။
 
-ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.3.0** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
+ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.4.0** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
 
 ## Stability model
 
@@ -17,7 +17,7 @@ Public domain နှင့် builtin တစ်ခုချင်းစီတွ
 | `platform-specific` | သတ်မှတ်ထားသော target family များတွင်သာ ထောက်ပံ့သော behavior | Platform matrix သည် normative ဖြစ်ပြီး unsupported target များတွင် silent emulation မပြုဘဲ stable diagnostic ဖြင့် fail ရမည် |
 | `deprecated` | Migration ကာလအတွင်း ထိန်းသိမ်းထားသော ရှိပြီးသား behavior | Catalog တွင် deprecation window နှင့် replacement ကို ဖော်ပြရမည်။ Window မကုန်မီ ဖယ်ရှားခြင်း မပြုရ |
 
-လက်ရှိ public catalog တွင် release လုပ်ပြီးသား domain နှင့် builtin အားလုံးကို `stable`၊ `2.1.14` တွင် စတင်အသုံးပြုနိုင်ပြီး active deprecation window မရှိဟု သတ်မှတ်ထားသည်။ အနာဂတ် entry များတွင် အခြား label သုံးမည်ဆိုပါက သက်ဆိုင်ရာ documentation နှင့် test လိုအပ်ချက်များကို ဖြည့်ဆည်းရမည်။
+လက်ရှိ public catalog တွင် release လုပ်ပြီးသား domain နှင့် builtin အားလုံးကို `stable`၊ `2.4.0` တွင် စတင်အသုံးပြုနိုင်ပြီး active deprecation window မရှိဟု သတ်မှတ်ထားသည်။ အနာဂတ် entry များတွင် အခြား label သုံးမည်ဆိုပါက သက်ဆိုင်ရာ documentation နှင့် test လိုအပ်ချက်များကို ဖြည့်ဆည်းရမည်။
 
 ## Determinism taxonomy
 

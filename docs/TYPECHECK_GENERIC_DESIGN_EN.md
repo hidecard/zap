@@ -1,6 +1,6 @@
 # Zap Generic Type Syntax Decision Record
 
-**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.3.0 type-checking contract. No new parser or runtime change is required for this design gate.
+**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.4.0 type-checking contract. No new parser or runtime change is required for this design gate.
 
 ## Scope
 
@@ -34,17 +34,17 @@ Whitespace around nested arguments is accepted after trimming. Generic forms mus
 
 ## Compatibility and rollout
 
-This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The v2.2.7 release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
+This decision preserves the existing `option<T>` and `result<T>` semantics used by branch narrowing and alias invalidation. It also formalizes the collection forms already exercised by the native test suite. The v2.4.0 release gate therefore records TC-012 as an implemented baseline rather than adding a duplicate experimental parser path.
 
 Future work may add generic function parameters, user-defined generic declarations, variance rules, and stronger collection-element inference. Those features require a separate design record because they would affect declaration parsing, symbol binding, call-site inference, diagnostics, and LSP synchronization.
 
 ## Conformance evidence
 
-The native suite covers valid nested collection and variant annotations, incompatible generic assignments, malformed forms such as `list<>`, and nested generic matching. These tests are the required TC-012 non-regression boundary for v2.2.7. Generic declaration syntax and advanced inference remain explicitly deferred and must not be inferred from this baseline.
+The native suite covers valid nested collection and variant annotations, incompatible generic assignments, malformed forms such as `list<>`, and nested generic matching. These tests are the required TC-012 non-regression boundary for v2.4.0. Generic declaration syntax and advanced inference remain explicitly deferred and must not be inferred from this baseline.
 
 ## Acceptance decision
 
-TC-012 is **implemented baseline** for v2.2.7. The next generic milestone is a separate design and implementation phase for generic declarations and inference; it is not part of the current release gate.
+TC-012 is **implemented baseline** for v2.4.0. The next generic milestone is a separate design and implementation phase for generic declarations and inference; it is not part of the current release gate.
 
 **Author:** Manus AI
 **Version:** v2.2.7 design gate

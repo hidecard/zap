@@ -1,6 +1,6 @@
 # Zap Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.3.0
+**အတည်ပြုထားသော baseline:** Zap v2.4.0
 **Framework branch:** `Framework`
 **အခြေအနေ:** Framework Foundation v0.1 — Zap-native Web project scaffold နှင့် contract starter များ၊ full native runtime integration များသည် gate ချထားသော milestone များအဖြစ် ဆက်လက်ရှိနေသေး
 

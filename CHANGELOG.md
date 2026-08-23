@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-23
+
+### Release summary
+- Rebuilt the bilingual Zap Language Guide, simplified the documentation surface, and clarified the one-command user-managed project workflow.
+
 ## [2.3.0] - 2026-08-23
 
 ### Framework and modular Web scaffold

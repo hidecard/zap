@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.3.0၊ `Framework` branch။
+**အတည်ပြုထားသော baseline:** Zap v2.4.0၊ `Framework` branch။
 
 ## ရည်ရွယ်ချက်
 
