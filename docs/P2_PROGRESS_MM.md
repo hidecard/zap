@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ verified baseline သည် published v2.4.0 documentation-maintenance release နောက်ပိုင်း HTTP URL invariant reliability maintenance အတွက် v2.4.0 release candidate ဖြစ်ပါသည်။ Historical v2.4.0၊ v2.4.0 နှင့် v2.4.0 tag/asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း `master` တွင် ပြီးစီးသော P2 package၊ async၊ registry၊ editor၊ standard-library နှင့် runtime correction များကို v2.4.0 အထိ explicit production-boundary limitation များနှင့်အတူ ထုတ်ဝေထားပါသည်။
+Zap ၏ လက်ရှိ development baseline သည် published v2.4.0 release နောက်ပိုင်း v2.5.0 release line ဖြစ်ပါသည်။ v2.4.0 tag/asset များသည် immutable ဖြစ်သည်။ P2 package၊ async၊ registry၊ editor၊ standard-library၊ runtime နှင့် documentation correction များကို explicit production-boundary limitation များနှင့်အတူ `master` တွင် track လုပ်နေပြီး complete release gate အောင်မြင်မှသာ v2.5.0 တွင် ပါဝင်မည်ဖြစ်သည်။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|
@@ -22,7 +22,7 @@ Zap ၏ လက်ရှိ verified baseline သည် published v2.4.0 document
 | v2.2.0 နောက်ပိုင်း corrective cycle | v2.2.2 အထိ ထုတ်ဝေပြီး | LSP-SYNC-01၊ LSP-REN-01၊ LSP-INTEROP-01၊ EXT-201၊ API-301 နှင့် DOC-401 များကို `master` တွင် ပြီးစီးထားပြီး v2.2.2 release တွင် corrected contract များ၊ bilingual provenance documentation နှင့် explicit limitation များ ပါဝင်သည်။ |
 | Post-v2.2.2 runtime hardening | v2.2.3 အဖြစ် ထုတ်ဝေပြီး | Cycle-safe bounded equality၊ accounting နှင့် AST member read များတွင် checked object/frame borrow၊ non-panicking task/frame invariant နှင့် checked LSP rename scope stack များ ပါဝင်သည်။ Weak-reference API၊ automatic collector သို့မဟုတ် traits/parser/runtime syntax များ မထည့်သွင်းပါ။ |
 | Post-v2.4.0 documentation baseline maintenance | v2.4.0 အဖြစ် ထုတ်ဝေပြီး | Active language-specification၊ generic type-check၊ README၊ security၊ conformance၊ navigation နှင့် package metadata reference များကို audit အပြီး synchronize လုပ်ထားပြီး parser၊ runtime သို့မဟုတ် generic-syntax behavior ပြောင်းလဲမှု မရှိပါ။ |
-| Post-v2.2.4 HTTP URL invariant hardening | v2.2.7 release အတွက် ပြင်ဆင်ပြီး | `http_request` သည် invalid internal parser result သို့မဟုတ် scheme/host မရှိမှုတွင် `unreachable!` ဖြင့် panic မဖြစ်တော့ဘဲ deterministic error ပြန်ပေးသည်။ Parser/runtime syntax၊ eager async semantics နှင့် no-framework boundary များ မပြောင်းလဲပါ။ |
+| Post-v2.2.4 HTTP URL invariant hardening | v2.2.7 တွင် publish ပြီး | `http_request` သည် invalid internal parser result သို့မဟုတ် scheme/host မရှိမှုတွင် `unreachable!` ဖြင့် panic မဖြစ်တော့ဘဲ deterministic error ပြန်ပေးသည်။ Parser/runtime syntax၊ eager async semantics နှင့် no-framework boundary များ မပြောင်းလဲပါ။ |
 
 ## Local install/update contract
 

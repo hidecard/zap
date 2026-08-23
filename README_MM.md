@@ -134,7 +134,7 @@ zap run hello.zp
 ```bash
 zap file.zp                 # source file run
 zap new my_app               # user-managed Web project ဖန်တီး
-zap check .                  # source/project validate
+zap check .                  # Zap project directory ကို validate လုပ်ရန်
 zap check --json .           # structured diagnostic
 zap build --locked .         # reproducible build input စစ်
 zap test tests               # Zap test run

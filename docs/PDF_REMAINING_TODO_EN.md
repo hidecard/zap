@@ -1,6 +1,6 @@
 # Zap Remaining Engineering To-do Register
 
-**Baseline:** Zap v2.2.6 is the current release candidate following the verified published v2.2.4 release. The v2.2.0, v2.2.1, and v2.2.2 tags and assets remain immutable, while the remaining partial items below continue as post-v2.2.4 engineering work.
+**Historical baseline:** This todo record was written for the Zap v2.2.6 release-candidate period following the published v2.2.4 release. The v2.2.0, v2.2.1, and v2.2.2 tags and assets remain immutable; the status below is historical roadmap context and does not override the current v2.5.0 development line.
 **Source:** `Zap_တွင်_ပြင်ဆင်သင့်သောအချက်များ.pdf`  
 **Purpose:** Track every recommendation that is not fully complete, without treating already-verified release work as unfinished.
 

@@ -1,6 +1,6 @@
 # Zap Production Operations Runbook
 
-**Verified baseline:** Zap v2.2.6 maintenance branch
+**Verified baseline:** Zap v2.5.0 development line
 
 **Scope:** This runbook deploys the built-in authenticated registry behind a Linux systemd service and an nginx TLS ingress. It is a reference runbook, not an automatic cloud provisioning system. Production operators must adapt the firewall, certificate authority, secret manager, monitoring, backup, and approval steps to their environment.
 
@@ -225,4 +225,4 @@ Before accepting production traffic, obtain evidence for every row:
 | Observability | Logs, health checks, certificate alerts, resource alerts, and 5xx alerts are active. |
 | Rollback | Previous binary and operator-approved rollback procedure are available. |
 
-Only after all gates pass should DNS or the public load balancer route production traffic to the ingress. Keep the current release candidate status in mind: a repository branch or pull request is not itself a published release artifact.
+Only after all gates pass should DNS or the public load balancer route production traffic to the ingress. Keep the release boundary in mind: a repository branch or pull request is not itself a published release artifact. Install only a tagged release whose checksums, signatures, provenance, and published assets have been verified.

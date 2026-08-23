@@ -1,98 +1,67 @@
 # Zap အသုံးပြုနည်း လမ်းညွှန်
 
-**စစ်ဆေးထားသော baseline:** Zap v2.2.6 maintenance branch
+**စစ်ဆေးထားသော baseline:** Zap v2.5.0 development line
 
-**ရည်ရွယ်ချက်:** Installation၊ project development၊ dependency lock၊ testing၊ registry အသုံးပြုမှုနှင့် production boundary များကို ရှင်းပြထားသည်။ v2.2.6 branch သည် release candidate ဖြစ်သောကြောင့် candidate ကို တရားဝင် publish မလုပ်မချင်း [GitHub Releases](https://github.com/hidecard/zap/releases) တွင် နောက်ဆုံး publish လုပ်ထားသော release ကို အသုံးပြုပါ။
+**ရည်ရွယ်ချက်:** ဤဖိုင်သည် command နှင့် operations အတွက် အတိုချုံး reference ဖြစ်သည်။ Installation မှ advanced အထိ အပြည့်အစုံလေ့လာရန် [မြန်မာ Language Guide](LEARN_ZAP_MM.md) ကို အသုံးပြုပါ။ Normative behavior သည် [language specification](LANGUAGE_SPEC_MM.md) တွင် သတ်မှတ်ထားပါသည်။
 
-## ၁။ Native runtime install လုပ်ခြင်း
+## Native runtime install လုပ်ခြင်း
 
-Zap သည် standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိ operating system နှင့် architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး checksum စစ်ဆေးကာ install လုပ်ရမည်။ မတူညီသော OS သို့မဟုတ် CPU architecture အတွက် ထုတ်ထားသော archive ကို မသုံးပါနှင့်။
+Zap သည် standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိ operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး checksum နှင့် signature စစ်ဆေးကာ extract လုပ်ပြီး executable ကို `PATH` ထဲ ထည့်ပါ။ v2.5.0 release တွင် release page ၌ ဖော်ပြထားသော target များကိုသာ support လုပ်မည်ဖြစ်သောကြောင့် မဖော်ပြထားသော target ကို မခန့်မှန်းပါနှင့်။
 
-| Platform | Release asset | Install လုပ်နည်း |
+| Platform | Archive pattern | Install လုပ်နည်း |
 |---|---|---|
 | Linux x86_64 | `zap-<version>-linux-x86_64.tar.gz` | Extract ပြီး `bash install.sh` run လုပ်ရန် |
 | macOS ARM64 | `zap-<version>-macos-arm64.tar.gz` | Extract၊ `chmod +x install.sh`၊ ထို့နောက် `./install.sh` |
 | Windows x86_64 | `zap-<version>-windows-x86_64.zip` | Extract ပြီး Command Prompt မှ `install_windows.bat` run လုပ်ရန် |
 
-Linux/macOS တွင် install မလုပ်မီ checksum စစ်ပါ။
+`bin/zap` ပါသော release archive ကို application host တွင် Rust၊ Cargo၊ Python၊ Node.js၊ Java သို့မဟုတ် အခြား language runtime မလိုဘဲ run နိုင်ပါသည်။ Installer သည် user-writable directory ကို default သုံးပြီး အခြားနေရာလိုပါက `ZAP_INSTALL_DIR` သတ်မှတ်နိုင်သည်။
+
+## Project ဆောက်ခြင်း
+
+One-command user-managed Web scaffold ကို အသုံးပြုပါ။ Zap တွင် Django-style `startapp` command နှင့် hidden application registry မရှိပါ။
 
 ```bash
-sha256sum -c zap-<version>-linux-x86_64.tar.gz.sha256
-# macOS asset ဖြစ်ပါက archive name ကို အစားထိုးပါ။
+zap new my_app
+cd my_app
+zap check
+zap build --locked
+zap test tests
+zap dev
 ```
 
-Extract လုပ်ပြီး user-level binary install လုပ်ပါ။
+Generator က `models/`, `functions/`, `ui/`, `routes/`, `middleware/`, `migrations/`, `admin/`, `public/` နှင့် `tests/` ကို ordinary user-owned files အဖြစ် ထုတ်ပေးပါသည်။ Module များကို မိမိလိုသလို ထည့်၊ ဖျက်၊ အမည်ပြောင်း၊ စီမံနိုင်ပါသည်။ Scaffold သည် development/reference Web slice ဖြစ်ပြီး production server၊ ORM၊ admin UI၊ authentication system သို့မဟုတ် deployment supervisor အဖြစ် အလိုအလျောက် မဖြစ်ပါ။
 
-```bash
-cd zap
-bash install.sh
-zap --version
-zap --help
-```
+Web မဟုတ်သော project အသေးများအတွက် `zap.toml` နှင့် `main.zp` ပါသော directory ကို ကိုယ်တိုင်ဖန်တီးနိုင်ပါသည်။ Compatibility အတွက် `zap init <directory>` ရှိသော်လည်း project အသစ်နှင့် user-managed workflow အတွက် `zap new` ကို ဦးစားပေးပါ။
 
-Default အားဖြင့် installer သည် binary ကို `~/.local/bin` ထဲတွင် ထည့်ပါသည်။ အခြား user-writable directory သုံးလိုပါက `ZAP_INSTALL_DIR` သတ်မှတ်နိုင်သည်။ Installer အတွက် root privilege မလိုပါ။ Release archive ထဲတွင် `bin/zap` ပါလျှင် Rust/Cargo မလိုပါ။
-
-### Source မှ build လုပ်ခြင်း
-
-Source build သည် developer သို့မဟုတ် operator က ရည်ရွယ်ချက်ရှိရှိ လုပ်သောလုပ်ဆောင်ချက် ဖြစ်သည်။ Repository ၏ `rust-toolchain.toml` သည် Rust 1.75.0 ကို pin လုပ်ထားသောကြောင့် installation အတွင်း dependency graph မပြောင်းလဲစေရန် locked build သုံးပါ။
-
-```bash
-ZAP_BUILD_FROM_SOURCE=1 bash install.sh
-```
-
-Repository checkout မှ reproducible build လုပ်ရန်—
-
-```bash
-cargo build --release --locked --manifest-path native/Cargo.toml
-./native/target/release/zap --version
-```
-
-## ၂။ Project ဖန်တီးပြီး run လုပ်ခြင်း
-
-အနည်းဆုံး project တစ်ခုတွင် `main.zp` source file ပါရမည်။ Dependency သုံးပါက `zap.toml` manifest နှင့် commit တင်ထားသော `zap.lock` lockfile ကိုပါ ထည့်ထားသင့်သည်။
-
-```bash
-mkdir hello-app
-cd hello-app
-cat > main.zp <<'EOF'
-say "Hello from Zap"
-EOF
-zap check .
-zap run main.zp
-```
-
-Project manifest ဥပမာ—
-
-```toml
-[package]
-name = "hello-app"
-version = "0.1.0"
-main = "main.zp"
-```
-
-Standard scaffold အတွက် `zap init <directory>` ကိုသုံးပါ။ Run မလုပ်မီ `zap check` လုပ်ပြီး editor/CI အတွက် structured diagnostic လိုပါက `zap check --json .` သုံးပါ။ Local module များကို main-file directory နှင့် supported project module directory များတွင် ရှာဖွေပြီး module cycle နှင့် unsafe path များကို reject လုပ်သည်။
-
-## ၃။ CLI workflow
+## CLI workflow
 
 | Command | အသုံးပြုရန် |
 |---|---|
-| `zap <file.zp>` | Canonical native AST runtime ဖြင့် source file run လုပ်ရန် |
+| `zap <file.zp>` | Source file run လုပ်ရန် |
 | `zap run <file.zp>` | Source file ကို explicit run လုပ်ရန် |
-| `zap init <dir>` | Project scaffold ဖန်တီးရန် |
-| `zap fmt <file.zp>` | Source format ပြင်ရန် |
-| `zap lint <file.zp>` | Source formatting နှင့် style စစ်ရန် |
-| `zap check [dir]` | Manifest၊ module၊ type နှင့် project structure စစ်ရန် |
-| `zap check --json [dir]` | CI/editor အတွက် structured diagnostic ထုတ်ရန် |
-| `zap test [dir]` | `*_test.zp` files များကို deterministic path order ဖြင့် runရန် |
-| `zap test --fail-fast [dir]` | ပထမ test failure တွင် ရပ်ရန် |
+| `zap new <dir>` | User-managed Web scaffold အပြည့် ဖန်တီးရန် |
+| `zap check [dir]` | Zap project directory၊ manifest၊ module နှင့် သိရှိနိုင်သော type များကို စစ်ရန် |
+| `zap check --json [dir]` | Structured project diagnostic ထုတ်ရန် |
+| `zap build [dir]` | Project ကို validate/prepare လုပ်ရန် |
+| `zap build --locked [dir]` | ရှိပြီးသား lockfile ကိုသာ အသုံးပြုရန် |
+| `zap test [dir]` | `*_test.zp` file များကို deterministic order ဖြင့် runရန် |
+| `zap test --filter <value> [dir]` | ကိုက်ညီသော test များသာ runရန် |
+| `zap test --fail-fast [dir]` | ပထမ failure တွင် ရပ်ရန် |
+| `zap test --json [dir]` | Support ပြုထားသောနေရာတွင် machine-readable result ထုတ်ရန် |
+| `zap fmt <file.zp>` | Zap source format ပြင်ရန် |
+| `zap lint <file.zp>` | Formatting နှင့် style issue စစ်ရန် |
 | `zap lock [dir]` | Canonical `zap.lock` generate လုပ်ရန် |
 | `zap add <name> <version> [dir]` | Dependency ထည့်ပြီး lockfile အဟောင်းကို invalidate လုပ်ရန် |
-| `zap install [dir]` | Project နှင့် lockfile ကို validate/install လုပ်ရန် |
-| `zap install --locked [dir]` | ရှိပြီးသား lockfile ကိုသာ အသုံးပြုပြီး graph မပြောင်းရန် |
-| `zap update [dir]` | Manifest မှ lockfile ပြန် generate လုပ်ရန် |
-| `zap registry gc [--dry-run] [dir]` | မသုံးတော့သော cache artifact ဖယ်ရန် သို့မဟုတ် preview လုပ်ရန် |
-| `zap lsp` | Editor integration အတွက် stdio language server runရန် |
-| `zap async-check` | Deterministic async runtime foundation စစ်ရန် |
+| `zap install [dir]` | Lockfile/cache မှ validate/install လုပ်ရန် |
+| `zap install --locked [dir]` | Valid lockfile ရှိမှသာ လက်ခံရန် |
+| `zap update [dir]` | Manifest ပြောင်းပြီးနောက် lock data ပြန်ထုတ်ရန် |
+| `zap web check [dir]` | Web configuration နှင့် project structure စစ်ရန် |
+| `zap db check [dir]` | Migration layout နှင့် database plan စစ်ရန် |
+| `zap db plan [dir] --json` | Read-only SQLite migration plan ပြရန် |
+| `zap db migrate [dir] --dry-run` | Migration မသုံးဘဲ ကြိုတင်ကြည့်ရန် |
+| `zap db migrate [dir] --check` | Pending migration ရှိပါက fail လုပ်ရန် |
+| `zap dev [dir]` | Bounded native development server runရန် |
+| `zap lsp` | Stdio language server runရန် |
 
 ပုံမှန် development loop သည်—
 
@@ -100,130 +69,25 @@ Standard scaffold အတွက် `zap init <directory>` ကိုသုံး�
 zap fmt main.zp
 zap lint main.zp
 zap check .
-zap test .
+zap test tests
 zap build --locked .
-zap install --locked .
+zap db check .
 ```
 
-Native runtime သည် source၊ execution depth၊ loop၊ output၊ memory၊ task နှင့် collection limit များကို ကန့်သတ်ထားသည်။ ထို runtime limit များသည် OS-level isolation ၏ အစားထိုးမဟုတ်ပါ။
+## Package နှင့် lockfile
 
-## ၄။ Language ဥပမာ
+`zap.toml` တွင် package identity နှင့် dependency များကို ကြေညာပြီး canonical `zap.lock` ကို commit တင်ပါ။ Reproducible environment တွင် `zap install --locked` သုံးပါ။ Local path dependency များကို recursive validate လုပ်ပြီး cycle များကို reject လုပ်ပါသည်။ Registry operation များသည် transport၊ checksum၊ signature၊ cache limit နှင့် credential policy ကို enforce လုပ်သော်လည်း registry foundation သည် npm၊ PyPI၊ crates.io သို့မဟုတ် Go modules တို့၏ package volume/governance အဆင့် မရောက်သေးပါ။
 
-Zap သည် indentation ဖြင့် block သတ်မှတ်ပြီး ဖတ်ရလွယ်သော expression များကို အသုံးပြုသည်။
+## Web နှင့် frontend boundary
 
-```zap
-fn greet(name):
-    return "Hello, " + name
+HTML၊ CSS နှင့် JavaScript များသည် `public/` အောက်ရှိ ordinary files ဖြစ်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား browser framework ကို build-time toolchain အဖြစ် သီးခြားသုံးနိုင်ပါသည်။ Build output ကို သတ်မှတ်ထားသော asset directory ထဲ copy လုပ်ပြီး deployed Zap executable ဖြင့် serve လုပ်ပါ။ Deployment အချိန်တွင် npm သို့မဟုတ် Node.js မလိုပါ။ [Frontend integration guide](FRONTEND_INTEGRATION_MM.md) နှင့် [Zap Web guide](ZAP_WEB_NATIVE_MM.md) ကို ဖတ်ပါ။
 
-for item in ["language", "runtime", "tooling"]:
-    say greet(item)
-```
+လက်ရှိ Web runtime သည် bounded request/response နှင့် static/SPA development behavior ကို ပေးပါသည်။ TLS termination၊ production concurrency၊ WebSocket၊ streaming upload၊ session persistence၊ provider-neutral database driver၊ ORM၊ SSR/template compiler၊ cache invalidation၊ observability နှင့် process supervision များသည် host/deployment အလုပ်များအဖြစ် သီးခြားကျန်ရှိပါသည်။
 
-Typed result ကို စစ်ဆေးပြီး `?` ဖြင့် propagate လုပ်နိုင်သည်။
+## Safety boundary
 
-```zap
-fn load_name(value: text) -> result<text>:
-    if value == "":
-        return err("name is empty")
-    return ok(value)
-```
+Source size၊ execution depth၊ loop၊ value၊ collection၊ file၊ process output၊ HTTP request နှင့် task limit များသည် reliability control များ ဖြစ်ပါသည်။ ၎င်းတို့သည် OS sandbox မဟုတ်ပါ။ Untrusted Zap code ကို filesystem၊ process၊ network၊ identity နှင့် secret policy ပါဝင်သော operating-system isolation profile အတွင်းတွင်သာ run ပါ။
 
-Functions၊ closures၊ classes၊ modules၊ collections၊ JSON၊ `Result`/`Option`၊ async task handle နှင့် deterministic tests များ ပါဝင်သည်။ Normative behavior အတွက် အဟောင်း example များထက် [language specification](LANGUAGE_SPEC_MM.md) ကို အဓိကကိုးကားပါ။
+## Source development
 
-## ၅။ Files၊ JSON နှင့် environment
-
-Standard library တွင် bounded text/line file helper၊ JSON encode/decode၊ path helper၊ time helper၊ logging နှင့် environment access ပါဝင်သည်။
-
-```zap
-let lines = ["one", "two"]
-write_lines("notes.txt", lines)
-let loaded = read_lines("notes.txt")
-say json({"lines": loaded})
-```
-
-`ExecutionContext` ပိုင် run အတွင်း relative file operation များကို ထို run ၏ workspace အတွင်း ကန့်သတ်ထားသည်။ Symlink/canonicalization checks များသည် defensive control များသာဖြစ်ပြီး process ကို kernel sandbox မဖြစ်စေပါ။ မယုံကြည်ရသော program များအတွက် isolated worker၊ read-only source tree၊ သီးခြား writable directory၊ အနည်းဆုံး environment variable၊ quota နှင့် network egress restriction များကို ထပ်မံသုံးပါ။
-
-## ၆။ Dependency နှင့် registry workflow
-
-Dependency ပါသော project တွင် lockfile generate ပြီး commit တင်ပါ။
-
-```bash
-zap add utility 1.2.0 .
-zap lock .
-zap check .
-zap install --locked .
-```
-
-`zap install --locked` သည် manifest၊ lockfile၊ registry metadata၊ selected version၊ yanked policy နှင့် SHA-256 cache artifact များ ကိုက်ညီမှုကို စစ်ဆေးသည်။ `ZAP_OFFLINE=1 zap install --locked .` သည် cache ထဲတွင် ရှိပြီး checksum မှန်သော artifact များကိုသာ သုံးပြီး network retrieval မလုပ်ပါ။
-
-Remote registry ကို explicit trust လုပ်ပြီးမှ အသုံးပြုပါ။ HTTP ကို controlled local fixture အတွက်သာ ရည်ရွယ်ထားပြီး ပုံမှန်အားဖြင့် ပိတ်ထားသည်။
-
-```bash
-zap registry trust add https://registry.example/team
-export ZAP_REGISTRY_TOKEN_CI='secret-manager မှ ဖတ်ထားသော read token'
-zap registry credential set https://registry.example/team --token-env ZAP_REGISTRY_TOKEN_CI
-zap install --locked .
-```
-
-Credential list command သည် origin များကိုသာ ပြပြီး token value မပြပါ။ Credential များကို secret manager သို့မဟုတ် protected environment variable ထဲတွင်သာ ထားပါ။ `zap.toml`၊ `zap.lock`၊ source code၊ logs သို့မဟုတ် CI output ထဲသို့ မထည့်ပါနှင့်။
-
-Package publish လုပ်ရန် local checksum တွက်ပြီး HTTPS endpoint မှ ပို့ပါ။
-
-```bash
-checksum="$(sha256sum ./demo.pkg | awk '{print $1}')"
-export ZAP_REGISTRY_TOKEN='secret-manager မှ ဖတ်ထားသော publish token'
-zap registry publish https://registry.example/team/publish ./demo.pkg demo 1.0.0 "$checksum"
-```
-
-Client သည် body မပို့မီ package checksum ကို စစ်သည်။ Registry fetch/publish path များသည် automatic redirect ပိတ်ထားပြီး untrusted mode တွင် registry host ကို တစ်ကြိမ် resolve လုပ်ကာ special/private destination များကို reject ပြုလုပ်ပြီး validated address set သို့ connection ကို pin လုပ်သည်။ TLS certificate validation သည် ပုံမှန် platform trust configuration ကို ဆက်သုံးသည်။
-
-## ၇။ Testing နှင့် CI
-
-Application test များကို `tests/` သို့မဟုတ် ရွေးချယ်ထားသော directory အောက်တွင် `*_test.zp` နာမည်ဖြင့် ထားပါ။
-
-```bash
-zap test --fail-fast .
-```
-
-Runtime contributor များအတွက် complete locked native gate များမှာ—
-
-```bash
-cargo fmt --manifest-path native/Cargo.toml --all -- --check
-cargo check --manifest-path native/Cargo.toml --all-targets --all-features --locked
-cargo clippy --manifest-path native/Cargo.toml --all-targets --all-features --locked -- -D warnings
-cargo test --manifest-path native/Cargo.toml --all-targets --all-features --locked
-scripts/validate_registry_deployment.sh
-```
-
-CI နှင့် release workflow များတွင် RustSec `cargo-audit`၊ deployment-policy validation၊ deterministic replay၊ native/legacy parity၊ archive checks နှင့် release provenance checks များလည်း run ပါသည်။ Dependency evidence အတွက် [`RUSTSEC_AUDIT_MM.md`](RUSTSEC_AUDIT_MM.md) ကို ဖတ်ပါ။
-
-## ၈။ Production security boundary
-
-`ZAP_UNTRUSTED=1` သည် filesystem၊ environment၊ process၊ outbound network နှင့် local-registry capability များကို runtime boundary မှ deny လုပ်သည်။
-
-```bash
-ZAP_UNTRUSTED=1 zap check --json .
-ZAP_UNTRUSTED=1 zap run main.zp
-```
-
-Native process ကို Internet သို့ တိုက်ရိုက်မဖွင့်ပါနှင့်။ Production registry reference deployment သည် service ကို loopback တွင် bind လုပ်ပြီး ingress proxy တွင် TLS terminate လုပ်သည်၊ dedicated service identity သုံးသည်၊ memory/CPU/tasks/open-files limit သတ်မှတ်သည်၊ backend egress ပိတ်ထားသည်၊ credential များကို repository အပြင်တွင် ထားသည်။ Complete systemd/nginx runbook အတွက် [production operations guide](PRODUCTION_OPERATIONS_MM.md) ကို လိုက်နာပါ။
-
-Runtime သည် universal OS sandbox မဟုတ်ပါ၊ kernel-enforced multi-tenant isolation မပေးပါ၊ built-in metrics သို့မဟုတ် durable backup system မပါပါ။ Operator ဘက်မှ isolation၊ monitoring၊ alerting၊ backup၊ restore drill၊ key rotation၊ firewall၊ certificate renewal နှင့် incident response များကို စီမံရမည်။
-
-## ၉။ VS Code နှင့် LSP
-
-Published extension ရှိပါက—
-
-```bash
-code --install-extension ArkarYan.zap-language-support
-```
-
-Extension သည် `zap lsp` ကို အသုံးပြုသည်။ `zap` ကို `PATH` ထဲတွင် ထည့်ထားပါ သို့မဟုတ် VS Code setting တွင် `zap.executable` သတ်မှတ်ပါ။ LSP တွင် full document synchronization၊ diagnostics၊ hover၊ completion၊ formatting၊ definition၊ workspace symbols နှင့် file-local rename ပါဝင်သည်။ Cross-file rename မပါဝင်သေးသောကြောင့် automated refactor မလုပ်မီ result ကို ပြန်စစ်ပါ။
-
-## ၁၀။ Uninstall
-
-Unix installer သည် user-level directory ကို အသုံးပြုသည်။ `uninstall.sh` run လုပ်ပါ သို့မဟုတ် installed binary နှင့် shell profile ထဲရှိ Zap PATH line ကို ဖယ်ရှားပါ။ Windows တွင် `uninstall_windows.bat` run လုပ်ပါ သို့မဟုတ် `%USERPROFILE%\.zap\bin\zap.exe` နှင့် PATH entry ကို ဖယ်ရှားပါ။ Uninstall လုပ်ခြင်းသည် project files၊ registry data သို့မဟုတ် credential များကို မဖျက်ပါ။
-
-## ကိုးကားရန်
-
-Normative reference များမှာ [language specification](LANGUAGE_SPEC_MM.md)၊ [package guide](PACKAGE.md)၊ [registry authentication contract](REGISTRY_AUTH_MM.md)၊ [deployment boundaries](DEPLOYMENT_MM.md)၊ [production operations guide](PRODUCTION_OPERATIONS_MM.md)၊ [security policy](../SECURITY.md) နှင့် [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) တို့ ဖြစ်သည်။
+Repository သည် `rust-toolchain.toml` တွင် Rust toolchain ကို pin လုပ်ထားပါသည်။ Source contributor များသည် locked dependency graph ကို အသုံးပြုပြီး native test၊ formatting၊ strict Clippy၊ documentation consistency၊ release-version၊ VS Code asset၊ LSP parity၊ framework နှင့် release-preflight gate များကို [မြန်မာ documentation navigation](DOCUMENTATION_NAVIGATION_MM.md) တွင် ဖော်ပြထားသည့်အတိုင်း run ရမည်။

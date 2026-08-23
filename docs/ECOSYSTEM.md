@@ -1,6 +1,6 @@
 # Zap Ecosystem Architecture
 
-Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ v2.2.3 အပြီးတွင် Framework Foundation v0.1 သည် Web၊ App၊ AI နှင့် IoT အတွက် current Zap syntax ဖြင့် run လို့ရသော contract starter များကို ပေးထားပြီ။ Web အတွက် Zap-native loopback server နှင့် SQLite-first migration adapter ကို စတင်ထားပြီး production-grade platform adapters များကို သီးခြား capability boundary၊ security policy နှင့် deployment evidence ဖြင့် ဆက်တိုးမည်။
+Zap သည် language core တစ်ခုအပေါ်တွင် domain-specific packages နှင့် platform runtimes များကို တည်ဆောက်မည့် ecosystem ဖြစ်သည်။ v2.5.0 development line အရ Framework Foundation v0.1 သည် Web၊ App၊ AI နှင့် IoT အတွက် current Zap syntax ဖြင့် run လို့ရသော contract starter များကို ပေးထားပြီ။ Web အတွက် Zap-native loopback server နှင့် SQLite-first migration adapter ကို စတင်ထားပြီး production-grade platform adapters များကို သီးခြား capability boundary၊ security policy နှင့် deployment evidence ဖြင့် ဆက်တိုးမည်။
 
 ## Layers
 

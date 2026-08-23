@@ -268,6 +268,7 @@ check_release_files() {
     scripts/check_rustsec_audit.sh
     scripts/validate_documentation_consistency.sh
     scripts/test_validate_documentation_consistency.sh
+    scripts/validate_markdown_links.py
     scripts/check_benchmark_regression.sh
     scripts/test_benchmark_regression.sh
     benchmark-results/native-summary.csv
@@ -423,6 +424,9 @@ run_contract_validation() {
 
   bash scripts/test_validate_documentation_consistency.sh
   pass "documentation consistency regression validation passed"
+
+  python3 scripts/validate_markdown_links.py
+  pass "repository Markdown link validation passed"
 
   ZAP_FRAMEWORK_DOCS_ONLY=1 \
     bash scripts/validate_framework_starters.sh

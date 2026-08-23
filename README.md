@@ -151,7 +151,7 @@ The language includes text, numbers, booleans, lists, maps, objects, functions, 
 ```bash
 zap file.zp                 # run a source file
 zap new my_app               # create a complete user-managed Web project
-zap check .                  # validate source or project
+zap check .                  # validate a Zap project directory
 zap check --json .           # emit structured diagnostics
 zap build --locked .         # validate reproducible build inputs
 zap test tests               # run Zap tests

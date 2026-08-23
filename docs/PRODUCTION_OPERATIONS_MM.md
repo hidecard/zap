@@ -1,6 +1,6 @@
 # Zap Production Operations Runbook
 
-**စစ်ဆေးထားသော baseline:** Zap v2.2.6 maintenance branch
+**စစ်ဆေးထားသော baseline:** Zap v2.5.0 development line
 
 **အကျယ်အဝန်း:** ဤ runbook သည် built-in authenticated registry ကို Linux systemd service နှင့် nginx TLS ingress အနောက်တွင် production သုံးရန် reference deployment အဖြစ် သတ်မှတ်ထားသည်။ Cloud provisioning အလိုအလျောက်လုပ်ပေးသည့်စနစ် မဟုတ်သောကြောင့် firewall၊ certificate authority၊ secret manager၊ monitoring၊ backup နှင့် approval အဆင့်များကို မိမိ environment နှင့် ကိုက်ညီအောင် operator က ဖြည့်စွက်ရမည်။
 
@@ -216,4 +216,4 @@ Production traffic လက်ခံမီ အောက်ပါ gate တစ်ခ
 | Observability | Log၊ health check၊ certificate/resource/5xx alert active ဖြစ်ခြင်း |
 | Rollback | Previous binary နှင့် approved rollback procedure ရှိခြင်း |
 
-Gate အားလုံးအောင်မြင်ပြီးမှ DNS သို့မဟုတ် public load balancer ကို ingress သို့ route လုပ်ပါ။ Repository branch သို့မဟုတ် pull request သည် publish လုပ်ထားသော release artifact မဟုတ်ကြောင်း မှတ်သားပါ။
+Gate အားလုံးအောင်မြင်ပြီးမှ DNS သို့မဟုတ် public load balancer ကို ingress သို့ route လုပ်ပါ။ Repository branch သို့မဟုတ် pull request သည် publish လုပ်ထားသော release artifact မဟုတ်ကြောင်း မှတ်သားပါ။ Checksum၊ signature၊ provenance နှင့် published asset verification ပြီးသော tagged release ကိုသာ install လုပ်ပါ။
