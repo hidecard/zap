@@ -8,7 +8,7 @@ v2.2.6 release ကို published v2.2.5 release နောက်ပိုင်
 
 ## Active runtime reliability baseline
 
-Canonical AST path နှင့် compatibility-only legacy path နှစ်ခုစလုံးတွင် filesystem line builtin များသည် text I/O နှင့် တူညီသော context-aware workspace confinement ကို အသုံးပြုပါသည်။ Traversal၊ workspace အပြင်ရှိ absolute path နှင့် active workspace အပြင်သို့ ရောက်သွားသော symlink-resolved path များကို reject လုပ်ပြီး ရှိပြီးသား file-size နှင့် capability limit များကို ထိန်းသိမ်းထားပါသည်။ Synchronous နှင့် async process timeout/cancellation များတွင် Unix တွင် သီးခြား process group ဖွဲ့ပြီး Windows တွင် platform process utility ဖြင့် recursive tree termination ကို တောင်းဆိုကာ direct-child cleanup နှင့် wait ကို ဆက်လက်လုပ်ဆောင်ပါသည်။
+Canonical AST path နှင့် compatibility-only legacy path နှစ်ခုစလုံးတွင် filesystem line builtin များသည် text I/O နှင့် တူညီသော context-aware workspace confinement ကို အသုံးပြုပါသည်။ Traversal၊ workspace အပြင်ရှိ absolute path နှင့် active workspace အပြင်သို့ ရောက်သွားသော symlink-resolved path များကို reject လုပ်ပြီး ရှိပြီးသား file-size နှင့် capability limit များကို ထိန်းသိမ်းထားပါသည်။ Synchronous နှင့် async process timeout/cancellation များတွင် Unix တွင် သီးခြား process group ဖွဲ့ပြီး negative group identifier အတွက် လိုအပ်သော `kill -KILL -- -PID` form ကို အသုံးပြုပါသည်။ Windows တွင် platform process utility ဖြင့် recursive tree termination ကို တောင်းဆိုကာ direct-child cleanup နှင့် wait ကို ဆက်လက်လုပ်ဆောင်ပါသည်။ Focused cancellation နှင့် direct process-group regression များဖြင့် ဤ boundary ကို စစ်ဆေးထားပါသည်။
 
 ## Bounded operations and URL handling
 

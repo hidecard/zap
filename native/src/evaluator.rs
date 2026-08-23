@@ -1905,7 +1905,7 @@ fn terminate_process_tree(child: &mut std::process::Child) {
     #[cfg(unix)]
     {
         let group = format!("-{pid}");
-        let _ = Command::new("kill").args(["-KILL", &group]).status();
+        let _ = Command::new("kill").args(["-KILL", "--", &group]).status();
     }
     #[cfg(windows)]
     {
@@ -4222,6 +4222,7 @@ mod tests {
         fs,
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
+        process::Command,
         rc::Rc,
         sync::atomic::Ordering,
     };
@@ -5805,6 +5806,22 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             .exists());
         let _ = fs::remove_file(outside);
         let _ = fs::remove_dir_all(workspace);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn direct_process_tree_termination_kills_the_process_group() {
+        use std::os::unix::process::CommandExt;
+
+        let mut process = Command::new("sh");
+        process.args(["-c", "sleep 5"]);
+        process.process_group(0);
+        let mut child = process.spawn().expect("process-group fixture should start");
+        super::terminate_process_tree(&mut child);
+        assert!(child
+            .try_wait()
+            .expect("terminated process should be waitable")
+            .is_some());
     }
 
     #[test]

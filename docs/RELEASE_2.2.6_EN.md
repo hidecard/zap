@@ -8,7 +8,7 @@ The v2.2.6 release is prepared from `master` history after the published v2.2.5 
 
 ## Active runtime reliability baseline
 
-Filesystem line builtins now use the same context-aware workspace confinement as text I/O in both the canonical AST path and the compatibility-only legacy path. The runtime rejects traversal, outside-workspace absolute paths, and symlink-resolved paths that leave the active workspace while retaining existing file-size and capability limits. Synchronous and async process timeouts/cancellation now place children in an isolated process group on Unix and request recursive tree termination through the platform process utility on Windows, followed by direct-child cleanup and wait.
+Filesystem line builtins now use the same context-aware workspace confinement as text I/O in both the canonical AST path and the compatibility-only legacy path. The runtime rejects traversal, outside-workspace absolute paths, and symlink-resolved paths that leave the active workspace while retaining existing file-size and capability limits. Synchronous and async process timeouts/cancellation now place children in an isolated process group on Unix, use the explicit `kill -KILL -- -PID` form required for negative group identifiers, and request recursive tree termination through the platform process utility on Windows, followed by direct-child cleanup and wait. Focused cancellation and direct process-group regressions cover this boundary.
 
 ## Bounded operations and URL handling
 

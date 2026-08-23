@@ -979,7 +979,7 @@ fn terminate_process_tree(child: &mut std::process::Child) {
     #[cfg(unix)]
     {
         let group = format!("-{pid}");
-        let _ = Command::new("kill").args(["-KILL", &group]).status();
+        let _ = Command::new("kill").args(["-KILL", "--", &group]).status();
     }
     #[cfg(windows)]
     {
