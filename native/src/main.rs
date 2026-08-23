@@ -11,7 +11,7 @@ use diagnostics::ZapError;
 use lexer::Token;
 mod value;
 
-use value::{EnvFrame, Function, Param, StaticSignature, Value};
+use value::{collect_bounded_values, EnvFrame, Function, Param, StaticSignature, Value};
 mod project;
 mod registry;
 
@@ -30,10 +30,10 @@ mod stdlib;
 mod stdlib_catalog;
 
 use evaluator::{
-    call_function_with_context, call_method_with_context, check_method_visibility,
-    constructor_delegates_to_parent, direct_builtin_with_context, duration_value,
-    execute_ast_program_with_context, initialize_object_fields, json_to_value, operate,
-    utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
+    bounded_range_values, call_function_with_context, call_method_with_context,
+    check_method_visibility, constructor_delegates_to_parent, direct_builtin_with_context,
+    duration_value, execute_ast_program_with_context, initialize_object_fields, json_to_value,
+    operate, utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
 };
 
 use runtime_state::ExecutionContext;
@@ -426,9 +426,10 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after split".into());
                 }
                 match (text, separator) {
-                    (Value::Text(x), Value::Text(sep)) => {
-                        Value::List(x.split(&sep).map(|part| Value::Text(part.into())).collect())
-                    }
+                    (Value::Text(x), Value::Text(sep)) => Value::List(collect_bounded_values(
+                        x.split(&sep).map(|part| Value::Text(part.into())),
+                        "split",
+                    )?),
                     _ => return Err("split expects text and separator".into()),
                 }
             }
@@ -818,12 +819,12 @@ impl<'a> ExprParser<'a> {
                 let Value::Text(value) = value else {
                     return Err("codepoints expects text".into());
                 };
-                Value::List(
+                Value::List(collect_bounded_values(
                     value
                         .chars()
-                        .map(|character| Value::Number(i64::from(u32::from(character))))
-                        .collect(),
-                )
+                        .map(|character| Value::Number(i64::from(u32::from(character)))),
+                    "codepoints",
+                )?)
             }
             Token::Name(n) if n == "new" && *self.peek() == Token::LParen => {
                 self.take();
@@ -929,7 +930,7 @@ impl<'a> ExprParser<'a> {
                 }
                 match (start, end) {
                     (Value::Number(a), Value::Number(b)) if a <= b => {
-                        Value::List((a..b).map(Value::Number).collect())
+                        Value::List(bounded_range_values(a, b)?)
                     }
                     _ => return Err("range expects numeric bounds".into()),
                 }
@@ -985,7 +986,7 @@ impl<'a> ExprParser<'a> {
                     return Err("expected ) after read_lines".into());
                 }
                 match path {
-                    Value::Text(p) => Value::List(
+                    Value::Text(p) => Value::List(collect_bounded_values(
                         read_limited_text(
                             &evaluator::confined_path(
                                 Path::new(&p),
@@ -995,9 +996,9 @@ impl<'a> ExprParser<'a> {
                             "read_lines",
                         )?
                         .lines()
-                        .map(|line| Value::Text(line.to_string()))
-                        .collect(),
-                    ),
+                        .map(|line| Value::Text(line.to_string())),
+                        "read_lines",
+                    )?),
                     _ => return Err("read_lines expects a text path".into()),
                 }
             }
@@ -1015,14 +1016,25 @@ impl<'a> ExprParser<'a> {
                     (Value::Text(p), Value::List(xs)) => {
                         let mut out = String::new();
                         for (i, v) in xs.iter().enumerate() {
+                            let Value::Text(s) = v else {
+                                return Err("write_lines expects a list of text".into());
+                            };
+                            let next_len = out
+                                .len()
+                                .checked_add(usize::from(i > 0))
+                                .and_then(|length| length.checked_add(s.len()))
+                                .ok_or_else(|| {
+                                    "write_lines failed: content length overflow".to_string()
+                                })?;
+                            if next_len > MAX_FILE_BYTES as usize {
+                                return Err(format!(
+                                    "write_lines failed: content exceeds the {MAX_FILE_BYTES} byte limit"
+                                ));
+                            }
                             if i > 0 {
                                 out.push('\n');
                             }
-                            if let Value::Text(s) = v {
-                                out.push_str(s)
-                            } else {
-                                return Err("write_lines expects a list of text".into());
-                            }
+                            out.push_str(s);
                         }
                         write_limited_text(
                             &evaluator::confined_path(

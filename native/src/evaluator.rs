@@ -16,7 +16,9 @@ use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, Unary
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::stdlib::{checked_integer_pow, MAX_SLEEP_MILLISECONDS};
-use crate::value::{try_values_equal, MAX_RUNTIME_VALUE_NODES};
+use crate::value::{
+    collect_bounded_values, try_values_equal, MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_VALUE_NODES,
+};
 use crate::ExprParser;
 use crate::{
     parse_signature, read_limited_text, resolve_module, write_limited_text, EnvFrame,
@@ -237,6 +239,16 @@ pub(crate) fn operate(a: Value, op: Token, b: Value) -> Result<Value, String> {
 struct JsonEncodeState {
     active_objects: HashSet<usize>,
     nodes: usize,
+}
+
+pub(crate) fn bounded_range_values(start: i64, end: i64) -> Result<Vec<Value>, String> {
+    let count = i128::from(end) - i128::from(start);
+    if count > i128::from(MAX_RUNTIME_COLLECTION_ITEMS as u64) {
+        return Err(format!(
+            "memory limit exceeded: range produced more than {MAX_RUNTIME_COLLECTION_ITEMS} items"
+        ));
+    }
+    Ok((start..end).map(Value::Number).collect())
 }
 
 pub(crate) fn value_to_json(value: &Value) -> Result<serde_json::Value, String> {
@@ -774,12 +786,12 @@ fn direct_builtin_with_context_inner(
             let Value::Text(value) = &args[0] else {
                 return Err("codepoints expects text".into());
             };
-            Ok(Some(Value::List(
+            Ok(Some(Value::List(collect_bounded_values(
                 value
                     .chars()
-                    .map(|character| Value::Number(i64::from(u32::from(character))))
-                    .collect(),
-            )))
+                    .map(|character| Value::Number(i64::from(u32::from(character)))),
+                "codepoints",
+            )?)))
         }
         "utc_now" => {
             expect(0)?;
@@ -922,12 +934,12 @@ fn direct_builtin_with_context_inner(
         "split" => {
             expect(2)?;
             match (&args[0], &args[1]) {
-                (Value::Text(value), Value::Text(separator)) => Ok(Some(Value::List(
-                    value
-                        .split(separator)
-                        .map(|part| Value::Text(part.into()))
-                        .collect(),
-                ))),
+                (Value::Text(value), Value::Text(separator)) => {
+                    Ok(Some(Value::List(collect_bounded_values(
+                        value.split(separator).map(|part| Value::Text(part.into())),
+                        "split",
+                    )?)))
+                }
                 _ => Err("split expects text and text separator".into()),
             }
         }
@@ -1085,7 +1097,7 @@ fn direct_builtin_with_context_inner(
                 [Value::Number(start), Value::Number(end)] => (*start, *end),
                 _ => return Err("range expects numeric arguments".into()),
             };
-            Ok(Some(Value::List((start..end).map(Value::Number).collect())))
+            Ok(Some(Value::List(bounded_range_values(start, end)?)))
         }
         "ok" | "err" | "some" => {
             expect(1)?;
@@ -1331,15 +1343,15 @@ fn direct_io_builtin_with_context(
             let Value::Text(path) = &args[0] else {
                 return Err("read_lines expects a text path".into());
             };
-            Ok(Some(Value::List(
+            Ok(Some(Value::List(collect_bounded_values(
                 read_limited_text(
                     &confined_path(Path::new(path), "read_lines", context)?,
                     "read_lines",
                 )?
                 .lines()
-                .map(|line| Value::Text(line.to_string()))
-                .collect(),
-            )))
+                .map(|line| Value::Text(line.to_string())),
+                "read_lines",
+            )?)))
         }
         "write_lines" => {
             if args.len() != 2 {
@@ -1356,6 +1368,16 @@ fn direct_io_builtin_with_context(
                 let Value::Text(line) = value else {
                     return Err("write_lines expects a list of text".into());
                 };
+                let next_len = output
+                    .len()
+                    .checked_add(usize::from(index > 0))
+                    .and_then(|length| length.checked_add(line.len()))
+                    .ok_or_else(|| "write_lines failed: content length overflow".to_string())?;
+                if next_len > MAX_FILE_BYTES as usize {
+                    return Err(format!(
+                        "write_lines failed: content exceeds the {MAX_FILE_BYTES} byte limit"
+                    ));
+                }
                 if index > 0 {
                     output.push('\n');
                 }
@@ -4882,6 +4904,64 @@ mod tests {
         let error = value_to_json(&value).unwrap_err();
         assert!(error.contains("json encode failed: value graph exceeds"));
         assert!(error.ends_with("levels"));
+    }
+
+    #[test]
+    fn collection_builtins_reject_oversized_results_before_unbounded_growth() {
+        let range_error = direct_builtin(
+            "range",
+            vec![
+                Value::Number(0),
+                Value::Number((MAX_RUNTIME_COLLECTION_ITEMS + 1) as i64),
+            ],
+        )
+        .expect_err("oversized range must fail");
+        assert!(range_error.contains("range produced more than"));
+
+        let split_error = direct_builtin(
+            "split",
+            vec![
+                Value::Text("x,".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1)),
+                Value::Text(",".into()),
+            ],
+        )
+        .expect_err("oversized split must fail");
+        assert!(split_error.contains("split produced more than"));
+
+        let codepoints_error = direct_builtin(
+            "codepoints",
+            vec![Value::Text("x".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1))],
+        )
+        .expect_err("oversized codepoints must fail");
+        assert!(codepoints_error.contains("codepoints produced more than"));
+    }
+
+    #[test]
+    fn line_builtins_reject_oversized_results_before_unbounded_growth() {
+        let path =
+            std::env::temp_dir().join(format!("zap-read-lines-limit-{}.txt", std::process::id()));
+        let content = "x\n".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1);
+        fs::write(&path, content).expect("line fixture should be written");
+        let read_error = direct_io_builtin(
+            "read_lines",
+            &[Value::Text(path.to_string_lossy().into_owned())],
+        )
+        .expect_err("oversized read_lines must fail");
+        assert!(read_error.contains("read_lines produced more than"));
+        let _ = fs::remove_file(&path);
+
+        let write_error = direct_io_builtin(
+            "write_lines",
+            &[
+                Value::Text(path.to_string_lossy().into_owned()),
+                Value::List(vec![Value::Text(
+                    "x".repeat(super::MAX_FILE_BYTES as usize + 1),
+                )]),
+            ],
+        )
+        .expect_err("oversized write_lines output must fail");
+        assert!(write_error.contains("write_lines failed: content exceeds"));
+        assert!(!path.exists());
     }
 
     #[test]
