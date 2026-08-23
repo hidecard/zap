@@ -1,0 +1,34 @@
+[Unit]
+Description=Apply Zap Web database migrations
+Wants=network-online.target
+After=network-online.target
+Before=zap-web.service
+ConditionPathExists=/srv/zap/app/zap.toml
+
+[Service]
+Type=oneshot
+User=zap
+Group=zap
+WorkingDirectory=/srv/zap/app
+EnvironmentFile=-/etc/zap/zap-web.env
+RuntimeDirectory=zap
+RuntimeDirectoryMode=0750
+ExecStartPre=/usr/local/bin/zap build --locked /srv/zap/app
+ExecStartPre=/usr/local/bin/zap db check /srv/zap/app
+ExecStart=/usr/bin/flock -n /run/zap/zap-web-migrate.lock /usr/local/bin/zap db migrate /srv/zap/app
+ExecStartPost=/usr/local/bin/zap db migrate --check /srv/zap/app
+TimeoutStartSec=120s
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadWritePaths=/srv/zap/app/data /run/zap
+RestrictAddressFamilies=AF_UNIX
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

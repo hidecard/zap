@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Production deployment and database operations
+- Added hardened `zap-web.service` and manual, lock-protected `zap-web-migrate.service` units with loopback binding, systemd filesystem/resource controls, migration preflight, and explicit writable data paths.
+- Added a TLS-terminating Nginx reverse-proxy template with HTTPS redirect, method/request limits, forwarded-header policy, health/readiness routes, and deployment validation.
+- Added production deployment and database operations runbooks covering SQLite checksum/transaction migration, backup/restore boundaries, external-provider migration locks, pool ownership, acquisition/query timeouts, and shutdown behavior.
+- Added bounded `DatabasePoolConfig` and semaphore-based `DatabasePoolGate` to the host adapter, with environment-backed defaults and regression tests. The gate is a host-side acquisition guard; real repositories still own provider pools.
+
 ### Framework branch Web runtime
 - Added a language-independent `[frontend]` manifest contract for plain HTML/CSS/JavaScript and optional React, Vue, Svelte, or other frontend build outputs. Validation requires a safe output directory and an existing SPA fallback document without executing a package manager.
 - Added binary-safe `web_static` responses with MIME types for common images, fonts, and Wasm, plus `web_static_spa` for explicit client-side route fallback. Added native regression coverage for binary bytes, SPA fallback, traversal rejection, and generated Web projects.

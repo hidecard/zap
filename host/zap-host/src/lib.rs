@@ -23,6 +23,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tower_http::{
     limit::RequestBodyLimitLayer, sensitive_headers::SetSensitiveHeadersLayer,
     timeout::TimeoutLayer, trace::TraceLayer,
@@ -35,6 +36,99 @@ pub const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
 pub const DEFAULT_RATE_LIMIT: u64 = 60;
 pub const DEFAULT_RATE_WINDOW_MS: u64 = 60_000;
 pub const DEFAULT_SHUTDOWN_TIMEOUT_MS: u64 = 30_000;
+pub const DEFAULT_DB_MAX_CONNECTIONS: usize = 16;
+pub const DEFAULT_DB_ACQUIRE_TIMEOUT_MS: u64 = 1_000;
+pub const DEFAULT_DB_QUERY_TIMEOUT_MS: u64 = 5_000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DatabasePoolConfig {
+    pub max_connections: usize,
+    pub acquire_timeout: Duration,
+    pub query_timeout: Duration,
+}
+
+impl Default for DatabasePoolConfig {
+    fn default() -> Self {
+        Self {
+            max_connections: DEFAULT_DB_MAX_CONNECTIONS,
+            acquire_timeout: Duration::from_millis(DEFAULT_DB_ACQUIRE_TIMEOUT_MS),
+            query_timeout: Duration::from_millis(DEFAULT_DB_QUERY_TIMEOUT_MS),
+        }
+    }
+}
+
+impl DatabasePoolConfig {
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.max_connections == 0 || self.max_connections > 256 {
+            return Err(ConfigError::message(
+                "database max_connections must be between 1 and 256",
+            ));
+        }
+        if self.acquire_timeout.is_zero() || self.acquire_timeout > Duration::from_secs(30) {
+            return Err(ConfigError::message(
+                "database acquire_timeout must be between 1ms and 30s",
+            ));
+        }
+        if self.query_timeout.is_zero() || self.query_timeout > Duration::from_secs(120) {
+            return Err(ConfigError::message(
+                "database query_timeout must be between 1ms and 120s",
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PoolAcquireError {
+    Closed,
+    Timeout,
+}
+
+#[derive(Clone)]
+pub struct DatabasePoolGate {
+    semaphore: Arc<Semaphore>,
+    config: DatabasePoolConfig,
+}
+
+impl DatabasePoolGate {
+    pub fn new(config: DatabasePoolConfig) -> Result<Self, ConfigError> {
+        config.validate()?;
+        Ok(Self {
+            semaphore: Arc::new(Semaphore::new(config.max_connections)),
+            config,
+        })
+    }
+
+    pub async fn acquire(&self) -> Result<DatabasePoolPermit, PoolAcquireError> {
+        let permit = tokio::time::timeout(
+            self.config.acquire_timeout,
+            self.semaphore.clone().acquire_owned(),
+        )
+        .await
+        .map_err(|_| PoolAcquireError::Timeout)?
+        .map_err(|_| PoolAcquireError::Closed)?;
+        Ok(DatabasePoolPermit { permit })
+    }
+
+    pub fn available_permits(&self) -> usize {
+        self.semaphore.available_permits()
+    }
+
+    pub fn close(&self) {
+        self.semaphore.close();
+    }
+}
+
+pub struct DatabasePoolPermit {
+    permit: OwnedSemaphorePermit,
+}
+
+impl DatabasePoolPermit {
+    pub fn is_acquired(&self) -> bool {
+        let _permit = &self.permit;
+        true
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct AppConfig {
@@ -47,6 +141,7 @@ pub struct AppConfig {
     pub rate_limit: u64,
     pub rate_window: Duration,
     pub rate_limit_key: String,
+    pub database_pool: DatabasePoolConfig,
 }
 
 impl Default for AppConfig {
@@ -61,6 +156,7 @@ impl Default for AppConfig {
             rate_limit: DEFAULT_RATE_LIMIT,
             rate_window: Duration::from_millis(DEFAULT_RATE_WINDOW_MS),
             rate_limit_key: "demo-host".to_string(),
+            database_pool: DatabasePoolConfig::default(),
         }
     }
 }
@@ -87,6 +183,17 @@ impl AppConfig {
         let rate_limit = env_u64("ZAP_HOST_RATE_LIMIT")?.unwrap_or(DEFAULT_RATE_LIMIT);
         let rate_window_ms = env_u64("ZAP_HOST_RATE_WINDOW_MS")?.unwrap_or(DEFAULT_RATE_WINDOW_MS);
         let rate_limit_key = env::var("ZAP_HOST_RATE_KEY").unwrap_or(defaults.rate_limit_key);
+        let database_pool = DatabasePoolConfig {
+            max_connections: env_u64("ZAP_DB_MAX_CONNECTIONS")?
+                .map(|value| value as usize)
+                .unwrap_or(DEFAULT_DB_MAX_CONNECTIONS),
+            acquire_timeout: Duration::from_millis(
+                env_u64("ZAP_DB_ACQUIRE_TIMEOUT_MS")?.unwrap_or(DEFAULT_DB_ACQUIRE_TIMEOUT_MS),
+            ),
+            query_timeout: Duration::from_millis(
+                env_u64("ZAP_DB_QUERY_TIMEOUT_MS")?.unwrap_or(DEFAULT_DB_QUERY_TIMEOUT_MS),
+            ),
+        };
         let config = Self {
             bind_addr,
             max_body_bytes,
@@ -97,6 +204,7 @@ impl AppConfig {
             rate_limit,
             rate_window: Duration::from_millis(rate_window_ms),
             rate_limit_key,
+            database_pool,
         };
         config.validate()?;
         Ok(config)
@@ -140,6 +248,7 @@ impl AppConfig {
                 "rate_limit_key must contain 1 to 256 bytes",
             ));
         }
+        self.database_pool.validate()?;
         Ok(())
     }
 }
@@ -1071,5 +1180,58 @@ mod tests {
             ..AppConfig::default()
         };
         assert!(invalid_timeout.validate().is_err());
+    }
+
+    #[test]
+    fn database_pool_configuration_has_bounded_defaults() {
+        let config = AppConfig::default();
+        assert_eq!(
+            config.database_pool.max_connections,
+            DEFAULT_DB_MAX_CONNECTIONS
+        );
+        assert_eq!(
+            config.database_pool.acquire_timeout,
+            Duration::from_millis(DEFAULT_DB_ACQUIRE_TIMEOUT_MS)
+        );
+        assert!(config.database_pool.validate().is_ok());
+
+        let invalid_connections = DatabasePoolConfig {
+            max_connections: 0,
+            ..DatabasePoolConfig::default()
+        };
+        assert!(invalid_connections.validate().is_err());
+
+        let invalid_query_timeout = DatabasePoolConfig {
+            query_timeout: Duration::from_secs(121),
+            ..DatabasePoolConfig::default()
+        };
+        assert!(invalid_query_timeout.validate().is_err());
+    }
+
+    #[tokio::test]
+    async fn database_pool_gate_bounds_acquisition_and_closes_cleanly() {
+        let config = DatabasePoolConfig {
+            max_connections: 1,
+            acquire_timeout: Duration::from_millis(5),
+            ..DatabasePoolConfig::default()
+        };
+        let pool = DatabasePoolGate::new(config).expect("valid pool config");
+        let permit = pool
+            .acquire()
+            .await
+            .expect("first permit should be available");
+        assert!(permit.is_acquired());
+        assert_eq!(pool.available_permits(), 0);
+        assert!(matches!(
+            pool.acquire().await,
+            Err(PoolAcquireError::Timeout)
+        ));
+        drop(permit);
+        assert_eq!(pool.available_permits(), 1);
+        pool.close();
+        assert!(matches!(
+            pool.acquire().await,
+            Err(PoolAcquireError::Closed)
+        ));
     }
 }

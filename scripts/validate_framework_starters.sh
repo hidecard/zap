@@ -173,6 +173,21 @@ require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_WEB_NATIVE_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_WEB_NATIVE_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRONTEND_INTEGRATION_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRONTEND_INTEGRATION_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "PRODUCTION_DEPLOYMENT_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "PRODUCTION_DEPLOYMENT_MM.md"
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md "DATABASE_PRODUCTION_EN.md"
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md "DATABASE_PRODUCTION_MM.md"
+require_file docs/PRODUCTION_DEPLOYMENT_EN.md
+require_file docs/PRODUCTION_DEPLOYMENT_MM.md
+require_file docs/DATABASE_PRODUCTION_EN.md
+require_file docs/DATABASE_PRODUCTION_MM.md
+require_text docs/PRODUCTION_DEPLOYMENT_EN.md "zap-web-migrate.service"
+require_text docs/PRODUCTION_DEPLOYMENT_MM.md "zap-web-migrate.service"
+require_text docs/DATABASE_PRODUCTION_EN.md "ZAP_DB_MAX_CONNECTIONS"
+require_text docs/DATABASE_PRODUCTION_MM.md "ZAP_DB_MAX_CONNECTIONS"
+require_text host/zap-host/.env.example "ZAP_DB_MAX_CONNECTIONS=16"
+require_text host/zap-host/.env.example "ZAP_DB_ACQUIRE_TIMEOUT_MS=1000"
+require_text host/zap-host/.env.example "ZAP_DB_QUERY_TIMEOUT_MS=5000"
 for native_web_file in \
   docs/ZAP_WEB_NATIVE_EN.md \
   docs/ZAP_WEB_NATIVE_MM.md \
@@ -196,13 +211,24 @@ for deployment_file in \
   deploy/zap-host.nginx.conf \
   deploy/zap-host-deployment-policy.toml \
   deploy/zap-host.env.example \
-  scripts/validate_zap_host_deployment.sh; do
+  deploy/zap-web.service \
+  deploy/zap-web-migrate.service \
+  deploy/zap-web.nginx.conf \
+  deploy/zap-web-deployment-policy.toml \
+  deploy/zap-web.env.example \
+  scripts/validate_zap_host_deployment.sh \
+  scripts/validate_zap_web_deployment.sh; do
   require_file "$deployment_file"
 done
 if [[ -x scripts/validate_zap_host_deployment.sh ]] && scripts/validate_zap_host_deployment.sh >/dev/null 2>&1; then
   record PASS "host-deployment-policy:zap-host"
 else
   record FAIL "host-deployment-policy:zap-host"
+fi
+if [[ -x scripts/validate_zap_web_deployment.sh ]] && scripts/validate_zap_web_deployment.sh >/dev/null 2>&1; then
+  record PASS "web-deployment-policy:zap-web"
+else
+  record FAIL "web-deployment-policy:zap-web"
 fi
 
 if command -v cargo >/dev/null 2>&1; then

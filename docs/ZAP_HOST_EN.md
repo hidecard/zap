@@ -101,6 +101,8 @@ The `GET /health` route is public and intentionally lightweight. `GET /ready` is
 
 A real `UserRepository` implementation must use parameterized statements and typed input binding. It must own connection-pool sizing, acquisition timeout, query timeout, transaction boundaries, cancellation behavior, duplicate-key classification, unavailable-service classification, and graceful pool shutdown. It must map an unavailable dependency to `503` and a duplicate create to `409` without returning provider-specific text to clients.
 
+`AppConfig.database_pool` exposes bounded policy values from `ZAP_DB_MAX_CONNECTIONS`, `ZAP_DB_ACQUIRE_TIMEOUT_MS`, and `ZAP_DB_QUERY_TIMEOUT_MS`. `DatabasePoolGate` provides an explicit semaphore-based acquisition boundary with a timeout and close operation. It is a host-side guard, not a database driver: the injected repository must still own the actual provider pool, call the gate before acquisition, apply the query timeout, and release the permit on every success, error, and cancellation path. The demo memory repository does not become a production database merely because these settings exist.
+
 The repository must return only the fields required by `PublicUser`. Secret columns, password material, access tokens, internal status fields, and diagnostic metadata must never be serialized by the DTO mapper. Subject or tenant binding must be enforced in repository queries rather than trusted only from a request body.
 
 ## Authentication and authorization checklist

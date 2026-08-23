@@ -48,6 +48,11 @@ require_exact "$policy" 'request_timeout_seconds = 10'
 require_exact "$policy" 'shutdown_drain_timeout_seconds = 30'
 require_exact "$policy" 'readiness_path = "/ready"'
 require_exact "$policy" 'external_egress = false'
+require_exact "$policy" 'pool_owner = "injected-user-repository"'
+require_exact "$policy" 'max_connections = 16'
+require_exact "$policy" 'acquire_timeout_ms = 1000'
+require_exact "$policy" 'query_timeout_ms = 5000'
+require_exact "$policy" 'migration_lock = "provider-orchestrator-required"'
 require_exact "$policy" 'raw_credentials_enter_zap_contract = false'
 require_exact "$policy" 'state = "shared-atomic-store-required-for-multiple-instances"'
 require_exact "$policy" 'demo_repository_allowed = false'
@@ -57,6 +62,9 @@ require_exact "$policy" 'runtime_cli_subprocess_per_request_allowed = false'
 
 require_exact "$env_example" 'ZAP_HOST_ADDR=127.0.0.1:3000'
 require_exact "$env_example" 'ZAP_HOST_SHUTDOWN_TIMEOUT_MS=30000'
+require_exact "$env_example" 'ZAP_DB_MAX_CONNECTIONS=16'
+require_exact "$env_example" 'ZAP_DB_ACQUIRE_TIMEOUT_MS=1000'
+require_exact "$env_example" 'ZAP_DB_QUERY_TIMEOUT_MS=5000'
 grep -Fq 'DATABASE_URL=<injected-by-secret-manager>' "$env_example" || { echo "missing database secret-source placeholder in $env_example" >&2; exit 1; }
 grep -Fq 'OIDC_ISSUER=<deployment-configured>' "$env_example" || { echo "missing identity-provider placeholder in $env_example" >&2; exit 1; }
 

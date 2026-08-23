@@ -101,6 +101,8 @@ JSON response အားလုံးတွင် `x-content-type-options: nosniff
 
 Real `UserRepository` implementation သည် parameterized statements နှင့် typed input binding ကို သုံးရမည်။ Connection-pool size၊ acquisition timeout၊ query timeout၊ transaction boundary၊ cancellation behavior၊ duplicate-key classification၊ unavailable-service classification နှင့် graceful pool shutdown ကို adapter က ပိုင်ဆိုင်ရမည်။ Unavailable dependency ကို `503` နှင့် duplicate create ကို `409` အဖြစ် map လုပ်ရမည်ဖြစ်ပြီး provider-specific text ကို client ထံ မပြန်ရ။
 
+`AppConfig.database_pool` သည် `ZAP_DB_MAX_CONNECTIONS`၊ `ZAP_DB_ACQUIRE_TIMEOUT_MS` နှင့် `ZAP_DB_QUERY_TIMEOUT_MS` မှ bounded policy value များကို ဖော်ပြပါသည်။ `DatabasePoolGate` သည် timeout နှင့် close operation ပါသော semaphore-based acquisition boundary ကို ပေးပါသည်။ ၎င်းသည် host-side guard သာဖြစ်ပြီး database driver မဟုတ်ပါ။ Inject လုပ်ထားသော repository သည် actual provider pool ကို ပိုင်ဆိုင်ရမည်၊ acquisition မတိုင်မီ gate သုံးရမည်၊ query timeout ထည့်ရမည်၊ success/error/cancellation အားလုံးတွင် permit release လုပ်ရမည်။ ဤ settings များရှိရုံဖြင့် demo memory repository သည် production database မဖြစ်လာပါ။
+
 Repository သည် `PublicUser` အတွက် လိုအပ်သည့် fields များသာ ပြန်ပေးရမည်။ Secret columns၊ password material၊ access tokens၊ internal status fields နှင့် diagnostic metadata များကို DTO mapper ဖြင့် serialize မလုပ်ရ။ Subject/tenant binding ကို request body တစ်ခုတည်းကို ယုံကြည်မထားဘဲ repository query ထဲတွင် enforce လုပ်ရမည်။
 
 ## Authentication နှင့် authorization checklist

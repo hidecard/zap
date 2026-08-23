@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Production deployment နှင့် database operations
+- Hardened `zap-web.service` နှင့် manual lock-protected `zap-web-migrate.service` unit များကို loopback binding၊ systemd filesystem/resource control၊ migration preflight နှင့် explicit writable data path ဖြင့် ထည့်သွင်းထားပါသည်။
+- HTTPS redirect၊ method/request limit၊ forwarded-header policy၊ health/readiness route နှင့် deployment validation ပါသော TLS-terminating Nginx reverse-proxy template ကို ထည့်သွင်းထားပါသည်။
+- SQLite checksum/transaction migration၊ backup/restore boundary၊ external-provider migration lock၊ pool ownership၊ acquire/query timeout နှင့် shutdown behavior များကို ဖော်ပြသော production deployment/database runbook များကို ထည့်သွင်းထားပါသည်။
+- Host adapter တွင် bounded `DatabasePoolConfig` နှင့် semaphore-based `DatabasePoolGate` ကို environment-backed default နှင့် regression test များဖြင့် ထည့်သွင်းထားပါသည်။ Gate သည် host-side acquisition guard ဖြစ်ပြီး real repository က provider pool ကို ဆက်လက်ပိုင်ဆိုင်ရမည်။
+
 ### Framework branch Web runtime
 - Plain HTML/CSS/JavaScript နှင့် optional React, Vue, Svelte သို့မဟုတ် အခြား frontend build output များအတွက် language-independent `[frontend]` manifest contract ကို ထည့်သွင်းထားပါသည်။ Package manager ကို execute မလုပ်ဘဲ safe output directory နှင့် ရှိပြီးသား SPA fallback document ကို validation လုပ်ပါသည်။
 - Common image၊ font နှင့် Wasm အတွက် MIME type ပါသော binary-safe `web_static` response နှင့် client-side route fallback အတွက် `web_static_spa` ကို ထည့်သွင်းထားပါသည်။ Binary byte၊ SPA fallback၊ traversal rejection နှင့် generated Web project များအတွက် native regression coverage ပါဝင်ပါသည်။

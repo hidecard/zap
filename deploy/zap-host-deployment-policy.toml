@@ -29,6 +29,14 @@ cpu_percent = 50
 tasks = 128
 open_files = 2048
 
+[database]
+pool_owner = "injected-user-repository"
+max_connections = 16
+acquire_timeout_ms = 1000
+query_timeout_ms = 5000
+migration_lock = "provider-orchestrator-required"
+readiness_check = "bounded-database-health-check"
+
 [credentials]
 source = "deployment-secret-manager"
 file_mode = "0600"
