@@ -210,6 +210,9 @@ check_release_files() {
     docs/WEB_FRAMEWORK_MM.md
     docs/ZAP_HOST_EN.md
     docs/ZAP_HOST_MM.md
+    docs/ZAP_HOST_QUICKSTART_EN.md
+    docs/ZAP_HOST_QUICKSTART_MM.md
+    host/zap-host/.env.example
     host/zap-host/Cargo.toml
     host/zap-host/Cargo.lock
     host/zap-host/README.md
@@ -293,6 +296,7 @@ check_documentation_pairs() {
     'docs/FRAMEWORK_EN.md:docs/FRAMEWORK_MM.md'
     'docs/WEB_FRAMEWORK_EN.md:docs/WEB_FRAMEWORK_MM.md'
     'docs/ZAP_HOST_EN.md:docs/ZAP_HOST_MM.md'
+    'docs/ZAP_HOST_QUICKSTART_EN.md:docs/ZAP_HOST_QUICKSTART_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )

@@ -4,11 +4,17 @@
 
 ## Run
 
+From this directory, run the quality gates first. To start the local demo with the checked-in non-secret configuration example:
+
 ```bash
 cargo check --all-targets
 cargo fmt -- --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
+cp .env.example .env.local
+set -a
+. ./.env.local
+set +a
 cargo run
 ```
 
@@ -22,4 +28,4 @@ curl -i -H 'content-type: application/json' -d '{"name":"Bob","email":"bob@examp
 
 The default repository is an in-memory demo and the default authenticator returns a fixed demo identity. Replace both before deployment. The current native Zap runtime is a binary crate, so this adapter does not claim direct runtime embedding; a future `ZapGateway` requires a reviewed library/embedding seam.
 
-See [`../../docs/ZAP_HOST_EN.md`](../../docs/ZAP_HOST_EN.md) and [`../../docs/ZAP_HOST_MM.md`](../../docs/ZAP_HOST_MM.md) for the architecture, production checklist, and integration boundary.
+See [`../../docs/ZAP_HOST_EN.md`](../../docs/ZAP_HOST_EN.md) and [`../../docs/ZAP_HOST_MM.md`](../../docs/ZAP_HOST_MM.md) for the architecture, production checklist, and integration boundary. For a step-by-step first-use workflow, read [`../../docs/ZAP_HOST_QUICKSTART_EN.md`](../../docs/ZAP_HOST_QUICKSTART_EN.md) or [`../../docs/ZAP_HOST_QUICKSTART_MM.md`](../../docs/ZAP_HOST_QUICKSTART_MM.md).

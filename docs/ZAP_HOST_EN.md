@@ -119,6 +119,8 @@ The production policy must document whether store failures fail open or fail clo
 
 TLS is deliberately absent from this first crate. It should normally terminate at a controlled edge or be added through a reviewed host deployment configuration. HTTP/2, HTTP/3, WebSockets, compression, CORS, proxy headers, and tracing exporters each require an explicit policy and regression tests rather than being enabled by default.
 
+For a step-by-step local workflow, see [`ZAP_HOST_QUICKSTART_EN.md`](ZAP_HOST_QUICKSTART_EN.md) or [`ZAP_HOST_QUICKSTART_MM.md`](ZAP_HOST_QUICKSTART_MM.md).
+
 ## Development and validation
 
 From the repository root:

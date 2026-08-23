@@ -100,6 +100,8 @@ require_file docs/WEB_FRAMEWORK_EN.md
 require_file docs/WEB_FRAMEWORK_MM.md
 require_file docs/ZAP_HOST_EN.md
 require_file docs/ZAP_HOST_MM.md
+require_file docs/ZAP_HOST_QUICKSTART_EN.md
+require_file docs/ZAP_HOST_QUICKSTART_MM.md
 require_text docs/FRAMEWORK_EN.md "Framework Foundation v0.1"
 require_text docs/FRAMEWORK_MM.md "Framework Foundation v0.1"
 require_text docs/WEB_FRAMEWORK_EN.md "Web Foundation v0.2"
@@ -112,6 +114,8 @@ require_text docs/WEB_FRAMEWORK_EN.md "rate_limit_contract.zp"
 require_text docs/WEB_FRAMEWORK_MM.md "rate_limit_contract.zp"
 require_text docs/ZAP_HOST_EN.md "host/zap-host"
 require_text docs/ZAP_HOST_MM.md "host/zap-host"
+require_text docs/ZAP_HOST_QUICKSTART_EN.md "cargo run"
+require_text docs/ZAP_HOST_QUICKSTART_MM.md "cargo run"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "FRAMEWORK_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "WEB_FRAMEWORK_EN.md"
@@ -119,6 +123,7 @@ require_text docs/DOCUMENTATION_NAVIGATION_MM.md "WEB_FRAMEWORK_MM.md"
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md "ZAP_HOST_EN.md"
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md "ZAP_HOST_MM.md"
 for host_file in \
+  host/zap-host/.env.example \
   host/zap-host/Cargo.toml \
   host/zap-host/Cargo.lock \
   host/zap-host/README.md \

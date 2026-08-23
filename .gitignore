@@ -12,3 +12,6 @@ dist/
 .pytest_cache/
 .DS_Store
 **/target/
+.env
+.env.*
+!.env.example

@@ -119,6 +119,8 @@ Production policy တွင် store failure တွင် fail-open/fail-closed 
 
 ပထမ crate တွင် TLS မပါသေးပါ။ ပုံမှန်အားဖြင့် controlled edge တွင် TLS terminate လုပ်ခြင်း သို့မဟုတ် reviewed host deployment configuration ဖြင့် ထည့်သွင်းခြင်းကို ရွေးချယ်ရမည်။ HTTP/2၊ HTTP/3၊ WebSocket၊ compression၊ CORS၊ proxy headers နှင့် tracing exporters တစ်ခုချင်းစီတွင် explicit policy နှင့် regression tests လိုအပ်သည်။
 
+အဆင့်လိုက် local workflow ကို [`ZAP_HOST_QUICKSTART_MM.md`](ZAP_HOST_QUICKSTART_MM.md) သို့မဟုတ် [`ZAP_HOST_QUICKSTART_EN.md`](ZAP_HOST_QUICKSTART_EN.md) တွင် ဖတ်နိုင်သည်။
+
 ## Development နှင့် validation
 
 Repository root မှ run လုပ်ရန်:
