@@ -519,7 +519,10 @@ fn runs_oop_property_assignment() {
 fn runs_v070_collection_and_line_helpers() {
     let file = std::env::temp_dir().join("zap_v070_helpers_test.zp");
     let lines = std::env::temp_dir().join("zap_v070_lines.txt");
-    let path = lines.to_string_lossy();
+    let path = lines.to_string_lossy().replace(
+        char::from(92),
+        &format!("{}{}", char::from(92), char::from(92)),
+    );
     let source = format!("let values = [4, 1, 8, 2]\nsay is_empty(values)\nsay sum(values)\nsay join(sort(values), \",\")\nwrite_lines(\"{}\", [\"one\", \"two\"])\nsay join(read_lines(\"{}\"), \"|\")\n", path, path);
     std::fs::write(&file, source).unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
