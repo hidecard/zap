@@ -1,0 +1,71 @@
+# Reference policy for a Zap-native Web application deployment.
+# This file contains no credentials and is not sufficient by itself for deployment.
+version = 1
+service = "zap-web"
+project_root = "/srv/zap/app"
+bind_address = "127.0.0.1:3000"
+public_ingress = "tls-terminating-proxy-only"
+http_redirect = true
+allowed_methods = ["GET", "POST"]
+max_request_bytes = 65536
+request_timeout_seconds = 10
+shutdown_drain_timeout_seconds = 30
+upstream_timeout_seconds = 15
+readiness_path = "/ready"
+liveness_path = "/health"
+
+[filesystem]
+user = "zap"
+group = "zap"
+writable_paths = ["/srv/zap/app/data"]
+source_tree_read_only = true
+
+[database]
+provider = "sqlite"
+url_source = "manifest-or-secret-manager"
+migration_command = "zap db migrate"
+migration_lock = "/run/zap/zap-web-migrate.lock"
+migration_mode = "manual-one-deployer-at-a-time"
+checksum_drift = "fail-closed"
+transactional_apply = true
+pool_owner = "host-adapter-repository"
+max_connections = 16
+acquire_timeout_ms = 1000
+query_timeout_ms = 5000
+
+[authentication]
+mode = "jwt-bearer-resource-server"
+issuer = "https-issuer-configured-at-deploy"
+audience = "api-audience-configured-at-deploy"
+jwks_url = "https-jwks-configured-at-deploy"
+allowed_algorithms = ["RS256"]
+clock_skew_seconds = 30
+jwks_cache_seconds = 300
+max_token_bytes = 16384
+key_rotation = "overlap-old-and-new-kids-with-bounded-refresh"
+raw_access_token_logging = false
+id_token_as_api_access_token = false
+
+[credentials]
+source = "deployment-secret-manager"
+file_mode = "0600"
+raw_credentials_enter_zap_contract = false
+redacted_from_logs = true
+
+[egress]
+web_service_external_egress = false
+external_database_egress = "provider-specific-allowlist"
+
+[supervision]
+restart = "on-failure"
+restart_seconds = 3
+stop_timeout_seconds = 35
+readiness_removed_before_termination = true
+
+[production_gates]
+demo_repository_allowed = false
+demo_authenticator_allowed = false
+migration_check_before_start = true
+migration_lock_required = true
+pool_acquire_timeout_required = true
+query_timeout_required = true

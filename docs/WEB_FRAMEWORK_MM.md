@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.2.7
+**အတည်ပြုထားသော baseline:** Zap v2.3.0
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
@@ -70,9 +70,9 @@ Starter သည် `x-content-type-options: nosniff` နှင့် `cache-contr
 
 ## Frontend asset နှင့် JavaScript interoperability
 
-`frontend_contract.zp` သည် Zap ပိုင် browser boundary ဖြစ်ပါသည်။ `frontend_asset_manifest()` က `public` root နှင့် browser runtime အတွက် Node မလိုကြောင်း သတ်မှတ်ပါသည်။ `web_static(asset_path, root_dir)` သည် filesystem capability ဖြင့် ကာကွယ်ထားသော builtin ဖြစ်ပြီး UTF-8 HTML၊ CSS၊ JavaScript/ES module၊ JSON၊ SVG နှင့် text file များကို response map အဖြစ် ပြန်ပေးပါသည်။ Root နှင့် resolved file ကို Zap workspace အတွင်းမှာပဲ ထားပြီး absolute path၊ traversal component၊ encoded traversal၊ backslash၊ မထောက်ပံ့သော extension နှင့် 2 MiB ထက်ကြီးသော file များကို reject လုပ်ပါသည်။ မရှိသော သို့မဟုတ် မထောက်ပံ့သော asset သည် deterministic `404` ပြန်ပြီး unsafe/unreadable path သည် fail closed ဖြစ်ပါသည်။
+`frontend_contract.zp` သည် Zap ပိုင် browser boundary ဖြစ်ပါသည်။ `frontend_asset_manifest()` က `public` root နှင့် browser runtime အတွက် Node မလိုကြောင်း သတ်မှတ်ပါသည်။ `web_static(asset_path, root_dir)` သည် filesystem capability ဖြင့် ကာကွယ်ထားသော builtin ဖြစ်ပြီး UTF-8 HTML၊ CSS၊ JavaScript/ES module၊ JSON၊ SVG၊ image၊ font၊ Wasm နှင့် text file များကို response map အဖြစ် ပြန်ပေးပါသည်။ Root နှင့် resolved file ကို Zap workspace အတွင်းမှာပဲ ထားပြီး absolute path၊ traversal component၊ encoded traversal၊ backslash၊ မထောက်ပံ့သော extension နှင့် bounded asset limit ထက်ကြီးသော file များကို reject လုပ်ပါသည်။ Text file ကို တိုက်ရိုက်ပြန်ပေးပြီး binary file ကို bounded base64 response boundary မှ ပြန်ပေးပါသည်။ မရှိသော သို့မဟုတ် မထောက်ပံ့သော asset သည် deterministic `404` ပြန်ပြီး unsafe/unreadable path သည် fail closed ဖြစ်ပါသည်။
 
-Route matcher သည် နောက်ဆုံး segment `*name` wildcard ကို support လုပ်သောကြောင့် `/assets/*path` ဖြင့် `/assets/chunks/app.js` ကဲ့သို့ nested bundle path များကို serve လုပ်နိုင်ပါသည်။ Wildcard သည် route parameter သာဖြစ်ပြီး static builtin က canonicalization နှင့် workspace confinement ကို ထပ်စစ်ပါသည်။ Raw file handle သို့မဟုတ် arbitrary SQL/process capability မပေးသည့်အပြင် binary image/font streaming မပါသေးပါ။
+`web_static_spa(asset_path, root_dir, fallback)` သည် requested asset ရှိလျှင် ထို asset ကို serve လုပ်ပြီး မရှိလျှင် validated fallback document ကို serve လုပ်ပါသည်။ ထို့ကြောင့် React/Vue/Svelte client-side route များကို explicit ထားနိုင်ပါသည်။ Route matcher သည် နောက်ဆုံး segment `*name` wildcard ကို support လုပ်သောကြောင့် `/assets/*path` ဖြင့် `/assets/chunks/app.js` ကဲ့သို့ nested bundle path များကို serve လုပ်နိုင်ပြီး နောက်ဆုံး `/*path` route ဖြင့် SPA entry document ကို serve လုပ်နိုင်ပါသည်။ Wildcard သည် route parameter သာဖြစ်ပြီး static builtin များက canonicalization နှင့် workspace confinement ကို ထပ်စစ်ပါသည်။
 
 HTML၊ CSS နှင့် JavaScript ကို လက်ရေးဖြင့်ရေးနိုင်သကဲ့သို့ optional frontend toolchain ဖြင့်လည်း build လုပ်နိုင်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework များသည် browser output ကို `public/assets/` ထဲသို့ compile လုပ်ပြီး `/api/tasks` ကဲ့သို့ Zap JSON route ကို ခေါ်နိုင်ပါသည်။ Deployed Zap process အတွက် Zap runtime နှင့် browser output files သာ လိုအပ်ပြီး Node သည် **build-time optional tool** ဖြစ်ကာ **run-time prerequisite မဟုတ်ပါ**။ Zap က npm install၊ JavaScript bundle၊ component hydration သို့မဟုတ် framework-specific adapter ကို ယခုမလုပ်ပေးသေးပါ။
 

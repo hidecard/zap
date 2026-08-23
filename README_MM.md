@@ -24,20 +24,23 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 | အချက် | လက်ရှိအခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.2.7` |
+| လက်ရှိ release line | `v2.3.0` |
 | Runtime | Native Rust runtime |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
 | CLI | `zap` |
 | Platforms | Linux၊ Windows၊ macOS ARM64 |
 | Documentation hub | [မြန်မာ navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) · [English navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) |
+| Usage guides | [မြန်မာ usage](docs/USAGE.md) · [English usage](docs/USAGE_EN.md) |
+| Production operations | [မြန်မာ runbook](docs/PRODUCTION_OPERATIONS_MM.md) · [English runbook](docs/PRODUCTION_OPERATIONS_EN.md) |
 | Runtime-state contract | [မြန်မာ](docs/RUNTIME_STATE_MM.md) · [English](docs/RUNTIME_STATE_EN.md) |
 | Memory budget/object store contract | [မြန်မာ](docs/MEMORY_BUDGET_OBJECT_STORE_MM.md) · [English](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) |
 | AST foundation status | [မြန်မာ](docs/P0_FOUNDATION_STATUS_MM.md) · [English](docs/P0_FOUNDATION_STATUS_EN.md) |
+| Framework Foundation | [မြန်မာ guide](docs/FRAMEWORK_MM.md) · [Web မြန်မာ guide](docs/WEB_FRAMEWORK_MM.md) · [frontend မြန်မာ guide](docs/FRONTEND_INTEGRATION_MM.md) · [production deployment](docs/PRODUCTION_DEPLOYMENT_MM.md) · [database operations](docs/DATABASE_PRODUCTION_MM.md) · [OAuth2/JWT authentication](docs/AUTH_OAUTH2_JWT_MM.md) · [load/chaos testing](docs/LOAD_CHAOS_TESTING_MM.md) · [English guide](docs/FRAMEWORK_EN.md) · [Web guide](docs/WEB_FRAMEWORK_EN.md) · [frontend integration](docs/FRONTEND_INTEGRATION_EN.md) · [starter projects](frameworks) |
 | Runtime architecture | `runtime_state.rs` နှင့် `value.rs` တွင် per-run `RuntimeState`၊ `MemoryBudget`၊ `ObjectStore`၊ workspace-root ownership၊ module-cache isolation၊ import-cycle tracking၊ execution-depth accounting၊ reset-detached lifecycle statistics နှင့် parent-linked `EnvFrame` closure များကို အကောင်အထည်ဖော်ထားပါသည် |
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Verification status | M2-VERIFY-01 bounded replay၊ M2-VERIFY-02 native matrix၊ M2-BENCH-01 provenance/variance၊ M2-REG-01 transport၊ M3-STDLIB-01 policy evidence၊ M3-LSP-01 semantic-parity/editor validation နှင့် post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_MM.md) — design-only ဖြစ်ပြီး v2.2.7 အတွက် deferred |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_MM.md) — design-only ဖြစ်ပြီး v2.3.0 အတွက် deferred |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_MM.md) |
 | v2.2.0 နောက်ပိုင်း remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_MM.md) — v2.2.0၊ v2.2.1 နှင့် v2.2.2 သည် immutable ဖြစ်ပြီး LSP/editor correction များကို v2.2.1၊ နောက်ဆက်တွဲ runtime-safety/helper correction များကို v2.2.2၊ post-v2.2.2 runtime/equality/borrow/LSP hardening များကို v2.2.3 တွင် ထည့်သွင်းထားပြီး v2.2.4 တွင် active-baseline documentation synchronization နှင့် v2.2.5 တွင် HTTP URL invariant hardening ပါဝင်သည် |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -45,7 +48,7 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 ## Release provenance
 
-ဤ README ထဲရှိ installation link နှင့် archive name များသည် published [v2.2.7 release](https://github.com/hidecard/zap/releases/tag/v2.2.7) ကို ရည်ညွှန်းထားပြီး tagged commit [`d1d6816`](https://github.com/hidecard/zap/commit/d1d6816d7d39198b4a9778d531e29cd7b4e1f38a) မှ source ထုတ်ထားခြင်း ဖြစ်ပါသည်။ Published v2.2.7 release နှင့် signed asset များသည် လက်ရှိနောက်ဆုံး official distribution ဖြစ်ပါသည်။ Published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) သည် immutable အဖြစ် ဆက်ရှိပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0)၊ [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1)၊ [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2)၊ [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3) နှင့် [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4) တို့၏ tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ v2.2.0 နောက်ပိုင်း remediation history နှင့် v2.2.3 အထိ runtime-safety/helper correction များကို [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) နှင့် v2.2.3 release note တွင် မှတ်တမ်းတင်ထားပါသည်။ post-v2.2.2 hardening ကို v2.2.3 တွင် ထည့်သွင်းထားပြီး v2.2.4 တွင် active-baseline documentation synchronization နှင့် v2.2.5 တွင် HTTP URL invariant hardening ပါဝင်သည်။
+ဤ README ထဲရှိ လက်ရှိ source baseline နှင့် archive contract များသည် v2.3.0 ကို ရည်ညွှန်းပါသည်။ အသေးစိတ်ကို [v2.3.0 release reference](https://github.com/hidecard/zap/releases/tag/v2.3.0) တွင် ကြည့်နိုင်ပြီး published asset များကို ဖြန့်ချိမီ checksum နှင့် signature ကို verify လုပ်ရမည်။ Published v2.2.7 release နှင့် signed asset များသည် historical reference အဖြစ် ဆက်ရှိပါသည်။ Published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) သည် immutable အဖြစ် ဆက်ရှိပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0)၊ [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1)၊ [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2)၊ [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3) နှင့် [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4) တို့၏ tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ v2.2.0 နောက်ပိုင်း remediation history နှင့် v2.2.3 အထိ runtime-safety/helper correction များကို [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) နှင့် v2.2.3 release note တွင် မှတ်တမ်းတင်ထားပါသည်။ post-v2.2.2 hardening ကို v2.2.3 တွင် ထည့်သွင်းထားပြီး v2.2.4 တွင် active-baseline documentation synchronization နှင့် v2.2.5 တွင် HTTP URL invariant hardening ပါဝင်သည်။
 
 ## v2.2.7 Dependency Remediation Status
 
@@ -75,9 +78,9 @@ Zap သည် language core ကို သေးငယ်၊ ရှင်းလ�
 
 ## Installation
 
-Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [published v2.2.7 release](https://github.com/hidecard/zap/releases/tag/v2.2.7) သို့မဟုတ် [GitHub Releases page](https://github.com/hidecard/zap/releases) မှ download လုပ်ပြီး checksum နှင့် signature ကို verify လုပ်ကာ extract လုပ်ပါ။ v2.2.7 release သည် လက်ရှိနောက်ဆုံး published release ဖြစ်ပါသည်။
+Zap သည် သီးခြား language runtime မလိုအပ်သော standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိအသုံးပြုသည့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.3.0 release reference](https://github.com/hidecard/zap/releases/tag/v2.3.0) သို့မဟုတ် [GitHub Releases page](https://github.com/hidecard/zap/releases) မှ download လုပ်ပြီး checksum နှင့် signature ကို verify လုပ်ကာ extract လုပ်ပါ။ v2.3.0 asset များ မထုတ်ပြန်ရသေးပါက Releases page တွင် ဖော်ပြထားသော နောက်ဆုံး signed asset ကို အသုံးပြုပါ။
 
-v2.2.7 official archive များမှာ `zap-2.2.7-linux-x86_64.tar.gz`၊ `zap-2.2.7-macos-arm64.tar.gz` နှင့် `zap-2.2.7-windows-x86_64.zip` ဖြစ်ပါသည်။
+v2.3.0 archive contract အရ `zap-2.3.0-linux-x86_64.tar.gz`၊ `zap-2.3.0-macos-arm64.tar.gz` နှင့် `zap-2.3.0-windows-x86_64.zip` ဖြစ်ပါသည်။ GitHub Releases page ပေါ်ရှိ signed asset name ကို install မလုပ်မီ စစ်ဆေးပါ။
 
 | Platform | Architecture | လုပ်ဆောင်ရန် |
 |---|---|---|

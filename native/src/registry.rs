@@ -3,10 +3,10 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -1068,7 +1068,11 @@ pub fn publish_package(
     package: &RegistryPackage,
     token: Option<&str>,
 ) -> Result<(), String> {
-    let agent = ureq::builder().build();
+    let pinned_agent = restricted_registry_agent(
+        registry_url,
+        std::env::var("ZAP_UNTRUSTED").as_deref() == Ok("1"),
+    )?;
+    let agent = pinned_agent.unwrap_or_else(|| ureq::builder().redirects(0).build());
     publish_package_with_agent(&agent, registry_url, archive, package, token)
 }
 
@@ -1222,6 +1226,8 @@ const REGISTRY_SERVICE_MAX_HEADERS: usize = 64 * 1024;
 const REGISTRY_SERVICE_MAX_BODY: usize = 16 * 1024 * 1024;
 const REGISTRY_CLIENT_MAX_RESPONSE: usize = 16 * 1024 * 1024;
 const REGISTRY_CLIENT_TIMEOUT: Duration = Duration::from_secs(5);
+const REGISTRY_SERVICE_WORKERS: usize = 8;
+const REGISTRY_SERVICE_QUEUE: usize = 32;
 
 /// Serve a small authenticated HTTP registry endpoint using only the standard
 /// library. The listener is non-blocking and exits when `stop` is cancelled.
@@ -1248,6 +1254,13 @@ pub fn serve_registry(
     serve_registry_listener(listener, registry_root, token, signing_secret, stop)
 }
 
+struct RegistryServiceConfig {
+    registry_root: PathBuf,
+    token: String,
+    signing_secret: Vec<u8>,
+    publish_lock: Mutex<()>,
+}
+
 fn serve_registry_listener(
     listener: TcpListener,
     registry_root: PathBuf,
@@ -1258,18 +1271,70 @@ fn serve_registry_listener(
     listener
         .set_nonblocking(true)
         .map_err(|error| format!("registry service non-blocking setup failed: {error}"))?;
-    while !stop.load(Ordering::Acquire) {
-        match listener.accept() {
-            Ok((stream, _)) => {
-                let _ = handle_registry_connection(stream, &registry_root, &token, &signing_secret);
+    let config = Arc::new(RegistryServiceConfig {
+        registry_root,
+        token,
+        signing_secret,
+        publish_lock: Mutex::new(()),
+    });
+    let (sender, receiver) = mpsc::sync_channel(REGISTRY_SERVICE_QUEUE);
+    let receiver = Arc::new(Mutex::new(receiver));
+    let mut workers = Vec::with_capacity(REGISTRY_SERVICE_WORKERS);
+    for _ in 0..REGISTRY_SERVICE_WORKERS {
+        let worker_receiver = Arc::clone(&receiver);
+        let worker_config = Arc::clone(&config);
+        let worker_stop = Arc::clone(&stop);
+        workers.push(std::thread::spawn(move || loop {
+            if worker_stop.load(Ordering::Acquire) {
+                break;
             }
+            let stream = match worker_receiver.lock() {
+                Ok(queue) => queue.recv_timeout(Duration::from_millis(100)),
+                Err(_) => break,
+            };
+            match stream {
+                Ok(stream) => {
+                    let _ = handle_registry_connection(stream, &worker_config);
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            }
+        }));
+    }
+
+    let accept_result = loop {
+        if stop.load(Ordering::Acquire) {
+            break Ok(());
+        }
+        match listener.accept() {
+            Ok((stream, _)) => match sender.try_send(stream) {
+                Ok(()) => {}
+                Err(mpsc::TrySendError::Full(mut returned_stream)) => {
+                    let _ = write_registry_response(
+                        &mut returned_stream,
+                        503,
+                        b"registry service busy",
+                    );
+                }
+                Err(mpsc::TrySendError::Disconnected(_)) => {
+                    break Err("registry service worker queue disconnected".to_string());
+                }
+            },
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                 std::thread::sleep(Duration::from_millis(2));
             }
-            Err(error) => return Err(format!("registry service accept failed: {error}")),
+            Err(error) => break Err(format!("registry service accept failed: {error}")),
+        }
+    };
+
+    stop.store(true, Ordering::Release);
+    drop(sender);
+    for worker in workers {
+        if worker.join().is_err() {
+            return Err("registry service worker panicked".to_string());
         }
     }
-    Ok(())
+    accept_result
 }
 
 /// A managed registry service suitable for local deployment and integration
@@ -1340,9 +1405,7 @@ impl Drop for RegistryService {
 
 fn handle_registry_connection(
     mut stream: TcpStream,
-    registry_root: &Path,
-    token: &str,
-    signing_secret: &[u8],
+    config: &RegistryServiceConfig,
 ) -> Result<(), String> {
     // The listener is intentionally non-blocking for its accept loop. Some
     // Unix targets can propagate that mode to accepted sockets, so normalize
@@ -1353,6 +1416,9 @@ fn handle_registry_connection(
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| format!("registry connection timeout failed: {error}"))?;
+    let registry_root = &config.registry_root;
+    let token = config.token.as_str();
+    let signing_secret = config.signing_secret.as_slice();
     let mut request = Vec::new();
     let mut buffer = [0_u8; 4096];
     let header_end = loop {
@@ -1420,6 +1486,17 @@ fn handle_registry_connection(
         }
         request.extend_from_slice(&buffer[..count]);
     }
+    if method == "GET" && path == "/healthz" {
+        return write_registry_response(&mut stream, 200, b"ok\n");
+    }
+    if method == "GET" && path == "/readyz" {
+        let (status, body) = if registry_root.is_dir() {
+            (200, b"ready\n".as_slice())
+        } else {
+            (503, b"not ready\n".as_slice())
+        };
+        return write_registry_response(&mut stream, status, body);
+    }
     let authorized = authorization
         .as_deref()
         .and_then(|value| value.strip_prefix("Bearer "))
@@ -1447,6 +1524,10 @@ fn handle_registry_connection(
                 yanked: false,
                 dependencies: BTreeMap::new(),
             };
+            let _publish_guard = config
+                .publish_lock
+                .lock()
+                .map_err(|_| "registry publish lock poisoned".to_string())?;
             let temporary = registry_root.join(".zap-registry-request.pkg");
             fs::write(&temporary, body)
                 .map_err(|error| format!("registry request staging failed: {error}"))?;
@@ -1492,6 +1573,7 @@ fn write_registry_response(stream: &mut TcpStream, status: u16, body: &[u8]) -> 
         413 => "Payload Too Large",
         422 => "Unprocessable Entity",
         431 => "Request Header Fields Too Large",
+        503 => "Service Unavailable",
         _ => "Error",
     };
     write!(
@@ -1527,7 +1609,7 @@ fn fetch_source_with_credentials(
     source: &str,
     credentials: &RegistryCredentialStore,
 ) -> Result<Vec<u8>, String> {
-    let agent = ureq::builder().build();
+    let agent = ureq::builder().redirects(0).build();
     fetch_source_with_agent(&agent, source, credentials)
 }
 
@@ -1557,8 +1639,10 @@ fn fetch_source_with_agent_timeout(
     }
     if source.starts_with("http://") || source.starts_with("https://") {
         require_secure_transport(source)?;
+        let pinned_agent = restricted_registry_agent(source, untrusted)?;
+        let request_agent = pinned_agent.as_ref().unwrap_or(agent);
         let token = resolve_registry_token(source, None, credentials)?;
-        let mut request = agent.get(source).timeout(timeout);
+        let mut request = request_agent.get(source).timeout(timeout);
         if let Some(token) = token.as_deref() {
             request = request.set("Authorization", &format!("Bearer {token}"));
         }
@@ -1636,6 +1720,74 @@ fn normalize_registry_transport_error(operation: &str, message: &str) -> String 
         format!("registry {operation} timed out")
     } else {
         format!("registry HTTP {operation} failed: {message}")
+    }
+}
+
+fn restricted_registry_agent(
+    source: &str,
+    restricted: bool,
+) -> Result<Option<ureq::Agent>, String> {
+    if !restricted || !(source.starts_with("http://") || source.starts_with("https://")) {
+        return Ok(None);
+    }
+    let origin = normalize_registry_origin(source)?;
+    let host = origin
+        .host
+        .as_deref()
+        .ok_or_else(|| "registry URL host is missing".to_string())?;
+    let port = origin.port.unwrap_or(match origin.scheme {
+        RegistryScheme::Http => 80,
+        RegistryScheme::Https => 443,
+        RegistryScheme::File => {
+            return Err("registry URL is not a network source".to_string());
+        }
+    });
+    let addresses = format!("{host}:{port}")
+        .to_socket_addrs()
+        .map_err(|error| format!("registry DNS resolution failed: {error}"))?
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err("registry DNS resolution returned no addresses".to_string());
+    }
+    for address in &addresses {
+        if blocked_registry_network_ip(address.ip()) {
+            return Err(format!(
+                "registry network destination is blocked in untrusted mode: {}",
+                address.ip()
+            ));
+        }
+    }
+    Ok(Some(
+        ureq::AgentBuilder::new()
+            .redirects(0)
+            .resolver(move |_netloc: &str| Ok::<Vec<SocketAddr>, std::io::Error>(addresses.clone()))
+            .build(),
+    ))
+}
+
+fn blocked_registry_network_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(value) => {
+            value.is_loopback()
+                || value.is_private()
+                || value.is_link_local()
+                || value.is_unspecified()
+                || value.is_broadcast()
+                || value.is_multicast()
+        }
+        IpAddr::V6(value) => {
+            let mapped_is_blocked = value
+                .to_ipv4_mapped()
+                .map(|mapped| blocked_registry_network_ip(IpAddr::V4(mapped)))
+                .unwrap_or(false);
+            let segments = value.segments();
+            mapped_is_blocked
+                || value.is_loopback()
+                || value.is_unspecified()
+                || value.is_multicast()
+                || (segments[0] & 0xfe00) == 0xfc00
+                || (segments[0] & 0xffc0) == 0xfe80
+        }
     }
 }
 
@@ -1814,19 +1966,19 @@ fn constant_time_equal(left: &[u8], right: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        cache_package, cache_package_source, fetch_source_with_agent,
+        blocked_registry_network_ip, cache_package, cache_package_source, fetch_source_with_agent,
         fetch_source_with_agent_timeout, find_package, hmac_sha256_hex, normalize_registry_origin,
         persist_registry_package, prune_cache, publish_package, publish_package_with_agent,
         read_index, read_index_source, read_signed_index, redact_registry_secret,
         registry_auth_failure_message, resolve_dependency_graph, resolve_registry_token,
-        sha256_hex, validate_package_name, verify_cached_package, verify_signed_index_bytes,
-        RegistryCredentialStore, RegistryPackage, RegistryScheme, RegistryService,
-        TrustedRegistryPolicy,
+        restricted_registry_agent, sha256_hex, validate_package_name, verify_cached_package,
+        verify_signed_index_bytes, RegistryCredentialStore, RegistryPackage, RegistryScheme,
+        RegistryService, TrustedRegistryPolicy,
     };
     use std::collections::BTreeMap;
     use std::fs;
     use std::io::{Read, Write};
-    use std::net::{SocketAddr, TcpListener, TcpStream};
+    use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
     use std::path::Path;
     use std::sync::{Arc, Mutex, OnceLock};
     use std::thread;
@@ -2201,6 +2353,20 @@ mod tests {
         let redacted = redact_registry_secret(&message, Some(token));
         assert!(!redacted.contains(token));
         assert_eq!(redacted.matches("<redacted>").count(), 3);
+    }
+
+    #[test]
+    fn restricted_registry_network_policy_blocks_private_and_special_addresses() {
+        for address in [
+            "127.0.0.1".parse::<IpAddr>().unwrap(),
+            "192.168.1.1".parse::<IpAddr>().unwrap(),
+            "::ffff:127.0.0.1".parse::<IpAddr>().unwrap(),
+            "ff02::1".parse::<IpAddr>().unwrap(),
+        ] {
+            assert!(blocked_registry_network_ip(address));
+        }
+        assert!(restricted_registry_agent("https://127.0.0.1/index", true).is_err());
+        assert!(restricted_registry_agent("https://[::1]/index", true).is_err());
     }
 
     #[test]
@@ -3078,6 +3244,18 @@ mod tests {
         )
         .unwrap();
         let address = service.address();
+        let health_response = raw_registry_request(
+            address,
+            b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+        );
+        assert!(String::from_utf8_lossy(&health_response).starts_with("HTTP/1.1 200"));
+        assert!(String::from_utf8_lossy(&health_response).ends_with("ok\n"));
+        let readiness_response = raw_registry_request(
+            address,
+            b"GET /readyz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+        );
+        assert!(String::from_utf8_lossy(&readiness_response).starts_with("HTTP/1.1 200"));
+        assert!(String::from_utf8_lossy(&readiness_response).ends_with("ready\n"));
         let bytes = b"package";
         let checksum = sha256_hex(bytes);
         let unauthorized_publish = format!(

@@ -1,6 +1,6 @@
 # Zap-first Web Framework Guide
 
-**Verified baseline:** Zap v2.2.7 on the `Framework` branch.
+**Verified baseline:** Zap v2.3.0 on the `Framework` branch.
 
 ## Purpose
 
@@ -32,7 +32,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated entrypoint prints a deterministic application description, route table, model metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
+`zap new` creates a Web-first project with `zap.toml`, `main.zp`, `routes.zp`, `models/`, `services/`, `views/`, `ui/ui.zp`, `public/`, `migrations/`, `middleware.zp`, `admin.zp`, `server.zp`, and `tests/`. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated `ui/ui.zp` is the explicit UI boundary: it describes the browser entrypoint, asset root, selected frontend mode, and the fact that Node is not required at runtime. The generated entrypoint prints a deterministic application description, route table, model metadata, UI metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
 
 The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
 
@@ -55,6 +55,8 @@ shop/
 │   └── user.zp
 ├── services/
 │   └── user_service.zp
+├── ui/
+│   └── ui.zp
 ├── migrations/
 │   └── 0001_initial.zp
 ├── views/
@@ -67,15 +69,15 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
+`routes.zp` owns the route catalog, `models/` owns data metadata, `services/` owns business operations and request handlers, `ui/ui.zp` owns browser-facing UI metadata, `public/` owns HTML/CSS/JavaScript assets, `middleware.zp` owns ordered cross-cutting policy, `migrations/` owns versioned schema intent, `admin.zp` owns explicit management registration, and `tests/` owns project tests. The generated `zap.toml` also declares `[database] driver = "sqlite"` and `url = "data/zap.sqlite3"`. This structure is a convention backed by the `[web]` manifest, the optional `[database]` validator, and the project checker.
 
 ## Runtime independence and frontend integration
 
 An installed Zap executable is intended to be sufficient for project validation, testing, and server execution. Users should not need Python, Node.js, Rust, Java, or another language runtime on the deployment host. Rust is used to implement and distribute the native Zap executable; it is not a runtime dependency of a Zap project. Cross-platform releases must ship a pinned executable or installer for each supported operating system.
 
-The browser boundary is deliberately ordinary. A project can serve HTML, CSS, and JavaScript from the declared `public` directory through `web_static`, and a browser application can call Zap JSON routes. React, Vue, Svelte, Alpine, or another JavaScript framework may be used as an optional build-time toolchain; the emitted files can be copied into `public/assets/`, after which the deployed process needs only Zap and those emitted files. Zap does not install npm packages, execute a JavaScript framework, or replace its compiler/bundler.
+The browser boundary is deliberately ordinary. A project can serve HTML, CSS, JavaScript, images, fonts, and Wasm from the declared `public` directory through `web_static`, and a browser application can call Zap JSON routes. React, Vue, Svelte, Alpine, or another JavaScript framework may be used as an optional build-time toolchain; the emitted files can be copied into `public/assets/`, after which the deployed process needs only Zap and those emitted files. Zap does not install npm packages, execute a JavaScript framework, or replace its compiler/bundler.
 
-The current `web_static` builtin is constrained to UTF-8 text assets and safe allow-listed extensions, with root confinement, traversal rejection, canonicalization, and a 2 MiB file limit. The final `*name` route wildcard supports nested paths such as `/assets/chunks/app.js`; it does not provide binary image/font streaming, cache fingerprinting, server-side rendering, or a production static-file CDN.
+The `web_static` builtin confines assets to the project root, rejects traversal and unsupported extensions, and returns binary assets through a bounded response representation. `web_static_spa(asset, root, fallback)` serves a requested asset or the validated entry document for client-side routes. The final `*name` route wildcard supports nested paths such as `/assets/chunks/app.js`; route ordering must keep API and asset paths before the SPA fallback. Cache fingerprinting, server-side rendering, and a production static-file CDN remain deployment concerns.
 
 ## Current route declaration contract
 

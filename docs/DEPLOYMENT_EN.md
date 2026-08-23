@@ -1,8 +1,8 @@
 # Zap Registry Production Deployment Boundaries
 
-**Verified baseline:** Zap v2.2.0
+**Verified baseline:** Zap v2.2.6 maintenance branch
 **Purpose:** Operator reference for local and public registry deployment boundaries, validation, TLS, supervision, credentials, quotas, and egress controls.
-**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Security policy](../SECURITY.md) · [Release policy](RELEASE_VERSION_POLICY_EN.md)
+**Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Package author guide](PACKAGE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Security policy](../SECURITY.md) · [Production operations](PRODUCTION_OPERATIONS_EN.md) · [Release policy](RELEASE_VERSION_POLICY_EN.md)
 
 ## Scope
 
@@ -22,7 +22,9 @@ Zap includes a controlled local registry service, but a public production deploy
 
 The registry process binds to `127.0.0.1:8787` and is not intended to receive public traffic directly. The reference nginx configuration terminates TLS with TLS 1.2 or TLS 1.3, redirects cleartext HTTP to HTTPS, limits request bodies to 1 MiB, permits only `GET` and `POST`, and forwards requests to the loopback service with bounded proxy timeouts. Operators must replace the example hostname and certificate paths with certificates managed by their platform. Private keys must remain outside the repository.
 
-The backend receives only loopback traffic. The ingress layer is responsible for certificate renewal, public DNS, external rate limiting, and any organization-specific WAF policy. Those controls are deliberately deployment-provider responsibilities rather than runtime assumptions.
+The backend receives only loopback traffic. The systemd unit starts it with `zap registry serve /var/lib/zap-registry 127.0.0.1:8787`; the root directory comes before the optional bind address. The service uses eight bounded request workers and a 32-connection queue, returning `503 Service Unavailable` rather than admitting unbounded work when the queue is full. The ingress layer is responsible for certificate renewal, public DNS, external rate limiting, and any organization-specific WAF policy. Those controls are deliberately deployment-provider responsibilities rather than runtime assumptions.
+
+The service exposes `GET /healthz` and `GET /readyz` for local probes. They intentionally bypass bearer authentication so a local supervisor can check liveness and data-directory readiness; the reference nginx configuration permits those paths only from loopback. Do not make them public without replacing the allow rule with a narrowly scoped, authenticated monitoring network.
 
 ## Supervision and sandbox
 
@@ -41,6 +43,21 @@ The reference policy limits memory to 256 MiB, CPU to 50 percent, tasks to 64, a
 ## Egress controls
 
 The registry backend is loopback-only. External egress is disabled in the reference policy, and the service may write only to its registry data directory. If an installation needs outbound package retrieval, that operation must be performed by a separate, explicitly allowlisted component rather than silently broadening the registry service's network permissions.
+
+## Installation and operations
+
+Use the [production operations guide](PRODUCTION_OPERATIONS_EN.md) for the complete install, secret-management, TLS ingress, firewall, health-check, backup, rotation, rollback, and incident-response procedure. At minimum, install the binary at `/usr/local/bin/zap`, install the service unit under `/etc/systemd/system/`, store `/etc/zap/registry.env` with mode `0600`, validate the deployment artifacts, and start the service only on `127.0.0.1:8787`.
+
+Before exposing the proxy, verify the service locally:
+
+```bash
+curl --fail http://127.0.0.1:8787/healthz
+curl --fail http://127.0.0.1:8787/readyz
+sudo systemctl status zap-registry
+sudo journalctl -u zap-registry --since '15 minutes ago'
+```
+
+The service has no built-in metrics endpoint. Use systemd journal collection, nginx access/error logs, host metrics, external uptime checks, and alerting. Back up `/var/lib/zap-registry` independently from the environment file and test restoration before accepting production traffic.
 
 ## Validation
 

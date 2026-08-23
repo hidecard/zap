@@ -35,6 +35,7 @@ fn validate_project_with_lock_mode(dir: &Path, require_lockfile: bool) -> Result
         manifest_value(&text, "version").ok_or("zap.toml: missing package version".to_string())?;
     validate_package_metadata(&text, "zap.toml")?;
     validate_web_manifest(dir, &text)?;
+    validate_frontend_manifest(dir, &text)?;
     validate_module_manifest(dir, &text)?;
     let main = manifest_value(&text, "main").unwrap_or_else(|| "main.zp".into());
     let main_path = dir.join(&main);
@@ -478,8 +479,102 @@ fn validate_web_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn validate_frontend_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
+    let mut in_frontend = false;
+    let mut saw_frontend = false;
+    let mut values = BTreeMap::new();
+    let allowed = ["framework", "output", "spa_fallback"];
+    for raw_line in manifest.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            in_frontend = line == "[frontend]";
+            saw_frontend |= in_frontend;
+            continue;
+        }
+        if !in_frontend {
+            continue;
+        }
+        let Some((key, raw_value)) = line.split_once('=') else {
+            return Err(format!("zap.toml: invalid Frontend entry `{line}`"));
+        };
+        let key = key.trim();
+        let value = raw_value.trim();
+        if !allowed.contains(&key) {
+            return Err(format!("zap.toml: unknown Frontend field `{key}`"));
+        }
+        if values.insert(key.to_string(), value.to_string()).is_some() {
+            return Err(format!("zap.toml: duplicate Frontend field `{key}`"));
+        }
+        if value.len() < 2 || !value.starts_with('"') || !value.ends_with('"') {
+            return Err(format!(
+                "zap.toml: Frontend field `{key}` must be a quoted string"
+            ));
+        }
+        if key != "framework" {
+            let path = value.trim_matches('"');
+            let candidate = Path::new(path);
+            if path.is_empty()
+                || candidate.is_absolute()
+                || candidate
+                    .components()
+                    .any(|component| component == std::path::Component::ParentDir)
+            {
+                return Err(format!(
+                    "zap.toml: Frontend field `{key}` must be a safe relative path"
+                ));
+            }
+        }
+    }
+    if !saw_frontend {
+        return Ok(());
+    }
+    if !manifest.lines().any(|line| line.trim() == "[web]") {
+        return Err("zap.toml: [frontend] requires a [web] section".into());
+    }
+    let framework = values
+        .get("framework")
+        .ok_or("zap.toml: Frontend field `framework` is required".to_string())?
+        .trim_matches('"');
+    if !matches!(framework, "plain" | "react" | "vue" | "svelte" | "other") {
+        return Err(
+            "zap.toml: Frontend framework must be plain, react, vue, svelte, or other".into(),
+        );
+    }
+    let output = values
+        .get("output")
+        .ok_or("zap.toml: Frontend field `output` is required".to_string())?
+        .trim_matches('"');
+    let output_path = dir.join(output);
+    if !output_path.is_dir() {
+        return Err(format!(
+            "zap.toml: Frontend output directory not found: {}",
+            output_path.display()
+        ));
+    }
+    let fallback = values
+        .get("spa_fallback")
+        .ok_or("zap.toml: Frontend field `spa_fallback` is required".to_string())?
+        .trim_matches('"');
+    if !output_path.join(fallback).is_file() {
+        return Err(format!(
+            "zap.toml: Frontend SPA fallback not found: {}",
+            output_path.join(fallback).display()
+        ));
+    }
+    Ok(())
+}
 fn validate_manifest_syntax(manifest: &str) -> Result<(), String> {
-    let allowed_sections = ["package", "dependencies", "module", "web", "database"];
+    let allowed_sections = [
+        "package",
+        "dependencies",
+        "module",
+        "web",
+        "frontend",
+        "database",
+    ];
     let mut section = "package";
     let mut keys = HashSet::new();
     for (index, raw_line) in manifest.lines().enumerate() {

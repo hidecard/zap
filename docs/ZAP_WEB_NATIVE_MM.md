@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.2.7၊ `Framework` branch။
+**အတည်ပြုထားသော baseline:** Zap v2.3.0၊ `Framework` branch။
 
 ## ရည်ရွယ်ချက်
 
@@ -32,7 +32,7 @@ zap run main.zp
 zap dev
 ```
 
-`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
+`zap new` သည် `zap.toml`၊ `main.zp`၊ `routes.zp`၊ `models/`၊ `services/`၊ `views/`၊ `ui/ui.zp`၊ `public/`၊ `migrations/`၊ `middleware.zp`၊ `admin.zp`၊ `server.zp` နှင့် `tests/` ပါသော Web project ကို ဖန်တီးပေးပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated `ui/ui.zp` သည် browser entrypoint၊ asset root၊ frontend mode နှင့် runtime တွင် Node မလိုကြောင်း သတ်မှတ်ပေးသော သီးခြား UI boundary ဖြစ်ပါသည်။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ UI metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
 
 Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
 
@@ -55,6 +55,8 @@ shop/
 │   └── user.zp
 ├── services/
 │   └── user_service.zp
+├── ui/
+│   └── ui.zp
 ├── migrations/
 │   └── 0001_initial.zp
 ├── views/
@@ -67,15 +69,15 @@ shop/
     └── web_test.zp
 ```
 
-`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
+`routes.zp` သည် route catalog၊ `models/` သည် data metadata၊ `services/` သည် business operation နှင့် request handler၊ `ui/ui.zp` သည် browser-facing UI metadata၊ `public/` သည် HTML/CSS/JavaScript asset များ၊ `middleware.zp` သည် cross-cutting policy အစီအစဉ်၊ `migrations/` သည် schema intent၊ `admin.zp` သည် management registration နှင့် `tests/` သည် project test များကို ပိုင်ဆိုင်ပါသည်။ Generated `zap.toml` တွင် `[database] driver = "sqlite"` နှင့် `url = "data/zap.sqlite3"` ကိုလည်း ကြေညာထားပါသည်။ ဤ structure သည် convention သက်သက်မဟုတ်ဘဲ `[web]` manifest၊ optional `[database]` validator နှင့် project checker က စစ်ဆေးပေးသည့် convention ဖြစ်ပါသည်။
 
 ## Runtime independence နှင့် frontend integration
 
 Installed Zap executable တစ်ခုရှိရုံဖြင့် project validation၊ testing နှင့် server execution လုပ်နိုင်ရန် ရည်ရွယ်ထားပါသည်။ Deployment host တွင် Python၊ Node.js၊ Rust၊ Java သို့မဟုတ် အခြား language runtime ထပ်မလိုသင့်ပါ။ Rust သည် native Zap executable ကို implement/distribute လုပ်ရန် အသုံးပြုသော source/build detail ဖြစ်ပြီး Zap project ၏ runtime dependency မဟုတ်ပါ။ Cross-platform release များတွင် support လုပ်သည့် operating system တစ်ခုချင်းစီအတွက် pinned executable သို့မဟုတ် installer ပေးရမည်။
 
-Browser boundary သည် ရိုးရိုး file များကိုသာ အသုံးပြုပါသည်။ `public` directory မှ HTML၊ CSS နှင့် JavaScript ကို `web_static` ဖြင့် serve လုပ်နိုင်ပြီး browser application က Zap JSON route များကို ခေါ်နိုင်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time toolchain အဖြစ် optional သုံးနိုင်ပြီး ထွက်လာသော file များကို `public/assets/` ထဲ ထည့်နိုင်ပါသည်။ ထို့နောက် deployed process အတွက် Zap နှင့် ထို browser output file များသာ လိုအပ်ပြီး Node သည် runtime prerequisite မဟုတ်ပါ။ Zap က npm package install၊ JavaScript framework execution သို့မဟုတ် compiler/bundler အစားထိုးခြင်း မလုပ်ပေးသေးပါ။
+Browser boundary သည် ရိုးရိုး file များကိုသာ အသုံးပြုပါသည်။ `public` directory မှ HTML၊ CSS၊ JavaScript၊ image၊ font နှင့် Wasm ကို `web_static` ဖြင့် serve လုပ်နိုင်ပြီး browser application က Zap JSON route များကို ခေါ်နိုင်ပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time toolchain အဖြစ် optional သုံးနိုင်ပြီး ထွက်လာသော file များကို `public/assets/` ထဲ ထည့်နိုင်ပါသည်။ ထို့နောက် deployed process အတွက် Zap နှင့် ထို browser output file များသာ လိုအပ်ပြီး Node သည် runtime prerequisite မဟုတ်ပါ။ Zap က npm package install၊ JavaScript framework execution သို့မဟုတ် compiler/bundler အစားထိုးခြင်း မလုပ်ပေးသေးပါ။
 
-လက်ရှိ `web_static` builtin သည် UTF-8 text asset နှင့် allow-listed extension များကိုသာ serve လုပ်ပြီး root confinement၊ traversal rejection၊ canonicalization နှင့် 2 MiB file limit ရှိပါသည်။ နောက်ဆုံး `*name` wildcard သည် `/assets/chunks/app.js` ကဲ့သို့ nested path များကို support လုပ်သော်လည်း binary image/font streaming၊ cache fingerprint၊ server-side rendering သို့မဟုတ် production static CDN မပါသေးပါ။
+`web_static` builtin သည် asset များကို project root အတွင်းတွင်သာ ချုပ်ထားပြီး traversal နှင့် unsupported extension များကို reject လုပ်ကာ binary asset များကို bounded response representation ဖြင့် ပြန်ပေးပါသည်။ `web_static_spa(asset, root, fallback)` သည် requested asset သို့မဟုတ် client-side route အတွက် validated entry document ကို serve လုပ်ပါသည်။ နောက်ဆုံး `*name` wildcard သည် `/assets/chunks/app.js` ကဲ့သို့ nested path များကို support လုပ်ပြီး API နှင့် asset path များကို SPA fallback မတိုင်မီ ထားရမည်။ Cache fingerprint၊ server-side rendering သို့မဟုတ် production static CDN များသည် deployment concern များအဖြစ် ဆက်ရှိပါသည်။
 
 ## လက်ရှိ route declaration contract
 

@@ -795,6 +795,7 @@ dependencies = [
 name = "zap-native"
 version = "2.3.0"
 dependencies = [
+ "base64",
  "rcgen",
  "rusqlite",
  "rustls",

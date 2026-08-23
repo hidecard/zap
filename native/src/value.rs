@@ -27,6 +27,23 @@ pub(crate) const MAX_RUNTIME_COLLECTION_ITEMS: usize = 100_000;
 /// Maximum number of reachable runtime values visited during one boundary check.
 pub(crate) const MAX_RUNTIME_VALUE_NODES: usize = 100_000;
 
+/// Collect runtime values without materializing more than the collection budget.
+pub(crate) fn collect_bounded_values(
+    values: impl IntoIterator<Item = Value>,
+    operation: &str,
+) -> Result<Vec<Value>, String> {
+    let mut output = Vec::new();
+    for value in values {
+        if output.len() >= MAX_RUNTIME_COLLECTION_ITEMS {
+            return Err(format!(
+                "memory limit exceeded: {operation} produced more than {MAX_RUNTIME_COLLECTION_ITEMS} items"
+            ));
+        }
+        output.push(value);
+    }
+    Ok(output)
+}
+
 #[derive(Debug)]
 pub(crate) struct TrackedObjectFields {
     fields: RefCell<HashMap<String, Value>>,

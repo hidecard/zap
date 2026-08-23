@@ -1,12 +1,15 @@
-## v2.2.7
-
-- Framework dependency/security remediation, RustSec CI coverage, host adapter lint fixes, and release metadata synchronization.
-
 # Zap Change Log
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
 ## [Unreleased]
+
+## [2.3.0] - 2026-08-23
+
+### Framework and modular Web scaffold
+- Integrated the Zap-native Framework runtime, frontend boundary, authentication/deployment contracts, registry hardening, and bilingual operational documentation.
+- Added an explicit generated `ui/ui.zp` module so Web projects separate models, services/functions, browser UI metadata, routes, middleware, migrations, admin registration, and tests.
+- Preserved the standalone native runtime boundary: deployed Zap projects do not require Python, Node.js, Rust, Java, or another language runtime.
 
 ## [2.2.6] - 2026-08-23
 

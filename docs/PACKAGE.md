@@ -166,15 +166,17 @@ zap update path/to/project
 installed 2 locked dependencies: appdep@1.0.0, leaf@1.0.0
 ```
 
-`zap install` သည် validation-only command ဖြစ်ပြီး `zap update` သည် lockfile regeneration command ဖြစ်သည်။ နှစ်ခုလုံးသည် project directory အတွင်းတွင်သာ အလုပ်လုပ်ပြီး manifest နှင့် dependency ordering rules များကို မပြောင်းလဲစေပါ။
+`zap install` သည် validation-only command ဖြစ်ပြီး `zap update` သည် lockfile regeneration command ဖြစ်သည်။ နှစ်ခုလုံးသည် project directory အတွင်းတွင်သာ အလုပ်လုပ်ပြီး manifest နှင့် dependency ordering rules များကို မပြောင်းလဲစေပါ။ `zap registry serve <root> [bind]` သည် authenticated loopback registry service ကို run လုပ်သည်။ Production တွင် root ကို အရင်ပေးပြီး bind address ကို `127.0.0.1:8787` သတ်မှတ်ကာ TLS ingress နောက်တွင်သာ အသုံးပြုပါ။
 
 ## Commands
 
 ```bash
 zap check
+zap registry check path/to/index.json
 zap registry fetch https://registry.example/index.json
+zap registry cache path/to/index.json https://registry.example/team/demo.pkg demo 1.0.0 .zap/cache
 zap registry publish https://registry.example/publish ./demo.pkg demo 1.0.0 <sha256>
-zap registry serve
+zap registry serve /var/lib/zap-registry 127.0.0.1:8787
 zap check path/to/project
 zap lock
 zap lock path/to/project

@@ -1,6 +1,6 @@
 # Zap Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.2.7
+**အတည်ပြုထားသော baseline:** Zap v2.3.0
 **Framework branch:** `Framework`
 **အခြေအနေ:** Framework Foundation v0.1 — Zap-native Web project scaffold နှင့် contract starter များ၊ full native runtime integration များသည် gate ချထားသော milestone များအဖြစ် ဆက်လက်ရှိနေသေး
 
@@ -24,7 +24,7 @@ Web roadmap ကို အခြား starter domain များထက် ဦ�
 
 ရည်ရွယ်သော developer experience သည် installed Zap runtime တစ်ခုရှိရုံဖြင့် Python၊ Node.js၊ Rust၊ Java သို့မဟုတ် အခြား language runtime ကို deployment host တွင် ထပ်မလိုဘဲ Zap project ကို validate၊ build၊ test နှင့် run လုပ်နိုင်ခြင်း ဖြစ်ပါသည်။ Native Zap executable သည် execution boundary ဖြစ်ပြီး Rust သည် source/build implementation detail သာဖြစ်ကာ project user အတွက် prerequisite မဟုတ်ပါ။ ထို့ကြောင့် distribution တစ်ခုသည် support လုပ်သော operating system တစ်ခုချင်းစီအတွက် pinned Zap binary သို့မဟုတ် installer ကို ပေးရမည်။ Server execution ကို ဒုတိယ language runtime ထံ မသိမသာ လွှဲမပေးရပါ။
 
-Browser code သည် server dependency မဟုတ်ဘဲ interoperability boundary ဖြစ်ပါသည်။ HTML၊ CSS နှင့် JavaScript သည် သတ်မှတ်ထားသော `public` asset root အောက်ရှိ ရိုးရိုး file များဖြစ်ပါသည်။ `frontend_contract.zp` နှင့် `web_static` က browser asset အတွက် confined၊ typed response boundary ပေးပြီး `/api/tasks` ကဲ့သို့ route များက JSON data ပေးပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time တွင် optional အဖြစ် သုံးနိုင်ပြီး ထွက်လာသော file များကို Zap က serve လုပ်ပါသည်။ Runtime တွင် Node မလိုပါ။ Zap သည် အဆိုပါ JavaScript framework များကို implement လုပ်သည် သို့မဟုတ် ၎င်းတို့၏ build tool ကို အစားထိုးသည်ဟု မဆိုပါ။
+Browser code သည် server dependency မဟုတ်ဘဲ interoperability boundary ဖြစ်ပါသည်။ HTML၊ CSS နှင့် JavaScript သည် သတ်မှတ်ထားသော `public` asset root အောက်ရှိ ရိုးရိုး file များဖြစ်ပါသည်။ `frontend_contract.zp`, `web_static` နှင့် `web_static_spa` တို့က text asset၊ binary image/font/Wasm နှင့် client-side SPA fallback အတွက် confined response boundary ပေးပါသည်။ React၊ Vue၊ Svelte၊ Alpine သို့မဟုတ် အခြား JavaScript framework ကို build-time တွင် optional အဖြစ် သုံးနိုင်ပြီး ထွက်လာသော file များကို Zap က serve လုပ်ပါသည်။ Runtime တွင် Node မလိုပါ။ `[frontend]` manifest section က framework metadata၊ output directory နှင့် fallback document ကို မှတ်တမ်းတင်ရုံသာဖြစ်ပြီး package manager ကို execute မလုပ်ပါ။ Build/deploy workflow အသေးစိတ်ကို [`FRONTEND_INTEGRATION_MM.md`](FRONTEND_INTEGRATION_MM.md) တွင် ဖတ်ပါ။
 
 ဤ policy ကြောင့် framework သည် Zap-first ဖြစ်နေသော်လည်း Web ecosystem နှင့် မခွဲထွက်ပါ။ Zap သည် project structure၊ route၊ validation၊ application contract နှင့် server-side execution ကို ပိုင်ဆိုင်ပြီး browser framework က project ရွေးချယ်ပါက client rendering ကို ပိုင်ဆိုင်ပါသည်။ Integration သည် file၊ HTTP route နှင့် JSON DTO များမှတစ်ဆင့် explicit ဖြစ်ပါသည်။
 
@@ -32,7 +32,7 @@ Browser code သည် server dependency မဟုတ်ဘဲ interoperability 
 
 | Starter | လက်ရှိ deliverable | ထပ်လိုအပ်မည့် host integration | Production အခြေအနေ |
 |---|---|---|---|
-| `frameworks/web` | Deterministic route/request/response contract၊ Zap-native loopback dev server၊ bounded HTML/CSS/JS asset၊ JSON API boundary နှင့် SQLite-first migration path | TLS၊ concurrent production listener၊ full middleware pipeline၊ provider-neutral database driver၊ binary asset delivery၊ deployment supervision | Development/reference slice |
+| `frameworks/web` | Deterministic route/request/response contract၊ Zap-native loopback server၊ bounded text/binary asset၊ SPA fallback၊ JSON API boundary နှင့် SQLite-first migration path | TLS၊ concurrent production listener၊ full middleware pipeline၊ provider-neutral database driver၊ identity/persistence adapter၊ deployment supervision | Development/reference slice; frontend artifact path သည် runtime-ready |
 | `frameworks/mobile` | Portable app model, screen နှင့် action contract | Tauri, Flutter, React Native/Expo သို့မဟုတ် native shell | Contract prototype |
 | `frameworks/iot` | Bounded sensor event နှင့် device-state contract | MQTT/Paho, gateway transport, ESP-IDF, Zephyr သို့မဟုတ် Embassy host | Contract prototype |
 | `frameworks/ai` | Prompt/response boundary example | Provider SDK, local model, credential နှင့် quota adapter | Contract prototype |
@@ -142,7 +142,7 @@ CI gate သည် undeclared dependency၊ missing lockfile၊ unresolved placeh
 
 ## v0.1 တွင် မပါသေးသောအရာများ
 
-Framework branch တွင် Zap-native Web project scaffold နှင့် CLI validation command များ ပါဝင်လာပြီဖြစ်သော်လည်း persistent native HTTP server၊ custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ real ORM/database driver၊ session store၊ built-in admin UI သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထို feature များသည် aspirational syntax မဟုတ်ဘဲ explicit contract နှင့် security evidence လိုအပ်ပါသည်။
+Framework branch တွင် Zap-native Web project scaffold၊ CLI validation command၊ binary-safe static asset၊ SPA fallback နှင့် bilingual frontend integration guide ပါဝင်လာပြီဖြစ်ပါသည်။ Custom mobile renderer၊ MCU interpreter၊ MQTT client၊ OTA manager၊ cloud deployment command၊ provider-neutral ORM/database driver၊ session store၊ built-in admin UI သို့မဟုတ် provider-specific AI client မပါသေးပါ။ ထို feature များသည် aspirational syntax မဟုတ်ဘဲ explicit contract နှင့် security evidence လိုအပ်ပါသည်။
 
 `zap-host` adapter ကို `host/zap-host` အောက်တွင် operational reference boundary အဖြစ် ဆက်အသုံးပြုနိုင်ပါသည်။ ၎င်းတွင် Axum/Tower HTTP handling၊ capability-facing trait များ၊ typed DTO mapping၊ bounded request/response handling၊ deterministic test၊ structured error၊ sensitive-header redaction နှင့် graceful shutdown ပါဝင်ပါသည်။ အသေးစိတ် setup ကို [`ZAP_HOST_MM.md`](ZAP_HOST_MM.md) နှင့် Zap-first project workflow ကို [`ZAP_WEB_NATIVE_MM.md`](ZAP_WEB_NATIVE_MM.md) တွင် ဖတ်နိုင်ပါသည်။ Real native runtime embedding၊ database/authentication provider၊ shared quota storage၊ TLS နှင့် deployment-specific evidence များသည် နောက်ဆက်တွဲအလုပ်များ ဖြစ်နေသေးပါသည်။
 

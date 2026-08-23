@@ -1,6 +1,6 @@
 # Zap Generic Type Syntax ဆုံးဖြတ်ချက်မှတ်တမ်း
 
-**ဆုံးဖြတ်ချက်:** TC-012 generic type syntax သည် v2.2.7 type-checking contract အတွက် implemented baseline အဖြစ် သတ်မှတ်နိုင်ပါသည်။ ဤ design gate အတွက် parser သို့မဟုတ် runtime code အသစ် ထပ်မံပြင်ဆင်ရန် မလိုအပ်ပါ။
+**ဆုံးဖြတ်ချက်:** TC-012 generic type syntax သည် v2.3.0 type-checking contract အတွက် implemented baseline အဖြစ် သတ်မှတ်နိုင်ပါသည်။ ဤ design gate အတွက် parser သို့မဟုတ် runtime code အသစ် ထပ်မံပြင်ဆင်ရန် မလိုအပ်ပါ။
 
 ## အကျုံးဝင်သည့်အပိုင်း
 

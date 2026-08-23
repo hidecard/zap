@@ -3,7 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs::{self, OpenOptions},
     io::{Read, Write},
-    net::{IpAddr, TcpListener, ToSocketAddrs},
+    net::{IpAddr, SocketAddr, TcpListener, ToSocketAddrs},
     path::{Component, Path, PathBuf},
     process::{Command, Stdio},
     rc::Rc,
@@ -12,11 +12,15 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+
 use crate::ast::{BinaryOp, CallArg, Expr, Literal, Program, Spanned, Stmt, UnaryOp};
 use crate::async_runtime::{AdapterLimits, ThreadRuntimeLimits};
 use crate::lexer::{tokenize, Token};
 use crate::stdlib::{checked_integer_pow, MAX_SLEEP_MILLISECONDS};
-use crate::value::try_values_equal;
+use crate::value::{
+    collect_bounded_values, try_values_equal, MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_VALUE_NODES,
+};
 use crate::ExprParser;
 use crate::{
     parse_signature, read_limited_text, resolve_module, write_limited_text, EnvFrame,
@@ -27,6 +31,7 @@ const MAX_EXECUTION_DEPTH: usize = 256;
 const MAX_SOURCE_LINES: usize = 100_000;
 const MAX_LOOP_ITERATIONS: usize = 100_000;
 const MAX_JSON_BYTES: usize = 8 * 1024 * 1024;
+const MAX_JSON_DEPTH: usize = MAX_EXECUTION_DEPTH;
 const MAX_LOG_MESSAGE_BYTES: usize = 8 * 1024;
 const MAX_LOG_FIELDS: usize = 64;
 const MAX_LOG_FIELD_KEY_BYTES: usize = 256;
@@ -232,50 +237,102 @@ pub(crate) fn operate(a: Value, op: Token, b: Value) -> Result<Value, String> {
         _ => Err("invalid operation".into()),
     }
 }
-pub(crate) fn value_to_json(v: &Value) -> Result<serde_json::Value, String> {
-    match v {
+#[derive(Default)]
+struct JsonEncodeState {
+    active_objects: HashSet<usize>,
+    nodes: usize,
+}
+
+pub(crate) fn bounded_range_values(start: i64, end: i64) -> Result<Vec<Value>, String> {
+    let count = i128::from(end) - i128::from(start);
+    if count > i128::from(MAX_RUNTIME_COLLECTION_ITEMS as u64) {
+        return Err(format!(
+            "memory limit exceeded: range produced more than {MAX_RUNTIME_COLLECTION_ITEMS} items"
+        ));
+    }
+    Ok((start..end).map(Value::Number).collect())
+}
+
+pub(crate) fn value_to_json(value: &Value) -> Result<serde_json::Value, String> {
+    let mut state = JsonEncodeState::default();
+    value_to_json_inner(value, 0, &mut state)
+}
+
+fn value_to_json_inner(
+    value: &Value,
+    depth: usize,
+    state: &mut JsonEncodeState,
+) -> Result<serde_json::Value, String> {
+    if depth > MAX_JSON_DEPTH {
+        return Err(format!(
+            "json encode failed: value graph exceeds {MAX_JSON_DEPTH} levels"
+        ));
+    }
+    state.nodes = state
+        .nodes
+        .checked_add(1)
+        .ok_or_else(|| "json encode failed: value graph node counter overflow".to_string())?;
+    if state.nodes > MAX_RUNTIME_VALUE_NODES {
+        return Err(format!(
+            "json encode failed: value graph exceeds {MAX_RUNTIME_VALUE_NODES} nodes"
+        ));
+    }
+
+    match value {
         Value::None => Ok(serde_json::Value::Null),
-        Value::Bool(x) => Ok(serde_json::Value::Bool(*x)),
-        Value::Number(x) => Ok(serde_json::Value::Number((*x).into())),
-        Value::Text(x) => Ok(serde_json::Value::String(x.clone())),
-        Value::List(xs) => Ok(serde_json::Value::Array(
-            xs.iter()
-                .map(value_to_json)
+        Value::Bool(value) => Ok(serde_json::Value::Bool(*value)),
+        Value::Number(value) => Ok(serde_json::Value::Number((*value).into())),
+        Value::Text(value) => Ok(serde_json::Value::String(value.clone())),
+        Value::List(values) => Ok(serde_json::Value::Array(
+            values
+                .iter()
+                .map(|value| value_to_json_inner(value, depth + 1, state))
                 .collect::<Result<Vec<_>, _>>()?,
         )),
-        Value::Map(m) => Ok(serde_json::Value::Object(
-            m.iter()
-                .map(|(k, v)| value_to_json(v).map(|value| (k.clone(), value)))
+        Value::Map(values) => Ok(serde_json::Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| {
+                    value_to_json_inner(value, depth + 1, state).map(|value| (key.clone(), value))
+                })
                 .collect::<Result<serde_json::Map<_, _>, _>>()?,
         )),
         Value::Object { class_name, fields } => {
-            let mut object = serde_json::Map::new();
-            object.insert(
-                "__class".into(),
-                serde_json::Value::String(class_name.clone()),
-            );
-            for (k, v) in fields.try_borrow()?.iter() {
-                object.insert(k.clone(), value_to_json(v)?);
+            let identity = Rc::as_ptr(fields) as usize;
+            if !state.active_objects.insert(identity) {
+                return Err("json encode failed: cyclic object reference".into());
             }
-            Ok(serde_json::Value::Object(object))
+            let result = (|| {
+                let mut object = serde_json::Map::new();
+                object.insert(
+                    "__class".into(),
+                    serde_json::Value::String(class_name.clone()),
+                );
+                for (key, value) in fields.try_borrow()?.iter() {
+                    object.insert(key.clone(), value_to_json_inner(value, depth + 1, state)?);
+                }
+                Ok(serde_json::Value::Object(object))
+            })();
+            state.active_objects.remove(&identity);
+            result
         }
-        Value::ResultOk(x) => Ok(serde_json::json!({
+        Value::ResultOk(value) => Ok(serde_json::json!({
             "__zap_variant":"ok",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
-        Value::ResultErr(x) => Ok(serde_json::json!({
+        Value::ResultErr(value) => Ok(serde_json::json!({
             "__zap_variant":"err",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
-        Value::OptionSome(x) => Ok(serde_json::json!({
+        Value::OptionSome(value) => Ok(serde_json::json!({
             "__zap_variant":"some",
-            "value":value_to_json(x)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
         Value::OptionNone => Ok(serde_json::json!({"__zap_variant":"none"})),
         Value::Callable(_) => Ok(serde_json::json!({"__zap_variant":"callable"})),
         Value::Future(value) => Ok(serde_json::json!({
             "__zap_variant":"future",
-            "value":value_to_json(value)?
+            "value":value_to_json_inner(value, depth + 1, state)?
         })),
         Value::ScheduledFuture(id) => Ok(serde_json::json!({
             "__zap_variant":"future",
@@ -731,12 +788,12 @@ fn direct_builtin_with_context_inner(
             let Value::Text(value) = &args[0] else {
                 return Err("codepoints expects text".into());
             };
-            Ok(Some(Value::List(
+            Ok(Some(Value::List(collect_bounded_values(
                 value
                     .chars()
-                    .map(|character| Value::Number(i64::from(u32::from(character))))
-                    .collect(),
-            )))
+                    .map(|character| Value::Number(i64::from(u32::from(character)))),
+                "codepoints",
+            )?)))
         }
         "utc_now" => {
             expect(0)?;
@@ -879,12 +936,12 @@ fn direct_builtin_with_context_inner(
         "split" => {
             expect(2)?;
             match (&args[0], &args[1]) {
-                (Value::Text(value), Value::Text(separator)) => Ok(Some(Value::List(
-                    value
-                        .split(separator)
-                        .map(|part| Value::Text(part.into()))
-                        .collect(),
-                ))),
+                (Value::Text(value), Value::Text(separator)) => {
+                    Ok(Some(Value::List(collect_bounded_values(
+                        value.split(separator).map(|part| Value::Text(part.into())),
+                        "split",
+                    )?)))
+                }
                 _ => Err("split expects text and text separator".into()),
             }
         }
@@ -1042,7 +1099,7 @@ fn direct_builtin_with_context_inner(
                 [Value::Number(start), Value::Number(end)] => (*start, *end),
                 _ => return Err("range expects numeric arguments".into()),
             };
-            Ok(Some(Value::List((start..end).map(Value::Number).collect())))
+            Ok(Some(Value::List(bounded_range_values(start, end)?)))
         }
         "ok" | "err" | "some" => {
             expect(1)?;
@@ -1224,11 +1281,13 @@ fn direct_io_builtin_with_context(
             | "file_metadata"
             | "atomic_write"
             | "web_static"
+            | "web_static_spa"
     ) {
         require_capability("filesystem access")?;
     }
     match name {
         "web_static" => Ok(Some(web_static_with_context(args, context)?)),
+        "web_static_spa" => Ok(Some(web_static_spa_with_context(args, context)?)),
         "file_metadata" => {
             if args.len() != 1 {
                 return Err(format!(
@@ -1290,15 +1349,15 @@ fn direct_io_builtin_with_context(
             let Value::Text(path) = &args[0] else {
                 return Err("read_lines expects a text path".into());
             };
-            Ok(Some(Value::List(
+            Ok(Some(Value::List(collect_bounded_values(
                 read_limited_text(
                     &confined_path(Path::new(path), "read_lines", context)?,
                     "read_lines",
                 )?
                 .lines()
-                .map(|line| Value::Text(line.to_string()))
-                .collect(),
-            )))
+                .map(|line| Value::Text(line.to_string())),
+                "read_lines",
+            )?)))
         }
         "write_lines" => {
             if args.len() != 2 {
@@ -1315,6 +1374,16 @@ fn direct_io_builtin_with_context(
                 let Value::Text(line) = value else {
                     return Err("write_lines expects a list of text".into());
                 };
+                let next_len = output
+                    .len()
+                    .checked_add(usize::from(index > 0))
+                    .and_then(|length| length.checked_add(line.len()))
+                    .ok_or_else(|| "write_lines failed: content length overflow".to_string())?;
+                if next_len > MAX_FILE_BYTES as usize {
+                    return Err(format!(
+                        "write_lines failed: content exceeds the {MAX_FILE_BYTES} byte limit"
+                    ));
+                }
                 if index > 0 {
                     output.push('\n');
                 }
@@ -1880,10 +1949,52 @@ fn web_static_content_type(path: &Path) -> Option<&'static str> {
         Some("html") => Some("text/html; charset=utf-8"),
         Some("css") => Some("text/css; charset=utf-8"),
         Some("js") | Some("mjs") => Some("text/javascript; charset=utf-8"),
-        Some("json") => Some("application/json; charset=utf-8"),
+        Some("json") | Some("map") => Some("application/json; charset=utf-8"),
         Some("svg") => Some("image/svg+xml"),
+        Some("png") => Some("image/png"),
+        Some("jpg") | Some("jpeg") => Some("image/jpeg"),
+        Some("gif") => Some("image/gif"),
+        Some("webp") => Some("image/webp"),
+        Some("ico") => Some("image/x-icon"),
+        Some("avif") => Some("image/avif"),
+        Some("woff") => Some("font/woff"),
+        Some("woff2") => Some("font/woff2"),
+        Some("ttf") => Some("font/ttf"),
+        Some("otf") => Some("font/otf"),
+        Some("wasm") => Some("application/wasm"),
         Some("txt") => Some("text/plain; charset=utf-8"),
         _ => None,
+    }
+}
+
+fn web_static_spa_with_context(
+    args: &[Value],
+    context: Option<&ExecutionContext>,
+) -> Result<Value, String> {
+    if args.len() != 3 {
+        return Err("web_static_spa expects asset path, root directory, and fallback path".into());
+    }
+    if !matches!(&args[0], Value::Text(_)) {
+        return Err("web_static_spa expects a text asset path".into());
+    }
+    let Value::Text(root) = &args[1] else {
+        return Err("web_static_spa expects a text root directory".into());
+    };
+    let Value::Text(fallback) = &args[2] else {
+        return Err("web_static_spa expects a text fallback path".into());
+    };
+    let response = web_static_with_context(&args[..2], context)?;
+    let is_not_found = matches!(
+        &response,
+        Value::Map(fields) if matches!(fields.get("status"), Some(Value::Number(404)))
+    );
+    if is_not_found {
+        web_static_with_context(
+            &[Value::Text(fallback.clone()), Value::Text(root.clone())],
+            context,
+        )
+    } else {
+        Ok(response)
     }
 }
 
@@ -1964,17 +2075,24 @@ fn web_static_with_context(
             "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
         ));
     }
-    let body = read_limited_text(&resolved, "web_static asset read")?;
-    if body.len() > MAX_STATIC_ASSET_BYTES {
+    let bytes =
+        fs::read(&resolved).map_err(|error| format!("web_static asset read failed: {error}"))?;
+    if bytes.len() > MAX_STATIC_ASSET_BYTES {
         return Err(format!(
             "web_static asset exceeds the {MAX_STATIC_ASSET_BYTES} byte limit"
         ));
     }
-    Ok(map_value([
+    let mut response = vec![
         ("status".into(), Value::Number(200)),
         ("content_type".into(), Value::Text(content_type.into())),
-        ("body".into(), Value::Text(body)),
-    ]))
+    ];
+    if let Ok(body) = String::from_utf8(bytes.clone()) {
+        response.push(("body".into(), Value::Text(body)));
+    } else {
+        response.push(("body_base64".into(), Value::Text(BASE64.encode(bytes))));
+        response.push(("body_encoding".into(), Value::Text("base64".into())));
+    }
+    Ok(Value::Map(response.into_iter().collect()))
 }
 
 fn web_response_header_is_reserved(name: &str) -> bool {
@@ -1998,12 +2116,19 @@ fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String>
         Some(Value::Number(value)) if (100..=599).contains(value) => *value,
         _ => return Err("web handler response status must be a number from 100 to 599".into()),
     };
-    let body = match fields.get("body") {
-        Some(Value::Text(value)) => value.clone(),
-        Some(value) => {
-            serde_json::to_string(&value_to_json(value)?).map_err(|error| error.to_string())?
+    let body = match (fields.get("body"), fields.get("body_base64")) {
+        (Some(_), Some(_)) => {
+            return Err("web handler response cannot contain both body and body_base64".into())
         }
-        None => String::new(),
+        (Some(Value::Text(value)), None) => value.as_bytes().to_vec(),
+        (Some(value), None) => serde_json::to_string(&value_to_json(value)?)
+            .map_err(|error| error.to_string())?
+            .into_bytes(),
+        (None, Some(Value::Text(encoded))) => BASE64
+            .decode(encoded)
+            .map_err(|_| "web handler response body_base64 is invalid".to_string())?,
+        (None, Some(_)) => return Err("web handler response body_base64 must be text".into()),
+        (None, None) => Vec::new(),
     };
     if body.len() > MAX_HTTP_RESPONSE_BYTES {
         return Err(format!(
@@ -2055,7 +2180,7 @@ fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String>
     }
     output.push_str("\r\n");
     let mut bytes = output.into_bytes();
-    bytes.extend_from_slice(body.as_bytes());
+    bytes.extend_from_slice(&body);
     Ok(bytes)
 }
 
@@ -2532,17 +2657,13 @@ fn read_process_output<R: Read>(mut reader: R) -> std::io::Result<(Vec<u8>, bool
     Ok((output, exceeded))
 }
 
-fn validate_network_destination(host: &str, port: u16) -> Result<(), String> {
-    validate_network_destination_for_mode(host, port, untrusted_mode())
-}
-
-fn validate_network_destination_for_mode(
+fn resolved_network_destination_for_mode(
     host: &str,
     port: u16,
     restricted: bool,
-) -> Result<(), String> {
+) -> Result<Option<Vec<SocketAddr>>, String> {
     if !restricted {
-        return Ok(());
+        return Ok(None);
     }
     let normalized = host.trim_start_matches('[').trim_end_matches(']');
     let addresses = (normalized, port)
@@ -2552,31 +2673,50 @@ fn validate_network_destination_for_mode(
     if addresses.is_empty() {
         return Err("network destination did not resolve to an address".into());
     }
-    for address in addresses {
-        let ip = address.ip();
-        let blocked = match ip {
-            IpAddr::V4(value) => {
-                value.is_loopback()
-                    || value.is_private()
-                    || value.is_link_local()
-                    || value.is_unspecified()
-                    || value.is_broadcast()
-            }
-            IpAddr::V6(value) => {
-                let segments = value.segments();
-                value.is_loopback()
-                    || value.is_unspecified()
-                    || (segments[0] & 0xfe00) == 0xfc00
-                    || (segments[0] & 0xffc0) == 0xfe80
-            }
-        };
-        if blocked {
+    for address in &addresses {
+        if blocked_network_ip(address.ip()) {
             return Err(format!(
-                "network destination is blocked in untrusted mode: {ip}"
+                "network destination is blocked in untrusted mode: {}",
+                address.ip()
             ));
         }
     }
-    Ok(())
+    Ok(Some(addresses))
+}
+
+fn blocked_network_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(value) => {
+            value.is_loopback()
+                || value.is_private()
+                || value.is_link_local()
+                || value.is_unspecified()
+                || value.is_broadcast()
+                || value.is_multicast()
+        }
+        IpAddr::V6(value) => {
+            let mapped_is_blocked = value
+                .to_ipv4_mapped()
+                .map(|mapped| blocked_network_ip(IpAddr::V4(mapped)))
+                .unwrap_or(false);
+            let segments = value.segments();
+            mapped_is_blocked
+                || value.is_loopback()
+                || value.is_unspecified()
+                || value.is_multicast()
+                || (segments[0] & 0xfe00) == 0xfc00
+                || (segments[0] & 0xffc0) == 0xfe80
+        }
+    }
+}
+
+#[cfg(test)]
+fn validate_network_destination_for_mode(
+    host: &str,
+    port: u16,
+    restricted: bool,
+) -> Result<(), String> {
+    resolved_network_destination_for_mode(host, port, restricted).map(|_| ())
 }
 
 fn http_request(args: &[Value]) -> Result<Value, String> {
@@ -2633,13 +2773,18 @@ fn http_request(args: &[Value]) -> Result<Value, String> {
         Some(Value::Text(value)) => value,
         _ => return Err("http_request URL parser omitted the host".into()),
     };
-    validate_network_destination(host, port)?;
-    let agent = ureq::AgentBuilder::new()
+    let pinned_addresses = resolved_network_destination_for_mode(host, port, untrusted_mode())?;
+    let mut agent_builder = ureq::AgentBuilder::new()
         .redirects(0)
         .timeout_connect(Duration::from_secs(10))
         .timeout_read(Duration::from_secs(10))
-        .timeout_write(Duration::from_secs(10))
-        .build();
+        .timeout_write(Duration::from_secs(10));
+    if let Some(addresses) = pinned_addresses {
+        agent_builder = agent_builder.resolver(move |_netloc: &str| {
+            Ok::<Vec<SocketAddr>, std::io::Error>(addresses.clone())
+        });
+    }
+    let agent = agent_builder.build();
     let request = agent.request(method, url);
     let response = match body {
         Some(body) => request.send_string(body),
@@ -4813,11 +4958,12 @@ mod tests {
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
     use crate::{ExecutionContext, Function, Value};
+    use base64::Engine as _;
     use std::{
         collections::HashMap,
         fs,
-        io::{Read, Write},
-        net::{TcpListener, TcpStream},
+        io::{ErrorKind, Read, Write},
+        net::{Shutdown, TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
         process::Command,
@@ -5415,6 +5561,91 @@ mod tests {
     }
 
     #[test]
+    fn json_conversion_rejects_cyclic_object_without_panicking() {
+        let value = Value::object("Node");
+        let Value::Object { fields, .. } = &value else {
+            panic!("object constructor must create an object value");
+        };
+        {
+            let mut fields = fields.try_borrow_mut().unwrap();
+            fields.insert("self".into(), value.clone());
+        }
+        assert_eq!(
+            value_to_json(&value).unwrap_err(),
+            "json encode failed: cyclic object reference"
+        );
+    }
+
+    #[test]
+    fn json_conversion_rejects_excessive_graph_depth() {
+        let mut value = Value::None;
+        for _ in 0..=super::MAX_JSON_DEPTH {
+            value = Value::List(vec![value]);
+        }
+        let error = value_to_json(&value).unwrap_err();
+        assert!(error.contains("json encode failed: value graph exceeds"));
+        assert!(error.ends_with("levels"));
+    }
+
+    #[test]
+    fn collection_builtins_reject_oversized_results_before_unbounded_growth() {
+        let range_error = direct_builtin(
+            "range",
+            vec![
+                Value::Number(0),
+                Value::Number((MAX_RUNTIME_COLLECTION_ITEMS + 1) as i64),
+            ],
+        )
+        .expect_err("oversized range must fail");
+        assert!(range_error.contains("range produced more than"));
+
+        let split_error = direct_builtin(
+            "split",
+            vec![
+                Value::Text("x,".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1)),
+                Value::Text(",".into()),
+            ],
+        )
+        .expect_err("oversized split must fail");
+        assert!(split_error.contains("split produced more than"));
+
+        let codepoints_error = direct_builtin(
+            "codepoints",
+            vec![Value::Text("x".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1))],
+        )
+        .expect_err("oversized codepoints must fail");
+        assert!(codepoints_error.contains("codepoints produced more than"));
+    }
+
+    #[test]
+    fn line_builtins_reject_oversized_results_before_unbounded_growth() {
+        let path =
+            std::env::temp_dir().join(format!("zap-read-lines-limit-{}.txt", std::process::id()));
+        let content = "x\n".repeat(MAX_RUNTIME_COLLECTION_ITEMS + 1);
+        fs::write(&path, content).expect("line fixture should be written");
+        let read_error = direct_io_builtin(
+            "read_lines",
+            &[Value::Text(path.to_string_lossy().into_owned())],
+        )
+        .expect_err("oversized read_lines must fail");
+        assert!(read_error.contains("read_lines produced more than"));
+        let _ = fs::remove_file(&path);
+
+        let write_error = direct_io_builtin(
+            "write_lines",
+            &[
+                Value::Text(path.to_string_lossy().into_owned()),
+                Value::List(vec![Value::Text(
+                    "x".repeat(super::MAX_FILE_BYTES as usize + 1),
+                )]),
+            ],
+        )
+        .expect_err("oversized write_lines output must fail");
+        assert!(write_error.contains("write_lines failed: content exceeds"));
+        assert!(!path.exists());
+    }
+
+    #[test]
     fn ast_object_member_read_propagates_borrow_error_without_panic() {
         let object = Value::object("Borrowed");
         let Value::Object { fields, .. } = &object else {
@@ -5757,6 +5988,8 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             .expect("JavaScript fixture should be written");
         fs::write(assets.join("secret.bin"), [0_u8, 1_u8, 2_u8])
             .expect("unsupported fixture should be written");
+        fs::write(assets.join("logo.png"), [0_u8, 159_u8, 146_u8, 150_u8])
+            .expect("binary fixture should be written");
         let root_text = root.to_string_lossy().into_owned();
         let value = direct_io_builtin(
             "web_static",
@@ -5794,6 +6027,46 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             css.get("content_type"),
             Some(&Value::Text("text/css; charset=utf-8".into()))
         );
+
+        let binary = direct_io_builtin(
+            "web_static",
+            &[
+                Value::Text("assets/logo.png".into()),
+                Value::Text(root_text.clone()),
+            ],
+        )
+        .expect("binary static builtin should not fail")
+        .expect("binary static builtin should return a value");
+        let Value::Map(binary) = binary else {
+            panic!("binary response must be a map");
+        };
+        assert_eq!(binary.get("status"), Some(&Value::Number(200)));
+        assert_eq!(
+            binary.get("content_type"),
+            Some(&Value::Text("image/png".into()))
+        );
+        assert_eq!(
+            binary.get("body_base64"),
+            Some(&Value::Text(
+                super::BASE64.encode([0_u8, 159_u8, 146_u8, 150_u8])
+            ))
+        );
+
+        let spa = direct_io_builtin(
+            "web_static_spa",
+            &[
+                Value::Text("dashboard".into()),
+                Value::Text(root_text.clone()),
+                Value::Text("index.html".into()),
+            ],
+        )
+        .expect("SPA static builtin should not fail")
+        .expect("SPA static builtin should return a value");
+        let Value::Map(spa) = spa else {
+            panic!("SPA response must be a map");
+        };
+        assert_eq!(spa.get("status"), Some(&Value::Number(200)));
+        assert_eq!(spa.get("body"), Some(&Value::Text("<h1>Zap</h1>".into())));
 
         let missing = direct_io_builtin(
             "web_static",
@@ -5982,11 +6255,22 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             stream
                 .write_all(raw.as_bytes())
                 .expect("test request should be written");
-            let mut response = String::new();
-            stream
-                .read_to_string(&mut response)
-                .expect("test response should be readable");
-            response
+            match stream.shutdown(Shutdown::Write) {
+                Ok(()) => {}
+                Err(error) if error.kind() == ErrorKind::NotConnected => {}
+                Err(error) => panic!("test request write side should shut down: {error}"),
+            }
+            let mut response_bytes = Vec::new();
+            let mut buffer = [0_u8; 4096];
+            loop {
+                match stream.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(read) => response_bytes.extend_from_slice(&buffer[..read]),
+                    Err(error) if error.kind() == ErrorKind::ConnectionReset => break,
+                    Err(error) => panic!("test response should be readable: {error}"),
+                }
+            }
+            String::from_utf8(response_bytes).expect("test response should be valid UTF-8")
         };
 
         let root =
@@ -6296,6 +6580,8 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
         assert!(require_capability_for_mode("network access", false).is_ok());
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("10.0.0.1", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("[::ffff:127.0.0.1]", 80, true).is_err());
+        assert!(validate_network_destination_for_mode("ff02::1", 80, true).is_err());
         assert!(validate_network_destination_for_mode("127.0.0.1", 80, false).is_ok());
     }
 
