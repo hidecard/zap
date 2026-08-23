@@ -1,6 +1,6 @@
 # Framework AI Starter
 
-ဤ project သည် current Zap v2.2.3 ဖြင့် run လို့ရသော **provider request/response contract** ဖြစ်သည်။ External model provider ကို မခေါ်ပါ၊ API key မဖတ်ပါ၊ network request မလုပ်ပါ။
+ဤ project သည် current Zap v2.2.6 ဖြင့် run လို့ရသော **provider request/response contract** ဖြစ်သည်။ External model provider ကို မခေါ်ပါ၊ API key မဖတ်ပါ၊ network request မလုပ်ပါ။
 
 ## Run
 

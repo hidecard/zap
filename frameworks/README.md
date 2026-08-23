@@ -1,6 +1,6 @@
 # Zap Framework Foundation
 
-ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Web ကို ယခု Framework ၏ ဦးစားပေး direction အဖြစ် Zap ကိုယ်တိုင်ပေါ်တွင် project/app structure၊ route metadata၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များ တည်ဆောက်နိုင်ရန် ပြင်ဆင်ထားပါသည်။ Starter များသည် current Zap v2.2.3 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ Zap-native loopback development server နှင့် SQLite-first database adapter/migration workflow ကို စတင်ထားပြီး production concurrency၊ identity provider နှင့် external platform runtime များသည် explicit capability နှင့် security gates မပြည့်မီ မဖွင့်သေးပါ။
+ဤ directory သည် Web, App, IoT နှင့် AI အတွက် **run လို့ရသော contract starter များ** ပါဝင်သော Framework Foundation ဖြစ်ပါသည်။ Web ကို ယခု Framework ၏ ဦးစားပေး direction အဖြစ် Zap ကိုယ်တိုင်ပေါ်တွင် project/app structure၊ route metadata၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များ တည်ဆောက်နိုင်ရန် ပြင်ဆင်ထားပါသည်။ Starter များသည် current Zap v2.2.6 syntax ဖြင့်ရေးထားပြီး domain model၊ validation နှင့် deterministic output ကို ပြသပါသည်။ Zap-native loopback development server နှင့် SQLite-first database adapter/migration workflow ကို စတင်ထားပြီး production concurrency၊ identity provider နှင့် external platform runtime များသည် explicit capability နှင့် security gates မပြည့်မီ မဖွင့်သေးပါ။
 
 ```text
 frameworks/

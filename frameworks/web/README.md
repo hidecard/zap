@@ -1,6 +1,6 @@
 # Framework Web Starter
 
-ဤ project သည် current Zap v2.2.3 ဖြင့် run လို့ရသော **Web API contract** ဖြစ်သည်။ Reusable logic ကို `web_contract.zp`, `api_contract.zp`, `dto_contract.zp`, `database_contract.zp`, `auth_contract.zp` နှင့် `rate_limit_contract.zp` modules တွင် ခွဲထားပြီး HTTP server မဖွင့်ပါ၊ TCP socket မဖတ်ပါ၊ TLS နှင့် raw credentials မသုံးပါ။
+ဤ project သည် current Zap v2.2.6 ဖြင့် run လို့ရသော **Web API contract** ဖြစ်သည်။ Reusable logic ကို `web_contract.zp`, `api_contract.zp`, `dto_contract.zp`, `database_contract.zp`, `auth_contract.zp` နှင့် `rate_limit_contract.zp` modules တွင် ခွဲထားပြီး HTTP server မဖွင့်ပါ၊ TCP socket မဖတ်ပါ၊ TLS နှင့် raw credentials မသုံးပါ။
 
 ## Run
 

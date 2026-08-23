@@ -33,7 +33,7 @@ jobs:
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.75.0
+          toolchain: 1.88.0
           components: rustfmt, clippy
 
       - name: Cache Cargo dependencies
@@ -74,6 +74,15 @@ jobs:
 
       - name: Run documentation consistency regression
         run: scripts/test_validate_documentation_consistency.sh
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Run native RustSec audit
+        run: cargo audit --file native/Cargo.lock
+
+      - name: Run host RustSec audit
+        run: cargo audit --file host/zap-host/Cargo.lock
 
       - name: Check formatting
         run: cargo fmt --manifest-path native/Cargo.toml --all -- --check

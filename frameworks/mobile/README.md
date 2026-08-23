@@ -1,6 +1,6 @@
 # Framework App Starter
 
-ဤ project သည် current Zap v2.2.3 ဖြင့် run လို့ရသော **app-state/navigation contract** ဖြစ်သည်။ Native window၊ Android/iOS lifecycle၊ permission prompt၊ IPC သို့မဟုတ် device API မဖွင့်ပါ။
+ဤ project သည် current Zap v2.2.6 ဖြင့် run လို့ရသော **app-state/navigation contract** ဖြစ်သည်။ Native window၊ Android/iOS lifecycle၊ permission prompt၊ IPC သို့မဟုတ် device API မဖွင့်ပါ။
 
 ## Run
 

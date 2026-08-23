@@ -1,6 +1,6 @@
 # Framework IoT Starter
 
-ဤ project သည် current Zap v2.2.3 ဖြင့် run လို့ရသော **telemetry/device-state contract** ဖြစ်သည်။ Sensor reading ကို simulate လုပ်ခြင်းသာ ဖြစ်ပြီး GPIO၊ serial၊ Bluetooth၊ Wi-Fi၊ MQTT၊ OTA သို့မဟုတ် hardware ကို မထိပါ။
+ဤ project သည် current Zap v2.2.6 ဖြင့် run လို့ရသော **telemetry/device-state contract** ဖြစ်သည်။ Sensor reading ကို simulate လုပ်ခြင်းသာ ဖြစ်ပြီး GPIO၊ serial၊ Bluetooth၊ Wi-Fi၊ MQTT၊ OTA သို့မဟုတ် hardware ကို မထိပါ။
 
 ## Run
 

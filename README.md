@@ -22,7 +22,7 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 | Item | Current status |
 |---|---|
-| Current release line | `v2.2.3` |
+| Current release line | `v2.2.6` |
 | Runtime | Native Rust runtime |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
@@ -38,13 +38,13 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 | Documentation source | [Zap documentation directory](https://github.com/hidecard/zap/tree/master/docs) |
 | Test status | Native test suite verified by GitHub Actions |
 | Verification status | M2-VERIFY-01 bounded replay, M2-VERIFY-02 native matrix, M2-BENCH-01 provenance/variance, M2-REG-01 transport, M3-STDLIB-01 policy evidence, M3-LSP-01 semantic-parity/editor validation, and post-release LSP protocol synchronization evidence |
-| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.3 |
+| Language design | [Traits/composition RFC](docs/TRAITS_RFC_EN.md) — design-only; deferred for v2.2.6 |
 | Release version policy | [Single-source-of-truth policy](docs/RELEASE_VERSION_POLICY_EN.md) |
 | Post-v2.2.0 remediation provenance | [Corrective-release record](docs/POST_V2.2.0_REMEDIATION_EN.md) — v2.2.0, v2.2.1, and v2.2.2 remain immutable; v2.2.1 contains the LSP/editor corrections, v2.2.2 contains the subsequent runtime-safety/helper corrections, and v2.2.3 contains the post-v2.2.2 runtime, equality, borrow, and LSP hardening |
 
 ## Release provenance
 
-The installation links and archive names in this README point to the published [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3). The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) and published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
+The installation links and archive names in this README point to the published [v2.2.6 release](https://github.com/hidecard/zap/releases/tag/v2.2.6), sourced from the tagged v2.2.6 commit. The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0) and published [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
 
 ## Learning Guide
 
