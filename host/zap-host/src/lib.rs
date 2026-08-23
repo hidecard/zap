@@ -625,10 +625,7 @@ async fn request_policy_middleware(
 ) -> Response {
     let request_id = match request.headers().get(request_id_header()) {
         Some(value) => match value.to_str() {
-            Ok(value)
-                if !value.is_empty()
-                    && value.as_bytes().len() <= state.config.max_request_id_bytes =>
-            {
+            Ok(value) if !value.is_empty() && value.len() <= state.config.max_request_id_bytes => {
                 value.to_string()
             }
             _ => {
@@ -643,10 +640,7 @@ async fn request_policy_middleware(
         None => next_request_id(),
     };
     let path = request.uri().path();
-    if !path.starts_with('/')
-        || path.as_bytes().len() > state.config.max_path_bytes
-        || path.contains("..")
-    {
+    if !path.starts_with('/') || path.len() > state.config.max_path_bytes || path.contains("..") {
         return policy_error_response(
             StatusCode::BAD_REQUEST,
             "invalid_request",
