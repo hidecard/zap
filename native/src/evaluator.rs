@@ -4962,7 +4962,7 @@ mod tests {
     use std::{
         collections::HashMap,
         fs,
-        io::{Read, Write},
+        io::{ErrorKind, Read, Write},
         net::{Shutdown, TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
@@ -6255,9 +6255,11 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             stream
                 .write_all(raw.as_bytes())
                 .expect("test request should be written");
-            stream
-                .shutdown(Shutdown::Write)
-                .expect("test request write side should shut down");
+            match stream.shutdown(Shutdown::Write) {
+                Ok(()) => {}
+                Err(error) if error.kind() == ErrorKind::NotConnected => {}
+                Err(error) => panic!("test request write side should shut down: {error}"),
+            }
             let mut response = String::new();
             stream
                 .read_to_string(&mut response)
