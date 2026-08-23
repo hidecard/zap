@@ -136,8 +136,7 @@ impl TrustedRegistryPolicy {
         let origin = normalize_registry_origin(source)?;
         if self.origins.len() >= MAX_TRUSTED_REGISTRIES && !self.origins.contains(&origin) {
             return Err(format!(
-                "trusted registry policy exceeds {} origins",
-                MAX_TRUSTED_REGISTRIES
+                "trusted registry policy exceeds {MAX_TRUSTED_REGISTRIES} origins"
             ));
         }
         Ok(self.origins.insert(origin))
@@ -1584,8 +1583,7 @@ fn fetch_source_with_agent_timeout(
         if let Some(length) = expected_length {
             if length > REGISTRY_CLIENT_MAX_RESPONSE {
                 return Err(format!(
-                    "registry response exceeds {} bytes",
-                    REGISTRY_CLIENT_MAX_RESPONSE
+                    "registry response exceeds {REGISTRY_CLIENT_MAX_RESPONSE} bytes"
                 ));
             }
         }
@@ -1607,8 +1605,7 @@ fn fetch_source_with_agent_timeout(
             }
             if bytes.len().saturating_add(count) > REGISTRY_CLIENT_MAX_RESPONSE {
                 return Err(format!(
-                    "registry response exceeds {} bytes",
-                    REGISTRY_CLIENT_MAX_RESPONSE
+                    "registry response exceeds {REGISTRY_CLIENT_MAX_RESPONSE} bytes"
                 ));
             }
             bytes.extend_from_slice(&buffer[..count]);
@@ -1843,10 +1840,10 @@ mod tests {
         response_body: &'static str,
         response_status: &'static str,
     ) -> (String, ureq::Agent, thread::JoinHandle<()>) {
-        let certificate =
+        let rcgen::CertifiedKey { cert, key_pair } =
             rcgen::generate_simple_self_signed(vec!["localhost".to_string()]).unwrap();
-        let certificate_der = certificate.serialize_der().unwrap();
-        let private_key = certificate.serialize_private_key_der();
+        let certificate_der = cert.der().to_vec();
+        let private_key = key_pair.serialize_der();
         let server_certificate = rustls::pki_types::CertificateDer::from(certificate_der.clone());
         let server_key = rustls::pki_types::PrivateKeyDer::Pkcs8(
             rustls::pki_types::PrivatePkcs8KeyDer::from(private_key),

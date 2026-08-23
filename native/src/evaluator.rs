@@ -2565,7 +2565,7 @@ fn ast_expression_with_context_inner(
                         (class_name.clone(), receiver)
                     };
                     let function = funcs
-                        .get(&format!("{dispatch_class}.{}", member))
+                        .get(&format!("{dispatch_class}.{member}"))
                         .ok_or_else(|| format!("undefined method: {dispatch_class}.{member}"))?
                         .clone();
                     check_method_visibility(&function, &dispatch_class, vars, funcs)?;
@@ -5742,8 +5742,8 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
             let first_result = first.expect("first corpus result should be present");
             let second_result = second.expect("second corpus result should be present");
             assert_eq!(
-                format!("{:?}", first_result),
-                format!("{:?}", second_result),
+                format!("{first_result:?}"),
+                format!("{second_result:?}"),
                 "stdlib corpus result was nondeterministic: {name}"
             );
             assert!(

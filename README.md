@@ -45,6 +45,19 @@ Zap is actively evolving toward a production-ready language ecosystem. The stabl
 
 The installation links and archive names in this README describe the v2.2.6 release candidate. The candidate is not published yet; until publication, the [GitHub Releases page](https://github.com/hidecard/zap/releases) remains the source for the latest published archive. The published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) remains immutable. The earlier [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0), [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1), [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2), [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3), and [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4), together with their tags and signed assets, remain immutable. The post-v2.2.0 remediation history and the runtime-safety/helper corrections through v2.2.3 are documented in the [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_EN.md) and the v2.2.3 release notes. The post-v2.2.2 hardening is included in v2.2.3.
 
+## v2.2.6 Dependency Remediation Status
+
+The isolated `chore/dependency-remediation-v2.2.6` branch updates the approved dependency graph and keeps the remediation separate from `master` until its final review and CI validation are complete.
+
+| Area | Verified remediation state |
+|---|---|
+| URL/TLS runtime graph | `ureq 2.12.1`, `url 2.5.8`, `idna 1.1.0`, `rustls-webpki 0.103.15`, and `rustls 0.23.40` with the `ring` provider selected for the TLS fixture dependency |
+| TLS test fixture | `rcgen 0.13.2`, using its current `CertifiedKey` API; this is test-only compatibility maintenance |
+| Development-time time dependency | `time 0.3.47`, which requires Rust 1.88.0 |
+| Security evidence | `cargo-audit 0.22.2` reports zero unresolved advisories across the 87-crate locked graph |
+
+Because `time 0.3.47` declares Rust 1.88.0 as its minimum supported toolchain, the remediation branch pins Rust 1.88.0 in `rust-toolchain.toml` and in the CI quality job. This is a build/toolchain compatibility change only; the Zap language surface, runtime contract, and explicitly deferred Framework/Web/App/IoT scope are unchanged. The v2.2.6 candidate remains unpublished until the clean committed branch, GitHub CI, final release preflight, and published artifact verification all pass.
+
 ## Learning Guide
 
 Start with the [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) to choose a learner, reference, runtime, tooling, deployment, or release path. Then use the [English learning guide](docs/LEARN_ZAP_EN.md) and [English syntax guide](docs/SYNTAX_GUIDE_EN.md) for language reference. Burmese lessons are available in the [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md), [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md), and [မြန်မာ documentation navigation](docs/DOCUMENTATION_NAVIGATION_MM.md).
