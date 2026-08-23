@@ -1,6 +1,6 @@
 # Zap Generic Type Syntax Decision Record
 
-**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.2.7 type-checking contract. No new parser or runtime change is required for this design gate.
+**Decision:** TC-012 generic type syntax is accepted as an implemented baseline for the current v2.3.0 type-checking contract. No new parser or runtime change is required for this design gate.
 
 ## Scope
 

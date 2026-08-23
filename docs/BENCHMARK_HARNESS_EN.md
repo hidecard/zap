@@ -1,6 +1,6 @@
 # Zap Native Benchmark Harness
 
-**Status:** Repeatable benchmark baseline and regression gate for Zap v2.2.7
+**Status:** Repeatable benchmark baseline and regression gate for Zap v2.3.0
 
 The repository now includes `scripts/benchmark_native.sh`, a dependency-free benchmark runner for the native interpreter. It builds `native/target/release/zap` with the locked dependency graph when necessary, creates temporary source fixtures, runs each fixture a configurable number of times, and writes stable raw CSV columns: `suite`, `iteration`, and `elapsed_seconds`. M2-BENCH-01 also writes a provenance sidecar, `ZAP_BENCH_PROVENANCE` (defaulting to the raw CSV basename with `.provenance.tsv`), containing the run status, UTC timestamp, commit, target triple, operating-system/kernel/architecture, CPU description when available, Rust/Cargo versions, binary and benchmark-script SHA-256 digests, repeat/warm-up counts, suite list, and raw-observation path.
 

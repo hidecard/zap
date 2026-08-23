@@ -1,6 +1,6 @@
 # Zap-first Web Framework Guide
 
-**Verified baseline:** Zap v2.2.7 on the `Framework` branch.
+**Verified baseline:** Zap v2.3.0 on the `Framework` branch.
 
 ## Purpose
 

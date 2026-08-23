@@ -1,7 +1,7 @@
 # Zap Traits and Composition RFC
 
 **RFC status:** Design-only proposal; no parser or runtime implementation is included.
-**Verified baseline:** Zap v2.2.7
+**Verified baseline:** Zap v2.3.0
 **Decision target:** Review for a future post-v2.2 language version; v2.2.0 does not enable traits, interfaces, or new inheritance semantics.
 **Audience:** Language designers, runtime maintainers, package authors, and reviewers of future compatibility changes.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package guide](PACKAGE_EN.md) · [Burmese RFC](TRAITS_RFC_MM.md)

@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ verified baseline သည် published v2.2.4 documentation-maintenance release နောက်ပိုင်း HTTP URL invariant reliability maintenance အတွက် v2.2.7 release candidate ဖြစ်ပါသည်။ Historical v2.2.0၊ v2.2.1 နှင့် v2.2.2 tag/asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း `master` တွင် ပြီးစီးသော P2 package၊ async၊ registry၊ editor၊ standard-library နှင့် runtime correction များကို v2.2.3 အထိ explicit production-boundary limitation များနှင့်အတူ ထုတ်ဝေထားပါသည်။
+Zap ၏ လက်ရှိ verified baseline သည် published v2.2.4 documentation-maintenance release နောက်ပိုင်း HTTP URL invariant reliability maintenance အတွက် v2.3.0 release candidate ဖြစ်ပါသည်။ Historical v2.2.0၊ v2.2.1 နှင့် v2.2.2 tag/asset များသည် immutable ဖြစ်ပြီး နောက်ပိုင်း `master` တွင် ပြီးစီးသော P2 package၊ async၊ registry၊ editor၊ standard-library နှင့် runtime correction များကို v2.2.3 အထိ explicit production-boundary limitation များနှင့်အတူ ထုတ်ဝေထားပါသည်။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|
