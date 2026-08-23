@@ -18,7 +18,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 | Item | Status |
 |---|---|
-| Current release line | `v2.6.0` |
+| Current release line | `v2.7.0` |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -30,12 +30,12 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 ## Install
 
-Download the archive matching your operating system and CPU architecture from the [v2.6.0 release page](https://github.com/hidecard/zap/releases/tag/v2.6.0), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
+Download the archive matching your operating system and CPU architecture from the [v2.7.0 release page](https://github.com/hidecard/zap/releases/tag/v2.7.0), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.6.0-linux-x86_64.tar.gz
+tar -xzf zap-2.7.0-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -44,7 +44,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.6.0-macos-arm64.tar.gz
+tar -xzf zap-2.7.0-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -53,7 +53,7 @@ zap --version
 
 ### Windows
 
-The expected archive is `zap-2.6.0-windows-x86_64.zip`.
+The expected archive is `zap-2.7.0-windows-x86_64.zip`.
 
 ```bat
 cd C:\Zap
@@ -194,7 +194,7 @@ Before contributing, also run the documentation, Web scaffold, release-version, 
 
 ## Release provenance
 
-The current source baseline is v2.6.0. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
+The current source baseline is v2.7.0. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
 
 ## License
 

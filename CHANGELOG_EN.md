@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-08-23
+
+### Release engineering
+- Add bounded incremental LSP synchronization, UTF-aware range validation, sequential edit limits, and regression evidence while preserving explicit cross-file refactoring boundaries.
+
 ## [2.6.0] — 2026-08-23
 
 ### Release engineering

@@ -1,6 +1,6 @@
 # Post-v2.4.0 Remediation and Provenance Record
 
-**Record baseline:** v2.6.0 current-master follow-up; v2.4.0 remains immutable
+**Record baseline:** v2.7.0 current-master follow-up; v2.4.0 remains immutable
 
 **Record status:** Current master follow-up record; v2.4.0 remains immutable
 
