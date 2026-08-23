@@ -45,11 +45,24 @@ def receive():
     return json.loads(body.decode("utf-8"))
 
 
+def assert_symbol(expected):
+    send(
+        {
+            "jsonrpc": "2.0",
+            "id": expected[1],
+            "method": "textDocument/documentSymbol",
+            "params": {"textDocument": {"uri": uri}},
+        }
+    )
+    response = receive()
+    assert [item["name"] for item in response["result"]] == [expected[0]]
+
+
 try:
     send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
     initialize = receive()
     sync = initialize["result"]["capabilities"]["textDocumentSync"]
-    assert sync["change"] == 1 and sync["openClose"] is True
+    assert sync["change"] == 2 and sync["openClose"] is True
 
     uri = "file:///protocol-sync.zp"
     send(
@@ -68,53 +81,65 @@ try:
     opened_diagnostics = receive()
     assert opened_diagnostics["method"] == "textDocument/publishDiagnostics"
 
+    # Replace only the function name using a UTF-8-compatible range.
     send(
         {
             "jsonrpc": "2.0",
             "method": "textDocument/didChange",
             "params": {
                 "textDocument": {"uri": uri, "version": 2},
-                "contentChanges": [{"text": "fn second():\n    return 2\n"}],
+                "contentChanges": [
+                    {
+                        "range": {
+                            "start": {"line": 0, "character": 3},
+                            "end": {"line": 0, "character": 8},
+                        },
+                        "text": "second",
+                    }
+                ],
             },
         }
     )
     changed_diagnostics = receive()
     assert changed_diagnostics["method"] == "textDocument/publishDiagnostics"
     assert changed_diagnostics["params"]["diagnostics"] == []
+    assert_symbol(("second", 2))
 
-    send(
-        {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "textDocument/documentSymbol",
-            "params": {"textDocument": {"uri": uri}},
-        }
-    )
-    symbols = receive()
-    assert [item["name"] for item in symbols["result"]] == ["second"]
-
+    # A stale version must not replace the successfully synchronized document.
     send(
         {
             "jsonrpc": "2.0",
             "method": "textDocument/didChange",
             "params": {
-                "textDocument": {"uri": uri, "version": 1},
+                "textDocument": {"uri": uri, "version": 2},
                 "contentChanges": [{"text": "fn stale():\n    return 0\n"}],
             },
         }
     )
+    assert_symbol(("second", 3))
+
+    # An out-of-range incremental edit must also leave the stored document intact.
     send(
         {
             "jsonrpc": "2.0",
-            "id": 3,
-            "method": "textDocument/documentSymbol",
-            "params": {"textDocument": {"uri": uri}},
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {"uri": uri, "version": 4},
+                "contentChanges": [
+                    {
+                        "range": {
+                            "start": {"line": 99, "character": 0},
+                            "end": {"line": 99, "character": 1},
+                        },
+                        "text": "fn invalid():\n    return 0\n",
+                    }
+                ],
+            },
         }
     )
-    after_stale = receive()
-    assert [item["name"] for item in after_stale["result"]] == ["second"]
+    assert_symbol(("second", 4))
 
-    send({"jsonrpc": "2.0", "id": 4, "method": "shutdown", "params": {}})
+    send({"jsonrpc": "2.0", "id": 5, "method": "shutdown", "params": {}})
     assert receive()["result"] is None
     process.stdin.close()
     process.wait(timeout=10)

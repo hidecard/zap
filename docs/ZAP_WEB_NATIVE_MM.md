@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.6.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
+**အတည်ပြုထားသော baseline:** Zap v2.7.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 
@@ -199,6 +199,12 @@ Test layer များကို အောက်ပါအစီအစဉ်ဖ�
 | Operations | readiness၊ drain၊ restart၊ migration lock၊ log redaction၊ resource-boundary test |
 
 Database အသုံးပြုသည့် test များသည် disposable isolated database သုံးရမည်။ Production credential သို့မဟုတ် production data ကို test runner ထဲ မသုံးရပါ။
+
+## LSP synchronization
+
+Native LSP သည် incremental document synchronization (`textDocumentSync.change = 2`) ကို ယခု advertise လုပ်ပါသည်။ `didChange` notification တစ်ခုတွင် sequential full-document သို့မဟုတ် range edit အများဆုံး 128 ခု ပါနိုင်သည်။ Range position များကို negotiated UTF-8၊ UTF-16 သို့မဟုတ် UTF-32 encoding အတိုင်း စစ်ဆေးပြီး character boundary ပေါ်တွင်သာ edit လုပ်ခွင့်ရှိသည်။ Document version များသည် အစဉ်တိုးရမည်ဖြစ်ပြီး 32 MiB workspace byte cap ကို edit တစ်ခုချင်းစီပြီးတိုင်း enforce လုပ်ပါသည်။ Malformed၊ out-of-range၊ oversized၊ မဖွင့်ထားသော document အတွက် range edit နှင့် stale update များကို stored document မပြောင်းဘဲ reject လုပ်ပါသည်။
+
+၎င်းသည် bounded synchronization foundation ဖြစ်ပြီး complete IDE refactoring system မဟုတ်သေးပါ။ Cross-file semantic rename၊ project-wide dependency invalidation၊ incremental compilation၊ debugging နှင့် profiling များသည် သီးခြား milestone များအဖြစ် ဆက်ရှိပါသည်။
 
 ## CLI workflow
 

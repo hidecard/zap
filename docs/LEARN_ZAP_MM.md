@@ -2,7 +2,7 @@
 
 > **ရည်ရွယ်သူ:** Zap ကို ပထမဆုံး install လုပ်ခြင်းမှစ၍ structured၊ typed၊ modular၊ asynchronous၊ tested နှင့် Web-enabled program များ ရေးသားနိုင်သည့် Advanced အဆင့်အထိ လေ့လာလိုသူများအတွက် ဖြစ်ပါသည်။
 
-**စစ်ဆေးထားသော baseline:** Zap v2.6.0
+**စစ်ဆေးထားသော baseline:** Zap v2.7.0
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Standard-library index](STDLIB_INDEX_MM.md) · [English guide](LEARN_ZAP_EN.md)
@@ -22,7 +22,7 @@ Rust toolchain သည် Zap executable ကို build လုပ်ရန်သ
 သင့် operating system နှင့် architecture ကိုက်ညီသော archive ကို [GitHub Releases](https://github.com/hidecard/zap/releases) မှ download လုပ်ပါ။ Extract လုပ်ပြီး executable ကို `PATH` ထဲရှိ directory သို့ ထည့်ကာ Unix စနစ်များတွင် executable permission ပေးပါ။
 
 ```bash
-tar -xzf zap-2.6.0-linux-x86_64.tar.gz
+tar -xzf zap-2.7.0-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
@@ -715,7 +715,7 @@ say task_join_timeout(handle, 1)
 
 ## 20. LSP နှင့် Editor Workflow
 
-Zap တွင် stdio Language Server Protocol implementation ပါဝင်ပြီး diagnostics၊ hover၊ completion၊ signature help၊ definition၊ document/workspace symbols၊ formatting နှင့် documented boundary အတွင်း rename ကို support လုပ်ပါသည်။ LSP သည် full document synchronization ကို advertise လုပ်ပြီး unsupported incremental range edit ကို reject လုပ်ပါသည်။ Cross-file rename သည် complete refactoring feature မဟုတ်သေးပါ။
+Zap တွင် stdio Language Server Protocol implementation ပါဝင်ပြီး diagnostics၊ hover၊ completion၊ signature help၊ definition၊ document/workspace symbols၊ formatting နှင့် documented boundary အတွင်း rename ကို support လုပ်ပါသည်။ LSP သည် bounded incremental synchronization ကို advertise လုပ်ပါသည်။ Change notification တစ်ခုတွင် sequential full-document သို့မဟုတ် range edit အများဆုံး 128 ခု ပါနိုင်ပြီး negotiated UTF-8/UTF-16/UTF-32 position များကို character boundary အတိုင်း စစ်ဆေးပါသည်။ Version များသည် အစဉ်တိုးရမည်ဖြစ်ပြီး 32 MiB workspace byte cap ကို edit တစ်ခုချင်းစီပြီးတိုင်း enforce လုပ်ပါသည်။ Malformed၊ stale၊ oversized၊ out-of-range သို့မဟုတ် မဖွင့်ထားသော document အတွက် range edit များကို stored text မပြောင်းဘဲ reject လုပ်ပါသည်။ Cross-file rename သည် complete refactoring feature မဟုတ်သေးပါ။
 
 ```bash
 python3 scripts/validate_vscode_assets.py

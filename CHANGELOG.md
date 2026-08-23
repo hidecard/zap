@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-08-23
+
+### Release summary
+- Add bounded incremental LSP synchronization with UTF-aware range safety and deterministic rejection of malformed edits.
+
 ## [2.6.0] - 2026-08-23
 
 ### Release summary
