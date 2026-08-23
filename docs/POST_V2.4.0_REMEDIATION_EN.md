@@ -1,5 +1,7 @@
 # Post-v2.4.0 Remediation and Provenance Record
 
+**Record baseline:** v2.5.0 current-master follow-up; v2.4.0 remains immutable
+
 **Record status:** Current master follow-up record; v2.4.0 remains immutable
 
 **Scope:** This record identifies corrections and documentation work that may land after the published v2.4.0 tag. It does not rewrite the v2.4.0 release or imply that later commits are present in its archives.

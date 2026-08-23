@@ -1,5 +1,7 @@
 # P0 AST Foundation အခြေအနေ
 
+**စစ်ဆေးထားသော baseline:** Zap v2.5.0
+
 **Zap v2.4.0 နှင့် စစ်ဆေးအတည်ပြုထားပါသည်။**
 
 ## AST migration အခြေအနေ

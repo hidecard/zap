@@ -1,5 +1,7 @@
 # Zap Traits and Composition RFC
 
+**Verified baseline:** Zap v2.5.0
+
 **RFC status:** Design-only proposal; no parser or runtime implementation is included.
 **Verified baseline:** Zap v2.4.0
 **Decision target:** Review for a future post-v2.2 language version; v2.2.0 does not enable traits, interfaces, or new inheritance semantics.

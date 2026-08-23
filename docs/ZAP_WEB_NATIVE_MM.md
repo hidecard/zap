@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.4.0၊ `Framework` branch။
+**အတည်ပြုထားသော baseline:** Zap v2.5.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 
