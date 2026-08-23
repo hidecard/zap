@@ -8,7 +8,7 @@ policy="$root_dir/deploy/zap-host-deployment-policy.toml"
 env_example="$root_dir/deploy/zap-host.env.example"
 
 for required in "$unit" "$ingress" "$policy" "$env_example"; do
-    test -f "$required" || { echo "missing zap-host deployment artifact: $required" >&2; exit 1; }
+    [[ -f "$required" ]] || { echo "missing zap-host deployment artifact: $required" >&2; exit 1; }
 done
 
 require_exact() {

@@ -251,10 +251,10 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       scaffold_dir=$(mktemp -d)
       scaffold_output=$(mktemp)
       if "$ZAP_BIN" new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && test -f "$scaffold_dir/project/server.zp" \
-        && test -f "$scaffold_dir/project/public/index.html" \
-        && test -f "$scaffold_dir/project/public/assets/app.css" \
-        && test -f "$scaffold_dir/project/public/assets/app.js" \
+        && [[ -f "$scaffold_dir/project/server.zp" ]] \
+        && [[ -f "$scaffold_dir/project/public/index.html" ]] \
+        && [[ -f "$scaffold_dir/project/public/assets/app.css" ]] \
+        && [[ -f "$scaffold_dir/project/public/assets/app.js" ]] \
         && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
         && grep -Fq '/assets/*path' "$scaffold_dir/project/routes.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes.zp" \
