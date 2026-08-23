@@ -1189,14 +1189,10 @@ fn print_test_report(results: &[TestResult], skipped: usize, json: bool) {
             .collect::<Vec<_>>()
             .join(",");
         println!(
-            "{{\"passed\":{},\"failed\":{},\"skipped\":{},\"tests\":[{}]}}",
-            passed, failed, skipped, cases
+            "{{\"passed\":{passed},\"failed\":{failed},\"skipped\":{skipped},\"tests\":[{cases}]}}"
         );
     } else {
-        println!(
-            "test result: {} passed; {} failed; {} skipped",
-            passed, failed, skipped
-        );
+        println!("test result: {passed} passed; {failed} failed; {skipped} skipped");
     }
 }
 

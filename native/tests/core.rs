@@ -141,10 +141,7 @@ fn reads_and_writes_text_files() {
     let file = std::env::temp_dir().join("zap_file_test.txt");
     let program = std::env::temp_dir().join("zap_file_builtins_test.zp");
     let path = file.to_string_lossy().replace('\\', "/");
-    let source = format!(
-        "write_text(\"{}\", \"hello\")\nsay read_text(\"{}\")\n",
-        path, path
-    );
+    let source = format!("write_text(\"{path}\", \"hello\")\nsay read_text(\"{path}\")\n");
     std::fs::write(&program, source).unwrap();
     let output = Command::new(binary()).arg(&program).output().unwrap();
     let _ = std::fs::remove_file(&file);
@@ -523,7 +520,7 @@ fn runs_v070_collection_and_line_helpers() {
         char::from(92),
         &format!("{}{}", char::from(92), char::from(92)),
     );
-    let source = format!("let values = [4, 1, 8, 2]\nsay is_empty(values)\nsay sum(values)\nsay join(sort(values), \",\")\nwrite_lines(\"{}\", [\"one\", \"two\"])\nsay join(read_lines(\"{}\"), \"|\")\n", path, path);
+    let source = format!("let values = [4, 1, 8, 2]\nsay is_empty(values)\nsay sum(values)\nsay join(sort(values), \",\")\nwrite_lines(\"{path}\", [\"one\", \"two\"])\nsay join(read_lines(\"{path}\"), \"|\")\n");
     std::fs::write(&file, source).unwrap();
     let output = Command::new(binary()).arg(&file).output().unwrap();
     let _ = std::fs::remove_file(&file);
@@ -5270,8 +5267,7 @@ fn registry_gc_dry_run_is_safe_and_deletion_is_deterministic() {
     std::fs::write(
         &index,
         format!(
-            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{}"}}]}}"#,
-            checksum
+            r#"{{"packages":[{{"name":"demo","version":"1.0.0","source":"file://demo.pkg","checksum":"{checksum}"}}]}}"#
         ),
     )
     .unwrap();

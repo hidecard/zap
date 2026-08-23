@@ -58,8 +58,7 @@ pub(crate) fn read_limited_text(path: &Path, operation: &str) -> Result<String, 
     let metadata = fs::metadata(path).map_err(|e| format!("{operation} failed: {e}"))?;
     if metadata.len() > MAX_FILE_BYTES {
         return Err(format!(
-            "{operation} failed: file exceeds the {} byte limit",
-            MAX_FILE_BYTES
+            "{operation} failed: file exceeds the {MAX_FILE_BYTES} byte limit"
         ));
     }
     fs::read_to_string(path).map_err(|e| format!("{operation} failed: {e}"))
@@ -72,8 +71,7 @@ pub(crate) fn write_limited_text(
 ) -> Result<(), String> {
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(format!(
-            "{operation} failed: content exceeds the {} byte limit",
-            MAX_FILE_BYTES
+            "{operation} failed: content exceeds the {MAX_FILE_BYTES} byte limit"
         ));
     }
     fs::write(path, content).map_err(|e| format!("{operation} failed: {e}"))

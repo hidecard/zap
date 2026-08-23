@@ -687,7 +687,7 @@ impl ThreadedRuntime {
                 return Err("async read requires a regular file".to_owned());
             }
             if metadata.len() > max_bytes {
-                return Err(format!("async read exceeds {} byte limit", max_bytes));
+                return Err(format!("async read exceeds {max_bytes} byte limit"));
             }
             std::fs::read(&path).map_err(|error| error.to_string())
         })

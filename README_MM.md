@@ -47,6 +47,19 @@ Zap သည် production-ready language ecosystem တစ်ခုအဖြစ်
 
 ဤ README ထဲရှိ installation link နှင့် archive name များသည် v2.2.6 release candidate ကို ရည်ညွှန်းထားခြင်း ဖြစ်ပါသည်။ Candidate ကို မထုတ်ဝေရသေးသဖြင့် ထုတ်ဝေပြီးသား archive အတွက် [GitHub Releases page](https://github.com/hidecard/zap/releases) ကို အသုံးပြုရမည် ဖြစ်ပြီး လက်ရှိနောက်ဆုံး published release သည် v2.2.5 ဖြစ်ပါသည်။ Published [v2.2.5 release](https://github.com/hidecard/zap/releases/tag/v2.2.5) သည် immutable အဖြစ် ဆက်ရှိပါသည်။ အစောပိုင်း [v2.2.0 release](https://github.com/hidecard/zap/releases/tag/v2.2.0)၊ [v2.2.1 release](https://github.com/hidecard/zap/releases/tag/v2.2.1)၊ [v2.2.2 release](https://github.com/hidecard/zap/releases/tag/v2.2.2)၊ [v2.2.3 release](https://github.com/hidecard/zap/releases/tag/v2.2.3) နှင့် [v2.2.4 release](https://github.com/hidecard/zap/releases/tag/v2.2.4) တို့၏ tag နှင့် signed asset များသည် immutable ဖြစ်သည်။ v2.2.0 နောက်ပိုင်း remediation history နှင့် v2.2.3 အထိ runtime-safety/helper correction များကို [remediation/provenance record](docs/POST_V2.2.0_REMEDIATION_MM.md) နှင့် v2.2.3 release note တွင် မှတ်တမ်းတင်ထားပါသည်။ post-v2.2.2 hardening ကို v2.2.3 တွင် ထည့်သွင်းထားပြီး v2.2.4 တွင် active-baseline documentation synchronization နှင့် v2.2.5 တွင် HTTP URL invariant hardening ပါဝင်သည်။
 
+## v2.2.6 Dependency Remediation Status
+
+သီးခြားခွဲထားသော `chore/dependency-remediation-v2.2.6` branch တွင် ခွင့်ပြုထားသော dependency graph ကို upgrade လုပ်ထားပြီး final review နှင့် CI validation မပြီးမချင်း `master` နှင့် မပေါင်းစည်းသေးပါ။
+
+| အပိုင်း | အတည်ပြုထားသော remediation အခြေအနေ |
+|---|---|
+| URL/TLS runtime graph | `ureq 2.12.1`၊ `url 2.5.8`၊ `idna 1.1.0`၊ `rustls-webpki 0.103.15` နှင့် TLS fixture dependency အတွက် `ring` provider ကို ရွေးထားသော `rustls 0.23.40` |
+| TLS test fixture | လက်ရှိ `CertifiedKey` API ကို အသုံးပြုသော `rcgen 0.13.2` ဖြစ်ပြီး test-only compatibility maintenance ဖြစ်သည် |
+| Development-time time dependency | `time 0.3.47` ဖြစ်ပြီး Rust 1.88.0 လိုအပ်သည် |
+| Security evidence | `cargo-audit 0.22.2` သည် locked graph ရှိ crate dependency ၈၇ ခုတွင် unresolved advisory သုညခုကို report လုပ်သည် |
+
+`time 0.3.47` ၏ minimum supported toolchain သည် Rust 1.88.0 ဖြစ်သောကြောင့် remediation branch တွင် `rust-toolchain.toml` နှင့် CI quality job နှစ်ခုလုံး၌ Rust 1.88.0 ကို pin လုပ်ထားပါသည်။ ၎င်းသည် build/toolchain compatibility ပြောင်းလဲမှုသာဖြစ်ပြီး Zap language surface၊ runtime contract နှင့် အတိအလင်း deferred ထားသော Framework/Web/App/IoT scope များ မပြောင်းလဲပါ။ Clean committed branch၊ GitHub CI၊ final release preflight နှင့် published artifact verification အားလုံး pass မဖြစ်မချင်း v2.2.6 candidate ကို မထုတ်ဝေသေးပါ။
+
 ## Learning Guide
 
 စတင်လေ့လာမည့်လမ်းကြောင်းကို ရွေးချယ်ရန် [မြန်မာ documentation navigation](docs/DOCUMENTATION_NAVIGATION_MM.md) ကို အရင်ဖတ်ရှုပါ။ ထို့နောက် [မြန်မာ learning guide](docs/LEARN_ZAP_MM.md) နှင့် [မြန်မာ syntax guide](docs/SYNTAX_GUIDE.md) ကို အသုံးပြုနိုင်ပါသည်။ English lessons အတွက် [English learning guide](docs/LEARN_ZAP_EN.md)၊ [English syntax guide](docs/SYNTAX_GUIDE_EN.md) နှင့် [English documentation navigation](docs/DOCUMENTATION_NAVIGATION_EN.md) ကို ဖတ်ရှုနိုင်ပါသည်။
