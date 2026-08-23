@@ -36,7 +36,7 @@
     },
     "builtins": {
       "patterns": [
-        {"match": "\\b(?:len|str|type|memory_stats|assert|upper|lower|trim|split|join|contains|replace|abs|min|max|pow|sqrt|sum|range|keys|entries|enumerate|count|reverse|sort|read_text|write_text|read_lines|write_lines|file_metadata|atomic_write|json|from_json|from_json_typed|char_at|substring|codepoints|path_join|now|sleep|utc_now|duration_parts|duration_between|spawn|task_join|task_is_ready|task_cancel|task_join_timeout|async_capabilities|log_record|log_json|env|has_env|env_get|config_dir|config_path|basename|dirname|url_parse|url_encode|url_decode|http_get|http_request|http_serve_once|process_run)(?=\\s*\\()", "name": "support.function.builtin.zap"}
+        {"match": "\\b(?:len|str|type|memory_stats|assert|upper|lower|trim|split|join|contains|replace|abs|min|max|pow|sqrt|sum|range|keys|entries|enumerate|count|reverse|sort|read_text|write_text|read_lines|write_lines|file_metadata|atomic_write|json|from_json|from_json_typed|char_at|substring|codepoints|path_join|now|sleep|utc_now|duration_parts|duration_between|spawn|task_join|task_is_ready|task_cancel|task_join_timeout|async_capabilities|log_record|log_json|env|has_env|env_get|config_dir|config_path|basename|dirname|url_parse|url_encode|url_decode|http_get|http_request|http_serve_once|web_static|web_serve|process_run)(?=\\s*\\()", "name": "support.function.builtin.zap"}
       ]
     },
     "functions": {
