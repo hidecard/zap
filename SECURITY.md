@@ -1,6 +1,6 @@
 # Security Policy
 
-**Verified baseline:** Zap v2.2.7
+**Verified baseline:** Zap v2.3.0
 **Purpose:** Security-maintainer and release-operator reference for supported versions, reporting, provenance, and release-integrity controls.
 **Navigation:** [Documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md) · [Deployment boundaries](docs/DEPLOYMENT_EN.md) · [Release signing](docs/RELEASE_SIGNING_EN.md) · [Release version policy](docs/RELEASE_VERSION_POLICY_EN.md)
 
@@ -10,7 +10,7 @@ Security fixes are applied to the latest version published in the [GitHub Releas
 
 | Version | Supported |
 |---|---|
-| Latest `v2.2.x` | Yes |
+| Latest `v2.3.x` | Yes |
 | Older versions | Best effort only |
 
 ## Reporting a Vulnerability
@@ -29,4 +29,4 @@ Zap is experimental software. Do not execute untrusted Zap programs with access 
 
 ## Release Integrity
 
-Release artifacts are published through the repository's GitHub Actions workflow. The published [v2.2.7 release](https://github.com/hidecard/zap/releases/tag/v2.2.7) is the latest official distribution; verify its checksums and signatures before distributing it. The published v2.2.5 release and historical v2.2.0–v2.2.4 tags and assets remain immutable. v2.2.7 confines line-based file I/O to the active workspace, bounds synchronous sleep and exponentiation, validates strict locked builds, rejects malformed URL ports, skips symlink loops during test discovery, and uses best-effort platform process-tree termination on timeout/cancellation. These controls are not an OS sandbox: portable filesystem check/use races, complete DNS-to-connection pinning, and universal descendant cleanup remain host/deployment boundaries. The released v2.2.7 dependency graph is `ureq 2.12.1`, `url 2.5.8`, `idna 1.1.0`, `rustls 0.23.40`, `rustls-webpki 0.103.15`, `rcgen 0.13.2`, and dev-only `time 0.3.47`; strict `cargo-audit 0.22.2` reports zero unresolved advisories across 87 locked crate dependencies. Because `time 0.3.47` requires Rust 1.88.0, the released source and CI quality job use Rust 1.88.0. The release workflow [32638479414](https://github.com/hidecard/zap/actions/runs/32638479414) published from tagged commit [`d1d6816`](https://github.com/hidecard/zap/commit/d1d6816d7d39198b4a9778d531e29cd7b4e1f38a), and the published archives plus release metadata passed independent checksum/signature verification.
+Release artifacts are published through the repository's GitHub Actions workflow. The current v2.3.0 source baseline is tracked at the [v2.3.0 release reference](https://github.com/hidecard/zap/releases/tag/v2.3.0); verify checksums and signatures for published assets before distributing them. The published v2.2.7 release and historical v2.2.0–v2.2.6 tags and assets remain immutable. The integrated v2.3.0 source retains workspace-confined line I/O, bounded sleep and exponentiation, strict locked-build validation, malformed-port rejection, cycle-safe test discovery, best-effort process-tree cleanup, JSON-cycle protection, bounded collection-producing builtins, and restricted HTTP connection pinning after DNS validation. These controls are not an OS sandbox: portable filesystem check/use races and universal descendant cleanup remain host/deployment boundaries. The locked dependency graph uses `ureq 2.12.1`, `url 2.5.8`, `idna 1.1.0`, `rustls 0.23.40`, `rustls-webpki 0.103.15`, `rcgen 0.13.2`, and dev-only `time 0.3.47`; strict `cargo-audit 0.22.2` evidence is recorded in [RustSec audit evidence](docs/RUSTSEC_AUDIT_EN.md). Because `time 0.3.47` requires Rust 1.88.0, the source and CI quality job use Rust 1.88.0. Published artifacts must pass the release preflight, checksum, signature, and provenance gates before distribution.
