@@ -1,3 +1,4 @@
+use crate::value::collect_bounded_values;
 use crate::Value;
 
 pub(crate) const MAX_SLEEP_MILLISECONDS: i64 = 60_000;
@@ -73,11 +74,10 @@ pub(crate) fn binary(name: &str, left: Value, right: Value) -> Result<Option<Val
             _ => return Err("max expects numbers".into()),
         },
         "split" => match (left, right) {
-            (Value::Text(text), Value::Text(separator)) => Value::List(
-                text.split(&separator)
-                    .map(|part| Value::Text(part.into()))
-                    .collect(),
-            ),
+            (Value::Text(text), Value::Text(separator)) => Value::List(collect_bounded_values(
+                text.split(&separator).map(|part| Value::Text(part.into())),
+                "split",
+            )?),
             _ => return Err("split expects text and separator".into()),
         },
         _ => return Ok(None),
