@@ -1,0 +1,43 @@
+# B2 candidate type checker written in Zap.
+# This is a provisional corpus-limited implementation. Native Rust remains the
+# reference type checker and owns the complete language semantics.
+
+export fn diagnostic(source_name, line, column, message):
+    return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
+
+export fn expression_type(expression):
+    let value = trim(expression)
+    if starts_with(value, "\""):
+        return "text"
+    if value == "true" or value == "false":
+        return "bool"
+    if contains(value, "if true then") and contains(value, "else"):
+        return "number"
+    if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
+        return "number"
+    return "any"
+
+export fn check_line(line, line_number, source_name):
+    let declaration = trim(line)
+    if not starts_with(declaration, "let ") or not contains(declaration, ":") or not contains(declaration, " = "):
+        return none
+    let assignment = split(declaration, " = ")
+    let left = trim(assignment[0])
+    let expression = assignment[1]
+    let annotation_parts = split(left, ":")
+    let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
+    let annotation = trim(annotation_parts[1])
+    let inferred = expression_type(expression)
+    if annotation == "number" and inferred == "text":
+        return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects number, got text")
+    return none
+
+export fn check(source, source_name):
+    let lines = split(source, "\n")
+    let line_number = 0
+    for line in lines:
+        line_number = line_number + 1
+        let error = check_line(line, line_number, source_name)
+        if error != none:
+            return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
+    return json({"diagnostics": [], "kind": "zap.typecheck", "ok": true, "schema_version": 1, "source_name": source_name})
