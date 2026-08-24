@@ -1,0 +1,3 @@
+fn need_number(value: number):
+    return value
+let answer: number = need_number("bad")

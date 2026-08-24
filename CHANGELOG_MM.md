@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Zap-only bootstrap foundations
+- Provisional Zap-owned type-checker candidate ကို annotated function တစ်ခု၊ return propagation နှင့် deterministic incompatible function-call diagnostic အထိ ချဲ့ထားပါသည်။ Type checking နှင့် typed IR အပြည့်အစုံသည် native-owned အဖြစ် ဆက်ရှိပြီး stage သည် B0 ဖြစ်ပါသည်။
+
 ## [2.11.1] — 2026-08-24
 
 ### Zap-only bootstrap foundations
