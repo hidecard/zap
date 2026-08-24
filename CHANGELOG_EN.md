@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.10.0] — 2026-08-24
+
+### Release engineering
+- Added bounded native Web request validation with typed ResultOk/ResultErr values and centralized Result-aware HTTP error mapping, with scaffold, catalog, policy, and bilingual documentation coverage.
+
 ## [2.9.2] — 2026-08-24
 
 ### Release engineering

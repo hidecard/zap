@@ -10,7 +10,7 @@ Security fixes are applied to the latest version published in the [GitHub Releas
 
 | Version | Supported |
 |---|---|
-| Latest `v2.9.x` | Yes |
+| Latest `v2.10.x` | Yes |
 | Older versions | Best effort only |
 
 ## Reporting a Vulnerability
