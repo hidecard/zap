@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [2.11.1] — 2026-08-24
+
 ### Zap-only bootstrap foundations
 - Annotated declaration၊ compatible conditional expression နှင့် incompatible number annotation များအတွက် ပထမဆုံး provisional Zap-owned type-checker candidate ကို deterministic CI/release-preflight coverage နှင့်အတူ ထည့်သွင်းထားပါသည်။
 - Annotated declaration fixture အတွက် candidate-only Zap typed-IR producer ကို ထည့်သွင်းပြီး ၎င်း၏ owned node field များကို native reference artifact နှင့် နှိုင်းယှဉ်ထားပါသည်။ Type checking နှင့် typed IR အပြည့်အစုံသည် native-owned အဖြစ် ဆက်ရှိပြီး stage သည် B0 အဖြစ်သာ ဆက်ရှိပါသည်။

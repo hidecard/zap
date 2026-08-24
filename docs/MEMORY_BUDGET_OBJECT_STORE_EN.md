@@ -1,6 +1,6 @@
 # MemoryBudget and ObjectStore Contract
 
-**Verified baseline:** Zap v2.11.0
+**Verified baseline:** Zap v2.11.1
 
 **Design status:** M2-MEM-02 logical accounting and rollback slice
 

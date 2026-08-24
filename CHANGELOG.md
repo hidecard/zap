@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.1] - 2026-08-24
+
+### Release summary
+- Provisional Zap-owned type-checker candidate၊ candidate-only typed-IR producer နှင့် deterministic B2 differential gates ကို ထည့်သွင်းထားပြီး B0/non-self-hosted boundary ကို ထိန်းသိမ်းထားသည်။
+
 ## [2.11.0] - 2026-08-24
 
 ### Release summary

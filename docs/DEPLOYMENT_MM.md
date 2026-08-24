@@ -1,6 +1,6 @@
 # Zap Registry Production Deployment Boundaries
 
-**Verified baseline:** Zap v2.11.0 development line
+**Verified baseline:** Zap v2.11.1 development line
 **ရည်ရွယ်ချက်:** Local နှင့် public registry deployment boundary၊ validation၊ TLS၊ supervision၊ credential၊ quota နှင့် egress control များအတွက် operator reference ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Package author guide](PACKAGE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Security policy](../SECURITY.md) · [Production operations](PRODUCTION_OPERATIONS_MM.md) · [Release policy](RELEASE_VERSION_POLICY_MM.md)
 
