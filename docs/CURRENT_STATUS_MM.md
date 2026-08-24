@@ -1,15 +1,15 @@
 # Zap လက်ရှိအခြေအနေ
 
 **အခြေအနေ label:** active
-**နောက်ဆုံး publish လုပ်ထားသော release:** [v2.11.9](https://github.com/hidecard/zap/releases/tag/v2.11.9)
-**နောက် release line:** v2.11.10 preparation
+**နောက်ဆုံး publish လုပ်ထားသော release:** [v2.11.10](https://github.com/hidecard/zap/releases/tag/v2.11.10)
+**နောက် release line:** v2.11.11 preparation
 **Bootstrap stage:** B0
 
 > Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
 
 ## Release နှင့် provenance
 
-နောက်ဆုံး publish လုပ်ထားသော release သည် v2.11.9 ဖြစ်သည်။ ၎င်း၏ tag နှင့် workflow record များသည် immutable release evidence ဖြစ်ပြီး နောက် release သည် tag အသစ်ကိုသာ အသုံးပြုရမည်၊ ယခင် tag များကို rewrite မလုပ်ရ။ Publish လုပ်ထားသော release တစ်ခုစီတွင် versioned manifest၊ aggregate checksum၊ detached signature နှင့် signed provenance asset ပါဝင်သည်။
+နောက်ဆုံး publish လုပ်ထားသော release သည် v2.11.10 ဖြစ်သည်။ ၎င်း၏ tag နှင့် workflow record များသည် immutable release evidence ဖြစ်ပြီး နောက် release သည် tag အသစ်ကိုသာ အသုံးပြုရမည်၊ ယခင် tag များကို rewrite မလုပ်ရ။ Publish လုပ်ထားသော release တစ်ခုစီတွင် versioned manifest၊ aggregate checksum၊ detached signature နှင့် signed provenance asset ပါဝင်သည်။
 
 Versioned provenance asset သည် release identity အတွက် canonical machine-readable record ဖြစ်သည်။ ၎င်းတွင် source URI၊ tag/ref၊ source commit၊ workflow run ID၊ reproducible manifest နှင့် checksum၊ signing metadata နှင့် SHA-256 digest/size ပါသော artifact subjects များကို မှတ်တမ်းတင်သည်။ Release verifier သည် downloaded archive နှင့် signature များနှင့်အတူ ဤ record ကို စစ်ဆေးသည်။
 
@@ -28,7 +28,7 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 
 ## နောက် bounded work
 
-v2.11.8 release တွင် text literal ဖြင့် index လုပ်သော bounded `map<text,number>` element နှင့် paired incompatible assignment ကို B2 evidence corpus ထဲသို့ ထည့်ထားသည်။ v2.11.9 release တွင် indented `if` body တစ်ခုအတွင်း tracked `option<number>` ကို direct `is_some` guard ဖြင့် narrowing လုပ်သည့် bounded case နှင့် paired incompatible payload assignment ကို ထည့်ထားသည်။ နောက် roadmap အလုပ်သည် ဤ bounded branch slice ၏ အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ဆက်လက်ချဲ့ထွင်ရန် ဖြစ်သည်။ Malformed-source no-panic behavior ကို regression-gated အဖြစ် ဆက်လက်ထိန်းသိမ်းမည်ဖြစ်ပြီး candidate typed-IR ထုတ်လုပ်မှုကိုလည်း ထို owned analysis တစ်ခုတည်းမှသာ တိုးချဲ့မည်။ Generic declaration၊ nested map၊ deeper nested inference၊ compound guard၊ loop narrowing၊ reassignment invalidation၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
+v2.11.8 release တွင် text literal ဖြင့် index လုပ်သော bounded `map<text,number>` element နှင့် paired incompatible assignment ကို B2 evidence corpus ထဲသို့ ထည့်ထားသည်။ v2.11.9 release တွင် indented `if` body တစ်ခုအတွင်း tracked `option<number>` ကို direct `is_some` guard ဖြင့် narrowing လုပ်သည့် bounded case နှင့် paired incompatible payload assignment ကို ထည့်ထားသည်။ v2.11.10 release တွင် branch-hygiene audit၊ safe no-merge ဆုံးဖြတ်ချက်နှင့် superseded `fix/json-cycle-guard` history ကို ရည်ရွယ်ချက်ရှိရှိ ထိန်းသိမ်းထားမှုကို မှတ်တမ်းတင်ထားသည်။ နောက် roadmap အလုပ်သည် ဤ bounded branch slice ၏ အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ဆက်လက်ချဲ့ထွင်ရန် ဖြစ်သည်။ Malformed-source no-panic behavior ကို regression-gated အဖြစ် ဆက်လက်ထိန်းသိမ်းမည်ဖြစ်ပြီး candidate typed-IR ထုတ်လုပ်မှုကိုလည်း ထို owned analysis တစ်ခုတည်းမှသာ တိုးချဲ့မည်။ Generic declaration၊ nested map၊ deeper nested inference၊ compound guard၊ loop narrowing၊ reassignment invalidation၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
 
 ## Developer environment
 
