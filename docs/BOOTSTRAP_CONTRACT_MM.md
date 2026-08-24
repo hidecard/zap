@@ -14,6 +14,12 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 ထို့ကြောင့် လက်ရှိ compiler ကို build လုပ်ရန် Rust/Cargo လိုအပ်နေသေးသည်။ Operating-system loader နှင့် explicit documented platform boundary များကို infrastructure boundary အဖြစ် လက်ခံထားပြီး အခြား language runtime နှင့် framework များကို လက်ရှိ Zap compiler path တွင် မလိုအပ်စေရ။
 
+## B1 candidate status
+
+ပထမဆုံး Zap-owned lexer candidate ကို [`bootstrap/b1/lexer.zp`](../bootstrap/b1/lexer.zp) တွင် ထည့်ထားသည်။ ၎င်းသည် initial owned corpus အတွက် identifier၊ number၊ text၊ comment၊ whitespace၊ operator၊ delimiter၊ Unicode နှင့် fail-closed diagnostic path များကို လက်ရှိအခြေအနေတွင် cover လုပ်သည်။ [`scripts/bootstrap/verify_b1_lexer.sh`](../scripts/bootstrap/verify_b1_lexer.sh) သည် candidate ကို run လုပ်ပြီး B0 token/diagnostic artifact များနှင့် output ကို နှိုင်းယှဉ်သည်။
+
+ဤအရာသည် **corpus-limited B1 foundation** ဖြစ်ပြီး B1 compiler အပြည့်အစုံ မဟုတ်သေးပါ။ Candidate သည် reference owner မဟုတ်သေး၊ Rust lexer ကို မအစားထိုးသေးပါ။ Bootstrap stage claim ကို မြှင့်ရန် differential fixture များဖြင့် ဆက်လက်ချဲ့ထွင်ရမည်။
+
 ## Canonical inspection commands
 
 Native CLI တွင် read-only B0 inspection command များ ထည့်ပြီးဖြစ်သည်။
@@ -41,4 +47,4 @@ B4 bootstrap check မအောင်မြင်သေးသရွေ့ releas
 
 ## နောက် gate
 
-နောက် implementation gate သည် B1 ဖြစ်သည်။ B0 fixture corpus တွင် သတ်မှတ်ထားသော token schema ကို ထုတ်ပေးနိုင်သည့် Zap-owned lexer နှင့် candidate output ကို Rust reference နှင့် နှိုင်းယှဉ်သည့် differential runner ကို တည်ဆောက်ရမည်။ Parser migration၊ type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
+လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer သည် owned corpus အပြည့်ကို cover လုပ်ရမည်။ Differential runner သည် valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် candidate output ကို Rust reference နှင့် နှိုင်းယှဉ်ရမည်။ Parser migration၊ type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။

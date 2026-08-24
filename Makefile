@@ -19,10 +19,13 @@ host-test:
 bootstrap-test:
 	./scripts/bootstrap/verify_b0_artifacts.sh --release
 
+bootstrap-b1-test:
+	./scripts/bootstrap/verify_b1_lexer.sh
+
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
 
-test: legacy-test native-test host-test bootstrap-test
+test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test
 
 package: native
 	./package_release.sh x86_64-unknown-linux-gnu

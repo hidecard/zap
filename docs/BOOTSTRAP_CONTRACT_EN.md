@@ -14,6 +14,12 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 Rust/Cargo is therefore still required to build the current compiler. The operating-system loader and explicitly documented platform boundary are accepted as infrastructure boundaries, while other language runtimes and frameworks are not required by the current Zap compiler path.
 
+## B1 candidate status
+
+A first Zap-owned lexer candidate is now checked in at [`bootstrap/b1/lexer.zp`](../bootstrap/b1/lexer.zp). It covers the current identifier, number, text, comment, whitespace, operator, delimiter, Unicode, and fail-closed diagnostic paths needed by the initial owned corpus. [`scripts/bootstrap/verify_b1_lexer.sh`](../scripts/bootstrap/verify_b1_lexer.sh) executes the candidate and compares its output with the B0 token/diagnostic artifacts.
+
+This is a **corpus-limited B1 foundation**, not a completed B1 compiler. The candidate is not yet the reference owner, does not replace the Rust lexer, and must expand through differential fixtures before the repository can advance the bootstrap stage claim.
+
 ## Canonical inspection commands
 
 The native CLI now exposes read-only B0 inspection commands:
@@ -41,4 +47,4 @@ No release may use the B4 wording before the B4 bootstrap checks pass. Future se
 
 ## Next gate
 
-The next implementation gate is B1: a Zap-owned lexer that emits the token schema defined by the B0 fixture corpus and a differential runner that compares candidate output with the Rust reference. Parser migration, type checking, VM work, and native-backend work must remain behind that gate rather than being claimed prematurely.
+The active implementation gate remains B1 parity expansion: the Zap-owned lexer must cover the full owned corpus and its differential runner must compare candidate output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. Parser migration, type checking, VM work, and native-backend work must remain behind that gate rather than being claimed prematurely.

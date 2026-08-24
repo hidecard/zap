@@ -44,3 +44,4 @@ SPEC-042	bootstrap-diagnostics	docs/BOOTSTRAP_CONTRACT_EN.md#Canonical inspectio
 SPEC-043	bootstrap-stdlib	docs/BOOTSTRAP_CONTRACT_EN.md#Current B0 boundary	docs/BOOTSTRAP_CONTRACT_MM.md#လက်ရှိ B0 boundary	bootstrap/fixtures/stdlib/catalog.json	implemented	normative
 SPEC-044	bootstrap-platform	docs/BOOTSTRAP_CONTRACT_EN.md#Current B0 boundary	docs/BOOTSTRAP_CONTRACT_MM.md#လက်ရှိ B0 boundary	bootstrap/fixtures/metadata/platform_seed.json	implemented	normative
 SPEC-045	bootstrap-versioning	docs/BOOTSTRAP_CONTRACT_EN.md#Stage policy	docs/BOOTSTRAP_CONTRACT_MM.md#အဆင့်ဆိုင်ရာ policy	bootstrap/contracts/VERSIONS.toml	implemented	normative
+SPEC-046	bootstrap-b1-lexer	docs/BOOTSTRAP_CONTRACT_EN.md#B1 candidate status	docs/BOOTSTRAP_CONTRACT_MM.md#B1 candidate status	scripts/bootstrap/verify_b1_lexer.sh	implemented	normative

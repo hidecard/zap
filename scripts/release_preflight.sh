@@ -478,6 +478,9 @@ run_contract_validation() {
   bash scripts/bootstrap/verify_b0_artifacts.sh --release
   pass "B0 bootstrap artifact reproducibility contract passed"
 
+  bash scripts/bootstrap/verify_b1_lexer.sh
+  pass "B1 Zap-owned lexer differential contract passed"
+
   bash scripts/test_lsp_semantic_parity.sh
   pass "LSP and VS Code semantic-parity contract passed"
 
