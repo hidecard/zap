@@ -1,15 +1,15 @@
 # Zap လက်ရှိအခြေအနေ
 
 **အခြေအနေ label:** active
-**နောက်ဆုံး publish လုပ်ထားသော release:** [v2.11.4](https://github.com/hidecard/zap/releases/tag/v2.11.4)
-**နောက် release line:** v2.11.5 preparation
+**နောက်ဆုံး publish လုပ်ထားသော release:** [v2.11.5](https://github.com/hidecard/zap/releases/tag/v2.11.5)
+**နောက် release line:** v2.11.6 preparation
 **Bootstrap stage:** B0
 
 > Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
 
 ## Release နှင့် provenance
 
-နောက်ဆုံး publish လုပ်ထားသော release သည် v2.11.4 ဖြစ်သည်။ ၎င်း၏ tag နှင့် workflow record များသည် immutable release evidence ဖြစ်ပြီး နောက် release သည် tag အသစ်ကိုသာ အသုံးပြုရမည်၊ ယခင် tag များကို rewrite မလုပ်ရ။ Publish လုပ်ထားသော release တစ်ခုစီတွင် versioned manifest၊ aggregate checksum၊ detached signature နှင့် signed provenance asset ပါဝင်သည်။
+နောက်ဆုံး publish လုပ်ထားသော release သည် v2.11.5 ဖြစ်သည်။ ၎င်း၏ tag နှင့် workflow record များသည် immutable release evidence ဖြစ်ပြီး နောက် release သည် tag အသစ်ကိုသာ အသုံးပြုရမည်၊ ယခင် tag များကို rewrite မလုပ်ရ။ Publish လုပ်ထားသော release တစ်ခုစီတွင် versioned manifest၊ aggregate checksum၊ detached signature နှင့် signed provenance asset ပါဝင်သည်။
 
 Versioned provenance asset သည် release identity အတွက် canonical machine-readable record ဖြစ်သည်။ ၎င်းတွင် source URI၊ tag/ref၊ source commit၊ workflow run ID၊ reproducible manifest နှင့် checksum၊ signing metadata နှင့် SHA-256 digest/size ပါသော artifact subjects များကို မှတ်တမ်းတင်သည်။ Release verifier သည် downloaded archive နှင့် signature များနှင့်အတူ ဤ record ကို စစ်ဆေးသည်။
 
