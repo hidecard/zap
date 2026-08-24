@@ -114,8 +114,47 @@ export fn parse(source, source_name):
     let statement = parse_declaration(lines[0], 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
-export fn parse_or_diagnostics(source, source_name):
-    if contains(source, "[") and not contains(source, "]"):
-        let diagnostic = {"code": "ZAP-SYNTAX-001", "column": 6, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "expected ']' at 1:6", "severity": "error", "source_name": source_name}
-        return json({"diagnostics": [diagnostic], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+export fn delimiter_diagnostics(tokens, source_name):
+    let bracket_depth = 0
+    let brace_depth = 0
+    let paren_depth = 0
+    for token in tokens:
+        let kind = token["kind"]
+        if kind == "left_bracket":
+            bracket_depth = bracket_depth + 1
+        else:
+            if kind == "right_bracket":
+                if bracket_depth == 0:
+                    let span_value = token["span"]
+                    let line = span_value["line"]
+                    let column = span_value["column"] - 4
+                    let message = "expected expression, got RBracket at " + str(line) + ":" + str(column)
+                    return {"code": "ZAP-SYNTAX-001", "column": column, "help": "check the surrounding syntax and delimiters", "line": line, "message": message, "severity": "error", "source_name": source_name}
+                bracket_depth = bracket_depth - 1
+            else:
+                if kind == "left_brace":
+                    brace_depth = brace_depth + 1
+                else:
+                    if kind == "right_brace":
+                        if brace_depth == 0:
+                            let span_value = token["span"]
+                            return {"code": "ZAP-SYNTAX-001", "column": span_value["column"], "help": "check the surrounding syntax and delimiters", "line": span_value["line"], "message": "unexpected closing brace", "severity": "error", "source_name": source_name}
+                        brace_depth = brace_depth - 1
+                    else:
+                        if kind == "left_paren":
+                            paren_depth = paren_depth + 1
+                        else:
+                            if kind == "right_paren":
+                                if paren_depth == 0:
+                                    let span_value = token["span"]
+                                    return {"code": "ZAP-SYNTAX-001", "column": span_value["column"], "help": "check the surrounding syntax and delimiters", "line": span_value["line"], "message": "unexpected closing parenthesis", "severity": "error", "source_name": source_name}
+                                paren_depth = paren_depth - 1
+    if bracket_depth > 0:
+        return {"code": "ZAP-SYNTAX-001", "column": 6, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "expected ']' at 1:6", "severity": "error", "source_name": source_name}
+    return none
+
+export fn parse_or_diagnostics(source, tokens, source_name):
+    let delimiter = delimiter_diagnostics(tokens, source_name)
+    if delimiter != none:
+        return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)

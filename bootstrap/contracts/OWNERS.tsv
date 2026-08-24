@@ -16,3 +16,4 @@ BOOT-014	syntax-diagnostics	Ownership rules	Ownership rules	native/src/bootstrap
 BOOT-015	b1-parser-candidate	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arithmetic.zp	provisional
 BOOT-016	b2-typed-ir	Artifact contract	Artifact contract	native/src/bootstrap.rs	bootstrap/fixtures/typecheck/annotated.zp	provisional
 BOOT-017	b2-typecheck	Ownership rules	Ownership rules	native/src/evaluator.rs	bootstrap/fixtures/typecheck/incompatible.zp	provisional
+BOOT-018	token-diagnostics	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp	provisional
