@@ -74,5 +74,6 @@ Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX
 | Async boundary | `ASYNC_BOUNDARIES_EN.md` | `ASYNC_BOUNDARIES_MM.md` |
 | Syntax reference | `SYNTAX_GUIDE_EN.md` | `SYNTAX_GUIDE_MM.md` |
 | Standard library | `STDLIB_TEXT_MATH_COLLECTION_EN.md` | `STDLIB_TEXT_MATH_COLLECTION_MM.md` |
+| Bootstrap/self-hosting | `BOOTSTRAP_CONTRACT_MM.md` နှင့် [`bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md) | `BOOTSTRAP_CONTRACT_EN.md` နှင့် [`bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md) |
 
 **လက်ရှိကန့်သတ်ချက်:** ဤစာတမ်းသည် canonical semantic foundation နှင့် navigation point ဖြစ်သည်။ ချဲ့ထွင်ထားသော ownership index တွင် post-review LSP၊ standard-library determinism၊ memory-budget၊ registry-transport၊ benchmark-provenance နှင့် release-version contract များအပါအဝင် stable rule ၃၆ ခု ပါဝင်သည်။ ကျန်ရှိသည့်အလုပ်မှာ အခြား fragmented rule တစ်ခုချင်းစီကို ဤစာတမ်း သို့မဟုတ် အတိအလင်း link ချိတ်ထားသည့် normative subcontract ထဲသို့ ရွှေ့ရန်၊ rule တစ်ခုချင်းစီအတွက် parser/evaluator conformance fixture ထည့်ရန်နှင့် မဖြေရှင်းရသေးသော legacy behavior ၏ version ownership ကို မှတ်တမ်းတင်ရန် ဖြစ်သည်။

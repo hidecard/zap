@@ -1,0 +1,11 @@
+{
+  "artifact_schema_version": 1,
+  "schemas": {
+    "ast": 1,
+    "diagnostic": 1,
+    "lockfile": 1,
+    "manifest": 1,
+    "token": 1,
+    "typed_ir": 0
+  }
+}

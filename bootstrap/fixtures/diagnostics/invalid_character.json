@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-LEX-CHAR-001","column":5,"help":"check the source token and its spelling","line":1,"message":"unexpected character at 1:5: @","severity":"error","source_name":"bootstrap/fixtures/diagnostics/invalid_character.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/invalid_character.zp"}

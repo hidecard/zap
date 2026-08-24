@@ -1,0 +1,8 @@
+{
+  "bootstrap_stage": "B0",
+  "compiler_version": "2.9.2",
+  "language_version": "2.9.2",
+  "reference_owner": "native Rust implementation",
+  "self_hosted": false,
+  "stdlib_version": "2.9.2"
+}

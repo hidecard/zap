@@ -56,6 +56,10 @@ Usage:
   zap init <dir>                        Create a generic Zap project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
+  zap bootstrap status                  Show bootstrap stage and schema versions
+  zap bootstrap tokens <file.zp>        Emit the canonical B0 token artifact
+  zap bootstrap ast <file.zp>            Emit the canonical B0 AST artifact
+  zap bootstrap diagnostics <file.zp>   Emit canonical lexer diagnostics
   zap --version                         Show the version
   zap --help                            Show this help"#;
 
@@ -1134,6 +1138,35 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if args.len() == 3 && args[1] == "bootstrap" && args[2] == "status" {
+        println!("{}", crate::bootstrap::status_json());
+        return;
+    }
+    if args.len() == 4 && args[1] == "bootstrap" {
+        let path = Path::new(&args[3]);
+        match args[2].as_str() {
+            "tokens" => match crate::bootstrap::tokens_json(path) {
+                Ok(artifact) => println!("{artifact}"),
+                Err(error) => {
+                    eprintln!("Zap bootstrap token error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+            },
+            "ast" => match crate::bootstrap::ast_json(path) {
+                Ok(artifact) => println!("{artifact}"),
+                Err(error) => {
+                    eprintln!("Zap bootstrap AST error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+            },
+            "diagnostics" => println!("{}", crate::bootstrap::diagnostics_json(path)),
+            _ => {
+                eprintln!("Zap bootstrap usage error: expected status, tokens, or diagnostics");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        }
+        return;
+    }
     if args.len() == 2 && args[1] == "lsp" {
         if let Err(error) = crate::lsp::run_stdio() {
             eprintln!("Zap LSP error: {error}");
@@ -1294,6 +1327,10 @@ mod tests {
             "zap init",
             "zap lsp",
             "zap async-check",
+            "zap bootstrap status",
+            "zap bootstrap tokens",
+            "zap bootstrap ast",
+            "zap bootstrap diagnostics",
             "zap --version",
             "zap --help",
         ] {

@@ -1,0 +1,34 @@
+# Canonical Zap bootstrap version contract.
+# These values are intentionally independent: a language change does not imply
+# an artifact-schema change, and a bootstrap-stage change does not imply either.
+
+language_version = "2.9.2"
+compiler_version = "2.9.2"
+stdlib_version = "2.9.2"
+
+[token_schema]
+version = 1
+
+[ast_schema]
+version = 1
+
+[diagnostic_schema]
+version = 1
+
+[typed_ir_schema]
+version = 0
+
+[manifest_schema]
+version = 1
+
+[lockfile_schema]
+version = 1
+
+[bootstrap]
+stage = "B0"
+reference_owner = "native Rust implementation"
+self_hosted = false
+
+[platform_seed]
+version = "0"
+status = "documented-boundary-only"

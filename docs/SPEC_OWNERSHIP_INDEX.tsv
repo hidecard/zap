@@ -36,3 +36,11 @@ SPEC-034	registry-transport	docs/LANGUAGE_SPEC_EN.md#8. Conformance ownership	do
 SPEC-035	benchmark-provenance	docs/BENCHMARK_HARNESS_EN.md#Verification	docs/BENCHMARK_HARNESS_MM.md#Verification	scripts/test_benchmark_provenance.sh#schema_version	implemented	normative
 SPEC-036	release-version	docs/RELEASE_VERSION_POLICY_EN.md#Validation and evidence	docs/RELEASE_VERSION_POLICY_MM.md#Validation နှင့် evidence	scripts/validate_release_version.sh#REPORT=	implemented	normative
 SPEC-037	runtime-borrow-equality	docs/MEMORY_MODEL_EN.md#Ownership contract	docs/MEMORY_MODEL_MM.md#Ownership contract	native/src/value.rs#value_equality_is_cycle_safe_and_borrow_checked	implemented	normative
+SPEC-038	bootstrap-stage	docs/BOOTSTRAP_CONTRACT_EN.md#Current B0 boundary	docs/BOOTSTRAP_CONTRACT_MM.md#လက်ရှိ B0 boundary	bootstrap/fixtures/metadata/b0_stage.json	implemented	normative
+SPEC-039	bootstrap-artifacts	docs/BOOTSTRAP_CONTRACT_EN.md#Canonical inspection commands	docs/BOOTSTRAP_CONTRACT_MM.md#Canonical inspection commands	scripts/bootstrap/verify_b0_artifacts.sh	implemented	normative
+SPEC-040	bootstrap-token	docs/BOOTSTRAP_CONTRACT_EN.md#Stage policy	docs/BOOTSTRAP_CONTRACT_MM.md#အဆင့်ဆိုင်ရာ policy	bootstrap/fixtures/lexer/basic.tokens.json	implemented	normative
+SPEC-041	bootstrap-ast	docs/BOOTSTRAP_CONTRACT_EN.md#Next gate	docs/BOOTSTRAP_CONTRACT_MM.md#နောက် gate	bootstrap/fixtures/lexer/basic.ast.json	implemented	normative
+SPEC-042	bootstrap-diagnostics	docs/BOOTSTRAP_CONTRACT_EN.md#Canonical inspection commands	docs/BOOTSTRAP_CONTRACT_MM.md#Canonical inspection commands	bootstrap/fixtures/diagnostics/invalid_character.json	implemented	normative
+SPEC-043	bootstrap-stdlib	docs/BOOTSTRAP_CONTRACT_EN.md#Current B0 boundary	docs/BOOTSTRAP_CONTRACT_MM.md#လက်ရှိ B0 boundary	bootstrap/fixtures/stdlib/catalog.json	implemented	normative
+SPEC-044	bootstrap-platform	docs/BOOTSTRAP_CONTRACT_EN.md#Current B0 boundary	docs/BOOTSTRAP_CONTRACT_MM.md#လက်ရှိ B0 boundary	bootstrap/fixtures/metadata/platform_seed.json	implemented	normative
+SPEC-045	bootstrap-versioning	docs/BOOTSTRAP_CONTRACT_EN.md#Stage policy	docs/BOOTSTRAP_CONTRACT_MM.md#အဆင့်ဆိုင်ရာ policy	bootstrap/contracts/VERSIONS.toml	implemented	normative

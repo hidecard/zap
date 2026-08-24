@@ -74,5 +74,6 @@ The following documents provide detailed subcontracts and must remain bilingual 
 | Async boundary | `ASYNC_BOUNDARIES_EN.md` | `ASYNC_BOUNDARIES_MM.md` |
 | Syntax reference | `SYNTAX_GUIDE_EN.md` | `SYNTAX_GUIDE_MM.md` |
 | Standard library | `STDLIB_TEXT_MATH_COLLECTION_EN.md` | `STDLIB_TEXT_MATH_COLLECTION_MM.md` |
+| Bootstrap/self-hosting | `BOOTSTRAP_CONTRACT_EN.md` and [`bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md) | `BOOTSTRAP_CONTRACT_MM.md` and [`bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md) |
 
 **Current limitation:** This is the canonical semantic foundation and navigation point. The expanded ownership index now covers 36 stable rules, including post-review LSP, standard-library determinism, memory-budget, registry-transport, benchmark-provenance, and release-version contracts. Remaining work is to migrate every other fragmented rule into this document or an explicitly linked normative subcontract, add parser/evaluator conformance fixtures for each rule, and record version ownership for unresolved legacy behavior.

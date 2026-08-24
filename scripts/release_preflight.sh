@@ -475,6 +475,9 @@ run_contract_validation() {
   bash scripts/test_stdlib_policy.sh
   pass "standard-library stability policy contract passed"
 
+  bash scripts/bootstrap/verify_b0_artifacts.sh --release
+  pass "B0 bootstrap artifact reproducibility contract passed"
+
   bash scripts/test_lsp_semantic_parity.sh
   pass "LSP and VS Code semantic-parity contract passed"
 

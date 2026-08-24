@@ -1,0 +1,12 @@
+{
+  "capabilities": {
+    "clock": "optional runtime capability",
+    "console": "platform_stdout/stderr",
+    "file": "explicit bounded source-read capability",
+    "memory": "VM-managed heap or platform_alloc/free",
+    "network": "not available to compiler core",
+    "process": "not available to compiler core"
+  },
+  "platform_seed_version": "0",
+  "status": "documented-boundary-only"
+}

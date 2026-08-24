@@ -1,0 +1,1 @@
+{"kind":"zap.token_stream","schema_version":1,"source_name":"bootstrap/fixtures/lexer/unicode.zp","tokens":[{"kind":"name","span":{"column":1,"length":3,"line":1},"value":"say"},{"kind":"text","span":{"column":5,"length":8,"line":1},"value":"မြန်မာ"},{"kind":"end","span":{"column":1,"length":1,"line":2},"value":null}]}

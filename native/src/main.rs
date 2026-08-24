@@ -2,6 +2,7 @@
 
 mod ast;
 mod async_runtime;
+mod bootstrap;
 #[cfg(test)]
 mod corpus;
 mod diagnostics;
