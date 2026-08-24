@@ -1,6 +1,6 @@
 # Zap Framework လမ်းညွှန်
 
-**စစ်ဆေးထားသော baseline:** Zap v2.9.1
+**စစ်ဆေးထားသော baseline:** Zap v2.9.2
 
 **အတည်ပြုထားသော baseline:** Zap v2.4.0
 **Framework branch:** `Framework`

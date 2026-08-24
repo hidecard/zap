@@ -37,7 +37,12 @@ remove_path() {
     }
     { print }
   ' "$file" > "$temp"
-  chmod --reference="$file" "$temp"
+  if mode=$(stat -c '%a' "$file" 2>/dev/null); then
+    chmod "$mode" "$temp"
+  else
+    mode=$(stat -f '%Lp' "$file")
+    chmod "$mode" "$temp"
+  fi
   mv "$temp" "$file"
 }
 

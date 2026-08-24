@@ -8,7 +8,12 @@
 
 ## [Unreleased]
 
-## [2.9.1] — 2026-08-24
+## [2.9.2] — 2026-08-24
+
+### Release engineering
+- macOS တွင် အလုပ်မလုပ်သော GNU-only `chmod --reference` cleanup ကို portable `stat`/`chmod` handling ဖြင့် ပြင်ဆင်ပြီး Linux နှင့် macOS နှစ်မျိုးလုံးတွင် Unix uninstaller verification အောင်မြင်စေပါသည်။
+
+## [2.9.0] — 2026-08-24
 
 ### Release engineering
 - Unix installer၊ Makefile contributor entrypoint၊ standalone release archive၊ production host configuration နှင့် documentation validation များကို harden လုပ်ထားပါသည်။

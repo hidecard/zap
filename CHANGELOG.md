@@ -4,7 +4,12 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
-## [2.9.1] - 2026-08-24
+## [2.9.2] - 2026-08-24
+
+### Release summary
+- macOS တွင် အလုပ်မလုပ်သော GNU-only `chmod --reference` ကို portable `stat`/`chmod` implementation ဖြင့် ပြင်ဆင်ပြီး installer/uninstaller release verification ကို ခိုင်မာစေသည်။
+
+## [2.9.0] - 2026-08-24
 
 ### Release summary
 - Installer၊ Makefile၊ release archive၊ production host configuration နှင့် documentation validation များကို harden လုပ်ထားသည်။ Host adapter တွင် persistent SQLite repository၊ bounded cursor pagination နှင့် explicit production fail-closed behavior ပါဝင်သည်။

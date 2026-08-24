@@ -8,7 +8,12 @@
 
 ## [Unreleased]
 
-## [2.9.1] — 2026-08-24
+## [2.9.2] — 2026-08-24
+
+### Release engineering
+- Replaced the GNU-only `chmod --reference` cleanup step with portable `stat`/`chmod` handling so Unix uninstaller verification passes on macOS as well as Linux.
+
+## [2.9.0] — 2026-08-24
 
 ### Release engineering
 - Hardened the Unix installer, Makefile contributor entrypoints, standalone release archives, production host configuration, and documentation validation.

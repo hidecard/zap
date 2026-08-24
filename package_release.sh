@@ -21,24 +21,25 @@ esac
 SOURCE="$ROOT/native/target/$TARGET/release/$BINARY"
 if [ ! -f "$SOURCE" ]; then echo "Missing prebuilt binary: $SOURCE" >&2; echo "Build it before packaging or use the CI release workflow." >&2; exit 1; fi
 DIST="$ROOT/dist/$TARGET"
+PACKAGE="$DIST/zap"
 rm -rf "$DIST"
-mkdir -p "$DIST/zap-$VERSION/bin"
-cp "$SOURCE" "$DIST/zap-$VERSION/$BINARY"
-if [ "$TARGET" != "x86_64-pc-windows-msvc" ]; then mv "$DIST/zap-$VERSION/$BINARY" "$DIST/zap-$VERSION/bin/zap"; else mv "$DIST/zap-$VERSION/$BINARY" "$DIST/zap-$VERSION/bin/zap.exe"; fi
+mkdir -p "$PACKAGE/bin"
+cp "$SOURCE" "$PACKAGE/$BINARY"
+if [ "$TARGET" != "x86_64-pc-windows-msvc" ]; then mv "$PACKAGE/$BINARY" "$PACKAGE/bin/zap"; else mv "$PACKAGE/$BINARY" "$PACKAGE/bin/zap.exe"; fi
 if [ "$TARGET" = "x86_64-pc-windows-msvc" ]; then
-  cp "$ROOT/install_windows.bat" "$ROOT/README.md" "$ROOT/README_MM.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$ROOT/CHANGELOG_EN.md" "$ROOT/CHANGELOG_MM.md" "$DIST/zap-$VERSION/"
-  cp -R "$ROOT/assets" "$DIST/zap-$VERSION/"
-  cp -R "$ROOT/docs" "$ROOT/examples" "$DIST/zap-$VERSION/"
+  cp "$ROOT/install_windows.bat" "$ROOT/README.md" "$ROOT/README_MM.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$ROOT/CHANGELOG_EN.md" "$ROOT/CHANGELOG_MM.md" "$PACKAGE/"
+  cp -R "$ROOT/assets" "$PACKAGE/"
+  cp -R "$ROOT/docs" "$ROOT/examples" "$PACKAGE/"
 else
-  cp "$ROOT/install.sh" "$ROOT/README.md" "$ROOT/README_MM.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$ROOT/CHANGELOG_EN.md" "$ROOT/CHANGELOG_MM.md" "$DIST/zap-$VERSION/"
-  cp -R "$ROOT/assets" "$DIST/zap-$VERSION/"
-  cp -R "$ROOT/docs" "$ROOT/examples" "$DIST/zap-$VERSION/"
+  cp "$ROOT/install.sh" "$ROOT/uninstall.sh" "$ROOT/README.md" "$ROOT/README_MM.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$ROOT/CHANGELOG_EN.md" "$ROOT/CHANGELOG_MM.md" "$PACKAGE/"
+  cp -R "$ROOT/assets" "$PACKAGE/"
+  cp -R "$ROOT/docs" "$ROOT/examples" "$PACKAGE/"
 fi
-chmod 0755 "$DIST/zap-$VERSION/bin/$([ "$TARGET" = "x86_64-pc-windows-msvc" ] && echo zap.exe || echo zap)"
+chmod 0755 "$PACKAGE/bin/$([ "$TARGET" = "x86_64-pc-windows-msvc" ] && echo zap.exe || echo zap)"
 if [[ "$ARCHIVE" == *.zip ]]; then
-  (cd "$DIST" && zip -qr "$ARCHIVE" "zap-$VERSION")
+  (cd "$DIST" && zip -qr "$ARCHIVE" zap)
 else
-  (cd "$DIST" && tar -czf "$ARCHIVE" "zap-$VERSION")
+  (cd "$DIST" && tar -czf "$ARCHIVE" zap)
 fi
 sha256sum "$DIST/$ARCHIVE" > "$DIST/$ARCHIVE.sha256"
 python3 "$ROOT/scripts/validate_release_archive.py" "$DIST/$ARCHIVE"

@@ -1,6 +1,6 @@
 # Zap-first Web Framework Guide
 
-**Verified baseline:** Zap v2.9.1 on merged `master`. The original Framework work is preserved as the Web contract foundation.
+**Verified baseline:** Zap v2.9.2 on merged `master`. The original Framework work is preserved as the Web contract foundation.
 
 ## Purpose
 
