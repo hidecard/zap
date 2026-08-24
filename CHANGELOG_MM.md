@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.0] — 2026-08-24
+
+### Release engineering
+- Handler မ execute ဘဲ route match ကို ရှင်းပြသော bounded `zap explain route` command၊ parameter/wildcard extraction၊ JSON automation output နှင့် bilingual framework smoke coverage ကို ထည့်သွင်းထားပါသည်။
+
 ## [2.10.1] — 2026-08-24
 
 ### Zap-only bootstrap foundations

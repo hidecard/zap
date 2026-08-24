@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-08-24
+
+### Release summary
+- Deterministic Web route explanation
+
 ## [2.10.1] - 2026-08-24
 
 ### Release summary
