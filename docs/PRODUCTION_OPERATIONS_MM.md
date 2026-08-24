@@ -1,6 +1,6 @@
 # Zap Production Operations Runbook
 
-**စစ်ဆေးထားသော baseline:** Zap v2.10.1 development line
+**စစ်ဆေးထားသော baseline:** Zap v2.11.0 development line
 
 **အကျယ်အဝန်း:** ဤ runbook သည် built-in authenticated registry ကို Linux systemd service နှင့် nginx TLS ingress အနောက်တွင် production သုံးရန် reference deployment အဖြစ် သတ်မှတ်ထားသည်။ Cloud provisioning အလိုအလျောက်လုပ်ပေးသည့်စနစ် မဟုတ်သောကြောင့် firewall၊ certificate authority၊ secret manager၊ monitoring၊ backup နှင့် approval အဆင့်များကို မိမိ environment နှင့် ကိုက်ညီအောင် operator က ဖြည့်စွက်ရမည်။
 
