@@ -24,6 +24,12 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 Repository တွင် reference-only B3 foundation gate ကို [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh) အဖြစ် ထည့်ထားသည်။ ၎င်းသည် catalog determinism taxonomy၊ dependency-free manifest ၏ canonical lockfile generation၊ lockfile reproducibility၊ offline locked build နှင့် Zap test fixture execution များကို စစ်ဆေးသည်။ ဤ check များသည် ရှိပြီးသား package/build/test-runner behavior ကို ပြသခြင်းသာဖြစ်ပြီး compiler pipeline တစ်ခုလုံး Zap-owned ဖြစ်နေပြီဟု မဆိုလိုပါ။
 
+## Reference VM နှင့် platform-seed အခြေအနေ
+
+ပထမဆုံး သီးခြား bytecode VM foundation ကို [`native/src/bytecode.rs`](../native/src/bytecode.rs) တွင် တည်ဆောက်ထားသည်။ `zap bootstrap vm-demo` သည် bounded arithmetic program ကို execute လုပ်ပြီး canonical [`bootstrap/fixtures/bytecode/vm_demo.json`](../bootstrap/fixtures/bytecode/vm_demo.json) artifact ကို ထုတ်ပေးသည်။ VM သည် unsupported schema version၊ မမှန်ကန်သော stack shape၊ Halt မရှိခြင်း၊ arithmetic failure နှင့် step-budget ကျော်လွန်ခြင်းတို့ကို panic မဖြစ်စေဘဲ reject လုပ်သည်။
+
+Platform boundary သည် self-hosted မဟုတ်သေးဘဲ documented boundary အဖြစ်သာ ရှိသည်။ Compiler core တွင် network သို့မဟုတ် process capability မရှိပါ။ Console၊ bounded file access၊ memory နှင့် optional clock behavior များသည် explicit seed responsibility များ ဖြစ်သည်။ [`scripts/bootstrap/verify_vm_platform.sh`](../scripts/bootstrap/verify_vm_platform.sh) သည် ဤ boundary နှင့် deterministic VM smoke artifact ကို စစ်ဆေးသည်။
+
 ## Canonical inspection commands
 
 Native CLI တွင် read-only B0 inspection command များ ထည့်ပြီးဖြစ်သည်။

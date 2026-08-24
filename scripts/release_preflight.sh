@@ -484,6 +484,9 @@ run_contract_validation() {
   bash scripts/bootstrap/verify_b3_foundations.sh
   pass "B3 package/build/test-runner foundation contract passed"
 
+  bash scripts/bootstrap/verify_vm_platform.sh
+  pass "reference VM and platform-seed foundation contract passed"
+
   bash scripts/test_lsp_semantic_parity.sh
   pass "LSP and VS Code semantic-parity contract passed"
 

@@ -57,6 +57,7 @@ Usage:
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
   zap bootstrap status                  Show bootstrap stage and schema versions
+  zap bootstrap vm-demo                 Run the reference-only VM smoke program
   zap bootstrap tokens <file.zp>        Emit the canonical B0 token artifact
   zap bootstrap ast <file.zp>            Emit the canonical B0 AST artifact
   zap bootstrap typed-ir <file.zp>       Emit reference-only typed IR
@@ -1139,6 +1140,31 @@ pub fn run_cli(args: &[String]) {
         }
         return;
     }
+    if args.len() == 3 && args[1] == "bootstrap" && args[2] == "vm-demo" {
+        let program = crate::bytecode::Program::new(vec![
+            crate::bytecode::Instruction::Const(Value::Number(2)),
+            crate::bytecode::Instruction::Const(Value::Number(3)),
+            crate::bytecode::Instruction::Multiply,
+            crate::bytecode::Instruction::Halt,
+        ]);
+        match crate::bytecode::run(&program).and_then(|value| {
+            crate::value_to_json(&value).map(|value| {
+                serde_json::json!({
+                    "kind": "zap.bytecode_result",
+                    "schema_version": crate::bytecode::BYTECODE_SCHEMA_VERSION,
+                    "value": value,
+                })
+                .to_string()
+            })
+        }) {
+            Ok(result) => println!("{result}"),
+            Err(error) => {
+                eprintln!("Zap bootstrap VM error: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            }
+        }
+        return;
+    }
     if args.len() == 3 && args[1] == "bootstrap" && args[2] == "status" {
         println!("{}", crate::bootstrap::status_json());
         return;
@@ -1336,6 +1362,7 @@ mod tests {
             "zap lsp",
             "zap async-check",
             "zap bootstrap status",
+            "zap bootstrap vm-demo",
             "zap bootstrap tokens",
             "zap bootstrap ast",
             "zap bootstrap typed-ir",

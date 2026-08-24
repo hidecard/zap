@@ -47,3 +47,4 @@ SPEC-045	bootstrap-versioning	docs/BOOTSTRAP_CONTRACT_EN.md#Stage policy	docs/BO
 SPEC-046	bootstrap-b1-lexer	docs/BOOTSTRAP_CONTRACT_EN.md#B1 candidate status	docs/BOOTSTRAP_CONTRACT_MM.md#B1 candidate status	scripts/bootstrap/verify_b1_lexer.sh	implemented	normative
 SPEC-047	bootstrap-typed-ir	docs/BOOTSTRAP_CONTRACT_EN.md#Canonical inspection commands	docs/BOOTSTRAP_CONTRACT_MM.md#Canonical inspection commands	bootstrap/fixtures/lexer/basic.typed-ir.json	implemented	normative
 SPEC-048	bootstrap-b3-foundations	docs/BOOTSTRAP_CONTRACT_EN.md#B3 foundation status	docs/BOOTSTRAP_CONTRACT_MM.md#B3 foundation status	scripts/bootstrap/verify_b3_foundations.sh	implemented	normative
+SPEC-049	bootstrap-vm-platform	docs/BOOTSTRAP_CONTRACT_EN.md#Reference VM and platform-seed status	docs/BOOTSTRAP_CONTRACT_MM.md#Reference VM နှင့် platform-seed အခြေအနေ	scripts/bootstrap/verify_vm_platform.sh	implemented	normative

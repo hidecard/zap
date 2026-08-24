@@ -24,6 +24,12 @@ This is a **corpus-limited B1 foundation**, not a completed B1 compiler. The can
 
 The repository now has a reference-only B3 foundation gate at [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh). It validates the catalog determinism taxonomy, generates a canonical dependency-free manifest lockfile, checks lockfile reproducibility, runs an offline locked build, and executes a Zap test fixture. These checks demonstrate existing package/build/test-runner behavior; they do not claim that the compiler pipeline is already Zap-owned.
 
+## Reference VM and platform-seed status
+
+The first isolated bytecode VM foundation is implemented in [`native/src/bytecode.rs`](../native/src/bytecode.rs). `zap bootstrap vm-demo` executes a bounded arithmetic program and emits the canonical [`bootstrap/fixtures/bytecode/vm_demo.json`](../bootstrap/fixtures/bytecode/vm_demo.json) artifact. The VM rejects unsupported schema versions, malformed stack shapes, missing halts, arithmetic failures, and step-budget exhaustion without panicking.
+
+The platform boundary remains documented rather than self-hosted. The compiler core has no network or process capability; console, bounded file access, memory, and optional clock behavior remain explicit seed responsibilities. [`scripts/bootstrap/verify_vm_platform.sh`](../scripts/bootstrap/verify_vm_platform.sh) checks this boundary and the deterministic VM smoke artifact.
+
 ## Canonical inspection commands
 
 The native CLI now exposes read-only B0 inspection commands:

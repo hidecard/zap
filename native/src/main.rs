@@ -3,6 +3,7 @@
 mod ast;
 mod async_runtime;
 mod bootstrap;
+mod bytecode;
 #[cfg(test)]
 mod corpus;
 mod diagnostics;
