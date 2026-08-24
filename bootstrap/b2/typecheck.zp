@@ -83,7 +83,7 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
-    if (annotation == "number" and (inferred == "text" or starts_with(inferred, "option<"))) or (annotation == "text" and (inferred == "number" or starts_with(inferred, "option<"))):
+    if (annotation == "number" and (inferred == "text" or inferred == "bool" or starts_with(inferred, "option<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or starts_with(inferred, "option<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or starts_with(inferred, "option<"))):
         return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none
 

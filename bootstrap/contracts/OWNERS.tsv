@@ -26,3 +26,4 @@ BOOT-024	b2-typechecker-map-element	B2 candidate status	B2 candidate status	boot
 BOOT-025	b2-typechecker-branch-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp	provisional
 BOOT-026	b2-typechecker-loop-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp	provisional
 BOOT-027	b2-typechecker-else-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp	provisional
+BOOT-028	b2-typechecker-bool-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp	provisional

@@ -75,6 +75,10 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 ## နောက် v2.11.14 B0-safe preparation
 
+- [x] Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ direct bool-literal annotation ကို နောက် bounded type-system increment အဖြစ် ရွေးချယ်ရန်။
+- [x] Tracked variable တစ်ခုတွင် direct `true`/`false` literal ကို `bool` annotation သို့ assign လုပ်ပါက လက်ခံပြီး direct numeric literal ကို `bool` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'enabled' expects bool, got number` diagnostic ဖြင့် reject လုပ်ရန်။
+- [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic bool acceptance/rejection evidence ထည့်ရန်။
+- [x] Provisional ownership ledger တွင် `BOOT-028` နှင့် `bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp` ထည့်ရန်။
 - [ ] နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 

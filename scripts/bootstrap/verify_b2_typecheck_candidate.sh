@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-for path in bootstrap/b2/typecheck.zp bootstrap/fixtures/typecheck/annotated.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp; do
+for path in bootstrap/b2/typecheck.zp bootstrap/fixtures/typecheck/annotated.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp bootstrap/fixtures/typecheck/bool_annotation.zp bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp; do
   [[ -f "$path" ]] || { printf 'missing B2 candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 runner=$(mktemp "$ROOT_DIR/.zap-b2-typecheck-candidate-runner.XXXXXX.zp")
@@ -27,6 +27,8 @@ let loop_narrowing = read_text("bootstrap/fixtures/typecheck/loop_narrowing.zp")
 let loop_narrowing_incompatible = read_text("bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp")
 let else_narrowing = read_text("bootstrap/fixtures/typecheck/else_narrowing.zp")
 let else_narrowing_incompatible = read_text("bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp")
+let bool_annotation = read_text("bootstrap/fixtures/typecheck/bool_annotation.zp")
+let bool_annotation_incompatible = read_text("bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp")
 say check(annotated, "bootstrap/fixtures/typecheck/annotated.zp")
 say check(conditional, "bootstrap/fixtures/typecheck/conditional.zp")
 say check(incompatible, "bootstrap/fixtures/typecheck/incompatible.zp")
@@ -43,11 +45,13 @@ say check(loop_narrowing, "bootstrap/fixtures/typecheck/loop_narrowing.zp")
 say check(loop_narrowing_incompatible, "bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp")
 say check(else_narrowing, "bootstrap/fixtures/typecheck/else_narrowing.zp")
 say check(else_narrowing_incompatible, "bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp")
+say check(bool_annotation, "bootstrap/fixtures/typecheck/bool_annotation.zp")
+say check(bool_annotation_incompatible, "bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp")
 EOF_RUNNER
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$first"
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$second"
 cmp "$first" "$second"
-[[ "$(wc -l < "$first")" -eq 16 ]] || { printf 'unexpected B2 candidate output line count\n' >&2; exit 1; }
+[[ "$(wc -l < "$first")" -eq 18 ]] || { printf 'unexpected B2 candidate output line count\n' >&2; exit 1; }
 sed -n '1p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
 sed -n '2p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
 sed -n '3p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].line == 1) and (.diagnostics[0].column == 1) and ((.diagnostics[0].message | contains("expects number, got text")))' >/dev/null
@@ -64,4 +68,6 @@ sed -n '13p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and 
 sed -n '14p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].line == 4) and (.diagnostics[0].column == 1) and ((.diagnostics[0].message | contains("variable '\''after_loop'\'' expects number, got option<number>")))' >/dev/null
 sed -n '15p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
 sed -n '16p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].line == 5) and (.diagnostics[0].column == 1) and ((.diagnostics[0].message | contains("variable '\''payload'\'' expects text, got number")))' >/dev/null
-printf 'B2 Zap type-checker candidate differential semantics passed: annotated, conditional, incompatible, function, function-call mismatch, list-element mismatch, nested-list element, nested-list mismatch, bounded map element, bounded map mismatch, branch-local narrowing, branch narrowing mismatch, loop-body narrowing, loop-boundary restoration mismatch, is_option_none else-body narrowing, else-body narrowing mismatch\n'
+sed -n '17p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
+sed -n '18p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].line == 1) and (.diagnostics[0].column == 1) and ((.diagnostics[0].message | contains("variable '\''enabled'\'' expects bool, got number")))' >/dev/null
+printf 'B2 Zap type-checker candidate differential semantics passed: annotated, conditional, incompatible, function, function-call mismatch, list-element mismatch, nested-list element, nested-list mismatch, bounded map element, bounded map mismatch, branch-local narrowing, branch narrowing mismatch, loop-body narrowing, loop-boundary restoration mismatch, is_option_none else-body narrowing, else-body narrowing mismatch, bool literal annotation, bool annotation mismatch\n'
