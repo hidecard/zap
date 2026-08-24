@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.7.0
+**အတည်ပြုထားသော baseline:** Zap v2.8.0
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
@@ -90,6 +90,18 @@ HTML၊ CSS နှင့် JavaScript ကို လက်ရေးဖြင့�
 | Invalid path/body/request ID | မည်သည့် path မဆို | 400 | `invalid_request` error |
 
 Invalid request ဖြစ်နေချိန်တွင် route function သည် handler ကို မခေါ်ပါ။ ဤအစီအစဉ်သည် အရေးကြီးသည်။ Validation နှင့် capability policy ကို application dispatch မတိုင်မီ လုပ်ထားသောကြောင့် အနာဂတ် adapter သည် authentication၊ rate limit နှင့် tracing ကို တည်ငြိမ်သော boundary ပတ်လည်တွင် ထည့်နိုင်သည်။
+
+## Route inspection
+
+Generated project ၏ route declaration များကို `routes/routes.zp` ထဲတွင် ထားရှိပါသည်။ Listener မစဘဲ export လုပ်ထားသော `routes()` factory ကို execute လုပ်ပြီး လက်ရှိ route table ကို စစ်ဆေးရန် project root မှ `zap web routes` ကို သုံးနိုင်သကဲ့သို့ project directory ကိုလည်း တိုက်ရိုက်ပေးနိုင်ပါသည်။
+
+```bash
+zap web routes
+zap web routes --json
+zap web routes ./shop
+```
+
+Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path နှင့် non-empty method token အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
 
 ## Host-adapter contract
 

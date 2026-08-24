@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.7.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
+**အတည်ပြုထားသော baseline:** Zap v2.8.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 
@@ -21,6 +21,7 @@ zap new shop
 cd shop
 zap check
 zap web check
+zap web routes
 zap db check
 zap db inspect --json
 zap db plan
@@ -34,7 +35,7 @@ zap dev
 
 `zap new <directory>` သည် project တစ်ခုလုံးကို command တစ်ကြောင်းတည်းဖြင့် ဖန်တီးပေးသော Zap ၏ canonical project generator ဖြစ်ပါသည်။ `zap.toml`၊ `zap.lock`၊ `main.zp`၊ `web.zp`၊ `models/`၊ `functions/`၊ `ui/`၊ `routes/`၊ `middleware/`၊ `migrations/`၊ `admin/`၊ `public/`၊ `server.zp` နှင့် `tests/` ပါသော user-managed project structure ကို ထုတ်ပေးပါသည်။ Django-style `startapp` command မရှိပါ။ Project ဖန်တီးပြီးသည်နှင့် file/module များကို user ကိုယ်တိုင် ထည့်ခြင်း၊ ဖျက်ခြင်း၊ ပြင်ခြင်းနှင့် စီမံခြင်း ပြုလုပ်နိုင်ပါသည်။ Generated `public/` directory ထဲတွင် ရိုးရိုး HTML entrypoint၊ CSS နှင့် `/api/tasks` ကို ခေါ်သည့် browser ES module ပါရှိပြီး run လုပ်ရန် Node.js မလိုပါ။ Generated `ui/ui.zp` သည် browser entrypoint၊ asset root၊ frontend mode နှင့် runtime တွင် Node မလိုကြောင်း သတ်မှတ်ပေးသော သီးခြား UI boundary ဖြစ်ပါသည်။ Generated entrypoint သည် application metadata၊ route table၊ model metadata၊ UI metadata၊ middleware order နှင့် admin registry ကို deterministic အဖြစ် print လုပ်ပါသည်။ Generated `server.zp` သည် bounded native development server entrypoint ဖြစ်ပြီး `zap dev` ဖြင့် စတင်နိုင်ပါသည်။ သို့သော် complete production Web platform မဟုတ်သေးပါ။
 
-Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
+Native CLI သည် ယခု constrained `[web]` manifest section နှင့် optional `[database]` section ကို စစ်ဆေးနိုင်ပါသည်။ Routes file၊ model directory၊ middleware file၊ migration directory၊ admin file နှင့် server entrypoint တို့ ရှိ/မရှိ၊ path များသည် safe relative path ဖြစ်/မဖြစ်နှင့် first Web profile သည် JSON-by-default ဖြစ်/မဖြစ် စစ်ဆေးပါသည်။ `[web]` မပါသော generic Zap project များသည် အရင်အတိုင်း valid ဖြစ်နေပါမည်။ `zap web check` သည် project structure ကို စစ်ပြီး `zap web routes` သည် listener မဖွင့်ဘဲ export လုပ်ထားသော `routes()` factory ကို execute လုပ်ကာ route table ကို ပြပါသည်။ `zap db check` သည် structured migration declaration နှင့် deterministic SQL plan ကို စစ်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို Web validation ပြီးမှ run ပါသည်။
 
 ## Project နှင့် app model
 
@@ -131,7 +132,7 @@ export fn middleware_stack():
     return [{"name": "request_id", "stage": "before", "order": 10}, {"name": "auth", "stage": "before_handler", "order": 40}, {"name": "security_headers", "stage": "after", "order": 90}]
 ```
 
-Framework checker သည် duplicate name၊ invalid order၊ dependency မကိုက်ညီမှုနှင့် database operation ပြီးမှ authorization စစ်သည့် unsafe placement များကို reject လုပ်သင့်ပါသည်။ Middleware order ကို `zap web check` သို့မဟုတ် အနာဂတ် `zap routes`/`zap explain` command မှ ပြသနိုင်ရမည်။
+Framework checker သည် duplicate name၊ invalid order၊ dependency မကိုက်ညီမှုနှင့် database operation ပြီးမှ authorization စစ်သည့် unsafe placement များကို reject လုပ်သင့်ပါသည်။ Middleware order ကို `zap web check` သို့မဟုတ် `zap web routes` သို့မဟုတ် အနာဂတ် `zap explain` command မှ ပြသနိုင်ရမည်။
 
 ## Models၊ DTO နှင့် ORM လမ်းကြောင်း
 
@@ -215,6 +216,7 @@ zap new shop
 cd shop
 zap check
 zap web check
+zap web routes
 zap db check
 zap db inspect --json
 zap db plan
