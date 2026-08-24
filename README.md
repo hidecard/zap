@@ -24,6 +24,8 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64, Windows x86_64, macOS ARM64 |
+| Bootstrap stage | **B0** — provisional corpus-limited Zap candidates |
+| Reference implementation | Rust native CLI/runtime remains the owner of complete semantics |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
@@ -179,7 +181,13 @@ A React, Vue, Svelte, or other frontend project may be built separately and its 
 
 The current stable direction covers the `.zp` language core, native CLI, project manifests and lockfiles, typed checks, modules, classes, Result/Option, JSON, tests, formatter/linter, structured diagnostics, LSP foundations, a user-managed Web scaffold, bounded native Web serving, and SQLite-first migration contracts.
 
-A complete ORM, provider-neutral production migration platform, user-defined trait syntax, production asynchronous I/O reactor, cross-file semantic rename, template compiler, and hidden app registry are not claimed as complete. Their status is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
+### Bootstrap and self-hosting status
+
+Zap remains at **B0**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The v2.11.3 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
+
+Complete type inference, arbitrary-program parser and diagnostic parity, general typed-IR production, package/build ownership, VM execution ownership, and platform-seed acceptance remain future roadmap work. Do not interpret the current candidates as fully Zap-only or B4/self-hosted. The detailed boundary is maintained in the [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_EN.md), and broader product scope is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
+
+A complete ORM, provider-neutral production migration platform, user-defined trait syntax, production asynchronous I/O reactor, cross-file semantic rename, template compiler, and hidden app registry are not claimed as complete. Their status is tracked in the same specification and release documentation.
 
 ## Development
 
@@ -190,7 +198,7 @@ cargo test --manifest-path native/Cargo.toml --all-targets
 cargo build --release --manifest-path native/Cargo.toml
 ```
 
-Before contributing, also run the documentation, Web scaffold, release-version, VS Code asset, and LSP parity validators described in the [documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md).
+Before contributing, also run the documentation, Web scaffold, release-version, VS Code asset, and LSP parity validators described in the [documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md). The repository uses `master` as the integrated baseline; stale merged branches are pruned only after their changes are present in `master`, while active review branches remain subject to their pull requests.
 
 ## Release provenance
 

@@ -24,6 +24,8 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64၊ Windows x86_64၊ macOS ARM64 |
+| Bootstrap stage | **B0** — provisional corpus-limited Zap candidate များ |
+| Reference implementation | Complete semantics အတွက် Rust native CLI/runtime က reference owner အဖြစ် ဆက်ရှိသည် |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
@@ -162,7 +164,14 @@ React၊ Vue၊ Svelte သို့မဟုတ် အခြား frontend proj
 
 လက်ရှိ stable direction တွင် `.zp` language core၊ native CLI၊ manifest/lockfile၊ typed check၊ modules၊ classes၊ Result/Option၊ JSON၊ tests၊ formatter/linter၊ structured diagnostics၊ LSP foundation၊ user-managed Web scaffold၊ bounded native Web serving နှင့် SQLite-first migration contract များ ပါဝင်ပါသည်။
 
-Complete ORM၊ provider-neutral production migration platform၊ user-defined trait syntax၊ production async I/O reactor၊ cross-file semantic rename၊ template compiler နှင့် hidden app registry တို့ကို complete ဟု မဆိုထားသေးပါ။ Status များကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ကြည့်ပါ။
+### Bootstrap နှင့် self-hosting အခြေအနေ
+
+Zap သည် **B0** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ v2.11.3 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
+
+Complete type inference၊ arbitrary-program parser/diagnostic parity၊ general typed-IR production၊ package/build ownership၊ VM execution ownership နှင့် platform-seed acceptance တို့သည် roadmap တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ လက်ရှိ candidate များကို fully Zap-only သို့မဟုတ် B4/self-hosted ဟု မယူဆရ။ အသေးစိတ် boundary ကို [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_MM.md) တွင် ထိန်းသိမ်းထားပြီး product scope ကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ဖော်ပြထားပါသည်။
+
+Complete ORM၊ provider-neutral production migration platform၊ user-defined trait syntax၊ production async I/O reactor၊ cross-file semantic rename၊ template compiler နှင့် hidden app registry တို့ကို complete ဟု မဆိုထားသေးပါ။
+
 
 ## Development
 
@@ -173,7 +182,7 @@ cargo test --manifest-path native/Cargo.toml --all-targets
 cargo build --release --manifest-path native/Cargo.toml
 ```
 
-Documentation၊ Web scaffold၊ release-version၊ VS Code asset နှင့် LSP parity validation များကို [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) တွင် ဖော်ပြထားသည့်အတိုင်း run ပါ။
+Documentation၊ Web scaffold၊ release-version၊ VS Code asset နှင့် LSP parity validation များကို [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) တွင် ဖော်ပြထားသည့်အတိုင်း run ပါ။ Repository တွင် `master` သည် integrated baseline ဖြစ်ပြီး stale merged branch များကို ၎င်းတို့၏ပြောင်းလဲမှုများ `master` ထဲရောက်ပြီးမှသာ prune လုပ်ပါသည်။ Active review branch များကို pull request အခြေအနေအတိုင်း ဆက်လက်ထိန်းသိမ်းပါသည်။
 
 ## Release provenance
 
