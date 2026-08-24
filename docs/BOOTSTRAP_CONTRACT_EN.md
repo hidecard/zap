@@ -20,6 +20,10 @@ A first Zap-owned lexer candidate is now checked in at [`bootstrap/b1/lexer.zp`]
 
 This is a **corpus-limited B1 foundation**, not a completed B1 compiler. The candidate is not yet the reference owner, does not replace the Rust lexer, and must expand through differential fixtures before the repository can advance the bootstrap stage claim.
 
+## B3 foundation status
+
+The repository now has a reference-only B3 foundation gate at [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh). It validates the catalog determinism taxonomy, generates a canonical dependency-free manifest lockfile, checks lockfile reproducibility, runs an offline locked build, and executes a Zap test fixture. These checks demonstrate existing package/build/test-runner behavior; they do not claim that the compiler pipeline is already Zap-owned.
+
 ## Canonical inspection commands
 
 The native CLI now exposes read-only B0 inspection commands:

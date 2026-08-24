@@ -20,6 +20,10 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 ဤအရာသည် **corpus-limited B1 foundation** ဖြစ်ပြီး B1 compiler အပြည့်အစုံ မဟုတ်သေးပါ။ Candidate သည် reference owner မဟုတ်သေး၊ Rust lexer ကို မအစားထိုးသေးပါ။ Bootstrap stage claim ကို မြှင့်ရန် differential fixture များဖြင့် ဆက်လက်ချဲ့ထွင်ရမည်။
 
+## B3 foundation status
+
+Repository တွင် reference-only B3 foundation gate ကို [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh) အဖြစ် ထည့်ထားသည်။ ၎င်းသည် catalog determinism taxonomy၊ dependency-free manifest ၏ canonical lockfile generation၊ lockfile reproducibility၊ offline locked build နှင့် Zap test fixture execution များကို စစ်ဆေးသည်။ ဤ check များသည် ရှိပြီးသား package/build/test-runner behavior ကို ပြသခြင်းသာဖြစ်ပြီး compiler pipeline တစ်ခုလုံး Zap-owned ဖြစ်နေပြီဟု မဆိုလိုပါ။
+
 ## Canonical inspection commands
 
 Native CLI တွင် read-only B0 inspection command များ ထည့်ပြီးဖြစ်သည်။
