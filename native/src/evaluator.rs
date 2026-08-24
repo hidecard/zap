@@ -2227,33 +2227,45 @@ fn web_route_path_is_valid(value: &str) -> bool {
     true
 }
 
-fn web_validate_routes(
+pub(crate) fn web_validate_route_shape(route: &Value) -> Result<(), String> {
+    let Value::Map(route) = route else {
+        return Err("Web route entries must be maps".into());
+    };
+    match route.get("method") {
+        Some(Value::Text(value))
+            if !value.is_empty()
+                && value
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || b"-".contains(&byte)) => {}
+        _ => return Err("Web route method must be a valid non-empty token".into()),
+    }
+    match route.get("path") {
+        Some(Value::Text(value)) if web_route_path_is_valid(value) => {}
+        _ => return Err("Web route path must be a safe absolute path".into()),
+    }
+    match route.get("handler") {
+        Some(Value::Callable(_)) | Some(Value::Text(_)) => {}
+        _ => return Err("Web route handler must be a function or function name".into()),
+    }
+    Ok(())
+}
+
+pub(crate) fn web_validate_routes(
     routes: &[Value],
     funcs: &HashMap<String, Rc<Function>>,
 ) -> Result<(), String> {
     for route in routes {
+        web_validate_route_shape(route)?;
         let Value::Map(route) = route else {
-            return Err("web_serve route entries must be maps".into());
+            unreachable!("web_validate_route_shape validated the route map");
         };
-        match route.get("method") {
-            Some(Value::Text(value))
-                if !value.is_empty()
-                    && value
-                        .bytes()
-                        .all(|byte| byte.is_ascii_alphanumeric() || b"-".contains(&byte)) => {}
-            _ => return Err("web_serve route method must be a valid non-empty token".into()),
-        }
-        match route.get("path") {
-            Some(Value::Text(value)) if web_route_path_is_valid(value) => {}
-            _ => return Err("web_serve route path must be a safe absolute path".into()),
-        }
         match route.get("handler") {
             Some(Value::Callable(_)) => {}
             Some(Value::Text(name)) if funcs.contains_key(name) => {}
             Some(Value::Text(name)) => {
                 return Err(format!("web_serve handler not found: {name}"));
             }
-            _ => return Err("web_serve route handler must be a function or function name".into()),
+            _ => unreachable!("web_validate_route_shape validated the handler"),
         }
     }
     Ok(())

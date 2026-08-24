@@ -910,6 +910,7 @@ When the program grows, move reusable declarations into a module, put tests in `
 | `zap install [directory]` | Validate/install locked dependencies |
 | `zap update [directory]` | Regenerate lock data after manifest changes |
 | `zap web check [directory]` | Validate Web manifest and scaffold |
+| `zap web routes [directory] [--json]` | Inspect the validated route table without opening a listener |
 | `zap dev [directory]` | Run the declared Web development server |
 | `zap db check [directory]` | Validate migration layout |
 | `zap db plan [directory]` | Show the deterministic migration plan |

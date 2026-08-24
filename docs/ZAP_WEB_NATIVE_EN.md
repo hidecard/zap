@@ -21,6 +21,7 @@ zap new shop
 cd shop
 zap check
 zap web check
+zap web routes
 zap db check
 zap db inspect --json
 zap db plan
@@ -34,7 +35,7 @@ zap dev
 
 `zap new <directory>` is the single canonical project generator. It creates a complete user-managed project with `zap.toml`, `zap.lock`, `main.zp`, `web.zp`, `models/`, `functions/`, `ui/`, `routes/`, `middleware/`, `migrations/`, `admin/`, `public/`, `server.zp`, and `tests/`. There is deliberately no Django-style `startapp` command: after generation, users own and manage the files and may add, remove, or reorganize modules according to their application needs. The generated `public/` directory contains a plain HTML entrypoint, CSS, and a browser ES module that consumes `/api/tasks`; it does not require Node.js to run. The generated `ui/ui.zp` is the explicit UI boundary: it describes the browser entrypoint, asset root, selected frontend mode, and the fact that Node is not required at runtime. The generated entrypoint prints a deterministic application description, route table, model metadata, UI metadata, middleware order, and admin registry. The generated `server.zp` is a bounded native development server entrypoint and can be started with `zap dev`; it is not yet a complete production Web platform.
 
-The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
+The native CLI now understands a constrained `[web]` section and an optional `[database]` section. It verifies that the declared routes, model directory, middleware, migration directory, admin registry, and server entrypoint exist, that paths are relative and safe, and that the first Web profile uses JSON-by-default serialization. Generic non-Web `zap.toml` projects remain valid. `zap web check` validates project structure, `zap web routes` executes the exported `routes()` factory and prints the route table without opening a listener, `zap db check` validates structured migration declarations and their deterministic SQL plan, and `zap dev` runs the manifest-declared `server.zp` after Web validation.
 
 ## Project and app model
 
@@ -215,6 +216,7 @@ zap new shop
 cd shop
 zap check
 zap web check
+zap web routes
 zap db check
 zap db inspect --json
 zap db plan
@@ -228,7 +230,7 @@ zap dev
 
 `zap db inspect` is a read-only adapter/status view; it does not create the SQLite file when it is absent. `zap db migrate --check` is a deployment-friendly check: it validates the migration ledger and exits successfully only when no migration is pending. With `--json`, the check includes `ok: true` or `ok: false` for automation. `zap dev` now runs the manifest-declared `server.zp` entrypoint. The generated server reads `ZAP_WEB_PORT` and defaults to `3000`, accepts bounded HTTP/1.0 or HTTP/1.1 requests on loopback, resolves exact, `:parameter`, and final `*wildcard` route segments, passes a request map to a Zap handler, and returns a framed response with security headers. The generated Web scaffold serves `public/index.html`, `public/assets/app.css`, and `public/assets/app.js` through `web_static`; the browser module calls `/api/tasks`. For a different local port, run `ZAP_WEB_PORT=3100 zap dev`. It is intentionally single-threaded and blocking; it is a development/reference server until concurrency, cancellation, TLS/edge policy, readiness integration, and operational evidence are complete.
 
-The next CLI additions should be implemented only when their semantics are real and testable. The roadmap is `zap routes` for a resolved route/middleware table, `zap explain route <path>` for execution tracing, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks. The current `zap db migrate` implementation is SQLite-first and additive; it must not be mistaken for a provider-neutral production migration system.
+The next CLI additions should be implemented only when their semantics are real and testable. `zap web routes` now provides a resolved route-table view without starting a listener. The roadmap remains `zap explain route <path>` for execution tracing, `zap docs` for generated API documentation, and `zap deploy preflight` for environment and security policy checks. The current `zap db migrate` implementation is SQLite-first and additive; it must not be mistaken for a provider-neutral production migration system.
 
 `zap run main.zp` remains a contract preview. `zap dev` is the first Zap-native HTTP execution path, while `host/zap-host` remains the operational Axum/Tower reference adapter. Neither should be described as a complete production Web platform until the production rule below is satisfied.
 

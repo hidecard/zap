@@ -47,6 +47,7 @@ Usage:
   zap new <dir>                         Create a complete user-managed Zap project
   zap dev [dir]                         Run the Zap-native Web server entrypoint
   zap web check [dir]                   Validate a Zap Web project
+  zap web routes [dir] [--json]         Inspect the validated route table
   zap db check [dir]                    Validate Web migration layout and SQL plan
   zap db plan [dir] [--json]            Show the read-only SQLite migration plan
   zap db inspect [dir] [--json]         Inspect SQLite adapter and migration status
@@ -167,6 +168,116 @@ fn validate_web_command(dir: &Path) -> Result<String, String> {
         return Err(format!("{} is not a Zap Web project", dir.display()));
     }
     validate_project(dir).map(|info| format!("valid Zap Web project: {info}"))
+}
+
+fn parse_web_routes_args(args: &[String]) -> Result<(PathBuf, bool), String> {
+    let mut dir = PathBuf::from(".");
+    let mut json_output = false;
+    for argument in args.iter().skip(3) {
+        match argument.as_str() {
+            "--json" => json_output = true,
+            value if value.starts_with('-') => {
+                return Err(format!("unknown Web routes option: {value}"));
+            }
+            _value if dir != Path::new(".") => {
+                return Err("Web routes accepts only one directory".into());
+            }
+            value => dir = PathBuf::from(value),
+        }
+    }
+    Ok((dir, json_output))
+}
+
+fn load_web_routes(dir: &Path) -> Result<(String, Vec<Value>), String> {
+    let info = validate_web_command(dir)?;
+    let routes_path = web_manifest_path(dir, "routes")?;
+    let source = read_limited_text(&routes_path, "Web routes source read")?;
+    let program = crate::ast::parse_program(&source)
+        .map_err(|error| format!("{}: syntax error: {error}", routes_path.display()))?;
+    let mut vars = HashMap::new();
+    let mut funcs = HashMap::new();
+    let mut context = ExecutionContext::new();
+    execute_ast_program_with_context(
+        &program,
+        &mut vars,
+        &mut funcs,
+        &mut context,
+        routes_path.parent().unwrap_or(dir),
+    )
+    .map_err(|error| {
+        format!(
+            "{}: route module execution failed: {error}",
+            routes_path.display()
+        )
+    })?;
+    let route_factory = funcs.get("routes").ok_or_else(|| {
+        format!(
+            "{}: exported routes() function is missing",
+            routes_path.display()
+        )
+    })?;
+    let value = call_function_with_context(route_factory, Vec::new(), &funcs, &mut context)
+        .map_err(|error| format!("{}: routes() failed: {error}", routes_path.display()))?;
+    let Value::List(routes) = value else {
+        return Err(format!(
+            "{}: routes() must return a list",
+            routes_path.display()
+        ));
+    };
+    for route in &routes {
+        evaluator::web_validate_route_shape(route)
+            .map_err(|error| format!("{}: {error}", routes_path.display()))?;
+    }
+    Ok((info, routes))
+}
+
+fn print_web_routes(dir: &Path, json_output: bool) {
+    let (info, routes) = match load_web_routes(dir) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Zap Web routes error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+    };
+    if json_output {
+        let route_json = routes
+            .iter()
+            .map(value_to_json)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap_or_else(|error| {
+                eprintln!("Zap Web routes error: cannot encode route table: {error}");
+                process::exit(EXIT_PROGRAM_FAILURE);
+            });
+        println!(
+            "{}",
+            serde_json::json!({"project": info, "routes": route_json})
+        );
+        return;
+    }
+    println!("{info}");
+    println!("routes: {}", routes.len());
+    for (index, route) in routes.iter().enumerate() {
+        let Value::Map(fields) = route else {
+            continue;
+        };
+        let method = fields
+            .get("method")
+            .map(Value::show)
+            .unwrap_or_else(|| "<missing>".into());
+        let path = fields
+            .get("path")
+            .map(Value::show)
+            .unwrap_or_else(|| "<missing>".into());
+        let handler = fields
+            .get("handler")
+            .map(Value::show)
+            .unwrap_or_else(|| "<missing>".into());
+        let scope = match fields.get("scope") {
+            Some(Value::Text(value)) if !value.is_empty() => format!(" scope={value}"),
+            _ => String::new(),
+        };
+        println!("{:>2}. {method} {path} -> {handler}{scope}", index + 1);
+    }
 }
 
 fn validate_migration_layout(dir: &Path) -> Result<String, String> {
@@ -418,7 +529,9 @@ for (const task of payload.tasks) {
     write_scaffold_file(
         dir,
         "main.zp",
-        "# Zap-first Web project entrypoint.\nimport \"web\"\nimport \"routes/routes\"\nimport \"models/user\"\nimport \"functions/user_functions\"\nimport \"middleware/middleware\"\nimport \"admin/admin\"\nimport \"ui/ui\"\nlet app = web_app(\"APP_NAME\")\nlet route_table = routes()\nlet model = user_model()\nlet middleware_table = middleware_stack()\nlet admin_table = admin_registry()\nlet ui = ui_manifest()\nsay json({\"framework\": \"zap-web\", \"app\": app, \"routes\": route_table, \"model\": model, \"middleware\": middleware_table, \"admin\": admin_table, \"ui\": ui})\n",
+        &format!(
+            "# Zap-first Web project entrypoint.\nimport \"web\"\nimport \"routes/routes\"\nimport \"models/user\"\nimport \"functions/user_functions\"\nimport \"middleware/middleware\"\nimport \"admin/admin\"\nimport \"ui/ui\"\nlet app = web_app(\"{name}\")\nlet route_table = routes()\nlet model = user_model()\nlet middleware_table = middleware_stack()\nlet admin_table = admin_registry()\nlet ui = ui_manifest()\nsay json({{\"framework\": \"zap-web\", \"app\": app, \"routes\": route_table, \"model\": model, \"middleware\": middleware_table, \"admin\": admin_table, \"ui\": ui}})\n"
+        ),
     )?;
     write_scaffold_file(
         dir,
@@ -492,6 +605,17 @@ pub fn run_cli(args: &[String]) {
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
         }
+        return;
+    }
+    if args.len() >= 3 && args[1] == "web" && args[2] == "routes" {
+        let (dir, json_output) = match parse_web_routes_args(args) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("Zap Web routes usage error: {error}");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        };
+        print_web_routes(&dir, json_output);
         return;
     }
     if args.len() >= 3
@@ -1160,6 +1284,7 @@ mod tests {
             "zap build",
             "zap new",
             "zap web check",
+            "zap web routes",
             "zap db check",
             "zap db plan",
             "zap db inspect",

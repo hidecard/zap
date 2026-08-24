@@ -90,6 +90,18 @@ The current router is intentionally small and deterministic:
 
 The route function never executes a handler for an invalid request. This ordering is important: validation and capability policy happen before application dispatch. The current `zap-host` adapter attaches authentication, rate limits, tracing, and bounded extraction around this stable boundary.
 
+## Route inspection
+
+The generated project keeps route declarations in `routes/routes.zp`. Use `zap web routes` from the project root, or pass a project directory explicitly, to execute the exported `routes()` factory and inspect its current table without starting a listener:
+
+```bash
+zap web routes
+zap web routes --json
+zap web routes ./shop
+```
+
+The human-readable form shows the method, path, handler, and optional authorization scope. `--json` is intended for editor tooling and scripts. Inspection validates the route entry shape, including a safe absolute path and a non-empty method token, while the live `web_serve` boundary additionally resolves every handler before accepting traffic. This keeps route visibility explicit and avoids hidden framework registration.
+
 ## Host-adapter contract
 
 The current `zap-host` prototype implements the following pipeline with Axum/Tower; a production deployment must complete each policy explicitly:
