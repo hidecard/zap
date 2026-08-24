@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.7] - 2026-08-24
+
+### Release summary
+- Malformed generic၊ unknown-annotation နှင့် incompatible-annotation source များကို native CLI ဖြင့် fail-closed စစ်ဆေးသော regression harness ထည့်ထားသည်။ Case တစ်ခုစီသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်ဖြစ်ပြီး CI နှင့် release preflight တွင် required ဖြစ်သည်။ Bootstrap stage သည် B0 ဖြစ်ပြီး Rust သည် reference owner အဖြစ် ဆက်ရှိသည်။
+
 ## [2.11.6] - 2026-08-24
 
 ### Release summary

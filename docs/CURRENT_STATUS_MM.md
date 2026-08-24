@@ -22,12 +22,13 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 | B1 lexer/parser candidates | provisional | Candidate output သည် owned corpus အပေါ်သာ စစ်ဆေးထားပြီး Rust pipeline ကို မအစားထိုးပါ။ |
 | B2 type-checker candidate | provisional | Selected declaration၊ conditional၊ function၊ call၊ bounded list-element diagnostic နှင့် paired nested-list index slice များ ပါဝင်သည်။ |
 | Typed-IR candidate | provisional | ရှိပြီးသား annotated declaration slice တစ်ခုတည်းကိုသာ cover လုပ်သည်။ |
+| Malformed-source safety | regression-gated | Invalid-source corpus အသေးတစ်ခုသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်။ ဤသည်မှာ safety regression gate ဖြစ်ပြီး compiler ownership evidence မဟုတ်ပါ။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
 | B4 self-hosting | deferred | Self-rebuild acceptance မအောင်မြင်သေးသရွေ့ B4 claim မပြုရ။ |
 
 ## နောက် bounded work
 
-နောက် roadmap အလုပ်သည် လက်ရှိ paired nested-list slice ၏ boundary အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ချဲ့ထွင်ပြီး၊ ထို owned analysis တစ်ခုတည်းမှ candidate typed-IR ထုတ်လုပ်မှုကို တိုးချဲ့ရန် ဖြစ်သည်။ Generic declaration၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
+နောက် roadmap အလုပ်သည် လက်ရှိ paired nested-list slice ၏ boundary အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ချဲ့ထွင်ရန် ဖြစ်ပြီး malformed-source no-panic behavior ကို regression-gated အဖြစ် ထိန်းသိမ်းမည်။ ထို့နောက် ထို owned analysis တစ်ခုတည်းမှ candidate typed-IR ထုတ်လုပ်မှုကို တိုးချဲ့မည်။ Generic declaration၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
 
 ## Developer environment
 

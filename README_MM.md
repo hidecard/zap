@@ -18,7 +18,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 | အချက် | အခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.11.6` |
+| လက်ရှိ release line | `v2.11.7` |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -33,12 +33,12 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 ## Install လုပ်ခြင်း
 
-သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.6 release page](https://github.com/hidecard/zap/releases/tag/v2.11.6) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
+သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.7 release page](https://github.com/hidecard/zap/releases/tag/v2.11.7) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.11.6-linux-x86_64.tar.gz
+tar -xzf zap-2.11.7-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -47,7 +47,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.11.6-macos-arm64.tar.gz
+tar -xzf zap-2.11.7-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -56,7 +56,7 @@ zap --version
 
 ### Windows
 
-မျှော်မှန်းထားသော archive သည် `zap-2.11.6-windows-x86_64.zip` ဖြစ်ပါသည်။
+မျှော်မှန်းထားသော archive သည် `zap-2.11.7-windows-x86_64.zip` ဖြစ်ပါသည်။
 
 ```bat
 cd C:\Zap
@@ -167,7 +167,7 @@ React၊ Vue၊ Svelte သို့မဟုတ် အခြား frontend proj
 
 ### Bootstrap နှင့် self-hosting အခြေအနေ
 
-Zap သည် **B0** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ v2.11.6 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
+Zap သည် **B0** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ v2.11.7 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
 
 Complete type inference၊ arbitrary-program parser/diagnostic parity၊ general typed-IR production၊ package/build ownership၊ VM execution ownership နှင့် platform-seed acceptance တို့သည် roadmap တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ လက်ရှိ candidate များကို fully Zap-only သို့မဟုတ် B4/self-hosted ဟု မယူဆရ။ အသေးစိတ် boundary ကို [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_MM.md) တွင် ထိန်းသိမ်းထားပြီး product scope ကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ဖော်ပြထားပါသည်။
 
@@ -187,7 +187,7 @@ Local validation မစတင်မီ `make doctor` ကို run လုပ်�
 
 ## Release provenance
 
-လက်ရှိ source baseline သည် v2.11.6 ဖြစ်ပါသည်။ [Canonical current-status page](docs/CURRENT_STATUS_MM.md) တွင် လက်ရှိ B0 boundary နှင့် နောက်ဆုံး publish လုပ်ထားသော release ၏ signed provenance fields များကို မှတ်တမ်းတင်ထားပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
+လက်ရှိ source baseline သည် v2.11.7 ဖြစ်ပါသည်။ [Canonical current-status page](docs/CURRENT_STATUS_MM.md) တွင် လက်ရှိ B0 boundary နှင့် နောက်ဆုံး publish လုပ်ထားသော release ၏ signed provenance fields များကို မှတ်တမ်းတင်ထားပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
 
 ## License
 

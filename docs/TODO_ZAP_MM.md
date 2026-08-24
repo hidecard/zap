@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v2.11.6 B0 bootstrap increment နှင့် P0 foundation hardening**
+**လက်ရှိအခြေအနေ — v2.11.7 B0 bootstrap increment နှင့် P0 foundation hardening**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.6 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.7 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -39,7 +39,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 
 ---
 
-## လက်ရှိ v2.11.6 B0 bootstrap checkpoint
+## လက်ရှိ v2.11.7 B0 bootstrap checkpoint
 
 - [x] Provisional Zap B2 type-checker candidate တွင် tracked `list<number>` value ကို numeric literal ဖြင့် index လုပ်သော bounded list-element inference path ထည့်ရန်။
 - [x] `list<number>` မှ numeric element ကို incompatible `text` annotation သို့ assign လုပ်သည့် negative fixture နှင့် stable line/column diagnostic ထည့်ရန်။
@@ -151,7 +151,7 @@ fn add(a: number, b: number) -> number:
 - [x] Function call ၏ argument count နှင့် literal argument type mismatch ကို `zap check --json` structured diagnostic အဖြစ် ထုတ်ရန်။
 - [x] Literal variable နှင့် ရိုးရိုး nested expression များ၏ inferred type mismatch ကို static diagnostic အဖြစ် ထုတ်ရန်။
 - [ ] Complex nested call၊ collection element နှင့် control-flow expression များ၏ inferred type mismatch ကို တိုးချဲ့ရန်။
-- [x] v2.11.6 bounded checkpoint အဖြစ် `list<list<number>>` nested indexing ၏ inferred type နှင့် text/number mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Broader nested expression inference ကို ဆက်လက် deferred ထားသည်။
+- [x] v2.11.7 bounded checkpoint အဖြစ် `list<list<number>>` nested indexing ၏ inferred type နှင့် text/number mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Broader nested expression inference ကို ဆက်လက် deferred ထားသည်။
 
 `zap check --json` သည် ယခု `file`၊ `line` နှင့် `column` fields များကို သီးခြားပြန်ပေးနိုင်ပြီး editor/CI tooling များက diagnostic location ကို တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 - [x] `any` type ၏ လက်ရှိ permissive runtime semantics ကို documentation တွင် ဖော်ပြရန်။

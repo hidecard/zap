@@ -1,6 +1,6 @@
 # Zap Bootstrap နှင့် Self-Hosting Contract
 
-**အခြေအနေ:** Zap v2.11.6 အတွက် B0 reference baseline
+**အခြေအနေ:** Zap v2.11.7 အတွက် B0 reference baseline
 
 Zap ၏ self-hosting roadmap သည် အဆင့်လိုက်ဖြစ်သည်။ လက်ရှိ release သည် **Rust reference/native implementation** ဖြစ်ပြီး fully Zap-only compiler မဖြစ်သေးပါ။ Normative stage contract၊ သီးခြား version identity များနှင့် machine-readable ownership record များကို [`bootstrap/contracts`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md) အောက်တွင် ထိန်းသိမ်းထားသည်။
 
@@ -68,4 +68,4 @@ B4 bootstrap check မအောင်မြင်သေးသရွေ့ releas
 
 ## နောက် gate
 
-လက်ရှိ implementation gate သည် staged parity expansion ဖြစ်သည်။ Zap-owned lexer နှင့် parser candidate များသည် owned corpus ကို ဆက်လက်ချဲ့ထွင်ပြီး valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် Rust reference နှင့် output နှိုင်းယှဉ်ရမည်။ B2 typed-IR/type-check conformance foundation၊ ပထမ provisional Zap-owned checker candidate နှင့် candidate-only typed-IR producer တို့ကို enforce လုပ်ပြီးဖြစ်သော်လည်း type checking နှင့် typed IR အပြည့်အစုံသည် native-owned အဖြစ်သာ ရှိသေးသည်။ v2.11.6 increment တွင် provisional list-element inference path တစ်ခုနှင့် negative collection-element diagnostic fixture တစ်ခု ထည့်ထားပြီး နောက်ထပ် nested-list slice တွင် paired valid/incompatible fixture များကို ownership မပြောင်းဘဲ ထည့်ထားသည်။ Broader collection inference၊ arbitrary nested expression နှင့် user-defined generic declarations များသည် သီးခြား evidence/design gate များနောက်တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။ VM နှင့် native backend အလုပ်များကို ထို gate များမကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
+လက်ရှိ implementation gate သည် staged parity expansion ဖြစ်သည်။ Zap-owned lexer နှင့် parser candidate များသည် owned corpus ကို ဆက်လက်ချဲ့ထွင်ပြီး valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် Rust reference နှင့် output နှိုင်းယှဉ်ရမည်။ B2 typed-IR/type-check conformance foundation၊ ပထမ provisional Zap-owned checker candidate နှင့် candidate-only typed-IR producer တို့ကို enforce လုပ်ပြီးဖြစ်သော်လည်း type checking နှင့် typed IR အပြည့်အစုံသည် native-owned အဖြစ်သာ ရှိသေးသည်။ v2.11.7 increment တွင် provisional list-element inference path တစ်ခုနှင့် negative collection-element diagnostic fixture တစ်ခု ထည့်ထားပြီး နောက်ထပ် nested-list slice တွင် paired valid/incompatible fixture များကို ownership မပြောင်းဘဲ ထည့်ထားသည်။ Broader collection inference၊ arbitrary nested expression နှင့် user-defined generic declarations များသည် သီးခြား evidence/design gate များနောက်တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိသည်။ VM နှင့် native backend အလုပ်များကို ထို gate များမကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။

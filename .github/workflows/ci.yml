@@ -78,6 +78,9 @@ jobs:
       - name: Run developer environment doctor regression
         run: bash scripts/test_doctor.sh
 
+      - name: Run malformed-source no-panic regression
+        run: bash scripts/test_malformed_source_safety.sh
+
       - name: Validate repository Markdown links
         run: python3 scripts/validate_markdown_links.py
 

@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.7] — 2026-08-24
+
+### Malformed-source safety
+- Malformed generic၊ unknown-annotation နှင့် incompatible-annotation source များအတွက် fail-closed native CLI regression harness ထည့်ထားပါသည်။ Case တစ်ခုစီသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်ဖြစ်ပြီး CI နှင့် release preflight နှစ်ခုစလုံးတွင် required ဖြစ်ပါသည်။ Bootstrap သည် B0 ဖြစ်ပြီး Rust သည် reference owner အဖြစ် ဆက်ရှိပါသည်။
+
 ## [2.11.6] — 2026-08-24
 
 ### B2 nested inference conformance

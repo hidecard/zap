@@ -1,6 +1,6 @@
 # MemoryBudget နှင့် ObjectStore Contract
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.6
+**စစ်ဆေးထားသော baseline:** Zap v2.11.7
 
 **Design status:** M2-MEM-02 logical accounting နှင့် rollback slice
 
