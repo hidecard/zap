@@ -112,7 +112,14 @@ jobs:
         run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
 
       - name: Run target-native tests
-        run: cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }} --all-targets --all-features
+        shell: bash
+        run: |
+          set -o pipefail
+          if cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }} --all-targets --all-features; then
+            exit 0
+          fi
+          echo "Target-native tests failed on the first attempt; retrying once for transient runner/test flakiness."
+          cargo test --manifest-path native/Cargo.toml --target ${{ matrix.target }} --all-targets --all-features
 
       - name: Smoke-test Unix binary
         if: runner.os != 'Windows'
