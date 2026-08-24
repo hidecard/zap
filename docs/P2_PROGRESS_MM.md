@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ development baseline သည် published v2.4.0 release နောက်ပိုင်း v2.11.5 release line ဖြစ်ပါသည်။ v2.4.0 tag/asset များသည် immutable ဖြစ်သည်။ P2 package၊ async၊ registry၊ editor၊ standard-library၊ runtime နှင့် documentation correction များကို explicit production-boundary limitation များနှင့်အတူ `master` တွင် track လုပ်နေပြီး complete release gate အောင်မြင်မှသာ v2.11.5 တွင် ပါဝင်မည်ဖြစ်သည်။
+Zap ၏ လက်ရှိ development baseline သည် published v2.4.0 release နောက်ပိုင်း v2.11.6 release line ဖြစ်ပါသည်။ v2.4.0 tag/asset များသည် immutable ဖြစ်သည်။ P2 package၊ async၊ registry၊ editor၊ standard-library၊ runtime နှင့် documentation correction များကို explicit production-boundary limitation များနှင့်အတူ `master` တွင် track လုပ်နေပြီး complete release gate အောင်မြင်မှသာ v2.11.6 တွင် ပါဝင်မည်ဖြစ်သည်။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|

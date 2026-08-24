@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.6] - 2026-08-24
+
+### Release summary
+- `list<list<number>>` nested-index inference အတွက် bounded provisional slice၊ paired positive/negative fixture၊ deterministic native/Zap-candidate diagnostic နှင့် `BOOT-023` ownership evidence ကို ထည့်ထားသည်။ Bootstrap stage သည် B0 ဖြစ်ပြီး Rust သည် reference owner အဖြစ် ဆက်ရှိသည်။
+
 ## [2.11.5] - 2026-08-24
 
 ### Release summary

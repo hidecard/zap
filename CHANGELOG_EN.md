@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.6] — 2026-08-24
+
+### B2 nested inference conformance
+- Added a bounded provisional `list<list<number>>` nested-index inference slice with paired positive/negative fixtures, deterministic native/candidate diagnostics, and `BOOT-023` ownership evidence. Rust remains the reference owner and bootstrap remains B0.
+
 ## [2.11.5] — 2026-08-24
 
 ### Release-gate and developer validation

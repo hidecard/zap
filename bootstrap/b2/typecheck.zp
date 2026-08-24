@@ -16,6 +16,14 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
     if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
         return "number"
     if collection_name != "" and starts_with(value, collection_name + "[") and ends_with(value, "]"):
+        if contains(value, "][") and starts_with(collection_element_type, "list<") and ends_with(collection_element_type, ">"):
+            let nested_parts = split(value, "][")
+            let first_index = trim(substring(nested_parts[0], len(collection_name) + 1, len(nested_parts[0])))
+            let second_index = trim(substring(nested_parts[1], 0, len(nested_parts[1]) - 1))
+            let nested_element_type = trim(substring(collection_element_type, 5, len(collection_element_type) - 1))
+            if expression_type(first_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type) == "number" and expression_type(second_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type) == "number":
+                return nested_element_type
+            return "any"
         let index = trim(substring(value, len(collection_name) + 1, len(value) - 1))
         if expression_type(index, parameter_name, parameter_type, function_name, collection_name, collection_element_type) == "number":
             return collection_element_type

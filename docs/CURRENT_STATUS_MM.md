@@ -20,14 +20,14 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 | Native compiler/runtime | active | Complete semantics နှင့် supported release target များအတွက် Rust သည် reference owner ဖြစ်နေဆဲ။ |
 | B0 artifacts | completed | Canonical token၊ AST၊ diagnostic၊ metadata၊ VM နှင့် platform-seed fixture များ reproducible ဖြစ်သည်။ |
 | B1 lexer/parser candidates | provisional | Candidate output သည် owned corpus အပေါ်သာ စစ်ဆေးထားပြီး Rust pipeline ကို မအစားထိုးပါ။ |
-| B2 type-checker candidate | provisional | Selected declaration၊ conditional၊ function၊ call နှင့် bounded list-element diagnostic များ ပါဝင်သည်။ |
+| B2 type-checker candidate | provisional | Selected declaration၊ conditional၊ function၊ call၊ bounded list-element diagnostic နှင့် paired nested-list index slice များ ပါဝင်သည်။ |
 | Typed-IR candidate | provisional | ရှိပြီးသား annotated declaration slice တစ်ခုတည်းကိုသာ cover လုပ်သည်။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
 | B4 self-hosting | deferred | Self-rebuild acceptance မအောင်မြင်သေးသရွေ့ B4 claim မပြုရ။ |
 
 ## နောက် bounded work
 
-နောက် roadmap အလုပ်သည် သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ကို ချဲ့ထွင်ပြီး၊ ထို owned analysis တစ်ခုတည်းမှ candidate typed-IR ထုတ်လုပ်မှုကို တိုးချဲ့ရန် ဖြစ်သည်။ Generic declaration၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
+နောက် roadmap အလုပ်သည် လက်ရှိ paired nested-list slice ၏ boundary အပြင်ဘက်ကိုပါ သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ချဲ့ထွင်ပြီး၊ ထို owned analysis တစ်ခုတည်းမှ candidate typed-IR ထုတ်လုပ်မှုကို တိုးချဲ့ရန် ဖြစ်သည်။ Generic declaration၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
 
 ## Developer environment
 

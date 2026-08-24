@@ -20,14 +20,14 @@ The versioned provenance asset is the canonical machine-readable record for rele
 | Native compiler/runtime | active | Rust remains the reference owner for complete semantics and supported release targets. |
 | B0 artifacts | completed | Canonical tokens, AST, diagnostics, metadata, VM, and platform-seed fixtures are reproducible. |
 | B1 lexer/parser candidates | provisional | Candidate output is checked only against the owned corpus and does not replace the Rust pipeline. |
-| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, and bounded list-element diagnostics. |
+| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, and a paired nested-list index slice. |
 | Typed-IR candidate | provisional | Covers the existing annotated declaration slice only. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
 | B4 self-hosting | deferred | No B4 claim is allowed until self-rebuild acceptance passes. |
 
 ## Next bounded work
 
-The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures, then extend candidate typed-IR production from the same owned analysis. Generic declarations, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
+The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures, including the boundary beyond the current paired nested-list slice, then extend candidate typed-IR production from the same owned analysis. Generic declarations, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
 
 ## Developer environment
 

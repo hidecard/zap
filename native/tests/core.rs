@@ -1631,6 +1631,18 @@ fn typecheck_p1_conformance_tc006_to_tc008() {
             false,
             "variable 'first' expects text, got number",
         ),
+        (
+            "tc008-nested-collection-element",
+            "let rows: list<list<number>> = [[1, 2], [3, 4]]\nlet first: number = rows[0][1]\n",
+            true,
+            "",
+        ),
+        (
+            "tc008-negative-nested-collection-element",
+            "let rows: list<list<number>> = [[1, 2], [3, 4]]\nlet first: text = rows[0][1]\n",
+            false,
+            "variable 'first' expects text, got number",
+        ),
     ];
 
     for (name, source, should_pass, expected_error) in cases {

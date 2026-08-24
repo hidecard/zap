@@ -1,10 +1,10 @@
 # Zap Type-Checking နှင့် Conformance Acceptance Matrix
 
 **အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline  
-**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.11.5
+**နောက်ဆုံးစစ်ဆေးထားသော version:** v2.11.6
 **အကျယ်အဝန်း:** Static checking၊ control-flow narrowing၊ diagnostics နှင့် conformance fixtures
 
-ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ နောက်ဆုံးစစ်ဆေးထားသော release metadata သည် v2.11.5 ဖြစ်ပြီး ဤ release သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
+ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ နောက်ဆုံးစစ်ဆေးထားသော release metadata သည် v2.11.6 ဖြစ်ပြီး ဤ release သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
 
 ## လက်ရှိ baseline
 
@@ -73,7 +73,7 @@ Message wording သည် ပြောင်းလဲနိုင်သော်
 
 ## အကောင်အထည်ဖော်ရန် အစီအစဉ်
 
-TC-001 မှ TC-012 အထိကို သတ်မှတ်ထားသော supported syntax boundary အတွင်း အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ နောက်ထပ်လုပ်ငန်းများတွင် negative collection-element cases၊ ပိုမိုနက်ရှိုင်းသော nested inference နှင့် user-defined generic declarations များကို design record နှင့် release gate အသစ်အောက်တွင်သာ တိုးချဲ့သင့်သည်။ Fixture တစ်ခုအတွက်သာ generic syntax ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
+TC-001 မှ TC-012 အထိကို သတ်မှတ်ထားသော supported syntax boundary အတွင်း အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ v2.11.6 candidate တွင် `list<list<number>>` indexing နှင့် numeric result ကို `text` သို့ assign လုပ်ပါက reject ဖြစ်ကြောင်း paired fixture များဖြင့် bounded nested-list slice တစ်ခု ထည့်ထားသည်။ နောက်ထပ်လုပ်ငန်းများတွင် ပိုမိုကျယ်ပြန့်သော collection inference၊ arbitrary nested expression နှင့် user-defined generic declarations များကို design record နှင့် release gate အသစ်အောက်တွင်သာ တိုးချဲ့သင့်သည်။ Fixture တစ်ခုအတွက်သာ generic syntax ကို အလျင်စလို မတိုးချဲ့သင့်ပါ။
 
 ## ထပ်မလုပ်သင့်သည့် အပိုင်း
 

@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.6] — 2026-08-24
+
+### B2 nested inference conformance
+- `list<list<number>>` nested-index inference အတွက် bounded provisional slice တစ်ခုကို paired positive/negative fixture၊ deterministic native/candidate diagnostic နှင့် `BOOT-023` ownership evidence များနှင့်အတူ ထည့်ထားပါသည်။ Rust သည် reference owner ဖြစ်ပြီး bootstrap သည် B0 အဖြစ် ဆက်ရှိပါသည်။
+
 ## [2.11.5] — 2026-08-24
 
 ### Release-gate နှင့် developer validation

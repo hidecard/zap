@@ -1,10 +1,10 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
 **Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** v2.11.5
+**Verified baseline:** v2.11.6
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
-This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its verified release metadata is v2.11.5; this release does not reopen the completed async runtime, registry, or release-engineering work.
+This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its verified release metadata is v2.11.6; this release does not reopen the completed async runtime, registry, or release-engineering work.
 
 ## Current baseline
 
@@ -73,7 +73,7 @@ The exact wording may evolve, but `kind`, source location, and a user-actionable
 
 ## Implementation order
 
-The implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. Future work should extend negative collection-element cases, deeper nested inference, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
+The implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. The v2.11.6 candidate adds a bounded nested-list slice: paired fixtures cover `list<list<number>>` indexing and rejection when its numeric result is assigned to `text`. Future work should extend broader collection inference, arbitrary nested expressions, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
 
 ## Do-not-duplicate boundary
 
