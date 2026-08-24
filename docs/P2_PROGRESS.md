@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current development baseline is the v2.11.13 corrective-release preparation line for cross-platform CI reliability and bounded bootstrap evidence. The published v2.11.11 tag and assets remain immutable; the v2.11.12 tag is preserved as a failed macOS ARM64 release-workflow record and has no public GitHub Release. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections are tracked on `master` with explicit production-boundary limitations and will be included in v2.11.13 only after the complete release gate passes.
+Zap's current development baseline is the published v2.11.13 corrective release for cross-platform CI reliability and bounded bootstrap evidence. The published v2.11.11 and v2.11.13 tags and assets remain immutable; the v2.11.12 tag is preserved as a failed macOS ARM64 release-workflow record and has no public GitHub Release. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections remain tracked on `master` with explicit production-boundary limitations, and the next active line is v2.11.14.
 
 | Milestone | Status | Notes |
 |---|---|---|

@@ -1,12 +1,12 @@
 # Zap v2.11.13 Release Notes
 
-**Release အခြေအနေ:** v2.11.12 failed-tag incident အတွက် corrective release candidate ဖြစ်ပြီး Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
+**Release အခြေအနေ:** v2.11.12 failed-tag incident အတွက် publish လုပ်ပြီးသော corrective release ဖြစ်ပြီး Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
 
 ## အနှစ်ချုပ်
 
 Zap v2.11.13 သည် tracked `option<number>` variable တစ်ခုအတွက် ထည့်သွင်းထားသော provisional၊ corpus-limited direct `is_option_none` else-body narrowing evidence ကို ဆက်လက်သယ်ဆောင်ထားပြီး macOS ARM64 CI အတွက် အကျယ်အဝန်းအနည်းဆုံး cross-platform correction ကို ထည့်ထားသည်။ Complete CRLF-terminated request header များပို့ပြီးနောက် native web-server regression test ၏ client write side ကို မလိုအပ်ဘဲ half-close မလုပ်တော့ပါ။ Request parser သည် EOF မလိုအပ်သောကြောင့် ထိုမလိုအပ်သော half-close ကို ဖယ်ရှားခြင်းက CI တွင် တွေ့ရှိခဲ့သော macOS ARM64 local-socket reset behavior ကို ရှောင်ရှားစေသည်။
 
-v2.11.12 annotated tag ကို macOS ARM64 target-native test တွင် release workflow မအောင်မြင်ခဲ့သည့် immutable evidence အဖြစ် ထိန်းသိမ်းထားပြီး v2.11.12 GitHub Release ကို publish မလုပ်ခဲ့ပါ။ v2.11.13 သည် tag အသစ်ဖြစ်ပြီး ကိုယ်ပိုင် complete release workflow နှင့် public artifact verification များ pass ပြီးမှသာ publish လုပ်နိုင်မည်။
+v2.11.12 annotated tag ကို macOS ARM64 target-native test တွင် release workflow မအောင်မြင်ခဲ့သည့် immutable evidence အဖြစ် ထိန်းသိမ်းထားပြီး v2.11.12 GitHub Release ကို publish မလုပ်ခဲ့ပါ။ v2.11.13 သည် tag အသစ်ဖြစ်ပြီး ကိုယ်ပိုင် complete release workflow နှင့် public artifact verification များ pass ပြီးမှသာ publish လုပ်ခဲ့သည်။
 
 ## ပြောင်းလဲမှုများ
 

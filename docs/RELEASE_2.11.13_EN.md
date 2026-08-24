@@ -1,12 +1,12 @@
 # Zap v2.11.13 Release Notes
 
-**Release status:** Corrective release candidate for the v2.11.12 failed-tag incident; Zap remains B0.
+**Release status:** Published corrective release for the v2.11.12 failed-tag incident; Zap remains B0.
 
 ## Summary
 
 Zap v2.11.13 carries forward the provisional, corpus-limited direct `is_option_none` else-body narrowing evidence introduced for one tracked `option<number>` variable and adds the smallest safe cross-platform CI correction. The native web-server regression test no longer half-closes the client write side after sending complete CRLF-terminated request headers; the parser does not require EOF, and avoiding that unnecessary half-close removes the macOS ARM64 local-socket reset behavior observed in CI.
 
-The v2.11.12 annotated tag is preserved as immutable evidence of a release workflow that failed in the macOS ARM64 target-native test, and no v2.11.12 GitHub Release was published. v2.11.13 uses a new tag and is eligible for publication only after its own complete release workflow and public artifact verification pass.
+The v2.11.12 annotated tag is preserved as immutable evidence of a release workflow that failed in the macOS ARM64 target-native test, and no v2.11.12 GitHub Release was published. v2.11.13 uses a new tag and was published only after its own complete release workflow and public artifact verification passed.
 
 ## Changes
 

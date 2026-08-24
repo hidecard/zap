@@ -64,13 +64,18 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Provisional ownership ledger တွင် `BOOT-026` နှင့် `bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp` ထည့်ရန်။
 - [ ] Compound guard၊ loop mutation၊ reassignment invalidation နှင့် general control-flow narrowing များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်。
 
-## v2.11.12 tag-attempt evidence နှင့် လက်ရှိ v2.11.13 corrective preparation checkpoint
+## v2.11.12 tag-attempt evidence နှင့် v2.11.13 corrective release ပြီးစီးမှု
 
 - [x] v2.11.12 tag-attempt အတွက် provisional Zap B2 candidate တွင် tracked `option<number>` variable တစ်ခုအတွက် direct `if is_option_none(name): ... else:` shape ကိုသာ support လုပ်ပြီး indented `else` body အတွင်း numeric payload use ကို bounded အဖြစ် စစ်ဆေးရန်။
 - [x] True body တွင် မူလ `option<number>` wrapper ကို ဆက်လက်ထိန်းထားပြီး else body ပြီးနောက် scope restoration မပျက်ကြောင်း paired fixtures နှင့် စစ်ဆေးရန်။
 - [x] Native Rust reference နှင့် Zap candidate အတွက် deterministic positive/negative evidence ထည့်ရန်။ Negative fixture သည် line 5, column 1 တွင် `variable 'payload' expects text, got number` diagnostic ကို assert လုပ်သည်။
 - [x] Provisional ownership ledger တွင် `BOOT-027` နှင့် `bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp` ထည့်ရန်။
 - [x] macOS ARM64 target-native web-server regression ကို test client half-close မလိုအပ်ကြောင်း သတ်မှတ်ပြီး platform-sensitive local-socket reset race မဖြစ်စေရန် ပြင်ဆင်ခြင်း၊ full Zap CI matrix ဖြင့် ပြန်လည်စစ်ဆေးခြင်း။
+- [x] v2.11.13 corrective release ကို new immutable tag ဖြင့် publish လုပ်ပြီး source၊ Linux၊ macOS၊ Windows၊ Publish နှင့် public artifact/signature verification အားလုံး အောင်မြင်ကြောင်း မှတ်တမ်းတင်ခြင်း။
+
+## နောက် v2.11.14 B0-safe preparation
+
+- [ ] နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety

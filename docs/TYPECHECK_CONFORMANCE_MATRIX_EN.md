@@ -1,10 +1,10 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
 **Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** v2.11.13 corrective preparation
+**Verified baseline:** published v2.11.13
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
-This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its active metadata is v2.11.13 corrective preparation; the failed v2.11.12 tag remains historical evidence, and this release does not reopen the completed async runtime, registry, or release-engineering work.
+This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its active metadata is published v2.11.13; the failed v2.11.12 tag remains historical evidence, and this release does not reopen the completed async runtime, registry, or release-engineering work.
 
 ## Current baseline
 
@@ -73,7 +73,7 @@ The exact wording may evolve, but `kind`, source location, and a user-actionable
 
 ## Implementation order
 
-The implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. The v2.11.7 candidate adds a bounded nested-list slice: paired fixtures cover `list<list<number>>` indexing and rejection when its numeric result is assigned to `text`. The v2.11.8 release adds a bounded map-element slice limited to a tracked `map<text,number>` variable and a text-literal key, with paired valid and incompatible fixtures. The v2.11.9 release adds a bounded direct-`is_some` branch-local narrowing slice limited to a tracked `option<number>` variable and one indented `if` body, with paired valid and incompatible fixtures. The v2.11.11 release adds a bounded direct-`is_some` loop-body slice and checks wrapper restoration after the loop with a paired incompatible fixture. The v2.11.12 tag attempt added a bounded direct `is_option_none` else-body slice limited to one tracked `option<number>` variable and one indented else body, with paired valid and incompatible fixtures, but its macOS ARM64 release workflow failed before publication; the v2.11.13 corrective preparation carries that evidence with the validated cross-platform test-harness fix. Future work should extend broader collection inference, nested maps, compound guards, loop mutation, reassignment invalidation, aliases, arbitrary nested expressions, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
+The implementation order is complete for TC-001 through TC-012 at the documented baseline boundary. The v2.11.7 candidate adds a bounded nested-list slice: paired fixtures cover `list<list<number>>` indexing and rejection when its numeric result is assigned to `text`. The v2.11.8 release adds a bounded map-element slice limited to a tracked `map<text,number>` variable and a text-literal key, with paired valid and incompatible fixtures. The v2.11.9 release adds a bounded direct-`is_some` branch-local narrowing slice limited to a tracked `option<number>` variable and one indented `if` body, with paired valid and incompatible fixtures. The v2.11.11 release adds a bounded direct-`is_some` loop-body slice and checks wrapper restoration after the loop with a paired incompatible fixture. The v2.11.12 tag attempt added a bounded direct `is_option_none` else-body slice limited to one tracked `option<number>` variable and one indented else body, with paired valid and incompatible fixtures, but its macOS ARM64 release workflow failed before publication; the published v2.11.13 corrective release carries that evidence with the validated cross-platform test-harness fix. Future work should extend broader collection inference, nested maps, compound guards, loop mutation, reassignment invalidation, aliases, arbitrary nested expressions, and user-defined generic declarations only under a new design record and release gate. Generic syntax must not be expanded merely to satisfy a fixture.
 
 ## Do-not-duplicate boundary
 
