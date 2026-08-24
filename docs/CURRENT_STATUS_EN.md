@@ -1,15 +1,15 @@
 # Zap Current Status
 
 **Status label:** active
-**Latest published release:** [v2.11.5](https://github.com/hidecard/zap/releases/tag/v2.11.5)
-**Next release line:** v2.11.6 preparation
+**Latest published release:** [v2.11.6](https://github.com/hidecard/zap/releases/tag/v2.11.6)
+**Next release line:** v2.11.7 preparation
 **Bootstrap stage:** B0
 
 > Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler.
 
 ## Release and provenance
 
-The latest published release is v2.11.5. Its tag and workflow record are immutable release evidence; a later release must use a new tag and must not rewrite prior tags. Each published release includes a versioned manifest, aggregate checksums, detached signatures, and a signed provenance asset.
+The latest published release is v2.11.6. Its tag and workflow record are immutable release evidence; a later release must use a new tag and must not rewrite prior tags. Each published release includes a versioned manifest, aggregate checksums, detached signatures, and a signed provenance asset.
 
 The versioned provenance asset is the canonical machine-readable record for release identity. It records the source URI, tag/ref, source commit, workflow run ID, reproducible manifest and checksums, signing metadata, and artifact subjects with their SHA-256 digests and sizes. The release verifier checks this record together with the downloaded archives and signatures.
 
@@ -27,7 +27,7 @@ The versioned provenance asset is the canonical machine-readable record for rele
 
 ## Next bounded work
 
-The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures, including the boundary beyond the current paired nested-list slice, then extend candidate typed-IR production from the same owned analysis. Generic declarations, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
+The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures beyond the current paired nested-list slice, then extend candidate typed-IR production from the same owned analysis. Generic declarations, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
 
 ## Developer environment
 
