@@ -1,15 +1,15 @@
 # Zap Current Status
 
 **Status label:** active
-**Latest published release:** [v2.11.6](https://github.com/hidecard/zap/releases/tag/v2.11.6)
-**Next release line:** v2.11.7 preparation
+**Latest published release:** [v2.11.7](https://github.com/hidecard/zap/releases/tag/v2.11.7)
+**Next release line:** v2.11.8 preparation
 **Bootstrap stage:** B0
 
 > Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler.
 
 ## Release and provenance
 
-The latest published release is v2.11.6. Its tag and workflow record are immutable release evidence; a later release must use a new tag and must not rewrite prior tags. Each published release includes a versioned manifest, aggregate checksums, detached signatures, and a signed provenance asset.
+The latest published release is v2.11.7. Its tag and workflow record are immutable release evidence; a later release must use a new tag and must not rewrite prior tags. Each published release includes a versioned manifest, aggregate checksums, detached signatures, and a signed provenance asset.
 
 The versioned provenance asset is the canonical machine-readable record for release identity. It records the source URI, tag/ref, source commit, workflow run ID, reproducible manifest and checksums, signing metadata, and artifact subjects with their SHA-256 digests and sizes. The release verifier checks this record together with the downloaded archives and signatures.
 
