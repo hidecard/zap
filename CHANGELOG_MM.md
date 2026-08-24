@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+### Zap-only bootstrap foundations
+- Canonical reference parser AST နှင့် syntax-diagnostic differential fixture များ၊ byte-for-byte CI/release-preflight check ပါဝင်သော provisional Zap-written parser candidate ကို ထည့်သွင်းထားပါသည်။
+- Typed-IR reproducibility နှင့် type-check acceptance/rejection fixture များကို ထည့်သွင်းထားသော်လည်း typed IR နှင့် type checking ကို native-owned အဖြစ် တိကျစွာ ထိန်းသိမ်းထားပါသည်။
+- Bootstrap identity များကို upstream v2.10.0 နှင့် reconcile လုပ်ပြီး B0/non-self-hosted wording ကို ထိန်းသိမ်းကာ historical v2.9.2 freeze ကို immutable evidence အဖြစ် ဆက်ထားပါသည်။
+
 ## [2.10.0] — 2026-08-24
 
 ### Release engineering
