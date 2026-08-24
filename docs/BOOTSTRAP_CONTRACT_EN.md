@@ -1,6 +1,6 @@
 # Zap Bootstrap and Self-Hosting Contract
 
-**Status:** B0 reference baseline for Zap v2.9.2
+**Status:** B0 reference baseline for Zap v2.10.0
 
 Zap’s self-hosting roadmap is staged. The current release remains a **Rust reference/native implementation**; it is not yet a fully Zap-only compiler. The normative stage contract, independent version identities, and machine-readable ownership records are maintained under [`bootstrap/contracts`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md).
 

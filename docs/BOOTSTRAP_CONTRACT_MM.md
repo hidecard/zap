@@ -1,6 +1,6 @@
 # Zap Bootstrap နှင့် Self-Hosting Contract
 
-**အခြေအနေ:** Zap v2.9.2 အတွက် B0 reference baseline
+**အခြေအနေ:** Zap v2.10.0 အတွက် B0 reference baseline
 
 Zap ၏ self-hosting roadmap သည် အဆင့်လိုက်ဖြစ်သည်။ လက်ရှိ release သည် **Rust reference/native implementation** ဖြစ်ပြီး fully Zap-only compiler မဖြစ်သေးပါ။ Normative stage contract၊ သီးခြား version identity များနှင့် machine-readable ownership record များကို [`bootstrap/contracts`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md) အောက်တွင် ထိန်းသိမ်းထားသည်။
 

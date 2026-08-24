@@ -1,6 +1,6 @@
 # Zap Bootstrap Contract
 
-**Status:** Normative B0 contract for Zap v2.9.2
+**Status:** Normative B0 contract for Zap v2.10.0
 
 This contract defines the staged path from the current Rust reference implementation to a Zap-only self-hosted ecosystem. It does not claim that Zap is already self-hosted. The operating-system loader, executable format, filesystem, and explicitly documented platform seed remain the boundary conditions for every stage.
 
@@ -44,4 +44,4 @@ Language version, compiler version, standard-library version, and each artifact 
 
 ## Current status
 
-Zap v2.9.2 is **B0**. The current native Rust lexer, parser, evaluator, standard library, registry, and host boundaries are the reference owners. The bootstrap directories establish the contract and corpus needed for B1 work; they do not replace the native implementation.
+Zap v2.10.0 is **B0**. The current native Rust lexer, parser, evaluator, standard library, registry, and host boundaries are the reference owners. The bootstrap directories establish the contract and corpus needed for B1 work; they do not replace the native implementation.

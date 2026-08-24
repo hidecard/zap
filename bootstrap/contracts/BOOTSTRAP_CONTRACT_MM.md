@@ -1,6 +1,6 @@
 # Zap Bootstrap Contract
 
-**အခြေအနေ:** Zap v2.9.2 အတွက် B0 normative contract
+**အခြေအနေ:** Zap v2.10.0 အတွက် B0 normative contract
 
 ဤ contract သည် လက်ရှိ Rust reference implementation မှ Zap-only self-hosted ecosystem သို့ သွားမည့် အဆင့်လိုက်လမ်းကြောင်းကို သတ်မှတ်သည်။ Zap သည် လက်ရှိတွင် self-hosted ဖြစ်ပြီးဟု မဆိုလိုပါ။ Operating-system loader၊ executable format၊ filesystem နှင့် document လုပ်ထားသော platform seed များသည် အဆင့်တိုင်း၏ platform boundary အဖြစ် ဆက်လက်ရှိမည်။
 
@@ -44,4 +44,4 @@ Language version၊ compiler version၊ standard-library version နှင့်
 
 ## လက်ရှိအခြေအနေ
 
-Zap v2.9.2 သည် **B0** ဖြစ်သည်။ လက်ရှိ native Rust lexer၊ parser၊ evaluator၊ standard library၊ registry နှင့် host boundary များသည် reference owner များဖြစ်သည်။ Bootstrap directory များသည် B1 အတွက် လိုအပ်သော contract နှင့် corpus ကို စတင်တည်ဆောက်ပေးခြင်းသာဖြစ်ပြီး native implementation ကို အစားမထိုးသေးပါ။
+Zap v2.10.0 သည် **B0** ဖြစ်သည်။ လက်ရှိ native Rust lexer၊ parser၊ evaluator၊ standard library၊ registry နှင့် host boundary များသည် reference owner များဖြစ်သည်။ Bootstrap directory များသည် B1 အတွက် လိုအပ်သော contract နှင့် corpus ကို စတင်တည်ဆောက်ပေးခြင်းသာဖြစ်ပြီး native implementation ကို အစားမထိုးသေးပါ။
