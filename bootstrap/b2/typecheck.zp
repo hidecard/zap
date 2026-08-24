@@ -101,6 +101,9 @@ export fn check(source, source_name):
     let narrowed_name = ""
     let narrowed_type = ""
     let branch_indent = -1
+    let pending_else_name = ""
+    let pending_else_type = ""
+    let pending_else_indent = -1
     for line in lines:
         line_number = line_number + 1
         let declaration = trim(line)
@@ -109,6 +112,10 @@ export fn check(source, source_name):
             narrowed_name = ""
             narrowed_type = ""
             branch_indent = -1
+        if pending_else_name != "" and declaration != "else:" and indent <= pending_else_indent:
+            pending_else_name = ""
+            pending_else_type = ""
+            pending_else_indent = -1
         if starts_with(declaration, "fn "):
             let parts = function_parts(declaration)
             function_name = parts["name"]
@@ -141,6 +148,19 @@ export fn check(source, source_name):
                 narrowed_name = option_name
                 narrowed_type = option_payload
                 branch_indent = indent
+        if starts_with(declaration, "if is_option_none(") and ends_with(declaration, "):"):
+            let guarded_name = trim(substring(declaration, len("if is_option_none("), len(declaration) - 2))
+            if guarded_name == option_name:
+                pending_else_name = option_name
+                pending_else_type = option_payload
+                pending_else_indent = indent
+        if declaration == "else:" and pending_else_name != "" and indent == pending_else_indent:
+            narrowed_name = pending_else_name
+            narrowed_type = pending_else_type
+            branch_indent = indent
+            pending_else_name = ""
+            pending_else_type = ""
+            pending_else_indent = -1
         let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if error != none:
             return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})

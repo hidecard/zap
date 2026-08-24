@@ -79,10 +79,22 @@ else:
 
 After the conditional, `maybe` is again `option<number>` in both paths. Passing it directly to a function that requires `number` is rejected by `zap check` unless it is guarded or explicitly unwrapped.
 
+The distinct negative predicate form has one bounded reference/candidate case:
+
+```zap
+let maybe: option<number> = option_none()
+if is_option_none(maybe):
+    let none_value: option<number> = maybe
+else:
+    let payload: number = maybe
+```
+
+For this exact direct shape, the true body retains `option<number>` and the single indented `else` body receives `number`. The current Zap candidate covers only one tracked `option<number>` variable and does not generalize this fact to compound guards, mutation, aliases, nested control flow, or arbitrary predicates.
+
 ## Scope and diagnostics
 
 Narrowing applies to nested statements whose indentation belongs to the guarded block. It does not leak into sibling statements or code after the conditional. The checker reports the expected and actual types, including wrapper types such as `option<number>` and `result<number>`, when a narrowed value is used outside its valid scope.
 
 ## Current boundary
 
-The current implementation covers direct predicate guards, boolean `and`/`or` combinations with safe common facts, inferred aliases, and branch restoration. More advanced flow facts such as arbitrary user-defined predicates, mutation-sensitive alias analysis, and complex loop invariants remain future static-checker work.
+The native reference implementation covers direct predicate guards, boolean `and`/`or` combinations with safe common facts, inferred aliases, and branch restoration. The Zap candidate additionally has corpus evidence for the direct `is_option_none` else-body shape shown above. More advanced flow facts such as arbitrary user-defined predicates, mutation-sensitive alias analysis, reassignment invalidation, and complex loop invariants remain future static-checker work.

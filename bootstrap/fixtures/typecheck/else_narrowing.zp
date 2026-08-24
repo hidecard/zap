@@ -1,0 +1,5 @@
+let maybe: option<number> = option_none()
+if is_option_none(maybe):
+    let none_value: option<number> = maybe
+else:
+    let payload: number = maybe

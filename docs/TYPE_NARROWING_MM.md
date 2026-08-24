@@ -79,10 +79,22 @@ else:
 
 Conditional ပြီးလျှင် `maybe` သည် branch နှစ်ခုလုံးတွင် `option<number>` အဖြစ် ပြန်လည်ရရှိပါသည်။ Guard သို့မဟုတ် explicit unwrap မရှိဘဲ `number` လိုအပ်သော function ထဲသို့ တိုက်ရိုက်ပေးပါက `zap check` က reject လုပ်ပါသည်။
 
+မတူညီသော negative predicate form အတွက် bounded reference/candidate case တစ်ခု ရှိပါသည်။
+
+```zap
+let maybe: option<number> = option_none()
+if is_option_none(maybe):
+    let none_value: option<number> = maybe
+else:
+    let payload: number = maybe
+```
+
+ဤ direct shape အတိအကျအတွက် true body သည် `option<number>` ကို ဆက်ထိန်းထားပြီး indented `else` body တစ်ခုတည်းတွင် `number` ကို ရရှိပါသည်။ လက်ရှိ Zap candidate သည် tracked `option<number>` variable တစ်ခုတည်းအတွက်သာ cover လုပ်ပြီး compound guard၊ mutation၊ alias၊ nested control flow သို့မဟုတ် arbitrary predicate များသို့ မချဲ့ထွင်ပါ။
+
 ## Scope နှင့် diagnostics
 
 Narrowing သည် indentation အရ guarded block အတွင်းရှိ nested statements များတွင်သာ သက်ရောက်ပါသည်။ Sibling statement များ သို့မဟုတ် conditional ပြီးနောက် code ထဲသို့ မပျံ့နှံ့ပါ။ Narrowed value ကို မှားယွင်းသော scope တွင် အသုံးပြုပါက `option<number>` နှင့် `result<number>` ကဲ့သို့ wrapper type များအပါအဝင် expected နှင့် actual type များကို diagnostic ဖြင့် ပြပေးပါသည်။
 
 ## လက်ရှိကန့်သတ်ချက်
 
-လက်ရှိ implementation သည် direct predicate guards၊ safe common facts ပါသော boolean `and`/`or` combinations၊ inferred aliases နှင့် branch restoration များကို support လုပ်ပါသည်။ User-defined predicates၊ mutation-sensitive alias analysis နှင့် complex loop invariants များသည် နောက်ပိုင်း static-checker အလုပ်များ ဖြစ်ပါသည်။
+Native reference implementation သည် direct predicate guards၊ safe common facts ပါသော boolean `and`/`or` combinations၊ inferred aliases နှင့် branch restoration များကို support လုပ်ပါသည်။ Zap candidate တွင် အထက်ဖော်ပြပါ direct `is_option_none` else-body shape အတွက် corpus evidence ထပ်မံရှိပါသည်။ User-defined predicates၊ mutation-sensitive alias analysis၊ reassignment invalidation နှင့် complex loop invariants များသည် နောက်ပိုင်း static-checker အလုပ်များ ဖြစ်ပါသည်။

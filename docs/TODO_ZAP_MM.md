@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v2.11.7 B0 bootstrap increment နှင့် P0 foundation hardening**
+**လက်ရှိအခြေအနေ — v2.11.11 published B0 bootstrap increment နှင့် P0 foundation hardening**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.7 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.11 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -62,7 +62,15 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Loop ပြီးနောက် မူလ `option<number>` wrapper type ပြန်လည်ရရှိကြောင်း paired incompatible assignment fixture နှင့် exact line/column diagnostic ဖြင့် စစ်ဆေးရန်။
 - [x] Native Rust reference နှင့် Zap candidate အတွက် deterministic loop-body acceptance နှင့် loop-boundary rejection evidence ထည့်ရန်။ Native Rust ၏ TC-006 loop-boundary regression သည် reference evidence အဖြစ် ဆက်လက်တည်ရှိသည်။
 - [x] Provisional ownership ledger တွင် `BOOT-026` နှင့် `bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp` ထည့်ရန်။
-- [ ] Compound guard၊ loop mutation၊ reassignment invalidation နှင့် general control-flow narrowing များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
+- [ ] Compound guard၊ loop mutation၊ reassignment invalidation နှင့် general control-flow narrowing များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်。
+
+## လက်ရှိ v2.11.12 preparation checkpoint
+
+- [x] Provisional Zap B2 candidate တွင် tracked `option<number>` variable တစ်ခုအတွက် direct `if is_option_none(name): ... else:` shape ကိုသာ support လုပ်ပြီး indented `else` body အတွင်း numeric payload use ကို bounded အဖြစ် စစ်ဆေးရန်။
+- [x] True body တွင် မူလ `option<number>` wrapper ကို ဆက်လက်ထိန်းထားပြီး else body ပြီးနောက် scope restoration မပျက်ကြောင်း paired fixtures နှင့် စစ်ဆေးရန်။
+- [x] Native Rust reference နှင့် Zap candidate အတွက် deterministic positive/negative evidence ထည့်ရန်။ Negative fixture သည် line 5, column 1 တွင် `variable 'payload' expects text, got number` diagnostic ကို assert လုပ်သည်။
+- [x] Provisional ownership ledger တွင် `BOOT-027` နှင့် `bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp` ထည့်ရန်။
+- [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety
 
