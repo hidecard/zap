@@ -148,6 +148,12 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap new"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap new"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap web check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap web check"
+require_text docs/WEB_FRAMEWORK_EN.md "zap web routes"
+require_text docs/WEB_FRAMEWORK_MM.md "zap web routes"
+require_text docs/WEB_FRAMEWORK_EN.md "web_validate_request"
+require_text docs/WEB_FRAMEWORK_MM.md "web_validate_request"
+require_text docs/ZAP_WEB_NATIVE_EN.md "web_validate_request"
+require_text docs/ZAP_WEB_NATIVE_MM.md "web_validate_request"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db plan"
@@ -328,6 +334,10 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && grep -Fq '/assets/*path' "$scaffold_dir/project/routes/routes.zp" \
         && grep -Fq '/*path' "$scaffold_dir/project/routes/routes.zp" \
         && grep -Fq 'web_static_spa' "$scaffold_dir/project/functions/user_functions.zp" \
+        && grep -Fq 'web_validate_request' "$scaffold_dir/project/functions/user_functions.zp" \
+        && grep -Fq 'return validated' "$scaffold_dir/project/functions/user_functions.zp" \
+        && grep -Fq 'is_ok(valid_create)' "$scaffold_dir/project/tests/web_test.zp" \
+        && grep -Fq 'is_err(invalid_create)' "$scaffold_dir/project/tests/web_test.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \

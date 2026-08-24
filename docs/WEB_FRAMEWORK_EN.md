@@ -102,6 +102,22 @@ zap web routes ./shop
 
 The human-readable form shows the method, path, handler, and optional authorization scope. `--json` is intended for editor tooling and scripts. Inspection validates the route entry shape, including a safe absolute path, a non-empty method token, and unique method/path registrations. Duplicate registrations are rejected before the table is displayed. `zap web check` performs the same route-table validation as part of project validation, while the live `web_serve` boundary additionally resolves every handler before accepting traffic. This keeps route visibility explicit and avoids hidden framework registration.
 
+## Typed request validation and Result-aware handlers
+
+A native Web handler can validate a raw JSON object or an already parsed map with `web_validate_request(body, schema)`. The schema supports up to 64 fields. Each field may declare a type (`text`, `number`, `bool`, `map`, `list`, or `none`) or an options map with `type`, optional `required`, and optional `max_len` for text. Unknown fields, missing required fields, type mismatches, invalid JSON, and values beyond the declared bound return `ResultErr` rather than raising an uncaught runtime error.
+
+```zap
+export fn create_user(request):
+    let schema = {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}}
+    let checked = web_validate_request(request["body"], schema)
+    if is_err(checked):
+        return checked
+    let payload = unwrap(checked)
+    return ok({"status": 201, "body": json({"created": true, "body": payload})})
+```
+
+The native Web boundary is Result-aware. `ResultOk(response_map)` follows the existing response-map encoding, while `ResultErr({"status": 400..599, "code": "safe_token", "message": "..."})` is converted centrally to a JSON error response containing `error`, `message`, and the request ID. The validator uses `400` for malformed JSON, invalid body shape, invalid schema, and field-level request violations; a handler may deliberately return `422` for a semantically invalid payload. Direct response maps remain supported for compatibility, and handler raises or malformed response values still fail closed as `500 handler_error`.
+
 ## Host-adapter contract
 
 The current `zap-host` prototype implements the following pipeline with Axum/Tower; a production deployment must complete each policy explicitly:

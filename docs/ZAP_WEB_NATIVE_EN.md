@@ -121,6 +121,22 @@ A production route pipeline should follow this order:
 
 The current `frameworks/web` contract and `host/zap-host` adapter implement a safe subset of these boundaries. The Zap-first project scaffold records the same boundaries as ordinary Zap data so the project can be inspected before a full native server exists.
 
+## Typed request validation and Result-aware responses
+
+The native runtime provides `web_validate_request(body, schema)` as a bounded typed boundary. `body` may be an already parsed map or raw JSON text no larger than 64 KiB. A schema can contain at most 64 fields; field specifications support `text`, `number`, `bool`, `map`, `list`, and `none`, with optional `required` and text-only `max_len` options. Unknown fields, missing required fields, invalid JSON, type mismatches, and length violations return a `ResultErr` map containing `status`, `code`, `message`, and an optional `field`.
+
+```zap
+export fn create_user(request):
+    let schema = {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}}
+    let checked = web_validate_request(request["body"], schema)
+    if is_err(checked):
+        return checked
+    let payload = unwrap(checked)
+    return ok({"status": 201, "body": json({"created": true, "body": payload})})
+```
+
+The native server acts as the centralized Result response middleware: `ResultOk(response_map)` uses the existing response encoder, while an error map with a 400–599 status and safe error code becomes a JSON error response with `error`, `message`, and the request ID. The validator deliberately uses `400` for malformed JSON, invalid body shape, invalid schema, and field-level request violations; a handler may choose `422` for a semantically invalid payload. Existing direct response maps remain compatible, and raises or malformed response values still fail closed as `500 handler_error`. This is a bounded response/validation contract, not a full schema compiler or production middleware graph.
+
 ## Middleware design
 
 Middleware is an ordered request/response pipeline, not a collection of decorators. Each middleware entry should identify its name, stage, order, and short-circuit behavior. A middleware may reject a request before the handler, enrich the request context, or add response headers on the way out.

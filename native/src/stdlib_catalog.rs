@@ -161,6 +161,9 @@ macro_rules! stable_domain {
     ("process", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
         stable_domain!(@build "process", $input_limit, $output_limit, $timeout, DeterminismClass::ExternalIo)
     };
+    ("web", $input_limit:literal, $output_limit:literal, $timeout:literal) => {
+        stable_domain!(@build "web", $input_limit, $output_limit, $timeout, DeterminismClass::Pure)
+    };
     (@build $domain:literal, $input_limit:literal, $output_limit:literal, $timeout:literal, $determinism:expr) => {
         PublicDomainPolicy {
             domain: $domain,
@@ -254,6 +257,12 @@ pub(crate) const PUBLIC_DOMAINS: &[PublicDomainPolicy] = &[
         "text command, text arguments, 1 MiB output",
         "1 MiB captured stdout/stderr",
         "bounded child wait and cleanup"
+    ),
+    stable_domain!(
+        "web",
+        "64 KiB JSON/map body and 64 schema fields",
+        "typed Result value with bounded error map",
+        "not applicable"
     ),
 ];
 
@@ -361,6 +370,9 @@ macro_rules! stable_builtin {
     ($name:literal, "process") => {
         stable_builtin!($name, "process", DeterminismClass::ExternalIo)
     };
+    ($name:literal, "web") => {
+        stable_builtin!($name, "web", DeterminismClass::Pure)
+    };
     ($name:literal, $domain:literal, $determinism:expr) => {
         PublicBuiltin {
             name: $name,
@@ -416,6 +428,7 @@ pub(crate) const PUBLIC_BUILTINS: &[PublicBuiltin] = &[
     stable_builtin!("atomic_write", "filesystem"),
     stable_builtin!("web_static", "filesystem"),
     stable_builtin!("web_static_spa", "filesystem"),
+    stable_builtin!("web_validate_request", "web"),
     stable_builtin!("json", "json"),
     stable_builtin!("from_json", "json"),
     stable_builtin!("from_json_typed", "json"),
@@ -468,7 +481,7 @@ mod tests {
 
     fn expected_determinism(domain: &str) -> DeterminismClass {
         match domain {
-            "text" | "math" | "collections" | "json" => DeterminismClass::Pure,
+            "text" | "math" | "collections" | "json" | "web" => DeterminismClass::Pure,
             "filesystem" | "logging" | "network" | "process" => DeterminismClass::ExternalIo,
             "system" | "time" | "runtime" | "async" => DeterminismClass::RuntimeDependent,
             _ => DeterminismClass::InputDeterministic,
@@ -492,7 +505,7 @@ mod tests {
     #[test]
     fn standard_library_catalog_metadata_is_complete_and_unique() {
         assert_eq!(CATALOG_SCHEMA_VERSION, 2);
-        assert_eq!(PUBLIC_DOMAINS.len(), 12);
+        assert_eq!(PUBLIC_DOMAINS.len(), 13);
         let domains = PUBLIC_DOMAINS
             .iter()
             .map(|policy| policy.domain)
@@ -613,6 +626,7 @@ mod tests {
                 "async",
                 "network",
                 "process",
+                "web",
             ]
         );
         assert_ne!(

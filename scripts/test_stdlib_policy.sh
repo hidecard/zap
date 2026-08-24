@@ -37,13 +37,13 @@ for class in Pure InputDeterministic RuntimeDependent ExternalIo; do
 done
 pass "catalog contains the complete stability and determinism metadata schema"
 
-domains=(text math collections filesystem json system time logging runtime async network process)
+domains=(text math collections filesystem web json system time logging runtime async network process)
 for domain in "${domains[@]}"; do
   grep -Fq -- "\`$domain\`" "$english" || fail "English policy is missing domain $domain"
   grep -Fq -- "\`$domain\`" "$burmese" || fail "Burmese policy is missing domain $domain"
   grep -Fq -- "\"$domain\"," "$catalog" || fail "catalog is missing domain $domain"
 done
-pass "all twelve public domains have catalog and bilingual policy entries"
+pass "all thirteen public domains have catalog and bilingual policy entries"
 
 for document in "$english" "$burmese"; do
   grep -Fq -- '2.1.14' "$document" || fail "$document is missing current release metadata"

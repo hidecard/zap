@@ -729,6 +729,16 @@ export fn tasks(request):
     return {"status": 200, "body": json({"tasks": [], "request_id": request["request_id"]})}
 ```
 
+For JSON request bodies, `web_validate_request(body, schema)` accepts raw JSON text or a parsed map and returns `ResultOk` with only declared fields. Missing fields, unknown fields, wrong types, invalid JSON, and declared length violations return `ResultErr`; returning that error directly lets the native Web boundary map it to a stable JSON response:
+
+```zap
+export fn create_user(request):
+    let checked = web_validate_request(request["body"], {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}})
+    if is_err(checked):
+        return checked
+    return ok({"status": 201, "body": json({"created": true, "body": unwrap(checked)})})
+```
+
 A static asset handler can use the bounded asset builtin:
 
 ```zap

@@ -630,6 +630,16 @@ export fn tasks(request):
     return {"status": 200, "body": json({"tasks": [], "request_id": request["request_id"]})}
 ```
 
+JSON request body များအတွက် `web_validate_request(body, schema)` သည် raw JSON text သို့မဟုတ် parse လုပ်ပြီးသား map ကို လက်ခံပြီး declared field များသာ ပါသော `ResultOk` ကို ပြန်ပေးပါသည်။ ပျောက်နေသော field၊ unknown field၊ type မကိုက်ညီမှု၊ invalid JSON နှင့် သတ်မှတ်ထားသော length ကျော်လွန်မှုများသည် `ResultErr` ပြန်ပေးပါသည်။ အဆိုပါ error ကို တိုက်ရိုက် return လုပ်လျှင် native Web boundary က stable JSON response အဖြစ် ပြောင်းပေးပါသည်။
+
+```zap
+export fn create_user(request):
+    let checked = web_validate_request(request["body"], {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}})
+    if is_err(checked):
+        return checked
+    return ok({"status": 201, "body": json({"created": true, "body": unwrap(checked)})})
+```
+
 Static asset handler—
 
 ```zap
