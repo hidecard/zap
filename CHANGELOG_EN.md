@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.9] — 2026-08-24
+
+### Release engineering
+- Add bounded provisional direct-is_some branch-local option narrowing evidence with paired native and candidate fixtures.
+
 ## [2.11.8] — 2026-08-24
 
 ### Release engineering

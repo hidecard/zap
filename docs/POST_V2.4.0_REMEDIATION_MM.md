@@ -1,6 +1,6 @@
 # v2.4.0 နောက်ပိုင်း ပြင်ဆင်ချက်နှင့် Provenance မှတ်တမ်း
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.8
+**စစ်ဆေးထားသော baseline:** Zap v2.11.9
 
 **မှတ်တမ်းအခြေအနေ:** လက်ရှိ master ၏ follow-up record; v2.4.0 သည် immutable ဖြစ်သည်
 

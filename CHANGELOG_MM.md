@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.9] — 2026-08-24
+
+### Release engineering
+- Paired native နှင့် candidate fixture များပါသော bounded direct-is_some branch-local option narrowing evidence ထည့်ထားသည်။
+
 ## [2.11.8] — 2026-08-24
 
 ### Release engineering
