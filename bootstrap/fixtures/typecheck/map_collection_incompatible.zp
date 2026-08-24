@@ -1,0 +1,2 @@
+let scores: map<text,number> = {"score": 7}
+let result: text = scores["score"]

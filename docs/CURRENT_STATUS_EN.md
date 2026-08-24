@@ -20,7 +20,7 @@ The versioned provenance asset is the canonical machine-readable record for rele
 | Native compiler/runtime | active | Rust remains the reference owner for complete semantics and supported release targets. |
 | B0 artifacts | completed | Canonical tokens, AST, diagnostics, metadata, VM, and platform-seed fixtures are reproducible. |
 | B1 lexer/parser candidates | provisional | Candidate output is checked only against the owned corpus and does not replace the Rust pipeline. |
-| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, and a paired nested-list index slice. |
+| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, a paired nested-list index slice, and a bounded text-key map-element slice. |
 | Typed-IR candidate | provisional | Covers the existing annotated declaration slice only. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
@@ -28,7 +28,7 @@ The versioned provenance asset is the canonical machine-readable record for rele
 
 ## Next bounded work
 
-The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures beyond the current paired nested-list slice, while keeping malformed-source no-panic behavior regression-gated, then extend candidate typed-IR production from the same owned analysis. Generic declarations, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
+The current v2.11.8 preparation work broadens B2 inference and diagnostics through separately evidenced fixtures beyond the paired nested-list slice with a bounded `map<text,number>` element indexed by a text literal and a paired incompatible assignment. Malformed-source no-panic behavior remains regression-gated, and candidate typed-IR production will be extended only from the same owned analysis. Generic declarations, nested maps, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
 
 ## Developer environment
 

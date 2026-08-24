@@ -1643,6 +1643,18 @@ fn typecheck_p1_conformance_tc006_to_tc008() {
             false,
             "variable 'first' expects text, got number",
         ),
+        (
+            "tc008-bounded-map-element",
+            "let scores: map<text,number> = {\"score\": 7}\nlet result: number = scores[\"score\"]\n",
+            true,
+            "",
+        ),
+        (
+            "tc008-negative-bounded-map-element",
+            "let scores: map<text,number> = {\"score\": 7}\nlet result: text = scores[\"score\"]\n",
+            false,
+            "variable 'result' expects text, got number",
+        ),
     ];
 
     for (name, source, should_pass, expected_error) in cases {

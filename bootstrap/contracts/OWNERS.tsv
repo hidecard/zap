@@ -22,3 +22,4 @@ BOOT-020	b2-typed-ir-candidate	Artifact contract	Artifact contract	bootstrap/b2/
 BOOT-021	b2-typechecker-function-corpus	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/function_incompatible.zp	provisional
 BOOT-022	b2-typechecker-collection-element	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/collection_incompatible.zp	provisional
 BOOT-023	b2-typechecker-nested-collection	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/nested_collection_incompatible.zp	provisional
+BOOT-024	b2-typechecker-map-element	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/map_collection_incompatible.zp	provisional

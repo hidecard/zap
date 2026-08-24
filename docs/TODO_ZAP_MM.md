@@ -152,6 +152,7 @@ fn add(a: number, b: number) -> number:
 - [x] Literal variable နှင့် ရိုးရိုး nested expression များ၏ inferred type mismatch ကို static diagnostic အဖြစ် ထုတ်ရန်။
 - [ ] Complex nested call၊ collection element နှင့် control-flow expression များ၏ inferred type mismatch ကို တိုးချဲ့ရန်။
 - [x] v2.11.7 bounded checkpoint အဖြစ် `list<list<number>>` nested indexing ၏ inferred type နှင့် text/number mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Broader nested expression inference ကို ဆက်လက် deferred ထားသည်။
+- [x] v2.11.8 preparation bounded checkpoint အဖြစ် tracked `map<text,number>` variable ကို text literal key ဖြင့် index လုပ်သော inferred number element နှင့် text assignment mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Nested map၊ arbitrary key expression နှင့် broader map inference ကို ဆက်လက် deferred ထားသည်။
 
 `zap check --json` သည် ယခု `file`၊ `line` နှင့် `column` fields များကို သီးခြားပြန်ပေးနိုင်ပြီး editor/CI tooling များက diagnostic location ကို တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 - [x] `any` type ၏ လက်ရှိ permissive runtime semantics ကို documentation တွင် ဖော်ပြရန်။

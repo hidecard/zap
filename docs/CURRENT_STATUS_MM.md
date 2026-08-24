@@ -20,7 +20,7 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 | Native compiler/runtime | active | Complete semantics နှင့် supported release target များအတွက် Rust သည် reference owner ဖြစ်နေဆဲ။ |
 | B0 artifacts | completed | Canonical token၊ AST၊ diagnostic၊ metadata၊ VM နှင့် platform-seed fixture များ reproducible ဖြစ်သည်။ |
 | B1 lexer/parser candidates | provisional | Candidate output သည် owned corpus အပေါ်သာ စစ်ဆေးထားပြီး Rust pipeline ကို မအစားထိုးပါ။ |
-| B2 type-checker candidate | provisional | Selected declaration၊ conditional၊ function၊ call၊ bounded list-element diagnostic နှင့် paired nested-list index slice များ ပါဝင်သည်။ |
+| B2 type-checker candidate | provisional | Selected declaration၊ conditional၊ function၊ call၊ bounded list-element diagnostic၊ paired nested-list index slice နှင့် bounded text-key map-element slice များ ပါဝင်သည်။ |
 | Typed-IR candidate | provisional | ရှိပြီးသား annotated declaration slice တစ်ခုတည်းကိုသာ cover လုပ်သည်။ |
 | Malformed-source safety | regression-gated | Invalid-source corpus အသေးတစ်ခုသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်။ ဤသည်မှာ safety regression gate ဖြစ်ပြီး compiler ownership evidence မဟုတ်ပါ။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
@@ -28,7 +28,7 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 
 ## နောက် bounded work
 
-နောက် roadmap အလုပ်သည် လက်ရှိ paired nested-list slice ၏ boundary အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ချဲ့ထွင်ရန် ဖြစ်ပြီး malformed-source no-panic behavior ကို regression-gated အဖြစ် ထိန်းသိမ်းမည်။ ထို့နောက် ထို owned analysis တစ်ခုတည်းမှ candidate typed-IR ထုတ်လုပ်မှုကို တိုးချဲ့မည်။ Generic declaration၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
+လက်ရှိ v2.11.8 preparation အလုပ်သည် paired nested-list slice ၏ boundary အပြင်ဘက်ကို သီးခြား fixture evidence များဖြင့် B2 inference နှင့် diagnostic coverage ချဲ့ထွင်ပြီး text literal ဖြင့် index လုပ်သော bounded `map<text,number>` element နှင့် paired incompatible assignment ကို ထည့်ထားသည်။ Malformed-source no-panic behavior ကို regression-gated အဖြစ် ဆက်လက်ထိန်းသိမ်းမည်ဖြစ်ပြီး candidate typed-IR ထုတ်လုပ်မှုကိုလည်း ထို owned analysis တစ်ခုတည်းမှသာ တိုးချဲ့မည်။ Generic declaration၊ nested map၊ deeper nested inference၊ arbitrary program parsing၊ package/build ownership၊ VM ownership နှင့် platform-seed self-hosting များသည် သက်ဆိုင်ရာ acceptance criteria များ မပြည့်မချင်း deferred အဖြစ် ဆက်ရှိသည်။
 
 ## Developer environment
 
