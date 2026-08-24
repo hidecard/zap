@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.0] — 2026-08-24
+
+### Release engineering
+- Added inspect-only zap explain route output with bounded path validation, parameter and wildcard extraction, JSON automation output, and bilingual framework smoke coverage.
+
 ## [2.10.1] — 2026-08-24
 
 ### Zap-only bootstrap foundations

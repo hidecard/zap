@@ -2,7 +2,7 @@
   "name": "zap-language-support",
   "displayName": "Zap Language Support",
   "description": "Syntax and language configuration support for the Zap programming language.",
-  "version": "2.10.1",
+  "version": "2.11.0",
   "publisher": "hidecard",
   "engines": {
     "vscode": "^1.85.0"

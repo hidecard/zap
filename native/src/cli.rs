@@ -48,6 +48,7 @@ Usage:
   zap dev [dir]                         Run the Zap-native Web server entrypoint
   zap web check [dir]                   Validate a Zap Web project
   zap web routes [dir] [--json]         Inspect the validated route table
+  zap explain route <path> [dir] [--json] Explain Web route matching without serving
   zap db check [dir]                    Validate Web migration layout and SQL plan
   zap db plan [dir] [--json]            Show the read-only SQLite migration plan
   zap db inspect [dir] [--json]         Inspect SQLite adapter and migration status
@@ -195,6 +196,41 @@ fn parse_web_routes_args(args: &[String]) -> Result<(PathBuf, bool), String> {
     Ok((dir, json_output))
 }
 
+fn parse_web_explain_args(args: &[String]) -> Result<(PathBuf, String, bool), String> {
+    if args.len() < 4 {
+        return Err("Web route explanation expects a path".into());
+    }
+    let raw_path = &args[3];
+    let path = raw_path.split('?').next().unwrap_or(raw_path);
+    if path.is_empty()
+        || path.len() > 2048
+        || !path.starts_with('/')
+        || path.contains("..")
+        || (path != "/"
+            && path
+                .split('/')
+                .enumerate()
+                .any(|(index, part)| index != 0 && part.is_empty()))
+    {
+        return Err("Web route explanation path must be a safe absolute path".into());
+    }
+    let mut dir = PathBuf::from(".");
+    let mut json_output = false;
+    for argument in args.iter().skip(4) {
+        match argument.as_str() {
+            "--json" => json_output = true,
+            value if value.starts_with('-') => {
+                return Err(format!("unknown Web route explanation option: {value}"));
+            }
+            _value if dir != Path::new(".") => {
+                return Err("Web route explanation accepts only one directory".into());
+            }
+            value => dir = PathBuf::from(value),
+        }
+    }
+    Ok((dir, path.to_string(), json_output))
+}
+
 fn load_web_routes(dir: &Path) -> Result<(String, Vec<Value>), String> {
     if !manifest_has_section(dir, "web")? {
         return Err(format!("{} is not a Zap Web project", dir.display()));
@@ -285,6 +321,70 @@ fn print_web_routes(dir: &Path, json_output: bool) {
             _ => String::new(),
         };
         println!("{:>2}. {method} {path} -> {handler}{scope}", index + 1);
+    }
+}
+
+fn print_web_route_explanation(dir: &Path, path: &str, json_output: bool) {
+    let (info, routes) = match load_web_routes(dir) {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Zap Web route explanation error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+    };
+    let mut matches = Vec::new();
+    for (index, route) in routes.iter().enumerate() {
+        let Value::Map(fields) = route else {
+            continue;
+        };
+        let Some(Value::Text(route_path)) = fields.get("path") else {
+            continue;
+        };
+        let Some(params) = evaluator::web_path_matches(route_path, path) else {
+            continue;
+        };
+        let method = fields
+            .get("method")
+            .and_then(|value| match value {
+                Value::Text(value) => Some(value.clone()),
+                _ => None,
+            })
+            .unwrap_or_else(|| "<missing>".into());
+        let handler = fields
+            .get("handler")
+            .map(Value::show)
+            .unwrap_or_else(|| "<missing>".into());
+        let params = value_to_json(&Value::Map(params)).unwrap_or_else(|error| {
+            eprintln!("Zap Web route explanation error: cannot encode parameters: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        });
+        matches.push(serde_json::json!({
+            "index": index + 1,
+            "method": method,
+            "path": route_path,
+            "handler": handler,
+            "params": params,
+        }));
+    }
+    if json_output {
+        println!(
+            "{}",
+            serde_json::json!({"project": info, "path": path, "matches": matches})
+        );
+        return;
+    }
+    println!("{info}");
+    println!("route explanation: {path}");
+    println!("path matches: {}", matches.len());
+    for candidate in matches {
+        let index = candidate["index"].as_u64().unwrap_or_default();
+        let method = candidate["method"].as_str().unwrap_or("<missing>");
+        let route_path = candidate["path"].as_str().unwrap_or("<missing>");
+        let handler = candidate["handler"].as_str().unwrap_or("<missing>");
+        println!(
+            "{:>2}. {method} {route_path} -> {handler} params={}",
+            index, candidate["params"]
+        );
     }
 }
 
@@ -613,6 +713,17 @@ pub fn run_cli(args: &[String]) {
                 process::exit(EXIT_PROGRAM_FAILURE);
             }
         }
+        return;
+    }
+    if args.len() >= 3 && args[1] == "explain" && args[2] == "route" {
+        let (dir, path, json_output) = match parse_web_explain_args(args) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("Zap Web route explanation usage error: {error}");
+                process::exit(EXIT_USAGE_ERROR);
+            }
+        };
+        print_web_route_explanation(&dir, &path, json_output);
         return;
     }
     if args.len() >= 3 && args[1] == "web" && args[2] == "routes" {
@@ -1334,7 +1445,31 @@ pub fn run_cli(args: &[String]) {
 
 #[cfg(test)]
 mod tests {
-    use super::CLI_HELP;
+    use super::{parse_web_explain_args, CLI_HELP};
+
+    #[test]
+    fn web_route_explanation_arguments_are_bounded() {
+        let args = vec![
+            "zap".into(),
+            "explain".into(),
+            "route".into(),
+            "/users/42?view=full".into(),
+            "./shop".into(),
+            "--json".into(),
+        ];
+        let (dir, path, json_output) = parse_web_explain_args(&args).unwrap();
+        assert_eq!(dir, std::path::PathBuf::from("./shop"));
+        assert_eq!(path, "/users/42");
+        assert!(json_output);
+
+        for path in ["users/42", "/users/../admin", "/users//42"] {
+            let args = vec!["zap".into(), "explain".into(), "route".into(), path.into()];
+            assert!(
+                parse_web_explain_args(&args).is_err(),
+                "unsafe path accepted: {path}"
+            );
+        }
+    }
 
     #[test]
     fn canonical_help_lists_supported_commands() {
@@ -1354,6 +1489,7 @@ mod tests {
             "zap new",
             "zap web check",
             "zap web routes",
+            "zap explain route",
             "zap db check",
             "zap db plan",
             "zap db inspect",

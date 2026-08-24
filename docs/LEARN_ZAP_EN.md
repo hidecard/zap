@@ -2,7 +2,7 @@
 
 > **Audience:** This is the complete path from installing Zap for the first time to writing structured, typed, modular, asynchronous, tested, and Web-enabled programs.
 
-**Verified baseline:** Zap v2.10.1
+**Verified baseline:** Zap v2.11.0
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Standard-library index](STDLIB_INDEX_EN.md) · [Burmese guide](LEARN_ZAP_MM.md)
@@ -22,7 +22,7 @@ This guide distinguishes three kinds of information. **Normative** behavior is d
 Download the archive for your operating system and architecture from the [GitHub Releases page](https://github.com/hidecard/zap/releases). Extract it, place the executable in a directory on `PATH`, and make it executable on Unix-like systems.
 
 ```bash
-tar -xzf zap-2.10.1-linux-x86_64.tar.gz
+tar -xzf zap-2.11.0-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
@@ -921,6 +921,7 @@ When the program grows, move reusable declarations into a module, put tests in `
 | `zap update [directory]` | Regenerate lock data after manifest changes |
 | `zap web check [directory]` | Validate Web manifest and scaffold |
 | `zap web routes [directory] [--json]` | Inspect the validated route table without opening a listener |
+| `zap explain route <path> [directory] [--json]` | Explain matching route declarations and extracted parameters without executing handlers |
 | `zap dev [directory]` | Run the declared Web development server |
 | `zap db check [directory]` | Validate migration layout |
 | `zap db plan [directory]` | Show the deterministic migration plan |

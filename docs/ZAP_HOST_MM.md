@@ -1,6 +1,6 @@
 # zap-host Axum/Tower Adapter
 
-**အတည်ပြုထားသော baseline:** Zap v2.10.1
+**အတည်ပြုထားသော baseline:** Zap v2.11.0
 **Branch:** `Framework`
 **အခြေအနေ:** `Framework` branch ၏ `host/zap-host` အောက်တွင် အကောင်အထည်ဖော်ထားသော adapter foundation v0.1 ဖြစ်သည်။
 

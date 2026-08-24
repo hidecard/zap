@@ -1,6 +1,6 @@
 # Zap Traits and Composition RFC
 
-**Verified baseline:** Zap v2.10.1
+**Verified baseline:** Zap v2.11.0
 
 **RFC status:** Design-only proposal; no parser or runtime implementation is included.
 **Verified baseline:** Zap v2.4.0

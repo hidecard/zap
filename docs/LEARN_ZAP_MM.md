@@ -2,7 +2,7 @@
 
 > **ရည်ရွယ်သူ:** Zap ကို ပထမဆုံး install လုပ်ခြင်းမှစ၍ structured၊ typed၊ modular၊ asynchronous၊ tested နှင့် Web-enabled program များ ရေးသားနိုင်သည့် Advanced အဆင့်အထိ လေ့လာလိုသူများအတွက် ဖြစ်ပါသည်။
 
-**စစ်ဆေးထားသော baseline:** Zap v2.10.1
+**စစ်ဆေးထားသော baseline:** Zap v2.11.0
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Standard-library index](STDLIB_INDEX_MM.md) · [English guide](LEARN_ZAP_EN.md)
@@ -22,7 +22,7 @@ Rust toolchain သည် Zap executable ကို build လုပ်ရန်သ
 သင့် operating system နှင့် architecture ကိုက်ညီသော archive ကို [GitHub Releases](https://github.com/hidecard/zap/releases) မှ download လုပ်ပါ။ Extract လုပ်ပြီး executable ကို `PATH` ထဲရှိ directory သို့ ထည့်ကာ Unix စနစ်များတွင် executable permission ပေးပါ။
 
 ```bash
-tar -xzf zap-2.10.1-linux-x86_64.tar.gz
+tar -xzf zap-2.11.0-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
@@ -801,6 +801,7 @@ Program ကြီးလာပါက reusable declaration များကို m
 | `zap update [directory]` | Lock data ပြန်ထုတ်ခြင်း |
 | `zap web check [directory]` | Web manifest/scaffold စစ်ခြင်း |
 | `zap web routes [directory] [--json]` | Listener မဖွင့်ဘဲ validated route table စစ်ခြင်း |
+| `zap explain route <path> [directory] [--json]` | Handler မ execute ဘဲ route match နှင့် extracted parameter များ ရှင်းပြခြင်း |
 | `zap dev [directory]` | Web development server run လုပ်ခြင်း |
 | `zap db check/plan/inspect/migrate` | Database migration workflow |
 | `zap lsp` | LSP ကို stdio ဖြင့် run လုပ်ခြင်း |

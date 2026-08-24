@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.10.1
+**အတည်ပြုထားသော baseline:** Zap v2.11.0
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
@@ -102,6 +102,15 @@ zap web routes ./shop
 ```
 
 Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path၊ non-empty method token နှင့် unique method/path registration အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Duplicate registration များကို table မပြမီ reject လုပ်ပါသည်။ `zap web check` သည် project validation အတွင်း အဆိုပါ route-table validation ကိုလည်း လုပ်ဆောင်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
+
+Listener မစဘဲ handler ကို execute မလုပ်ဘဲ concrete path နှင့် declaration route များ မည်သို့ကိုက်ညီသည်ကို စစ်ဆေးရန် `zap explain route <path>` ကို သုံးနိုင်ပါသည်။
+
+```bash
+zap explain route /users/42
+zap explain route /assets/chunks/app.js ./shop --json
+```
+
+Explanation သည် ကိုက်ညီသော declaration များကို declaration order အတိုင်း ပြပြီး extracted `:parameters` သို့မဟုတ် နောက်ဆုံး `*wildcard` value များကို ထည့်ပြပါသည်။ ဤ command သည် path-only explanation ဖြစ်သောကြောင့် native server သည် တောင်းထားသော method အတွက် ပထမဆုံးကိုက်ညီသော declaration ကို ရွေးချယ်ဆဲဖြစ်ပါသည်။ Path ကိုက်သော်လည်း method မကိုက်ပါက `405`၊ path မကိုက်ပါက `404` ပြန်ပေးပါသည်။ Command သည် project ကို validate လုပ်ပြီး native server သုံးသော route matcher ကိုပဲ ပြန်သုံးပါသည်။ Middleware၊ authorization သို့မဟုတ် handler execution ကို trace ပြုလုပ်သည်ဟု မဆိုပါ။
 
 ## Typed request validation နှင့် Result-aware handlers
 

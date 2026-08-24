@@ -1,6 +1,6 @@
 # Zap Native Benchmark Harness
 
-**Verified baseline:** Zap v2.10.1
+**Verified baseline:** Zap v2.11.0
 
 **Status:** Repeatable benchmark baseline and regression gate for Zap v2.4.0
 

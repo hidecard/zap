@@ -18,7 +18,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 | အချက် | အခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.10.1` |
+| လက်ရှိ release line | `v2.11.0` |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -30,12 +30,12 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 ## Install လုပ်ခြင်း
 
-သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.10.1 release page](https://github.com/hidecard/zap/releases/tag/v2.10.1) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
+သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.0 release page](https://github.com/hidecard/zap/releases/tag/v2.11.0) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.10.1-linux-x86_64.tar.gz
+tar -xzf zap-2.11.0-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -44,7 +44,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.10.1-macos-arm64.tar.gz
+tar -xzf zap-2.11.0-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -53,7 +53,7 @@ zap --version
 
 ### Windows
 
-မျှော်မှန်းထားသော archive သည် `zap-2.10.1-windows-x86_64.zip` ဖြစ်ပါသည်။
+မျှော်မှန်းထားသော archive သည် `zap-2.11.0-windows-x86_64.zip` ဖြစ်ပါသည်။
 
 ```bat
 cd C:\Zap
@@ -177,7 +177,7 @@ Documentation၊ Web scaffold၊ release-version၊ VS Code asset နှင့�
 
 ## Release provenance
 
-လက်ရှိ source baseline သည် v2.10.1 ဖြစ်ပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
+လက်ရှိ source baseline သည် v2.11.0 ဖြစ်ပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
 
 ## License
 

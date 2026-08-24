@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.10.1၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
+**အတည်ပြုထားသော baseline:** Zap v2.11.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 
@@ -246,7 +246,7 @@ zap dev
 
 `zap db inspect` သည် read-only adapter/status view ဖြစ်ပြီး SQLite file မရှိသေးလျှင် file အသစ် မဖန်တီးပါ။ `zap db migrate --check` သည် deployment တွင် အသုံးပြုနိုင်သော check ဖြစ်ပြီး migration ledger ကို validate လုပ်ကာ pending migration မရှိမှသာ success exit ပြန်ပေးပါသည်။ `--json` သုံးလျှင် automation အတွက် `ok: true` သို့မဟုတ် `ok: false` ပါဝင်ပါသည်။ `zap dev` သည် manifest ထဲက `server.zp` ကို run ပါသည်။ Scaffold ထဲရှိ server သည် `ZAP_WEB_PORT` ကိုဖတ်ပြီး မသတ်မှတ်လျှင် `3000` ကို အသုံးပြုပါသည်။ လက်ရှိ native server သည် loopback ပေါ်တွင် bounded HTTP/1.0 သို့မဟုတ် HTTP/1.1 request များကို လက်ခံပြီး exact path၊ `:parameter` နှင့် နောက်ဆုံး `*wildcard` segment များကို match လုပ်ကာ request map ကို Zap handler ထံ ပေးပြီး security header ပါသော framed response ပြန်ပေးပါသည်။ Generated Web scaffold သည် `public/index.html`, `public/assets/app.css` နှင့် `public/assets/app.js` ကို `web_static` ဖြင့် serve လုပ်ပြီး browser module က `/api/tasks` ကို ခေါ်ပါသည်။ Port ပြောင်းလိုပါက `ZAP_WEB_PORT=3100 zap dev` ဟု run နိုင်ပါသည်။ ၎င်းသည် single-threaded နှင့် blocking ဖြစ်သော development/reference server ဖြစ်သဖြင့် concurrency၊ cancellation၊ TLS/edge policy၊ readiness integration နှင့် production operation evidence များ မပြည့်မီ production server ဟု မဆိုရပါ။
 
-နောက်ထပ် CLI command များကို semantics အမှန်နှင့် test evidence ရှိမှသာ ထည့်သင့်ပါသည်။ Roadmap တွင် resolved route/middleware table အတွက် `zap routes`၊ execution flow အတွက် `zap explain route <path>`၊ API documentation အတွက် `zap docs` နှင့် production config/security policy အတွက် `zap deploy preflight` တို့ ပါဝင်ပါသည်။ လက်ရှိ `zap db migrate` implementation သည် SQLite-first နှင့် additive operation များအတွက်သာ ဖြစ်ပြီး provider-neutral production migration system ဟု မယူဆရပါ။
+နောက်ထပ် CLI command များကို semantics အမှန်နှင့် test evidence ရှိမှသာ ထည့်သင့်ပါသည်။ `zap web routes` သည် listener မစဘဲ resolved route table ကို ပြပြီး `zap explain route <path>` သည် handler မ execute ဘဲ concrete path match၊ extracted parameter နှင့် wildcard value များကို ယခုရှင်းပြပေးပါသည်။ ကျန်ရှိသော roadmap တွင် API documentation အတွက် `zap docs` နှင့် production config/security policy အတွက် `zap deploy preflight` တို့ ပါဝင်ပါသည်။ လက်ရှိ `zap db migrate` implementation သည် SQLite-first နှင့် additive operation များအတွက်သာ ဖြစ်ပြီး provider-neutral production migration system ဟု မယူဆရပါ။
 
 `zap run main.zp` သည် contract preview အဖြစ် ဆက်ရှိနေပါမည်။ `zap dev` သည် ပထမဆုံး Zap-native HTTP execution path ဖြစ်ပြီး `host/zap-host` သည် operational Axum/Tower reference adapter ဖြစ်ပါသည်။ Production rule ပြည့်မီသည်အထိ နှစ်ခုလုံးကို complete production Web platform ဟု မဖော်ပြရပါ။
 

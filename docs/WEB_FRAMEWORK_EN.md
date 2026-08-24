@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**Verified baseline:** Zap v2.10.1
+**Verified baseline:** Zap v2.11.0
 **Branch:** `Framework`
 **Status:** Web Foundation v0.2 — runnable contract package plus initial `zap-host` adapter prototype; production integrations remain separate
 
@@ -101,6 +101,15 @@ zap web routes ./shop
 ```
 
 The human-readable form shows the method, path, handler, and optional authorization scope. `--json` is intended for editor tooling and scripts. Inspection validates the route entry shape, including a safe absolute path, a non-empty method token, and unique method/path registrations. Duplicate registrations are rejected before the table is displayed. `zap web check` performs the same route-table validation as part of project validation, while the live `web_serve` boundary additionally resolves every handler before accepting traffic. This keeps route visibility explicit and avoids hidden framework registration.
+
+Use `zap explain route <path>` to inspect which declared routes match a concrete path without starting a listener or executing a handler:
+
+```bash
+zap explain route /users/42
+zap explain route /assets/chunks/app.js ./shop --json
+```
+
+The explanation lists matching declarations in declaration order and includes extracted `:parameters` or final `*wildcard` values. It is a path-only explanation: the native server still selects the first matching declaration for the requested method, returns `405` when a path matches but the method does not, and returns `404` when no path matches. The command validates the project and reuses the same route matcher as the native server; it does not claim to trace middleware, authorization, or handler execution.
 
 ## Typed request validation and Result-aware handlers
 
