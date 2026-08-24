@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.4] - 2026-08-24
+
+### Release summary
+- Provisional list-element inference path နှင့် deterministic native/Zap-candidate negative collection-element diagnostic fixture ကို ထည့်သွင်းထားသည်။ Rust သည် reference owner အဖြစ် ဆက်ရှိပြီး bootstrap stage သည် B0 ဖြစ်သည်။
+
 ## [2.11.3] - 2026-08-24
 
 ### Release summary
