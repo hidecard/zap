@@ -1,8 +1,6 @@
 # Zap Framework လမ်းညွှန်
 
 **စစ်ဆေးထားသော baseline:** Zap v2.10.1
-
-**အတည်ပြုထားသော baseline:** Zap v2.4.0
 **Framework branch:** `Framework`
 **အခြေအနေ:** Framework Foundation v0.1 — Zap-native Web project scaffold နှင့် contract starter များ၊ full native runtime integration များသည် gate ချထားသော milestone များအဖြစ် ဆက်လက်ရှိနေသေး
 
@@ -16,7 +14,7 @@ Framework layer သည် **Zap-first application boundary** ဖြစ်ပါ�
 
 ## Zap-native Web direction
 
-Web roadmap ကို အခြား starter domain များထက် ဦးစားပေးထားပါသည်။ Web project အသစ်ကို `zap new <dir>` ဖြင့် ဖန်တီးပြီး `zap check`၊ `zap web check`၊ `zap web routes`၊ `zap db check`၊ `zap db plan` နှင့် `zap test tests` ဖြင့် စစ်နိုင်ပါသည်။ Generated project သည် routes၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များအတွက် ရိုးရိုး Zap module များကို အသုံးပြုပါသည်။ `zap db migrate --dry-run` သည် read-only SQLite plan ကို ပြပြီး `zap db migrate` သည် additive migration များကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် manifest ထဲက native server ကို run ပါသည်။ Nested test များ၏ import ကိုလည်း `zap.toml` ရှိသော အနီးဆုံး project root မှ resolve လုပ်ပေးပါသည်။
+Web roadmap ကို အခြား starter domain များထက် ဦးစားပေးထားပါသည်။ Web project အသစ်ကို `zap new <dir>` ဖြင့် ဖန်တီးပြီး `zap check`၊ `zap web check`၊ `zap web routes`၊ `zap explain route <path>`၊ `zap db check`၊ `zap db plan` နှင့် `zap test tests` ဖြင့် စစ်နိုင်ပါသည်။ Generated project သည် routes၊ models၊ services၊ middleware၊ migrations၊ admin registration နှင့် tests များအတွက် ရိုးရိုး Zap module များကို အသုံးပြုပါသည်။ `zap db migrate --dry-run` သည် read-only SQLite plan ကို ပြပြီး `zap db migrate` သည် additive migration များကို transaction အတွင်း apply လုပ်ကာ checksum ledger မှတ်တမ်းတင်ပါသည်။ `zap dev` သည် manifest ထဲက native server ကို run ပါသည်။ Nested test များ၏ import ကိုလည်း `zap.toml` ရှိသော အနီးဆုံး project root မှ resolve လုပ်ပေးပါသည်။
 
 ဤအရာသည် Django ကဲ့သို့ framework အတွက် ပထမအဆင့် ဖြစ်ပါသည်။ လက်ရှိ parser တွင် first-class route/model declaration၊ concurrent production server၊ SQLite-first adapter ထက်ကျော်သော provider-neutral database driver၊ session system သို့မဟုတ် built-in admin UI မရှိသေးပါ။ ထို feature များအတွက် explicit language/runtime contract နှင့် security test လိုအပ်သဖြင့် scaffold က ရှိပြီးသားဟု မဆိုရပါ။
 

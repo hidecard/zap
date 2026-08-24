@@ -103,6 +103,15 @@ zap web routes ./shop
 
 Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path၊ non-empty method token နှင့် unique method/path registration အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Duplicate registration များကို table မပြမီ reject လုပ်ပါသည်။ `zap web check` သည် project validation အတွင်း အဆိုပါ route-table validation ကိုလည်း လုပ်ဆောင်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
 
+Listener မစဘဲ handler ကို execute မလုပ်ဘဲ concrete path နှင့် declaration route များ မည်သို့ကိုက်ညီသည်ကို စစ်ဆေးရန် `zap explain route <path>` ကို သုံးနိုင်ပါသည်။
+
+```bash
+zap explain route /users/42
+zap explain route /assets/chunks/app.js ./shop --json
+```
+
+Explanation သည် ကိုက်ညီသော declaration များကို declaration order အတိုင်း ပြပြီး extracted `:parameters` သို့မဟုတ် နောက်ဆုံး `*wildcard` value များကို ထည့်ပြပါသည်။ ဤ command သည် path-only explanation ဖြစ်သောကြောင့် native server သည် တောင်းထားသော method အတွက် ပထမဆုံးကိုက်ညီသော declaration ကို ရွေးချယ်ဆဲဖြစ်ပါသည်။ Path ကိုက်သော်လည်း method မကိုက်ပါက `405`၊ path မကိုက်ပါက `404` ပြန်ပေးပါသည်။ Command သည် project ကို validate လုပ်ပြီး native server သုံးသော route matcher ကိုပဲ ပြန်သုံးပါသည်။ Middleware၊ authorization သို့မဟုတ် handler execution ကို trace ပြုလုပ်သည်ဟု မဆိုပါ။
+
 ## Typed request validation နှင့် Result-aware handlers
 
 Native Web handler သည် raw JSON object သို့မဟုတ် parse လုပ်ပြီးသား map ကို `web_validate_request(body, schema)` ဖြင့် validate လုပ်နိုင်ပါသည်။ Schema တွင် field အများဆုံး 64 ခု ပါနိုင်ပါသည်။ Field တစ်ခုစီတွင် type (`text`၊ `number`၊ `bool`၊ `map`၊ `list` သို့မဟုတ် `none`) ကို တိုက်ရိုက်သတ်မှတ်နိုင်သကဲ့သို့ `type`၊ optional `required` နှင့် text အတွက် optional `max_len` ပါသော options map ကိုလည်း သတ်မှတ်နိုင်ပါသည်။ Unknown field၊ ပျောက်နေသော required field၊ type မကိုက်ညီမှု၊ invalid JSON နှင့် သတ်မှတ်ထားသော bound ကျော်လွန်သော value များသည် uncaught runtime error မဖြစ်ဘဲ `ResultErr` အဖြစ် ပြန်လာပါသည်။

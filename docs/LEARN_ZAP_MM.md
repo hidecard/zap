@@ -801,6 +801,7 @@ Program ကြီးလာပါက reusable declaration များကို m
 | `zap update [directory]` | Lock data ပြန်ထုတ်ခြင်း |
 | `zap web check [directory]` | Web manifest/scaffold စစ်ခြင်း |
 | `zap web routes [directory] [--json]` | Listener မဖွင့်ဘဲ validated route table စစ်ခြင်း |
+| `zap explain route <path> [directory] [--json]` | Handler မ execute ဘဲ route match နှင့် extracted parameter များ ရှင်းပြခြင်း |
 | `zap dev [directory]` | Web development server run လုပ်ခြင်း |
 | `zap db check/plan/inspect/migrate` | Database migration workflow |
 | `zap lsp` | LSP ကို stdio ဖြင့် run လုပ်ခြင်း |

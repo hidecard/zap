@@ -150,6 +150,10 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap web check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap web check"
 require_text docs/WEB_FRAMEWORK_EN.md "zap web routes"
 require_text docs/WEB_FRAMEWORK_MM.md "zap web routes"
+require_text docs/WEB_FRAMEWORK_EN.md "zap explain route"
+require_text docs/WEB_FRAMEWORK_MM.md "zap explain route"
+require_text docs/ZAP_WEB_NATIVE_EN.md "zap explain route"
+require_text docs/ZAP_WEB_NATIVE_MM.md "zap explain route"
 require_text docs/WEB_FRAMEWORK_EN.md "web_validate_request"
 require_text docs/WEB_FRAMEWORK_MM.md "web_validate_request"
 require_text docs/ZAP_WEB_NATIVE_EN.md "web_validate_request"
@@ -341,6 +345,12 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && "$ZAP_BIN" web routes "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && grep -Fq 'routes: 7' "$scaffold_output" \
+        && "$ZAP_BIN" explain route /users/42 "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && grep -Fq 'path matches: 2' "$scaffold_output" \
+        && "$ZAP_BIN" explain route /assets/chunks/app.js "$scaffold_dir/project" --json >>"$scaffold_output" 2>&1 \
+        && grep -Fq '"matches"' "$scaffold_output" \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db inspect --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \

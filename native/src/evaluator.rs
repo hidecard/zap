@@ -1809,7 +1809,7 @@ fn web_http_reason(status: i64) -> &'static str {
     }
 }
 
-fn web_path_matches(pattern: &str, path: &str) -> Option<HashMap<String, Value>> {
+pub(crate) fn web_path_matches(pattern: &str, path: &str) -> Option<HashMap<String, Value>> {
     let pattern_parts = pattern.split('/').collect::<Vec<_>>();
     let path_parts = path.split('/').collect::<Vec<_>>();
     let has_wildcard = pattern_parts

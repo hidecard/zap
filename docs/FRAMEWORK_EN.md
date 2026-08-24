@@ -1,8 +1,6 @@
 # Zap Framework Guide
 
 **Verified baseline:** Zap v2.10.1
-
-**Verified baseline:** Zap v2.4.0
 **Framework branch:** `Framework`
 **Status:** Framework Foundation v0.1 — Zap-native Web project scaffold and contract starters; full native runtime integrations remain gated milestones
 
@@ -16,7 +14,7 @@ The Framework layer is therefore a **Zap-first application boundary**. Zap shoul
 
 ## Zap-native Web direction
 
-The Web roadmap is now prioritized over the other starter domains. A new Web project is created with `zap new <dir>` and validated through `zap check`, `zap web check`, `zap web routes`, `zap db check`, `zap db plan`, and `zap test tests`. The generated project uses ordinary Zap modules for routes, models, services, middleware, migrations, admin registration, and tests. `zap db migrate --dry-run` shows a read-only SQLite plan, while `zap db migrate` applies additive migrations transactionally and records checksums in a migration ledger. `zap dev` runs the manifest-declared native server, and the CLI resolves imports for nested tests from the nearest project root containing `zap.toml`.
+The Web roadmap is now prioritized over the other starter domains. A new Web project is created with `zap new <dir>` and validated through `zap check`, `zap web check`, `zap web routes`, `zap explain route <path>`, `zap db check`, `zap db plan`, and `zap test tests`. The generated project uses ordinary Zap modules for routes, models, services, middleware, migrations, admin registration, and tests. `zap db migrate --dry-run` shows a read-only SQLite plan, while `zap db migrate` applies additive migrations transactionally and records checksums in a migration ledger. `zap dev` runs the manifest-declared native server, and the CLI resolves imports for nested tests from the nearest project root containing `zap.toml`.
 
 This is the first step toward a Django-like framework. The current parser does not yet support first-class route/model declarations, a concurrent production server, provider-neutral database drivers beyond the SQLite-first adapter, a session system, or a built-in admin UI. Those features require explicit language/runtime contracts and executable security tests; the scaffold must not pretend they already exist.
 
