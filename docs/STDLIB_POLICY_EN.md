@@ -1,12 +1,12 @@
 # Standard-Library Stability Policy
 
-**Verified baseline:** Zap v2.9.2
+**Verified baseline:** Zap v2.10.0
 
 ## Status and scope
 
 This policy defines the compatibility contract for every public standard-library domain and its directly exposed builtins. The machine-readable source is the native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog, while this document explains how users and maintainers interpret the metadata. Runtime dispatch remains centralized in the evaluator; the catalog does not create a second implementation path.
 
-The policy applies to the current release line, **v2.9.2**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
+The policy applies to the current release line, **v2.10.0**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
 
 ## Stability model
 
@@ -37,6 +37,7 @@ The following table is the normative domain-level summary. Individual builtins i
 | `math` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | bounded integer arguments | bounded integer result | not applicable | pure |
 | `collections` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB logical collection graph | 8 MiB logical collection graph | not applicable | pure |
 | `filesystem` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB path/content input | 8 MiB text/line output | not applicable | external-io |
+| `web` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 64 KiB JSON/map body and 64 schema fields | typed Result value with bounded error map | not applicable | pure |
 | `json` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 MiB JSON input | 8 MiB JSON output | not applicable | pure |
 | `system` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB environment/path input | 8 KiB text or structured result | not applicable | runtime-dependent |
 | `time` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | checked integer milliseconds | checked duration map | not applicable | runtime-dependent |
@@ -46,7 +47,7 @@ The following table is the normative domain-level summary. Individual builtins i
 | `network` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | 8 KiB URL and 8 MiB request body | 8 MiB response body | bounded connect/read/write; server wait 10 seconds | external-io |
 | `process` | stable | 2.1.14 | none | minor-compatible | Linux, Windows, macOS ARM64 | text command, text arguments, 1 MiB output | 1 MiB captured stdout/stderr | bounded child wait and cleanup | external-io |
 
-All public domains use the stable runtime diagnostic contract. Invalid types, malformed values, path escapes, oversized values, unavailable platform operations, and exceeded logical budgets fail closed. The `determinism_class` field describes the source of repeatability and dependency; it does not claim that external clocks, network peers, process scheduling, or filesystem latency are deterministic. In particular, a `pure` or `input-deterministic` builtin can be listed within a domain whose default is `runtime-dependent` or `external-io` when the builtin-level implementation has no such dependency. The public `sqrt` helper accepts a non-negative integer and returns the rounded integer square root; `sort` returns a cloned number-only or text-only list in ascending order; and `assert` returns `none` on truthy input or a deterministic runtime error containing the supplied message and observed value. The runtime `memory_stats()` record reports `cycle_policy=explicit_clear_object_fields`; public weak references and automatic tracing collection remain unsupported/deferred.
+All public domains use the stable runtime diagnostic contract. Invalid types, malformed values, path escapes, oversized values, unavailable platform operations, and exceeded logical budgets fail closed. The `web` domain’s `web_validate_request` builtin accepts a bounded JSON object or map, validates declared primitive field types, rejects unknown or missing fields, and returns a `ResultOk` value or a bounded `ResultErr` map. The native Web server centrally maps safe Result errors to JSON responses while preserving direct response-map compatibility. The `determinism_class` field describes the source of repeatability and dependency; it does not claim that external clocks, network peers, process scheduling, or filesystem latency are deterministic. In particular, a `pure` or `input-deterministic` builtin can be listed within a domain whose default is `runtime-dependent` or `external-io` when the builtin-level implementation has no such dependency. The public `sqrt` helper accepts a non-negative integer and returns the rounded integer square root; `sort` returns a cloned number-only or text-only list in ascending order; and `assert` returns `none` on truthy input or a deterministic runtime error containing the supplied message and observed value. The runtime `memory_stats()` record reports `cycle_policy=explicit_clear_object_fields`; public weak references and automatic tracing collection remain unsupported/deferred.
 
 ## API evolution and semver rules
 

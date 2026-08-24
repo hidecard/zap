@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-08-24
+
+### Release summary
+- Native Web validation and centralized Result error middleware
+
 ## [2.9.2] - 2026-08-24
 
 ### Release summary

@@ -1,6 +1,6 @@
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.9.2၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
+**အတည်ပြုထားသော baseline:** Zap v2.10.0၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 
@@ -120,6 +120,22 @@ Production request pipeline ကို အောက်ပါအစီအစဉ်
 | ၁၀ | Response | explicit DTO serialize လုပ်ခြင်း၊ internal field redact လုပ်ခြင်း |
 
 လက်ရှိ `frameworks/web` contract နှင့် `host/zap-host` adapter သည် ဤ boundary များ၏ safe subset ကို implement လုပ်ထားပါသည်။ Zap-first project scaffold သည် full native server မရှိသေးသော်လည်း တူညီသော boundary များကို ရိုးရိုး Zap data ဖြင့် မှတ်တမ်းတင်ထားပါသည်။
+
+## Typed request validation နှင့် Result-aware responses
+
+Native runtime တွင် `web_validate_request(body, schema)` ကို bounded typed boundary အဖြစ် ပေးထားပါသည်။ `body` သည် parse လုပ်ပြီးသား map ဖြစ်နိုင်သကဲ့သို့ 64 KiB ထက် မကျော်သော raw JSON text လည်း ဖြစ်နိုင်ပါသည်။ Schema တွင် field အများဆုံး 64 ခု ပါနိုင်ပြီး field specification များသည် `text`၊ `number`၊ `bool`၊ `map`၊ `list` နှင့် `none` ကို support လုပ်ပါသည်။ `required` option နှင့် text အတွက်သာ `max_len` option ကို ထည့်နိုင်ပါသည်။ Unknown field၊ ပျောက်နေသော required field၊ invalid JSON၊ type မကိုက်ညီမှုနှင့် length violation များသည် `status`၊ `code`၊ `message` နှင့် ရှိပါက `field` ပါသော `ResultErr` map အဖြစ် ပြန်လာပါသည်။
+
+```zap
+export fn create_user(request):
+    let schema = {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}}
+    let checked = web_validate_request(request["body"], schema)
+    if is_err(checked):
+        return checked
+    let payload = unwrap(checked)
+    return ok({"status": 201, "body": json({"created": true, "body": payload})})
+```
+
+Native server သည် centralized Result response middleware အဖြစ် လုပ်ဆောင်ပါသည်။ `ResultOk(response_map)` သည် ရှိပြီးသား response encoder ကို သုံးပြီး 400–599 status နှင့် safe error code ပါသော error map ကို `error`၊ `message` နှင့် request ID ပါသည့် JSON error response အဖြစ် ပြောင်းပေးပါသည်။ Validator သည် malformed JSON၊ invalid body shape၊ invalid schema နှင့် field-level request violation များအတွက် `400` ကို ရည်ရွယ်ချက်ရှိရှိ အသုံးပြုပါသည်။ Semantic အရ invalid ဖြစ်သော payload အတွက် handler က `422` ကို ရွေးချယ်ပြန်ပေးနိုင်ပါသည်။ ရှိပြီးသား direct response map များကို compatibility အတွက် ဆက်လက်ထောက်ပံ့ပါသည်။ Raise သို့မဟုတ် malformed response value ဖြစ်ပါက `500 handler_error` အဖြစ် fail closed လုပ်ပါသည်။ ဤသည်မှာ bounded response/validation contract ဖြစ်ပြီး full schema compiler သို့မဟုတ် production middleware graph မဟုတ်သေးပါ။
 
 ## Middleware design
 

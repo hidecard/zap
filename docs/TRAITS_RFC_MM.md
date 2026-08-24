@@ -1,6 +1,6 @@
 # Zap Traits နှင့် Composition RFC
 
-**စစ်ဆေးထားသော baseline:** Zap v2.9.2
+**စစ်ဆေးထားသော baseline:** Zap v2.10.0
 
 **RFC အခြေအနေ:** Design-only proposal ဖြစ်ပြီး parser သို့မဟုတ် runtime implementation မပါဝင်ပါ။
 **စစ်ဆေးထားသော baseline:** Zap v2.4.0

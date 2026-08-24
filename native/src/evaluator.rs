@@ -36,6 +36,9 @@ const MAX_LOG_MESSAGE_BYTES: usize = 8 * 1024;
 const MAX_LOG_FIELDS: usize = 64;
 const MAX_LOG_FIELD_KEY_BYTES: usize = 256;
 const MAX_LOG_OUTPUT_BYTES: usize = 64 * 1024;
+const MAX_WEB_SCHEMA_FIELDS: usize = 64;
+const MAX_WEB_FIELD_NAME_BYTES: usize = 128;
+const MAX_WEB_FIELD_TEXT_BYTES: usize = 64 * 1024;
 
 #[derive(Clone, Debug)]
 pub(crate) struct CallArgument {
@@ -712,6 +715,7 @@ fn direct_builtin_with_context_inner(
             }
             Ok(Some(Value::Text(encoded)))
         }
+        "web_validate_request" => Ok(Some(web_validate_request(&args)?)),
         "from_json" => {
             expect(1)?;
             let Value::Text(text) = &args[0] else {
@@ -1797,6 +1801,7 @@ fn web_http_reason(status: i64) -> &'static str {
         405 => "Method Not Allowed",
         413 => "Payload Too Large",
         415 => "Unsupported Media Type",
+        422 => "Unprocessable Entity",
         429 => "Too Many Requests",
         500 => "Internal Server Error",
         503 => "Service Unavailable",
@@ -2108,6 +2113,274 @@ fn web_response_header_is_reserved(name: &str) -> bool {
     )
 }
 
+fn web_validation_error(code: &str, message: &str, field: Option<&str>) -> Value {
+    let mut fields = HashMap::new();
+    fields.insert("status".into(), Value::Number(400));
+    fields.insert("code".into(), Value::Text(code.into()));
+    fields.insert("message".into(), Value::Text(message.into()));
+    if let Some(field) = field {
+        fields.insert("field".into(), Value::Text(field.into()));
+    }
+    Value::ResultErr(Box::new(Value::Map(fields)))
+}
+
+fn web_validate_request(args: &[Value]) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err(format!(
+            "web_validate_request expects body and schema, got {} arguments",
+            args.len()
+        ));
+    }
+    let body = match &args[0] {
+        Value::Map(body) => body.clone(),
+        Value::Text(text) => {
+            if text.len() > MAX_HTTP_REQUEST_BYTES {
+                return Ok(web_validation_error(
+                    "body_too_large",
+                    "request JSON body exceeds the 65536 byte limit",
+                    None,
+                ));
+            }
+            let parsed = match serde_json::from_str::<serde_json::Value>(text) {
+                Ok(parsed) => parsed,
+                Err(_) => {
+                    return Ok(web_validation_error(
+                        "invalid_json",
+                        "request body is not valid JSON",
+                        None,
+                    ))
+                }
+            };
+            let value = match json_to_value(parsed) {
+                Ok(value) => value,
+                Err(_) => {
+                    return Ok(web_validation_error(
+                        "invalid_json",
+                        "request body could not be represented safely",
+                        None,
+                    ))
+                }
+            };
+            value.validate_memory_limits().map_err(|_| {
+                "web_validate_request request JSON exceeds the runtime value limits".to_string()
+            })?;
+            let Value::Map(body) = value else {
+                return Ok(web_validation_error(
+                    "invalid_body",
+                    "request JSON body must be an object",
+                    None,
+                ));
+            };
+            body
+        }
+        _ => {
+            return Err(
+                "web_validate_request expects a body map or JSON text and schema map".into(),
+            )
+        }
+    };
+    let Value::Map(schema) = &args[1] else {
+        return Err("web_validate_request expects a body map and schema map".into());
+    };
+    if schema.is_empty() || schema.len() > MAX_WEB_SCHEMA_FIELDS {
+        return Ok(web_validation_error(
+            "invalid_schema",
+            "schema must contain between 1 and 64 fields",
+            None,
+        ));
+    }
+
+    let mut field_names = schema.keys().cloned().collect::<Vec<_>>();
+    field_names.sort();
+    for field in &field_names {
+        if field.is_empty()
+            || field.len() > MAX_WEB_FIELD_NAME_BYTES
+            || field
+                .bytes()
+                .any(|byte| !(byte.is_ascii_alphanumeric() || byte == b'_'))
+        {
+            return Ok(web_validation_error(
+                "invalid_schema",
+                "schema field names must be non-empty ASCII identifiers no longer than 128 bytes",
+                Some(field),
+            ));
+        }
+    }
+    let body_names = body.keys().cloned().collect::<Vec<_>>();
+    for field in body_names {
+        if !schema.contains_key(&field) {
+            return Ok(web_validation_error(
+                "unknown_field",
+                "request contains a field not declared by the schema",
+                Some(&field),
+            ));
+        }
+    }
+
+    let mut output = HashMap::new();
+    for field in field_names {
+        let spec = schema
+            .get(&field)
+            .expect("schema field name was collected from the schema");
+        let (expected_type, required, max_len) = match spec {
+            Value::Text(expected_type) => (expected_type.clone(), true, None),
+            Value::Map(options) => {
+                for option in options.keys() {
+                    if !matches!(option.as_str(), "type" | "required" | "max_len") {
+                        return Ok(web_validation_error(
+                            "invalid_schema",
+                            "schema options are limited to type, required, and max_len",
+                            Some(&field),
+                        ));
+                    }
+                }
+                let Some(Value::Text(expected_type)) = options.get("type") else {
+                    return Ok(web_validation_error(
+                        "invalid_schema",
+                        "schema field type must be text",
+                        Some(&field),
+                    ));
+                };
+                let required = match options.get("required") {
+                    None => true,
+                    Some(Value::Bool(value)) => *value,
+                    Some(_) => {
+                        return Ok(web_validation_error(
+                            "invalid_schema",
+                            "schema required flag must be bool",
+                            Some(&field),
+                        ))
+                    }
+                };
+                let max_len = match options.get("max_len") {
+                    None => None,
+                    Some(Value::Number(value))
+                        if (0..=MAX_WEB_FIELD_TEXT_BYTES as i64).contains(value) =>
+                    {
+                        Some(*value as usize)
+                    }
+                    Some(_) => {
+                        return Ok(web_validation_error(
+                            "invalid_schema",
+                            "schema max_len must be a number from 0 to 65536",
+                            Some(&field),
+                        ))
+                    }
+                };
+                (expected_type.clone(), required, max_len)
+            }
+            _ => {
+                return Ok(web_validation_error(
+                    "invalid_schema",
+                    "schema fields must be type text or an options map",
+                    Some(&field),
+                ))
+            }
+        };
+        if !matches!(
+            expected_type.as_str(),
+            "text" | "number" | "bool" | "map" | "list" | "none"
+        ) {
+            return Ok(web_validation_error(
+                "invalid_schema",
+                "schema type must be text, number, bool, map, list, or none",
+                Some(&field),
+            ));
+        }
+        if max_len.is_some() && expected_type != "text" {
+            return Ok(web_validation_error(
+                "invalid_schema",
+                "schema max_len is only valid for text fields",
+                Some(&field),
+            ));
+        }
+        let Some(value) = body.get(&field) else {
+            if required {
+                return Ok(web_validation_error(
+                    "missing_field",
+                    "required request field is missing",
+                    Some(&field),
+                ));
+            }
+            continue;
+        };
+        let actual_type = value_type_name(value);
+        if actual_type != expected_type {
+            return Ok(web_validation_error(
+                "invalid_type",
+                &format!("request field has type {actual_type}, expected {expected_type}"),
+                Some(&field),
+            ));
+        }
+        if let (Some(max_len), Value::Text(text)) = (max_len, value) {
+            if text.len() > max_len {
+                return Ok(web_validation_error(
+                    "value_too_long",
+                    "request text field exceeds the schema max_len",
+                    Some(&field),
+                ));
+            }
+        }
+        output.insert(field, value.clone());
+    }
+    Ok(Value::ResultOk(Box::new(Value::Map(output))))
+}
+
+fn web_result_error_response(value: Value, request_id: &str) -> Result<Vec<u8>, String> {
+    let Value::Map(fields) = value else {
+        return Err("web handler Result error must contain an error map".into());
+    };
+    let status = match fields.get("status") {
+        Some(Value::Number(value)) if (400..=599).contains(value) => *value,
+        _ => return Err("web handler Result error status must be a number from 400 to 599".into()),
+    };
+    let code = match fields.get("code") {
+        Some(Value::Text(value))
+            if !value.is_empty()
+                && value.len() <= 128
+                && value
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-') =>
+        {
+            value.clone()
+        }
+        _ => {
+            return Err("web handler Result error code must be a safe non-empty text token".into())
+        }
+    };
+    let message = match fields.get("message") {
+        Some(Value::Text(value)) if value.len() <= MAX_WEB_FIELD_TEXT_BYTES => value.clone(),
+        None => code.clone(),
+        _ => {
+            return Err(
+                "web handler Result error message must be text no longer than 65536 bytes".into(),
+            )
+        }
+    };
+    let body = serde_json::json!({
+        "error": code,
+        "message": message,
+        "request_id": request_id,
+    })
+    .to_string();
+    Ok(format!(
+        "HTTP/1.1 {status} {}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nCache-Control: no-store\r\nX-Request-Id: {}\r\n\r\n{}",
+        web_http_reason(status),
+        body.len(),
+        request_id,
+        body
+    )
+    .into_bytes())
+}
+
+fn web_result_response(value: Value, request_id: &str) -> Result<Vec<u8>, String> {
+    match value {
+        Value::ResultOk(value) => web_response_value(*value, request_id),
+        Value::ResultErr(value) => web_result_error_response(*value, request_id),
+        value => web_response_value(value, request_id),
+    }
+}
+
 fn web_response_value(value: Value, request_id: &str) -> Result<Vec<u8>, String> {
     let Value::Map(fields) = value else {
         return Err("web handler must return a response map".into());
@@ -2387,7 +2660,7 @@ fn web_serve_on_listener(
                             context,
                         ) {
                             Ok(result) => {
-                                web_response_value(result, &request_id).unwrap_or_else(|_| {
+                                web_result_response(result, &request_id).unwrap_or_else(|_| {
                                     web_error_response(500, "handler_error", &request_id)
                                 })
                             }
@@ -6231,6 +6504,140 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
     }
 
     #[test]
+    fn web_validate_request_returns_typed_results() {
+        let body = Value::Map(
+            [
+                ("name".into(), Value::Text(" Ada ".into())),
+                ("age".into(), Value::Number(7)),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        let schema = Value::Map(
+            [
+                (
+                    "name".into(),
+                    Value::Map(
+                        [
+                            ("type".into(), Value::Text("text".into())),
+                            ("max_len".into(), Value::Number(32)),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+                ("age".into(), Value::Text("number".into())),
+                (
+                    "nickname".into(),
+                    Value::Map(
+                        [
+                            ("type".into(), Value::Text("text".into())),
+                            ("required".into(), Value::Bool(false)),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        let valid = direct_builtin("web_validate_request", vec![body.clone(), schema.clone()])
+            .expect("typed request builtin should not fail")
+            .expect("typed request builtin should return a value");
+        let Value::ResultOk(value) = valid else {
+            panic!("valid request should return ResultOk");
+        };
+        let Value::Map(fields) = *value else {
+            panic!("valid request ResultOk should contain a map");
+        };
+        assert_eq!(fields.get("name"), Some(&Value::Text(" Ada ".into())));
+        assert_eq!(fields.get("age"), Some(&Value::Number(7)));
+        assert!(!fields.contains_key("nickname"));
+
+        let raw_valid = direct_builtin(
+            "web_validate_request",
+            vec![
+                Value::Text(r#"{"name":"Ada","age":7}"#.into()),
+                schema.clone(),
+            ],
+        )
+        .expect("raw JSON validation should not fail")
+        .expect("raw JSON validation should return a value");
+        assert!(matches!(raw_valid, Value::ResultOk(_)));
+
+        let malformed = direct_builtin(
+            "web_validate_request",
+            vec![Value::Text("{not-json}".into()), schema.clone()],
+        )
+        .expect("malformed JSON validation should not raise")
+        .expect("malformed JSON validation should return a value");
+        let Value::ResultErr(error) = malformed else {
+            panic!("malformed JSON should return ResultErr");
+        };
+        let Value::Map(error) = *error else {
+            panic!("malformed JSON error should contain a map");
+        };
+        assert_eq!(error.get("code"), Some(&Value::Text("invalid_json".into())));
+        assert_eq!(error.get("status"), Some(&Value::Number(400)));
+
+        let missing = direct_builtin(
+            "web_validate_request",
+            vec![
+                Value::Map(
+                    [("name".into(), Value::Text("Ada".into()))]
+                        .into_iter()
+                        .collect(),
+                ),
+                schema.clone(),
+            ],
+        )
+        .expect("missing field validation should not fail")
+        .expect("missing field validation should return a value");
+        let Value::ResultErr(error) = missing else {
+            panic!("missing field should return ResultErr");
+        };
+        let Value::Map(error) = *error else {
+            panic!("validation error should contain a map");
+        };
+        assert_eq!(
+            error.get("code"),
+            Some(&Value::Text("missing_field".into()))
+        );
+        assert_eq!(error.get("field"), Some(&Value::Text("age".into())));
+        assert_eq!(error.get("status"), Some(&Value::Number(400)));
+
+        let unknown = direct_builtin(
+            "web_validate_request",
+            vec![
+                Value::Map(
+                    [
+                        ("name".into(), Value::Text("Ada".into())),
+                        ("age".into(), Value::Number(7)),
+                        ("admin".into(), Value::Bool(true)),
+                    ]
+                    .into_iter()
+                    .collect(),
+                ),
+                schema,
+            ],
+        )
+        .expect("unknown field validation should not fail")
+        .expect("unknown field validation should return a value");
+        let Value::ResultErr(error) = unknown else {
+            panic!("unknown field should return ResultErr");
+        };
+        let Value::Map(error) = *error else {
+            panic!("unknown field error should contain a map");
+        };
+        assert_eq!(
+            error.get("code"),
+            Some(&Value::Text("unknown_field".into()))
+        );
+        assert_eq!(error.get("field"), Some(&Value::Text("admin".into())));
+    }
+
+    #[test]
     fn native_web_server_handles_requests_and_isolates_handler_errors() {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("test listener should bind");
         let port = listener
@@ -6247,7 +6654,9 @@ fn boom(request):
     raise "handler failure"
 fn reserved(request):
     return {"status": 200, "headers": {"Content-Length": "1"}, "body": "unsafe"}
-let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET", "path": "/users/:id", "handler": "user"}, {"method": "GET", "path": "/boom", "handler": "boom"}, {"method": "GET", "path": "/reserved", "handler": "reserved"}]
+fn invalid(request):
+    return err({"status": 422, "code": "invalid_payload", "message": "payload rejected"})
+let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET", "path": "/users/:id", "handler": "user"}, {"method": "GET", "path": "/boom", "handler": "boom"}, {"method": "GET", "path": "/reserved", "handler": "reserved"}, {"method": "GET", "path": "/invalid", "handler": "invalid"}]
 "#,
             )
             .expect("native Web test program should parse");
@@ -6266,7 +6675,7 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             else {
                 panic!("route table should be a list");
             };
-            let result = web_serve_on_listener(listener, &routes, &funcs, &mut context, Some(8))
+            let result = web_serve_on_listener(listener, &routes, &funcs, &mut context, Some(9))
                 .map_err(|error| format!("native Web test server failed: {error}"))?;
             let Value::Map(fields) = result else {
                 return Err("native Web test server result should be a map".into());
@@ -6349,11 +6758,16 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
         assert!(reserved_header.starts_with("HTTP/1.1 500 Internal Server Error\r\n"));
         assert!(reserved_header.contains(r#""error":"handler_error""#));
 
+        let invalid_result = request("GET /invalid HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(invalid_result.starts_with("HTTP/1.1 422 Unprocessable Entity\r\n"));
+        assert!(invalid_result.contains(r#""error":"invalid_payload""#));
+        assert!(invalid_result.contains(r#""message":"payload rejected""#));
+
         let (_, served) = server
             .join()
             .expect("native Web test server should join")
             .expect("native Web test server should complete");
-        assert_eq!(served, 8);
+        assert_eq!(served, 9);
     }
 
     #[test]

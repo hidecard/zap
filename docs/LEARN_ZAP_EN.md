@@ -2,7 +2,7 @@
 
 > **Audience:** This is the complete path from installing Zap for the first time to writing structured, typed, modular, asynchronous, tested, and Web-enabled programs.
 
-**Verified baseline:** Zap v2.9.2
+**Verified baseline:** Zap v2.10.0
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Standard-library index](STDLIB_INDEX_EN.md) · [Burmese guide](LEARN_ZAP_MM.md)
@@ -22,7 +22,7 @@ This guide distinguishes three kinds of information. **Normative** behavior is d
 Download the archive for your operating system and architecture from the [GitHub Releases page](https://github.com/hidecard/zap/releases). Extract it, place the executable in a directory on `PATH`, and make it executable on Unix-like systems.
 
 ```bash
-tar -xzf zap-2.9.2-linux-x86_64.tar.gz
+tar -xzf zap-2.10.0-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
@@ -727,6 +727,16 @@ A handler can return a JSON response:
 ```zap
 export fn tasks(request):
     return {"status": 200, "body": json({"tasks": [], "request_id": request["request_id"]})}
+```
+
+For JSON request bodies, `web_validate_request(body, schema)` accepts raw JSON text or a parsed map and returns `ResultOk` with only declared fields. Missing fields, unknown fields, wrong types, invalid JSON, and declared length violations return `ResultErr`; returning that error directly lets the native Web boundary map it to a stable JSON response:
+
+```zap
+export fn create_user(request):
+    let checked = web_validate_request(request["body"], {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}})
+    if is_err(checked):
+        return checked
+    return ok({"status": 201, "body": json({"created": true, "body": unwrap(checked)})})
 ```
 
 A static asset handler can use the bounded asset builtin:

@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.9.2
+**အတည်ပြုထားသော baseline:** Zap v2.10.0
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
@@ -102,6 +102,22 @@ zap web routes ./shop
 ```
 
 Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path၊ non-empty method token နှင့် unique method/path registration အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Duplicate registration များကို table မပြမီ reject လုပ်ပါသည်။ `zap web check` သည် project validation အတွင်း အဆိုပါ route-table validation ကိုလည်း လုပ်ဆောင်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
+
+## Typed request validation နှင့် Result-aware handlers
+
+Native Web handler သည် raw JSON object သို့မဟုတ် parse လုပ်ပြီးသား map ကို `web_validate_request(body, schema)` ဖြင့် validate လုပ်နိုင်ပါသည်။ Schema တွင် field အများဆုံး 64 ခု ပါနိုင်ပါသည်။ Field တစ်ခုစီတွင် type (`text`၊ `number`၊ `bool`၊ `map`၊ `list` သို့မဟုတ် `none`) ကို တိုက်ရိုက်သတ်မှတ်နိုင်သကဲ့သို့ `type`၊ optional `required` နှင့် text အတွက် optional `max_len` ပါသော options map ကိုလည်း သတ်မှတ်နိုင်ပါသည်။ Unknown field၊ ပျောက်နေသော required field၊ type မကိုက်ညီမှု၊ invalid JSON နှင့် သတ်မှတ်ထားသော bound ကျော်လွန်သော value များသည် uncaught runtime error မဖြစ်ဘဲ `ResultErr` အဖြစ် ပြန်လာပါသည်။
+
+```zap
+export fn create_user(request):
+    let schema = {"name": {"type": "text", "max_len": 120}, "email": {"type": "text", "max_len": 254}}
+    let checked = web_validate_request(request["body"], schema)
+    if is_err(checked):
+        return checked
+    let payload = unwrap(checked)
+    return ok({"status": 201, "body": json({"created": true, "body": payload})})
+```
+
+Native Web boundary သည် Result-aware ဖြစ်ပါသည်။ `ResultOk(response_map)` သည် ရှိပြီးသား response-map encoding အတိုင်း ဆက်သွားပြီး `ResultErr({"status": 400..599, "code": "safe_token", "message": "..."})` ကို `error`၊ `message` နှင့် request ID ပါသော JSON error response အဖြစ် centrally ပြောင်းပေးပါသည်။ Validator သည် malformed JSON၊ invalid body shape၊ invalid schema နှင့် field-level request violation များအတွက် `400` ကို အသုံးပြုပါသည်။ Semantic အရ invalid ဖြစ်သော payload အတွက် handler က `422` ကို ရည်ရွယ်ချက်ရှိရှိ ပြန်ပေးနိုင်ပါသည်။ Compatibility အတွက် direct response map များကိုလည်း ဆက်လက်ထောက်ပံ့ပါသည်။ Handler raise သို့မဟုတ် malformed response value ဖြစ်ပါက fail closed အနေဖြင့် `500 handler_error` ပြန်ပေးပါသည်။
 
 ## Host-adapter contract
 
