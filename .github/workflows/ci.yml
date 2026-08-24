@@ -117,6 +117,9 @@ jobs:
       - name: Verify B2 Zap type-checker candidate
         run: scripts/bootstrap/verify_b2_typecheck_candidate.sh
 
+      - name: Verify B2 Zap typed-IR candidate
+        run: scripts/bootstrap/verify_b2_typed_ir_candidate.sh
+
       - name: Verify B3 package/build/test-runner foundations
         run: scripts/bootstrap/verify_b3_foundations.sh
 

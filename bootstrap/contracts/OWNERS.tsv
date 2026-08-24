@@ -18,3 +18,4 @@ BOOT-016	b2-typed-ir	Artifact contract	Artifact contract	native/src/bootstrap.rs
 BOOT-017	b2-typecheck	Ownership rules	Ownership rules	native/src/evaluator.rs	bootstrap/fixtures/typecheck/incompatible.zp	provisional
 BOOT-018	token-diagnostics	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp	provisional
 BOOT-019	b2-typechecker-candidate	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/incompatible.zp	provisional
+BOOT-020	b2-typed-ir-candidate	Artifact contract	Artifact contract	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/annotated.typed-ir.json	provisional

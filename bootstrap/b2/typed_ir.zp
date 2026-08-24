@@ -1,0 +1,20 @@
+# B2 candidate typed-IR producer written in Zap.
+# This producer owns only the annotated declaration fixture and is not a
+# replacement for the native reference typed-IR emitter.
+
+export fn span(line, column, length):
+    return {"column": column, "length": length, "line": line}
+
+export fn emit(source, source_name):
+    let lines = split(source, "\n")
+    let line = trim(lines[0])
+    let assignment = split(line, " = ")
+    let left = trim(assignment[0])
+    let annotation_parts = split(left, ":")
+    let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
+    let annotation = trim(annotation_parts[1])
+    let expression = trim(assignment[1])
+    let literal = {"kind": "literal", "literal_kind": "number", "span": span(1, 1, 1), "value": from_json(expression)}
+    let declaration = {"annotation": annotation, "exported": false, "inferred_type": "number", "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
+    let ir = {"nodes": [declaration]}
+    return json({"candidate_only": true, "ir": ir, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
