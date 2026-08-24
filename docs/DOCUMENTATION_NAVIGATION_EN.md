@@ -40,6 +40,7 @@
 | Runtime state | [Runtime state and execution context](RUNTIME_STATE_EN.md) | Runtime-state isolation, workspace, and reset regressions |
 | AST foundation | [AST foundation status](P0_FOUNDATION_STATUS_EN.md) | Canonical AST, export, and compatibility-boundary regressions |
 | Bootstrap/self-hosting | [Bootstrap contract](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md) | `scripts/test_bootstrap_contract.sh`, canonical fixture corpus, and future B0/B1 differential artifacts |
+| Zap-only policy | [Zap-only dependency policy](ZAP_ONLY_POLICY_EN.md) | Clean-machine B4 acceptance and platform-seed boundary |
 | Async boundaries | [Async boundary contract](ASYNC_BOUNDARIES_EN.md) | Async runtime and adapter tests |
 | Framework adapters | [Framework guide](FRAMEWORK_EN.md) · [Zap-first Web guide](ZAP_WEB_NATIVE_EN.md) · [Web Framework guide](WEB_FRAMEWORK_EN.md) · [frontend integration guide](FRONTEND_INTEGRATION_EN.md) · [production deployment](PRODUCTION_DEPLOYMENT_EN.md) · [database operations](DATABASE_PRODUCTION_EN.md) · [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_EN.md) · [load/chaos testing](LOAD_CHAOS_TESTING_EN.md) · [zap-host adapter](ZAP_HOST_EN.md) · [zap-host quickstart](ZAP_HOST_QUICKSTART_EN.md) | Zap-first scaffold checks, starter smoke tests, Web contract tests, host-capability contract tests, and Axum/Tower adapter tests |
 | Standard library | [Stdlib index](STDLIB_INDEX_EN.md) · [Stability policy](STDLIB_POLICY_EN.md) | Machine-readable builtin catalog, stability/deprecation metadata, schema-2 determinism classes, and security corpus |
