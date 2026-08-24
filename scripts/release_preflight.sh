@@ -487,6 +487,9 @@ run_contract_validation() {
   bash scripts/bootstrap/verify_b1_parser_candidate.sh
   pass "B1 Zap parser candidate differential contract passed"
 
+  bash scripts/bootstrap/verify_b2_typecheck.sh
+  pass "B2 typed-IR and type-check conformance contract passed"
+
   bash scripts/bootstrap/verify_b3_foundations.sh
   pass "B3 package/build/test-runner foundation contract passed"
 

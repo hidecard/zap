@@ -24,6 +24,10 @@ The native reference parser now has an additive differential corpus at [`bootstr
 
 A first Zap-written parser candidate is now checked in at [`bootstrap/b1/parser.zp`](../bootstrap/b1/parser.zp). It intentionally owns only a numeric declaration with a `+` expression and one missing-bracket rejection path. [`scripts/bootstrap/verify_b1_parser_candidate.sh`](../scripts/bootstrap/verify_b1_parser_candidate.sh) compares both outputs byte-for-byte with B0 artifacts. This is a **provisional, corpus-limited candidate**: it does not replace the Rust parser, does not cover the compound corpus, and does not advance the repository beyond B0.
 
+## B2 conformance foundation
+
+The repository now has a reference-only B2 conformance gate at [`scripts/bootstrap/verify_b2_typecheck.sh`](../scripts/bootstrap/verify_b2_typecheck.sh). It compares the annotated typed-IR artifact byte-for-byte across repeated native runs and checks native type-check acceptance for annotated and conditional expressions plus rejection for an incompatible annotation. The typed-IR artifact remains explicitly `reference_only`; this is a conformance foundation, not a Zap-owned type checker.
+
 ## B3 foundation status
 
 The repository now has a reference-only B3 foundation gate at [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh). It validates the catalog determinism taxonomy, generates a canonical dependency-free manifest lockfile, checks lockfile reproducibility, runs an offline locked build, and executes a Zap test fixture. These checks demonstrate existing package/build/test-runner behavior; they do not claim that the compiler pipeline is already Zap-owned.
@@ -62,4 +66,4 @@ No release may use the B4 wording before the B4 bootstrap checks pass. Future se
 
 ## Next gate
 
-The active implementation gate remains B1 parity expansion: the Zap-owned lexer and parser candidates must expand their owned corpora and compare output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. The reference parser corpus and the first provisional parser candidate are now separate foundation gates. The next ownership step is to expand parser coverage to compound expressions/statements and replace the candidate’s hard-coded rejection path with token-driven diagnostics. Type checking, VM work, and native-backend work must remain behind that gate rather than being claimed prematurely.
+The active implementation gate remains staged parity expansion: the Zap-owned lexer and parser candidates must expand their owned corpora and compare output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. The B2 typed-IR/type-check conformance foundation is now also enforced, but the type checker and typed IR remain native-owned. The next ownership step is to expand parser coverage to compound expressions/statements, replace the parser candidate’s hard-coded rejection path with token-driven diagnostics, and then implement a Zap-owned checker against the B2 acceptance/rejection corpus. VM work and native-backend work must remain behind those gates rather than being claimed prematurely.

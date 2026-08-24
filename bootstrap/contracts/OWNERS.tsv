@@ -14,3 +14,5 @@ BOOT-012	typed-ir	Canonical inspection commands	Canonical inspection commands	na
 BOOT-013	parser	Artifact contract	Artifact contract	native/src/ast.rs	bootstrap/fixtures/parser/compound.zp	provisional
 BOOT-014	syntax-diagnostics	Ownership rules	Ownership rules	native/src/bootstrap.rs	bootstrap/fixtures/diagnostics/missing_closing_bracket.zp	provisional
 BOOT-015	b1-parser-candidate	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arithmetic.zp	provisional
+BOOT-016	b2-typed-ir	Artifact contract	Artifact contract	native/src/bootstrap.rs	bootstrap/fixtures/typecheck/annotated.zp	provisional
+BOOT-017	b2-typecheck	Ownership rules	Ownership rules	native/src/evaluator.rs	bootstrap/fixtures/typecheck/incompatible.zp	provisional

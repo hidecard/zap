@@ -24,6 +24,10 @@ Native reference parser အတွက် additive differential corpus ကို [
 
 ပထမဆုံး Zap-written parser candidate ကို [`bootstrap/b1/parser.zp`](../bootstrap/b1/parser.zp) တွင် ထည့်ထားသည်။ ၎င်းသည် numeric declaration တစ်ခုတွင် `+` expression နှင့် missing-bracket rejection path တစ်ခုကိုသာ ရည်ရွယ်ချက်ရှိရှိ ပိုင်ဆိုင်သည်။ [`scripts/bootstrap/verify_b1_parser_candidate.sh`](../scripts/bootstrap/verify_b1_parser_candidate.sh) သည် output နှစ်ခုကို B0 artifact များနှင့် byte-for-byte နှိုင်းယှဉ်သည်။ ဤသည်မှာ **provisional၊ corpus-limited candidate** ဖြစ်ပြီး Rust parser ကို မအစားထိုးသေး၊ compound corpus ကို မ cover သေး၊ B0 ထက် stage claim မမြှင့်သေးပါ။
 
+## B2 conformance foundation
+
+Repository တွင် reference-only B2 conformance gate ကို [`scripts/bootstrap/verify_b2_typecheck.sh`](../scripts/bootstrap/verify_b2_typecheck.sh) အဖြစ် ထည့်ထားသည်။ ၎င်းသည် annotated typed-IR artifact ကို native run များအကြား byte-for-byte နှိုင်းယှဉ်ပြီး annotated/conditional expression များ၏ type-check acceptance နှင့် incompatible annotation ၏ rejection ကို စစ်ဆေးသည်။ Typed-IR artifact သည် `reference_only` အဖြစ် ဆက်ရှိနေပြီး ဤအရာသည် conformance foundation သာဖြစ်ကာ Zap-owned type checker မဖြစ်သေးပါ။
+
 ## B3 foundation status
 
 Repository တွင် reference-only B3 foundation gate ကို [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh) အဖြစ် ထည့်ထားသည်။ ၎င်းသည် catalog determinism taxonomy၊ dependency-free manifest ၏ canonical lockfile generation၊ lockfile reproducibility၊ offline locked build နှင့် Zap test fixture execution များကို စစ်ဆေးသည်။ ဤ check များသည် ရှိပြီးသား package/build/test-runner behavior ကို ပြသခြင်းသာဖြစ်ပြီး compiler pipeline တစ်ခုလုံး Zap-owned ဖြစ်နေပြီဟု မဆိုလိုပါ။
@@ -62,4 +66,4 @@ B4 bootstrap check မအောင်မြင်သေးသရွေ့ releas
 
 ## နောက် gate
 
-လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer နှင့် parser candidate များသည် owned corpus ကို ဆက်လက်ချဲ့ထွင်ပြီး valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် Rust reference နှင့် output နှိုင်းယှဉ်ရမည်။ Reference parser corpus နှင့် ပထမ provisional parser candidate ကို သီးခြား foundation gate များအဖြစ် ထည့်ပြီးဖြစ်သည်။ နောက် ownership step သည် compound expression/statement များအထိ parser coverage ချဲ့ခြင်းနှင့် hard-coded rejection path အစား token-driven diagnostics ပြောင်းခြင်း ဖြစ်သည်။ Type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
+လက်ရှိ implementation gate သည် staged parity expansion ဖြစ်သည်။ Zap-owned lexer နှင့် parser candidate များသည် owned corpus ကို ဆက်လက်ချဲ့ထွင်ပြီး valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် Rust reference နှင့် output နှိုင်းယှဉ်ရမည်။ B2 typed-IR/type-check conformance foundation ကိုလည်း enforce လုပ်ပြီးဖြစ်သော်လည်း type checker နှင့် typed IR သည် native-owned အဖြစ်သာ ရှိသေးသည်။ နောက် ownership step သည် compound expression/statement များအထိ parser coverage ချဲ့ခြင်း၊ hard-coded rejection path အစား token-driven diagnostics ပြောင်းခြင်းနှင့် B2 acceptance/rejection corpus အပေါ် Zap-owned checker တည်ဆောက်ခြင်း ဖြစ်သည်။ VM နှင့် native backend အလုပ်များကို ထို gate များမကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
