@@ -23,17 +23,25 @@ fi
 mkdir -p "$USER_BIN"
 install -m 0755 "$BINARY" "$USER_BIN/zap"
 
+shell_quote() {
+  local value="$1"
+  value=${value//\'/\'\\\'\'}
+  printf "'%s'" "$value"
+}
+
 add_path() {
   local file="$1"
+  local path_literal
+  path_literal=$(shell_quote "$USER_BIN")
   touch "$file"
-  if ! grep -Fq 'export PATH="$HOME/.local/bin:$PATH"' "$file"; then
-    printf '\n# Zap CLI\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$file"
+  if ! grep -Fqx "# Zap CLI: $USER_BIN" "$file"; then
+    printf '\n# Zap CLI: %s\nexport PATH=%s:"$PATH"\n' "$USER_BIN" "$path_literal" >> "$file"
   fi
 }
 
 case "${SHELL##*/}" in
-  zsh) [ -f "$HOME/.zshrc" ] && add_path "$HOME/.zshrc" ;;
-  *) [ -f "$HOME/.bashrc" ] && add_path "$HOME/.bashrc" ;;
+  zsh) add_path "$HOME/.zshrc" ;;
+  *) add_path "$HOME/.bashrc" ;;
 esac
 
 export PATH="$USER_BIN:$PATH"

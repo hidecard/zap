@@ -1,8 +1,8 @@
 # Zap RustSec Dependency Audit Evidence
 
-**Verified baseline:** Zap v2.9.0 development line
+**Verified baseline:** Zap v2.9.1 development line
 
-**Purpose:** This document records the dependency versions, local audit evidence, tool limitations, and CI/release controls for the native runtime. It is an evidence record for the v2.9.0 development line, not a claim that an untagged development commit is a published release.
+**Purpose:** This document records the dependency versions, local audit evidence, tool limitations, and CI/release controls for the native runtime. It is an evidence record for the v2.9.1 development line, not a claim that an untagged development commit is a published release.
 
 ## Current locked dependency graph
 

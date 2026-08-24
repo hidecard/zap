@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.9.1] — 2026-08-24
+
+### Release engineering
+- Unix installer၊ Makefile contributor entrypoint၊ standalone release archive၊ production host configuration နှင့် documentation validation များကို harden လုပ်ထားပါသည်။
+- Persistent SQLite host storage၊ bounded cursor pagination၊ explicit production fail-closed behavior နှင့် release-archive link verification ကို ထည့်သွင်းထားပါသည်။
+
 ## [2.9.0] — 2026-08-24
 
 ### Release engineering

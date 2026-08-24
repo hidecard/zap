@@ -32,6 +32,7 @@ if [[ -f "${HOME}/.cargo/env" ]]; then
   # shellcheck disable=SC1091
   source "${HOME}/.cargo/env"
 fi
+export PATH="${HOME}/.cargo/bin:${PATH}"
 
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [[ -z "$ROOT_DIR" ]]; then

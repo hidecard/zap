@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.9.1] — 2026-08-24
+
+### Release engineering
+- Hardened the Unix installer, Makefile contributor entrypoints, standalone release archives, production host configuration, and documentation validation.
+- Added persistent SQLite-backed host storage, bounded cursor pagination, explicit production fail-closed behavior, and release-archive link verification.
+
 ## [2.9.0] — 2026-08-24
 
 ### Release engineering

@@ -1,12 +1,12 @@
 # Zap Usage Guide
 
-**Verified baseline:** Zap v2.9.0 development line
+**Verified baseline:** Zap v2.9.1 development line
 
 **Purpose:** This guide is a compact command and operations reference. For the complete installation-to-advanced learning path, use the [English Language Guide](LEARN_ZAP_EN.md). Normative behavior belongs to the [language specification](LANGUAGE_SPEC_EN.md).
 
 ## Install the native runtime
 
-Zap is distributed as a standalone native executable. Download the archive that matches the operating system and CPU architecture, verify its checksum and signature, extract it, and place the executable on `PATH`. The v2.9.0 release will publish only the targets listed on its release page; do not infer support for an unlisted target.
+Zap is distributed as a standalone native executable. Download the archive that matches the operating system and CPU architecture, verify its checksum and signature, extract it, and place the executable on `PATH`. The v2.9.1 release will publish only the targets listed on its release page; do not infer support for an unlisted target.
 
 | Platform | Archive pattern | Installation |
 |---|---|---|

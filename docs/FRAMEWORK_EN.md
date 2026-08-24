@@ -1,6 +1,6 @@
 # Zap Framework Guide
 
-**Verified baseline:** Zap v2.9.0
+**Verified baseline:** Zap v2.9.1
 
 **Verified baseline:** Zap v2.4.0
 **Framework branch:** `Framework`

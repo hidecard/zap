@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.9.1] - 2026-08-24
+
+### Release summary
+- Installer၊ Makefile၊ release archive၊ production host configuration နှင့် documentation validation များကို harden လုပ်ထားသည်။ Host adapter တွင် persistent SQLite repository၊ bounded cursor pagination နှင့် explicit production fail-closed behavior ပါဝင်သည်။
+
 ## [2.9.0] - 2026-08-24
 
 ### Release summary

@@ -1,6 +1,6 @@
 # Zap Syntax Reference — English
 
-**Verified baseline:** Zap v2.9.0
+**Verified baseline:** Zap v2.9.1
 
 **Purpose:** Normative, searchable syntax reference for Zap language users, linked to the canonical specification and executable contracts.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Diagnostics](DIAGNOSTIC_MODEL_EN.md)

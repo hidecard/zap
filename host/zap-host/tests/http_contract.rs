@@ -10,8 +10,8 @@ use tower::ServiceExt;
 
 use zap_host::{
     build_router, AppConfig, AppState, AuthFailure, Authenticator, ContractGateway, DatabaseError,
-    DbUser, GatewayError, Identity, NormalizedCreateUser, ReadinessError, ReadinessProbe,
-    UserRepository, WebGateway,
+    DbUser, GatewayError, Identity, MemoryRepository, NormalizedCreateUser, ReadinessError,
+    ReadinessProbe, UserRepository, WebGateway,
 };
 
 #[derive(Clone)]
@@ -72,7 +72,11 @@ impl UserRepository for CountingRepository {
         Err(DatabaseError::Unavailable)
     }
 
-    async fn list_users(&self) -> Result<Vec<DbUser>, DatabaseError> {
+    async fn list_users(
+        &self,
+        _limit: usize,
+        _after_id: Option<u64>,
+    ) -> Result<Vec<DbUser>, DatabaseError> {
         Ok(Vec::new())
     }
 }
@@ -94,7 +98,11 @@ impl WebGateway for ErrorGateway {
         Err(self.error)
     }
 
-    async fn list_users(&self) -> Result<Vec<zap_host::PublicUser>, GatewayError> {
+    async fn list_users(
+        &self,
+        _limit: usize,
+        _after_id: Option<u64>,
+    ) -> Result<Vec<zap_host::PublicUser>, GatewayError> {
         Err(self.error)
     }
 }
@@ -138,6 +146,71 @@ async fn json_body(response: axum::response::Response) -> Value {
         .expect("response body must be readable")
         .to_bytes();
     serde_json::from_slice(&bytes).expect("response body must be JSON")
+}
+
+#[tokio::test]
+async fn list_users_is_bounded_and_cursor_paginated() {
+    let repository = Arc::new(MemoryRepository::demo());
+    let gateway: Arc<dyn WebGateway> = Arc::new(ContractGateway::new(repository.clone()));
+    let state = AppState::new(
+        config(),
+        gateway,
+        Arc::new(TestAuth {
+            mode: AuthMode::Valid,
+        }),
+    )
+    .expect("valid state");
+    let app = build_router(state);
+
+    let first = app
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/api/users?limit=1",
+            "list-page-1",
+            Body::empty(),
+        ))
+        .await
+        .expect("first page response");
+    assert_eq!(first.status(), StatusCode::OK);
+    let first_json = json_body(first).await;
+    assert_eq!(first_json["count"], 1);
+    assert_eq!(first_json["data"][0]["id"], 1);
+    assert_eq!(first_json["next_cursor"], 1);
+
+    repository
+        .create_user(NormalizedCreateUser {
+            name: "Grace".to_string(),
+            email: "grace@example.com".to_string(),
+        })
+        .await
+        .expect("second user");
+    let second = app
+        .clone()
+        .oneshot(request(
+            Method::GET,
+            "/api/users?limit=1&cursor=1",
+            "list-page-2",
+            Body::empty(),
+        ))
+        .await
+        .expect("second page response");
+    assert_eq!(second.status(), StatusCode::OK);
+    let second_json = json_body(second).await;
+    assert_eq!(second_json["data"][0]["email"], "grace@example.com");
+
+    let invalid = app
+        .oneshot(request(
+            Method::GET,
+            "/api/users?limit=101",
+            "list-invalid",
+            Body::empty(),
+        ))
+        .await
+        .expect("invalid page response");
+    assert_eq!(invalid.status(), StatusCode::BAD_REQUEST);
+    let invalid_json = json_body(invalid).await;
+    assert_eq!(invalid_json["error"], "invalid_pagination");
 }
 
 #[tokio::test]

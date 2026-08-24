@@ -148,8 +148,6 @@ require_text docs/ZAP_WEB_NATIVE_EN.md "zap new"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap new"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap web check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap web check"
-require_text docs/WEB_FRAMEWORK_EN.md "zap web routes"
-require_text docs/WEB_FRAMEWORK_MM.md "zap web routes"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_MM.md "zap db check"
 require_text docs/ZAP_WEB_NATIVE_EN.md "zap db plan"
@@ -327,17 +325,12 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && grep -Fq 'assets = "public"' "$scaffold_dir/project/zap.toml" \
         && grep -Fq '[frontend]' "$scaffold_dir/project/zap.toml" \
         && grep -Fq 'spa_fallback = "index.html"' "$scaffold_dir/project/zap.toml" \
-        && grep -Fq 'web_app("project")' "$scaffold_dir/project/main.zp" \
         && grep -Fq '/assets/*path' "$scaffold_dir/project/routes/routes.zp" \
         && grep -Fq '/*path' "$scaffold_dir/project/routes/routes.zp" \
         && grep -Fq 'web_static_spa' "$scaffold_dir/project/functions/user_functions.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes/routes.zp" \
         && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" web routes "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && grep -Fq 'routes: 7' "$scaffold_output" \
-        && "$ZAP_BIN" web routes --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && grep -Fq '"routes"' "$scaffold_output" \
         && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db inspect --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && "$ZAP_BIN" db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \

@@ -2,7 +2,7 @@
 
 > **ရည်ရွယ်သူ:** Zap ကို ပထမဆုံး install လုပ်ခြင်းမှစ၍ structured၊ typed၊ modular၊ asynchronous၊ tested နှင့် Web-enabled program များ ရေးသားနိုင်သည့် Advanced အဆင့်အထိ လေ့လာလိုသူများအတွက် ဖြစ်ပါသည်။
 
-**စစ်ဆေးထားသော baseline:** Zap v2.9.0
+**စစ်ဆေးထားသော baseline:** Zap v2.9.1
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Standard-library index](STDLIB_INDEX_MM.md) · [English guide](LEARN_ZAP_EN.md)
@@ -22,7 +22,7 @@ Rust toolchain သည် Zap executable ကို build လုပ်ရန်သ
 သင့် operating system နှင့် architecture ကိုက်ညီသော archive ကို [GitHub Releases](https://github.com/hidecard/zap/releases) မှ download လုပ်ပါ။ Extract လုပ်ပြီး executable ကို `PATH` ထဲရှိ directory သို့ ထည့်ကာ Unix စနစ်များတွင် executable permission ပေးပါ။
 
 ```bash
-tar -xzf zap-2.9.0-linux-x86_64.tar.gz
+tar -xzf zap-2.9.1-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
