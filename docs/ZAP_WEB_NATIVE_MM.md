@@ -92,7 +92,7 @@ export fn routes():
     return [{"method": "GET", "path": "/", "handler": "home", "scope": ""}, {"method": "GET", "path": "/users/:id", "handler": "get_user", "scope": "users:read"}]
 ```
 
-ဤနည်းသည် လက်ရှိ project ကို runnable နှင့် inspectable ဖြစ်စေပြီး future parser/AST ပြောင်းလဲမှုအတွက် compatibility-reviewed RFC တစ်ခု ထားနိုင်စေပါသည်။ အောက်ပါ concise route form သည် **design notation သာ ဖြစ်ပြီး လက်ရှိ parser က မလက်ခံသေးပါ**။ Parser contract မထည့်သွင်းမီ project ထဲတွင် မသုံးရပါ။
+ဤနည်းသည် လက်ရှိ project ကို runnable နှင့် inspectable ဖြစ်စေပြီး future parser/AST ပြောင်းလဲမှုအတွက် compatibility-reviewed RFC တစ်ခု ထားနိုင်စေပါသည်။ `zap web routes` သည် listener မဖွင့်ဘဲ ဤ factory ကို execute လုပ်ကာ method/path registration များ unique ဖြစ်/မဖြစ် စစ်ပြီး resolved table ကို text သို့မဟုတ် JSON အဖြစ် ပြပါသည်။ Live Web server သည် အတူတူ conflict check လုပ်သည့်အပြင် traffic လက်မခံမီ named handler အားလုံး resolve ဖြစ်/မဖြစ်ကို ထပ်မံစစ်ပါသည်။ အောက်ပါ concise route form သည် **design notation သာ ဖြစ်ပြီး လက်ရှိ parser က မလက်ခံသေးပါ**။ Parser contract မထည့်သွင်းမီ project ထဲတွင် မသုံးရပါ။
 
 ```zap
 route GET "/users/:id" handler get_user scope "users:read"

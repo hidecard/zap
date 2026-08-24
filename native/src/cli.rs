@@ -167,7 +167,8 @@ fn validate_web_command(dir: &Path) -> Result<String, String> {
     if !manifest_has_section(dir, "web")? {
         return Err(format!("{} is not a Zap Web project", dir.display()));
     }
-    validate_project(dir).map(|info| format!("valid Zap Web project: {info}"))
+    let (info, _routes) = load_web_routes(dir)?;
+    Ok(info)
 }
 
 fn parse_web_routes_args(args: &[String]) -> Result<(PathBuf, bool), String> {
@@ -189,7 +190,10 @@ fn parse_web_routes_args(args: &[String]) -> Result<(PathBuf, bool), String> {
 }
 
 fn load_web_routes(dir: &Path) -> Result<(String, Vec<Value>), String> {
-    let info = validate_web_command(dir)?;
+    if !manifest_has_section(dir, "web")? {
+        return Err(format!("{} is not a Zap Web project", dir.display()));
+    }
+    let info = validate_project(dir).map(|info| format!("valid Zap Web project: {info}"))?;
     let routes_path = web_manifest_path(dir, "routes")?;
     let source = read_limited_text(&routes_path, "Web routes source read")?;
     let program = crate::ast::parse_program(&source)
@@ -224,10 +228,8 @@ fn load_web_routes(dir: &Path) -> Result<(String, Vec<Value>), String> {
             routes_path.display()
         ));
     };
-    for route in &routes {
-        evaluator::web_validate_route_shape(route)
-            .map_err(|error| format!("{}: {error}", routes_path.display()))?;
-    }
+    evaluator::web_validate_route_table(&routes)
+        .map_err(|error| format!("{}: {error}", routes_path.display()))?;
     Ok((info, routes))
 }
 
