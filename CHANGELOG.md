@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.11] - 2026-08-24
+
+### Release summary
+- Add corpus-limited while-loop option narrowing and post-loop wrapper restoration evidence; Rust remains the reference owner.
+
 ## [2.11.10] - 2026-08-24
 
 ### Release summary

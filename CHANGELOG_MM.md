@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.11] — 2026-08-24
+
+### Release engineering
+- Corpus-limited while-loop option narrowing နှင့် loop ပြီးနောက် wrapper restoration evidence ကို ထည့်ပြီး Rust ကို reference owner အဖြစ် ဆက်ထားသည်။
+
 ## [2.11.10] — 2026-08-24
 
 ### Release engineering
