@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+## [2.11.2] — 2026-08-24
+
 ### Zap-only bootstrap foundations
 - Expanded the provisional Zap-owned type-checker candidate with one annotated function, return propagation, and deterministic incompatible function-call diagnostics. Complete type checking and typed IR remain native-owned and the stage remains B0.
 

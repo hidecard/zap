@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.2] - 2026-08-24
+
+### Release summary
+- Annotated function၊ return propagation နှင့် incompatible function-call diagnostic ပါသော provisional Zap-owned B2 type-checker corpus ကို ချဲ့ထွင်ထားပြီး B0/non-self-hosted boundary ကို ထိန်းသိမ်းထားသည်။
+
 ## [2.11.1] - 2026-08-24
 
 ### Release summary
