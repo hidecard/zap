@@ -9,3 +9,5 @@ BOOT-007	platform	Capability contract	Capability contract	host/zap-host	bootstra
 BOOT-008	artifact	Artifact contract	Artifact contract	scripts/bootstrap	bootstrap/fixtures/metadata/artifact_schema.json	stable
 BOOT-009	release	Version policy	Version policy	docs/LANGUAGE_SPEC_EN.md	bootstrap/contracts/VERSIONS.toml	stable
 BOOT-010	bootstrap	Current status	လက်ရှိအခြေအနေ	native Rust reference	bootstrap/BASELINE_B0.md	stable
+BOOT-011	b1-lexer	B1 candidate status	B1 candidate status	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/operators.tokens.json	provisional
+BOOT-012	typed-ir	Canonical inspection commands	Canonical inspection commands	native/src/bootstrap.rs	bootstrap/fixtures/lexer/basic.typed-ir.json	provisional

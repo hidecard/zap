@@ -59,6 +59,7 @@ Usage:
   zap bootstrap status                  Show bootstrap stage and schema versions
   zap bootstrap tokens <file.zp>        Emit the canonical B0 token artifact
   zap bootstrap ast <file.zp>            Emit the canonical B0 AST artifact
+  zap bootstrap typed-ir <file.zp>       Emit reference-only typed IR
   zap bootstrap diagnostics <file.zp>   Emit canonical lexer diagnostics
   zap --version                         Show the version
   zap --help                            Show this help"#;
@@ -1159,9 +1160,16 @@ pub fn run_cli(args: &[String]) {
                     process::exit(EXIT_PROGRAM_FAILURE);
                 }
             },
+            "typed-ir" => match crate::bootstrap::typed_ir_json(path) {
+                Ok(artifact) => println!("{artifact}"),
+                Err(error) => {
+                    eprintln!("Zap bootstrap typed IR error: {error}");
+                    process::exit(EXIT_PROGRAM_FAILURE);
+                }
+            },
             "diagnostics" => println!("{}", crate::bootstrap::diagnostics_json(path)),
             _ => {
-                eprintln!("Zap bootstrap usage error: expected status, tokens, or diagnostics");
+                eprintln!("Zap bootstrap usage error: expected status, tokens, ast, typed-ir, or diagnostics");
                 process::exit(EXIT_USAGE_ERROR);
             }
         }
@@ -1330,6 +1338,7 @@ mod tests {
             "zap bootstrap status",
             "zap bootstrap tokens",
             "zap bootstrap ast",
+            "zap bootstrap typed-ir",
             "zap bootstrap diagnostics",
             "zap --version",
             "zap --help",

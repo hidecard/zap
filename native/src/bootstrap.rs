@@ -9,6 +9,7 @@ use crate::{read_limited_text, ZapResult};
 pub(crate) const TOKEN_SCHEMA_VERSION: u32 = 1;
 pub(crate) const DIAGNOSTIC_SCHEMA_VERSION: u32 = 1;
 pub(crate) const AST_SCHEMA_VERSION: u32 = 1;
+pub(crate) const TYPED_IR_SCHEMA_VERSION: u32 = 1;
 
 pub(crate) fn status_json() -> String {
     let mut schemas = BTreeMap::new();
@@ -17,7 +18,7 @@ pub(crate) fn status_json() -> String {
     schemas.insert("lockfile", 1);
     schemas.insert("manifest", 1);
     schemas.insert("token", TOKEN_SCHEMA_VERSION);
-    schemas.insert("typed_ir", 0);
+    schemas.insert("typed_ir", TYPED_IR_SCHEMA_VERSION);
     json!({
         "bootstrap_stage": "B0",
         "compiler_version": env!("CARGO_PKG_VERSION"),
@@ -65,6 +66,102 @@ pub(crate) fn ast_json(path: &Path) -> ZapResult<String> {
             "bootstrap AST encoding failed: {error}"
         ))
     })
+}
+
+pub(crate) fn typed_ir_json(path: &Path) -> ZapResult<String> {
+    let source = read_limited_text(path, "bootstrap source read")
+        .map_err(crate::diagnostics::ZapError::from_message)?;
+    let program =
+        crate::ast::parse_program(&source).map_err(crate::diagnostics::ZapError::from_message)?;
+    let mut artifact = BTreeMap::new();
+    artifact.insert("ir", typed_ir_program(&program));
+    artifact.insert("kind", json!("zap.typed_ir"));
+    artifact.insert("reference_only", json!(true));
+    artifact.insert("schema_version", json!(TYPED_IR_SCHEMA_VERSION));
+    artifact.insert("source_name", json!(path.to_string_lossy()));
+    serde_json::to_string(&artifact).map_err(|error| {
+        crate::diagnostics::ZapError::from_message(format!(
+            "bootstrap typed IR encoding failed: {error}"
+        ))
+    })
+}
+
+fn typed_ir_program(program: &Program) -> JsonValue {
+    obj(vec![(
+        "nodes",
+        JsonValue::Array(program.statements.iter().map(typed_ir_statement).collect()),
+    )])
+}
+
+fn typed_ir_statement(statement: &Spanned<Stmt>) -> JsonValue {
+    let mut fields = match stmt_json(statement) {
+        JsonValue::Object(fields) => fields,
+        _ => unreachable!("statement serializer must return an object"),
+    };
+    if let Stmt::Declaration {
+        annotation, value, ..
+    } = &statement.node
+    {
+        fields.insert(
+            "inferred_type".into(),
+            json!(annotation
+                .clone()
+                .unwrap_or_else(|| inferred_expr_type(value).to_string())),
+        );
+    }
+    fields.insert("ir_schema_version".into(), json!(TYPED_IR_SCHEMA_VERSION));
+    JsonValue::Object(fields)
+}
+
+fn inferred_expr_type(expression: &Spanned<Expr>) -> &'static str {
+    match &expression.node {
+        Expr::Literal(Literal::Number(_)) => "number",
+        Expr::Literal(Literal::Text(_)) => "text",
+        Expr::Literal(Literal::Bool(_)) => "bool",
+        Expr::Literal(Literal::None) => "none",
+        Expr::List(_) => "list<any>",
+        Expr::Map(_) => "map<any, any>",
+        Expr::Name(_) => "unknown",
+        Expr::Unary { op, value } => match op {
+            UnaryOp::Not => "bool",
+            UnaryOp::Negate if inferred_expr_type(value) == "number" => "number",
+            UnaryOp::Negate => "unknown",
+        },
+        Expr::Binary { left, op, right } => match op {
+            BinaryOp::Equal
+            | BinaryOp::NotEqual
+            | BinaryOp::Less
+            | BinaryOp::Greater
+            | BinaryOp::LessEqual
+            | BinaryOp::GreaterEqual
+            | BinaryOp::And
+            | BinaryOp::Or => "bool",
+            BinaryOp::Add
+            | BinaryOp::Subtract
+            | BinaryOp::Multiply
+            | BinaryOp::Divide
+            | BinaryOp::Remainder
+                if inferred_expr_type(left) == "number"
+                    && inferred_expr_type(right) == "number" =>
+            {
+                "number"
+            }
+            BinaryOp::Add
+                if inferred_expr_type(left) == "text" && inferred_expr_type(right) == "text" =>
+            {
+                "text"
+            }
+            BinaryOp::Add
+            | BinaryOp::Subtract
+            | BinaryOp::Multiply
+            | BinaryOp::Divide
+            | BinaryOp::Remainder => "unknown",
+        },
+        Expr::Conditional { .. } => "unknown",
+        Expr::Call { .. } | Expr::Await(_) => "unknown",
+        Expr::Propagate(_) => "unknown",
+        Expr::Member { .. } | Expr::Index { .. } => "unknown",
+    }
 }
 
 pub(crate) fn diagnostics_json(path: &Path) -> String {
@@ -492,7 +589,7 @@ fn classify_lexer_error(message: &str) -> (&'static str, Option<usize>, Option<u
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_lexer_error, status_json, token_json, tokens_json};
+    use super::{classify_lexer_error, status_json, token_json, tokens_json, typed_ir_program};
     use crate::lexer::{tokenize_with_spans, Token};
     use std::path::Path;
 
@@ -514,6 +611,15 @@ mod tests {
             Some(Token::End)
         ));
         let _ = tokens_json(Path::new("bootstrap/fixtures/lexer/basic.zp"));
+    }
+
+    #[test]
+    fn typed_ir_snapshot_has_stable_schema_and_inferred_type() {
+        let program = crate::ast::parse_program("let answer = 1 + 2\n").expect("parse");
+        let artifact = typed_ir_program(&program);
+        assert_eq!(artifact["nodes"][0]["ir_schema_version"], 1);
+        assert_eq!(artifact["nodes"][0]["inferred_type"], "number");
+        assert_eq!(artifact["nodes"][0]["kind"], "declaration");
     }
 
     #[test]

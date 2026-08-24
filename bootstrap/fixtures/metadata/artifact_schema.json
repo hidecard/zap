@@ -6,6 +6,6 @@
     "lockfile": 1,
     "manifest": 1,
     "token": 1,
-    "typed_ir": 0
+    "typed_ir": 1
   }
 }
