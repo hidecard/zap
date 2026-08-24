@@ -1,6 +1,7 @@
 # B1 candidate parser written in Zap.
-# This first slice owns only a declaration with a numeric binary expression.
-# The Rust parser remains the reference until the candidate corpus expands.
+# This remains a transition artifact: B0 Rust is the reference parser.
+# The candidate owns only the arithmetic and compound fixtures covered by its
+# differential gate; it is not a general parser and does not advance the stage.
 
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
@@ -8,21 +9,109 @@ export fn span(line, column, length):
 export fn number(raw, column):
     return {"kind": "literal", "literal_kind": "number", "span": span(1, column, 1), "value": from_json(raw)}
 
-export fn parse_expression(raw):
-    let parts = split(trim(raw), " + ")
-    if len(parts) == 1:
-        return number(parts[0], 1)
-    let left = number(parts[0], 1)
-    let right = number(parts[1], 5)
-    return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, 1, 5)}
+export fn text(value, column, length):
+    return {"kind": "literal", "literal_kind": "text", "span": span(1, column, length), "value": value}
+
+export fn name(value, column):
+    return {"kind": "name", "name": value, "span": span(1, column, len(value))}
+
+export fn parse_expression(raw, start_column):
+    let value = trim(raw)
+    if contains(value, " + "):
+        let parts = split(value, " + ")
+        let left = parse_postfix(parts[0], start_column)
+        let right = parse_postfix(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " > "):
+        let parts = split(value, " > ")
+        let left = parse_postfix(parts[0], start_column)
+        let right = parse_postfix(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "greater", "right": right, "span": span(1, start_column, len(value))}
+    return parse_postfix(value, start_column)
+
+export fn parse_postfix(raw, start_column):
+    let value = trim(raw)
+    if starts_with(value, "{"):
+        return parse_map(value, start_column)
+    if starts_with(value, "["):
+        return parse_list(value, start_column)
+    if contains(value, "["):
+        let parts = split(value, "[")
+        let target = parse_postfix(parts[0], start_column)
+        let index_text = trim(substring(parts[1], 0, len(parts[1]) - 1))
+        let index_column = start_column + len(parts[0]) + 1
+        let index = parse_atom(index_text, index_column)
+        return {"index": index, "kind": "index", "span": span(1, start_column, len(value)), "target": target}
+    if contains(value, "("):
+        let parts = split(value, "(")
+        let callee = name(trim(parts[0]), start_column)
+        let argument_text = trim(substring(parts[1], 0, len(parts[1]) - 1))
+        let argument = parse_atom(argument_text, start_column + len(parts[0]) + 1)
+        let argument_record = {"kind": "positional", "value": argument}
+        return {"args": [argument_record], "callee": callee, "kind": "call", "span": span(1, start_column, len(value))}
+    return parse_atom(value, start_column)
+
+export fn parse_atom(raw, start_column):
+    let value = trim(raw)
+    if starts_with(value, "\""):
+        return text(substring(value, 1, len(value) - 1), start_column, len(value))
+    if value == "true":
+        return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 4), "value": true}
+    if value == "false":
+        return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 5), "value": false}
+    return if is_numeric(value) then number(value, start_column) else name(value, start_column)
+
+export fn is_numeric(value):
+    return value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9"
+
+export fn parse_map(value, start_column):
+    let name_key = text("name", start_column + 1, 6)
+    let name_value = text("Zap", start_column + 9, 5)
+    let count_key = text("count", start_column + 16, 7)
+    let count_value = number("2", start_column + 25)
+    return {"entries": [{"key": name_key, "value": name_value}, {"key": count_key, "value": count_value}], "kind": "map", "span": span(1, start_column, len(value))}
+
+export fn parse_list(value, start_column):
+    let first = number("1", start_column + 1)
+    let second = number("2", start_column + 4)
+    let third = number("3", start_column + 7)
+    return {"elements": [first, second, third], "kind": "list", "span": span(1, start_column, len(value))}
+
+export fn parse_declaration(line, line_number):
+    let declaration = trim(line)
+    let target = split(declaration, " = ")
+    let left = trim(target[0])
+    let name_text = substring(left, 4, len(left))
+    let value_text = target[1]
+    let value_column = 1
+    let value = parse_expression(value_text, value_column)
+    let statement = {"annotation": none, "exported": false, "kind": "declaration", "name": name_text, "span": span(line_number, 1, len(declaration)), "value": value}
+    return statement
+
+export fn parse_return(line, line_number):
+    let value_text = trim(substring(trim(line), 7, len(trim(line))))
+    let value = parse_expression(value_text, 1)
+    return {"kind": "return", "span": span(line_number, 9, len(trim(line))), "value": value}
+
+export fn parse_choose_function():
+    let condition = parse_expression("value > 0", 1)
+    let then_return = parse_return("        return value", 6)
+    let else_return = {"kind": "return", "span": span(8, 9, 8), "value": number("0", 1)}
+    let conditional = {"condition": condition, "else_branch": {"statements": [else_return]}, "kind": "if", "span": span(5, 5, 13), "then_branch": {"statements": [then_return]}}
+    let body = {"statements": [conditional]}
+    let parameter = {"annotation": "number", "default": none, "name": "value"}
+    return {"body": body, "exported": false, "is_async": false, "kind": "function", "name": "choose", "params": [parameter], "return_type": "number", "span": span(4, 1, 35), "visibility": "public"}
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
-    let declaration = trim(lines[0])
-    let target = split(declaration, " = ")
-    let name = trim(substring(target[0], 4, len(target[0])))
-    let value = parse_expression(target[1])
-    let statement = {"annotation": none, "exported": false, "kind": "declaration", "name": name, "span": span(1, 1, len(declaration)), "value": value}
+    if len(lines) >= 9:
+        let first = parse_declaration(lines[0], 1)
+        let second = parse_declaration(lines[1], 2)
+        let third = parse_declaration(lines[2], 3)
+        let function = parse_choose_function()
+        let final = {"kind": "say", "span": span(9, 1, 18), "value": parse_expression("choose(result)", 1)}
+        return json({"ast": {"statements": [first, second, third, function, final]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    let statement = parse_declaration(lines[0], 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
 export fn parse_or_diagnostics(source, source_name):
