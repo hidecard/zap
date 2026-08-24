@@ -20,6 +20,8 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 ဤအရာသည် **corpus-limited B1 foundation** ဖြစ်ပြီး B1 compiler အပြည့်အစုံ မဟုတ်သေးပါ။ Candidate သည် reference owner မဟုတ်သေး၊ Rust lexer ကို မအစားထိုးသေးပါ။ Bootstrap stage claim ကို မြှင့်ရန် differential fixture များဖြင့် ဆက်လက်ချဲ့ထွင်ရမည်။
 
+Native reference parser အတွက် additive differential corpus ကို [`bootstrap/fixtures/parser/compound.zp`](../bootstrap/fixtures/parser/compound.zp) တွင် ထည့်ထားပြီး canonical AST snapshot နှင့် syntax-rejection diagnostic fixture ပါရှိသည်။ [`scripts/bootstrap/verify_b1_parser.sh`](../scripts/bootstrap/verify_b1_parser.sh) သည် byte-for-byte reproducibility နှင့် reference output ကို စစ်ဆေးသည်။ ဤအရာသည် parser contract evidence သာဖြစ်ပြီး Zap-owned parser ရှိပြီဟု မဆိုလိုပါ။
+
 ## B3 foundation status
 
 Repository တွင် reference-only B3 foundation gate ကို [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh) အဖြစ် ထည့်ထားသည်။ ၎င်းသည် catalog determinism taxonomy၊ dependency-free manifest ၏ canonical lockfile generation၊ lockfile reproducibility၊ offline locked build နှင့် Zap test fixture execution များကို စစ်ဆေးသည်။ ဤ check များသည် ရှိပြီးသား package/build/test-runner behavior ကို ပြသခြင်းသာဖြစ်ပြီး compiler pipeline တစ်ခုလုံး Zap-owned ဖြစ်နေပြီဟု မဆိုလိုပါ။
@@ -58,4 +60,4 @@ B4 bootstrap check မအောင်မြင်သေးသရွေ့ releas
 
 ## နောက် gate
 
-လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer သည် owned corpus အပြည့်ကို cover လုပ်ရမည်။ Differential runner သည် valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် candidate output ကို Rust reference နှင့် နှိုင်းယှဉ်ရမည်။ Parser migration၊ type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
+လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer သည် owned corpus အပြည့်ကို cover လုပ်ရမည်။ Differential runner သည် valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် candidate output ကို Rust reference နှင့် နှိုင်းယှဉ်ရမည်။ Reference parser corpus ကို သီးခြား foundation gate အဖြစ် ထည့်ပြီးဖြစ်သည်။ နောက် ownership step သည် ဤ snapshot များနှင့် နှိုင်းယှဉ်မည့် Zap-written parser candidate ဖြစ်သည်။ Type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။

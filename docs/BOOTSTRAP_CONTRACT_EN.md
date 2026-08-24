@@ -20,6 +20,8 @@ A first Zap-owned lexer candidate is now checked in at [`bootstrap/b1/lexer.zp`]
 
 This is a **corpus-limited B1 foundation**, not a completed B1 compiler. The candidate is not yet the reference owner, does not replace the Rust lexer, and must expand through differential fixtures before the repository can advance the bootstrap stage claim.
 
+The native reference parser now has an additive differential corpus at [`bootstrap/fixtures/parser/compound.zp`](../bootstrap/fixtures/parser/compound.zp), with a canonical AST snapshot and a syntax-rejection diagnostic fixture. [`scripts/bootstrap/verify_b1_parser.sh`](../scripts/bootstrap/verify_b1_parser.sh) checks byte-for-byte reproducibility and reference output. This is parser contract evidence only; no Zap-owned parser is claimed yet.
+
 ## B3 foundation status
 
 The repository now has a reference-only B3 foundation gate at [`scripts/bootstrap/verify_b3_foundations.sh`](../scripts/bootstrap/verify_b3_foundations.sh). It validates the catalog determinism taxonomy, generates a canonical dependency-free manifest lockfile, checks lockfile reproducibility, runs an offline locked build, and executes a Zap test fixture. These checks demonstrate existing package/build/test-runner behavior; they do not claim that the compiler pipeline is already Zap-owned.
@@ -58,4 +60,4 @@ No release may use the B4 wording before the B4 bootstrap checks pass. Future se
 
 ## Next gate
 
-The active implementation gate remains B1 parity expansion: the Zap-owned lexer must cover the full owned corpus and its differential runner must compare candidate output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. Parser migration, type checking, VM work, and native-backend work must remain behind that gate rather than being claimed prematurely.
+The active implementation gate remains B1 parity expansion: the Zap-owned lexer must cover the full owned corpus and its differential runner must compare candidate output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. The reference parser corpus is now included as a separate foundation gate; the next ownership step is a Zap-written parser candidate compared against these snapshots. Type checking, VM work, and native-backend work must remain behind that gate rather than being claimed prematurely.

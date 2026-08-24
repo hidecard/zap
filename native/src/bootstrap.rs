@@ -165,8 +165,10 @@ fn inferred_expr_type(expression: &Spanned<Expr>) -> &'static str {
 }
 
 pub(crate) fn diagnostics_json(path: &Path) -> String {
-    let result = read_limited_text(path, "bootstrap source read")
-        .and_then(|source| tokenize_with_spans(&source));
+    let result = read_limited_text(path, "bootstrap source read").and_then(|source| {
+        tokenize_with_spans(&source)?;
+        crate::ast::parse_program(&source)
+    });
     let diagnostics = match result {
         Ok(_) => Vec::new(),
         Err(message) => vec![diagnostic_json(path, &message)],
@@ -549,11 +551,16 @@ fn binary_name(op: BinaryOp) -> &'static str {
 }
 
 fn diagnostic_json(path: &Path, message: &str) -> JsonValue {
-    let (code, line, column) = classify_lexer_error(message);
+    let (code, line, column) = classify_error(message);
+    let help = if code.starts_with("ZAP-SYNTAX") {
+        "check the surrounding syntax and delimiters"
+    } else {
+        "check the source token and its spelling"
+    };
     json!({
         "code": code,
         "column": column,
-        "help": "check the source token and its spelling",
+        "help": help,
         "line": line,
         "message": message,
         "severity": "error",
@@ -561,13 +568,20 @@ fn diagnostic_json(path: &Path, message: &str) -> JsonValue {
     })
 }
 
-fn classify_lexer_error(message: &str) -> (&'static str, Option<usize>, Option<usize>) {
+fn classify_error(message: &str) -> (&'static str, Option<usize>, Option<usize>) {
     let code = if message.starts_with("invalid integer literal") {
         "ZAP-LEX-INT-001"
     } else if message.starts_with("unterminated string") {
         "ZAP-LEX-STR-001"
     } else if message.starts_with("unexpected character") {
         "ZAP-LEX-CHAR-001"
+    } else if message.starts_with("expected ")
+        || message.starts_with("unexpected token")
+        || message.starts_with("invalid ")
+        || message.contains("expects an expression")
+        || message.contains("expects '")
+    {
+        "ZAP-SYNTAX-001"
     } else {
         "ZAP-LEX-001"
     };
@@ -589,7 +603,7 @@ fn classify_lexer_error(message: &str) -> (&'static str, Option<usize>, Option<u
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_lexer_error, status_json, token_json, tokens_json, typed_ir_program};
+    use super::{classify_error, status_json, token_json, tokens_json, typed_ir_program};
     use crate::lexer::{tokenize_with_spans, Token};
     use std::path::Path;
 
@@ -625,11 +639,11 @@ mod tests {
     #[test]
     fn lexer_errors_get_stable_codes_and_locations() {
         assert_eq!(
-            classify_lexer_error("unexpected character at 3:7: @"),
+            classify_error("unexpected character at 3:7: @"),
             ("ZAP-LEX-CHAR-001", Some(3), Some(7))
         );
         assert_eq!(
-            classify_lexer_error("unterminated string at 2:4"),
+            classify_error("unterminated string at 2:4"),
             ("ZAP-LEX-STR-001", Some(2), Some(4))
         );
     }

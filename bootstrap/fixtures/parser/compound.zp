@@ -1,0 +1,9 @@
+let data = {"name": "Zap", "count": 2}
+let values = [1, 2, 3]
+let result = data["count"] + values[0]
+fn choose(value: number) -> number:
+    if value > 0:
+        return value
+    else:
+        return 0
+say choose(result)
