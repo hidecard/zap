@@ -1547,6 +1547,18 @@ fn typecheck_p0_conformance_matrix_tc001_to_tc005() {
             "",
         ),
         (
+            "tc001-bounded-candidate-branch-local",
+            "fn need_number(value: number) -> number:\n    return value\nlet maybe: option<number> = some(7)\nif is_some(maybe):\n    let inside: number = need_number(maybe)\n",
+            true,
+            "",
+        ),
+        (
+            "tc001-negative-bounded-candidate-branch-local",
+            "fn need_number(value: number) -> number:\n    return value\nlet maybe: option<number> = some(7)\nif is_some(maybe):\n    let inside: text = need_number(maybe)\n",
+            false,
+            "variable 'inside' expects text, got number",
+        ),
+        (
             "tc002-combined-guards",
             "fn need_number(value: number):\n    return value\nlet maybe: option<number> = some(7)\nlet outcome: result<number> = ok(9)\nif is_some(maybe) and is_ok(outcome):\n    let first: number = need_number(maybe)\n    let second: number = need_number(outcome)\n",
             true,

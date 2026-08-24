@@ -48,6 +48,14 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [ ] General collection/map inference၊ arbitrary index expression၊ deeper nested inference နှင့် user-defined generic declarations ကို မစတင်မီ သီးခြား design/evidence gate သတ်မှတ်ရန်။
 - [ ] Bootstrap stage ကို B0 ထက်မြှင့်ရန် Rust reference အစားထိုးနိုင်ကြောင်း၊ broader corpus parity၊ typed-IR ownership နှင့် B4 acceptance အထောက်အထားများ ပြည့်စုံအောင်လုပ်ရန်။
 
+## လက်ရှိ v2.11.9 preparation checkpoint
+
+- [x] Provisional Zap B2 candidate တွင် tracked `option<number>` variable ကို direct `is_some` guard ပါသော indented `if` body တစ်ခုအတွင်း numeric payload အဖြစ် bounded narrowing လုပ်နိုင်သည့် path ထည့်ရန်။
+- [x] Narrowed numeric payload ကို incompatible `text` annotation သို့ assign လုပ်သည့် paired negative fixture နှင့် exact line/column diagnostic ထည့်ရန်။
+- [x] Native Rust reference၊ Zap candidate နှင့် TC-001 regression test များအတွက် deterministic acceptance/rejection evidence ထည့်ရန်။
+- [x] Provisional ownership ledger တွင် `BOOT-025` နှင့် `bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp` ထည့်ရန်။
+- [ ] Compound guard၊ loop narrowing နှင့် reassignment invalidation များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
+
 # 2။ P0 — Foundation နှင့် Production Safety
 
 အောက်ပါအဆင့်များ မပြီးမချင်း async၊ HTTP နှင့် package registry ကဲ့သို့သော feature ကြီးများကို မထည့်သင့်သေးပါ။

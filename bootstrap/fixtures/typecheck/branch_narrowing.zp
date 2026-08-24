@@ -1,0 +1,5 @@
+fn need_number(value: number) -> number:
+    return value
+let maybe: option<number> = some(7)
+if is_some(maybe):
+    let inside: number = need_number(maybe)

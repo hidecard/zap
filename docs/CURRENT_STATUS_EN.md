@@ -20,7 +20,7 @@ The versioned provenance asset is the canonical machine-readable record for rele
 | Native compiler/runtime | active | Rust remains the reference owner for complete semantics and supported release targets. |
 | B0 artifacts | completed | Canonical tokens, AST, diagnostics, metadata, VM, and platform-seed fixtures are reproducible. |
 | B1 lexer/parser candidates | provisional | Candidate output is checked only against the owned corpus and does not replace the Rust pipeline. |
-| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, a paired nested-list index slice, and a bounded text-key map-element slice. |
+| B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, a paired nested-list index slice, a bounded text-key map-element slice, and a bounded direct-`is_some` branch-local option-narrowing slice. |
 | Typed-IR candidate | provisional | Covers the existing annotated declaration slice only. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
@@ -28,7 +28,7 @@ The versioned provenance asset is the canonical machine-readable record for rele
 
 ## Next bounded work
 
-The v2.11.8 release added a bounded `map<text,number>` element indexed by a text literal and a paired incompatible assignment to the B2 evidence corpus. The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures beyond this bounded map slice. Malformed-source no-panic behavior remains regression-gated, and candidate typed-IR production will be extended only from the same owned analysis. Generic declarations, nested maps, deeper nested inference, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
+The v2.11.8 release added a bounded `map<text,number>` element indexed by a text literal and a paired incompatible assignment to the B2 evidence corpus. The current v2.11.9 preparation line adds a bounded direct-`is_some` branch-local narrowing case for a tracked `option<number>` inside one indented `if` body, with a paired incompatible payload assignment. The next roadmap work is to broaden B2 inference and diagnostics through separately evidenced fixtures beyond this bounded branch slice. Malformed-source no-panic behavior remains regression-gated, and candidate typed-IR production will be extended only from the same owned analysis. Generic declarations, nested maps, deeper nested inference, compound guards, loop narrowing, reassignment invalidation, arbitrary program parsing, package/build ownership, VM ownership, and platform-seed self-hosting remain deferred until their acceptance criteria are met.
 
 ## Developer environment
 
