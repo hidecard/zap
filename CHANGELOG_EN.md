@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.8] — 2026-08-24
+
+### Release engineering
+- Added a provisional, corpus-limited B2 map-element inference slice for a tracked map<text,number> variable indexed by a text literal, with paired native and candidate fixtures and deterministic mismatch diagnostics. Rust remains the complete reference compiler and runtime owner; bootstrap status remains B0.
+
 ## [2.11.7] — 2026-08-24
 
 ### Malformed-source safety

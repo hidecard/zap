@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.8] - 2026-08-24
+
+### Release summary
+- Added a bounded provisional map-element inference slice to the B2 evidence corpus.
+
 ## [2.11.7] - 2026-08-24
 
 ### Release summary

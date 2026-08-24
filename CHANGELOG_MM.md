@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.8] — 2026-08-24
+
+### Release engineering
+- Tracked map<text,number> variable ကို text literal key ဖြင့် index လုပ်သော provisional၊ corpus-limited B2 map-element inference slice ကို paired native/candidate fixture နှင့် deterministic mismatch diagnostic များဖြင့် ထည့်သွင်းထားပါသည်။ Rust သည် complete reference compiler နှင့် runtime owner အဖြစ် ဆက်ရှိပြီး bootstrap status သည် B0 အဖြစ်သာ ရှိပါသည်။
+
 ## [2.11.7] — 2026-08-24
 
 ### Malformed-source safety

@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**Verified baseline:** Zap v2.11.7
+**Verified baseline:** Zap v2.11.8
 **Branch:** `Framework`
 **Status:** Web Foundation v0.2 — runnable contract package plus initial `zap-host` adapter prototype; production integrations remain separate
 

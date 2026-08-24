@@ -1,12 +1,12 @@
 # Zap အသုံးပြုနည်း လမ်းညွှန်
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.7 development line
+**စစ်ဆေးထားသော baseline:** Zap v2.11.8 development line
 
 **ရည်ရွယ်ချက်:** ဤဖိုင်သည် command နှင့် operations အတွက် အတိုချုံး reference ဖြစ်သည်။ Installation မှ advanced အထိ အပြည့်အစုံလေ့လာရန် [မြန်မာ Language Guide](LEARN_ZAP_MM.md) ကို အသုံးပြုပါ။ Normative behavior သည် [language specification](LANGUAGE_SPEC_MM.md) တွင် သတ်မှတ်ထားပါသည်။
 
 ## Native runtime install လုပ်ခြင်း
 
-Zap သည် standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိ operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး checksum နှင့် signature စစ်ဆေးကာ extract လုပ်ပြီး executable ကို `PATH` ထဲ ထည့်ပါ။ v2.11.7 release တွင် release page ၌ ဖော်ပြထားသော target များကိုသာ support လုပ်မည်ဖြစ်သောကြောင့် မဖော်ပြထားသော target ကို မခန့်မှန်းပါနှင့်။
+Zap သည် standalone native executable အဖြစ် ဖြန့်ချိပါသည်။ မိမိ operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို download လုပ်ပြီး checksum နှင့် signature စစ်ဆေးကာ extract လုပ်ပြီး executable ကို `PATH` ထဲ ထည့်ပါ။ v2.11.8 release တွင် release page ၌ ဖော်ပြထားသော target များကိုသာ support လုပ်မည်ဖြစ်သောကြောင့် မဖော်ပြထားသော target ကို မခန့်မှန်းပါနှင့်။
 
 | Platform | Archive pattern | Install လုပ်နည်း |
 |---|---|---|
