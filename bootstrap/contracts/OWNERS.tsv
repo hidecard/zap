@@ -13,3 +13,4 @@ BOOT-011	b1-lexer	B1 candidate status	B1 candidate status	bootstrap/b1/lexer.zp	
 BOOT-012	typed-ir	Canonical inspection commands	Canonical inspection commands	native/src/bootstrap.rs	bootstrap/fixtures/lexer/basic.typed-ir.json	provisional
 BOOT-013	parser	Artifact contract	Artifact contract	native/src/ast.rs	bootstrap/fixtures/parser/compound.zp	provisional
 BOOT-014	syntax-diagnostics	Ownership rules	Ownership rules	native/src/bootstrap.rs	bootstrap/fixtures/diagnostics/missing_closing_bracket.zp	provisional
+BOOT-015	b1-parser-candidate	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arithmetic.zp	provisional

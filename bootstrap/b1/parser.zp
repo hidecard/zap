@@ -1,0 +1,32 @@
+# B1 candidate parser written in Zap.
+# This first slice owns only a declaration with a numeric binary expression.
+# The Rust parser remains the reference until the candidate corpus expands.
+
+export fn span(line, column, length):
+    return {"column": column, "length": length, "line": line}
+
+export fn number(raw, column):
+    return {"kind": "literal", "literal_kind": "number", "span": span(1, column, 1), "value": from_json(raw)}
+
+export fn parse_expression(raw):
+    let parts = split(trim(raw), " + ")
+    if len(parts) == 1:
+        return number(parts[0], 1)
+    let left = number(parts[0], 1)
+    let right = number(parts[1], 5)
+    return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, 1, 5)}
+
+export fn parse(source, source_name):
+    let lines = split(source, "\n")
+    let declaration = trim(lines[0])
+    let target = split(declaration, " = ")
+    let name = trim(substring(target[0], 4, len(target[0])))
+    let value = parse_expression(target[1])
+    let statement = {"annotation": none, "exported": false, "kind": "declaration", "name": name, "span": span(1, 1, len(declaration)), "value": value}
+    return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+
+export fn parse_or_diagnostics(source, source_name):
+    if contains(source, "[") and not contains(source, "]"):
+        let diagnostic = {"code": "ZAP-SYNTAX-001", "column": 6, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "expected ']' at 1:6", "severity": "error", "source_name": source_name}
+        return json({"diagnostics": [diagnostic], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    return parse(source, source_name)

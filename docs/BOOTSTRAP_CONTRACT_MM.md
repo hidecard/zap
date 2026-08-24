@@ -20,7 +20,9 @@ Zap source -> Rust lexer -> AST parser -> evaluator/runtime
 
 ဤအရာသည် **corpus-limited B1 foundation** ဖြစ်ပြီး B1 compiler အပြည့်အစုံ မဟုတ်သေးပါ။ Candidate သည် reference owner မဟုတ်သေး၊ Rust lexer ကို မအစားထိုးသေးပါ။ Bootstrap stage claim ကို မြှင့်ရန် differential fixture များဖြင့် ဆက်လက်ချဲ့ထွင်ရမည်။
 
-Native reference parser အတွက် additive differential corpus ကို [`bootstrap/fixtures/parser/compound.zp`](../bootstrap/fixtures/parser/compound.zp) တွင် ထည့်ထားပြီး canonical AST snapshot နှင့် syntax-rejection diagnostic fixture ပါရှိသည်။ [`scripts/bootstrap/verify_b1_parser.sh`](../scripts/bootstrap/verify_b1_parser.sh) သည် byte-for-byte reproducibility နှင့် reference output ကို စစ်ဆေးသည်။ ဤအရာသည် parser contract evidence သာဖြစ်ပြီး Zap-owned parser ရှိပြီဟု မဆိုလိုပါ။
+Native reference parser အတွက် additive differential corpus ကို [`bootstrap/fixtures/parser/compound.zp`](../bootstrap/fixtures/parser/compound.zp) တွင် ထည့်ထားပြီး canonical AST snapshot နှင့် syntax-rejection diagnostic fixture ပါရှိသည်။ [`scripts/bootstrap/verify_b1_parser.sh`](../scripts/bootstrap/verify_b1_parser.sh) သည် byte-for-byte reproducibility နှင့် reference output ကို စစ်ဆေးသည်။ ဤအရာသည် parser contract evidence သာဖြစ်ပြီး full Zap-owned parser ရှိပြီဟု မဆိုလိုပါ။
+
+ပထမဆုံး Zap-written parser candidate ကို [`bootstrap/b1/parser.zp`](../bootstrap/b1/parser.zp) တွင် ထည့်ထားသည်။ ၎င်းသည် numeric declaration တစ်ခုတွင် `+` expression နှင့် missing-bracket rejection path တစ်ခုကိုသာ ရည်ရွယ်ချက်ရှိရှိ ပိုင်ဆိုင်သည်။ [`scripts/bootstrap/verify_b1_parser_candidate.sh`](../scripts/bootstrap/verify_b1_parser_candidate.sh) သည် output နှစ်ခုကို B0 artifact များနှင့် byte-for-byte နှိုင်းယှဉ်သည်။ ဤသည်မှာ **provisional၊ corpus-limited candidate** ဖြစ်ပြီး Rust parser ကို မအစားထိုးသေး၊ compound corpus ကို မ cover သေး၊ B0 ထက် stage claim မမြှင့်သေးပါ။
 
 ## B3 foundation status
 
@@ -60,4 +62,4 @@ B4 bootstrap check မအောင်မြင်သေးသရွေ့ releas
 
 ## နောက် gate
 
-လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer သည် owned corpus အပြည့်ကို cover လုပ်ရမည်။ Differential runner သည် valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် candidate output ကို Rust reference နှင့် နှိုင်းယှဉ်ရမည်။ Reference parser corpus ကို သီးခြား foundation gate အဖြစ် ထည့်ပြီးဖြစ်သည်။ နောက် ownership step သည် ဤ snapshot များနှင့် နှိုင်းယှဉ်မည့် Zap-written parser candidate ဖြစ်သည်။ Type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။
+လက်ရှိ implementation gate သည် B1 parity expansion ဖြစ်သည်။ Zap-owned lexer နှင့် parser candidate များသည် owned corpus ကို ဆက်လက်ချဲ့ထွင်ပြီး valid၊ Unicode၊ malformed၊ overflow နှင့် determinism case များတွင် Rust reference နှင့် output နှိုင်းယှဉ်ရမည်။ Reference parser corpus နှင့် ပထမ provisional parser candidate ကို သီးခြား foundation gate များအဖြစ် ထည့်ပြီးဖြစ်သည်။ နောက် ownership step သည် compound expression/statement များအထိ parser coverage ချဲ့ခြင်းနှင့် hard-coded rejection path အစား token-driven diagnostics ပြောင်းခြင်း ဖြစ်သည်။ Type checking၊ VM နှင့် native backend အလုပ်များကို ထို gate မကျော်မီ ပြီးစီးသည်ဟု မဆိုရ။

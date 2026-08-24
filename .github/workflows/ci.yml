@@ -108,6 +108,9 @@ jobs:
       - name: Verify B1 reference parser differential corpus
         run: scripts/bootstrap/verify_b1_parser.sh
 
+      - name: Verify B1 Zap parser candidate differential corpus
+        run: scripts/bootstrap/verify_b1_parser_candidate.sh
+
       - name: Verify B3 package/build/test-runner foundations
         run: scripts/bootstrap/verify_b3_foundations.sh
 
