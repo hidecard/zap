@@ -3,7 +3,7 @@
 **Purpose:** Canonical normative owner for Zap syntax, typing, runtime behavior, diagnostics, compatibility, and version decisions.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 
-**Specification status:** Normative foundation for Zap v2.11.11
+**Specification status:** Normative foundation for Zap v2.11.12
 
 This document is the canonical index for language semantics. When an older guide conflicts with this document, the implementation and tests must be brought into alignment with this specification; a compatibility exception must be recorded explicitly rather than inferred from legacy behavior.
 
@@ -53,7 +53,7 @@ The current async executor is deterministic and poll-budgeted. Language `async f
 
 Every user-facing diagnostic must preserve severity, stable code, message, source location where available, notes, and help. CLI and LSP consumers share the same semantic diagnostic fields. Compatibility behavior must be labeled as one of: **normative**, **compatibility**, **deprecated**, or **rejected**. A behavior cannot become normative solely because an old fixture happens to accept it.
 
-The current release line is v2.11.11. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
+The current release line is v2.11.12. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
 
 ## 8. Conformance ownership
 

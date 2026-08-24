@@ -1,12 +1,12 @@
 # Standard-Library Stability Policy
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.11
+**စစ်ဆေးထားသော baseline:** Zap v2.11.12
 
 ## အခြေအနေနှင့် အကျုံးဝင်မှု
 
 ဤ policy သည် public standard-library domain တစ်ခုချင်းစီနှင့် တိုက်ရိုက်ဖော်ပြထားသော builtin များအတွက် compatibility contract ကို သတ်မှတ်သည်။ Machine-readable source သည် native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog ဖြစ်ပြီး ဤစာတမ်းက metadata ကို user နှင့် maintainer များ မည်သို့ဖတ်ရမည်ကို ရှင်းပြသည်။ Runtime dispatch ကို evaluator ထဲတွင် ဗဟိုပြုထားဆဲဖြစ်ပြီး catalog သည် ဒုတိယ implementation path တစ်ခု မဖန်တီးပါ။
 
-ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.11.11** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
+ဤ policy သည် လက်ရှိ release line ဖြစ်သော **v2.11.12** အတွက် သက်ရောက်ပြီး public builtin တစ်ခုကို ထည့်ခြင်း၊ ပြင်ခြင်း၊ deprecated ပြုလုပ်ခြင်း သို့မဟုတ် ဖယ်ရှားခြင်းတိုင်းတွင် ပြန်လည်သုံးသပ်ရမည်။
 
 ## Stability model
 

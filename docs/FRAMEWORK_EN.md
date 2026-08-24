@@ -1,6 +1,6 @@
 # Zap Framework Guide
 
-**Verified baseline:** Zap v2.11.11
+**Verified baseline:** Zap v2.11.12
 **Framework branch:** `Framework`
 **Status:** Framework Foundation v0.1 — Zap-native Web project scaffold and contract starters; full native runtime integrations remain gated milestones
 

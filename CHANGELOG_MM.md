@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.12] — 2026-08-24
+
+### Release engineering
+- Tracked option<number> တစ်ခုအတွက် provisional၊ corpus-limited direct is_option_none else-body narrowing evidence နှင့် native/candidate paired fixture များ ထည့်ထားသည်။
+
 ## [2.11.11] — 2026-08-24
 
 ### Release engineering

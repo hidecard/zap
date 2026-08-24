@@ -1,6 +1,6 @@
 # P0 AST Foundation Status
 
-**Verified baseline:** Zap v2.11.11
+**Verified baseline:** Zap v2.11.12
 
 **Verified against Zap v2.4.0.**
 

@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.12] - 2026-08-24
+
+### Release summary
+- Added provisional, corpus-limited direct is_option_none else-body narrowing evidence for one tracked option<number>, with paired native/candidate fixtures.
+
 ## [2.11.11] - 2026-08-24
 
 ### Release summary
