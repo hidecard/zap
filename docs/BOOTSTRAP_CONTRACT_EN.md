@@ -28,10 +28,11 @@ The native CLI now exposes read-only B0 inspection commands:
 zap bootstrap status
 zap bootstrap tokens <file.zp>
 zap bootstrap ast <file.zp>
+zap bootstrap typed-ir <file.zp>
 zap bootstrap diagnostics <file.zp>
 ```
 
-The first batch freezes representative token, AST, diagnostic, metadata, platform-boundary, and standard-library fixtures under [`bootstrap/fixtures`](../bootstrap/fixtures). Run [`scripts/bootstrap/verify_b0_artifacts.sh`](../scripts/bootstrap/verify_b0_artifacts.sh) to rebuild those artifacts and compare them byte-for-byte with the committed corpus.
+The first batch freezes representative token, AST, reference-only typed-IR, diagnostic, metadata, platform-boundary, and standard-library fixtures under [`bootstrap/fixtures`](../bootstrap/fixtures). Run [`scripts/bootstrap/verify_b0_artifacts.sh`](../scripts/bootstrap/verify_b0_artifacts.sh) to rebuild those artifacts and compare them byte-for-byte with the committed corpus.
 
 ## Stage policy
 

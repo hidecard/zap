@@ -28,10 +28,11 @@ Native CLI တွင် read-only B0 inspection command များ ထည့�
 zap bootstrap status
 zap bootstrap tokens <file.zp>
 zap bootstrap ast <file.zp>
+zap bootstrap typed-ir <file.zp>
 zap bootstrap diagnostics <file.zp>
 ```
 
-ပထမ batch တွင် token၊ AST၊ diagnostic၊ metadata၊ platform-boundary နှင့် standard-library fixture များကို [`bootstrap/fixtures`](../bootstrap/fixtures) အောက်တွင် freeze လုပ်ထားသည်။ [`scripts/bootstrap/verify_b0_artifacts.sh`](../scripts/bootstrap/verify_b0_artifacts.sh) ကို run လုပ်ပါက artifact များကို ပြန်တည်ဆောက်ပြီး committed corpus နှင့် byte-for-byte နှိုင်းယှဉ်ပေးမည်။
+ပထမ batch တွင် token၊ AST၊ reference-only typed-IR၊ diagnostic၊ metadata၊ platform-boundary နှင့် standard-library fixture များကို [`bootstrap/fixtures`](../bootstrap/fixtures) အောက်တွင် freeze လုပ်ထားသည်။ [`scripts/bootstrap/verify_b0_artifacts.sh`](../scripts/bootstrap/verify_b0_artifacts.sh) ကို run လုပ်ပါက artifact များကို ပြန်တည်ဆောက်ပြီး committed corpus နှင့် byte-for-byte နှိုင်းယှဉ်ပေးမည်။
 
 ## အဆင့်ဆိုင်ရာ policy
 
