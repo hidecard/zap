@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.13] - 2026-08-24
+
+### Release summary
+- Corrective release: includes the bounded is_option_none else-body evidence and the macOS ARM64-safe web-server test fix validated by the full cross-platform CI matrix; v2.11.12 remains an immutable failed-tag record with no published release.
+
 ## [2.11.12] - 2026-08-24
 
 ### Release summary

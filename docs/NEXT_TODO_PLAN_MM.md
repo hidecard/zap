@@ -1,6 +1,8 @@
 # Zap နောက်ဆက်တွဲ Engineering TODO Plan
 
-**အခြေခံအခြေအနေ:** Zap v2.2.6 သည် verified published v2.2.5 release နောက်ပိုင်း လက်ရှိ release candidate ဖြစ်သည်။ Candidate commit သည် `efe44a621251a1d61e85480fced6593b9bd27941` ဖြစ်ပြီး v2.2.6 tag သို့မဟုတ် release မရှိသေးပါ။ v2.2.0၊ v2.2.1 နှင့် v2.2.2 tag/asset များသည် immutable အဖြစ် ဆက်ရှိပြီး နောက်ပိုင်း runtime၊ equality၊ borrow နှင့် LSP hardening များကို v2.2.3 တွင် ထုတ်ဝေထားသည်။ ကျန် broader architecture အလုပ်များကို roadmap အဖြစ် ဆက်လက်ထားရှိသည်။
+**အခြေခံအခြေအနေ:** Zap v2.2.6 သည် verified published v2.2.5 release နောက်ပိုင်း legacy planning record အတွက် သမိုင်းမှတ်တမ်းအဖြစ်သာ သတ်မှတ်ထားသည်။ Candidate commit သည် `efe44a621251a1d61e85480fced6593b9bd27941` ဖြစ်ပြီး ထိုသမိုင်းမှတ်တမ်းအတွင်း v2.2.6 tag သို့မဟုတ် release မရှိသေးပါ။ v2.2.0၊ v2.2.1 နှင့် v2.2.2 tag/asset များသည် immutable အဖြစ် ဆက်ရှိပြီး နောက်ပိုင်း runtime၊ equality၊ borrow နှင့် LSP hardening များကို v2.2.3 တွင် ထုတ်ဝေထားသည်။ ကျန် broader architecture အလုပ်များကို roadmap အဖြစ် ဆက်လက်ထားရှိသည်။
+
+**လက်ရှိအခြေအနေ ပြင်ဆင်ချက် (2026-08-24):** ဤစာတမ်းရှိ v2.2.6 စာသားများသည် သမိုင်းမှတ်တမ်းဖြစ်ပြီး repository ၏ လက်ရှိ release အခြေအနေ မဟုတ်ပါ။ နောက်ဆုံး publish လုပ်ထားသော release သည် v2.11.11 ဖြစ်သည်။ v2.11.12 tag ကို macOS ARM64 release workflow မအောင်မြင်ခဲ့သော immutable record အဖြစ် ထိန်းသိမ်းထားပြီး public GitHub Release မရှိပါ။ လက်ရှိ `master` တွင် cross-platform test fix ကို စစ်ဆေးပြီးဖြစ်ကာ v2.11.13 သည် corrective-release preparation line ဖြစ်သည်။ Zap သည် B0 ဖြစ်ပြီး Rust သည် complete/reference compiler နှင့် runtime owner ဖြစ်နေဆဲဖြစ်သည်။
 
 **ရည်ရွယ်ချက်:** Stable diagnostic contract ပြီးစီးပြီးနောက် ဆက်လက်အကောင်အထည်ဖော်ရမည့် အစီအစဉ်ကို သတ်မှတ်ရန် ဖြစ်သည်။ ပြီးစီးပြီးသား release အလုပ်များကို ထပ်မတွက်ဘဲ ကျန်ရှိနေသော TODO register ကို executable milestone များအဖြစ် ခွဲထားသည်။
 

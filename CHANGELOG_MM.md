@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.13] — 2026-08-24
+
+### Release engineering
+- Corrective release ဖြစ်သည်။ bounded is_option_none else-body evidence နှင့် full cross-platform CI matrix ဖြင့် စစ်ဆေးပြီးသော macOS ARM64-safe web-server test fix ကို ထည့်ထားသည်။ v2.11.12 သည် publish မလုပ်နိုင်ခဲ့သော immutable failed-tag record အဖြစ် ဆက်ရှိသည်။
+
 ## [2.11.12] — 2026-08-24
 
 ### Release engineering

@@ -1,6 +1,6 @@
 # Runtime State နှင့် Execution Context
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.12
+**စစ်ဆေးထားသော baseline:** Zap v2.11.13
 
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Memory model](MEMORY_MODEL_MM.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_MM.md) · [Async/LSP guide](ASYNC_LSP_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 
