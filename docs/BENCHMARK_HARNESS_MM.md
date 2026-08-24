@@ -1,6 +1,6 @@
 # Zap Native Benchmark Harness
 
-**စစ်ဆေးထားသော baseline:** Zap v2.8.0
+**စစ်ဆေးထားသော baseline:** Zap v2.9.0
 
 **အခြေအနေ:** Zap v2.4.0 အတွက် repeatable benchmark baseline နှင့် regression gate
 
