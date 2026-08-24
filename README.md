@@ -199,7 +199,7 @@ cargo test --manifest-path native/Cargo.toml --all-targets
 cargo build --release --manifest-path native/Cargo.toml
 ```
 
-Before contributing, run `make doctor` to distinguish missing environment prerequisites from test failures, then run the documentation, Web scaffold, release-version, VS Code asset, and LSP parity validators described in the [documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md). The repository uses `master` as the integrated baseline; stale merged branches are pruned only after their changes are present in `master`, while active review branches remain subject to their pull requests.
+Before contributing, run `make doctor` to distinguish missing environment prerequisites from test failures, then run the documentation, Web scaffold, release-version, VS Code asset, and LSP parity validators described in the [documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md). The repository uses `master` as the integrated baseline; stale merged branches are pruned only after their changes are present in `master`, while active review branches remain subject to their pull requests. See the [branch hygiene and merge record](docs/BRANCH_HYGIENE_EN.md) before merging or deleting a branch.
 
 ## Release provenance
 

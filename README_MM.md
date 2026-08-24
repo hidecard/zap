@@ -183,7 +183,7 @@ cargo test --manifest-path native/Cargo.toml --all-targets
 cargo build --release --manifest-path native/Cargo.toml
 ```
 
-Local validation မစတင်မီ `make doctor` ကို run လုပ်၍ environment prerequisite မရှိခြင်းနှင့် test failure ကို ခွဲခြားပါ။ ထို့နောက် Documentation၊ Web scaffold၊ release-version၊ VS Code asset နှင့် LSP parity validation များကို [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) တွင် ဖော်ပြထားသည့်အတိုင်း run ပါ။ Repository တွင် `master` သည် integrated baseline ဖြစ်ပြီး stale merged branch များကို ၎င်းတို့၏ပြောင်းလဲမှုများ `master` ထဲရောက်ပြီးမှသာ prune လုပ်ပါသည်။ Active review branch များကို pull request အခြေအနေအတိုင်း ဆက်လက်ထိန်းသိမ်းပါသည်။
+Local validation မစတင်မီ `make doctor` ကို run လုပ်၍ environment prerequisite မရှိခြင်းနှင့် test failure ကို ခွဲခြားပါ။ ထို့နောက် Documentation၊ Web scaffold၊ release-version၊ VS Code asset နှင့် LSP parity validation များကို [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) တွင် ဖော်ပြထားသည့်အတိုင်း run ပါ။ Repository တွင် `master` သည် integrated baseline ဖြစ်ပြီး stale merged branch များကို ၎င်းတို့၏ပြောင်းလဲမှုများ `master` ထဲရောက်ပြီးမှသာ prune လုပ်ပါသည်။ Active review branch များကို pull request အခြေအနေအတိုင်း ဆက်လက်ထိန်းသိမ်းပါသည်။ Branch merge သို့မဟုတ် delete မလုပ်မီ [branch hygiene နှင့် merge မှတ်တမ်း](docs/BRANCH_HYGIENE_MM.md) ကို ကြည့်ရှုပါ။
 
 ## Release provenance
 
