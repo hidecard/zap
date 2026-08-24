@@ -1,8 +1,8 @@
 # Zap Generic Type Syntax ဆုံးဖြတ်ချက်မှတ်တမ်း
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.4
+**စစ်ဆေးထားသော baseline:** Zap v2.11.5
 
-**ဆုံးဖြတ်ချက်:** TC-012 generic type syntax သည် v2.11.4 type-checking contract အတွက် implemented baseline အဖြစ် သတ်မှတ်နိုင်ပါသည်။ ဤ design gate အတွက် parser သို့မဟုတ် runtime code အသစ် ထပ်မံပြင်ဆင်ရန် မလိုအပ်ပါ။
+**ဆုံးဖြတ်ချက်:** TC-012 generic type syntax သည် v2.11.5 type-checking contract အတွက် implemented baseline အဖြစ် သတ်မှတ်နိုင်ပါသည်။ ဤ design gate အတွက် parser သို့မဟုတ် runtime code အသစ် ထပ်မံပြင်ဆင်ရန် မလိုအပ်ပါ။
 
 ## အကျုံးဝင်သည့်အပိုင်း
 
@@ -36,17 +36,17 @@ Nested argument များအနီးရှိ whitespace ကို trim ပ�
 
 ## Compatibility နှင့် rollout
 
-ဤဆုံးဖြတ်ချက်သည် branch narrowing နှင့် alias invalidation တွင် အသုံးပြုနေသော `option<T>` နှင့် `result<T>` semantics များကို မပြောင်းလဲစေပါ။ Native test suite တွင် စစ်ဆေးပြီးသား collection form များကိုလည်း formalize လုပ်ပေးပါသည်။ ထို့ကြောင့် v2.11.4 release gate တွင် duplicate experimental parser path အသစ် ထပ်ထည့်မည့်အစား TC-012 ကို implemented baseline အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
+ဤဆုံးဖြတ်ချက်သည် branch narrowing နှင့် alias invalidation တွင် အသုံးပြုနေသော `option<T>` နှင့် `result<T>` semantics များကို မပြောင်းလဲစေပါ။ Native test suite တွင် စစ်ဆေးပြီးသား collection form များကိုလည်း formalize လုပ်ပေးပါသည်။ ထို့ကြောင့် v2.11.5 release gate တွင် duplicate experimental parser path အသစ် ထပ်ထည့်မည့်အစား TC-012 ကို implemented baseline အဖြစ် မှတ်တမ်းတင်ထားပါသည်။
 
 နောင်တွင် generic function parameter၊ user-defined generic declaration၊ variance rule နှင့် ပိုမိုအားကောင်းသော collection-element inference များကို ထည့်သွင်းနိုင်ပါသည်။ ထိုအင်္ဂါရပ်များသည် declaration parsing၊ symbol binding၊ call-site inference၊ diagnostic နှင့် LSP synchronization များကို သက်ရောက်စေသောကြောင့် သီးခြား design record လိုအပ်ပါသည်။
 
 ## Conformance အထောက်အထား
 
-Native suite သည် valid nested collection နှင့် variant annotation များ၊ incompatible generic assignment များ၊ `list<>` ကဲ့သို့ malformed form များနှင့် nested generic matching ကို စစ်ဆေးထားပါသည်။ ထို test များသည် v2.11.4 အတွက် TC-012 non-regression boundary ဖြစ်ပါသည်။ Generic declaration syntax နှင့် advanced inference များကို explicit deferred scope အဖြစ် ထားရှိရမည်ဖြစ်ပြီး ဤ baseline မှ အလိုအလျောက် မခန့်မှန်းရပါ။
+Native suite သည် valid nested collection နှင့် variant annotation များ၊ incompatible generic assignment များ၊ `list<>` ကဲ့သို့ malformed form များနှင့် nested generic matching ကို စစ်ဆေးထားပါသည်။ ထို test များသည် v2.11.5 အတွက် TC-012 non-regression boundary ဖြစ်ပါသည်။ Generic declaration syntax နှင့် advanced inference များကို explicit deferred scope အဖြစ် ထားရှိရမည်ဖြစ်ပြီး ဤ baseline မှ အလိုအလျောက် မခန့်မှန်းရပါ။
 
 ## Acceptance ဆုံးဖြတ်ချက်
 
-TC-012 ကို v2.11.4 အတွက် **implemented baseline** အဖြစ် သတ်မှတ်ပါသည်။ နောက်လာမည့် generic milestone သည် generic declaration နှင့် inference အတွက် သီးခြား design နှင့် implementation phase ဖြစ်ပြီး လက်ရှိ release gate ၏ အစိတ်အပိုင်း မဟုတ်ပါ။
+TC-012 ကို v2.11.5 အတွက် **implemented baseline** အဖြစ် သတ်မှတ်ပါသည်။ နောက်လာမည့် generic milestone သည် generic declaration နှင့် inference အတွက် သီးခြား design နှင့် implementation phase ဖြစ်ပြီး လက်ရှိ release gate ၏ အစိတ်အပိုင်း မဟုတ်ပါ။
 
 **Author:** Manus AI
 **Version:** v2.2.7 design gate

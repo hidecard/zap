@@ -150,6 +150,18 @@ jobs:
           & $zap p3_smoke.zp
           if ($LASTEXITCODE -ne 0) { throw "P3.3 smoke test failed" }
 
+          $project = Join-Path $env:RUNNER_TEMP "zap-release-project"
+          if (Test-Path $project) { Remove-Item -Recurse -Force $project }
+          & $zap new $project
+          if ($LASTEXITCODE -ne 0) { throw "zap new smoke test failed" }
+          & $zap check $project
+          if ($LASTEXITCODE -ne 0) { throw "zap check smoke test failed" }
+          & $zap build --locked $project
+          if ($LASTEXITCODE -ne 0) { throw "zap build --locked smoke test failed" }
+          $tests = Join-Path $project "tests"
+          & $zap test $tests
+          if ($LASTEXITCODE -ne 0) { throw "zap test smoke test failed" }
+
       - name: Set versioned archive name
         if: runner.os != 'Windows'
         shell: bash

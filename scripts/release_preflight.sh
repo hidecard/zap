@@ -269,6 +269,8 @@ check_release_files() {
     scripts/check_rustsec_audit.sh
     scripts/validate_documentation_consistency.sh
     scripts/test_validate_documentation_consistency.sh
+    scripts/test_doctor.sh
+    scripts/doctor.sh
     scripts/validate_markdown_links.py
     scripts/check_benchmark_regression.sh
     scripts/test_benchmark_regression.sh
@@ -296,6 +298,9 @@ check_release_files() {
     docs/BENCHMARK_HARNESS_MM.md
     docs/DOCUMENTATION_NAVIGATION_EN.md
     docs/DOCUMENTATION_NAVIGATION_MM.md
+    docs/CURRENT_STATUS_EN.md
+    docs/CURRENT_STATUS_MM.md
+    scripts/doctor.sh
     docs/RUNTIME_STATE_EN.md
     docs/RUNTIME_STATE_MM.md
   )
@@ -319,6 +324,7 @@ check_documentation_pairs() {
     'docs/ZAP_HOST_QUICKSTART_EN.md:docs/ZAP_HOST_QUICKSTART_MM.md'
     'docs/ZAP_WEB_NATIVE_EN.md:docs/ZAP_WEB_NATIVE_MM.md'
     'docs/RUNTIME_STATE_EN.md:docs/RUNTIME_STATE_MM.md'
+    'docs/CURRENT_STATUS_EN.md:docs/CURRENT_STATUS_MM.md'
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md:docs/RELEASE_${EXPECTED_VERSION}_MM.md"
   )
   local pair en mm
@@ -338,6 +344,8 @@ check_documentation_pairs() {
   require_text docs/DEPLOYMENT_MM.md 'production'
   require_text docs/TYPECHECK_CONFORMANCE_MATRIX_EN.md "$EXPECTED_VERSION"
   require_text docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md "$EXPECTED_VERSION"
+  require_text docs/CURRENT_STATUS_EN.md 'Bootstrap stage'
+  require_text docs/CURRENT_STATUS_MM.md 'Bootstrap stage'
   require_text "docs/RELEASE_${EXPECTED_VERSION}_EN.md" "$EXPECTED_VERSION"
   require_text "docs/RELEASE_${EXPECTED_VERSION}_MM.md" "$EXPECTED_VERSION"
 }
@@ -425,6 +433,9 @@ run_contract_validation() {
 
   bash scripts/test_validate_documentation_consistency.sh
   pass "documentation consistency regression validation passed"
+
+  bash scripts/test_doctor.sh
+  pass "developer environment doctor regression passed"
 
   python3 scripts/validate_markdown_links.py
   pass "repository Markdown link validation passed"

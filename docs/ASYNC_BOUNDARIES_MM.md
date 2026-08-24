@@ -1,8 +1,8 @@
 # Zap Async Boundary များ
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.4
+**စစ်ဆေးထားသော baseline:** Zap v2.11.5
 
-**အခြေအနေ:** Zap v2.11.4 အတွက် normative runtime-boundary လမ်းညွှန်
+**အခြေအနေ:** Zap v2.11.5 အတွက် normative runtime-boundary လမ်းညွှန်
 
 ## ရည်ရွယ်ချက်
 
@@ -48,7 +48,7 @@ Matrix သည် runner တိုင်းတွင် `scripts/test_platform_ar
 
 ## Stability rules
 
-Deterministic executor၊ eager language async scheduled-value contract နှင့် context-owned language scheduling boundary သည် v2.11.4 အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ semantic၊ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် lazy continuation၊ parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
+Deterministic executor၊ eager language async scheduled-value contract နှင့် context-owned language scheduling boundary သည် v2.11.5 အတွက် stable baseline ဖြစ်ပါသည်။ API အသစ်တိုင်းသည် deterministic-only၊ reactor-backed သို့မဟုတ် blocking-adapted ဟုတ်/မဟုတ် ဖော်ပြရမည်။ Documentation နှင့် diagnostics များတွင်လည်း ထိုတူညီသော စကားလုံးများကို အသုံးပြုရမည်။ သက်ဆိုင်ရာ semantic၊ reactor နှင့် platform gates မရှိမချင်း release note သို့မဟုတ် benchmark တစ်ခုခုတွင် lazy continuation၊ parallel scheduling သို့မဟုတ် production non-blocking I/O ရှိသည်ဟု မဆိုရပါ။
 
 အနာဂတ် production implementation တွင် အနည်းဆုံး အောက်ပါအချက်များ ပါဝင်ရမည်။
 

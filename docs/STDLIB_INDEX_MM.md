@@ -1,6 +1,6 @@
 # Zap Standard Library Public Modules
 
-**Verified baseline:** Zap v2.11.4 development line
+**Verified baseline:** Zap v2.11.5 development line
 **ရည်ရွယ်ချက်:** Language user နှင့် package author များအတွက် public standard-library reference ဖြစ်ပြီး stability rule များကို ချိတ်ဆက်ထားသော policy က ပိုင်ဆိုင်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package author guide](PACKAGE.md) · [Stability policy](STDLIB_POLICY_MM.md)
 
@@ -50,4 +50,4 @@ let served = http_serve_once(8080, "Hello from Zap")
 say served["path"]
 ```
 
-လက်ရှိ release line တွင် API များကို direct builtin များအဖြစ် အသုံးပြုနိုင်ပါသည်။ ဖော်ပြထားသော domain နှင့် builtin အားလုံးကို v2.11.4 development line အတွက် stable၊ active deprecation window မရှိ၊ release-target platform matrix ကို ထောက်ပံ့ပြီး explicit schema-2 determinism class ပါရှိသည်ဟု catalog တွင် မှတ်တမ်းတင်ထားပါသည်။ Change checklist အတွက် [stability policy](STDLIB_POLICY_MM.md) ကို ကြည့်ပါ။ Namespace import syntax နှင့် remote standard-library package များကို P1 verification ပြီးနောက် Ecosystem milestone အတွက် ဆက်လက်လုပ်ဆောင်ပါမည်။
+လက်ရှိ release line တွင် API များကို direct builtin များအဖြစ် အသုံးပြုနိုင်ပါသည်။ ဖော်ပြထားသော domain နှင့် builtin အားလုံးကို v2.11.5 development line အတွက် stable၊ active deprecation window မရှိ၊ release-target platform matrix ကို ထောက်ပံ့ပြီး explicit schema-2 determinism class ပါရှိသည်ဟု catalog တွင် မှတ်တမ်းတင်ထားပါသည်။ Change checklist အတွက် [stability policy](STDLIB_POLICY_MM.md) ကို ကြည့်ပါ။ Namespace import syntax နှင့် remote standard-library package များကို P1 verification ပြီးနောက် Ecosystem milestone အတွက် ဆက်လက်လုပ်ဆောင်ပါမည်။

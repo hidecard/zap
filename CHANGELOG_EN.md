@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.11.5] — 2026-08-24
+
+### Release-gate and developer validation
+- Made Windows release smoke tests cover `zap.exe --version`, help, examples, `zap new`, `zap check`, `zap build --locked`, and `zap test` as required fail-closed operations.
+- Added bilingual canonical current-status pages, signed-provenance documentation, and `make doctor` with regression coverage. Bootstrap remains B0 and Rust remains the reference owner.
+
 ## [2.11.4] — 2026-08-24
 
 ### B2 bootstrap conformance

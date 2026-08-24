@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.5] - 2026-08-24
+
+### Release summary
+- Windows CLI smoke tests၊ bilingual current-status/provenance documentation နှင့် missing-prerequisite များကို test failure နှင့် ခွဲခြားပေးသော `make doctor` ကို ထည့်ထားသည်။ Bootstrap stage သည် B0 ဖြစ်ပြီး Rust သည် reference owner အဖြစ် ဆက်ရှိသည်။
+
 ## [2.11.4] - 2026-08-24
 
 ### Release summary

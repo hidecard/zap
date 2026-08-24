@@ -75,6 +75,9 @@ jobs:
       - name: Run documentation consistency regression
         run: scripts/test_validate_documentation_consistency.sh
 
+      - name: Run developer environment doctor regression
+        run: bash scripts/test_doctor.sh
+
       - name: Validate repository Markdown links
         run: python3 scripts/validate_markdown_links.py
 

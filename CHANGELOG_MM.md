@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.11.5] — 2026-08-24
+
+### Release-gate နှင့် developer validation
+- Windows release smoke test များတွင် `zap.exe --version`၊ help၊ example၊ `zap new`၊ `zap check`၊ `zap build --locked` နှင့် `zap test` တို့ကို required fail-closed operation များအဖြစ် ထည့်ထားပါသည်။
+- Bilingual canonical current-status page၊ signed-provenance documentation နှင့် regression coverage ပါသော `make doctor` ကို ထည့်ထားပါသည်။ Bootstrap သည် B0 ဖြစ်ပြီး Rust သည် reference owner အဖြစ် ဆက်ရှိပါသည်။
+
 ## [2.11.4] — 2026-08-24
 
 ### B2 bootstrap conformance

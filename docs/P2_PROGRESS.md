@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current development baseline is the v2.11.4 release line for HTTP URL invariant reliability maintenance, following the published v2.4.0 release. The v2.4.0 tag and assets remain immutable. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections are tracked on `master` with explicit production-boundary limitations and will be included in v2.11.4 only after the complete release gate passes.
+Zap's current development baseline is the v2.11.5 release line for HTTP URL invariant reliability maintenance, following the published v2.4.0 release. The v2.4.0 tag and assets remain immutable. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections are tracked on `master` with explicit production-boundary limitations and will be included in v2.11.5 only after the complete release gate passes.
 
 | Milestone | Status | Notes |
 |---|---|---|

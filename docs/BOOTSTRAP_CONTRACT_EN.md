@@ -1,6 +1,6 @@
 # Zap Bootstrap and Self-Hosting Contract
 
-**Status:** B0 reference baseline for Zap v2.11.4
+**Status:** B0 reference baseline for Zap v2.11.5
 
 Zap’s self-hosting roadmap is staged. The current release remains a **Rust reference/native implementation**; it is not yet a fully Zap-only compiler. The normative stage contract, independent version identities, and machine-readable ownership records are maintained under [`bootstrap/contracts`](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md).
 
@@ -68,4 +68,4 @@ No release may use the B4 wording before the B4 bootstrap checks pass. Future se
 
 ## Next gate
 
-The active implementation gate remains staged parity expansion: the Zap-owned lexer and parser candidates must expand their owned corpora and compare output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. The B2 typed-IR/type-check conformance foundation, the first provisional Zap-owned checker candidate, and its candidate-only typed-IR producer are now enforced, but complete type checking and typed IR remain native-owned. The v2.11.4 increment adds one provisional list-element inference path and one negative collection-element diagnostic fixture. Broader collection inference, deeper nested inference, and user-defined generic declarations remain future work behind separate evidence and design gates. VM work and native-backend work must remain behind those gates rather than being claimed prematurely.
+The active implementation gate remains staged parity expansion: the Zap-owned lexer and parser candidates must expand their owned corpora and compare output with the Rust reference for valid, Unicode, malformed, overflow, and determinism cases. The B2 typed-IR/type-check conformance foundation, the first provisional Zap-owned checker candidate, and its candidate-only typed-IR producer are now enforced, but complete type checking and typed IR remain native-owned. The v2.11.5 increment adds one provisional list-element inference path and one negative collection-element diagnostic fixture. Broader collection inference, deeper nested inference, and user-defined generic declarations remain future work behind separate evidence and design gates. VM work and native-backend work must remain behind those gates rather than being claimed prematurely.

@@ -53,6 +53,7 @@ pairs=(
   'docs/ZAP_HOST_EN.md:docs/ZAP_HOST_MM.md'
   'docs/ZAP_HOST_QUICKSTART_EN.md:docs/ZAP_HOST_QUICKSTART_MM.md'
   'docs/ZAP_WEB_NATIVE_EN.md:docs/ZAP_WEB_NATIVE_MM.md'
+  'docs/CURRENT_STATUS_EN.md:docs/CURRENT_STATUS_MM.md'
   'docs/POST_V2.2.0_REMEDIATION_EN.md:docs/POST_V2.2.0_REMEDIATION_MM.md'
   'docs/POST_V2.4.0_REMEDIATION_EN.md:docs/POST_V2.4.0_REMEDIATION_MM.md'
   'docs/USAGE_EN.md:docs/USAGE.md'
@@ -95,6 +96,7 @@ for file in \
   docs/ZAP_HOST_EN.md docs/ZAP_HOST_MM.md \
   docs/ZAP_HOST_QUICKSTART_EN.md docs/ZAP_HOST_QUICKSTART_MM.md \
   docs/ZAP_WEB_NATIVE_EN.md docs/ZAP_WEB_NATIVE_MM.md \
+  docs/CURRENT_STATUS_EN.md docs/CURRENT_STATUS_MM.md \
   docs/RUNTIME_STATE_EN.md docs/RUNTIME_STATE_MM.md \
   docs/MEMORY_BUDGET_OBJECT_STORE_EN.md docs/MEMORY_BUDGET_OBJECT_STORE_MM.md \
   docs/P0_FOUNDATION_STATUS_EN.md docs/P0_FOUNDATION_STATUS_MM.md \
@@ -125,6 +127,8 @@ require_text docs/DOCUMENTATION_NAVIGATION_EN.md 'ZAP_HOST_QUICKSTART_EN.md'
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md 'ZAP_HOST_QUICKSTART_MM.md'
 require_text docs/DOCUMENTATION_NAVIGATION_EN.md 'ZAP_WEB_NATIVE_EN.md'
 require_text docs/DOCUMENTATION_NAVIGATION_MM.md 'ZAP_WEB_NATIVE_MM.md'
+require_text docs/DOCUMENTATION_NAVIGATION_EN.md 'CURRENT_STATUS_EN.md'
+require_text docs/DOCUMENTATION_NAVIGATION_MM.md 'CURRENT_STATUS_MM.md'
 
 if (( failures > 0 )); then
   printf 'documentation consistency failed: %d failure(s); report=%s\n' "$failures" "$REPORT" >&2

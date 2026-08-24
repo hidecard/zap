@@ -16,6 +16,9 @@ native-test:
 host-test:
 	cargo test --manifest-path host/zap-host/Cargo.toml --all-targets --locked
 
+doctor:
+	bash scripts/doctor.sh
+
 bootstrap-test:
 	./scripts/bootstrap/verify_b0_artifacts.sh --release
 

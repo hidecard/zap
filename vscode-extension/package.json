@@ -2,7 +2,7 @@
   "name": "zap-language-support",
   "displayName": "Zap Language Support",
   "description": "Syntax highlighting, LSP completion, signature help, hover, definitions, formatting, diagnostics, and run support for the Zap programming language.",
-  "version": "2.11.4",
+  "version": "2.11.5",
   "publisher": "ArkarYan",
   "license": "MIT",
   "engines": {
