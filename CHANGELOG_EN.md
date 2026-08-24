@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.9.0] — 2026-08-24
+
+### Release engineering
+- Reject duplicate method/path Web route registrations during zap web check and zap web routes, with shared validation and bilingual documentation.
+
 ## [2.8.0] — 2026-08-24
 
 ### Release engineering

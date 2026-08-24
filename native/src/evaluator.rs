@@ -2250,14 +2250,35 @@ pub(crate) fn web_validate_route_shape(route: &Value) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn web_validate_routes(
-    routes: &[Value],
-    funcs: &HashMap<String, Rc<Function>>,
-) -> Result<(), String> {
+pub(crate) fn web_validate_route_table(routes: &[Value]) -> Result<(), String> {
+    let mut registrations = HashSet::new();
     for route in routes {
         web_validate_route_shape(route)?;
         let Value::Map(route) = route else {
             unreachable!("web_validate_route_shape validated the route map");
+        };
+        let (Some(Value::Text(method)), Some(Value::Text(path))) =
+            (route.get("method"), route.get("path"))
+        else {
+            unreachable!("web_validate_route_shape validated method and path");
+        };
+        if !registrations.insert((method.clone(), path.clone())) {
+            return Err(format!(
+                "Web route conflict: {method} {path} is registered more than once"
+            ));
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn web_validate_routes(
+    routes: &[Value],
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    web_validate_route_table(routes)?;
+    for route in routes {
+        let Value::Map(route) = route else {
+            unreachable!("web_validate_route_table validated the route map");
         };
         match route.get("handler") {
             Some(Value::Callable(_)) => {}
@@ -2265,7 +2286,7 @@ pub(crate) fn web_validate_routes(
             Some(Value::Text(name)) => {
                 return Err(format!("web_serve handler not found: {name}"));
             }
-            _ => unreachable!("web_validate_route_shape validated the handler"),
+            _ => unreachable!("web_validate_route_table validated the handler"),
         }
     }
     Ok(())
@@ -4965,7 +4986,7 @@ mod tests {
         execute_ast_program, execute_ast_program_with_context, execute_lines, http_serve_once,
         json_to_value, require_capability_for_mode, validate_network_destination_for_mode,
         value_to_json, web_path_matches, web_route_path_is_valid, web_serve_on_listener,
-        web_validate_routes, MAX_HTTP_REQUEST_BYTES,
+        web_validate_route_table, web_validate_routes, MAX_HTTP_REQUEST_BYTES,
     };
     use crate::ast::parse_program;
     use crate::value::{MAX_RUNTIME_COLLECTION_ITEMS, MAX_RUNTIME_TEXT_BYTES};
@@ -6199,6 +6220,14 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         assert!(web_validate_routes(&[route("GET", "/", "missing")], &funcs).is_err());
         assert!(web_validate_routes(&[route("GET", "/", "home")], &funcs).is_ok());
         assert!(web_validate_routes(&[route("GET", "/assets/*path", "home")], &funcs).is_ok());
+        assert!(
+            web_validate_route_table(&[route("GET", "/", "home"), route("GET", "/", "home")])
+                .is_err()
+        );
+        assert!(
+            web_validate_route_table(&[route("GET", "/", "home"), route("POST", "/", "home")])
+                .is_ok()
+        );
     }
 
     #[test]

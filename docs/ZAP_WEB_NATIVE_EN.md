@@ -1,6 +1,6 @@
 # Zap-first Web Framework Guide
 
-**Verified baseline:** Zap v2.8.0 on merged `master`. The original Framework work is preserved as the Web contract foundation.
+**Verified baseline:** Zap v2.9.0 on merged `master`. The original Framework work is preserved as the Web contract foundation.
 
 ## Purpose
 
@@ -92,7 +92,7 @@ export fn routes():
     return [{"method": "GET", "path": "/", "handler": "home", "scope": ""}, {"method": "GET", "path": "/users/:id", "handler": "get_user", "scope": "users:read"}]
 ```
 
-This is intentional. It makes the current project runnable and inspectable while reserving a future parser/AST change for a compatibility-reviewed RFC. A future concise route form may look like the following, but it is **design notation and must not be copied into a current project until the parser contract is implemented**:
+This is intentional. It makes the current project runnable and inspectable while reserving a future parser/AST change for a compatibility-reviewed RFC. `zap web routes` executes this factory without opening a listener, checks that method/path registrations are unique, and prints the resolved table in text or JSON form. The live Web server performs the same conflict check and additionally requires every named handler to resolve before it accepts traffic. A future concise route form may look like the following, but it is **design notation and must not be copied into a current project until the parser contract is implemented**:
 
 ```zap
 route GET "/users/:id" handler get_user scope "users:read"

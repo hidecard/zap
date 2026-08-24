@@ -1,6 +1,6 @@
 # Zap Production Operations Runbook
 
-**Verified baseline:** Zap v2.8.0 development line
+**Verified baseline:** Zap v2.9.0 development line
 
 **Scope:** This runbook deploys the built-in authenticated registry behind a Linux systemd service and an nginx TLS ingress. It is a reference runbook, not an automatic cloud provisioning system. Production operators must adapt the firewall, certificate authority, secret manager, monitoring, backup, and approval steps to their environment.
 

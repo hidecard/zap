@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**Verified baseline:** Zap v2.8.0
+**Verified baseline:** Zap v2.9.0
 **Branch:** `Framework`
 **Status:** Web Foundation v0.2 — runnable contract package plus initial `zap-host` adapter prototype; production integrations remain separate
 
@@ -100,7 +100,7 @@ zap web routes --json
 zap web routes ./shop
 ```
 
-The human-readable form shows the method, path, handler, and optional authorization scope. `--json` is intended for editor tooling and scripts. Inspection validates the route entry shape, including a safe absolute path and a non-empty method token, while the live `web_serve` boundary additionally resolves every handler before accepting traffic. This keeps route visibility explicit and avoids hidden framework registration.
+The human-readable form shows the method, path, handler, and optional authorization scope. `--json` is intended for editor tooling and scripts. Inspection validates the route entry shape, including a safe absolute path, a non-empty method token, and unique method/path registrations. Duplicate registrations are rejected before the table is displayed. `zap web check` performs the same route-table validation as part of project validation, while the live `web_serve` boundary additionally resolves every handler before accepting traffic. This keeps route visibility explicit and avoids hidden framework registration.
 
 ## Host-adapter contract
 

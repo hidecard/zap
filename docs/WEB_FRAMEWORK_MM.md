@@ -1,6 +1,6 @@
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.8.0
+**အတည်ပြုထားသော baseline:** Zap v2.9.0
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
@@ -101,7 +101,7 @@ zap web routes --json
 zap web routes ./shop
 ```
 
-Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path နှင့် non-empty method token အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
+Human-readable output တွင် method၊ path၊ handler နှင့် ရှိပါက authorization scope ကို ပြပါသည်။ `--json` သည် editor tooling နှင့် script များအတွက် အသုံးပြုရန် ဖြစ်ပါသည်။ Inspection အဆင့်တွင် safe absolute path၊ non-empty method token နှင့် unique method/path registration အပါအဝင် route entry shape ကို validate လုပ်ပါသည်။ Duplicate registration များကို table မပြမီ reject လုပ်ပါသည်။ `zap web check` သည် project validation အတွင်း အဆိုပါ route-table validation ကိုလည်း လုပ်ဆောင်ပါသည်။ Live `web_serve` boundary သည် traffic လက်မခံမီ handler အားလုံးကို ထပ်မံ resolve လုပ်ပါသည်။ ထိုပုံစံသည် hidden framework registration မသုံးဘဲ route visibility ကို explicit ဖြစ်စေပါသည်။
 
 ## Host-adapter contract
 

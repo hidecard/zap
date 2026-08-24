@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-08-24
+
+### Release summary
+- Reject duplicate Web route registrations before serving
+
 ## [2.8.0] - 2026-08-24
 
 ### Release summary
