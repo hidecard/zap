@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-08-24
+
+### Release engineering
+- Validated Web route table စစ်ဆေးမှု၊ project name အလိုက် scaffold နှင့် နှစ်ဘာသာ Web workflow documentation ကို ထည့်သွင်းထားပါသည်။
+
 ## [2.7.0] — 2026-08-23
 
 ### Release engineering

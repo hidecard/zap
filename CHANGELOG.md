@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-08-24
+
+### Release summary
+- Add validated Web route inspection and improve zap new scaffold clarity
+
 ## [2.7.0] - 2026-08-23
 
 ### Release summary

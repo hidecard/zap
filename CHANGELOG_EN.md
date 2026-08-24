@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-08-24
+
+### Release engineering
+- Added validated Web route-table inspection, project-name-aware scaffolding, and bilingual Web workflow documentation.
+
 ## [2.7.0] — 2026-08-23
 
 ### Release engineering
