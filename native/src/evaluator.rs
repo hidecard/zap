@@ -5269,7 +5269,7 @@ mod tests {
         collections::HashMap,
         fs,
         io::{ErrorKind, Read, Write},
-        net::{Shutdown, TcpListener, TcpStream},
+        net::{TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
         process::Command,
@@ -6705,11 +6705,9 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
             stream
                 .write_all(raw.as_bytes())
                 .expect("test request should be written");
-            match stream.shutdown(Shutdown::Write) {
-                Ok(()) => {}
-                Err(error) if error.kind() == ErrorKind::NotConnected => {}
-                Err(error) => panic!("test request write side should shut down: {error}"),
-            }
+            // The parser stops after CRLF-terminated headers; an EOF is not required.
+            // Keeping the write side open avoids a platform-specific local-socket
+            // half-close/reset race while the server writes its response.
             let mut response_bytes = Vec::new();
             let mut buffer = [0_u8; 4096];
             loop {
