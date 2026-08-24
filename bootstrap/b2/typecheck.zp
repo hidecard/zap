@@ -5,7 +5,7 @@
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
 
-export fn expression_type(expression, parameter_name, parameter_type, function_name):
+export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type):
     let value = trim(expression)
     if starts_with(value, "\""):
         return "text"
@@ -15,12 +15,17 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "number"
     if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
         return "number"
+    if collection_name != "" and starts_with(value, collection_name + "[") and ends_with(value, "]"):
+        let index = trim(substring(value, len(collection_name) + 1, len(value) - 1))
+        if expression_type(index, parameter_name, parameter_type, function_name, collection_name, collection_element_type) == "number":
+            return collection_element_type
+        return "any"
     if value == parameter_name and parameter_type != "":
         return parameter_type
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        let argument_type = expression_type(argument, "", "", "")
+        let argument_type = expression_type(argument, "", "", "", "", "")
         if argument_type == "text":
             return "call_error"
         return "number"
@@ -36,11 +41,11 @@ export fn function_parts(line):
     let parameter_type = trim(annotation_parts[1])
     return {"name": name, "parameter_name": parameter_name, "parameter_type": parameter_type}
 
-export fn check_line(line, line_number, source_name, parameter_name, parameter_type, function_name):
+export fn check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type):
     let declaration = trim(line)
     if starts_with(declaration, "return "):
         let return_expression = trim(substring(declaration, 7, len(declaration)))
-        let inferred = expression_type(return_expression, parameter_name, parameter_type, function_name)
+        let inferred = expression_type(return_expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type)
         if parameter_type == "number" and inferred == "text":
             return diagnostic(source_name, line_number, 9, "return value expects number, got text")
         return none
@@ -52,15 +57,15 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
     let annotation_parts = split(left, ":")
     let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
     let annotation = trim(annotation_parts[1])
-    let inferred = expression_type(expression, parameter_name, parameter_type, function_name)
+    let inferred = expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type)
     if function_name != "" and starts_with(trim(expression), function_name + "("):
         let call_parts = split(trim(expression), "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        let argument_type = expression_type(argument, "", "", "")
+        let argument_type = expression_type(argument, "", "", "", "", "")
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
-    if annotation == "number" and inferred == "text":
-        return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects number, got text")
+    if (annotation == "number" and inferred == "text") or (annotation == "text" and inferred == "number"):
+        return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none
 
 export fn check(source, source_name):
@@ -69,6 +74,8 @@ export fn check(source, source_name):
     let parameter_name = ""
     let parameter_type = ""
     let function_name = ""
+    let collection_name = ""
+    let collection_element_type = ""
     for line in lines:
         line_number = line_number + 1
         let declaration = trim(line)
@@ -77,7 +84,16 @@ export fn check(source, source_name):
             function_name = parts["name"]
             parameter_name = parts["parameter_name"]
             parameter_type = parts["parameter_type"]
-        let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name)
+        if starts_with(declaration, "let ") and contains(declaration, ":") and contains(declaration, " = "):
+            let assignment = split(declaration, " = ")
+            let left = trim(assignment[0])
+            let annotation_parts = split(left, ":")
+            let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
+            let annotation = trim(annotation_parts[1])
+            if starts_with(annotation, "list<") and ends_with(annotation, ">"):
+                collection_name = variable
+                collection_element_type = trim(substring(annotation, 5, len(annotation) - 1))
+        let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type)
         if error != none:
             return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
     return json({"diagnostics": [], "kind": "zap.typecheck", "ok": true, "schema_version": 1, "source_name": source_name})

@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.4] — 2026-08-24
+
+### B2 bootstrap conformance
+- Added a provisional list-element inference path and a negative collection-element fixture with deterministic native and Zap-candidate diagnostics. Rust remains the reference owner and the bootstrap stage remains B0.
+
 ## [2.11.3] — 2026-08-24
 
 ### Zap-only bootstrap and release engineering

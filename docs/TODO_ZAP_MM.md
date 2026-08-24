@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v0.9.2 release နှင့် P0 foundation hardening**
+**လက်ရှိအခြေအနေ — v2.11.4 B0 bootstrap increment နှင့် P0 foundation hardening**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.4 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -38,6 +38,15 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Burmese beginner guide၊ syntax guide၊ usage guide နှင့် audit document
 
 ---
+
+## လက်ရှိ v2.11.4 B0 bootstrap checkpoint
+
+- [x] Provisional Zap B2 type-checker candidate တွင် tracked `list<number>` value ကို numeric literal ဖြင့် index လုပ်သော bounded list-element inference path ထည့်ရန်။
+- [x] `list<number>` မှ numeric element ကို incompatible `text` annotation သို့ assign လုပ်သည့် negative fixture နှင့် stable line/column diagnostic ထည့်ရန်။
+- [x] Native Rust checker နှင့် Zap candidate နှစ်ခုစလုံးအတွက် deterministic differential gate ထည့်ရန်။
+- [x] Provisional ownership ledger တွင် `BOOT-022` နှင့် fixture `bootstrap/fixtures/typecheck/collection_incompatible.zp` ထည့်ရန်။
+- [ ] General collection/map inference၊ arbitrary index expression၊ deeper nested inference နှင့် user-defined generic declarations ကို မစတင်မီ သီးခြား design/evidence gate သတ်မှတ်ရန်။
+- [ ] Bootstrap stage ကို B0 ထက်မြှင့်ရန် Rust reference အစားထိုးနိုင်ကြောင်း၊ broader corpus parity၊ typed-IR ownership နှင့် B4 acceptance အထောက်အထားများ ပြည့်စုံအောင်လုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety
 

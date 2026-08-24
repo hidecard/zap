@@ -1,0 +1,2 @@
+let values: list<number> = [1, 2]
+let first: text = values[0]

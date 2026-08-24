@@ -20,3 +20,4 @@ BOOT-018	token-diagnostics	B1 candidate status	B1 candidate status	bootstrap/b1/
 BOOT-019	b2-typechecker-candidate	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/incompatible.zp	provisional
 BOOT-020	b2-typed-ir-candidate	Artifact contract	Artifact contract	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/annotated.typed-ir.json	provisional
 BOOT-021	b2-typechecker-function-corpus	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/function_incompatible.zp	provisional
+BOOT-022	b2-typechecker-collection-element	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/collection_incompatible.zp	provisional

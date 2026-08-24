@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.4] — 2026-08-24
+
+### B2 bootstrap conformance
+- Provisional list-element inference path တစ်ခုနှင့် deterministic native/Zap-candidate diagnostic ပါသော negative collection-element fixture တစ်ခု ထည့်ထားပါသည်။ Rust သည် reference owner အဖြစ် ဆက်ရှိပြီး bootstrap stage သည် B0 ဖြစ်ပါသည်။
+
 ## [2.11.3] — 2026-08-24
 
 ### Zap-only bootstrap နှင့် release engineering

@@ -1,6 +1,6 @@
 # zap-host စတင်အသုံးပြုခြင်းနှင့် Integration လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.11.3
+**အတည်ပြုထားသော baseline:** Zap v2.11.4
 **Branch:** `Framework`
 **Adapter:** `host/zap-host`
 

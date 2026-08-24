@@ -1560,6 +1560,35 @@ fn static_expr_type(
         let else_type = static_expr_type(else_branch, vars, signatures)?;
         return (then_type == else_type).then_some(then_type);
     }
+    if let Some(open) = value.rfind('[') {
+        if open > 0 && value.ends_with(']') {
+            let base = value[..open].trim();
+            let index = value[open + 1..value.len() - 1].trim();
+            if let Some(base_type) = static_expr_type(base, vars, signatures) {
+                let index_type = static_expr_type(index, vars, signatures);
+                if base_type.starts_with("list<") {
+                    if index_type.as_deref() != Some("number") {
+                        return None;
+                    }
+                    if let Some(element) = base_type.strip_prefix("list<") {
+                        return element.strip_suffix('>').map(str::to_string);
+                    }
+                }
+                if base_type.starts_with("map<") {
+                    if index_type.as_deref() != Some("text") {
+                        return None;
+                    }
+                    if let Some((_, value_type)) = base_type
+                        .strip_prefix("map<")
+                        .and_then(|rest| rest.strip_suffix('>'))
+                        .and_then(|inner| inner.split_once(','))
+                    {
+                        return Some(value_type.to_string());
+                    }
+                }
+            }
+        }
+    }
     if value.starts_with('[') && value.ends_with(']') {
         let inner = &value[1..value.len() - 1];
         let mut item_type: Option<String> = None;

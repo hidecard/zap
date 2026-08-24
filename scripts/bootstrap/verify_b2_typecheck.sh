@@ -5,7 +5,7 @@ cd "$ROOT_DIR"
 
 valid_ir_fixture="bootstrap/fixtures/typecheck/annotated.zp"
 valid_ir_expected="bootstrap/fixtures/typecheck/annotated.typed-ir.json"
-for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp; do
+for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp; do
   [[ -f "$path" ]] || { printf 'missing B2 fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -62,3 +62,14 @@ if [[ "$status" -eq 0 ]]; then
 fi
 jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 22 and (.message | test("argument .* for .* expects number, got text"))' <<<"$function_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible function call\n'
+
+set +e
+collection_incompatible=$(run_check collection_incompatible 2>/tmp/zap-b2-collection-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'collection_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''first'\'' expects text, got number"))' <<<"$collection_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible collection element\n'

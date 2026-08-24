@@ -1625,6 +1625,12 @@ fn typecheck_p1_conformance_tc006_to_tc008() {
             true,
             "",
         ),
+        (
+            "tc008-negative-collection-element",
+            "let values: list<number> = [1, 2]\nlet first: text = values[0]\n",
+            false,
+            "variable 'first' expects text, got number",
+        ),
     ];
 
     for (name, source, should_pass, expected_error) in cases {

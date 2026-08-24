@@ -18,7 +18,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 | Item | Status |
 |---|---|
-| Current release line | `v2.11.3` |
+| Current release line | `v2.11.4` |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -32,12 +32,12 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 ## Install
 
-Download the archive matching your operating system and CPU architecture from the [v2.11.3 release page](https://github.com/hidecard/zap/releases/tag/v2.11.3), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
+Download the archive matching your operating system and CPU architecture from the [v2.11.4 release page](https://github.com/hidecard/zap/releases/tag/v2.11.4), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.11.3-linux-x86_64.tar.gz
+tar -xzf zap-2.11.4-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -46,7 +46,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.11.3-macos-arm64.tar.gz
+tar -xzf zap-2.11.4-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -55,7 +55,7 @@ zap --version
 
 ### Windows
 
-The expected archive is `zap-2.11.3-windows-x86_64.zip`.
+The expected archive is `zap-2.11.4-windows-x86_64.zip`.
 
 ```bat
 cd C:\Zap
@@ -183,7 +183,7 @@ The current stable direction covers the `.zp` language core, native CLI, project
 
 ### Bootstrap and self-hosting status
 
-Zap remains at **B0**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The v2.11.3 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
+Zap remains at **B0**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The v2.11.4 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
 
 Complete type inference, arbitrary-program parser and diagnostic parity, general typed-IR production, package/build ownership, VM execution ownership, and platform-seed acceptance remain future roadmap work. Do not interpret the current candidates as fully Zap-only or B4/self-hosted. The detailed boundary is maintained in the [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_EN.md), and broader product scope is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
 
@@ -202,7 +202,7 @@ Before contributing, also run the documentation, Web scaffold, release-version, 
 
 ## Release provenance
 
-The current source baseline is v2.11.3. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
+The current source baseline is v2.11.4. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
 
 ## License
 

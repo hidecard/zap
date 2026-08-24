@@ -793,7 +793,7 @@ dependencies = [
 
 [[package]]
 name = "zap-native"
-version = "2.11.3"
+version = "2.11.4"
 dependencies = [
  "base64",
  "rcgen",
