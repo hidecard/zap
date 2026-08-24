@@ -5,7 +5,7 @@
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
 
-export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type):
+export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let value = trim(expression)
     if starts_with(value, "\""):
         return "text"
@@ -17,10 +17,12 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "number"
     if narrowed_name != "" and value == narrowed_name:
         return narrowed_type
+    if option_name != "" and value == option_name:
+        return option_wrapper_type
     if collection_name != "" and starts_with(value, collection_name + "[") and ends_with(value, "]"):
         if starts_with(collection_element_type, "map<") and ends_with(collection_element_type, ">"):
             let map_index = trim(substring(value, len(collection_name) + 1, len(value) - 1))
-            if expression_type(map_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type) == "text":
+            if expression_type(map_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type) == "text":
                 let map_parts = split(collection_element_type, ",")
                 if len(map_parts) == 2:
                     return trim(substring(map_parts[1], 0, len(map_parts[1]) - 1))
@@ -30,11 +32,11 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
             let first_index = trim(substring(nested_parts[0], len(collection_name) + 1, len(nested_parts[0])))
             let second_index = trim(substring(nested_parts[1], 0, len(nested_parts[1]) - 1))
             let nested_element_type = trim(substring(collection_element_type, 5, len(collection_element_type) - 1))
-            if expression_type(first_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type) == "number" and expression_type(second_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type) == "number":
+            if expression_type(first_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type) == "number" and expression_type(second_index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type) == "number":
                 return nested_element_type
             return "any"
         let index = trim(substring(value, len(collection_name) + 1, len(value) - 1))
-        if expression_type(index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type) == "number":
+        if expression_type(index, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type) == "number":
             return collection_element_type
         return "any"
     if value == parameter_name and parameter_type != "":
@@ -42,7 +44,7 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type)
+        let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if argument_type == "text":
             return "call_error"
         return "number"
@@ -58,11 +60,11 @@ export fn function_parts(line):
     let parameter_type = trim(annotation_parts[1])
     return {"name": name, "parameter_name": parameter_name, "parameter_type": parameter_type}
 
-export fn check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type):
+export fn check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let declaration = trim(line)
     if starts_with(declaration, "return "):
         let return_expression = trim(substring(declaration, 7, len(declaration)))
-        let inferred = expression_type(return_expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type)
+        let inferred = expression_type(return_expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and inferred == "text":
             return diagnostic(source_name, line_number, 9, "return value expects number, got text")
         return none
@@ -74,14 +76,14 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
     let annotation_parts = split(left, ":")
     let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
     let annotation = trim(annotation_parts[1])
-    let inferred = expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type)
+    let inferred = expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
     if function_name != "" and starts_with(trim(expression), function_name + "("):
         let call_parts = split(trim(expression), "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type)
+        let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
-    if (annotation == "number" and inferred == "text") or (annotation == "text" and inferred == "number"):
+    if (annotation == "number" and (inferred == "text" or starts_with(inferred, "option<"))) or (annotation == "text" and (inferred == "number" or starts_with(inferred, "option<"))):
         return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none
 
@@ -95,6 +97,7 @@ export fn check(source, source_name):
     let collection_element_type = ""
     let option_name = ""
     let option_payload = ""
+    let option_wrapper_type = ""
     let narrowed_name = ""
     let narrowed_type = ""
     let branch_indent = -1
@@ -126,13 +129,19 @@ export fn check(source, source_name):
             if starts_with(annotation, "option<") and ends_with(annotation, ">"):
                 option_name = variable
                 option_payload = trim(substring(annotation, 7, len(annotation) - 1))
-        if starts_with(declaration, "if is_some(") and ends_with(declaration, "):"):
-            let guarded_name = trim(substring(declaration, 11, len(declaration) - 2))
+                option_wrapper_type = annotation
+        let guard_prefix = ""
+        if starts_with(declaration, "if is_some("):
+            guard_prefix = "if is_some("
+        if starts_with(declaration, "while is_some("):
+            guard_prefix = "while is_some("
+        if guard_prefix != "" and ends_with(declaration, "):"):
+            let guarded_name = trim(substring(declaration, len(guard_prefix), len(declaration) - 2))
             if guarded_name == option_name:
                 narrowed_name = option_name
                 narrowed_type = option_payload
                 branch_indent = indent
-        let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type)
+        let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if error != none:
             return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
     return json({"diagnostics": [], "kind": "zap.typecheck", "ok": true, "schema_version": 1, "source_name": source_name})

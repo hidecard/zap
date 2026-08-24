@@ -1,0 +1,4 @@
+let maybe: option<number> = some(3)
+while is_some(maybe):
+    let inside_loop: number = maybe
+let after_loop: number = maybe

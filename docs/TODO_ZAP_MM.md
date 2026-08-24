@@ -56,6 +56,14 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Provisional ownership ledger တွင် `BOOT-025` နှင့် `bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp` ထည့်ရန်။
 - [ ] Compound guard၊ loop narrowing နှင့် reassignment invalidation များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
+## လက်ရှိ v2.11.11 preparation checkpoint
+
+- [x] Provisional Zap B2 candidate တွင် tracked `option<number>` variable ကို direct `is_some` guard ပါသော indented `while` body တစ်ခုအတွင်း numeric payload အဖြစ် bounded narrowing လုပ်နိုင်သည့် path ထည့်ရန်။
+- [x] Loop ပြီးနောက် မူလ `option<number>` wrapper type ပြန်လည်ရရှိကြောင်း paired incompatible assignment fixture နှင့် exact line/column diagnostic ဖြင့် စစ်ဆေးရန်။
+- [x] Native Rust reference နှင့် Zap candidate အတွက် deterministic loop-body acceptance နှင့် loop-boundary rejection evidence ထည့်ရန်။ Native Rust ၏ TC-006 loop-boundary regression သည် reference evidence အဖြစ် ဆက်လက်တည်ရှိသည်။
+- [x] Provisional ownership ledger တွင် `BOOT-026` နှင့် `bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp` ထည့်ရန်။
+- [ ] Compound guard၊ loop mutation၊ reassignment invalidation နှင့် general control-flow narrowing များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
+
 # 2။ P0 — Foundation နှင့် Production Safety
 
 အောက်ပါအဆင့်များ မပြီးမချင်း async၊ HTTP နှင့် package registry ကဲ့သို့သော feature ကြီးများကို မထည့်သင့်သေးပါ။
