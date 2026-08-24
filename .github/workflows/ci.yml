@@ -78,6 +78,9 @@ jobs:
       - name: Validate repository Markdown links
         run: python3 scripts/validate_markdown_links.py
 
+      - name: Validate bootstrap contract structure
+        run: bash scripts/test_bootstrap_contract.sh
+
       - name: Install cargo-audit
         run: cargo install cargo-audit --version 0.22.2 --locked
 

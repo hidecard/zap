@@ -1,0 +1,4 @@
+let words = ["zap", "boot", "strap"]
+let joined = join(words, "-")
+let normalized = upper(trim(joined))
+assert(normalized == "ZAP-BOOT-STRAP", "pure stdlib fixture failed")

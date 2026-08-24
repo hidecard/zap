@@ -1,0 +1,4 @@
+let grouped = (2 + 3) * 4
+let arithmetic = 2 + 3 * 4
+let decision = arithmetic == 14 and grouped == 20
+assert(decision, "precedence fixture failed")

@@ -228,9 +228,13 @@ pub struct RuntimeLimits {
 
 impl Default for RuntimeLimits {
     fn default() -> Self {
+        // Keep the compatibility executor bounded by default. Callers that
+        // intentionally need a larger budget must opt in through
+        // `RuntimeLimits::with_limits` rather than receiving an unlimited
+        // polling loop implicitly.
         Self {
-            max_tasks: usize::MAX,
-            max_polls_per_run: usize::MAX,
+            max_tasks: 256,
+            max_polls_per_run: 100_000,
         }
     }
 }
@@ -1027,6 +1031,13 @@ mod tests {
         ThreadedRuntime, TimeoutError,
     };
     use std::future::ready;
+
+    #[test]
+    fn default_runtime_limits_are_finite() {
+        let limits = RuntimeLimits::default();
+        assert_eq!(limits.max_tasks, 256);
+        assert_eq!(limits.max_polls_per_run, 100_000);
+    }
 
     #[test]
     fn block_on_returns_ready_value() {
