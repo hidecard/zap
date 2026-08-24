@@ -8,8 +8,11 @@
 
 ## [Unreleased]
 
+## [2.10.1] — 2026-08-24
+
 ### Zap-only bootstrap foundations
 - Added canonical reference parser AST and syntax-diagnostic differential fixtures, plus a provisional Zap-written parser candidate covering arithmetic and compound corpus cases with byte-for-byte CI and release-preflight checks.
+- Replaced the parser candidate’s substring-based bracket check with token-driven delimiter diagnostics covering missing and unexpected closing brackets.
 - Added B2 typed-IR reproducibility and type-check acceptance/rejection fixtures while keeping typed IR and type checking explicitly native-owned.
 - Reconciled bootstrap identities with upstream v2.10.0, preserved B0/non-self-hosted wording, and retained the historical v2.9.2 freeze as immutable evidence.
 

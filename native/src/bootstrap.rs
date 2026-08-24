@@ -22,11 +22,11 @@ pub(crate) fn status_json() -> String {
     json!({
         "bootstrap_stage": "B0",
         "compiler_version": env!("CARGO_PKG_VERSION"),
-        "language_version": "2.10.0",
+        "language_version": "2.10.1",
         "reference_owner": "native Rust implementation",
         "schemas": schemas,
         "self_hosted": false,
-        "stdlib_version": "2.10.0"
+        "stdlib_version": "2.10.1"
     })
     .to_string()
 }

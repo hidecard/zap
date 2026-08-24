@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.10.1] - 2026-08-24
+
+### Release summary
+- Zap-only bootstrap parser/diagnostics foundation၊ token-driven delimiter diagnostics နှင့် B2 typed-IR/type-check conformance evidence ကို ထည့်သွင်းထားသည်။ B0/non-self-hosted boundary ကို ထိန်းသိမ်းထားသည်။
+
 ## [2.10.0] - 2026-08-24
 
 ### Release summary

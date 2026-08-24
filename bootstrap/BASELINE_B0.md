@@ -5,7 +5,7 @@
 **Freeze date:** 2026-08-24  
 **Reference commit:** `18dec9a028a406491187d1e79289410ee491d356`  
 **Release tag:** `v2.9.2`
-**Historical role:** This freeze remains the immutable v2.9.2 reference record. The current v2.10.0 branch carries the same B0 ownership and non-self-hosted boundary with independent version identities in [`contracts/VERSIONS.toml`](contracts/VERSIONS.toml).
+**Historical role:** This freeze remains the immutable v2.9.2 reference record. The current v2.10.1 branch carries the same B0 ownership and non-self-hosted boundary with independent version identities in [`contracts/VERSIONS.toml`](contracts/VERSIONS.toml).
 
 ## Baseline meaning
 
