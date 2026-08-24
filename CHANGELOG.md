@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.3] - 2026-08-24
+
+### Release summary
+- Annotated function၊ return propagation၊ incompatible function-call diagnostic ပါသော provisional Zap-owned B2 corpus ကို ချဲ့ထွင်ပြီး transient target-native test အတွက် fail-closed one-retry release hardening ထည့်ထားသည်။ B0/non-self-hosted boundary ကို ထိန်းသိမ်းထားသည်။
+
 ## [2.11.2] - 2026-08-24
 
 ### Release summary

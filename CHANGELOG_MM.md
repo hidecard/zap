@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.11.3] — 2026-08-24
+
+### Zap-only bootstrap နှင့် release engineering
+- Provisional Zap-owned type-checker candidate ကို annotated function တစ်ခု၊ return propagation နှင့် deterministic incompatible function-call diagnostic အထိ ချဲ့ထားပါသည်။ Type checking နှင့် typed IR အပြည့်အစုံသည် native-owned အဖြစ် ဆက်ရှိပြီး stage သည် B0 ဖြစ်ပါသည်။
+- သီးခြား macOS ARM64 first-attempt failure နောက်တွင် target-native tests အတွက် fail-closed retry တစ်ကြိမ် ထည့်ထားပါသည်။ ရှိပြီးသား v2.11.2 tag ကို rewrite မလုပ်ထားပါ။
+
 ## [2.11.2] — 2026-08-24
 
 ### Zap-only bootstrap foundations

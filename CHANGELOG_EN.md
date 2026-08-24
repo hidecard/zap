@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+## [2.11.3] — 2026-08-24
+
+### Zap-only bootstrap and release engineering
+- Expanded the provisional Zap-owned type-checker candidate with one annotated function, return propagation, and deterministic incompatible function-call diagnostics. Complete type checking and typed IR remain native-owned and the stage remains B0.
+- Added a single fail-closed retry to target-native tests after an isolated macOS ARM64 first-attempt failure; the existing v2.11.2 tag was not rewritten.
+
 ## [2.11.2] — 2026-08-24
 
 ### Zap-only bootstrap foundations
