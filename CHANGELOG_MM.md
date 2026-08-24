@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.10] — 2026-08-24
+
+### Release engineering
+- Branch hygiene နှင့် safe merge/cleanup policy ကို မှတ်တမ်းတင်ပြီး ရည်ရွယ်ချက်ရှိရှိ ထိန်းသိမ်းထားသော superseded branch history ကို မဖျက်ပါ။
+
 ## [2.11.9] — 2026-08-24
 
 ### Release engineering

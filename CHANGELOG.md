@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.10] - 2026-08-24
+
+### Release summary
+- Document branch hygiene and safe merge/cleanup policy; retain intentionally preserved superseded branch history.
+
 ## [2.11.9] - 2026-08-24
 
 ### Release summary

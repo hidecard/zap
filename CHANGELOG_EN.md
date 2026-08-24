@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.10] — 2026-08-24
+
+### Release engineering
+- Document branch hygiene and safe merge/cleanup policy; retain intentionally preserved superseded branch history.
+
 ## [2.11.9] — 2026-08-24
 
 ### Release engineering
