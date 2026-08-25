@@ -41,6 +41,8 @@ parenthesized_nested_fixture="bootstrap/fixtures/parser/parenthesized_nested.zp"
 parenthesized_nested_expected="bootstrap/fixtures/parser/parenthesized_nested.ast.json"
 nested_blocks_fixture="bootstrap/fixtures/parser/nested_blocks.zp"
 nested_blocks_expected="bootstrap/fixtures/parser/nested_blocks.ast.json"
+three_argument_call_fixture="bootstrap/fixtures/parser/three_argument_call.zp"
+three_argument_call_expected="bootstrap/fixtures/parser/three_argument_call.ast.json"
 invalid_fixture="bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"
 invalid_expected="bootstrap/fixtures/diagnostics/missing_closing_bracket.json"
 unexpected_fixture="bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"
@@ -49,7 +51,7 @@ missing_assignment_fixture="bootstrap/fixtures/diagnostics/missing_assignment.zp
 missing_assignment_expected="bootstrap/fixtures/diagnostics/missing_assignment.json"
 missing_function_paren_fixture="bootstrap/fixtures/diagnostics/missing_function_paren.zp"
 missing_function_paren_expected="bootstrap/fixtures/diagnostics/missing_function_paren.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -79,6 +81,7 @@ let three_declarations = read_text("bootstrap/fixtures/parser/three_declarations
 let nested_calls = read_text("bootstrap/fixtures/parser/nested_calls.zp")
 let parenthesized_nested = read_text("bootstrap/fixtures/parser/parenthesized_nested.zp")
 let nested_blocks = read_text("bootstrap/fixtures/parser/nested_blocks.zp")
+let three_argument_call = read_text("bootstrap/fixtures/parser/three_argument_call.zp")
 let invalid = read_text("bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 let unexpected = read_text("bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 let missing_assignment = read_text("bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -102,6 +105,7 @@ let three_declarations_tokens = from_json(lex(three_declarations, "bootstrap/fix
 let nested_calls_tokens = from_json(lex(nested_calls, "bootstrap/fixtures/parser/nested_calls.zp"))
 let parenthesized_nested_tokens = from_json(lex(parenthesized_nested, "bootstrap/fixtures/parser/parenthesized_nested.zp"))
 let nested_blocks_tokens = from_json(lex(nested_blocks, "bootstrap/fixtures/parser/nested_blocks.zp"))
+let three_argument_call_tokens = from_json(lex(three_argument_call, "bootstrap/fixtures/parser/three_argument_call.zp"))
 let invalid_tokens = from_json(lex(invalid, "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"))
 let unexpected_tokens = from_json(lex(unexpected, "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"))
 let missing_assignment_tokens = from_json(lex(missing_assignment, "bootstrap/fixtures/diagnostics/missing_assignment.zp"))
@@ -125,6 +129,7 @@ say parse_or_diagnostics(three_declarations, three_declarations_tokens["tokens"]
 say parse_or_diagnostics(nested_calls, nested_calls_tokens["tokens"], "bootstrap/fixtures/parser/nested_calls.zp")
 say parse_or_diagnostics(parenthesized_nested, parenthesized_nested_tokens["tokens"], "bootstrap/fixtures/parser/parenthesized_nested.zp")
 say parse_or_diagnostics(nested_blocks, nested_blocks_tokens["tokens"], "bootstrap/fixtures/parser/nested_blocks.zp")
+say parse_or_diagnostics(three_argument_call, three_argument_call_tokens["tokens"], "bootstrap/fixtures/parser/three_argument_call.zp")
 say parse_or_diagnostics(invalid, invalid_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 say parse_or_diagnostics(unexpected, unexpected_tokens["tokens"], "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 say parse_or_diagnostics(missing_assignment, missing_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -150,6 +155,7 @@ EOF
   cat "$nested_calls_expected"
   cat "$parenthesized_nested_expected"
   cat "$nested_blocks_expected"
+  cat "$three_argument_call_expected"
   cat "$invalid_expected"
   cat "$unexpected_expected"
   cat "$missing_assignment_expected"

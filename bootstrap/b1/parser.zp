@@ -132,6 +132,8 @@ export fn find_top_level_comma(value):
         return len(nested_parts[0]) + 1
     if contains(value, ", "):
         let parts = split(value, ", ")
+        if contains(parts[0], "("):
+            return none
         return len(parts[0])
     return none
 
@@ -146,8 +148,16 @@ export fn parse_call_arguments(argument_text, argument_column):
     let second_text = trim(substring(value, comma + 1, len(value)))
     let first = {"kind": "positional", "value": parse_expression(first_text, argument_column)}
     let second_column = argument_column + comma + 2
-    let second = {"kind": "positional", "value": parse_expression(second_text, second_column)}
-    return [first, second]
+    let second_comma = find_top_level_comma(second_text)
+    if second_comma == none:
+        let second = {"kind": "positional", "value": parse_expression(second_text, second_column)}
+        return [first, second]
+    let second_value = trim(substring(second_text, 0, second_comma))
+    let third_value = trim(substring(second_text, second_comma + 1, len(second_text)))
+    let second = {"kind": "positional", "value": parse_expression(second_value, second_column)}
+    let third_column = second_column + second_comma + 2
+    let third = {"kind": "positional", "value": parse_expression(third_value, third_column)}
+    return [first, second, third]
 
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
