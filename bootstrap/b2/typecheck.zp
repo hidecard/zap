@@ -3,10 +3,44 @@
 # reference type checker and owns the complete language semantics.
 
 export fn ast_lookup_type(environment, name):
+    let result = "any"
     for binding in environment:
         if binding["name"] == name:
-            return binding["type"]
-    return "any"
+            result = binding["type"]
+    return result
+
+export fn symbol_environment_bind(environment, name, type):
+    return append(environment, {"name": name, "type": type})
+
+export fn symbol_environment_from_parameters(parameters):
+    let environment = []
+    for parameter in parameters:
+        environment = symbol_environment_bind(environment, parameter["name"], parameter["type"])
+    return environment
+
+export fn symbol_environment_extend(environment, locals):
+    let result = environment
+    for binding in locals:
+        result = symbol_environment_bind(result, binding["name"], binding["type"])
+    return result
+
+export fn branch_environment_merge(base, then_environment, else_environment):
+    let merged = []
+    for binding in base:
+        let then_type = ast_lookup_type(then_environment, binding["name"])
+        let else_type = ast_lookup_type(else_environment, binding["name"])
+        if then_type == else_type:
+            merged = symbol_environment_bind(merged, binding["name"], then_type)
+        else:
+            merged = symbol_environment_bind(merged, binding["name"], "any")
+    return merged
+
+export fn function_body_environment(parameters, locals):
+    return symbol_environment_extend(symbol_environment_from_parameters(parameters), locals)
+
+export fn infer_function_body_return(body_expression, parameters, locals, expected_type):
+    let environment = function_body_environment(parameters, locals)
+    return infer_return_type(body_expression, environment, expected_type)
 
 export fn ast_expression_type_env(node, environment):
     let kind = node["kind"]

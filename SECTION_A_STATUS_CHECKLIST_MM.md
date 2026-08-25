@@ -8,7 +8,7 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — environment-aware expression၊ collection၊ index နှင့် function/call foundations တိုးချဲ့ထားသော်လည်း arbitrary program-wide inference၊ branch merge၊ loop mutation နှင့် complete symbol environment မပြီးသေးပါ။
+- [ ] **Complete type inference** — function-body symbol environment နှင့် branch merge foundations တိုးချဲ့ထားသော်လည်း arbitrary program-wide symbol graph၊ branch path completeness၊ loop mutation နှင့် full flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
@@ -20,7 +20,7 @@
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
-- [ ] **Loop mutation analysis** — bounded loop narrowing/restoration ရှိသော်လည်း general mutation analysis မပြီးသေးပါ။
+- [ ] **Loop mutation analysis** — bounded loop narrowing/restoration ရှိသော်လည်း merged function environments နှင့် ချိတ်ဆက်ထားသော general mutation analysis မပြီးသေးပါ။
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
@@ -123,6 +123,14 @@
 - [x] Nested function-call inference foundation — AST call arguments အတွင်း nested call return types ကို outer call ၏ argument types အဖြစ် ဆက်လက်အသုံးပြုနိုင်သည်။
 
 - [x] Function return-type compatibility foundation — inferred return AST type နှင့် expected return annotation ကို စစ်ဆေးနိုင်သည်။
+
+- [x] Function-body symbol environment foundation — typed parameters နှင့် local bindings များကို ordered environment အဖြစ် စုစည်းပြီး shadowing lookup support ပါဝင်သည်။
+
+- [x] Branch environment merge foundation — same-type branch bindings ကို ထိန်းသိမ်းပြီး divergent branch types ကို `any` သို့ widen လုပ်နိုင်သည်။
+
+- [x] Nested scope expression inference foundation — merged/function environments ကို name၊ collection၊ index နှင့် return inference ထဲသို့ ဆက်လက်အသုံးပြုနိုင်သည်။
+
+- [x] B2 scope/branch ၁၀-case verifier — parameter/local lookup၊ shadowing၊ divergent/same merge၊ missing lookup နှင့် return compatibility cases pass.
 
 - [x] Typed-IR multi-declaration foundation — multi-line annotated declarations များကို line-aware declaration nodes အဖြစ် စုစည်းပြီး list/map literal inferred types ထည့်သွင်းနိုင်သည်။
 
