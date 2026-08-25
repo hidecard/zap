@@ -59,6 +59,12 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "bool"
     if value == "none":
         return "none"
+    if starts_with(value, "not "):
+        return "bool"
+    if (contains(value, " < ") or contains(value, " <= ") or contains(value, " > ") or contains(value, " >= ") or contains(value, " == ") or contains(value, " != ")) and not starts_with(value, "[") and not starts_with(value, "{"):
+        return "bool"
+    if (contains(value, " and ") or contains(value, " or ")) and not starts_with(value, "[") and not starts_with(value, "{"):
+        return "bool"
     if not starts_with(value, "[") and not starts_with(value, "{") and contains(value, " + "):
         let binary_parts = split(value, " + ")
         if len(binary_parts) == 2:
