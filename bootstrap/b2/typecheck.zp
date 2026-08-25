@@ -38,6 +38,58 @@ export fn branch_environment_merge(base, then_environment, else_environment):
 export fn function_body_environment(parameters, locals):
     return symbol_environment_extend(symbol_environment_from_parameters(parameters), locals)
 
+export fn symbol_graph_bind(graph, name, kind, type, scope):
+    return append(graph, {"kind": kind, "name": name, "scope": scope, "type": type})
+
+export fn symbol_graph_lookup(graph, name):
+    let result = {"kind": "unknown", "name": name, "scope": "", "type": "any"}
+    for symbol in graph:
+        if symbol["name"] == name:
+            result = symbol
+    return result
+
+export fn symbol_graph_type(graph, name):
+    return symbol_graph_lookup(graph, name)["type"]
+
+export fn symbol_graph_kind(graph, name):
+    return symbol_graph_lookup(graph, name)["kind"]
+
+export fn symbol_graph_reassign(graph, name, type, scope):
+    return symbol_graph_bind(graph, name, "variable", type, scope)
+
+export fn symbol_graph_collect(source):
+    let graph = []
+    let lines = split(source, "\n")
+    let current_function = ""
+    for line in lines:
+        let declaration = trim(line)
+        let indent = len(line) - len(declaration)
+        if starts_with(declaration, "fn "):
+            let function = function_signature_info(declaration)
+            graph = symbol_graph_bind(graph, function["name"], "function", function["return_type"], "module")
+            for parameter in function["params"]:
+                graph = symbol_graph_bind(graph, parameter["name"], "parameter", parameter["type"], function["name"])
+            current_function = function["name"]
+        if indent == 0 and not starts_with(declaration, "fn ") and not starts_with(declaration, "let "):
+            current_function = ""
+        if starts_with(declaration, "let ") and contains(declaration, ":") and contains(declaration, " = "):
+            let assignment = split(declaration, " = ")
+            let left = trim(assignment[0])
+            let annotation_parts = split(left, ":")
+            let name = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
+            let type = trim(annotation_parts[1])
+            let scope = "module"
+            if indent > 0 and current_function != "":
+                scope = current_function
+            graph = symbol_graph_bind(graph, name, "variable", type, scope)
+    return graph
+
+export fn symbol_graph_scope(graph, name):
+    return symbol_graph_lookup(graph, name)["scope"]
+
+export fn infer_program_symbol_type(source, name):
+    return symbol_graph_type(symbol_graph_collect(source), name)
+
 export fn infer_function_body_return(body_expression, parameters, locals, expected_type):
     let environment = function_body_environment(parameters, locals)
     return infer_return_type(body_expression, environment, expected_type)

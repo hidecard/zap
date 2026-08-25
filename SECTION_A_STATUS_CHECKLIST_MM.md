@@ -8,7 +8,7 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — function-body symbol environment နှင့် branch merge foundations တိုးချဲ့ထားသော်လည်း arbitrary program-wide symbol graph၊ branch path completeness၊ loop mutation နှင့် full flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — module/function symbol graph foundation ထည့်ထားသော်လည်း arbitrary nested scope graph၊ branch path completeness၊ loop mutation၊ call graph propagation နှင့် full flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
@@ -24,7 +24,7 @@
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
-- [ ] **Arbitrary-program parser coverage** — functions၊ loops၊ classes၊ nested calls၊ parenthesized expressions နှင့် selected nested blocks fixtures ရှိသော်လည်း parser သည် line-count/fixture dispatch ကို ဆက်သုံးနေသေးသည်။
+- [ ] **Arbitrary-program parser coverage** — functions၊ loops၊ classes၊ nested calls၊ parenthesized expressions နှင့် selected nested blocks fixtures ရှိသော်လည်း parser သည် line-count/fixture dispatch ကို ဆက်သုံးနေသေးသည်။ Symbol graph collection သည် parser-independent bounded foundation သာ ဖြစ်သည်။
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
@@ -129,6 +129,12 @@
 - [x] Branch environment merge foundation — same-type branch bindings ကို ထိန်းသိမ်းပြီး divergent branch types ကို `any` သို့ widen လုပ်နိုင်သည်။
 
 - [x] Nested scope expression inference foundation — merged/function environments ကို name၊ collection၊ index နှင့် return inference ထဲသို့ ဆက်လက်အသုံးပြုနိုင်သည်။
+
+- [x] Program-wide symbol graph collection foundation — module functions၊ function parameters နှင့် module/function-local declarations များကို kind/type/scope metadata ဖြင့် စုစည်းနိုင်သည်။
+
+- [x] Program symbol lookup/update foundation — deterministic last-binding lookup၊ reassignment shadow binding နှင့် unknown-symbol fallback ကို စစ်ဆေးနိုင်သည်။
+
+- [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
 - [x] B2 scope/branch ၁၀-case verifier — parameter/local lookup၊ shadowing၊ divergent/same merge၊ missing lookup နှင့် return compatibility cases pass.
 
