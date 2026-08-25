@@ -7,7 +7,7 @@ export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
 
 export fn number(raw, column):
-    return {"kind": "literal", "literal_kind": "number", "span": span(1, column, 1), "value": from_json(raw)}
+    return {"kind": "literal", "literal_kind": "number", "span": span(1, column, len(raw)), "value": from_json(raw)}
 
 export fn text(value, column, length):
     return {"kind": "literal", "literal_kind": "text", "span": span(1, column, length), "value": value}
@@ -31,6 +31,10 @@ export fn parse_expression(raw, start_column):
 
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
+    if starts_with(value, "-"):
+        let operand_text = trim(substring(value, 1, len(value)))
+        let operand = parse_atom(operand_text, start_column + 1)
+        return {"kind": "unary", "op": "negate", "span": span(1, start_column, len(value)), "value": operand}
     if starts_with(value, "{"):
         return parse_map(value, start_column)
     if starts_with(value, "["):
@@ -173,6 +177,8 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     let delimiter = delimiter_diagnostics(tokens, source_name)
     if delimiter != none:
         return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    if contains(source, "."):
+        return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if not contains(source, " = "):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)
