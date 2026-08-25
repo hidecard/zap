@@ -8,6 +8,7 @@
     {"determinism": "runtime-dependent", "domain": "async", "name": "task_is_ready"},
     {"determinism": "runtime-dependent", "domain": "async", "name": "task_join"},
     {"determinism": "runtime-dependent", "domain": "async", "name": "task_join_timeout"},
+    {"determinism": "pure", "domain": "collections", "name": "append"},
     {"determinism": "pure", "domain": "collections", "name": "count"},
     {"determinism": "pure", "domain": "collections", "name": "entries"},
     {"determinism": "pure", "domain": "collections", "name": "enumerate"},

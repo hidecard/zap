@@ -830,6 +830,20 @@ fn direct_builtin_with_context_inner(
             };
             Ok(Some(Value::Number(length as i64)))
         }
+        "append" => {
+            expect(2)?;
+            let Value::List(values) = &args[0] else {
+                return Err("append expects a list and a value".into());
+            };
+            if values.len() >= MAX_LOOP_ITERATIONS {
+                return Err("append output exceeds iteration limit".into());
+            }
+            let mut output = values.clone();
+            output.push(args[1].clone());
+            let result = Value::List(output);
+            result.validate_memory_limits()?;
+            Ok(Some(result))
+        }
         "str" => {
             expect(1)?;
             Ok(Some(Value::Text(args[0].show())))

@@ -302,8 +302,22 @@ export fn parse_choose_function():
     let parameter = {"annotation": "number", "default": none, "name": "value"}
     return {"body": body, "exported": false, "is_async": false, "kind": "function", "name": "choose", "params": [parameter], "return_type": "number", "span": span(4, 1, 35), "visibility": "public"}
 
+export fn parse_flat_sequence(lines):
+    let statements = []
+    let index = 0
+    while index + 1 < len(lines):
+        let current = trim(lines[index])
+        if current != "":
+            let statement = parse_statement(lines[index], index + 1, 1)
+            statements = append(statements, statement)
+        index = index + 1
+    return statements
+
 export fn parse(source, source_name):
     let lines = split(source, "\n")
+    if len(lines) > 2 and starts_with(trim(lines[0]), "let ") and starts_with(trim(lines[1]), "let ") and starts_with(trim(lines[2]), "let ") and not contains(source, "fn "):
+        let statements = parse_flat_sequence(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 6:
         if starts_with(trim(lines[0]), "while "):
             let while_header = trim(lines[0])
