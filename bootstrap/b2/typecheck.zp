@@ -238,6 +238,52 @@ export fn infer_function_body_return(body_expression, parameters, locals, expect
     let environment = function_body_environment(parameters, locals)
     return infer_return_type(body_expression, environment, expected_type)
 
+export fn ast_list_type_env(elements, environment):
+    if len(elements) == 0:
+        return "list<any>"
+    let first_type = ast_expression_type_env(elements[0], environment)
+    for element in elements:
+        if ast_expression_type_env(element, environment) != first_type:
+            return "list<any>"
+    return "list<" + first_type + ">"
+
+export fn ast_map_type_env(entries, environment):
+    if len(entries) == 0:
+        return "map<any,any>"
+    let first_key = ast_expression_type_env(entries[0]["key"], environment)
+    let first_value = ast_expression_type_env(entries[0]["value"], environment)
+    for entry in entries:
+        if ast_expression_type_env(entry["key"], environment) != first_key:
+            return "map<any,any>"
+        if ast_expression_type_env(entry["value"], environment) != first_value:
+            return "map<any,any>"
+    return "map<" + first_key + "," + first_value + ">"
+
+export fn ast_expression_type_env_functions(node, environment, functions):
+    if node["kind"] == "call":
+        return infer_ast_function_call(node, functions, environment)
+    if node["kind"] == "binary":
+        let left = ast_expression_type_env_functions(node["left"], environment, functions)
+        let right = ast_expression_type_env_functions(node["right"], environment, functions)
+        if node["op"] == "add" and left == "text" and right == "text":
+            return "text"
+        if (node["op"] == "add" or node["op"] == "subtract" or node["op"] == "multiply" or node["op"] == "divide" or node["op"] == "remainder") and left == "number" and right == "number":
+            return "number"
+        if node["op"] == "and" or node["op"] == "or" or node["op"] == "equal" or node["op"] == "not_equal" or node["op"] == "less" or node["op"] == "less_equal" or node["op"] == "greater" or node["op"] == "greater_equal":
+            return "bool"
+        return "any"
+    if node["kind"] == "list":
+        return ast_list_type_env(node["elements"], environment)
+    if node["kind"] == "map":
+        return ast_map_type_env(node["entries"], environment)
+    return ast_expression_type_env(node, environment)
+
+export fn infer_program_expression_types(nodes, environment, functions):
+    let result = []
+    for node in nodes:
+        result = append(result, ast_expression_type_env_functions(node, environment, functions))
+    return result
+
 export fn ast_expression_type_env(node, environment):
     let kind = node["kind"]
     if kind == "literal":
@@ -262,18 +308,9 @@ export fn ast_expression_type_env(node, environment):
             return "number"
         return "any"
     if kind == "list":
-        if len(node["elements"]) == 0:
-            return "list<any>"
-        let first_type = ast_expression_type_env(node["elements"][0], environment)
-        for element in node["elements"]:
-            if ast_expression_type_env(element, environment) != first_type:
-                return "list<any>"
-        return "list<" + first_type + ">"
+        return ast_list_type_env(node["elements"], environment)
     if kind == "map":
-        if len(node["entries"]) == 0:
-            return "map<any,any>"
-        let first_entry = node["entries"][0]
-        return "map<" + ast_expression_type_env(first_entry["key"], environment) + "," + ast_expression_type_env(first_entry["value"], environment) + ">"
+        return ast_map_type_env(node["entries"], environment)
     if kind == "call":
         let callee = node["callee"]["name"]
         if callee == "identity" and len(node["args"]) == 1:
@@ -423,6 +460,43 @@ export fn generic_return_from_call(return_template, parameters, argument_types):
         if index < len(argument_types):
             result = generic_type_substitute(result, parameter, argument_types[index])
     return result
+
+export fn generic_container_instantiate(type_template, parameters, argument_types):
+    let result = type_template
+    let index = 0
+    for parameter in parameters:
+        if index < len(argument_types):
+            result = generic_type_substitute(result, parameter, argument_types[index])
+        index = index + 1
+    return result
+
+export fn generic_container_valid(type_name):
+    let parts = type_wrapper_parts(type_name)
+    if parts["wrapper"] == "":
+        return type_name == "any" or type_name == "number" or type_name == "text" or type_name == "bool" or type_name == "none"
+    if parts["wrapper"] == "map":
+        return generic_container_valid(parts["key"]) and generic_container_valid(parts["value"])
+    return generic_container_valid(parts["inner"])
+
+export fn generic_container_element(type_name):
+    let parts = type_wrapper_parts(type_name)
+    if parts["wrapper"] == "list" or parts["wrapper"] == "option" or parts["wrapper"] == "result":
+        return parts["inner"]
+    if parts["wrapper"] == "map":
+        return parts["value"]
+    return "any"
+
+export fn generic_container_key(type_name):
+    let parts = type_wrapper_parts(type_name)
+    if parts["wrapper"] == "map":
+        return parts["key"]
+    return "any"
+
+export fn generic_container_constraint(type_name, constraint):
+    let element = generic_container_element(type_name)
+    if constraint == "":
+        return true
+    return type_unify(element, constraint) or type_unify(type_name, constraint)
 
 export fn generic_type_substitute(type_template, parameter, argument_type):
     if type_template == parameter:

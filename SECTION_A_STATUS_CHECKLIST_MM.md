@@ -8,13 +8,13 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — recursive AST environment inference၊ nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution၊ simple `where` constraint နှင့် generic unification foundation ရှိသော်လည်း generic type/container၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ simple `where` constraint၊ recursive unification နှင့် generic container foundation ရှိသော်လည်း generic type/container semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
-- [ ] **Complete collection inference** — homogeneous AST list/map နှင့် environment-aware collection foundation ရှိသော်လည်း arbitrary nested collection/index inference မပြီးသေးပါ။
+- [ ] **Complete collection inference** — recursive AST list/map collection helpers နှင့် nested wrapper unification foundation ရှိသော်လည်း arbitrary nested collection/index inference နှင့် heterogeneous collection diagnostics မပြီးသေးပါ။
 
 - [ ] **Nested map/deeper nested inference** — nested list/map/index foundation ရှိသော်လည်း arbitrary map key/value nesting နှင့် full environment propagation မပြီးသေးပါ။
 
@@ -151,6 +151,14 @@
 - [x] B2 type-unification ၁၀-case verifier — recursive wrapper၊ map key/value၊ wildcard နှင့် generic cases pass.
 
 - [x] Section A next-50 consolidated acceptance — inference၊ function/call၊ nested scope၊ scope exit၊ loop fixpoint နှင့် call-cycle စုစုပေါင်း ၅၀ focused cases pass.
+
+- [x] Recursive AST environment inference foundation — recursive list/map collection typing၊ function-aware call typing နှင့် program expression type propagation ကို candidate API များဖြင့် စစ်ဆေးနိုင်သည်။
+
+- [x] Generic type-container foundation — recursive wrapper parsing၊ scalar/list/map/option/result validity၊ element/value/key extraction နှင့် container instantiation ကို စစ်ဆေးနိုင်သည်။
+
+- [x] Section A type-inference/symbol-graph ၁၀၀-case family acceptance — type unification၊ function/call၊ nested scopes၊ scope exit၊ loop fixpoint၊ call cycles၊ program graph နှင့် candidate differential families pass.
+
+- [x] Section A generic/type-container ၁၀၀-case family acceptance — generic/type၊ recursive unification၊ function call၊ typed-IR metadata၊ scope/call graph support နှင့် candidate differential families pass.
 
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
