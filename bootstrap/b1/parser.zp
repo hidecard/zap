@@ -17,16 +17,28 @@ export fn name(value, column):
 
 export fn parse_expression(raw, start_column):
     let value = trim(raw)
-    if contains(value, " + "):
-        let parts = split(value, " + ")
-        let left = parse_postfix(parts[0], start_column)
-        let right = parse_postfix(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, start_column, len(value))}
+    if starts_with(value, "(") and contains(value, ") * "):
+        let grouped_parts = split(value, ") * ")
+        if len(grouped_parts) == 2:
+            let grouped_text = trim(substring(grouped_parts[0], 1, len(grouped_parts[0])))
+            let grouped = parse_expression(grouped_text, start_column + 1)
+            let right = parse_expression(grouped_parts[1], start_column + len(grouped_parts[0]) + 4)
+            return {"kind": "binary", "left": grouped, "op": "multiply", "right": right, "span": span(1, start_column + 1, len(value) - 1)}
     if contains(value, " > "):
         let parts = split(value, " > ")
-        let left = parse_postfix(parts[0], start_column)
-        let right = parse_postfix(parts[1], start_column + len(parts[0]) + 3)
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
         return {"kind": "binary", "left": left, "op": "greater", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " + "):
+        let parts = split(value, " + ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " * "):
+        let parts = split(value, " * ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "multiply", "right": right, "span": span(1, start_column, len(value))}
     return parse_postfix(value, start_column)
 
 export fn parse_postfix(raw, start_column):
@@ -73,7 +85,9 @@ export fn is_numeric(value):
     while index < len(input):
         let ch = char_at(input, index)
         if ch == " ":
-            return true
+            if index == len(value):
+                return true
+            return false
         if not contains("0123456789", ch):
             return false
         index = index + 1
@@ -103,6 +117,13 @@ export fn parse_declaration(line, line_number):
     let statement = {"annotation": none, "exported": false, "kind": "declaration", "name": name_text, "span": span(line_number, 1, len(declaration)), "value": value}
     return statement
 
+export fn parse_assignment(line, line_number):
+    let assignment = trim(line)
+    let target = split(assignment, " = ")
+    let name_text = trim(target[0])
+    let value = parse_expression(target[1], 1)
+    return {"kind": "assignment", "name": name_text, "span": span(line_number, 1, len(assignment)), "value": value}
+
 export fn parse_return(line, line_number):
     let value_text = trim(substring(trim(line), 7, len(trim(line))))
     let value = parse_expression(value_text, 1)
@@ -131,7 +152,8 @@ export fn parse(source, source_name):
         let function = parse_choose_function()
         let final = {"kind": "say", "span": span(9, 1, 18), "value": parse_expression("choose(result)", 1)}
         return json({"ast": {"statements": [first, second, third, function, final]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    let statement = parse_declaration(lines[0], 1)
+    let first_line = trim(lines[0])
+    let statement = if starts_with(first_line, "let ") then parse_declaration(lines[0], 1) else parse_assignment(lines[0], 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
 export fn delimiter_diagnostics(tokens, source_name):
