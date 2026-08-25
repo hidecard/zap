@@ -287,6 +287,8 @@ export fn delimiter_diagnostics(tokens, source_name):
                                 paren_depth = paren_depth - 1
     if bracket_depth > 0:
         return {"code": "ZAP-SYNTAX-001", "column": 6, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "expected ']' at 1:6", "severity": "error", "source_name": source_name}
+    if paren_depth > 0:
+        return {"code": "ZAP-SYNTAX-001", "column": 4, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "unexpected token after expression at 1:4", "severity": "error", "source_name": source_name}
     return none
 
 export fn parse_or_diagnostics(source, tokens, source_name):
