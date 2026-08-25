@@ -1,0 +1,2 @@
+class Counter:
+    let value = 0

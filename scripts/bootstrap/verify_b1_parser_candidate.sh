@@ -25,13 +25,19 @@ assignment_fixture="bootstrap/fixtures/parser/assignment_statement.zp"
 assignment_expected="bootstrap/fixtures/parser/assignment_statement.ast.json"
 logic_fixture="bootstrap/fixtures/parser/logical_comparison_matrix.zp"
 logic_expected="bootstrap/fixtures/parser/logical_comparison_matrix.ast.json"
+function_fixture="bootstrap/fixtures/parser/simple_function.zp"
+function_expected="bootstrap/fixtures/parser/simple_function.ast.json"
+loop_fixture="bootstrap/fixtures/parser/simple_loop.zp"
+loop_expected="bootstrap/fixtures/parser/simple_loop.ast.json"
+class_fixture="bootstrap/fixtures/parser/simple_class.zp"
+class_expected="bootstrap/fixtures/parser/simple_class.ast.json"
 invalid_fixture="bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"
 invalid_expected="bootstrap/fixtures/diagnostics/missing_closing_bracket.json"
 unexpected_fixture="bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"
 unexpected_expected="bootstrap/fixtures/diagnostics/unexpected_closing_bracket.json"
 missing_assignment_fixture="bootstrap/fixtures/diagnostics/missing_assignment.zp"
 missing_assignment_expected="bootstrap/fixtures/diagnostics/missing_assignment.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "bootstrap/b1/parser.zp"; do
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -53,6 +59,9 @@ let multiplicative = read_text("bootstrap/fixtures/parser/multiplicative_additiv
 let grouped = read_text("bootstrap/fixtures/parser/grouped_expression.zp")
 let assignment = read_text("bootstrap/fixtures/parser/assignment_statement.zp")
 let logic = read_text("bootstrap/fixtures/parser/logical_comparison_matrix.zp")
+let function = read_text("bootstrap/fixtures/parser/simple_function.zp")
+let loop = read_text("bootstrap/fixtures/parser/simple_loop.zp")
+let class_source = read_text("bootstrap/fixtures/parser/simple_class.zp")
 let invalid = read_text("bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 let unexpected = read_text("bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 let missing_assignment = read_text("bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -67,6 +76,9 @@ let multiplicative_tokens = from_json(lex(multiplicative, "bootstrap/fixtures/pa
 let grouped_tokens = from_json(lex(grouped, "bootstrap/fixtures/parser/grouped_expression.zp"))
 let assignment_tokens = from_json(lex(assignment, "bootstrap/fixtures/parser/assignment_statement.zp"))
 let logic_tokens = from_json(lex(logic, "bootstrap/fixtures/parser/logical_comparison_matrix.zp"))
+let function_tokens = from_json(lex(function, "bootstrap/fixtures/parser/simple_function.zp"))
+let loop_tokens = from_json(lex(loop, "bootstrap/fixtures/parser/simple_loop.zp"))
+let class_tokens = from_json(lex(class_source, "bootstrap/fixtures/parser/simple_class.zp"))
 let invalid_tokens = from_json(lex(invalid, "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"))
 let unexpected_tokens = from_json(lex(unexpected, "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"))
 let missing_assignment_tokens = from_json(lex(missing_assignment, "bootstrap/fixtures/diagnostics/missing_assignment.zp"))
@@ -81,6 +93,9 @@ say parse_or_diagnostics(multiplicative, multiplicative_tokens["tokens"], "boots
 say parse_or_diagnostics(grouped, grouped_tokens["tokens"], "bootstrap/fixtures/parser/grouped_expression.zp")
 say parse_or_diagnostics(assignment, assignment_tokens["tokens"], "bootstrap/fixtures/parser/assignment_statement.zp")
 say parse_or_diagnostics(logic, logic_tokens["tokens"], "bootstrap/fixtures/parser/logical_comparison_matrix.zp")
+say parse_or_diagnostics(function, function_tokens["tokens"], "bootstrap/fixtures/parser/simple_function.zp")
+say parse_or_diagnostics(loop, loop_tokens["tokens"], "bootstrap/fixtures/parser/simple_loop.zp")
+say parse_or_diagnostics(class_source, class_tokens["tokens"], "bootstrap/fixtures/parser/simple_class.zp")
 say parse_or_diagnostics(invalid, invalid_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 say parse_or_diagnostics(unexpected, unexpected_tokens["tokens"], "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 say parse_or_diagnostics(missing_assignment, missing_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -97,6 +112,9 @@ EOF
   cat "$grouped_expected"
   cat "$assignment_expected"
   cat "$logic_expected"
+  cat "$function_expected"
+  cat "$loop_expected"
+  cat "$class_expected"
   cat "$invalid_expected"
   cat "$unexpected_expected"
   cat "$missing_assignment_expected"

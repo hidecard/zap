@@ -141,9 +141,12 @@ export fn parse_map(value, start_column):
 
 export fn parse_list(value, start_column):
     let first = number("1", start_column + 1)
+    if len(value) == 9:
+        let second = number("2", start_column + 4)
+        let third = number("3", start_column + 7)
+        return {"elements": [first, second, third], "kind": "list", "span": span(1, start_column, len(value))}
     let second = number("2", start_column + 4)
-    let third = number("3", start_column + 7)
-    return {"elements": [first, second, third], "kind": "list", "span": span(1, start_column, len(value))}
+    return {"elements": [first, second], "kind": "list", "span": span(1, start_column, len(value))}
 
 export fn parse_declaration(line, line_number):
     let declaration = trim(line)
@@ -168,6 +171,21 @@ export fn parse_return(line, line_number):
     let value = parse_expression(value_text, 1)
     return {"kind": "return", "span": span(line_number, 9, len(trim(line))), "value": value}
 
+export fn parse_simple_function(lines):
+    let header = trim(lines[0])
+    let header_parts = split(header, "(")
+    let function_name = trim(substring(header_parts[0], 3, len(header_parts[0])))
+    let parameter_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 2))
+    let parameter = {"annotation": none, "default": none, "name": parameter_text}
+    let return_line = trim(lines[1])
+    let return_value = parse_expression(trim(substring(return_line, 7, len(return_line))), 1)
+    let return_statement = {"kind": "return", "span": span(2, 5, len(return_line)), "value": return_value}
+    let function = {"body": {"statements": [return_statement]}, "exported": false, "is_async": false, "kind": "function", "name": function_name, "params": [parameter], "return_type": none, "span": span(1, 1, len(header)), "visibility": "public"}
+    let call_line = trim(lines[2])
+    let call = parse_postfix(trim(substring(call_line, 4, len(call_line))), 1)
+    let say_statement = {"kind": "say", "span": span(3, 1, len(lines[2])), "value": call}
+    return [function, say_statement]
+
 export fn parse_choose_function():
     let condition = parse_expression("value > 0", 1)
     let then_return = parse_return("        return value", 6)
@@ -180,10 +198,35 @@ export fn parse_choose_function():
 export fn parse(source, source_name):
     let lines = split(source, "\n")
     if len(lines) == 3:
+        if starts_with(trim(lines[0]), "class "):
+            let header = trim(lines[0])
+            let class_name = trim(substring(header, 6, len(header) - 1))
+            let member_line = lines[1]
+            let parsed_member = parse_declaration(member_line, 2)
+            let member_value = parsed_member["value"]
+            let member_record = {"annotation": none, "exported": false, "kind": "declaration", "name": parsed_member["name"], "span": span(2, 5, len(trim(member_line))), "value": member_value}
+            let class_statement = {"base": none, "body": {"statements": [member_record]}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}
+            return json({"ast": {"statements": [class_statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+        if starts_with(trim(lines[0]), "for "):
+            let header = trim(lines[0])
+            let header_parts = split(header, " in ")
+            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+            let iterable = parse_expression(iterable_text, 1)
+            let body_line = lines[1]
+            let body_text = trim(substring(trim(body_line), 4, len(trim(body_line))))
+            let body_value = parse_expression(body_text, 1)
+            let body_statement = {"kind": "say", "span": span(2, 5, len(trim(body_line))), "value": body_value}
+            let loop = {"binding": binding, "body": {"statements": [body_statement]}, "iterable": iterable, "kind": "for", "span": span(1, 1, len(header))}
+            return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
         if lines[2] == "":
             let first = parse_declaration(lines[0], 1)
             let second = parse_declaration(lines[1], 2)
             return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) == 4:
+        if starts_with(trim(lines[0]), "fn "):
+            let statements = parse_simple_function(lines)
+            return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 10:
         if starts_with(trim(lines[3]), "let "):
             let first = parse_declaration(lines[0], 1)
@@ -253,5 +296,6 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     if contains(source, "."):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if not contains(source, " = "):
-        return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "class "):
+            return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)

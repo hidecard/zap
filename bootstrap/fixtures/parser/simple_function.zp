@@ -1,0 +1,3 @@
+fn double(value):
+    return value + value
+say double(3)
