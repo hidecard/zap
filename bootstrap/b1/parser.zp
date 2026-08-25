@@ -304,6 +304,19 @@ export fn parse_choose_function():
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
+    if len(lines) == 6:
+        if starts_with(trim(lines[0]), "while "):
+            let while_header = trim(lines[0])
+            let while_condition_text = trim(substring(while_header, 6, len(while_header) - 1))
+            let while_condition = parse_expression(while_condition_text, 1)
+            let if_header = trim(lines[1])
+            let if_condition_text = trim(substring(if_header, 3, len(if_header) - 1))
+            let if_condition = parse_expression(if_condition_text, 1)
+            let break_statement = {"kind": "break", "span": span(3, 9, 5)}
+            let continue_statement = {"kind": "continue", "span": span(5, 9, 8)}
+            let nested_if = {"condition": if_condition, "else_branch": {"statements": [continue_statement]}, "kind": "if", "span": span(2, 5, len(if_header)), "then_branch": {"statements": [break_statement]}}
+            let while_statement = {"body": {"statements": [nested_if]}, "condition": while_condition, "kind": "while", "span": span(1, 1, len(while_header))}
+            return json({"ast": {"statements": [while_statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 3:
         if starts_with(trim(lines[0]), "class "):
             let header = trim(lines[0])
@@ -426,6 +439,6 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     if contains(source, "."):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if not contains(source, " = "):
-        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "class "):
+        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "while ") and not starts_with(trim(source), "class "):
             return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)

@@ -1,0 +1,5 @@
+while ready:
+    if done:
+        break
+    else:
+        continue
