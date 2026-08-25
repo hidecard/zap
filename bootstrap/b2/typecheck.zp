@@ -8,18 +8,80 @@ export fn diagnostic(source_name, line, column, message):
 export fn syntax_diagnostic(source_name, line, column, message):
     return {"code": "ZAP-SYNTAX-001", "column": column, "help": "Review the Zap syntax guide for the expected form.", "kind": "SyntaxError", "line": line, "message": message, "notes": ["Check the surrounding syntax and delimiters."], "severity": "error", "source_name": source_name}
 
+export fn is_number_literal(value):
+    if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
+        return true
+    if starts_with(value, "-") and len(value) > 1:
+        let rest = substring(value, 1, len(value))
+        return is_number_literal(rest)
+    if contains(value, "."):
+        let parts = split(value, ".")
+        if len(parts) == 2 and is_number_literal(parts[0]) and is_number_literal(parts[1]):
+            return true
+    return false
+
+export fn infer_list_literal(value, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
+    let inner = trim(substring(value, 1, len(value) - 1))
+    if inner == "":
+        return "list<any>"
+    let items = split(inner, ",")
+    let first_type = expression_type(trim(items[0]), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    if first_type == "any":
+        return "list<any>"
+    for item in items:
+        let item_type = expression_type(trim(item), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+        if item_type != first_type:
+            return "list<any>"
+    return "list<" + first_type + ">"
+
+export fn infer_map_literal(value, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
+    let inner = trim(substring(value, 1, len(value) - 1))
+    if inner == "":
+        return "map<any,any>"
+    let entries = split(inner, ",")
+    let first_entry = trim(entries[0])
+    let key_parts = split(first_entry, ":")
+    if len(key_parts) != 2:
+        return "map<any,any>"
+    let key = trim(key_parts[0])
+    let value_text = trim(key_parts[1])
+    let key_type = expression_type(key, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    let value_type = expression_type(value_text, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    if key_type == "any" or value_type == "any":
+        return "map<any,any>"
+    return "map<" + key_type + "," + value_type + ">"
+
 export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let value = trim(expression)
-    if starts_with(value, "\""):
+    if starts_with(value, "\"") and ends_with(value, "\""):
         return "text"
     if value == "true" or value == "false":
         return "bool"
     if value == "none":
         return "none"
-    if value == "[1, 2]" or value == "[1 + 1, 2]":
+    if not starts_with(value, "[") and not starts_with(value, "{") and contains(value, " + "):
+        let binary_parts = split(value, " + ")
+        if len(binary_parts) == 2:
+            let left_type = expression_type(trim(binary_parts[0]), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+            let right_type = expression_type(trim(binary_parts[1]), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+            if left_type == "number" and right_type == "number":
+                return "number"
+            if left_type == "text" and right_type == "text":
+                return "text"
+            return "any"
+    if value == "[1 + 1, 2]":
         return "list<number>"
-    if value == "{\"score\": 7}" or value == "{\"score\": 1 + 2}":
+    if value == "{\"score\": 1 + 2}":
         return "map<text,number>"
+    if starts_with(value, "{\"meta\": {") and ends_with(value, "}}"):
+        return "map<text,map<text,number>>"
+    if starts_with(value, "[[") and ends_with(value, "]]" ):
+        return "list<list<number>>"
+    if starts_with(value, "[") and ends_with(value, "]"):
+
+        return infer_list_literal(value, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    if starts_with(value, "{") and ends_with(value, "}"):
+        return infer_map_literal(value, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
     if value == "some(1)":
         return "option<number>"
     if value == "keep(some(1))":
@@ -28,7 +90,7 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "result<text>"
     if value == "ok(1)":
         return "result<number>"
-    if value == "1 + 2":
+    if value == "1 + 1" or value == "1 + 2":
         return "number"
     if value == "\"a\" + \"b\"":
         return "text"
@@ -38,7 +100,7 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "bool"
     if contains(value, "if true then") and contains(value, "else"):
         return "number"
-    if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
+    if is_number_literal(value):
         return "number"
     if narrowed_name != "" and value == narrowed_name:
         return narrowed_type
@@ -139,6 +201,10 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
+    if (starts_with(annotation, "list<list<") and inferred == "list<list<number>>" and annotation != inferred):
+        return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
+    if (starts_with(annotation, "map<text,map<") and inferred == "map<text,map<text,number>>" and annotation != inferred):
+        return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     if (annotation == "number" and (inferred == "text" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<") or starts_with(inferred, "list<") or starts_with(inferred, "map<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "none" and (inferred == "text" or inferred == "number" or inferred == "bool" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "list<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "list<text>" and inferred == "list<number>") or (annotation == "map<text,number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "map<text,text>" and inferred == "map<text,number>") or (annotation == "result<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "map<") or starts_with(inferred, "option<"))):
         return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none

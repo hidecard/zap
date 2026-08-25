@@ -1,0 +1,2 @@
+let matrix: list<list<text>> = [[1, 2], [3, 4]]
+let metadata: map<text,map<text,text>> = {"meta": {"score": 7}}
