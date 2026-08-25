@@ -1,0 +1,2 @@
+fn bad(value: T) -> T:
+    return value
