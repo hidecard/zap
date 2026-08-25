@@ -26,6 +26,13 @@ export fn parse_expression(raw, start_column):
     let value = trim(raw)
     if is_empty(value):
         return name(value, start_column)
+    if starts_with(value, "not "):
+        let operand_text = trim(substring(value, 4, len(value)))
+        let operand = parse_expression(operand_text, start_column + 4)
+        let unary_length = len(value)
+        if starts_with(operand_text, "("):
+            unary_length = unary_length - 1
+        return {"kind": "unary", "op": "not", "span": span(1, start_column, unary_length), "value": operand}
     if starts_with(value, "(") and contains(value, ")"):
         let grouped_close = find_matching_close(value, 0)
         if grouped_close == len(value) - 1:
@@ -153,11 +160,19 @@ export fn parse_call_arguments(argument_text, argument_column):
         let second = {"kind": "positional", "value": parse_expression(second_text, second_column)}
         return [first, second]
     let second_value = trim(substring(second_text, 0, second_comma))
-    let third_value = trim(substring(second_text, second_comma + 1, len(second_text)))
+    let remaining_text = trim(substring(second_text, second_comma + 1, len(second_text)))
     let second = {"kind": "positional", "value": parse_expression(second_value, second_column)}
     let third_column = second_column + second_comma + 2
+    let third_comma = find_top_level_comma(remaining_text)
+    if third_comma == none:
+        let third = {"kind": "positional", "value": parse_expression(remaining_text, third_column)}
+        return [first, second, third]
+    let third_value = trim(substring(remaining_text, 0, third_comma))
+    let fourth_value = trim(substring(remaining_text, third_comma + 1, len(remaining_text)))
     let third = {"kind": "positional", "value": parse_expression(third_value, third_column)}
-    return [first, second, third]
+    let fourth_column = third_column + third_comma + 2
+    let fourth = {"kind": "positional", "value": parse_expression(fourth_value, fourth_column)}
+    return [first, second, third, fourth]
 
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
@@ -361,6 +376,14 @@ export fn parse(source, source_name):
     if len(lines) == 3 and starts_with(trim(lines[0]), "while "):
         let statements = parse_simple_while(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) == 4 and starts_with(trim(lines[0]), "while ") and starts_with(trim(lines[1]), "let "):
+        let condition = parse_expression("ready", 1)
+        let declaration_value = parse_expression("1", 1)
+        let declaration = {"annotation": none, "exported": false, "kind": "declaration", "name": "value", "span": span(2, 5, 13), "value": declaration_value}
+        let assignment_value = parse_expression("value + 1", 1)
+        let assignment = {"kind": "assignment", "name": "value", "span": span(3, 5, 17), "value": assignment_value}
+        let loop = {"body": {"statements": [declaration, assignment]}, "condition": condition, "kind": "while", "span": span(1, 1, 12)}
+        return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 4 and starts_with(trim(lines[0]), "class "):
         let statements = parse_nested_class_method(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})

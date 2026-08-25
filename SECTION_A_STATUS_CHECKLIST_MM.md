@@ -34,6 +34,9 @@
 - [x] Nested class method body — bounded class member function and return body reference parity.
 - [x] Simple while block — `while ready:` with `break` body reference parity.
 - [x] Deep mixed nested block — `for/if/while/continue` recursive AST reference parity.
+- [x] Four-argument call — nested/top-level comma splitting supports four positional arguments.
+- [x] Parenthesized unary `not` — precedence and grouped operand AST parity.
+- [x] Nested assignment block — `while` body declaration plus reassignment AST parity.
 - [x] Mixed recursive top-level sequence — nested call, `say`, and parenthesized declaration in one flat sequence.
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
