@@ -1,0 +1,53 @@
+# Token cursor and indentation primitives for the bootstrap parser.
+# The cursor is immutable: advance returns a new cursor, keeping compiler-core
+# operations deterministic and side-effect free.
+
+export fn cursor_new(tokens):
+    return {"index": 0, "tokens": tokens}
+
+export fn cursor_length(cursor):
+    return len(cursor["tokens"])
+
+export fn cursor_done(cursor):
+    return cursor["index"] >= len(cursor["tokens"])
+
+export fn cursor_peek(cursor):
+    if cursor_done(cursor):
+        return none
+    return cursor["tokens"][cursor["index"]]
+
+export fn cursor_advance(cursor):
+    if cursor_done(cursor):
+        return cursor
+    return {"index": cursor["index"] + 1, "tokens": cursor["tokens"]}
+
+export fn token_line(token):
+    if token == none:
+        return 0
+    return token["line"]
+
+export fn token_column(token):
+    if token == none:
+        return 0
+    return token["column"]
+
+export fn indentation_width(line):
+    let trimmed = trim(line)
+    return len(line) - len(trimmed)
+
+export fn indentation_relation(parent_indent, child_indent):
+    if child_indent > parent_indent:
+        return "nested"
+    if child_indent == parent_indent:
+        return "same"
+    return "dedent"
+
+export fn source_lines(source):
+    let lines = split(source, "\n")
+    if len(lines) == 0:
+        return [""]
+    return lines
+
+export fn block_header(line):
+    let value = trim(line)
+    return ends_with(value, ":") and (starts_with(value, "if ") or starts_with(value, "for ") or starts_with(value, "while ") or starts_with(value, "fn ") or starts_with(value, "class ") or value == "else:")
