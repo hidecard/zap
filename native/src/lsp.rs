@@ -552,7 +552,12 @@ fn signature_help_response(message: &Value, state: &LspState) -> Value {
                 .strip_prefix("fn ")
                 .or_else(|| trimmed.strip_prefix("async fn "))?;
             let name_end = declaration.find('(')?;
-            if declaration[..name_end].trim() != callee {
+            let (declaration_name, _type_params) =
+                crate::parser::parse_function_name_and_type_parameters(
+                    declaration[..name_end].trim(),
+                )
+                .ok()?;
+            if declaration_name != callee {
                 return None;
             }
             let close = declaration[name_end + 1..].find(')')? + name_end + 1;
@@ -2154,6 +2159,29 @@ mod tests {
             "fn greet(name: text, punctuation: text = \"!\")"
         );
         assert_eq!(response["result"]["activeParameter"], 1);
+    }
+
+    #[test]
+    fn signature_help_includes_generic_function_declaration() {
+        let uri = "file:///generic-signature.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn identity<T>(value: T) -> T:\n    return value\nidentity(1"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 103, "method": "textDocument/signatureHelp",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 11}}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["result"]["signatures"][0]["label"],
+            "fn identity<T>(value: T) -> T"
+        );
+        assert_eq!(response["result"]["documentation"], Value::Null);
+        assert_eq!(
+            response["result"]["signatures"][0]["parameters"][0]["label"],
+            "value: T"
+        );
     }
 
     #[test]
