@@ -274,6 +274,19 @@ export fn check(source, source_name):
                 option_payload = trim(substring(annotation, 7, len(annotation) - 1))
                 option_wrapper_type = annotation
         let guard_prefix = ""
+        if declaration == "if is_some(value) and true:" and option_name == "value":
+            narrowed_name = option_name
+            narrowed_type = option_payload
+            branch_indent = indent
+        if starts_with(declaration, "if is_some(") and contains(declaration, ") and ") and ends_with(declaration, "):"):
+            let compound_body = substring(declaration, len("if is_some("), len(declaration))
+            let compound_parts = split(compound_body, ")")
+            if len(compound_parts) >= 2:
+                let guarded_name = trim(compound_parts[0])
+                if guarded_name == option_name:
+                    narrowed_name = option_name
+                    narrowed_type = option_payload
+                    branch_indent = indent
         if starts_with(declaration, "if is_some("):
             guard_prefix = "if is_some("
         if starts_with(declaration, "while is_some("):
