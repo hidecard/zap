@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.16] - 2026-08-25
+
+### Release summary
+- Bounded direct some(1) option-constructor annotation evidence.
+
 ## [2.11.15] - 2026-08-25
 
 ### Release summary

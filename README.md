@@ -18,7 +18,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 | Item | Status |
 |---|---|
-| Current release line | `v2.11.15` |
+| Current release line | `v2.11.16` |
 | Source files | `.zp`, commonly `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -33,12 +33,12 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 
 ## Install
 
-Download the archive matching your operating system and CPU architecture from the [v2.11.15 release page](https://github.com/hidecard/zap/releases/tag/v2.11.15), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
+Download the archive matching your operating system and CPU architecture from the [v2.11.16 release page](https://github.com/hidecard/zap/releases/tag/v2.11.16), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.11.15-linux-x86_64.tar.gz
+tar -xzf zap-2.11.16-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -47,7 +47,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.11.15-macos-arm64.tar.gz
+tar -xzf zap-2.11.16-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -56,7 +56,7 @@ zap --version
 
 ### Windows
 
-The expected archive is `zap-2.11.15-windows-x86_64.zip`.
+The expected archive is `zap-2.11.16-windows-x86_64.zip`.
 
 ```bat
 cd C:\Zap
@@ -203,7 +203,7 @@ Before contributing, run `make doctor` to distinguish missing environment prereq
 
 ## Release provenance
 
-The current source baseline is v2.11.15. The [canonical current-status page](docs/CURRENT_STATUS_EN.md) records the active B0 boundary and the signed provenance fields for the latest published release. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
+The current source baseline is v2.11.16. The [canonical current-status page](docs/CURRENT_STATUS_EN.md) records the active B0 boundary and the signed provenance fields for the latest published release. The preceding v2.3.0, v2.2.7, and earlier release records remain available in [GitHub Releases](https://github.com/hidecard/zap/releases) and the bilingual `CHANGELOG` files. Release artifacts are published only after version consistency, native tests, cross-platform builds, security checks, documentation checks, and installer verification pass.
 
 ## License
 

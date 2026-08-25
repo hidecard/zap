@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.16] — 2026-08-25
+
+### Release engineering
+- ကန့်သတ်ထားသော direct some(1) option-constructor annotation evidence ထည့်သွင်းထားသည်။
+
 ## [2.11.15] — 2026-08-25
 
 ### Release engineering
