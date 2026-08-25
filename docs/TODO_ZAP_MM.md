@@ -73,7 +73,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] macOS ARM64 target-native web-server regression ကို test client half-close မလိုအပ်ကြောင်း သတ်မှတ်ပြီး platform-sensitive local-socket reset race မဖြစ်စေရန် ပြင်ဆင်ခြင်း၊ full Zap CI matrix ဖြင့် ပြန်လည်စစ်ဆေးခြင်း။
 - [x] v2.11.13 corrective release ကို new immutable tag ဖြင့် publish လုပ်ပြီး source၊ Linux၊ macOS၊ Windows၊ Publish နှင့် public artifact/signature verification အားလုံး အောင်မြင်ကြောင်း မှတ်တမ်းတင်ခြင်း။
 
-## v2.11.14 B0-safe published evidence နှင့် v2.11.15 preparation
+## v2.11.14 နှင့် v2.11.15 B0-safe published evidence၊ v2.11.16 preparation
 
 - [x] Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ direct bool-literal annotation ကို နောက် bounded type-system increment အဖြစ် ရွေးချယ်ရန်။
 - [x] Tracked variable တစ်ခုတွင် direct `true`/`false` literal ကို `bool` annotation သို့ assign လုပ်ပါက လက်ခံပြီး direct numeric literal ကို `bool` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'enabled' expects bool, got number` diagnostic ဖြင့် reject လုပ်ရန်။
@@ -89,7 +89,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct map-literal acceptance/rejection evidence ထည့်ရန်။
 - [x] Provisional ownership ledger တွင် `BOOT-031` နှင့် `bootstrap/fixtures/typecheck/map_annotation_incompatible.zp` ထည့်ရန်။
 - [x] macOS native web-server test harness တွင် socket EOF ကို မစောင့်ဘဲ declared `Content-Length` အတိုင်း response ဖတ်ရန် harden လုပ်ပြီး focused regression test 5 ကြိမ် အောင်မြင်ကြောင်း စစ်ဆေးရန်။
-- [ ] v2.11.15 preparation အတွက် နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
+- [x] v2.11.15 ကို immutable `v2.11.15` tag ဖြင့် publish လုပ်ပြီး source၊ Linux၊ macOS၊ Windows၊ Publish နှင့် public artifact/signature verification အားလုံး အောင်မြင်ကြောင်း မှတ်တမ်းတင်ရန်။
+- [ ] v2.11.16 preparation အတွက် နောက် B0-safe type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety

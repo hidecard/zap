@@ -1,10 +1,10 @@
 # Zap v2.11.15
 
-**Release အခြေအနေ:** Candidate preparation ဖြစ်ပြီး complete validation အောင်မြင်မှသာ publish လုပ်မည်။ Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
+**Release အခြေအနေ:** Complete validation နှင့် public artifact/signature verification ပြီးစီးပြီး publish လုပ်ထားသည်။ Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
 
 ## အကျဉ်းချုပ်
 
-Zap v2.11.15 တွင် provisional၊ corpus-limited B2 type-checker increment အဖြစ် exact direct map-literal annotation shape တစ်ခုကို ပြင်ဆင်ထားသည်။ Candidate သည် exact literal `{"score": 7}` ကို `map<text,number>` အဖြစ် သတ်မှတ်ပြီး `let scores: map<text,number> = {"score": 7}` ကို လက်ခံသည်။ Paired negative fixture သည် ထို direct map literal ကို `text` သို့ assign လုပ်ပါက line 1၊ column 1 တွင် `variable 'wrong' expects text, got map<text,number>` diagnostic ဖြင့် reject လုပ်သည်။
+Zap v2.11.15 တွင် provisional၊ corpus-limited B2 type-checker increment ကို publish လုပ်ထားပြီး exact direct map-literal annotation shape တစ်ခုကို ပြင်ဆင်ထားသည်။ Published candidate သည် exact literal `{"score": 7}` ကို `map<text,number>` အဖြစ် သတ်မှတ်ပြီး `let scores: map<text,number> = {"score": 7}` ကို လက်ခံသည်။ Paired negative fixture သည် ထို direct map literal ကို `text` သို့ assign လုပ်ပါက line 1၊ column 1 တွင် `variable 'wrong' expects text, got map<text,number>` diagnostic ဖြင့် reject လုပ်သည်။
 
 ဤအရာသည် deterministic fixture pair တစ်ခုအတွက် evidence သာဖြစ်သည်။ General map-literal inference၊ arbitrary map key/value၊ nested map၊ alias၊ collection expression inference သို့မဟုတ် static type checking အပြည့်အစုံကို မဆိုလိုပါ။
 
@@ -22,7 +22,7 @@ Zap v2.11.15 တွင် provisional၊ corpus-limited B2 type-checker incremen
 
 ## Verification contract
 
-Candidate သည် native နှင့် Zap candidate B2 verifier၊ malformed-source safety၊ native tests၊ typecheck matrix parity၊ specification ownership၊ Markdown links၊ VS Code packaging၊ formatting၊ release-version validation၊ documentation consistency နှင့် exact committed release preflight အားလုံးကို အောင်မြင်ရမည်။ Public workflow တွင် source validation၊ Linux x86_64၊ macOS ARM64၊ Windows x86_64 နှင့် Publish jobs အားလုံး အောင်မြင်ရမည်။ Publish ပြီးသော artifact များသည် checksum၊ manifest၊ provenance နှင့် detached-signature verification များကို အောင်မြင်ရမည်။
+Published source သည် native နှင့် Zap candidate B2 verifier၊ malformed-source safety၊ native tests၊ typecheck matrix parity၊ specification ownership၊ Markdown links၊ VS Code packaging၊ formatting၊ release-version validation၊ documentation consistency နှင့် exact committed release preflight အားလုံးကို အောင်မြင်ရမည်။ Public workflow တွင် source validation၊ Linux x86_64၊ macOS ARM64၊ Windows x86_64 နှင့် Publish jobs အားလုံး အောင်မြင်ခဲ့သည်။ Publish ပြီးသော artifact များသည် checksum၊ manifest၊ provenance နှင့် detached-signature verification များကို အောင်မြင်ခဲ့သည်။
 
 ## Deferred scope
 

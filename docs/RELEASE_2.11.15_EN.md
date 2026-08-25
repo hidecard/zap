@@ -1,10 +1,10 @@
 # Zap v2.11.15
 
-**Release status:** Candidate preparation; publication requires complete validation. Zap remains B0.
+**Release status:** Published after complete validation and public artifact/signature verification. Zap remains B0.
 
 ## Summary
 
-Zap v2.11.15 prepares a provisional, corpus-limited B2 type-checker increment for one exact direct map-literal annotation shape. The candidate recognizes the exact literal `{"score": 7}` as `map<text,number>` and accepts `let scores: map<text,number> = {"score": 7}`. A paired negative fixture rejects assigning the same direct map literal to `text` with the stable diagnostic `variable 'wrong' expects text, got map<text,number>` at line 1, column 1.
+Zap v2.11.15 publishes a provisional, corpus-limited B2 type-checker increment for one exact direct map-literal annotation shape. The published candidate recognizes the exact literal `{"score": 7}` as `map<text,number>` and accepts `let scores: map<text,number> = {"score": 7}`. A paired negative fixture rejects assigning the same direct map literal to `text` with the stable diagnostic `variable 'wrong' expects text, got map<text,number>` at line 1, column 1.
 
 This is evidence for one deterministic fixture pair only. It does not implement general map-literal inference, arbitrary map keys or values, nested maps, aliases, collection expression inference, or complete static type checking.
 
@@ -22,7 +22,7 @@ This is evidence for one deterministic fixture pair only. It does not implement 
 
 ## Verification contract
 
-The candidate must pass the native and Zap candidate B2 verifiers, malformed-source safety, native tests, typecheck matrix parity, specification ownership, Markdown links, VS Code packaging, formatting, release-version validation, documentation consistency, and the exact committed release preflight. The public workflow must independently pass source validation, Linux x86_64, macOS ARM64, Windows x86_64, and Publish jobs. Published artifacts must pass checksum, manifest, provenance, and detached-signature verification.
+The published source passed the native and Zap candidate B2 verifiers, malformed-source safety, native tests, typecheck matrix parity, specification ownership, Markdown links, VS Code packaging, formatting, release-version validation, documentation consistency, and the exact committed release preflight. The public workflow passed source validation, Linux x86_64, macOS ARM64, Windows x86_64, and Publish jobs. Published artifacts passed checksum, manifest, provenance, and detached-signature verification.
 
 ## Deferred scope
 
