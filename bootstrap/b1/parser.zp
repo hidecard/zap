@@ -62,7 +62,18 @@ export fn parse_atom(raw, start_column):
     return if is_numeric(value) then number(value, start_column) else name(value, start_column)
 
 export fn is_numeric(value):
-    return value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9"
+    if is_empty(value):
+        return false
+    let input = value + " "
+    let index = 0
+    while index < len(input):
+        let ch = char_at(input, index)
+        if ch == " ":
+            return true
+        if not contains("0123456789", ch):
+            return false
+        index = index + 1
+    return true
 
 export fn parse_map(value, start_column):
     let name_key = text("name", start_column + 1, 6)
