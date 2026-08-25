@@ -5,10 +5,10 @@
 | Order | Task | Current status | Evidence/next acceptance |
 |---:|---|---|---|
 | 1 | Token cursor abstraction | [x] foundation | Immutable cursor with peek/advance/eof and peek-kind; `verify_b1_token_cursor.sh` passes. |
-| 2 | Span-based indentation stack | [x] foundation | Span-aware line/column accessors and indentation relation/width exist; full arbitrary dedent stack remains pending. |
-| 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-driven flat statement-list traversal is integrated; recursive block ownership still remains pending. |
+| 2 | Span-based indentation stack | [x] partial | Parser-owned history/depth stack validates one-level nesting, valid prior-level dedent, inconsistent dedent, and jump errors; token-native full ownership remains pending. |
+| 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-based `parse_block_from` handles bounded arbitrary-depth `if`/`for`/`while` bodies and siblings; full grammar replacement remains pending. |
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
-| 5 | Recursive `if/elif/else` blocks | [x] bounded fixture expansion | Existing recursive branch fixtures plus unexpected-indentation validation pass; arbitrary-depth branch-chain parser remains pending. |
+| 5 | Recursive `if/elif/else` blocks | [x] partial | Recursive `if`/nested loop and sibling block cases pass in a 10-case verifier; `elif/else` attachment remains pending. |
 | 6 | Recursive loop bodies and loop control | [x] bounded | `for`/`while` and `break`/`continue` fixtures pass; generic indentation ownership remains pending. |
 | 7 | General expression-to-type bridge | [x] partial | `ast_expression_type` bridges literal/unary/binary/list AST nodes; environment-aware and call-aware general inference remains pending. |
 | 8 | General typed-IR emitter | [x] bounded regression | Existing B2 typed-IR candidate differential still passes; arbitrary emitter remains unchecked. |
@@ -33,6 +33,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md`
 - `scripts/bootstrap/verify_b1_parser_candidate.sh`
 - `scripts/bootstrap/verify_b1_token_cursor.sh`
+- `scripts/bootstrap/verify_b1_recursive_blocks.sh`
 - `scripts/bootstrap/verify_b2_ast_expression_bridge.sh`
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`

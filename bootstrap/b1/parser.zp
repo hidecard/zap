@@ -386,8 +386,37 @@ export fn indentation_width(line):
         return 0
     return len(line) - len(substring(line, len(line) - len(trimmed), len(line)))
 
+export fn indentation_stack_new():
+    return [0]
+
+export fn indentation_stack_top(stack):
+    return stack[len(stack) - 1]
+
+export fn indentation_stack_push(stack, level):
+    return append(stack, level)
+
+export fn indentation_stack_pop(stack):
+    let result = []
+    let index = 0
+    while index + 1 < len(stack):
+        result = append(result, stack[index])
+        index = index + 1
+    return result
+
+export fn indentation_stack_find(stack, depth, level):
+    let index = 0
+    let found = none
+    while index < len(stack):
+        if index > depth:
+            return found
+        if stack[index] == level:
+            found = index
+        index = index + 1
+    return found
+
 export fn indentation_stack_diagnostic(lines, source_name):
-    let previous = 0
+    let stack = indentation_stack_new()
+    let depth = 0
     let cursor = line_cursor(lines)
     while not line_cursor_done(cursor):
         let line = line_cursor_peek(cursor)
@@ -396,14 +425,69 @@ export fn indentation_stack_diagnostic(lines, source_name):
             let current = indentation_width(line)
             if current % 4 != 0:
                 return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "invalid indentation at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
-            if current > previous + 4:
-                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "indent one level at a time", "line": cursor["index"] + 1, "message": "unexpected indentation at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
-            previous = current
+            let top = stack[depth]
+            if current > top:
+                if current != top + 4:
+                    return {"code": "ZAP-SYNTAX-001", "column": none, "help": "indent one level at a time", "line": cursor["index"] + 1, "message": "unexpected indentation at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
+                stack = indentation_stack_push(stack, current)
+                depth = depth + 1
+            else:
+                let found = indentation_stack_find(stack, depth, current)
+                if found == none:
+                    return {"code": "ZAP-SYNTAX-001", "column": none, "help": "dedent to an existing block level", "line": cursor["index"] + 1, "message": "inconsistent dedent at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
+                depth = found
         cursor = line_cursor_advance(cursor)
     return none
 
+export fn is_block_header(line):
+    let value = trim(line)
+    return ends_with(value, ":") and (starts_with(value, "if ") or starts_with(value, "for ") or starts_with(value, "while "))
+
+export fn parse_block_from(lines, start_index, indent):
+    let statements = []
+    let cursor = {"index": start_index, "lines": lines}
+    while not line_cursor_done(cursor):
+        let index = cursor["index"]
+        let line = line_cursor_peek(cursor)
+        let current = trim(line)
+        if current == "":
+            cursor = line_cursor_advance(cursor)
+        else:
+            let current_indent = indentation_width(line)
+            if current_indent < indent:
+                return {"next": index, "statements": statements}
+            if current_indent > indent:
+                return {"next": index, "statements": statements}
+            if is_block_header(line):
+                let nested = parse_block_from(lines, index + 1, indent + 4)
+                let body = {"statements": nested["statements"]}
+                if starts_with(current, "if "):
+                    let condition_text = trim(substring(current, 3, len(current) - 1))
+                    statements = append(statements, {"condition": parse_expression(condition_text, indent + 4), "else_branch": none, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
+                else:
+                    if starts_with(current, "for "):
+                        let header_parts = split(current, " in ")
+                        let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+                        let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+                        statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, indent + 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                    else:
+                        let condition_text = trim(substring(current, 6, len(current) - 1))
+                        statements = append(statements, {"body": body, "condition": parse_expression(condition_text, indent + 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                cursor = {"index": nested["next"], "lines": lines}
+            else:
+                statements = append(statements, parse_statement(line, index + 1, indent + 1))
+                cursor = line_cursor_advance(cursor)
+    return {"next": cursor["index"], "statements": statements}
+
+export fn parse_block_program(lines):
+    let result = parse_block_from(lines, 0, 0)
+    return result["statements"]
+
 export fn parse(source, source_name):
     let lines = split(source, "\n")
+    if starts_with(trim(lines[0]), "if "):
+        let statements = parse_block_program(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
         let statements = parse_flat_sequence(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
@@ -585,6 +669,6 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     if contains(source, "."):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if not contains(source, " = "):
-        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "while ") and not starts_with(trim(source), "class "):
+        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "if ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "while ") and not starts_with(trim(source), "class "):
             return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)

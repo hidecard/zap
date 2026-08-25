@@ -78,6 +78,10 @@
 
 - [x] Unexpected multi-level indentation fixture — one-level jump violation ကို line-aware diagnostic ဖြင့် differential corpus ထဲတွင် စစ်ဆေးထားသည်။
 
+- [x] History-backed indentation stack — stack level history နှင့် depth pointer ဖြင့် valid prior-level dedent၊ inconsistent dedent နှင့် one-level jump ကို စစ်ဆေးနိုင်သည်။
+
+- [x] Recursive block parser foundation — cursor-based `parse_block_from` သည် nested `if`/`for`/`while` body နှင့် sibling statements များကို arbitrary-depth bounded cases အတွက် စုစည်းနိုင်သည်။
+
 - [x] Boolean expression inference slice — unary `not`, comparison matrix, and logical `and/or` expressions infer as `bool` in the candidate.
 
 - [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
@@ -94,9 +98,11 @@
 
 - [x] B1 unexpected indentation differential — multi-level indentation jump fixture နှင့် reference diagnostic pass.
 
+- [x] B1 recursive block ၁၀-case verifier — nested branch/loop ownership၊ sibling dedent နှင့် generic `if` entrypoint cases pass.
+
 ## လက်ရှိနောက်တစ်ဆင့်
 
-1. Token span line/column များမှ full indentation stack တည်ဆောက်ရန်။ Cursor/width foundation ပြီးသော်လည်း arbitrary dedent stack ownership မပြီးသေးပါ။
+1. Token span line/column များမှ parser-owned full indentation stack တည်ဆောက်ရန်။ History/depth foundation ပြီးသော်လည်း token-native ownership နှင့် all grammar interaction မပြီးသေးပါ။
 
 1. Recursive `parse_block(indent)` နှင့် statement-list builder ကို line-count dispatch မပါဘဲ ပြောင်းရန်။
 
