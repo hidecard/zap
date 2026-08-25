@@ -1665,23 +1665,36 @@ fn document_symbol_for_statement(
     encoding: PositionEncoding,
 ) -> Option<Value> {
     let (name, kind, detail) = match &statement.node {
-        crate::ast::Stmt::Function { name, is_async, .. } => (
-            name.clone(),
-            12,
-            if *is_async {
-                "async function"
+        crate::ast::Stmt::Function {
+            name,
+            is_async,
+            type_params,
+            ..
+        } => {
+            let detail = if *is_async {
+                "async function".to_string()
             } else {
-                "function"
-            },
-        ),
-        crate::ast::Stmt::Class { name, .. } => (name.clone(), 5, "class"),
-        crate::ast::Stmt::Declaration { name, .. } => (name.clone(), 13, "binding"),
-        crate::ast::Stmt::Module { name } => (name.clone(), 2, "module"),
+                "function".to_string()
+            };
+            let detail = if type_params.is_empty() {
+                detail
+            } else {
+                format!("{detail}<{}>", type_params.join(", "))
+            };
+            (name.clone(), 12, detail)
+        }
+        crate::ast::Stmt::Class { name, .. } => (name.clone(), 5, "class".to_string()),
+        crate::ast::Stmt::Declaration { name, .. } => (name.clone(), 13, "binding".to_string()),
+        crate::ast::Stmt::Module { name } => (name.clone(), 2, "module".to_string()),
         crate::ast::Stmt::Import {
             path,
             explicit: true,
             alias,
-        } => (alias.clone().unwrap_or_else(|| path.clone()), 9, "import"),
+        } => (
+            alias.clone().unwrap_or_else(|| path.clone()),
+            9,
+            "import".to_string(),
+        ),
         _ => return None,
     };
     let range = symbol_range(source, &statement.span, &name, encoding);
@@ -2238,6 +2251,27 @@ mod tests {
             .unwrap()
             .ends_with("/app/util.zp"));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn document_symbols_include_generic_type_parameters() {
+        let uri = "file:///generic-symbols.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0", "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn identity<T>(value: T) -> T:\n    return value\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 102, "method": "textDocument/documentSymbol",
+            "params": {"textDocument": {"uri": uri}}
+        }))
+        .unwrap();
+        let symbols = response["result"].as_array().unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0]["name"], "identity");
+        assert_eq!(
+            symbols[0]["detail"],
+            "function<T> in file:///generic-symbols.zp"
+        );
     }
 
     #[test]
