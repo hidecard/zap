@@ -47,6 +47,8 @@ control_flow_fixture="bootstrap/fixtures/parser/control_flow.zp"
 control_flow_expected="bootstrap/fixtures/parser/control_flow.ast.json"
 invalid_indentation_fixture="bootstrap/fixtures/parser/invalid_indentation.zp"
 invalid_indentation_expected="bootstrap/fixtures/parser/invalid_indentation.json"
+mixed_top_level_fixture="bootstrap/fixtures/parser/mixed_top_level.zp"
+mixed_top_level_expected="bootstrap/fixtures/parser/mixed_top_level.ast.json"
 invalid_fixture="bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"
 invalid_expected="bootstrap/fixtures/diagnostics/missing_closing_bracket.json"
 unexpected_fixture="bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"
@@ -55,7 +57,7 @@ missing_assignment_fixture="bootstrap/fixtures/diagnostics/missing_assignment.zp
 missing_assignment_expected="bootstrap/fixtures/diagnostics/missing_assignment.json"
 missing_function_paren_fixture="bootstrap/fixtures/diagnostics/missing_function_paren.zp"
 missing_function_paren_expected="bootstrap/fixtures/diagnostics/missing_function_paren.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -88,6 +90,7 @@ let nested_blocks = read_text("bootstrap/fixtures/parser/nested_blocks.zp")
 let three_argument_call = read_text("bootstrap/fixtures/parser/three_argument_call.zp")
 let control_flow = read_text("bootstrap/fixtures/parser/control_flow.zp")
 let invalid_indentation = read_text("bootstrap/fixtures/parser/invalid_indentation.zp")
+let mixed_top_level = read_text("bootstrap/fixtures/parser/mixed_top_level.zp")
 let invalid = read_text("bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 let unexpected = read_text("bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 let missing_assignment = read_text("bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -114,6 +117,7 @@ let nested_blocks_tokens = from_json(lex(nested_blocks, "bootstrap/fixtures/pars
 let three_argument_call_tokens = from_json(lex(three_argument_call, "bootstrap/fixtures/parser/three_argument_call.zp"))
 let control_flow_tokens = from_json(lex(control_flow, "bootstrap/fixtures/parser/control_flow.zp"))
 let invalid_indentation_tokens = from_json(lex(invalid_indentation, "bootstrap/fixtures/parser/invalid_indentation.zp"))
+let mixed_top_level_tokens = from_json(lex(mixed_top_level, "bootstrap/fixtures/parser/mixed_top_level.zp"))
 let invalid_tokens = from_json(lex(invalid, "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"))
 let unexpected_tokens = from_json(lex(unexpected, "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"))
 let missing_assignment_tokens = from_json(lex(missing_assignment, "bootstrap/fixtures/diagnostics/missing_assignment.zp"))
@@ -140,6 +144,7 @@ say parse_or_diagnostics(nested_blocks, nested_blocks_tokens["tokens"], "bootstr
 say parse_or_diagnostics(three_argument_call, three_argument_call_tokens["tokens"], "bootstrap/fixtures/parser/three_argument_call.zp")
 say parse_or_diagnostics(control_flow, control_flow_tokens["tokens"], "bootstrap/fixtures/parser/control_flow.zp")
 say parse_or_diagnostics(invalid_indentation, invalid_indentation_tokens["tokens"], "bootstrap/fixtures/parser/invalid_indentation.zp")
+say parse_or_diagnostics(mixed_top_level, mixed_top_level_tokens["tokens"], "bootstrap/fixtures/parser/mixed_top_level.zp")
 say parse_or_diagnostics(invalid, invalid_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 say parse_or_diagnostics(unexpected, unexpected_tokens["tokens"], "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 say parse_or_diagnostics(missing_assignment, missing_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -168,6 +173,7 @@ EOF
   cat "$three_argument_call_expected"
   cat "$control_flow_expected"
   cat "$invalid_indentation_expected"
+  cat "$mixed_top_level_expected"
   cat "$invalid_expected"
   cat "$unexpected_expected"
   cat "$missing_assignment_expected"

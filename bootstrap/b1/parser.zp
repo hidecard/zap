@@ -270,11 +270,11 @@ export fn parse_statement(line, line_number, body_column):
         return {"annotation": declaration["annotation"], "exported": declaration["exported"], "kind": declaration["kind"], "name": declaration["name"], "span": span(line_number, body_column, len(statement)), "value": declaration["value"]}
     if starts_with(statement, "return "):
         let value_text = trim(substring(statement, 7, len(statement)))
-        let value = parse_expression(value_text, body_column + 7)
+        let value = parse_expression(value_text, 1)
         return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": value}
     if starts_with(statement, "say "):
         let value_text = trim(substring(statement, 4, len(statement)))
-        let value = parse_expression(value_text, body_column + 4)
+        let value = parse_expression(value_text, 1)
         return {"kind": "say", "span": span(line_number, body_column, len(statement)), "value": value}
     return parse_assignment(line, line_number)
 
@@ -315,7 +315,7 @@ export fn parse_flat_sequence(lines):
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
-    if len(lines) > 2 and starts_with(trim(lines[0]), "let ") and starts_with(trim(lines[1]), "let ") and starts_with(trim(lines[2]), "let ") and not contains(source, "fn "):
+    if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
         let statements = parse_flat_sequence(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 6:

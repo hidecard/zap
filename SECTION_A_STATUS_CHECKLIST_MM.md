@@ -30,6 +30,7 @@
 - [x] Parenthesized/nested expression fixtures — bounded precedence/span support.
 - [x] Nested `for/if` နှင့် `while/if/else/break/continue` fixtures — bounded reference parity.
 - [x] Invalid indentation diagnostic — two-space malformed indentation is rejected with reference-matching diagnostic.
+- [x] Mixed top-level simple statement sequence — declarations and `say` statements use the append-backed flat sequence path.
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
 
