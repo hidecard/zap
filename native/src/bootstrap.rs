@@ -357,7 +357,9 @@ fn stmt_json(statement: &Spanned<Stmt>) -> JsonValue {
             fields.insert("is_async", json!(is_async));
             fields.insert("kind", json!("function"));
             fields.insert("name", json!(name));
-            fields.insert("type_params", json!(type_params));
+            if !type_params.is_empty() {
+                fields.insert("type_params", json!(type_params));
+            }
             fields.insert(
                 "params",
                 JsonValue::Array(
