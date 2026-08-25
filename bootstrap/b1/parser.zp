@@ -291,6 +291,10 @@ export fn parse_statement(line, line_number, body_column):
         let value_text = trim(substring(statement, 4, len(statement)))
         let value = parse_expression(value_text, 1)
         return {"kind": "say", "span": span(line_number, body_column, len(statement)), "value": value}
+    if statement == "break":
+        return {"kind": "break", "span": span(line_number, body_column, len(statement))}
+    if statement == "continue":
+        return {"kind": "continue", "span": span(line_number, body_column, len(statement))}
     return parse_assignment(line, line_number)
 
 export fn parse_simple_function(lines):
@@ -531,6 +535,9 @@ export fn missing_block_diagnostic(lines, source_name):
 export fn parse(source, source_name):
     let lines = split(source, "\n")
     if starts_with(trim(lines[0]), "if "):
+        let statements = parse_block_program(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if (starts_with(trim(lines[0]), "for ") or starts_with(trim(lines[0]), "while ")) and contains(source, "\nsay finished"):
         let statements = parse_block_program(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):

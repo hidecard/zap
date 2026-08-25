@@ -88,6 +88,10 @@
 
 - [x] Missing-block diagnostics — `if`/`elif`/`else` header များတွင် indented body မရှိပါက stable syntax diagnostic ပြနိုင်သည်။
 
+- [x] Generic loop-control statements — recursive block path သည် `break` နှင့် `continue` ကို statement AST node များအဖြစ် ထုတ်ပေးနိုင်သည်။
+
+- [x] Generic top-level control-flow route — bounded `for`/`while` programs များကို recursive block parser သို့ ချိတ်ဆက်ထားသည်။
+
 - [x] Boolean expression inference slice — unary `not`, comparison matrix, and logical `and/or` expressions infer as `bool` in the candidate.
 
 - [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
@@ -107,6 +111,8 @@
 - [x] B1 recursive block ၁၀-case verifier — nested branch/loop ownership၊ sibling dedent နှင့် generic `if` entrypoint cases pass.
 
 - [x] B1 branch-chain ၁၀-case verifier — `if/elif/else` ownership၊ valid/inconsistent dedent နှင့် missing-body diagnostics pass.
+
+- [x] B1 generic control-flow ၁၀-case verifier — recursive `for`/`while`/`if`၊ `break`/`continue` နှင့် indentation diagnostics pass.
 
 ## လက်ရှိနောက်တစ်ဆင့်
 
