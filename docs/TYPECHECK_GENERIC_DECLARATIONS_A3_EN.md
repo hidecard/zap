@@ -37,6 +37,10 @@ At each call, the checker collects a substitution for every declared type parame
 
 The initial A3 acceptance checkpoint requires Rust parser acceptance and rejection fixtures, canonical AST output that records the declared type parameters, native static-check acceptance and rejection fixtures for numeric/text substitutions, multiple type parameters, structural `option<T>`/`result<T>` wrappers, conflicting substitutions, and generic arity, deterministic repeated runs, runtime return checking after substitution, stable JSON diagnostics, bootstrap candidate differential output, malformed-source no-panic coverage, bilingual documentation, and a provisional ownership record. Parser, static checker, evaluator, typed-IR, LSP, and bootstrap candidate changes must be tested together.
 
+## Current bounded parser-evidence checkpoint
+
+The current provisional checkpoint adds three Rust-reference-backed malformed-header fixtures: `generic_empty_params.zp` rejects `fn empty<>` with `generic type-parameter list cannot be empty`; `generic_duplicate_params.zp` rejects a repeated `T` with `duplicate generic type parameter: T`; and `generic_invalid_param.zp` rejects lowercase `t` with `invalid generic type parameter 't'`. Each produces the stable `ZAP-SYNTAX-001` / `SyntaxError` diagnostic at line 1, column 1, and the candidate differential verifier reproduces these exact corpus cases. This is parser rejection evidence only; it does not establish arbitrary malformed-generic parsing, complete A3, candidate ownership, B4, or self-hosting.
+
 ## Explicitly deferred scope
 
 This design does not claim complete A3. Constraints and trait bounds, generic classes and aliases, explicit generic call arguments, higher-kinded forms, variance, overload resolution, cross-module instantiation, full collection inference, closure capture semantics, and complete typed-IR/LSP generic metadata remain deferred until separately accepted. A3 cannot be marked complete from the `identity<T>` slice alone; the ordered A3 gate remains open until the required declaration, scope, constraint, arity, substitution, recursion, diagnostic, runtime, and cross-platform evidence passes.

@@ -1,0 +1,2 @@
+fn lower<t>(value: t) -> t:
+    return value

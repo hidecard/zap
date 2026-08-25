@@ -1,0 +1,2 @@
+fn empty<>(value: number) -> number:
+    return value

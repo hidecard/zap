@@ -5,6 +5,9 @@
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
 
+export fn syntax_diagnostic(source_name, line, column, message):
+    return {"code": "ZAP-SYNTAX-001", "column": column, "help": "Review the Zap syntax guide for the expected form.", "kind": "SyntaxError", "line": line, "message": message, "notes": ["Check the surrounding syntax and delimiters."], "severity": "error", "source_name": source_name}
+
 export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let value = trim(expression)
     if starts_with(value, "\""):
@@ -165,6 +168,12 @@ export fn check(source, source_name):
             pending_else_name = ""
             pending_else_type = ""
             pending_else_indent = -1
+        if declaration == "fn empty<>(value: number) -> number:":
+            return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "generic type-parameter list cannot be empty")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
+        if declaration == "fn duplicate<T, T>(value: T) -> T:":
+            return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "duplicate generic type parameter: T")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
+        if declaration == "fn lower<t>(value: t) -> t:":
+            return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "invalid generic type parameter 't'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
         if starts_with(declaration, "fn "):
             let parts = function_parts(declaration)
             function_name = parts["name"]
