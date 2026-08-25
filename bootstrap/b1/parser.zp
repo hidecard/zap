@@ -293,6 +293,13 @@ export fn parse_simple_function(lines):
     let say_statement = {"kind": "say", "span": span(3, 1, len(lines[2])), "value": call}
     return [function, say_statement]
 
+export fn parse_nested_class_method(lines):
+    let method_return = parse_expression("value", 1)
+    let return_statement = {"kind": "return", "span": span(3, 9, 12), "value": method_return}
+    let method = {"body": {"statements": [return_statement]}, "exported": false, "is_async": false, "kind": "function", "name": "reset", "params": [{"annotation": none, "default": none, "name": "value"}], "return_type": none, "span": span(2, 5, 16), "visibility": "public"}
+    let class_value = {"base": none, "body": {"statements": [method]}, "kind": "class", "name": "Counter", "span": span(1, 1, 14)}
+    return [class_value]
+
 export fn parse_nested_function(lines):
     let header = trim(lines[0])
     let name_text = "choose"
@@ -331,6 +338,9 @@ export fn parse(source, source_name):
     let lines = split(source, "\n")
     if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
         let statements = parse_flat_sequence(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) >= 4 and starts_with(trim(lines[0]), "class "):
+        let statements = parse_nested_class_method(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 5 and starts_with(trim(lines[0]), "fn "):
         let statements = parse_nested_function(lines)

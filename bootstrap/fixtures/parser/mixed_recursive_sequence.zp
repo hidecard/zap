@@ -1,0 +1,3 @@
+let first = outer(inner(1), 2)
+say first
+let third = (first + 3)

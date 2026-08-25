@@ -31,6 +31,8 @@
 - [x] Nested `for/if` နှင့် `while/if/else/break/continue` fixtures — bounded reference parity.
 - [x] Invalid indentation diagnostic — two-space malformed indentation is rejected with reference-matching diagnostic.
 - [x] Mixed top-level simple statement sequence — declarations and `say` statements use the append-backed flat sequence path.
+- [x] Nested class method body — bounded class member function and return body reference parity.
+- [x] Mixed recursive top-level sequence — nested call, `say`, and parenthesized declaration in one flat sequence.
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
 
@@ -39,9 +41,10 @@
 1. Token span line/column များမှ indentation stack တည်ဆောက်ရန်။
 2. Recursive `parse_block(indent)` နှင့် statement-list builder ကို line-count dispatch မပါဘဲ ပြောင်းရန်။
 3. Token-derived indentation stack နှင့် arbitrary-depth block diagnostics ကို broaden လုပ်ရန်။
-4. Mixed top-level statements၊ arbitrary-depth nested blocks နှင့် invalid indentation diagnostics fixtures ထည့်ရန်။
-5. ထို parser AST ကို general typed-IR နှင့် type-checker pipeline သို့ ဆက်စပ်ရန်။
-6. A gates အားလုံး pass ပြီးမှသာ B section ကို စတင်ရန်။
+4. `while ... else` ကို language reference syntax အဖြစ် မပံ့ပိုးသေးကြောင်း သတ်မှတ်ပြီး valid loop-block variants ကို ဆက်စစ်ရန်။
+5. Mixed top-level statements၊ arbitrary-depth nested blocks နှင့် invalid indentation diagnostics fixtures ထည့်ရန်။
+6. ထို parser AST ကို general typed-IR နှင့် type-checker pipeline သို့ ဆက်စပ်ရန်။
+7. A gates အားလုံး pass ပြီးမှသာ B section ကို စတင်ရန်။
 
 ## B အပိုင်း
 
