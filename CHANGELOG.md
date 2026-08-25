@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.14] - 2026-08-25
+
+### Release summary
+- Add bounded direct list-literal annotation evidence.
+
 ## [2.11.13] - 2026-08-24
 
 ### Release summary

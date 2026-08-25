@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.14] — 2026-08-25
+
+### Release engineering
+- Provisional direct [1, 2] list<number> annotation slice နှင့် native/candidate paired fixture များ ထည့်သွင်းထားပါသည်။
+
 ## [2.11.13] — 2026-08-24
 
 ### Release engineering

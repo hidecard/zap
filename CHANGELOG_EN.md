@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.14] — 2026-08-25
+
+### Release engineering
+- Added a provisional direct [1, 2] list<number> annotation slice with paired native and candidate fixtures.
+
 ## [2.11.13] — 2026-08-24
 
 ### Release engineering

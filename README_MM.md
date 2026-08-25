@@ -18,7 +18,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 | အချက် | အခြေအနေ |
 |---|---|
-| လက်ရှိ release line | `v2.11.13` |
+| လက်ရှိ release line | `v2.11.14` |
 | Source file | `.zp`၊ အများအားဖြင့် `main.zp` |
 | Project manifest | `zap.toml` |
 | Lockfile | `zap.lock` |
@@ -33,12 +33,12 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 
 ## Install လုပ်ခြင်း
 
-သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.13 release page](https://github.com/hidecard/zap/releases/tag/v2.11.13) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
+သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.14 release page](https://github.com/hidecard/zap/releases/tag/v2.11.14) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
 
 ### Linux
 
 ```bash
-tar -xzf zap-2.11.13-linux-x86_64.tar.gz
+tar -xzf zap-2.11.14-linux-x86_64.tar.gz
 cd zap
 bash install.sh
 zap --version
@@ -47,7 +47,7 @@ zap --version
 ### macOS ARM64
 
 ```bash
-tar -xzf zap-2.11.13-macos-arm64.tar.gz
+tar -xzf zap-2.11.14-macos-arm64.tar.gz
 cd zap
 chmod +x install.sh
 ./install.sh
@@ -56,7 +56,7 @@ zap --version
 
 ### Windows
 
-မျှော်မှန်းထားသော archive သည် `zap-2.11.13-windows-x86_64.zip` ဖြစ်ပါသည်။
+မျှော်မှန်းထားသော archive သည် `zap-2.11.14-windows-x86_64.zip` ဖြစ်ပါသည်။
 
 ```bat
 cd C:\Zap
@@ -187,7 +187,7 @@ Local validation မစတင်မီ `make doctor` ကို run လုပ်�
 
 ## Release provenance
 
-လက်ရှိ source baseline သည် v2.11.13 ဖြစ်ပါသည်။ [Canonical current-status page](docs/CURRENT_STATUS_MM.md) တွင် လက်ရှိ B0 boundary နှင့် နောက်ဆုံး publish လုပ်ထားသော release ၏ signed provenance fields များကို မှတ်တမ်းတင်ထားပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
+လက်ရှိ source baseline သည် v2.11.14 ဖြစ်သည်။ [Canonical current-status page](docs/CURRENT_STATUS_MM.md) တွင် လက်ရှိ B0 boundary နှင့် နောက်ဆုံး publish လုပ်ထားသော release ၏ signed provenance fields များကို မှတ်တမ်းတင်ထားပါသည်။ v2.3.0၊ v2.2.7 နှင့် အစောပိုင်း release record များကို [GitHub Releases](https://github.com/hidecard/zap/releases) နှင့် bilingual `CHANGELOG` file များတွင် ဆက်လက်ကြည့်ရှုနိုင်ပါသည်။ Release artifact များကို version consistency၊ native test၊ cross-platform build၊ security check၊ documentation check နှင့် installer verification များ pass ပြီးမှသာ publish လုပ်ပါသည်။
 
 ## License
 
