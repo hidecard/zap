@@ -1,0 +1,4 @@
+fn first<T, U>(left: T, right: U) -> T:
+    return left
+
+let wrong: number = first(1)

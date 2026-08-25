@@ -1,0 +1,16 @@
+fn identity<T>(value: T) -> T:
+    return value
+
+fn first<T, U>(left: T, right: U) -> T:
+    return left
+
+fn keep<T>(value: option<T>) -> option<T>:
+    return value
+
+fn recover<T>(value: result<T>) -> result<T>:
+    return value
+
+let numeric: number = identity(1)
+let pair: number = first(1, "zap")
+let optional: option<number> = keep(some(1))
+let result_value: result<text> = recover(err("bad"))

@@ -1,0 +1,5 @@
+fn recover<T>(value: result<T>) -> result<T>:
+    return value
+
+let textual: result<text> = recover(err("bad"))
+let wrong: number = recover(err("bad"))

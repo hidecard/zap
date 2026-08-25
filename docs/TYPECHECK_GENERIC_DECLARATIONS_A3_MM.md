@@ -35,7 +35,7 @@ Call တစ်ခုစီတွင် checker သည် annotated argument မ�
 
 ## ကနဦး slice အတွက် လိုအပ်သော evidence
 
-ကနဦး A3 acceptance checkpoint အတွက် Rust parser acceptance/rejection fixture၊ declared type parameter များကို မှတ်တမ်းတင်သည့် canonical AST output၊ numeric/text substitution နှင့် conflicting substitution အတွက် native static-check acceptance/rejection fixture၊ deterministic repeated run၊ substitution ပြီးနောက် runtime return checking၊ stable JSON diagnostic၊ bootstrap candidate differential output၊ malformed-source no-panic coverage၊ bilingual documentation နှင့် provisional ownership record လိုအပ်သည်။ Parser၊ static checker၊ evaluator၊ typed-IR၊ LSP နှင့် bootstrap candidate ပြောင်းလဲမှုများကို တစ်စုတစ်စည်းတည်း စစ်ဆေးရမည်။
+ကနဦး A3 acceptance checkpoint အတွက် Rust parser acceptance/rejection fixture၊ declared type parameter များကို မှတ်တမ်းတင်သည့် canonical AST output၊ numeric/text substitution၊ multiple type parameter၊ structural `option<T>`/`result<T>` wrapper၊ conflicting substitution နှင့် generic arity အတွက် native static-check acceptance/rejection fixture၊ deterministic repeated run၊ substitution ပြီးနောက် runtime return checking၊ stable JSON diagnostic၊ bootstrap candidate differential output၊ malformed-source no-panic coverage၊ bilingual documentation နှင့် provisional ownership record လိုအပ်သည်။ Parser၊ static checker၊ evaluator၊ typed-IR၊ LSP နှင့် bootstrap candidate ပြောင်းလဲမှုများကို တစ်စုတစ်စည်းတည်း စစ်ဆေးရမည်။
 
 ## ရှင်းလင်းစွာ deferred ထားသော scope
 

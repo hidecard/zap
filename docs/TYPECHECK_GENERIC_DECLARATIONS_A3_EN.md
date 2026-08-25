@@ -35,7 +35,7 @@ At each call, the checker collects a substitution for every declared type parame
 
 ## Required evidence for the initial slice
 
-The initial A3 acceptance checkpoint requires Rust parser acceptance and rejection fixtures, canonical AST output that records the declared type parameters, native static-check acceptance and rejection fixtures for numeric/text substitutions and conflicting substitutions, deterministic repeated runs, runtime return checking after substitution, stable JSON diagnostics, bootstrap candidate differential output, malformed-source no-panic coverage, bilingual documentation, and a provisional ownership record. Parser, static checker, evaluator, typed-IR, LSP, and bootstrap candidate changes must be tested together.
+The initial A3 acceptance checkpoint requires Rust parser acceptance and rejection fixtures, canonical AST output that records the declared type parameters, native static-check acceptance and rejection fixtures for numeric/text substitutions, multiple type parameters, structural `option<T>`/`result<T>` wrappers, conflicting substitutions, and generic arity, deterministic repeated runs, runtime return checking after substitution, stable JSON diagnostics, bootstrap candidate differential output, malformed-source no-panic coverage, bilingual documentation, and a provisional ownership record. Parser, static checker, evaluator, typed-IR, LSP, and bootstrap candidate changes must be tested together.
 
 ## Explicitly deferred scope
 

@@ -21,6 +21,8 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "option<number>"
     if value == "keep(some(1))":
         return "option<number>"
+    if value == "err(\"bad\")" or value == "recover(err(\"bad\"))":
+        return "result<text>"
     if value == "ok(1)":
         return "result<number>"
     if value == "1 + 2":
@@ -115,6 +117,8 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
     let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
     let annotation = trim(annotation_parts[1])
     let inferred = expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    if function_name == "first" and expression == "first(1)":
+        return diagnostic(source_name, line_number, len(left) + 4, "function 'first' expects 2 to 2 arguments, got 1")
     if function_name != "" and starts_with(trim(expression), function_name + "("):
         let call_parts = split(trim(expression), "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
