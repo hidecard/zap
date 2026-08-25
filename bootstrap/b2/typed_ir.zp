@@ -21,6 +21,10 @@ export fn inferred_literal(expression):
         return {"kind": "literal", "literal_kind": "bool", "span": span(1, 1, 5), "value": false}
     if value == "none":
         return {"kind": "literal", "literal_kind": "none", "span": span(1, 1, 4), "value": none}
+    if starts_with(value, "["):
+        return {"kind": "literal", "literal_kind": "list", "span": span(1, 1, len(value)), "value": from_json(value)}
+    if starts_with(value, "{"):
+        return {"kind": "literal", "literal_kind": "map", "span": span(1, 1, len(value)), "value": from_json(value)}
     return {"kind": "literal", "literal_kind": "number", "span": span(1, 1, len(value)), "value": from_json(value)}
 
 export fn inferred_type_for(expression):
@@ -31,7 +35,63 @@ export fn inferred_type_for(expression):
         return "bool"
     if value == "none":
         return "none"
+    if starts_with(value, "["):
+        let inner = trim(substring(value, 1, len(value) - 1))
+        if inner == "":
+            return "list<any>"
+        let parts = split(inner, ",")
+        let element_type = inferred_type_for(parts[0])
+        for part in parts:
+            if inferred_type_for(part) != element_type:
+                return "list<any>"
+        return "list<" + element_type + ">"
+    if starts_with(value, "{"):
+        let inner = trim(substring(value, 1, len(value) - 1))
+        if inner == "":
+            return "map<any,any>"
+        let pair = split(inner, ":")
+        if len(pair) == 2:
+            return "map<text," + inferred_type_for(pair[1]) + ">"
+        return "map<any,any>"
     return "number"
+
+export fn generic_parameters(signature):
+    let parts = split(trim(signature), "<")
+    if len(parts) < 2:
+        return []
+    let raw = split(parts[1], ">")
+    if len(raw) == 0 or trim(raw[0]) == "":
+        return []
+    let result = []
+    for parameter in split(raw[0], ","):
+        result = append(result, trim(parameter))
+    return result
+
+export fn generic_function_metadata(signature, return_type):
+    let name_area = split(trim(signature), "(")[0]
+    let name_parts = split(name_area, "<")
+    let name = trim(name_parts[0])
+    if starts_with(name, "fn "):
+        name = trim(substring(name, 3, len(name)))
+    return {"name": name, "type_params": generic_parameters(signature), "return_type": return_type}
+
+export fn emit_declarations(source, source_name):
+    let lines = split(source, "\n")
+    let nodes = []
+    let line_number = 0
+    for line in lines:
+        line_number = line_number + 1
+        let value = trim(line)
+        if starts_with(value, "let ") and contains(value, ":") and contains(value, " = "):
+            let assignment = split(value, " = ")
+            let left = trim(assignment[0])
+            let annotation_parts = split(left, ":")
+            let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
+            let annotation = trim(annotation_parts[1])
+            let expression = trim(assignment[1])
+            let literal = inferred_literal(expression)
+            nodes = append(nodes, declaration_node(variable, annotation, inferred_type_for(expression), literal, line_number, len(value)))
+    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit(source, source_name):
     if source == "let first: number = 1\nlet label: text = \"zap\"\n":
@@ -48,6 +108,8 @@ export fn emit(source, source_name):
         let textual_declaration = {"annotation": "text", "exported": false, "inferred_type": "text", "ir_schema_version": 1, "kind": "declaration", "name": "textual", "span": span(5, 1, 35), "value": textual_call}
         return json({"candidate_only": true, "ir": {"nodes": [function_node, numeric_declaration, textual_declaration]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
     let lines = split(source, "\n")
+    if len(lines) > 1:
+        return emit_declarations(source, source_name)
     let line = trim(lines[0])
     let assignment = split(line, " = ")
     let left = trim(assignment[0])

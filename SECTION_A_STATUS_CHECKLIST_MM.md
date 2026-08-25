@@ -28,7 +28,7 @@
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
-- [ ] **General typed-IR production** — annotated declarations၊ generic identity နှင့် primitive literals အတွက် bounded candidate ရှိသော်လည်း arbitrary program typed-IR မထုတ်နိုင်သေးပါ။
+- [ ] **General typed-IR production** — multi-declaration/list/map emission နှင့် generic metadata foundation ရှိသော်လည်း arbitrary program၊ expression၊ block နှင့် call typed-IR မထုတ်နိုင်သေးပါ။
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
@@ -116,7 +116,13 @@
 
 - [x] Multi-parameter generic substitution foundation — `T`/`U` စသည့် parameter များကို nested return wrapper ထဲသို့ instantiate လုပ်နိုင်ပြီး simple constraint check ပြုလုပ်နိုင်သည်။
 
+- [x] Typed-IR multi-declaration foundation — multi-line annotated declarations များကို line-aware declaration nodes အဖြစ် စုစည်းပြီး list/map literal inferred types ထည့်သွင်းနိုင်သည်။
+
+- [x] Typed-IR generic metadata foundation — generic function name၊ type parameters နှင့် return type metadata ကို candidate IR helper အဖြစ် ထုတ်နိုင်သည်။
+
 - [x] B2 Type/Generic ၁၅-case verifier — environment inference၊ nested collection/indexing၊ generic metadata၊ validation၊ substitution နှင့် simple constraints cases pass.
+
+- [x] B2 typed-IR/generic ၁၀-case verifier — multi-declaration emission၊ collection inferred types၊ source spans နှင့် generic metadata cases pass.
 
 - [x] B1 unexpected indentation differential — multi-level indentation jump fixture နှင့် reference diagnostic pass.
 
