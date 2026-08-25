@@ -8,11 +8,11 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — လက်ရှိသည် selected declarations၊ functions၊ conditions၊ calls၊ collections နှင့် literals အတွက် bounded candidate slice ဖြစ်သည်။ Environment-aware AST foundation ထပ်တိုးထားသော်လည်း arbitrary program inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — environment-aware expression၊ collection၊ index နှင့် function/call foundations တိုးချဲ့ထားသော်လည်း arbitrary program-wide inference၊ branch merge၊ loop mutation နှင့် complete symbol environment မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — parameter extraction၊ validation နှင့် nested wrapper substitution foundation ရှိသော်လည်း generic function/type/container နှင့် constraints အပြည့်အဝ မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution နှင့် simple `where` constraint foundation ရှိသော်လည်း generic type/container၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — homogeneous AST list/map နှင့် environment-aware collection foundation ရှိသော်လည်း arbitrary nested collection/index inference မပြီးသေးပါ။
 
@@ -28,7 +28,7 @@
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
-- [ ] **General typed-IR production** — multi-declaration/list/map emission နှင့် generic metadata foundation ရှိသော်လည်း arbitrary program၊ expression၊ block နှင့် call typed-IR မထုတ်နိုင်သေးပါ။
+- [ ] **General typed-IR production** — declaration/list/map emission နှင့် generic/function metadata foundation ရှိသော်လည်း inferred function/call expressions၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
@@ -116,9 +116,19 @@
 
 - [x] Multi-parameter generic substitution foundation — `T`/`U` စသည့် parameter များကို nested return wrapper ထဲသို့ instantiate လုပ်နိုင်ပြီး simple constraint check ပြုလုပ်နိုင်သည်။
 
+- [x] Function signature environment foundation — typed/generic parameter lists၊ canonical function name၊ return annotation နှင့် `where` constraint metadata ကို candidate အဖြစ် ဖတ်နိုင်သည်။
+
+- [x] Function call-site inference foundation — typed arguments၊ generic substitution၊ arity mismatch၊ argument mismatch နှင့် unknown-function result များကို ခွဲခြားနိုင်သည်။
+
+- [x] Nested function-call inference foundation — AST call arguments အတွင်း nested call return types ကို outer call ၏ argument types အဖြစ် ဆက်လက်အသုံးပြုနိုင်သည်။
+
+- [x] Function return-type compatibility foundation — inferred return AST type နှင့် expected return annotation ကို စစ်ဆေးနိုင်သည်။
+
 - [x] Typed-IR multi-declaration foundation — multi-line annotated declarations များကို line-aware declaration nodes အဖြစ် စုစည်းပြီး list/map literal inferred types ထည့်သွင်းနိုင်သည်။
 
 - [x] Typed-IR generic metadata foundation — generic function name၊ type parameters နှင့် return type metadata ကို candidate IR helper အဖြစ် ထုတ်နိုင်သည်။
+
+- [x] B2 function/call inference verifier — signature၊ typed call၊ generic call၊ nested call၊ arity/type/unknown/constraint diagnostics နှင့် return compatibility စုစုပေါင်း ၁၃ cases pass.
 
 - [x] B2 Type/Generic ၁၅-case verifier — environment inference၊ nested collection/indexing၊ generic metadata၊ validation၊ substitution နှင့် simple constraints cases pass.
 

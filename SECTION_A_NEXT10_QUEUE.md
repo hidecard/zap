@@ -10,8 +10,8 @@
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
 | 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, and missing-body diagnostics pass in 10-case and control-flow verifiers; full branch semantics remain pending. |
 | 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes and `break`/`continue` AST nodes pass focused cases; function/class integration remains pending. |
-| 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive environment lookup, homogeneous collections, nested list/map indexing, and generic identity calls; full expression environment remains pending. |
-| 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans နှင့် generic function metadata foundation pass; arbitrary expression/block/call typed-IR remains pending. |
+| 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive environment lookup, homogeneous collections, nested list/map indexing, generic identity calls, and nested function-call argument inference; full expression environment remains pending. |
+| 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans နှင့် generic/function metadata foundation pass; inferred call expressions and arbitrary block typed-IR remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, inconsistent dedent, jump, and missing-block cases pass in focused verifiers; complete reference error matrix remains pending. |
 | 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
 
@@ -39,6 +39,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_ast_expression_bridge.sh`
 - `scripts/bootstrap/verify_b2_type_generic_10.sh` — covers 15 inference/generic cases
 - `scripts/bootstrap/verify_b2_typed_ir_generic_10.sh` — covers 10 typed-IR/generic metadata cases
+- `scripts/bootstrap/verify_b2_function_call_inference_10.sh` — covers 13 function/call inference cases
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`

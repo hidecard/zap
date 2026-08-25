@@ -189,11 +189,90 @@ export fn generic_constraint_satisfied(argument_types, constraint):
             return false
     return true
 
+export fn function_signature_info(signature):
+    let value = trim(signature)
+    let name_area = split(value, "(")[0]
+    let raw_name = trim(substring(name_area, 3, len(name_area)))
+    let name = trim(split(raw_name, "<")[0])
+    let params_area = split(split(value, "(")[1], ")")[0]
+    let params = []
+    if trim(params_area) != "":
+        for raw in split(params_area, ","):
+            let parts = split(trim(raw), ":")
+            if len(parts) == 2:
+                params = append(params, {"name": trim(parts[0]), "type": trim(parts[1])})
+    let return_type = "none"
+    let constraint = ""
+    if contains(value, " -> "):
+        let return_parts = split(value, " -> ")
+        let return_area = trim(return_parts[1])
+        if contains(return_area, " where "):
+            let where_parts = split(return_area, " where ")
+            return_type = trim(split(where_parts[0], ":")[0])
+            let constraint_parts = split(where_parts[1], ":")
+            if len(constraint_parts) >= 2:
+                constraint = trim(constraint_parts[1])
+        else:
+            return_type = trim(split(return_area, ":")[0])
+    let generic = generic_declaration_info(value)
+    return {"constraint": constraint, "generic_parameters": generic["parameters"], "name": name, "params": params, "return_type": return_type}
+
+export fn type_compatible(expected, actual):
+    return expected == "any" or actual == "any" or expected == actual
+
+export fn infer_function_call(functions, callee, argument_types):
+    for function in functions:
+        if function["name"] != callee:
+            continue
+        let params = function["params"]
+        if len(params) != len(argument_types):
+            return "arity_error"
+        let generic_parameters = function["generic_parameters"]
+        if len(generic_parameters) > 0:
+            if not generic_constraint_satisfied(argument_types, function["constraint"]):
+                return "constraint_error"
+            return generic_instantiate_return(generic_parameters, argument_types, function["return_type"])
+        let index = 0
+        for parameter in params:
+            if not type_compatible(parameter["type"], argument_types[index]):
+                return "argument_error"
+            index = index + 1
+        return function["return_type"]
+    return "unknown_function"
+
+export fn infer_ast_function_call(node, functions, environment):
+    let argument_types = []
+    for argument in node["args"]:
+        let argument_value = argument["value"]
+        if argument_value["kind"] == "call":
+            argument_types = append(argument_types, infer_ast_function_call(argument_value, functions, environment))
+        else:
+            argument_types = append(argument_types, ast_expression_type_env(argument_value, environment))
+    return infer_function_call(functions, node["callee"]["name"], argument_types)
+
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
 
 export fn syntax_diagnostic(source_name, line, column, message):
     return {"code": "ZAP-SYNTAX-001", "column": column, "help": "Review the Zap syntax guide for the expected form.", "kind": "SyntaxError", "line": line, "message": message, "notes": ["Check the surrounding syntax and delimiters."], "severity": "error", "source_name": source_name}
+
+export fn function_call_diagnostic(functions, callee, argument_types, source_name, line):
+    let result = infer_function_call(functions, callee, argument_types)
+    if result == "unknown_function":
+        return diagnostic(source_name, line, 1, "unknown function '" + callee + "'")
+    if result == "arity_error":
+        return diagnostic(source_name, line, 1, "function '" + callee + "' received an invalid argument count")
+    if result == "argument_error":
+        return diagnostic(source_name, line, 1, "function '" + callee + "' received an incompatible argument")
+    if result == "constraint_error":
+        return diagnostic(source_name, line, 1, "generic constraint for '" + callee + "' is not satisfied")
+    return none
+
+export fn infer_return_type(return_node, environment, expected_type):
+    let inferred = ast_expression_type_env(return_node, environment)
+    if expected_type == "any" or expected_type == inferred:
+        return inferred
+    return "return_error"
 
 export fn is_number_literal(value):
     if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
