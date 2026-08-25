@@ -208,6 +208,14 @@ export fn call_graph_propagate(graph, functions, calls):
 export fn call_graph_return_type(graph, caller, callee):
     return call_graph_lookup(graph, caller, callee)
 
+export fn call_graph_propagate_fixpoint(graph, functions, calls, max_iterations):
+    let updated = call_graph_propagate(graph, functions, calls)
+    if max_iterations <= 1:
+        return updated
+    if len(updated) == len(graph) + len(calls):
+        return updated
+    return call_graph_propagate_fixpoint(updated, functions, calls, max_iterations - 1)
+
 export fn call_graph_has_cycle_from(graph, start, current, visited):
     if list_contains(visited, current):
         return current == start
@@ -372,6 +380,50 @@ export fn ast_expression_type(node):
         return "any"
     return "any"
 
+export fn type_wrapper_parts(type_name):
+    if starts_with(type_name, "list<") and ends_with(type_name, ">"):
+        return {"wrapper": "list", "inner": substring(type_name, 5, len(type_name) - 1)}
+    if starts_with(type_name, "map<") and ends_with(type_name, ">"):
+        let inside = substring(type_name, 4, len(type_name) - 1)
+        let parts = split(inside, ",")
+        if len(parts) == 2:
+            return {"wrapper": "map", "key": trim(parts[0]), "value": trim(parts[1])}
+    if starts_with(type_name, "option<") and ends_with(type_name, ">"):
+        return {"wrapper": "option", "inner": substring(type_name, 7, len(type_name) - 1)}
+    if starts_with(type_name, "result<") and ends_with(type_name, ">"):
+        return {"wrapper": "result", "inner": substring(type_name, 7, len(type_name) - 1)}
+    return {"wrapper": "", "inner": type_name}
+
+export fn type_unify(expected, actual):
+    if expected == "any" or actual == "any":
+        return true
+    if expected == actual:
+        return true
+    let expected_parts = type_wrapper_parts(expected)
+    let actual_parts = type_wrapper_parts(actual)
+    if expected_parts["wrapper"] == "" or expected_parts["wrapper"] != actual_parts["wrapper"]:
+        return false
+    if expected_parts["wrapper"] == "map":
+        return type_unify(expected_parts["key"], actual_parts["key"]) and type_unify(expected_parts["value"], actual_parts["value"])
+    return type_unify(expected_parts["inner"], actual_parts["inner"])
+
+export fn generic_unify(expected, actual, parameters):
+    if contains(parameters, expected):
+        return true
+    return type_unify(expected, actual)
+
+export fn generic_return_from_call(return_template, parameters, argument_types):
+    let result = return_template
+    for parameter in parameters:
+        let index = 0
+        for candidate in parameters:
+            if candidate == parameter:
+                break
+            index = index + 1
+        if index < len(argument_types):
+            result = generic_type_substitute(result, parameter, argument_types[index])
+    return result
+
 export fn generic_type_substitute(type_template, parameter, argument_type):
     if type_template == parameter:
         return argument_type
@@ -440,7 +492,7 @@ export fn function_signature_info(signature):
     return {"constraint": constraint, "generic_parameters": generic["parameters"], "name": name, "params": params, "return_type": return_type}
 
 export fn type_compatible(expected, actual):
-    return expected == "any" or actual == "any" or expected == actual
+    return type_unify(expected, actual)
 
 export fn infer_function_call(functions, callee, argument_types):
     for function in functions:

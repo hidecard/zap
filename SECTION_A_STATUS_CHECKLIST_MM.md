@@ -8,11 +8,11 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — nested scope graph၊ branch-local merge၊ loop fixpoint နှင့် call-cycle foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution နှင့် simple `where` constraint foundation ရှိသော်လည်း generic type/container၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ simple `where` constraint နှင့် generic unification foundation ရှိသော်လည်း generic type/container၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — homogeneous AST list/map နှင့် environment-aware collection foundation ရှိသော်လည်း arbitrary nested collection/index inference မပြီးသေးပါ။
 
@@ -145,6 +145,12 @@
 - [x] Call graph cycle foundation — self-recursion၊ mutual recursion နှင့် acyclic graph များကို cycle kind အဖြစ် ခွဲခြားနိုင်သည်။
 
 - [x] B2 loop-fixpoint/cycle ၁၀-case verifier — stable/divergent mutation၊ self-cycle၊ mutual-cycle နှင့် acyclic graph cases pass.
+
+- [x] Recursive type unification foundation — scalar၊ list၊ map၊ option၊ result wrapper များကို nested type အဖြစ် unify လုပ်နိုင်ပြီး `any` wildcard နှင့် generic parameter matching ပါဝင်သည်။
+
+- [x] B2 type-unification ၁၀-case verifier — recursive wrapper၊ map key/value၊ wildcard နှင့် generic cases pass.
+
+- [x] Section A next-50 consolidated acceptance — inference၊ function/call၊ nested scope၊ scope exit၊ loop fixpoint နှင့် call-cycle စုစုပေါင်း ၅၀ focused cases pass.
 
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
