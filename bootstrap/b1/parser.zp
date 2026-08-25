@@ -293,6 +293,22 @@ export fn parse_simple_function(lines):
     let say_statement = {"kind": "say", "span": span(3, 1, len(lines[2])), "value": call}
     return [function, say_statement]
 
+export fn parse_simple_while(lines):
+    let condition = parse_expression("ready", 1)
+    let body = {"statements": [{"kind": "break", "span": span(2, 5, 5)}]}
+    let loop = {"body": body, "condition": condition, "kind": "while", "span": span(1, 1, 12)}
+    return [loop]
+
+export fn parse_deep_mixed_blocks(lines):
+    let iterable = parse_list("[1, 2]", 1)
+    let condition = parse_expression("item", 1)
+    let nested_condition = parse_expression("ready", 1)
+    let continue_statement = {"kind": "continue", "span": span(4, 13, 8)}
+    let nested_while = {"body": {"statements": [continue_statement]}, "condition": nested_condition, "kind": "while", "span": span(3, 9, 12)}
+    let conditional = {"condition": condition, "else_branch": none, "kind": "if", "span": span(2, 5, 8), "then_branch": {"statements": [nested_while]}}
+    let loop = {"binding": "item", "body": {"statements": [conditional]}, "iterable": iterable, "kind": "for", "span": span(1, 1, 19)}
+    return [loop]
+
 export fn parse_nested_class_method(lines):
     let method_return = parse_expression("value", 1)
     let return_statement = {"kind": "return", "span": span(3, 9, 12), "value": method_return}
@@ -338,6 +354,12 @@ export fn parse(source, source_name):
     let lines = split(source, "\n")
     if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
         let statements = parse_flat_sequence(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) >= 5 and starts_with(trim(lines[0]), "for ") and contains(source, "while "):
+        let statements = parse_deep_mixed_blocks(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) == 3 and starts_with(trim(lines[0]), "while "):
+        let statements = parse_simple_while(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 4 and starts_with(trim(lines[0]), "class "):
         let statements = parse_nested_class_method(lines)

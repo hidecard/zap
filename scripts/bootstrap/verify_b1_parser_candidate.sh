@@ -55,6 +55,10 @@ nested_class_method_fixture="bootstrap/fixtures/parser/nested_class_method.zp"
 nested_class_method_expected="bootstrap/fixtures/parser/nested_class_method.ast.json"
 mixed_recursive_fixture="bootstrap/fixtures/parser/mixed_recursive_sequence.zp"
 mixed_recursive_expected="bootstrap/fixtures/parser/mixed_recursive_sequence.ast.json"
+while_simple_fixture="bootstrap/fixtures/parser/while_simple.zp"
+while_simple_expected="bootstrap/fixtures/parser/while_simple.ast.json"
+deep_mixed_fixture="bootstrap/fixtures/parser/deep_mixed_blocks.zp"
+deep_mixed_expected="bootstrap/fixtures/parser/deep_mixed_blocks.ast.json"
 invalid_fixture="bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"
 invalid_expected="bootstrap/fixtures/diagnostics/missing_closing_bracket.json"
 unexpected_fixture="bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"
@@ -63,7 +67,7 @@ missing_assignment_fixture="bootstrap/fixtures/diagnostics/missing_assignment.zp
 missing_assignment_expected="bootstrap/fixtures/diagnostics/missing_assignment.json"
 missing_function_paren_fixture="bootstrap/fixtures/diagnostics/missing_function_paren.zp"
 missing_function_paren_expected="bootstrap/fixtures/diagnostics/missing_function_paren.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$while_simple_fixture" "$while_simple_expected" "$deep_mixed_fixture" "$deep_mixed_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -100,6 +104,8 @@ let mixed_top_level = read_text("bootstrap/fixtures/parser/mixed_top_level.zp")
 let nested_function = read_text("bootstrap/fixtures/parser/nested_function_blocks.zp")
 let nested_class_method = read_text("bootstrap/fixtures/parser/nested_class_method.zp")
 let mixed_recursive = read_text("bootstrap/fixtures/parser/mixed_recursive_sequence.zp")
+let while_simple = read_text("bootstrap/fixtures/parser/while_simple.zp")
+let deep_mixed = read_text("bootstrap/fixtures/parser/deep_mixed_blocks.zp")
 let invalid = read_text("bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 let unexpected = read_text("bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 let missing_assignment = read_text("bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -130,6 +136,8 @@ let mixed_top_level_tokens = from_json(lex(mixed_top_level, "bootstrap/fixtures/
 let nested_function_tokens = from_json(lex(nested_function, "bootstrap/fixtures/parser/nested_function_blocks.zp"))
 let nested_class_method_tokens = from_json(lex(nested_class_method, "bootstrap/fixtures/parser/nested_class_method.zp"))
 let mixed_recursive_tokens = from_json(lex(mixed_recursive, "bootstrap/fixtures/parser/mixed_recursive_sequence.zp"))
+let while_simple_tokens = from_json(lex(while_simple, "bootstrap/fixtures/parser/while_simple.zp"))
+let deep_mixed_tokens = from_json(lex(deep_mixed, "bootstrap/fixtures/parser/deep_mixed_blocks.zp"))
 let invalid_tokens = from_json(lex(invalid, "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"))
 let unexpected_tokens = from_json(lex(unexpected, "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"))
 let missing_assignment_tokens = from_json(lex(missing_assignment, "bootstrap/fixtures/diagnostics/missing_assignment.zp"))
@@ -160,6 +168,8 @@ say parse_or_diagnostics(mixed_top_level, mixed_top_level_tokens["tokens"], "boo
 say parse_or_diagnostics(nested_function, nested_function_tokens["tokens"], "bootstrap/fixtures/parser/nested_function_blocks.zp")
 say parse_or_diagnostics(nested_class_method, nested_class_method_tokens["tokens"], "bootstrap/fixtures/parser/nested_class_method.zp")
 say parse_or_diagnostics(mixed_recursive, mixed_recursive_tokens["tokens"], "bootstrap/fixtures/parser/mixed_recursive_sequence.zp")
+say parse_or_diagnostics(while_simple, while_simple_tokens["tokens"], "bootstrap/fixtures/parser/while_simple.zp")
+say parse_or_diagnostics(deep_mixed, deep_mixed_tokens["tokens"], "bootstrap/fixtures/parser/deep_mixed_blocks.zp")
 say parse_or_diagnostics(invalid, invalid_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_closing_bracket.zp")
 say parse_or_diagnostics(unexpected, unexpected_tokens["tokens"], "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 say parse_or_diagnostics(missing_assignment, missing_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_assignment.zp")
@@ -192,6 +202,8 @@ EOF
   cat "$nested_function_expected"
   cat "$nested_class_method_expected"
   cat "$mixed_recursive_expected"
+  cat "$while_simple_expected"
+  cat "$deep_mixed_expected"
   cat "$invalid_expected"
   cat "$unexpected_expected"
   cat "$missing_assignment_expected"

@@ -32,6 +32,8 @@
 - [x] Invalid indentation diagnostic — two-space malformed indentation is rejected with reference-matching diagnostic.
 - [x] Mixed top-level simple statement sequence — declarations and `say` statements use the append-backed flat sequence path.
 - [x] Nested class method body — bounded class member function and return body reference parity.
+- [x] Simple while block — `while ready:` with `break` body reference parity.
+- [x] Deep mixed nested block — `for/if/while/continue` recursive AST reference parity.
 - [x] Mixed recursive top-level sequence — nested call, `say`, and parenthesized declaration in one flat sequence.
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.

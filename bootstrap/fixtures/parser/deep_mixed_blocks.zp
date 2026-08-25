@@ -1,0 +1,4 @@
+for item in [1, 2]:
+    if item:
+        while ready:
+            continue
