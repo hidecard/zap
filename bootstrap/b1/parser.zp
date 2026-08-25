@@ -162,4 +162,6 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     let delimiter = delimiter_diagnostics(tokens, source_name)
     if delimiter != none:
         return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    if not contains(source, " = "):
+        return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)
