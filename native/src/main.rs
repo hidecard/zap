@@ -22,7 +22,8 @@ use project::{resolve_module, run_zap_tests, validate_project};
 mod parser;
 
 use parser::{
-    annotation_matches, generic_parts, generic_type, is_allowed_annotation, matching_paren,
+    annotation_matches, generic_parts, generic_type, is_allowed_annotation,
+    is_allowed_annotation_with_type_params, matching_paren,
     parse_function_name_and_type_parameters, parse_signature, split_static_args, split_type_args,
     static_literal_type,
 };
@@ -1402,10 +1403,8 @@ fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String>
                 .map_err(|error| {
                     format!("SyntaxError at {}:{}: {error}", file.display(), index + 1)
                 })?;
-            let valid_annotation = |annotation: &str| {
-                type_params.iter().any(|parameter| parameter == annotation)
-                    || is_allowed_annotation(annotation)
-            };
+            let valid_annotation =
+                |annotation: &str| is_allowed_annotation_with_type_params(annotation, &type_params);
             for param in &params {
                 if let Some(annotation) = &param.annotation {
                     if !valid_annotation(annotation) {

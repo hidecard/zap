@@ -1,0 +1,5 @@
+fn keep<T>(value: option<T>) -> option<T>:
+    return value
+
+let numeric: option<number> = keep(some(1))
+let wrong: text = keep(some(1))

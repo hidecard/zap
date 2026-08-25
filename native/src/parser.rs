@@ -248,6 +248,37 @@ pub(crate) fn is_allowed_annotation(annotation: &str) -> bool {
     }
 }
 
+pub(crate) fn is_allowed_annotation_with_type_params(
+    annotation: &str,
+    type_params: &[String],
+) -> bool {
+    let value = annotation.trim();
+    if type_params.iter().any(|parameter| parameter == value) {
+        return true;
+    }
+    if is_allowed_annotation(value) {
+        return true;
+    }
+    let Some((base, inner)) = generic_parts(value) else {
+        return false;
+    };
+    let Some(args) = split_type_args(inner) else {
+        return false;
+    };
+    match base {
+        "list" | "option" | "result" => {
+            args.len() == 1 && is_allowed_annotation_with_type_params(args[0], type_params)
+        }
+        "map" => {
+            args.len() == 2
+                && args
+                    .iter()
+                    .all(|arg| is_allowed_annotation_with_type_params(arg, type_params))
+        }
+        _ => false,
+    }
+}
+
 pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
     let expected = expected.trim();
     let actual = actual.trim();

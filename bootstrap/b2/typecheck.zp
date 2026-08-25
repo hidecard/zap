@@ -19,6 +19,8 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "map<text,number>"
     if value == "some(1)":
         return "option<number>"
+    if value == "keep(some(1))":
+        return "option<number>"
     if value == "ok(1)":
         return "result<number>"
     if value == "1 + 2":
@@ -62,8 +64,12 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        if function_name == "identity":
+        if function_name == "identity" or function_name == "keep":
             return expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+        if function_name == "first":
+            let arguments = split(argument, ",")
+            if len(arguments) > 0:
+                return expression_type(trim(arguments[0]), "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if function_name == "same":
             let arguments = split(argument, ",")
             if len(arguments) == 2:

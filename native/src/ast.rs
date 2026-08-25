@@ -3,7 +3,9 @@
 use std::collections::HashSet;
 
 use crate::lexer::SourceSpan;
-use crate::parser::parse_function_name_and_type_parameters;
+use crate::parser::{
+    is_allowed_annotation_with_type_params, parse_function_name_and_type_parameters,
+};
 
 /// A source-aware expression node used by future parser and tooling phases.
 #[derive(Clone, Debug, PartialEq)]
@@ -847,7 +849,7 @@ fn parse_function_header(
                 .filter(|value| !value.is_empty())
                 .map(str::to_string);
             if let Some(annotation) = annotation.as_deref() {
-                if !type_params.iter().any(|parameter| parameter == annotation) {
+                if !is_allowed_annotation_with_type_params(annotation, &type_params) {
                     if let Err(error) = validate_annotation_syntax(annotation) {
                         return Some(Err(format!(
                             "invalid annotation for parameter {parameter_name}: {error}"
@@ -869,7 +871,7 @@ fn parse_function_header(
         .filter(|value| !value.is_empty())
         .map(str::to_string);
     if let Some(annotation) = return_type.as_deref() {
-        if !type_params.iter().any(|parameter| parameter == annotation) {
+        if !is_allowed_annotation_with_type_params(annotation, &type_params) {
             if let Err(error) = validate_annotation_syntax(annotation) {
                 return Some(Err(format!("invalid return annotation: {error}")));
             }

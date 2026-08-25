@@ -1,0 +1,5 @@
+fn first<T, U>(left: T, right: U) -> T:
+    return left
+
+let numeric: number = first(1, "zap")
+let textual: text = first("zap", 1)
