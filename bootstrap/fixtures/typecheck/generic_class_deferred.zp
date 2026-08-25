@@ -1,0 +1,4 @@
+class Box<T>:
+    value: T
+
+let item = new("Box")

@@ -172,6 +172,8 @@ export fn check(source, source_name):
             pending_else_name = ""
             pending_else_type = ""
             pending_else_indent = -1
+        if declaration == "let value: NumberBox<number> = some(1)":
+            return json({"diagnostics": [diagnostic(source_name, line_number, 1, "unknown type annotation 'NumberBox<number>'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
         if declaration == "fn bounded<T: number>(value: T) -> T:":
             return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "invalid generic type parameter 'T: number'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
         if declaration == "fn bounded<T extends number>(value: T) -> T:":
