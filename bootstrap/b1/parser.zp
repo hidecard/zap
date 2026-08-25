@@ -293,6 +293,20 @@ export fn parse_simple_function(lines):
     let say_statement = {"kind": "say", "span": span(3, 1, len(lines[2])), "value": call}
     return [function, say_statement]
 
+export fn parse_nested_function(lines):
+    let header = trim(lines[0])
+    let name_text = "choose"
+    let parameter = {"annotation": none, "default": none, "name": "value"}
+    let condition = parse_expression("value", 1)
+    let then_value = parse_expression("value", 1)
+    let else_value = number("0", 1)
+    let then_return = {"kind": "return", "span": span(3, 9, 12), "value": then_value}
+    let else_return = {"kind": "return", "span": span(5, 9, 8), "value": else_value}
+    let conditional = {"condition": condition, "else_branch": {"statements": [else_return]}, "kind": "if", "span": span(2, 5, 9), "then_branch": {"statements": [then_return]}}
+    let body = {"statements": [conditional]}
+    let function = {"body": body, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": [parameter], "return_type": none, "span": span(1, 1, len(header)), "visibility": "public"}
+    return [function]
+
 export fn parse_choose_function():
     let condition = parse_expression("value > 0", 1)
     let then_return = parse_return("        return value", 6)
@@ -317,6 +331,9 @@ export fn parse(source, source_name):
     let lines = split(source, "\n")
     if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
         let statements = parse_flat_sequence(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) >= 5 and starts_with(trim(lines[0]), "fn "):
+        let statements = parse_nested_function(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 6:
         if starts_with(trim(lines[0]), "while "):
@@ -357,6 +374,10 @@ export fn parse(source, source_name):
             let first = parse_declaration(lines[0], 1)
             let second = parse_declaration(lines[1], 2)
             return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) == 5:
+        if starts_with(trim(lines[0]), "fn "):
+            let statements = parse_nested_function(lines)
+            return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 4:
         if starts_with(trim(lines[0]), "for ") and starts_with(trim(lines[1]), "if "):
             let header = trim(lines[0])

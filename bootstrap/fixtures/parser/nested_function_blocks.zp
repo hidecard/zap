@@ -1,0 +1,5 @@
+fn choose(value):
+    if value:
+        return value
+    else:
+        return 0
