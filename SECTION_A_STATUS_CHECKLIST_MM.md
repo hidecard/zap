@@ -8,7 +8,7 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — module/function symbol graph foundation ထည့်ထားသော်လည်း arbitrary nested scope graph၊ branch path completeness၊ loop mutation၊ call graph propagation နှင့် full flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — module/function symbol graph၊ branch path merge နှင့် scope restoration foundations ထည့်ထားသော်လည်း arbitrary nested scope graph၊ loop mutation fixpoint၊ call graph propagation နှင့် full flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
@@ -20,7 +20,7 @@
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
-- [ ] **Loop mutation analysis** — bounded loop narrowing/restoration ရှိသော်လည်း merged function environments နှင့် ချိတ်ဆက်ထားသော general mutation analysis မပြီးသေးပါ။
+- [ ] **Loop mutation analysis** — loop body type comparison နှင့် divergent mutation ကို `any` သို့ widen လုပ်သည့် foundation ရှိသော်လည်း arbitrary loop assignments၊ nested scopes နှင့် iteration fixpoint analysis မပြီးသေးပါ။
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
@@ -134,9 +134,21 @@
 
 - [x] Program symbol lookup/update foundation — deterministic last-binding lookup၊ reassignment shadow binding နှင့် unknown-symbol fallback ကို စစ်ဆေးနိုင်သည်။
 
+- [x] Loop mutation update foundation — unchanged body types preserve bindings၊ changed body types widen mutated names to `any` အဖြစ် ပြန်လည်သတ်မှတ်နိုင်သည်။
+
+- [x] Call graph propagation foundation — function call edges ကို caller/callee/return type metadata ဖြင့် စုစည်းပြီး typed/generic/error results များကို edge graph ထဲသို့ ဖြန့်နိုင်သည်။
+
+- [x] B2 loop/call-graph ၁၀-case verifier — mutation preservation/widening နှင့် call return/constraint/error propagation cases pass.
+
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
 - [x] B2 scope/branch ၁၀-case verifier — parameter/local lookup၊ shadowing၊ divergent/same merge၊ missing lookup နှင့် return compatibility cases pass.
+
+- [x] Branch path-sensitive merge foundation — fallthrough/fallthrough merge၊ one-sided return path၊ both-sided return path နှင့် divergent type widening ကို ခွဲခြားနိုင်သည်။
+
+- [x] Scope-exit restoration foundation — child scope ထဲမှ local binding များကို parent environment သို့ ပြန်မပေါက်စေဘဲ snapshot/restore/enter/exit helpers ဖြင့် ထိန်းချုပ်နိုင်သည်။
+
+- [x] B2 scope-exit ၁၀-case verifier — branch merge path နှင့် scope restoration cases pass.
 
 - [x] Typed-IR multi-declaration foundation — multi-line annotated declarations များကို line-aware declaration nodes အဖြစ် စုစည်းပြီး list/map literal inferred types ထည့်သွင်းနိုင်သည်။
 

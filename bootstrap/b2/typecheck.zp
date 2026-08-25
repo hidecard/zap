@@ -35,6 +35,27 @@ export fn branch_environment_merge(base, then_environment, else_environment):
             merged = symbol_environment_bind(merged, binding["name"], "any")
     return merged
 
+export fn symbol_environment_snapshot(environment):
+    return environment
+
+export fn symbol_environment_restore(snapshot):
+    return snapshot
+
+export fn scope_enter(parent, bindings):
+    return symbol_environment_extend(parent, bindings)
+
+export fn scope_exit(parent, child):
+    return symbol_environment_restore(parent)
+
+export fn branch_environment_merge_paths(base, then_environment, else_environment, then_returns, else_returns):
+    if then_returns and not else_returns:
+        return else_environment
+    if else_returns and not then_returns:
+        return then_environment
+    if then_returns and else_returns:
+        return base
+    return branch_environment_merge(base, then_environment, else_environment)
+
 export fn function_body_environment(parameters, locals):
     return symbol_environment_extend(symbol_environment_from_parameters(parameters), locals)
 
@@ -89,6 +110,40 @@ export fn symbol_graph_scope(graph, name):
 
 export fn infer_program_symbol_type(source, name):
     return symbol_graph_type(symbol_graph_collect(source), name)
+
+export fn loop_mutation_update(before, body, mutated_names):
+    let result = before
+    for name in mutated_names:
+        let before_type = ast_lookup_type(before, name)
+        let body_type = ast_lookup_type(body, name)
+        if before_type == body_type:
+            result = symbol_environment_bind(result, name, body_type)
+        else:
+            result = symbol_environment_bind(result, name, "any")
+    return result
+
+export fn loop_mutation_type(before, body, name):
+    return ast_lookup_type(loop_mutation_update(before, body, [name]), name)
+
+export fn call_graph_bind(graph, caller, callee, return_type):
+    return append(graph, {"caller": caller, "callee": callee, "return_type": return_type})
+
+export fn call_graph_lookup(graph, caller, callee):
+    let result = "unknown"
+    for edge in graph:
+        if edge["caller"] == caller and edge["callee"] == callee:
+            result = edge["return_type"]
+    return result
+
+export fn call_graph_propagate(graph, functions, calls):
+    let result = graph
+    for call in calls:
+        let return_type = infer_function_call(functions, call["callee"], call["argument_types"])
+        result = call_graph_bind(result, call["caller"], call["callee"], return_type)
+    return result
+
+export fn call_graph_return_type(graph, caller, callee):
+    return call_graph_lookup(graph, caller, callee)
 
 export fn infer_function_body_return(body_expression, parameters, locals, expected_type):
     let environment = function_body_environment(parameters, locals)
