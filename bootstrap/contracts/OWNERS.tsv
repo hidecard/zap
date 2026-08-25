@@ -31,3 +31,4 @@ BOOT-029	b2-typechecker-none-annotation	B2 candidate status	B2 candidate status	
 BOOT-030	b2-typechecker-list-literal-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/list_annotation_incompatible.zp	provisional
 BOOT-031	b2-typechecker-map-literal-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/map_annotation_incompatible.zp	provisional
 BOOT-032	b2-typechecker-option-constructor-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/option_annotation_incompatible.zp	provisional
+BOOT-033	b2-typechecker-basic-expression-matrix	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/expression_result_constructor_incompatible.zp	provisional

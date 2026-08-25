@@ -5,7 +5,7 @@ cd "$ROOT_DIR"
 
 valid_ir_fixture="bootstrap/fixtures/typecheck/annotated.zp"
 valid_ir_expected="bootstrap/fixtures/typecheck/annotated.typed-ir.json"
-for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp bootstrap/fixtures/typecheck/bool_annotation.zp bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp bootstrap/fixtures/typecheck/none_annotation.zp bootstrap/fixtures/typecheck/none_annotation_incompatible.zp bootstrap/fixtures/typecheck/list_annotation.zp bootstrap/fixtures/typecheck/list_annotation_incompatible.zp bootstrap/fixtures/typecheck/map_annotation.zp bootstrap/fixtures/typecheck/map_annotation_incompatible.zp; do
+for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp bootstrap/fixtures/typecheck/bool_annotation.zp bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp bootstrap/fixtures/typecheck/none_annotation.zp bootstrap/fixtures/typecheck/none_annotation_incompatible.zp bootstrap/fixtures/typecheck/list_annotation.zp bootstrap/fixtures/typecheck/list_annotation_incompatible.zp bootstrap/fixtures/typecheck/map_annotation.zp bootstrap/fixtures/typecheck/map_annotation_incompatible.zp bootstrap/fixtures/typecheck/option_annotation.zp bootstrap/fixtures/typecheck/option_annotation_incompatible.zp bootstrap/fixtures/typecheck/expression_number_add.zp bootstrap/fixtures/typecheck/expression_number_add_incompatible.zp bootstrap/fixtures/typecheck/expression_text_add.zp bootstrap/fixtures/typecheck/expression_text_add_incompatible.zp bootstrap/fixtures/typecheck/expression_comparison_bool.zp bootstrap/fixtures/typecheck/expression_boolean_logic.zp bootstrap/fixtures/typecheck/expression_boolean_logic_incompatible.zp bootstrap/fixtures/typecheck/expression_result_constructor.zp bootstrap/fixtures/typecheck/expression_result_constructor_incompatible.zp; do
   [[ -f "$path" ]] || { printf 'missing B2 fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -223,3 +223,67 @@ if [[ "$status" -eq 0 ]]; then
 fi
 jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$option_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible direct option annotation\n'
+
+expression_number_add_check=$(run_check expression_number_add)
+jq -e '.ok == true' <<<"$expression_number_add_check" >/dev/null
+printf 'B2 type-check acceptance passed: exact numeric addition expression\n'
+
+set +e
+expression_number_add_incompatible=$(run_check expression_number_add_incompatible 2>/tmp/zap-b2-expression-number-add-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'expression_number_add_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got number"))' <<<"$expression_number_add_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible exact numeric addition expression\n'
+
+expression_text_add_check=$(run_check expression_text_add)
+jq -e '.ok == true' <<<"$expression_text_add_check" >/dev/null
+printf 'B2 type-check acceptance passed: exact text addition expression\n'
+
+set +e
+expression_text_add_incompatible=$(run_check expression_text_add_incompatible 2>/tmp/zap-b2-expression-text-add-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'expression_text_add_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects number, got text"))' <<<"$expression_text_add_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible exact text addition expression\n'
+
+expression_comparison_bool_check=$(run_check expression_comparison_bool)
+jq -e '.ok == true' <<<"$expression_comparison_bool_check" >/dev/null
+printf 'B2 type-check acceptance passed: exact comparison bool expression\n'
+
+expression_boolean_logic_check=$(run_check expression_boolean_logic)
+jq -e '.ok == true' <<<"$expression_boolean_logic_check" >/dev/null
+printf 'B2 type-check acceptance passed: exact boolean logic expression\n'
+
+set +e
+expression_boolean_logic_incompatible=$(run_check expression_boolean_logic_incompatible 2>/tmp/zap-b2-expression-boolean-logic-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'expression_boolean_logic_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got bool"))' <<<"$expression_boolean_logic_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible exact boolean logic expression\n'
+
+expression_result_constructor_check=$(run_check expression_result_constructor)
+jq -e '.ok == true' <<<"$expression_result_constructor_check" >/dev/null
+printf 'B2 type-check acceptance passed: exact result constructor expression\n'
+
+set +e
+expression_result_constructor_incompatible=$(run_check expression_result_constructor_incompatible 2>/tmp/zap-b2-expression-result-constructor-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'expression_result_constructor_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got result<number>"))' <<<"$expression_result_constructor_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible exact result constructor expression\n'

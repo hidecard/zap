@@ -1,0 +1,1 @@
+let outcome: result<number> = ok(1)
