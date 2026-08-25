@@ -4,6 +4,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 source "$HOME/.cargo/env"
 ./scripts/bootstrap/verify_b2_type_generic_10.sh
+./scripts/bootstrap/verify_b2_generic_bounds_10.sh
 ./scripts/bootstrap/verify_b2_type_unification_10.sh
 ./scripts/bootstrap/verify_b2_function_call_inference_10.sh
 ./scripts/bootstrap/verify_b2_typed_ir_generic_10.sh

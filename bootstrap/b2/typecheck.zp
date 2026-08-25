@@ -368,6 +368,31 @@ export fn generic_declaration_info(line):
         raw_name = trim(substring(raw_name, 3, len(raw_name)))
     return {"generic": len(parameters) > 0, "name": raw_name, "parameters": parameters, "valid": generic_parameters_valid(parameters)}
 
+export fn generic_type_declaration_info(line):
+    let value = trim(line)
+    if not starts_with(value, "type "):
+        return {"name": "", "parameters": [], "body": "", "valid": false}
+    let declaration = trim(substring(value, 5, len(value)))
+    let name_area = trim(split(declaration, "=")[0])
+    let name = trim(split(name_area, "<")[0])
+    let parameters = []
+    if contains(name_area, "<") and contains(name_area, ">"):
+        let raw_parts = split(split(name_area, "<")[1], ">")
+        for parameter in split(raw_parts[0], ","):
+            parameters = append(parameters, trim(parameter))
+    let body = ""
+    if contains(declaration, "="):
+        body = trim(split(declaration, "=")[1])
+    return {"body": body, "name": name, "parameters": parameters, "valid": generic_parameters_valid(parameters) and body != ""}
+
+export fn generic_type_declaration_instance(line, argument_types):
+    let info = generic_type_declaration_info(line)
+    if not info["valid"]:
+        return "invalid_generic_type"
+    if len(info["parameters"]) != len(argument_types):
+        return "generic_arity_error"
+    return generic_container_instantiate(info["body"], info["parameters"], argument_types)
+
 export fn ast_expression_type(node):
     let kind = node["kind"]
     if kind == "literal":
@@ -537,6 +562,34 @@ export fn generic_constraint_satisfied(argument_types, constraint):
             return false
     return true
 
+export fn generic_constraints(line):
+    let result = []
+    if not contains(line, " where "):
+        return result
+    let where_area = split(line, " where ")[1]
+    let constraint_text = trim(split(where_area, ":")[0])
+    if contains(where_area, " and "):
+        for item in split(where_area, " and "):
+            let parts = split(trim(item), ":")
+            if len(parts) >= 2:
+                result = append(result, {"parameter": trim(parts[0]), "bound": trim(parts[1])})
+        return result
+    let parts = split(where_area, ":")
+    if len(parts) >= 2:
+        result = append(result, {"parameter": trim(parts[0]), "bound": trim(parts[1])})
+    return result
+
+export fn generic_constraints_satisfied(argument_types, parameters, constraints):
+    for constraint in constraints:
+        let index = 0
+        for parameter in parameters:
+            if parameter == constraint["parameter"]:
+                break
+            index = index + 1
+        if index >= len(argument_types) or not type_unify(constraint["bound"], argument_types[index]):
+            return false
+    return true
+
 export fn function_signature_info(signature):
     let value = trim(signature)
     let name_area = split(value, "(")[0]
@@ -563,7 +616,7 @@ export fn function_signature_info(signature):
         else:
             return_type = trim(split(return_area, ":")[0])
     let generic = generic_declaration_info(value)
-    return {"constraint": constraint, "generic_parameters": generic["parameters"], "name": name, "params": params, "return_type": return_type}
+    return {"constraint": constraint, "constraints": generic_constraints(value), "generic_parameters": generic["parameters"], "name": name, "params": params, "return_type": return_type}
 
 export fn type_compatible(expected, actual):
     return type_unify(expected, actual)
@@ -578,6 +631,8 @@ export fn infer_function_call(functions, callee, argument_types):
         let generic_parameters = function["generic_parameters"]
         if len(generic_parameters) > 0:
             if not generic_constraint_satisfied(argument_types, function["constraint"]):
+                return "constraint_error"
+            if not generic_constraints_satisfied(argument_types, generic_parameters, function["constraints"]):
                 return "constraint_error"
             return generic_instantiate_return(generic_parameters, argument_types, function["return_type"])
         let index = 0

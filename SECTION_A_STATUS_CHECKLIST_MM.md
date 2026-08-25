@@ -8,11 +8,11 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — recursive AST environment inference၊ nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — recursive AST flow၊ nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution၊ simple `where` constraint၊ recursive unification နှင့် generic container foundation ရှိသော်လည်း generic type/container semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification နှင့် generic type declaration/container foundation ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — recursive AST list/map collection helpers နှင့် nested wrapper unification foundation ရှိသော်လည်း arbitrary nested collection/index inference နှင့် heterogeneous collection diagnostics မပြီးသေးပါ။
 
@@ -159,6 +159,14 @@
 - [x] Section A type-inference/symbol-graph ၁၀၀-case family acceptance — type unification၊ function/call၊ nested scopes၊ scope exit၊ loop fixpoint၊ call cycles၊ program graph နှင့် candidate differential families pass.
 
 - [x] Section A generic/type-container ၁၀၀-case family acceptance — generic/type၊ recursive unification၊ function call၊ typed-IR metadata၊ scope/call graph support နှင့် candidate differential families pass.
+
+- [x] Function-aware AST flow foundation — environment-aware binary/list/map inference၊ nested function-call return inference နှင့် program expression type sequence propagation ကို candidate API များဖြင့် စစ်ဆေးနိုင်သည်။
+
+- [x] Multiple generic bounds foundation — `where T: number and U: text` ကဲ့သို့ parameter-specific bounds များကို parse/check လုပ်နိုင်ပြီး instantiated return container type ကို ထုတ်နိုင်သည်။
+
+- [x] Generic type declaration foundation — `type Pair<T,U> = map<T,list<U>>` metadata၊ nested container instantiation၊ generic arity error နှင့် duplicate parameter validation ကို စစ်ဆေးနိုင်သည်.
+
+- [x] B2 generic-bounds/type-declaration acceptance — bounds ၁၀ cases နှင့် generic type declaration ၁၀ cases pass.
 
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
