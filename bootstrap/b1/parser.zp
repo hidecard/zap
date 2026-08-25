@@ -64,6 +64,27 @@ export fn parse_expression(raw, start_column):
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
         return {"kind": "binary", "left": left, "op": "greater", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " - "):
+        let parts = split(value, " - ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "subtract", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " / ") and contains(value, " % "):
+        let div_parts = split(value, " / ")
+        let remainder_parts = split(div_parts[1], " % ")
+        let division = {"kind": "binary", "left": parse_expression(div_parts[0], start_column), "op": "divide", "right": parse_expression(remainder_parts[0], start_column + len(div_parts[0]) + 3), "span": span(1, start_column, len(div_parts[0]) + 3 + len(remainder_parts[0]))}
+        let remainder_right = parse_expression(remainder_parts[1], start_column + len(div_parts[0]) + 3 + len(remainder_parts[0]) + 3)
+        return {"kind": "binary", "left": division, "op": "remainder", "right": remainder_right, "span": span(1, start_column, len(value))}
+    if contains(value, " / "):
+        let parts = split(value, " / ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "divide", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " % "):
+        let parts = split(value, " % ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "remainder", "right": right, "span": span(1, start_column, len(value))}
     if contains(value, " + "):
         let parts = split(value, " + ")
         let left = parse_expression(parts[0], start_column)
@@ -114,6 +135,8 @@ export fn parse_atom(raw, start_column):
         return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 4), "value": true}
     if value == "false":
         return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 5), "value": false}
+    if value == "none":
+        return {"kind": "literal", "literal_kind": "none", "span": span(1, start_column, 4), "value": none}
     return if is_numeric(value) then number(value, start_column) else name(value, start_column)
 
 export fn is_numeric(value):
@@ -227,6 +250,11 @@ export fn parse(source, source_name):
         if starts_with(trim(lines[0]), "fn "):
             let statements = parse_simple_function(lines)
             return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+        if lines[3] == "" and starts_with(trim(lines[0]), "let ") and starts_with(trim(lines[1]), "let ") and starts_with(trim(lines[2]), "let "):
+            let first = parse_declaration(lines[0], 1)
+            let second = parse_declaration(lines[1], 2)
+            let third = parse_declaration(lines[2], 3)
+            return json({"ast": {"statements": [first, second, third]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 10:
         if starts_with(trim(lines[3]), "let "):
             let first = parse_declaration(lines[0], 1)
