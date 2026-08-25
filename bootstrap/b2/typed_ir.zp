@@ -11,6 +11,28 @@ export fn literal_node(literal_kind, value, line, column, length):
 export fn declaration_node(name, annotation, inferred_type, value, line, length):
     return {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": name, "span": span(line, 1, length), "value": value}
 
+export fn inferred_literal(expression):
+    let value = trim(expression)
+    if starts_with(value, "\""):
+        return {"kind": "literal", "literal_kind": "text", "span": span(1, 1, len(value)), "value": substring(value, 1, len(value) - 1)}
+    if value == "true":
+        return {"kind": "literal", "literal_kind": "bool", "span": span(1, 1, 4), "value": true}
+    if value == "false":
+        return {"kind": "literal", "literal_kind": "bool", "span": span(1, 1, 5), "value": false}
+    if value == "none":
+        return {"kind": "literal", "literal_kind": "none", "span": span(1, 1, 4), "value": none}
+    return {"kind": "literal", "literal_kind": "number", "span": span(1, 1, len(value)), "value": from_json(value)}
+
+export fn inferred_type_for(expression):
+    let value = trim(expression)
+    if starts_with(value, "\""):
+        return "text"
+    if value == "true" or value == "false":
+        return "bool"
+    if value == "none":
+        return "none"
+    return "number"
+
 export fn emit(source, source_name):
     if source == "let first: number = 1\nlet label: text = \"zap\"\n":
         let first_value = literal_node("number", 1, 1, 1, 1)
@@ -33,7 +55,8 @@ export fn emit(source, source_name):
     let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
     let annotation = trim(annotation_parts[1])
     let expression = trim(assignment[1])
-    let literal = {"kind": "literal", "literal_kind": "number", "span": span(1, 1, 1), "value": from_json(expression)}
-    let declaration = {"annotation": annotation, "exported": false, "inferred_type": "number", "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
+    let literal = inferred_literal(expression)
+    let inferred_type = inferred_type_for(expression)
+    let declaration = {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
     let ir = {"nodes": [declaration]}
     return json({"candidate_only": true, "ir": ir, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
