@@ -10,8 +10,8 @@
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
 | 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, and missing-body diagnostics pass in 10-case and control-flow verifiers; full branch semantics remain pending. |
 | 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes and `break`/`continue` AST nodes pass focused cases; function/class integration remains pending. |
-| 7 | General expression-to-type bridge | [x] partial | `ast_expression_type` bridges literal/unary/binary/list AST nodes; environment-aware and call-aware general inference remains pending. |
-| 8 | General typed-IR emitter | [x] bounded regression | Existing B2 typed-IR candidate differential still passes; arbitrary emitter remains unchecked. |
+| 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes homogeneous collections, map key/value inference, generic identity/first calls, and environment-aware name/arithmetic inference; full expression environment remains pending. |
+| 8 | General typed-IR emitter | [x] bounded regression | Existing B2 typed-IR candidate differential still passes; new type metadata helpers are not yet wired to an arbitrary typed-IR emitter. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, inconsistent dedent, jump, and missing-block cases pass in focused verifiers; complete reference error matrix remains pending. |
 | 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
 
@@ -37,6 +37,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b1_branch_chain.sh`
 - `scripts/bootstrap/verify_b1_control_flow_blocks.sh`
 - `scripts/bootstrap/verify_b2_ast_expression_bridge.sh`
+- `scripts/bootstrap/verify_b2_type_generic_10.sh`
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`

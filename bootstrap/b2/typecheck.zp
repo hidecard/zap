@@ -2,6 +2,93 @@
 # This is a provisional corpus-limited implementation. Native Rust remains the
 # reference type checker and owns the complete language semantics.
 
+export fn ast_lookup_type(environment, name):
+    for binding in environment:
+        if binding["name"] == name:
+            return binding["type"]
+    return "any"
+
+export fn ast_expression_type_env(node, environment):
+    let kind = node["kind"]
+    if kind == "literal":
+        return node["literal_kind"]
+    if kind == "name":
+        return ast_lookup_type(environment, node["name"])
+    if kind == "unary":
+        if node["op"] == "not":
+            return "bool"
+        if node["op"] == "negate" and ast_expression_type_env(node["value"], environment) == "number":
+            return "number"
+        return "any"
+    if kind == "binary":
+        let operator = node["op"]
+        if operator == "and" or operator == "or" or operator == "equal" or operator == "not_equal" or operator == "less" or operator == "less_equal" or operator == "greater" or operator == "greater_equal":
+            return "bool"
+        let left_type = ast_expression_type_env(node["left"], environment)
+        let right_type = ast_expression_type_env(node["right"], environment)
+        if operator == "add" and left_type == "text" and right_type == "text":
+            return "text"
+        if (operator == "add" or operator == "subtract" or operator == "multiply" or operator == "divide" or operator == "remainder") and left_type == "number" and right_type == "number":
+            return "number"
+        return "any"
+    if kind == "list":
+        if len(node["elements"]) == 0:
+            return "list<any>"
+        let first_type = ast_expression_type_env(node["elements"][0], environment)
+        for element in node["elements"]:
+            if ast_expression_type_env(element, environment) != first_type:
+                return "list<any>"
+        return "list<" + first_type + ">"
+    if kind == "map":
+        if len(node["entries"]) == 0:
+            return "map<any,any>"
+        let first_entry = node["entries"][0]
+        return "map<" + ast_expression_type_env(first_entry["key"], environment) + "," + ast_expression_type_env(first_entry["value"], environment) + ">"
+    if kind == "call":
+        let callee = node["callee"]["name"]
+        if callee == "identity" and len(node["args"]) == 1:
+            return ast_expression_type_env(node["args"][0]["value"], environment)
+        return "any"
+    return "any"
+
+export fn generic_parameter_names(line):
+    let header = trim(line)
+    let name_area = split(header, "(")[0]
+    let name_parts = split(name_area, "<")
+    if len(name_parts) < 2:
+        return []
+    let raw = split(name_parts[1], ">")
+    if len(raw) == 0 or trim(raw[0]) == "":
+        return []
+    let result = []
+    for parameter in split(raw[0], ","):
+        result = append(result, trim(parameter))
+    return result
+
+export fn generic_parameter_valid(parameter):
+    return parameter == "T" or parameter == "U" or parameter == "V" or parameter == "E"
+
+export fn generic_parameters_valid(parameters):
+    if len(parameters) == 0:
+        return false
+    let seen = "|"
+    for parameter in parameters:
+        if not generic_parameter_valid(parameter):
+            return false
+        if contains(seen, "|" + parameter + "|"):
+            return false
+        seen = seen + parameter + "|"
+    return true
+
+export fn generic_declaration_info(line):
+    let parameters = generic_parameter_names(line)
+    let header = trim(line)
+    let name_parts = split(split(header, "(")[0], "<")
+    let raw_name = trim(name_parts[0])
+    if starts_with(raw_name, "fn "):
+        raw_name = trim(substring(raw_name, 3, len(raw_name)))
+    return {"generic": len(parameters) > 0, "name": raw_name, "parameters": parameters, "valid": generic_parameters_valid(parameters)}
+
 export fn ast_expression_type(node):
     let kind = node["kind"]
     if kind == "literal":
@@ -28,14 +115,50 @@ export fn ast_expression_type(node):
     if kind == "list":
         if len(node["elements"]) == 0:
             return "list<any>"
-        return "list<" + ast_expression_type(node["elements"][0]) + ">"
+        let element_type = ast_expression_type(node["elements"][0])
+        for element in node["elements"]:
+            if ast_expression_type(element) != element_type:
+                return "list<any>"
+        return "list<" + element_type + ">"
     if kind == "map":
-        return "map<any,any>"
+        if len(node["entries"]) == 0:
+            return "map<any,any>"
+        let entry = node["entries"][0]
+        let key_type = ast_expression_type(entry["key"])
+        let value_type = ast_expression_type(entry["value"])
+        return "map<" + key_type + "," + value_type + ">"
     if kind == "call":
+        let callee = node["callee"]["name"]
+        if callee == "identity" and len(node["args"]) == 1:
+            return ast_expression_type(node["args"][0]["value"])
+        if callee == "first" and len(node["args"]) > 0:
+            return ast_expression_type(node["args"][0]["value"])
         return "any"
     if kind == "index":
         return "any"
     return "any"
+
+export fn generic_type_substitute(type_template, parameter, argument_type):
+    if type_template == parameter:
+        return argument_type
+    if starts_with(type_template, "list<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 5, len(type_template) - 1)
+        return "list<" + generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "option<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 7, len(type_template) - 1)
+        return "option<" + generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "result<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 7, len(type_template) - 1)
+        return "result<" + generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "map<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 4, len(type_template) - 1)
+        let parts = split(inner, ",")
+        if len(parts) == 2:
+            return "map<" + generic_type_substitute(trim(parts[0]), parameter, argument_type) + "," + generic_type_substitute(trim(parts[1]), parameter, argument_type) + ">"
+    return type_template
+
+export fn generic_identity_result(argument_type, return_template):
+    return generic_type_substitute(return_template, "T", argument_type)
 
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
@@ -227,7 +350,7 @@ export fn function_parts(line):
     let annotation_parts = split(parameter_area, ":")
     let parameter_name = trim(annotation_parts[0])
     let parameter_type = trim(annotation_parts[1])
-    return {"name": name, "parameter_name": parameter_name, "parameter_type": parameter_type}
+    return {"generic_parameters": generic_parameter_names(line), "name": name, "parameter_name": parameter_name, "parameter_type": parameter_type}
 
 export fn check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let declaration = trim(line)

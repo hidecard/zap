@@ -8,13 +8,13 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — လက်ရှိသည် selected declarations၊ functions၊ conditions၊ calls၊ collections နှင့် literals အတွက် bounded candidate slice ဖြစ်သည်။
+- [ ] **Complete type inference** — လက်ရှိသည် selected declarations၊ functions၊ conditions၊ calls၊ collections နှင့် literals အတွက် bounded candidate slice ဖြစ်သည်။ Environment-aware AST foundation ထပ်တိုးထားသော်လည်း arbitrary program inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — `identity<T>` နှင့် wrapper substitution bounded evidence ရှိသော်လည်း generic function/type/container အပြည့်အဝ မပြီးသေးပါ။
+- [ ] **Generic declarations** — parameter extraction၊ validation နှင့် nested wrapper substitution foundation ရှိသော်လည်း generic function/type/container နှင့် constraints အပြည့်အဝ မပြီးသေးပါ။
 
-- [ ] **Complete collection inference** — direct list/map နှင့် selected nested indexing ရှိသော်လည်း arbitrary nested collection inference မပြီးသေးပါ။
+- [ ] **Complete collection inference** — homogeneous AST list/map နှင့် environment-aware collection foundation ရှိသော်လည်း arbitrary nested collection/index inference မပြီးသေးပါ။
 
 - [ ] **Nested map/deeper nested inference** — reference-only/bounded evidence ရှိသော်လည်း candidate general support မပြီးသေးပါ။
 
@@ -105,6 +105,12 @@
 - [x] B1 token cursor foundation verifier — immutable cursor နှင့် indentation relation matrix automated gate pass.
 
 - [x] B2 AST expression bridge verifier — parser-shaped expression nodes ၆ မျိုးအတွက် deterministic type outputs pass.
+
+- [x] Environment-aware AST inference foundation — name lookup၊ arithmetic၊ homogeneous list နှင့် map key/value types များကို explicit environment မှ ခန့်မှန်းနိုင်သည်။
+
+- [x] Generic declaration metadata foundation — generic parameter extraction၊ canonical function name၊ duplicate/invalid parameter validation နှင့် nested list/map/option/result substitution ကို စစ်ဆေးနိုင်သည်။
+
+- [x] B2 Type/Generic ၁၀-case verifier — environment inference၊ nested collections၊ generic metadata၊ validation နှင့် substitution cases pass.
 
 - [x] B1 unexpected indentation differential — multi-level indentation jump fixture နှင့် reference diagnostic pass.
 
