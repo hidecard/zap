@@ -1,0 +1,2 @@
+export fn broken<T>(value: T) -> T:
+    return "wrong"
