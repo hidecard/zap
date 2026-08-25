@@ -1,0 +1,3 @@
+for item in [1, 2]:
+    if item > 0:
+        say item

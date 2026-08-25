@@ -15,18 +15,32 @@ export fn text(value, column, length):
 export fn name(value, column):
     return {"kind": "name", "name": value, "span": span(1, column, len(value))}
 
+export fn binary_expression(left, operator, right):
+    let left_span = left["span"]
+    let right_span = right["span"]
+    let start = left_span["column"]
+    let end = right_span["column"] + right_span["length"]
+    return {"kind": "binary", "left": left, "op": operator, "right": right, "span": span(1, start, end - start)}
+
 export fn parse_expression(raw, start_column):
     let value = trim(raw)
+    if is_empty(value):
+        return name(value, start_column)
+    if starts_with(value, "(") and contains(value, ")"):
+        let grouped_close = find_matching_close(value, 0)
+        if grouped_close == len(value) - 1:
+            let grouped_text = substring(value, 1, len(value) - 1)
+            return parse_expression(grouped_text, start_column + 1)
     if contains(value, " or "):
         let parts = split(value, " or ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
-        return {"kind": "binary", "left": left, "op": "or", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "or", right)
     if contains(value, " and "):
         let parts = split(value, " and ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 5)
-        return {"kind": "binary", "left": left, "op": "and", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "and", right)
     if starts_with(value, "(") and contains(value, ") * "):
         let grouped_parts = split(value, ") * ")
         if len(grouped_parts) == 2:
@@ -38,37 +52,37 @@ export fn parse_expression(raw, start_column):
         let parts = split(value, " <= ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
-        return {"kind": "binary", "left": left, "op": "less_equal", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "less_equal", right)
     if contains(value, " >= "):
         let parts = split(value, " >= ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
-        return {"kind": "binary", "left": left, "op": "greater_equal", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "greater_equal", right)
     if contains(value, " == "):
         let parts = split(value, " == ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
-        return {"kind": "binary", "left": left, "op": "equal", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "equal", right)
     if contains(value, " != "):
         let parts = split(value, " != ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
-        return {"kind": "binary", "left": left, "op": "not_equal", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "not_equal", right)
     if contains(value, " < "):
         let parts = split(value, " < ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "less", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "less", right)
     if contains(value, " > "):
         let parts = split(value, " > ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "greater", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "greater", right)
     if contains(value, " - "):
         let parts = split(value, " - ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "subtract", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "subtract", right)
     if contains(value, " / ") and contains(value, " % "):
         let div_parts = split(value, " / ")
         let remainder_parts = split(div_parts[1], " % ")
@@ -79,27 +93,68 @@ export fn parse_expression(raw, start_column):
         let parts = split(value, " / ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "divide", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "divide", right)
     if contains(value, " % "):
         let parts = split(value, " % ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "remainder", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "remainder", right)
     if contains(value, " + "):
         let parts = split(value, " + ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "add", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "add", right)
     if contains(value, " * "):
         let parts = split(value, " * ")
         let left = parse_expression(parts[0], start_column)
         let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
-        return {"kind": "binary", "left": left, "op": "multiply", "right": right, "span": span(1, start_column, len(value))}
+        return binary_expression(left, "multiply", right)
     return parse_postfix(value, start_column)
+
+export fn find_matching_close(value, open_index):
+    let depth = 0
+    let index = open_index
+    while index < len(value):
+        let ch = char_at(value, index)
+        if ch == "(":
+            depth = depth + 1
+        else:
+            if ch == ")":
+                depth = depth - 1
+                if depth == 0:
+                    return index
+        index = index + 1
+    return len(value) - 1
+
+export fn find_top_level_comma(value):
+    if contains(value, "), "):
+        let nested_parts = split(value, "), ")
+        return len(nested_parts[0]) + 1
+    if contains(value, ", "):
+        let parts = split(value, ", ")
+        return len(parts[0])
+    return none
+
+export fn parse_call_arguments(argument_text, argument_column):
+    let value = trim(argument_text)
+    if is_empty(value):
+        return []
+    let comma = find_top_level_comma(value)
+    if comma == none:
+        return [{"kind": "positional", "value": parse_expression(value, argument_column)}]
+    let first_text = trim(substring(value, 0, comma))
+    let second_text = trim(substring(value, comma + 1, len(value)))
+    let first = {"kind": "positional", "value": parse_expression(first_text, argument_column)}
+    let second_column = argument_column + comma + 2
+    let second = {"kind": "positional", "value": parse_expression(second_text, second_column)}
+    return [first, second]
 
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
+    if is_empty(value):
+        return name(value, start_column)
     if starts_with(value, "not "):
+
         let operand_text = trim(substring(value, 4, len(value)))
         let operand = parse_expression(operand_text, start_column + 4)
         return {"kind": "unary", "op": "not", "span": span(1, start_column, len(value)), "value": operand}
@@ -119,12 +174,16 @@ export fn parse_postfix(raw, start_column):
         let index = parse_atom(index_text, index_column)
         return {"index": index, "kind": "index", "span": span(1, start_column, len(value)), "target": target}
     if contains(value, "("):
-        let parts = split(value, "(")
-        let callee = name(trim(parts[0]), start_column)
-        let argument_text = trim(substring(parts[1], 0, len(parts[1]) - 1))
-        let argument = parse_atom(argument_text, start_column + len(parts[0]) + 1)
-        let argument_record = {"kind": "positional", "value": argument}
-        return {"args": [argument_record], "callee": callee, "kind": "call", "span": span(1, start_column, len(value))}
+        let open_index = 0
+        while open_index < len(value):
+            if char_at(value, open_index) == "(":
+                break
+            open_index = open_index + 1
+        let close_index = find_matching_close(value, open_index)
+        let callee = name(trim(substring(value, 0, open_index)), start_column)
+        let argument_text = substring(value, open_index + 1, close_index)
+        let arguments = parse_call_arguments(argument_text, start_column + open_index + 1)
+        return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1)}
     return parse_atom(value, start_column)
 
 export fn parse_atom(raw, start_column):
@@ -247,6 +306,22 @@ export fn parse(source, source_name):
             let second = parse_declaration(lines[1], 2)
             return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) == 4:
+        if starts_with(trim(lines[0]), "for ") and starts_with(trim(lines[1]), "if "):
+            let header = trim(lines[0])
+            let header_parts = split(header, " in ")
+            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+            let iterable = parse_expression(iterable_text, 1)
+            let condition_line = trim(lines[1])
+            let condition_text = trim(substring(condition_line, 3, len(condition_line) - 1))
+            let condition = parse_expression(condition_text, 1)
+            let say_line = lines[2]
+            let say_text = trim(substring(trim(say_line), 4, len(trim(say_line))))
+            let say_value = parse_expression(say_text, 1)
+            let say_statement = {"kind": "say", "span": span(3, 9, len(trim(say_line))), "value": say_value}
+            let conditional = {"condition": condition, "else_branch": none, "kind": "if", "span": span(2, 5, len(condition_line)), "then_branch": {"statements": [say_statement]}}
+            let loop = {"binding": binding, "body": {"statements": [conditional]}, "iterable": iterable, "kind": "for", "span": span(1, 1, len(header))}
+            return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
         if starts_with(trim(lines[0]), "fn "):
             let statements = parse_simple_function(lines)
             return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
