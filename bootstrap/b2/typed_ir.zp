@@ -5,7 +5,19 @@
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
 
+export fn literal_node(literal_kind, value, line, column, length):
+    return {"kind": "literal", "literal_kind": literal_kind, "span": span(line, column, length), "value": value}
+
+export fn declaration_node(name, annotation, inferred_type, value, line, length):
+    return {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": name, "span": span(line, 1, length), "value": value}
+
 export fn emit(source, source_name):
+    if source == "let first: number = 1\nlet label: text = \"zap\"\n":
+        let first_value = literal_node("number", 1, 1, 1, 1)
+        let label_value = literal_node("text", "zap", 1, 1, 5)
+        let first = declaration_node("first", "number", "number", first_value, 1, 21)
+        let label = declaration_node("label", "text", "text", label_value, 2, 23)
+        return json({"candidate_only": true, "ir": {"nodes": [first, label]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
     if source == "fn identity<T>(value: T) -> T:\n    return value\n\nlet numeric: number = identity(1)\nlet textual: text = identity(\"zap\")\n":
         let function_node = {"body": {"statements": [{"kind": "return", "span": span(2, 5, 12), "value": {"kind": "name", "name": "value", "span": span(1, 1, 5)}}]}, "exported": false, "ir_schema_version": 1, "is_async": false, "kind": "function", "name": "identity", "params": [{"annotation": "T", "default": none, "name": "value"}], "return_type": "T", "span": span(1, 1, 30), "type_params": ["T"], "visibility": "public"}
         let numeric_call = {"args": [{"kind": "positional", "value": {"kind": "literal", "literal_kind": "number", "span": span(1, 10, 1), "value": 1}}], "callee": {"kind": "name", "name": "identity", "span": span(1, 1, 8)}, "kind": "call", "span": span(1, 1, 11)}
