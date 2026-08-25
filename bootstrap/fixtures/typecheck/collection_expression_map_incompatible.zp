@@ -1,0 +1,1 @@
+let wrong: map<text,text> = {"score": 1 + 2}

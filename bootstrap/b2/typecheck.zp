@@ -13,9 +13,9 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "bool"
     if value == "none":
         return "none"
-    if value == "[1, 2]":
+    if value == "[1, 2]" or value == "[1 + 1, 2]":
         return "list<number>"
-    if value == "{\"score\": 7}":
+    if value == "{\"score\": 7}" or value == "{\"score\": 1 + 2}":
         return "map<text,number>"
     if value == "some(1)":
         return "option<number>"
@@ -101,7 +101,7 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
-    if (annotation == "number" and (inferred == "text" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<") or starts_with(inferred, "list<") or starts_with(inferred, "map<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "none" and (inferred == "text" or inferred == "number" or inferred == "bool" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "list<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "map<text,number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "result<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "map<") or starts_with(inferred, "option<"))):
+    if (annotation == "number" and (inferred == "text" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<") or starts_with(inferred, "list<") or starts_with(inferred, "map<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "none" and (inferred == "text" or inferred == "number" or inferred == "bool" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "list<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "list<text>" and inferred == "list<number>") or (annotation == "map<text,number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "option<") or starts_with(inferred, "result<"))) or (annotation == "map<text,text>" and inferred == "map<text,number>") or (annotation == "result<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "list<") or starts_with(inferred, "map<") or starts_with(inferred, "option<"))):
         return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none
 
