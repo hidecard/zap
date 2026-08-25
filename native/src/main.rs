@@ -1380,7 +1380,7 @@ fn manifest_value(text: &str, key: &str) -> Option<String> {
     }
     None
 }
-fn parse_static_function_header(
+pub(crate) fn parse_static_function_header(
     rest: &str,
 ) -> Result<(String, Vec<String>, Vec<Param>, Option<String>), String> {
     let head = rest.trim_end_matches(':').trim();
@@ -1988,8 +1988,12 @@ fn narrowed_branch_types(condition: &str, vars: &HashMap<String, String>) -> Vec
     Vec::new()
 }
 
-fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
-    let mut signatures: HashMap<String, StaticSignature> = HashMap::new();
+fn validate_function_calls(
+    source: &str,
+    file: &Path,
+    imported_signatures: &HashMap<String, StaticSignature>,
+) -> Result<(), String> {
+    let mut signatures = imported_signatures.clone();
     for (line_index, line) in source.lines().enumerate() {
         let trimmed = line.trim();
         if let Some(rest) = trimmed
@@ -2200,7 +2204,7 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
 }
 pub(crate) fn source_diagnostics(source: &str, file: &Path) -> Vec<String> {
     let mut diagnostics = lint_source(source);
-    if let Err(error) = validate_function_calls(source, file) {
+    if let Err(error) = validate_function_calls(source, file, &HashMap::new()) {
         diagnostics.push(error);
     }
     diagnostics

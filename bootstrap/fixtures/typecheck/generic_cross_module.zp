@@ -1,0 +1,3 @@
+import "generic_cross_module_library"
+
+let number_value: number = identity(1)

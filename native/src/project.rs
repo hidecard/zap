@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -11,6 +11,7 @@ use crate::registry::{
     package_cache_path, read_index, read_index_source_with_credentials, resolve_dependency_graph,
     validate_package_name, verify_cached_package, version_satisfies_requirement, RegistryPackage,
 };
+use crate::value::{Param, StaticSignature};
 
 use super::{
     manifest_value, read_limited_text, run, validate_function_calls, validate_function_returns,
@@ -50,8 +51,101 @@ fn validate_project_with_lock_mode(dir: &Path, require_lockfile: bool) -> Result
     validate_explicit_imports(dir, &text, &source, &main_path)?;
     validate_function_signatures(&source, &main_path)?;
     validate_function_returns(&source, &main_path)?;
-    validate_function_calls(&source, &main_path)?;
+    let imported_signatures = collect_imported_signatures(dir, &text, &main_path, &source)?;
+    validate_function_calls(&source, &main_path, &imported_signatures)?;
     Ok(format!("{name} {version} (main: {main})"))
+}
+
+fn collect_imported_signatures(
+    dir: &Path,
+    manifest: &str,
+    source_path: &Path,
+    source: &str,
+) -> Result<HashMap<String, StaticSignature>, String> {
+    let has_import = source.lines().any(|line| {
+        let line = line.trim_start();
+        line == "import" || line.starts_with("import ")
+    });
+    if !has_import {
+        return Ok(HashMap::new());
+    }
+    let root_dir = dir.join(module_root(manifest));
+    let mut visited = HashSet::new();
+    let mut signatures = HashMap::new();
+    collect_module_signatures(
+        &root_dir,
+        source_path,
+        source,
+        &mut visited,
+        &mut signatures,
+    )?;
+    Ok(signatures)
+}
+
+fn collect_module_signatures(
+    root_dir: &Path,
+    source_path: &Path,
+    source: &str,
+    visited: &mut HashSet<PathBuf>,
+    signatures: &mut HashMap<String, StaticSignature>,
+) -> Result<(), String> {
+    if !visited.insert(source_path.to_path_buf()) {
+        return Ok(());
+    }
+    let program = parse_program(source).map_err(|error| {
+        format!(
+            "{}: imported module syntax error: {error}",
+            source_path.display()
+        )
+    })?;
+    for statement in program.statements {
+        match statement.node {
+            Stmt::Function {
+                name,
+                type_params,
+                params,
+                return_type,
+                exported: true,
+                ..
+            } => {
+                signatures.insert(
+                    name,
+                    StaticSignature {
+                        params: params
+                            .into_iter()
+                            .map(|(name, annotation, default)| Param {
+                                name,
+                                annotation,
+                                default,
+                            })
+                            .collect(),
+                        type_params,
+                        return_annotation: return_type,
+                    },
+                );
+            }
+            Stmt::Import {
+                path,
+                explicit: true,
+                ..
+            } => {
+                let relative = import_target_path(&path)
+                    .map_err(|error| format!("{}: {error}", source_path.display()))?;
+                let target = root_dir.join(relative);
+                if !target.is_file() {
+                    return Err(format!(
+                        "{}: imported module not found: {}",
+                        source_path.display(),
+                        target.display()
+                    ));
+                }
+                let target_source = read_limited_text(&target, "module source read")?;
+                collect_module_signatures(root_dir, &target, &target_source, visited, signatures)?;
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn validate_explicit_imports(

@@ -66,6 +66,10 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "any"
     if value == parameter_name and parameter_type != "":
         return parameter_type
+    if starts_with(value, "identity(") and ends_with(value, ")"):
+        let imported_call_parts = split(value, "(")
+        let imported_argument = trim(substring(imported_call_parts[1], 0, len(imported_call_parts[1]) - 1))
+        return expression_type(imported_argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
