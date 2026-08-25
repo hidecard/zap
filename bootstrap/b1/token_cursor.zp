@@ -21,14 +21,24 @@ export fn cursor_advance(cursor):
         return cursor
     return {"index": cursor["index"] + 1, "tokens": cursor["tokens"]}
 
+export fn cursor_peek_kind(cursor):
+    let token = cursor_peek(cursor)
+    if token == none:
+        return none
+    return token["kind"]
+
 export fn token_line(token):
     if token == none:
         return 0
+    if token["span"] != none:
+        return token["span"]["line"]
     return token["line"]
 
 export fn token_column(token):
     if token == none:
         return 0
+    if token["span"] != none:
+        return token["span"]["column"]
     return token["column"]
 
 export fn indentation_width(line):

@@ -354,17 +354,53 @@ export fn parse_choose_function():
     let parameter = {"annotation": "number", "default": none, "name": "value"}
     return {"body": body, "exported": false, "is_async": false, "kind": "function", "name": "choose", "params": [parameter], "return_type": "number", "span": span(4, 1, 35), "visibility": "public"}
 
+export fn line_cursor(lines):
+    return {"index": 0, "lines": lines}
+
+export fn line_cursor_done(cursor):
+    return cursor["index"] >= len(cursor["lines"])
+
+export fn line_cursor_peek(cursor):
+    if line_cursor_done(cursor):
+        return ""
+    return cursor["lines"][cursor["index"]]
+
+export fn line_cursor_advance(cursor):
+    return {"index": cursor["index"] + 1, "lines": cursor["lines"]}
+
 export fn parse_flat_sequence(lines):
     let statements = []
-    let input = append(lines, "")
-    let index = 0
-    while index + 1 < len(input):
-        let current = trim(input[index])
+    let cursor = line_cursor(lines)
+    while not line_cursor_done(cursor):
+        let line = line_cursor_peek(cursor)
+        let current = trim(line)
         if current != "":
-            let statement = parse_statement(input[index], index + 1, 1)
+            let statement = parse_statement(line, cursor["index"] + 1, 1)
             statements = append(statements, statement)
-        index = index + 1
+        cursor = line_cursor_advance(cursor)
     return statements
+
+export fn indentation_width(line):
+    let trimmed = trim(line)
+    if trimmed == "":
+        return 0
+    return len(line) - len(substring(line, len(line) - len(trimmed), len(line)))
+
+export fn indentation_stack_diagnostic(lines, source_name):
+    let previous = 0
+    let cursor = line_cursor(lines)
+    while not line_cursor_done(cursor):
+        let line = line_cursor_peek(cursor)
+        let trimmed = trim(line)
+        if trimmed != "":
+            let current = indentation_width(line)
+            if current % 4 != 0:
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "invalid indentation at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
+            if current > previous + 4:
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "indent one level at a time", "line": cursor["index"] + 1, "message": "unexpected indentation at line " + str(cursor["index"] + 1), "severity": "error", "source_name": source_name}
+            previous = current
+        cursor = line_cursor_advance(cursor)
+    return none
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
@@ -484,6 +520,9 @@ export fn parse(source, source_name):
 
 export fn indentation_diagnostic(source, source_name):
     let lines = split(source, "\n")
+    let structural = indentation_stack_diagnostic(lines, source_name)
+    if structural != none:
+        return structural
     let index = 0
     while index + 1 < len(lines):
         let line = lines[index]

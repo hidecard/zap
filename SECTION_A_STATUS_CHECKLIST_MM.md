@@ -1,6 +1,6 @@
 # Zap Section A — လက်ရှိ Status Checklist
 
-**နောက်ဆုံးစစ်ဆေးမှု:** `master` / `a0e9e58` + verified follow-up changes
+**နောက်ဆုံးစစ်ဆေးမှု:** `master` / verified follow-up changes through cursor-driven parser foundation
 
 **Contract status:** B0 — native Rust reference owner; `self_hosted = false`
 
@@ -29,6 +29,8 @@
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
 - [ ] **General typed-IR production** — annotated declarations၊ generic identity နှင့် primitive literals အတွက် bounded candidate ရှိသော်လည်း arbitrary program typed-IR မထုတ်နိုင်သေးပါ။
+
+- [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
 - [ ] **Zap-owned package/build pipeline** — B3 manifest/lock/offline build foundation သည် native Rust-owned ဖြစ်နေသေးသည်။
 
@@ -70,6 +72,12 @@
 
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 
+- [x] Immutable line-cursor foundation — parser sequence traversal သည် cursor state၊ peek၊ advance နှင့် EOF checks ကို အသုံးပြုသည်။
+
+- [x] Structural indentation foundation — indentation width၊ one-level transition validation နှင့် line-aware unexpected indentation diagnostic ထည့်ထားသည်။
+
+- [x] Unexpected multi-level indentation fixture — one-level jump violation ကို line-aware diagnostic ဖြင့် differential corpus ထဲတွင် စစ်ဆေးထားသည်။
+
 - [x] Boolean expression inference slice — unary `not`, comparison matrix, and logical `and/or` expressions infer as `bool` in the candidate.
 
 - [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
@@ -78,11 +86,17 @@
 
 - [x] Flat sequence final-line handling — sentinel normalization preserves the last statement when source has no trailing newline.
 
-- [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
+- [x] B0/B1/B2/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
+
+- [x] B1 token cursor foundation verifier — immutable cursor နှင့် indentation relation matrix automated gate pass.
+
+- [x] B2 AST expression bridge verifier — parser-shaped expression nodes ၆ မျိုးအတွက် deterministic type outputs pass.
+
+- [x] B1 unexpected indentation differential — multi-level indentation jump fixture နှင့် reference diagnostic pass.
 
 ## လက်ရှိနောက်တစ်ဆင့်
 
-1. Token span line/column များမှ indentation stack တည်ဆောက်ရန်။
+1. Token span line/column များမှ full indentation stack တည်ဆောက်ရန်။ Cursor/width foundation ပြီးသော်လည်း arbitrary dedent stack ownership မပြီးသေးပါ။
 
 1. Recursive `parse_block(indent)` နှင့် statement-list builder ကို line-count dispatch မပါဘဲ ပြောင်းရန်။
 

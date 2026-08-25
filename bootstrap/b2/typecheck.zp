@@ -2,6 +2,41 @@
 # This is a provisional corpus-limited implementation. Native Rust remains the
 # reference type checker and owns the complete language semantics.
 
+export fn ast_expression_type(node):
+    let kind = node["kind"]
+    if kind == "literal":
+        return node["literal_kind"]
+    if kind == "name":
+        return "any"
+    if kind == "unary":
+        if node["op"] == "not":
+            return "bool"
+        if node["op"] == "negate" and ast_expression_type(node["value"]) == "number":
+            return "number"
+        return "any"
+    if kind == "binary":
+        let operator = node["op"]
+        if operator == "and" or operator == "or" or operator == "equal" or operator == "not_equal" or operator == "less" or operator == "less_equal" or operator == "greater" or operator == "greater_equal":
+            return "bool"
+        let left_type = ast_expression_type(node["left"])
+        let right_type = ast_expression_type(node["right"])
+        if operator == "add" and left_type == "text" and right_type == "text":
+            return "text"
+        if (operator == "add" or operator == "subtract" or operator == "multiply" or operator == "divide" or operator == "remainder") and left_type == "number" and right_type == "number":
+            return "number"
+        return "any"
+    if kind == "list":
+        if len(node["elements"]) == 0:
+            return "list<any>"
+        return "list<" + ast_expression_type(node["elements"][0]) + ">"
+    if kind == "map":
+        return "map<any,any>"
+    if kind == "call":
+        return "any"
+    if kind == "index":
+        return "any"
+    return "any"
+
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
 

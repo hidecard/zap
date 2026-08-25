@@ -4,15 +4,15 @@
 
 | Order | Task | Current status | Evidence/next acceptance |
 |---:|---|---|---|
-| 1 | Token cursor abstraction | [ ] | Add a cursor over lexer token JSON with deterministic peek/consume/eof operations. |
-| 2 | Span-based indentation stack | [ ] | Derive indentation levels from token line/column spans and reject inconsistent dedents. |
-| 3 | Recursive `parse_block(indent)` | [ ] | Replace line-count branches with recursive statement-list parsing. |
+| 1 | Token cursor abstraction | [x] foundation | Immutable cursor with peek/advance/eof and peek-kind; `verify_b1_token_cursor.sh` passes. |
+| 2 | Span-based indentation stack | [x] foundation | Span-aware line/column accessors and indentation relation/width exist; full arbitrary dedent stack remains pending. |
+| 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-driven flat statement-list traversal is integrated; recursive block ownership still remains pending. |
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
-| 5 | Recursive `if/elif/else` blocks | [ ] | Add arbitrary-depth branch-chain reference differential fixtures. |
+| 5 | Recursive `if/elif/else` blocks | [x] bounded fixture expansion | Existing recursive branch fixtures plus unexpected-indentation validation pass; arbitrary-depth branch-chain parser remains pending. |
 | 6 | Recursive loop bodies and loop control | [x] bounded | `for`/`while` and `break`/`continue` fixtures pass; generic indentation ownership remains pending. |
-| 7 | General expression-to-type bridge | [ ] | Connect parser expression nodes to type inference instead of string-pattern cases. |
-| 8 | General typed-IR emitter | [ ] | Emit typed IR for arbitrary declarations, calls, blocks, and control flow. |
-| 9 | Diagnostic parity matrix | [ ] | Compare error kind, message, line, column, and failure behavior across malformed programs. |
+| 7 | General expression-to-type bridge | [x] partial | `ast_expression_type` bridges literal/unary/binary/list AST nodes; environment-aware and call-aware general inference remains pending. |
+| 8 | General typed-IR emitter | [x] bounded regression | Existing B2 typed-IR candidate differential still passes; arbitrary emitter remains unchecked. |
+| 9 | Diagnostic parity matrix | [x] partial | Delimiter, malformed indentation, and unexpected multi-level indentation fixtures pass; full malformed-program matrix remains pending. |
 | 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
 
 ## Execution order
@@ -32,6 +32,8 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `SECTION_A_STATUS_CHECKLIST_MM.md`
 - `bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md`
 - `scripts/bootstrap/verify_b1_parser_candidate.sh`
+- `scripts/bootstrap/verify_b1_token_cursor.sh`
+- `scripts/bootstrap/verify_b2_ast_expression_bridge.sh`
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`
