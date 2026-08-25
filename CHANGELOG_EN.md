@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.15] — 2026-08-25
+
+### Release engineering
+- Adds exact {"score": 7} map-literal annotation evidence and hardens the native macOS HTTP response test harness without changing production networking behavior.
+
 ## [2.11.14] — 2026-08-25
 
 ### Release engineering

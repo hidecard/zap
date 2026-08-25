@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.15] - 2026-08-25
+
+### Release summary
+- Bounded exact map literal annotation evidence and macOS HTTP response-reader test hardening.
+
 ## [2.11.14] - 2026-08-25
 
 ### Release summary
