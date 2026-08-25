@@ -43,3 +43,4 @@ BOOT-041	b2-typechecker-generic-constraint-deferred	B2 candidate status	B2 candi
 BOOT-042	b2-typechecker-explicit-generic-call-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_explicit_call_deferred.zp	provisional
 BOOT-043	b2-typechecker-generic-class-alias-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_alias_deferred.zp	provisional
 BOOT-044	b2-typed-ir-generic-identity-metadata	B2 candidate status	B2 candidate status	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_identity.zp	provisional
+BOOT-045	b2-lsp-generic-hover-metadata	B2 candidate status	Rust LSP reference only	bootstrap/fixtures/typecheck/generic_identity.zp	native/src/lsp.rs::hover_includes_generic_function_type_parameters	provisional

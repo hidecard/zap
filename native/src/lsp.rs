@@ -1086,12 +1086,20 @@ fn hover_response(message: &Value, state: &LspState) -> Value {
                     name,
                     return_type,
                     is_async,
+                    type_params,
                     ..
-                } if name == &word => Some(format!(
-                    "{}function `{name}` -> `{}`",
-                    if *is_async { "async " } else { "" },
-                    return_type.as_deref().unwrap_or("none")
-                )),
+                } if name == &word => {
+                    let generic_suffix = if type_params.is_empty() {
+                        String::new()
+                    } else {
+                        format!("<{}>", type_params.join(", "))
+                    };
+                    Some(format!(
+                        "{}function `{name}`{generic_suffix} -> `{}`",
+                        if *is_async { "async " } else { "" },
+                        return_type.as_deref().unwrap_or("none")
+                    ))
+                }
                 crate::ast::Stmt::Class { name, .. } if name == &word => {
                     Some(format!("class `{name}`"))
                 }
@@ -2036,6 +2044,25 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("async function `load`"));
+    }
+
+    #[test]
+    fn hover_includes_generic_function_type_parameters() {
+        let uri = "file:///generic-hover.zp";
+        let _ = handle_message(&json!({
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": uri, "text": "fn identity<T>(value: T) -> T:\n    return value\nidentity(1)\n"}}
+        }));
+        let response = handle_message(&json!({
+            "jsonrpc": "2.0", "id": 101, "method": "textDocument/hover",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 2, "character": 8}}
+        }))
+        .unwrap();
+        assert_eq!(
+            response["result"]["contents"]["value"],
+            "function `identity`<T> -> `T`"
+        );
     }
 
     #[test]
