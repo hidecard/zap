@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use crate::lexer::SourceSpan;
 use crate::parser::{
     is_allowed_annotation_with_type_params, parse_function_name_and_type_parameters,
+    split_signature_params,
 };
 
 /// A source-aware expression node used by future parser and tooling phases.
@@ -809,8 +810,9 @@ fn parse_function_header(
     let mut params = Vec::new();
     let mut parameter_names = HashSet::new();
     if !params_text.trim().is_empty() {
-        for parameter in params_text.split(',') {
-            let parameter = parameter.trim();
+        for parameter in split_signature_params(params_text) {
+            let parameter_text = parameter;
+            let parameter = parameter_text.trim();
             let (parameter, default) = parameter
                 .split_once('=')
                 .map_or((parameter, None), |(left, right)| {

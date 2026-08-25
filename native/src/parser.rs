@@ -13,8 +13,8 @@ pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>),
         .map(str::trim)
         .filter(|x| !x.is_empty())
         .map(str::to_string);
-    let params = params_raw
-        .split(',')
+    let params = split_signature_params(params_raw)
+        .into_iter()
         .filter(|x| !x.trim().is_empty())
         .map(|item| {
             let item = item.trim();
@@ -120,6 +120,44 @@ pub(crate) fn static_literal_type(raw: &str) -> Option<&'static str> {
         None
     }
 }
+pub(crate) fn split_signature_params(raw: &str) -> Vec<&str> {
+    let mut params = Vec::new();
+    let mut start = 0;
+    let mut delimiter_depth = 0i32;
+    let mut generic_depth = 0i32;
+    let mut quote = None;
+    for (index, ch) in raw.char_indices() {
+        if let Some(q) = quote {
+            if ch == q {
+                quote = None;
+            }
+            continue;
+        }
+        if ch == '"' || ch == '\'' {
+            quote = Some(ch);
+        } else if matches!(ch, '(' | '[' | '{') {
+            delimiter_depth += 1;
+        } else if matches!(ch, ')' | ']' | '}') {
+            delimiter_depth -= 1;
+        } else if ch == '<' {
+            generic_depth += 1;
+        } else if ch == '>' && generic_depth > 0 {
+            generic_depth -= 1;
+        } else if ch == ',' && delimiter_depth == 0 && generic_depth == 0 {
+            let parameter = raw[start..index].trim();
+            if !parameter.is_empty() {
+                params.push(parameter);
+            }
+            start = index + ch.len_utf8();
+        }
+    }
+    let parameter = raw[start..].trim();
+    if !parameter.is_empty() {
+        params.push(parameter);
+    }
+    params
+}
+
 pub(crate) fn split_static_args(raw: &str) -> Vec<String> {
     let mut args = Vec::new();
     let mut current = String::new();
@@ -322,7 +360,7 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
 mod tests {
     use super::{
         annotation_matches, is_allowed_annotation, parse_function_name_and_type_parameters,
-        parse_signature, split_static_args, static_literal_type,
+        parse_signature, split_signature_params, split_static_args, static_literal_type,
     };
 
     #[test]
@@ -340,6 +378,24 @@ mod tests {
         for (source, expected) in cases {
             assert_eq!(static_literal_type(source), expected, "literal {source:?}");
         }
+    }
+
+    #[test]
+    fn parser_splits_generic_signature_parameters_without_losing_inner_commas() {
+        assert_eq!(
+            split_signature_params("value: map<K, V>, fallback: list<option<T>>"),
+            vec!["value: map<K, V>", "fallback: list<option<T>>"]
+        );
+    }
+
+    #[test]
+    fn parser_preserves_generic_map_parameter_and_return_annotations() {
+        let (params, return_type) =
+            parse_signature("value: map<K, V>) -> map<K, V>").expect("valid map signature");
+        assert_eq!(params.len(), 1);
+        assert_eq!(params[0].name, "value");
+        assert_eq!(params[0].annotation.as_deref(), Some("map<K, V>"));
+        assert_eq!(return_type.as_deref(), Some("map<K, V>"));
     }
 
     #[test]

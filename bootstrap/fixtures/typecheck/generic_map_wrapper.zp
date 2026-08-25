@@ -1,0 +1,4 @@
+fn map_keep<K, V>(value: map<K, V>) -> map<K, V>:
+    return value
+
+let records: map<text, number> = map_keep({"score": 7})
