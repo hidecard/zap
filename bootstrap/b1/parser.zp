@@ -104,6 +104,11 @@ export fn parse_choose_function():
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
+    if len(lines) == 3:
+        if lines[2] == "":
+            let first = parse_declaration(lines[0], 1)
+            let second = parse_declaration(lines[1], 2)
+            return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 9:
         let first = parse_declaration(lines[0], 1)
         let second = parse_declaration(lines[1], 2)
