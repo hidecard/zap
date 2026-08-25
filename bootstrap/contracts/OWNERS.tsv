@@ -39,3 +39,4 @@ BOOT-037	b2-typechecker-generic-wrapper-runtime-and-arity	B2 candidate status	B2
 BOOT-038	b2-typechecker-generic-list-wrapper	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_list_wrapper_incompatible.zp	provisional
 BOOT-039	b2-typechecker-generic-map-wrapper-and-signature-split	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_map_wrapper_incompatible.zp	provisional
 BOOT-040	b2-typechecker-cross-module-generic-signatures	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_cross_module_incompatible.zp	provisional
+BOOT-041	b2-typechecker-generic-constraint-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_constraint_where.zp	provisional

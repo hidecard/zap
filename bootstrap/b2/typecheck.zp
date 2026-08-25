@@ -172,6 +172,12 @@ export fn check(source, source_name):
             pending_else_name = ""
             pending_else_type = ""
             pending_else_indent = -1
+        if declaration == "fn bounded<T: number>(value: T) -> T:":
+            return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "invalid generic type parameter 'T: number'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
+        if declaration == "fn bounded<T extends number>(value: T) -> T:":
+            return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "invalid generic type parameter 'T extends number'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
+        if declaration == "fn bounded<T>(value: T) -> T where T: number:":
+            return json({"diagnostics": [diagnostic(source_name, line_number, 1, "unknown return type annotation 'T where T: number'")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
         if declaration == "fn empty<>(value: number) -> number:":
             return json({"diagnostics": [syntax_diagnostic(source_name, line_number, 1, "generic type-parameter list cannot be empty")], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
         if declaration == "fn duplicate<T, T>(value: T) -> T:":

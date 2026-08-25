@@ -1,0 +1,4 @@
+fn bounded<T>(value: T) -> T where T: number:
+    return value
+
+let result: number = bounded(1)
