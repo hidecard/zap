@@ -75,6 +75,38 @@ export fn generic_function_metadata(signature, return_type):
         name = trim(substring(name, 3, len(name)))
     return {"name": name, "type_params": generic_parameters(signature), "return_type": return_type}
 
+export fn generic_type_alias_info(line):
+    let value = trim(line)
+    if not starts_with(value, "type "):
+        return {"name": "", "type_params": [], "body": "", "valid": false}
+    let declaration = trim(substring(value, 5, len(value)))
+    let left = trim(split(declaration, "=")[0])
+    let name = trim(split(left, "<")[0])
+    let type_params = []
+    if contains(left, "<") and contains(left, ">"):
+        let raw = split(split(left, "<")[1], ">")
+        if len(raw) > 0:
+            for parameter in split(raw[0], ","):
+                type_params = append(type_params, trim(parameter))
+    let body = ""
+    if contains(declaration, "="):
+        body = trim(split(declaration, "=")[1])
+    return {"body": body, "name": name, "type_params": type_params, "valid": name != "" and body != ""}
+
+export fn generic_type_alias_node(info, line):
+    return {"body": info["body"], "inferred_type": info["body"], "ir_schema_version": 1, "kind": "type_alias", "name": info["name"], "span": span(line, 1, 0), "type_params": info["type_params"]}
+
+export fn emit_generic_type_aliases(source, source_name):
+    let lines = split(source, "\\n")
+    let nodes = []
+    let line_number = 0
+    for line in lines:
+        line_number = line_number + 1
+        let info = generic_type_alias_info(line)
+        if info["valid"]:
+            nodes = append(nodes, generic_type_alias_node(info, line_number))
+    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+
 export fn emit_declarations(source, source_name):
     let lines = split(source, "\n")
     let nodes = []
@@ -94,6 +126,8 @@ export fn emit_declarations(source, source_name):
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit(source, source_name):
+    if starts_with(trim(source), "type "):
+        return emit_generic_type_aliases(source, source_name)
     if source == "let first: number = 1\nlet label: text = \"zap\"\n":
         let first_value = literal_node("number", 1, 1, 1, 1)
         let label_value = literal_node("text", "zap", 1, 1, 5)

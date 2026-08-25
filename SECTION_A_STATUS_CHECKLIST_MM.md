@@ -12,7 +12,7 @@
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification နှင့် generic type declaration/container foundation ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node နှင့် end-to-end foundation ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — recursive AST list/map collection helpers နှင့် nested wrapper unification foundation ရှိသော်လည်း arbitrary nested collection/index inference နှင့် heterogeneous collection diagnostics မပြီးသေးပါ။
 
@@ -28,7 +28,7 @@
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
-- [ ] **General typed-IR production** — declaration/list/map emission နှင့် generic/function metadata foundation ရှိသော်လည်း inferred function/call expressions၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
+- [ ] **General typed-IR production** — declaration/list/map emission၊ generic type-alias node နှင့် generic/function metadata foundation ရှိသော်လည်း inferred function/call expressions၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
@@ -167,6 +167,10 @@
 - [x] Generic type declaration foundation — `type Pair<T,U> = map<T,list<U>>` metadata၊ nested container instantiation၊ generic arity error နှင့် duplicate parameter validation ကို စစ်ဆေးနိုင်သည်.
 
 - [x] B2 generic-bounds/type-declaration acceptance — bounds ၁၀ cases နှင့် generic type declaration ၁၀ cases pass.
+
+- [x] Generic declaration end-to-end foundation — generic function signature၊ parameter-specific bounds၊ generic type alias metadata၊ nested container instantiation နှင့် typed-IR type-alias node ကို end-to-end စစ်ဆေးနိုင်သည်။
+
+- [x] B2 generic end-to-end ၁၀-case verifier — parser/typechecker/typed-IR generic declaration and call integration cases pass.
 
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
