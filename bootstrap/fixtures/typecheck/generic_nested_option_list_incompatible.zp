@@ -1,0 +1,4 @@
+fn keep_nested<T>(value: option<list<T>>) -> option<list<T>>:
+    return value
+
+let wrong: text = keep_nested(some([1, 2]))
