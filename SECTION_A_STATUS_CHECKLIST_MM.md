@@ -8,7 +8,7 @@
 
 ## Compiler နှင့် Self-hosting
 
-- [ ] **Complete type inference** — module/function symbol graph၊ branch path merge နှင့် scope restoration foundations ထည့်ထားသော်လည်း arbitrary nested scope graph၊ loop mutation fixpoint၊ call graph propagation နှင့် full flow-sensitive inference မပြီးသေးပါ။
+- [ ] **Complete type inference** — nested scope graph၊ branch-local merge၊ loop fixpoint နှင့် call-cycle foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
@@ -20,7 +20,7 @@
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
-- [ ] **Loop mutation analysis** — loop body type comparison နှင့် divergent mutation ကို `any` သို့ widen လုပ်သည့် foundation ရှိသော်လည်း arbitrary loop assignments၊ nested scopes နှင့် iteration fixpoint analysis မပြီးသေးပါ။
+- [ ] **Loop mutation analysis** — loop mutation widening နှင့် bounded fixpoint foundation ရှိသော်လည်း arbitrary loop assignments၊ nested scopes၊ multiple iterations နှင့် full fixpoint convergence analysis မပြီးသေးပါ။
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
@@ -140,9 +140,21 @@
 
 - [x] B2 loop/call-graph ၁၀-case verifier — mutation preservation/widening နှင့် call return/constraint/error propagation cases pass.
 
+- [x] Loop iteration fixpoint foundation — repeated mutation update သည် stable type သို့ converge လုပ်နိုင်ပြီး divergent update ကို `any` သို့ ထိန်းသိမ်းနိုင်သည်။
+
+- [x] Call graph cycle foundation — self-recursion၊ mutual recursion နှင့် acyclic graph များကို cycle kind အဖြစ် ခွဲခြားနိုင်သည်။
+
+- [x] B2 loop-fixpoint/cycle ၁၀-case verifier — stable/divergent mutation၊ self-cycle၊ mutual-cycle နှင့် acyclic graph cases pass.
+
 - [x] B2 program symbol graph verifier — function/module symbols၊ parameter/local scopes၊ declaration types၊ reassignment update နှင့် missing symbol cases pass.
 
 - [x] B2 scope/branch ၁၀-case verifier — parameter/local lookup၊ shadowing၊ divergent/same merge၊ missing lookup နှင့် return compatibility cases pass.
+
+- [x] Arbitrary nested scope graph foundation — module/function/branch/loop scope nodes၊ parent fallback lookup နှင့် deep nested symbol resolution ကို စစ်ဆေးနိုင်သည်။
+
+- [x] Branch-local declaration merge foundation — branch နှစ်ဖက်လုံးတွင် ရှိသော local declarations များကို same-type preserve၊ divergent-type widen အဖြစ် merge လုပ်နိုင်သည်။
+
+- [x] B2 nested-scope/branch-merge ၁၀-case verifier — deep parent fallback၊ branch-local presence၊ shadowing နှင့် missing-symbol isolation cases pass.
 
 - [x] Branch path-sensitive merge foundation — fallthrough/fallthrough merge၊ one-sided return path၊ both-sided return path နှင့် divergent type widening ကို ခွဲခြားနိုင်သည်။
 

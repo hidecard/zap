@@ -12,6 +12,24 @@ export fn ast_lookup_type(environment, name):
 export fn symbol_environment_bind(environment, name, type):
     return append(environment, {"name": name, "type": type})
 
+export fn symbol_environment_has(environment, name):
+    for binding in environment:
+        if binding["name"] == name:
+            return true
+    return false
+
+export fn branch_local_declaration_merge(base, then_environment, else_environment, names):
+    let merged = base
+    for name in names:
+        if symbol_environment_has(then_environment, name) and symbol_environment_has(else_environment, name):
+            let then_type = ast_lookup_type(then_environment, name)
+            let else_type = ast_lookup_type(else_environment, name)
+            if then_type == else_type:
+                merged = symbol_environment_bind(merged, name, then_type)
+            else:
+                merged = symbol_environment_bind(merged, name, "any")
+    return merged
+
 export fn symbol_environment_from_parameters(parameters):
     let environment = []
     for parameter in parameters:
@@ -61,6 +79,30 @@ export fn function_body_environment(parameters, locals):
 
 export fn symbol_graph_bind(graph, name, kind, type, scope):
     return append(graph, {"kind": kind, "name": name, "scope": scope, "type": type})
+
+export fn nested_scope_bind(graph, scope, parent, name, kind, type):
+    return append(graph, {"kind": kind, "name": name, "parent": parent, "scope": scope, "type": type})
+
+export fn nested_scope_parent(graph, scope):
+    for symbol in graph:
+        if symbol["scope"] == scope:
+            return symbol["parent"]
+    return ""
+
+export fn nested_scope_lookup(graph, scope, name):
+    let result = {"kind": "unknown", "name": name, "parent": "", "scope": scope, "type": "any"}
+    for symbol in graph:
+        if symbol["scope"] == scope and symbol["name"] == name:
+            result = symbol
+    if result["kind"] != "unknown" or scope == "":
+        return result
+    let parent = nested_scope_parent(graph, scope)
+    if parent == scope:
+        return result
+    return nested_scope_lookup(graph, parent, name)
+
+export fn nested_scope_type(graph, scope, name):
+    return nested_scope_lookup(graph, scope, name)["type"]
 
 export fn symbol_graph_lookup(graph, name):
     let result = {"kind": "unknown", "name": name, "scope": "", "type": "any"}
@@ -125,6 +167,27 @@ export fn loop_mutation_update(before, body, mutated_names):
 export fn loop_mutation_type(before, body, name):
     return ast_lookup_type(loop_mutation_update(before, body, [name]), name)
 
+export fn loop_fixpoint_update(before, body, mutated_names, remaining_iterations):
+    let updated = loop_mutation_update(before, body, mutated_names)
+    if remaining_iterations <= 1:
+        return updated
+    let changed = false
+    for name in mutated_names:
+        if ast_lookup_type(updated, name) != ast_lookup_type(before, name):
+            changed = true
+    if not changed:
+        return updated
+    return loop_fixpoint_update(updated, body, mutated_names, remaining_iterations - 1)
+
+export fn loop_fixpoint_type(before, body, name, max_iterations):
+    return ast_lookup_type(loop_fixpoint_update(before, body, [name], max_iterations), name)
+
+export fn list_contains(values, value):
+    for item in values:
+        if item == value:
+            return true
+    return false
+
 export fn call_graph_bind(graph, caller, callee, return_type):
     return append(graph, {"caller": caller, "callee": callee, "return_type": return_type})
 
@@ -144,6 +207,24 @@ export fn call_graph_propagate(graph, functions, calls):
 
 export fn call_graph_return_type(graph, caller, callee):
     return call_graph_lookup(graph, caller, callee)
+
+export fn call_graph_has_cycle_from(graph, start, current, visited):
+    if list_contains(visited, current):
+        return current == start
+    let next_visited = append(visited, current)
+    for edge in graph:
+        if edge["caller"] == current:
+            if call_graph_has_cycle_from(graph, start, edge["callee"], next_visited):
+                return true
+    return false
+
+export fn call_graph_has_cycle(graph, start):
+    return call_graph_has_cycle_from(graph, start, start, [])
+
+export fn call_graph_cycle_kind(graph, start):
+    if call_graph_has_cycle(graph, start):
+        return "cycle"
+    return "acyclic"
 
 export fn infer_function_body_return(body_expression, parameters, locals, expected_type):
     let environment = function_body_environment(parameters, locals)
