@@ -12,7 +12,7 @@
 
 - [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node နှင့် end-to-end foundation ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — recursive AST list/map collection helpers နှင့် nested wrapper unification foundation ရှိသော်လည်း arbitrary nested collection/index inference နှင့် heterogeneous collection diagnostics မပြီးသေးပါ။
 
@@ -225,3 +225,25 @@
 ## B အပိုင်း
 
 B section ကို မစတင်သေးပါ။ Section A ၏ full type inference၊ arbitrary parser၊ diagnostic parity၊ general typed-IR၊ package/build ownership၊ VM ownership၊ platform-seed acceptance နှင့် B4 self-rebuild များ မပြီးမချင်း B ကို intentionally hold ထားသည်။
+
+- [x] B2 generic runtime/recursive-call bounded verifier — list/map/option/result container operation compatibility နှင့် recursive generic return instantiation ၁၁ cases pass။ Full runtime value semantics နှင့် arbitrary recursive execution မပြီးသေးပါ။
+
+- [ ] **Arbitrary AST symbol graph construction** — လက်ရှိ parser-independent program graph foundation သည် typed declarations၊ parameters နှင့် selected local scope များအထိသာ ဖြစ်ပြီး arbitrary AST statements၊ branch-local declarations၊ loop scopes နှင့် assignment flow ကို graph တစ်ခုတည်းအဖြစ် မစုစည်းနိုင်သေးပါ။
+
+- [ ] **Flow-sensitive analysis** — branch/loop/call bounded helpers ရှိသော်လည်း arbitrary AST CFG၊ path-sensitive narrowing၊ merge completeness နှင့် mutation fixpoint ကို full program အပေါ် မပြည့်စုံသေးပါ။
+
+- [ ] **Generic runtime container semantics** — type-level operation compatibility foundation ရှိသော်လည်း evaluator/VM value-level list/map/option/result operations၊ ownership/error behavior နှင့် recursive generic execution contract မပြီးသေးပါ။
+
+- [ ] **Recursive generic calls** — bounded return substitution နှင့် recursion-limit result foundation ရှိသော်လည်း evaluator-integrated recursive generic instantiation၊ polymorphic recursion validation နှင့် full diagnostics မပြီးသေးပါ။
+
+## လက်ရှိ batch မှတ်ချက်
+
+တောင်းဆိုထားသော ၁၀,၀၀၀ နှင့် ၁,၀၀၀ task counts ကို တစ်ခုချင်း artificially mark မလုပ်ဘဲ acceptance-gated implementation batches အဖြစ် စုစည်းထားသည်။ ယခု batch တွင် generic runtime/recursive-call ၁၁ cases pass ဖြစ်သော်လည်း Section A full gates မပြီးသေးသဖြင့် `[ ]` ကို ဆက်ထိန်းထားသည်။
+
+## References
+
+[1]: https://github.com/hidecard/zap "Zap repository"
+[2]: https://github.com/hidecard/zap/blob/master/SECTION_A_NEXT10_QUEUE.md "Section A next-task queue"
+[3]: https://github.com/hidecard/zap/blob/master/native/src/evaluator.rs "Zap native evaluator"
+
+ဤ checklist ၏ verification status သည် local repository test runs နှင့် source inspection အပေါ် အခြေခံထားသည်။

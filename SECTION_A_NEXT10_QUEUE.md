@@ -15,6 +15,10 @@
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint and cycle foundations pass in focused verifiers; complete reference error matrix remains pending. |
 | 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
 
+## Current expansion batch
+
+The requested 10,000 flow-sensitive/arbitrary-AST tasks and 1,000 generic runtime/recursive-call tasks are being executed as acceptance-gated batches rather than falsely marking every requested count as complete. The current verified increment is the bounded generic runtime/recursive-call gate; the next implementation boundary remains arbitrary AST control-flow graph construction and evaluator-integrated generic value semantics.
+
 ## Execution order
 
 Tasks 1–6 are parser prerequisites. Tasks 7–9 depend on stable AST/block ownership. Task 10 depends on general typed IR and complete diagnostics. The B4 contract must remain `self_hosted = false` until task 10 and platform-seed self-rebuild acceptance pass.
@@ -53,6 +57,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_generic_bounds_10.sh` — covers 10 multiple-bound generic call cases
 - `scripts/bootstrap/verify_b2_generic_type_declaration_10.sh` — covers 10 generic type declaration/container cases
 - `scripts/bootstrap/verify_b2_generic_end_to_end_10.sh` — covers 10 parser/typechecker/typed-IR generic integration cases
+- `scripts/bootstrap/verify_b2_generic_runtime_recursive_10.sh` — covers 11 bounded generic runtime-container compatibility and recursive generic-call cases
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`

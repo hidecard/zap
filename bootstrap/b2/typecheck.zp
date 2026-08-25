@@ -643,6 +643,34 @@ export fn infer_function_call(functions, callee, argument_types):
         return function["return_type"]
     return "unknown_function"
 
+export fn generic_recursive_call_result(functions, callee, argument_types, parameters, return_template, remaining_depth):
+    if remaining_depth <= 0:
+        return "recursion_limit"
+    let result = infer_function_call(functions, callee, argument_types)
+    if result == "unknown_function" or result == "arity_error" or result == "argument_error" or result == "constraint_error":
+        return result
+    if len(parameters) == 0:
+        return result
+    return generic_instantiate_return(parameters, argument_types, return_template)
+
+export fn generic_runtime_container_kind(type_name):
+    let parts = type_wrapper_parts(type_name)
+    return parts["wrapper"]
+
+export fn generic_runtime_container_accepts(operation, container_type, value_type):
+    let parts = type_wrapper_parts(container_type)
+    if operation == "list_push" and parts["wrapper"] == "list":
+        return type_unify(parts["inner"], value_type)
+    if operation == "map_key" and parts["wrapper"] == "map":
+        return type_unify(parts["key"], value_type)
+    if operation == "map_value" and parts["wrapper"] == "map":
+        return type_unify(parts["value"], value_type)
+    if operation == "option_some" and parts["wrapper"] == "option":
+        return type_unify(parts["inner"], value_type)
+    if operation == "result_ok" and parts["wrapper"] == "result":
+        return type_unify(parts["inner"], value_type)
+    return false
+
 export fn infer_ast_function_call(node, functions, environment):
     let argument_types = []
     for argument in node["args"]:
