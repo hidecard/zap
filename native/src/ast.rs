@@ -3,6 +3,7 @@
 use std::collections::HashSet;
 
 use crate::lexer::SourceSpan;
+use crate::parser::parse_function_name_and_type_parameters;
 
 /// A source-aware expression node used by future parser and tooling phases.
 #[derive(Clone, Debug, PartialEq)]
@@ -141,6 +142,7 @@ pub(crate) enum Stmt {
     },
     Function {
         name: String,
+        type_params: Vec<String>,
         params: Vec<(String, Option<String>, Option<String>)>,
         return_type: Option<String>,
         body: Program,
@@ -744,6 +746,7 @@ fn parse_function_header(
     Result<
         (
             String,
+            Vec<String>,
             Vec<(String, Option<String>, Option<String>)>,
             Option<String>,
             String,
@@ -785,7 +788,11 @@ fn parse_function_header(
     if close < open {
         return Some(Err("function parameter list is malformed".to_string()));
     }
-    let name = signature[..open].trim();
+    let raw_name = signature[..open].trim();
+    let (name, type_params) = match parse_function_name_and_type_parameters(raw_name) {
+        Ok(value) => value,
+        Err(error) => return Some(Err(error)),
+    };
     if name.is_empty() {
         return Some(Err("function name is missing".to_string()));
     }
@@ -840,10 +847,12 @@ fn parse_function_header(
                 .filter(|value| !value.is_empty())
                 .map(str::to_string);
             if let Some(annotation) = annotation.as_deref() {
-                if let Err(error) = validate_annotation_syntax(annotation) {
-                    return Some(Err(format!(
-                        "invalid annotation for parameter {parameter_name}: {error}"
-                    )));
+                if !type_params.iter().any(|parameter| parameter == annotation) {
+                    if let Err(error) = validate_annotation_syntax(annotation) {
+                        return Some(Err(format!(
+                            "invalid annotation for parameter {parameter_name}: {error}"
+                        )));
+                    }
                 }
             }
             params.push((
@@ -860,8 +869,10 @@ fn parse_function_header(
         .filter(|value| !value.is_empty())
         .map(str::to_string);
     if let Some(annotation) = return_type.as_deref() {
-        if let Err(error) = validate_annotation_syntax(annotation) {
-            return Some(Err(format!("invalid return annotation: {error}")));
+        if !type_params.iter().any(|parameter| parameter == annotation) {
+            if let Err(error) = validate_annotation_syntax(annotation) {
+                return Some(Err(format!("invalid return annotation: {error}")));
+            }
         }
     }
     if !suffix.is_empty() && return_type.is_none() {
@@ -869,6 +880,7 @@ fn parse_function_header(
     }
     Some(Ok((
         name.to_string(),
+        type_params,
         params,
         return_type,
         visibility.to_string(),
@@ -1069,10 +1081,11 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
             }
             let body_indent = lines[*cursor].indent;
             let body = parse_block(lines, cursor, body_indent)?;
-            let (name, params, return_type, visibility, is_async, exported) = function;
+            let (name, type_params, params, return_type, visibility, is_async, exported) = function;
             program.statements.push(Spanned::new(
                 Stmt::Function {
                     name,
+                    type_params,
                     params,
                     return_type,
                     body,

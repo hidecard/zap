@@ -22,8 +22,9 @@ use project::{resolve_module, run_zap_tests, validate_project};
 mod parser;
 
 use parser::{
-    annotation_matches, generic_type, is_allowed_annotation, matching_paren, parse_signature,
-    split_static_args, static_literal_type,
+    annotation_matches, generic_parts, generic_type, is_allowed_annotation, matching_paren,
+    parse_function_name_and_type_parameters, parse_signature, split_static_args, split_type_args,
+    static_literal_type,
 };
 mod cli;
 mod evaluator;
@@ -1378,30 +1379,36 @@ fn manifest_value(text: &str, key: &str) -> Option<String> {
     }
     None
 }
+fn parse_static_function_header(
+    rest: &str,
+) -> Result<(String, Vec<String>, Vec<Param>, Option<String>), String> {
+    let head = rest.trim_end_matches(':').trim();
+    let (raw_name, args) = head
+        .split_once('(')
+        .ok_or("function signature requires parentheses".to_string())?;
+    let (name, type_params) = parse_function_name_and_type_parameters(raw_name)?;
+    let (params, return_annotation) = parse_signature(args)?;
+    Ok((name, type_params, params, return_annotation))
+}
+
 fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String> {
-    let allowed = [
-        "text", "number", "bool", "list", "map", "object", "none", "any", "function",
-    ];
     for (index, line) in source.lines().enumerate() {
         let trimmed = line.trim();
         if let Some(rest) = trimmed
             .strip_prefix("fn ")
             .or_else(|| trimmed.strip_prefix("def "))
         {
-            let head = rest.trim_end_matches(':').trim();
-            let (_name, args) = head.split_once('(').ok_or_else(|| {
-                format!(
-                    "SyntaxError at {}:{}: function signature requires parentheses",
-                    file.display(),
-                    index + 1
-                )
-            })?;
-            let (params, return_annotation) = parse_signature(args).map_err(|error| {
-                format!("SyntaxError at {}:{}: {error}", file.display(), index + 1)
-            })?;
+            let (name, type_params, params, return_annotation) = parse_static_function_header(rest)
+                .map_err(|error| {
+                    format!("SyntaxError at {}:{}: {error}", file.display(), index + 1)
+                })?;
+            let valid_annotation = |annotation: &str| {
+                type_params.iter().any(|parameter| parameter == annotation)
+                    || is_allowed_annotation(annotation)
+            };
             for param in &params {
                 if let Some(annotation) = &param.annotation {
-                    if !is_allowed_annotation(annotation) {
+                    if !valid_annotation(annotation) {
                         return Err(format!(
                             "TypeError at {}:{}: unknown type annotation '{}'",
                             file.display(),
@@ -1412,7 +1419,7 @@ fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String>
                 }
             }
             if let Some(annotation) = return_annotation {
-                if !allowed.contains(&annotation.as_str()) {
+                if !valid_annotation(&annotation) {
                     return Err(format!(
                         "TypeError at {}:{}: unknown return type annotation '{}'",
                         file.display(),
@@ -1421,6 +1428,7 @@ fn validate_function_signatures(source: &str, file: &Path) -> Result<(), String>
                     ));
                 }
             }
+            let _ = name;
         }
     }
     Ok(())
@@ -1433,19 +1441,13 @@ fn validate_function_returns(source: &str, file: &Path) -> Result<(), String> {
             .strip_prefix("fn ")
             .or_else(|| trimmed.strip_prefix("def "))
         {
-            let head = rest.trim_end_matches(':').trim();
-            let (name, args) = head.split_once('(').ok_or_else(|| {
-                format!(
-                    "SyntaxError at {}: function signature requires parentheses",
-                    file.display()
-                )
-            })?;
-            let (params, return_annotation) = parse_signature(args)
+            let (name, type_params, params, return_annotation) = parse_static_function_header(rest)
                 .map_err(|error| format!("SyntaxError at {}: {error}", file.display()))?;
             signatures.insert(
-                name.trim().to_string(),
+                name,
                 StaticSignature {
                     params,
+                    type_params,
                     return_annotation,
                 },
             );
@@ -1462,21 +1464,14 @@ fn validate_function_returns(source: &str, file: &Path) -> Result<(), String> {
             .strip_prefix("fn ")
             .or_else(|| trimmed.strip_prefix("def "))
         {
-            let head = rest.trim_end_matches(':').trim();
-            let (name, args) = head.split_once('(').ok_or_else(|| {
-                format!(
-                    "SyntaxError at {}:{}: function signature requires parentheses",
-                    file.display(),
-                    line_index + 1
-                )
-            })?;
-            let (params, return_annotation) = parse_signature(args).map_err(|error| {
-                format!(
-                    "SyntaxError at {}:{}: {error}",
-                    file.display(),
-                    line_index + 1
-                )
-            })?;
+            let (name, _type_params, params, return_annotation) =
+                parse_static_function_header(rest).map_err(|error| {
+                    format!(
+                        "SyntaxError at {}:{}: {error}",
+                        file.display(),
+                        line_index + 1
+                    )
+                })?;
             let vars = params
                 .iter()
                 .filter_map(|param| {
@@ -1486,7 +1481,7 @@ fn validate_function_returns(source: &str, file: &Path) -> Result<(), String> {
                         .map(|annotation| (param.name.clone(), annotation.clone()))
                 })
                 .collect();
-            active = Some((indent, name.trim().to_string(), return_annotation, vars));
+            active = Some((indent, name, return_annotation, vars));
             continue;
         }
         let Some((function_indent, function_name, return_annotation, vars)) = active.as_mut()
@@ -1662,7 +1657,25 @@ fn static_expr_type(
                 return Some("option<any>".into());
             }
             if let Some(signature) = signatures.get(name) {
-                return signature.return_annotation.clone();
+                let return_annotation = signature.return_annotation.as_deref()?;
+                if signature.type_params.is_empty() {
+                    return Some(return_annotation.to_string());
+                }
+                let bindings = infer_static_call_bindings(
+                    &args,
+                    &signature.params,
+                    &signature.type_params,
+                    vars,
+                    signatures,
+                )?;
+                if !signature
+                    .type_params
+                    .iter()
+                    .all(|parameter| bindings.contains_key(parameter))
+                {
+                    return None;
+                }
+                return substitute_generic_annotation(return_annotation, &bindings, 0);
             }
         }
     }
@@ -1700,11 +1713,102 @@ fn static_expr_type(
     None
 }
 
+fn infer_generic_substitution(
+    expected: &str,
+    actual: &str,
+    type_params: &[String],
+    bindings: &mut HashMap<String, String>,
+    depth: usize,
+) -> bool {
+    if depth > 32 {
+        return false;
+    }
+    let expected = expected.trim();
+    let actual = actual.trim();
+    if type_params.iter().any(|parameter| parameter == expected) {
+        if let Some(bound) = bindings.get(expected) {
+            return bound == actual;
+        }
+        bindings.insert(expected.to_string(), actual.to_string());
+        return true;
+    }
+    if expected == "any" || expected == actual {
+        return true;
+    }
+    let (Some((expected_base, expected_inner)), Some((actual_base, actual_inner))) =
+        (generic_parts(expected), generic_parts(actual))
+    else {
+        return false;
+    };
+    if expected_base != actual_base {
+        return false;
+    }
+    let (Some(expected_args), Some(actual_args)) = (
+        split_type_args(expected_inner),
+        split_type_args(actual_inner),
+    ) else {
+        return false;
+    };
+    expected_args.len() == actual_args.len()
+        && expected_args
+            .iter()
+            .zip(actual_args)
+            .all(|(expected, actual)| {
+                infer_generic_substitution(expected, actual, type_params, bindings, depth + 1)
+            })
+}
+
+fn substitute_generic_annotation(
+    annotation: &str,
+    bindings: &HashMap<String, String>,
+    depth: usize,
+) -> Option<String> {
+    if depth > 32 {
+        return None;
+    }
+    let annotation = annotation.trim();
+    if let Some(bound) = bindings.get(annotation) {
+        return Some(bound.clone());
+    }
+    let Some((base, inner)) = generic_parts(annotation) else {
+        return Some(annotation.to_string());
+    };
+    let args = split_type_args(inner)?;
+    let substituted = args
+        .into_iter()
+        .map(|arg| substitute_generic_annotation(arg, bindings, depth + 1))
+        .collect::<Option<Vec<_>>>()?;
+    Some(format!("{base}<{}>", substituted.join(",")))
+}
+
+fn infer_static_call_bindings(
+    args: &[String],
+    params: &[Param],
+    type_params: &[String],
+    vars: &HashMap<String, String>,
+    signatures: &HashMap<String, StaticSignature>,
+) -> Option<HashMap<String, String>> {
+    let mut bindings = HashMap::new();
+    for (param, arg) in params.iter().zip(args.iter()) {
+        let Some(expected) = param.annotation.as_deref() else {
+            continue;
+        };
+        let Some(actual) = static_expr_type(arg, vars, signatures) else {
+            continue;
+        };
+        if !infer_generic_substitution(expected, &actual, type_params, &mut bindings, 0) {
+            return None;
+        }
+    }
+    Some(bindings)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn validate_static_call(
     name: &str,
     args: &[String],
     params: &[Param],
+    type_params: &[String],
     vars: &HashMap<String, String>,
     signatures: &HashMap<String, StaticSignature>,
     file: &Path,
@@ -1727,13 +1831,34 @@ fn validate_static_call(
             args.len()
         ));
     }
+    let bindings = infer_static_call_bindings(args, params, type_params, vars, signatures);
+    let bindings = if type_params.is_empty() {
+        HashMap::new()
+    } else {
+        let Some(bindings) = bindings.filter(|bindings| {
+            type_params
+                .iter()
+                .all(|parameter| bindings.contains_key(parameter))
+        }) else {
+            return Err(format!(
+                "TypeError at {}:{}:{}: generic argument substitution for '{}' is inconsistent",
+                file.display(),
+                line,
+                column,
+                name
+            ));
+        };
+        bindings
+    };
     for (param, arg) in params.iter().zip(args.iter()) {
         if let Some(expected) = param.annotation.as_deref() {
             if expected == "any" {
                 continue;
             }
             if let Some(actual) = static_expr_type(arg, vars, signatures) {
-                if !annotation_matches(expected, &actual) {
+                let expected = substitute_generic_annotation(expected, &bindings, 0)
+                    .unwrap_or_else(|| expected.to_string());
+                if !annotation_matches(&expected, &actual) {
                     return Err(format!(
                         "TypeError at {}:{}:{}: argument '{}' for '{}' expects {}, got {}",
                         file.display(),
@@ -1872,25 +1997,19 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
             .strip_prefix("fn ")
             .or_else(|| trimmed.strip_prefix("def "))
         {
-            let head = rest.trim_end_matches(':').trim();
-            let (name, args) = head.split_once('(').ok_or_else(|| {
-                format!(
-                    "SyntaxError at {}:{}:1: function signature requires parentheses",
-                    file.display(),
-                    line_index + 1
-                )
-            })?;
-            let (params, return_annotation) = parse_signature(args).map_err(|error| {
-                format!(
-                    "SyntaxError at {}:{}:1: {error}",
-                    file.display(),
-                    line_index + 1
-                )
-            })?;
+            let (name, type_params, params, return_annotation) = parse_static_function_header(rest)
+                .map_err(|error| {
+                    format!(
+                        "SyntaxError at {}:{}:1: {error}",
+                        file.display(),
+                        line_index + 1
+                    )
+                })?;
             signatures.insert(
-                name.trim().to_string(),
+                name,
                 StaticSignature {
                     params,
+                    type_params,
                     return_annotation,
                 },
             );
@@ -2066,6 +2185,7 @@ fn validate_function_calls(source: &str, file: &Path) -> Result<(), String> {
                         name,
                         &args,
                         &signature.params,
+                        &signature.type_params,
                         &vars,
                         &signatures,
                         file,
@@ -2223,6 +2343,7 @@ mod zap_error_tests {
                     annotation: Some("number".into()),
                     default: None,
                 }],
+                type_params: Vec::new(),
                 return_annotation: Some("number".into()),
                 is_async: false,
                 body: vec!["return value + 1".into()],

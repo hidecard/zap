@@ -17,6 +17,7 @@ pub(crate) struct Param {
 #[derive(Clone, Debug)]
 pub(crate) struct StaticSignature {
     pub(crate) params: Vec<Param>,
+    pub(crate) type_params: Vec<String>,
     pub(crate) return_annotation: Option<String>,
 }
 
@@ -363,6 +364,7 @@ impl EnvFrame {
 pub(crate) struct Function {
     pub(crate) visibility: String,
     pub(crate) params: Vec<Param>,
+    pub(crate) type_params: Vec<String>,
     pub(crate) return_annotation: Option<String>,
     pub(crate) is_async: bool,
     /// Legacy source lines retained for compatibility with older declarations.
@@ -1199,6 +1201,7 @@ mod tests {
                 annotation: Some("text".into()),
                 default: Some("\"fallback\"".into()),
             }],
+            type_params: Vec::new(),
             return_annotation: Some("text".into()),
             is_async: false,
             body: Vec::new(),
@@ -1218,6 +1221,7 @@ mod tests {
         let oversized = Value::Callable(Rc::new(Function {
             visibility: "public".into(),
             params: Vec::new(),
+            type_params: Vec::new(),
             return_annotation: None,
             is_async: false,
             body: Vec::new(),
@@ -1357,6 +1361,7 @@ mod tests {
         let callable = Value::Callable(Rc::new(Function {
             visibility: "public".into(),
             params: Vec::new(),
+            type_params: Vec::new(),
             return_annotation: None,
             is_async: false,
             body: Vec::new(),

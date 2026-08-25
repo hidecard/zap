@@ -3762,6 +3762,7 @@ fn call_function_with_arguments(
             return Err(format!("unknown named argument: {name}"));
         }
     }
+    let mut generic_bindings = HashMap::new();
     for param in &f.params {
         let v = if let Some(value) = named.remove(&param.name) {
             value
@@ -3771,12 +3772,46 @@ fn call_function_with_arguments(
             return Err(format!("missing required argument: {}", param.name));
         };
         if let Some(annotation) = &param.annotation {
-            check_annotation(&param.name, annotation, &v)?;
+            let annotation = if f.type_params.is_empty() {
+                annotation.clone()
+            } else {
+                let actual = runtime_annotation(&v, 0);
+                if !infer_runtime_substitution(
+                    annotation,
+                    &actual,
+                    &f.type_params,
+                    &mut generic_bindings,
+                    0,
+                ) {
+                    return Err(format!(
+                        "generic argument substitution for '{}' is inconsistent",
+                        f.type_params.join(", ")
+                    ));
+                }
+                substitute_runtime_annotation(annotation, &generic_bindings, 0).ok_or_else(
+                    || {
+                        format!(
+                            "generic argument substitution for '{}' exceeds the recursion limit",
+                            f.type_params.join(", ")
+                        )
+                    },
+                )?
+            };
+            check_annotation(&param.name, &annotation, &v)?;
         }
         local.insert(param.name.clone(), v.clone());
         if let Some(frame) = &ast_frame {
             frame.try_insert_local(param.name.clone(), v)?;
         }
+    }
+    if f.type_params
+        .iter()
+        .any(|parameter| !generic_bindings.contains_key(parameter))
+    {
+        return Err(format!(
+            "generic argument substitution for '{}' is incomplete",
+            f.type_params.join(", ")
+        ));
     }
     let mut local_funcs = funcs.clone();
     let (value, use_snapshot_sync) = if let Some(body) = &f.ast_body {
@@ -3811,7 +3846,17 @@ fn call_function_with_arguments(
         f.closure.try_sync_captured(&captured_keys, &local)?;
     }
     if let Some(annotation) = &f.return_annotation {
-        check_annotation("return", annotation, &value)?;
+        let annotation = if f.type_params.is_empty() {
+            annotation.clone()
+        } else {
+            substitute_runtime_annotation(annotation, &generic_bindings, 0).ok_or_else(|| {
+                format!(
+                    "generic return substitution for '{}' exceeds the recursion limit",
+                    f.type_params.join(", ")
+                )
+            })?
+        };
+        check_annotation("return", &annotation, &value)?;
     }
     if f.is_async {
         // Async language calls intentionally execute the body eagerly; only the
@@ -4119,6 +4164,128 @@ fn matches_annotation(annotation: &str, value: &Value) -> Result<bool, String> {
     ))
 }
 
+fn runtime_annotation(value: &Value, depth: usize) -> String {
+    if depth > 32 {
+        return "any".into();
+    }
+    match value {
+        Value::None => "none".into(),
+        Value::Bool(_) => "bool".into(),
+        Value::Number(_) => "number".into(),
+        Value::Text(_) => "text".into(),
+        Value::Object { .. } => "object".into(),
+        Value::Callable(_) => "function".into(),
+        Value::Future(_) | Value::ScheduledFuture(_) => "future".into(),
+        Value::List(items) => {
+            let element = items
+                .first()
+                .map(|item| runtime_annotation(item, depth + 1))
+                .unwrap_or_else(|| "any".into());
+            if items
+                .iter()
+                .skip(1)
+                .any(|item| runtime_annotation(item, depth + 1) != element)
+            {
+                "list<any>".into()
+            } else {
+                format!("list<{element}>")
+            }
+        }
+        Value::Map(entries) => {
+            let element = entries
+                .values()
+                .next()
+                .map(|item| runtime_annotation(item, depth + 1))
+                .unwrap_or_else(|| "any".into());
+            if entries
+                .values()
+                .skip(1)
+                .any(|item| runtime_annotation(item, depth + 1) != element)
+            {
+                "map<text,any>".into()
+            } else {
+                format!("map<text,{element}>")
+            }
+        }
+        Value::ResultOk(item) | Value::ResultErr(item) => {
+            format!("result<{}>", runtime_annotation(item, depth + 1))
+        }
+        Value::OptionSome(item) => {
+            format!("option<{}>", runtime_annotation(item, depth + 1))
+        }
+        Value::OptionNone => "option<any>".into(),
+    }
+}
+
+fn infer_runtime_substitution(
+    expected: &str,
+    actual: &str,
+    type_params: &[String],
+    bindings: &mut HashMap<String, String>,
+    depth: usize,
+) -> bool {
+    if depth > 32 {
+        return false;
+    }
+    let expected = expected.trim();
+    let actual = actual.trim();
+    if type_params.iter().any(|parameter| parameter == expected) {
+        if let Some(bound) = bindings.get(expected) {
+            return bound == actual;
+        }
+        bindings.insert(expected.to_string(), actual.to_string());
+        return true;
+    }
+    if expected == "any" || expected == actual {
+        return true;
+    }
+    let (Some((expected_base, expected_inner)), Some((actual_base, actual_inner))) =
+        (generic_annotation(expected), generic_annotation(actual))
+    else {
+        return false;
+    };
+    if expected_base.trim() != actual_base.trim() {
+        return false;
+    }
+    let (expected_args, actual_args) = match (
+        split_generic_args(expected_inner),
+        split_generic_args(actual_inner),
+    ) {
+        (Ok(expected_args), Ok(actual_args)) => (expected_args, actual_args),
+        _ => return false,
+    };
+    expected_args.len() == actual_args.len()
+        && expected_args
+            .iter()
+            .zip(actual_args.iter())
+            .all(|(expected, actual)| {
+                infer_runtime_substitution(expected, actual, type_params, bindings, depth + 1)
+            })
+}
+
+fn substitute_runtime_annotation(
+    annotation: &str,
+    bindings: &HashMap<String, String>,
+    depth: usize,
+) -> Option<String> {
+    if depth > 32 {
+        return None;
+    }
+    let annotation = annotation.trim();
+    if let Some(bound) = bindings.get(annotation) {
+        return Some(bound.clone());
+    }
+    let Some((base, inner)) = generic_annotation(annotation) else {
+        return Some(annotation.to_string());
+    };
+    let args = split_generic_args(inner).ok()?;
+    let substituted = args
+        .into_iter()
+        .map(|arg| substitute_runtime_annotation(arg, bindings, depth + 1))
+        .collect::<Option<Vec<_>>>()?;
+    Some(format!("{}<{}>", base.trim(), substituted.join(",")))
+}
+
 pub(crate) fn check_annotation(name: &str, annotation: &str, value: &Value) -> Result<(), String> {
     let expected = annotation.trim();
     if expected.is_empty() || expected == "any" {
@@ -4223,6 +4390,7 @@ pub(crate) fn ast_program_compatible(_program: &Program) -> bool {
 
 struct AstFunctionSpec<'a> {
     name: &'a str,
+    type_params: &'a [String],
     params: &'a [(String, Option<String>, Option<String>)],
     visibility: &'a str,
     return_type: &'a Option<String>,
@@ -4252,6 +4420,7 @@ fn register_ast_function(
 ) -> Result<(), String> {
     let function = Rc::new(Function {
         visibility: spec.visibility.to_string(),
+        type_params: spec.type_params.to_vec(),
         params: spec
             .params
             .iter()
@@ -4287,6 +4456,7 @@ fn register_ast_class(
         Rc::new(Function {
             visibility: "public".into(),
             params: Vec::new(),
+            type_params: Vec::new(),
             return_annotation: None,
             is_async: false,
             body: Vec::new(),
@@ -4303,6 +4473,7 @@ fn register_ast_class(
             Rc::new(Function {
                 visibility: "public".into(),
                 params: Vec::new(),
+                type_params: Vec::new(),
                 return_annotation: None,
                 is_async: false,
                 body: vec![parent.clone()],
@@ -4331,6 +4502,7 @@ fn register_ast_class(
                 Rc::new(Function {
                     visibility: visibility.clone(),
                     params: Vec::new(),
+                    type_params: Vec::new(),
                     return_annotation: annotation.clone(),
                     is_async: false,
                     body: Vec::new(),
@@ -4356,6 +4528,7 @@ fn register_ast_class(
                     Rc::new(Function {
                         visibility: "public".into(),
                         params: Vec::new(),
+                        type_params: Vec::new(),
                         return_annotation: None,
                         is_async: false,
                         body: Vec::new(),
@@ -4392,6 +4565,7 @@ fn register_ast_class(
                 Rc::new(Function {
                     visibility: visibility.clone(),
                     params: method_params,
+                    type_params: Vec::new(),
                     return_annotation: return_type.clone(),
                     is_async: *is_async,
                     body: Vec::new(),
@@ -4647,6 +4821,7 @@ fn execute_ast_program_with_frame(
             }
             Stmt::Function {
                 name,
+                type_params,
                 params,
                 return_type,
                 body,
@@ -4657,6 +4832,7 @@ fn execute_ast_program_with_frame(
                 register_ast_function(
                     AstFunctionSpec {
                         name,
+                        type_params,
                         params,
                         visibility,
                         return_type,
@@ -4911,6 +5087,7 @@ pub(crate) fn execute_lines_with_context(
                 Rc::new(Function {
                     visibility: "public".into(),
                     params: Vec::new(),
+                    type_params: Vec::new(),
                     return_annotation: None,
                     is_async: false,
                     body: Vec::new(),
@@ -4927,6 +5104,7 @@ pub(crate) fn execute_lines_with_context(
                     Rc::new(Function {
                         visibility: "public".into(),
                         params: Vec::new(),
+                        type_params: Vec::new(),
                         return_annotation: None,
                         is_async: false,
                         body: vec![parent_name],
@@ -4962,6 +5140,7 @@ pub(crate) fn execute_lines_with_context(
                             Rc::new(Function {
                                 visibility: visibility.into(),
                                 params: Vec::new(),
+                                type_params: Vec::new(),
                                 return_annotation: None,
                                 is_async: false,
                                 body: Vec::new(),
@@ -4991,6 +5170,7 @@ pub(crate) fn execute_lines_with_context(
                         Rc::new(Function {
                             visibility: visibility.into(),
                             params,
+                            type_params: Vec::new(),
                             return_annotation,
                             is_async: false,
                             body: method_body,
@@ -5039,6 +5219,7 @@ pub(crate) fn execute_lines_with_context(
                 Rc::new(Function {
                     visibility: "public".into(),
                     params: args,
+                    type_params: Vec::new(),
                     return_annotation,
                     is_async: false,
                     body,
@@ -5052,6 +5233,7 @@ pub(crate) fn execute_lines_with_context(
                     Rc::new(Function {
                         visibility: "public".into(),
                         params: Vec::new(),
+                        type_params: Vec::new(),
                         return_annotation: None,
                         is_async: false,
                         body: Vec::new(),
@@ -6483,6 +6665,7 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         let home = Rc::new(Function {
             visibility: "public".into(),
             params: Vec::new(),
+            type_params: Vec::new(),
             return_annotation: None,
             is_async: false,
             body: Vec::new(),

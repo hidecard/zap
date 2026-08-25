@@ -1,0 +1,4 @@
+fn same<T>(left: T, right: T) -> T:
+    return left
+
+let wrong: text = same(1, "zap")

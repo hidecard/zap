@@ -62,6 +62,16 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
+        if function_name == "identity":
+            return expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+        if function_name == "same":
+            let arguments = split(argument, ",")
+            if len(arguments) == 2:
+                let left_type = expression_type(trim(arguments[0]), "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+                let right_type = expression_type(trim(arguments[1]), "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+                if left_type != right_type:
+                    return "generic_error"
+                return left_type
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if argument_type == "text":
             return "call_error"
@@ -71,7 +81,9 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
 export fn function_parts(line):
     let after_keyword = substring(trim(line), 3, len(trim(line)))
     let signature_parts = split(after_keyword, "(")
-    let name = trim(signature_parts[0])
+    let raw_name = trim(signature_parts[0])
+    let name_parts = split(raw_name, "<")
+    let name = trim(name_parts[0])
     let parameter_area = split(signature_parts[1], ")")[0]
     let annotation_parts = split(parameter_area, ":")
     let parameter_name = trim(annotation_parts[0])
@@ -85,6 +97,8 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
         let inferred = expression_type(return_expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and inferred == "text":
             return diagnostic(source_name, line_number, 9, "return value expects number, got text")
+        if parameter_type == "T" and inferred != "T":
+            return diagnostic(source_name, line_number, 1, "return from '" + function_name + "' expects " + parameter_type + ", got " + inferred)
         return none
     if not starts_with(declaration, "let ") or not contains(declaration, ":") or not contains(declaration, " = "):
         return none
@@ -98,6 +112,13 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
     if function_name != "" and starts_with(trim(expression), function_name + "("):
         let call_parts = split(trim(expression), "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
+        if function_name == "same" and contains(argument, ","):
+            let arguments = split(argument, ",")
+            if len(arguments) == 2:
+                let left_type = expression_type(trim(arguments[0]), "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+                let right_type = expression_type(trim(arguments[1]), "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
+                if left_type != right_type:
+                    return diagnostic(source_name, line_number, len(left) + 4, "generic argument substitution for 'same' is inconsistent")
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")

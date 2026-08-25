@@ -5,7 +5,7 @@ cd "$ROOT_DIR"
 
 valid_ir_fixture="bootstrap/fixtures/typecheck/annotated.zp"
 valid_ir_expected="bootstrap/fixtures/typecheck/annotated.typed-ir.json"
-for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp bootstrap/fixtures/typecheck/bool_annotation.zp bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp bootstrap/fixtures/typecheck/none_annotation.zp bootstrap/fixtures/typecheck/none_annotation_incompatible.zp bootstrap/fixtures/typecheck/list_annotation.zp bootstrap/fixtures/typecheck/list_annotation_incompatible.zp bootstrap/fixtures/typecheck/map_annotation.zp bootstrap/fixtures/typecheck/map_annotation_incompatible.zp bootstrap/fixtures/typecheck/option_annotation.zp bootstrap/fixtures/typecheck/option_annotation_incompatible.zp bootstrap/fixtures/typecheck/expression_number_add.zp bootstrap/fixtures/typecheck/expression_number_add_incompatible.zp bootstrap/fixtures/typecheck/expression_text_add.zp bootstrap/fixtures/typecheck/expression_text_add_incompatible.zp bootstrap/fixtures/typecheck/expression_comparison_bool.zp bootstrap/fixtures/typecheck/expression_boolean_logic.zp bootstrap/fixtures/typecheck/expression_boolean_logic_incompatible.zp bootstrap/fixtures/typecheck/expression_result_constructor.zp bootstrap/fixtures/typecheck/expression_result_constructor_incompatible.zp bootstrap/fixtures/typecheck/collection_expression_list.zp bootstrap/fixtures/typecheck/collection_expression_list_incompatible.zp bootstrap/fixtures/typecheck/collection_expression_map.zp bootstrap/fixtures/typecheck/collection_expression_map_incompatible.zp; do
+for path in "$valid_ir_fixture" "$valid_ir_expected" bootstrap/fixtures/typecheck/incompatible.zp bootstrap/fixtures/typecheck/conditional.zp bootstrap/fixtures/typecheck/function.zp bootstrap/fixtures/typecheck/function_incompatible.zp bootstrap/fixtures/typecheck/collection_incompatible.zp bootstrap/fixtures/typecheck/nested_collection.zp bootstrap/fixtures/typecheck/nested_collection_incompatible.zp bootstrap/fixtures/typecheck/map_collection.zp bootstrap/fixtures/typecheck/map_collection_incompatible.zp bootstrap/fixtures/typecheck/branch_narrowing.zp bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp bootstrap/fixtures/typecheck/loop_narrowing.zp bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp bootstrap/fixtures/typecheck/else_narrowing.zp bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp bootstrap/fixtures/typecheck/bool_annotation.zp bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp bootstrap/fixtures/typecheck/none_annotation.zp bootstrap/fixtures/typecheck/none_annotation_incompatible.zp bootstrap/fixtures/typecheck/list_annotation.zp bootstrap/fixtures/typecheck/list_annotation_incompatible.zp bootstrap/fixtures/typecheck/map_annotation.zp bootstrap/fixtures/typecheck/map_annotation_incompatible.zp bootstrap/fixtures/typecheck/option_annotation.zp bootstrap/fixtures/typecheck/option_annotation_incompatible.zp bootstrap/fixtures/typecheck/expression_number_add.zp bootstrap/fixtures/typecheck/expression_number_add_incompatible.zp bootstrap/fixtures/typecheck/expression_text_add.zp bootstrap/fixtures/typecheck/expression_text_add_incompatible.zp bootstrap/fixtures/typecheck/expression_comparison_bool.zp bootstrap/fixtures/typecheck/expression_boolean_logic.zp bootstrap/fixtures/typecheck/expression_boolean_logic_incompatible.zp bootstrap/fixtures/typecheck/expression_result_constructor.zp bootstrap/fixtures/typecheck/expression_result_constructor_incompatible.zp bootstrap/fixtures/typecheck/collection_expression_list.zp bootstrap/fixtures/typecheck/collection_expression_list_incompatible.zp bootstrap/fixtures/typecheck/collection_expression_map.zp bootstrap/fixtures/typecheck/collection_expression_map_incompatible.zp bootstrap/fixtures/typecheck/generic_identity.zp bootstrap/fixtures/typecheck/generic_conflict.zp bootstrap/fixtures/typecheck/generic_return_mismatch.zp; do
   [[ -f "$path" ]] || { printf 'missing B2 fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -317,3 +317,26 @@ if [[ "$status" -eq 0 ]]; then
 fi
 jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects map<text,text>, got map<text,number>"))' <<<"$collection_expression_map_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact map arithmetic expression\n'
+generic_identity_check=$(run_check generic_identity)
+jq -e '.ok == true and .code? == null' <<<"$generic_identity_check" >/dev/null
+printf 'A3 type-check acceptance passed: generic identity substitution\n'
+set +e
+generic_conflict=$(run_check generic_conflict 2>/tmp/zap-a3-generic-conflict-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'generic_conflict fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 19 and (.message | contains("generic argument substitution for '\''same'\'' is inconsistent"))' <<<"$generic_conflict" >/dev/null
+printf 'A3 type-check rejection passed: conflicting generic substitution\n'
+set +e
+generic_return_mismatch=$(run_check generic_return_mismatch 2>/tmp/zap-a3-generic-return-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'generic_return_mismatch fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("return from '\''broken'\'' expects T, got text"))' <<<"$generic_return_mismatch" >/dev/null
+printf 'A3 type-check rejection passed: generic return mismatch\n'

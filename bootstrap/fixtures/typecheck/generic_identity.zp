@@ -1,0 +1,5 @@
+fn identity<T>(value: T) -> T:
+    return value
+
+let numeric: number = identity(1)
+let textual: text = identity("zap")

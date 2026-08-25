@@ -344,6 +344,7 @@ fn stmt_json(statement: &Spanned<Stmt>) -> JsonValue {
         }
         Stmt::Function {
             name,
+            type_params,
             params,
             return_type,
             body,
@@ -356,6 +357,7 @@ fn stmt_json(statement: &Spanned<Stmt>) -> JsonValue {
             fields.insert("is_async", json!(is_async));
             fields.insert("kind", json!("function"));
             fields.insert("name", json!(name));
+            fields.insert("type_params", json!(type_params));
             fields.insert(
                 "params",
                 JsonValue::Array(

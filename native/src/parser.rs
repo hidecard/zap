@@ -54,6 +54,51 @@ pub(crate) fn parse_signature(raw: &str) -> Result<(Vec<Param>, Option<String>),
     Ok((params, return_annotation))
 }
 
+pub(crate) fn parse_type_parameters(raw: &str) -> Result<Vec<String>, String> {
+    let value = raw.trim();
+    if value.is_empty() {
+        return Err("generic type-parameter list cannot be empty".to_string());
+    }
+    let mut parameters = Vec::new();
+    let mut names = HashSet::new();
+    for item in value.split(',') {
+        let parameter = item.trim();
+        let valid = parameter.chars().enumerate().all(|(index, character)| {
+            character == '_'
+                || character.is_ascii_alphanumeric()
+                    && (index > 0 || character.is_ascii_uppercase())
+        });
+        if !valid || parameter.is_empty() {
+            return Err(format!("invalid generic type parameter '{parameter}'"));
+        }
+        if !names.insert(parameter.to_string()) {
+            return Err(format!("duplicate generic type parameter: {parameter}"));
+        }
+        parameters.push(parameter.to_string());
+    }
+    Ok(parameters)
+}
+
+pub(crate) fn parse_function_name_and_type_parameters(
+    raw: &str,
+) -> Result<(String, Vec<String>), String> {
+    let value = raw.trim();
+    let Some(open) = value.find('<') else {
+        return Ok((value.to_string(), Vec::new()));
+    };
+    if !value.ends_with('>') || value[..open].trim().is_empty() {
+        return Err(format!("malformed generic function declaration '{value}'"));
+    }
+    let name = value[..open].trim();
+    let inner = &value[open + 1..value.len() - 1];
+    if inner.contains('<') || inner.contains('>') {
+        return Err(format!(
+            "nested generic function parameters are unsupported: '{value}'"
+        ));
+    }
+    Ok((name.to_string(), parse_type_parameters(inner)?))
+}
+
 pub(crate) fn static_literal_type(raw: &str) -> Option<&'static str> {
     let value = raw.trim();
     if value.len() >= 2
@@ -139,7 +184,7 @@ pub(crate) fn generic_type(base: &str, inner: &str) -> String {
     format!("{base}<{}>", inner.trim())
 }
 
-fn generic_parts(annotation: &str) -> Option<(&str, &str)> {
+pub(crate) fn generic_parts(annotation: &str) -> Option<(&str, &str)> {
     let open = annotation.find('<')?;
     if !annotation.ends_with('>') || open == 0 {
         return None;
@@ -150,7 +195,7 @@ fn generic_parts(annotation: &str) -> Option<(&str, &str)> {
     ))
 }
 
-fn split_type_args(inner: &str) -> Option<Vec<&str>> {
+pub(crate) fn split_type_args(inner: &str) -> Option<Vec<&str>> {
     let mut args = Vec::new();
     let mut start = 0;
     let mut depth = 0usize;
@@ -245,8 +290,8 @@ pub(crate) fn annotation_matches(expected: &str, actual: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        annotation_matches, is_allowed_annotation, parse_signature, split_static_args,
-        static_literal_type,
+        annotation_matches, is_allowed_annotation, parse_function_name_and_type_parameters,
+        parse_signature, split_static_args, static_literal_type,
     };
 
     #[test]
@@ -309,5 +354,23 @@ mod tests {
         assert!(!is_allowed_annotation("map<number>"));
         assert!(annotation_matches("list<any>", "list<text>"));
         assert!(!annotation_matches("list<number>", "list<text>"));
+    }
+
+    #[test]
+    fn parser_generic_function_heads_are_strict_and_deterministic() {
+        assert_eq!(
+            parse_function_name_and_type_parameters("identity<T>").expect("valid generic head"),
+            ("identity".to_string(), vec!["T".to_string()])
+        );
+        assert_eq!(
+            parse_function_name_and_type_parameters("pair<T, U>").expect("valid generic head"),
+            ("pair".to_string(), vec!["T".to_string(), "U".to_string()])
+        );
+        for invalid in ["identity<>", "identity<T, T>", "identity<t>", "identity<T"] {
+            assert!(
+                parse_function_name_and_type_parameters(invalid).is_err(),
+                "accepted invalid generic head {invalid:?}"
+            );
+        }
     }
 }
