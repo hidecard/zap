@@ -1,8 +1,8 @@
 # Zap Language ကျန်ရှိသည့်အလုပ်များ — မြန်မာ To-do List
 
-**လက်ရှိအခြေအနေ — v2.11.13 published B0 bootstrap increment နှင့် v2.11.14 preparation**
+**လက်ရှိအခြေအနေ — v2.11.14 published B0 bootstrap increment နှင့် v2.11.15 preparation**
 
-Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.13 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint နှင့် v2.11.14 preparation evidence ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
+Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collection helpers၊ JSON၊ file I/O၊ function annotations၊ static call checking၊ variable/nested-expression inference၊ typed `Result`/`Option` foundation၊ structured `zap check --json` diagnostics နှင့် cross-platform release workflow များ ပါဝင်သည်။ Release နောက်ပိုင်း native runtime ကို modularize လုပ်ပြီး explicit export visibility၊ canonical-path cache၊ circular import detection နှင့် absolute-path rejection တို့ ထပ်မံပြီးစီးထားသည်။ Native unit tests 25 ခုနှင့် integration tests 47 ခု စုစုပေါင်း 72 ခု အောင်မြင်နေသည်။ v0.9.2 CI တွင် Linux x86_64၊ Windows x86_64 နှင့် macOS ARM64 release build များကို quality gate ဖြင့် စစ်ဆေးထားသည်။ အောက်ပါ To-do list သည် audit findings နှင့် legacy v0.9.0 roadmap ကို အခြေခံထားပြီး **အရင်လုပ်ရမည့် foundation အလုပ်များမှ နောက်ပိုင်း ecosystem အလုပ်များသို့** အစဉ်လိုက် စီထားခြင်း ဖြစ်သည်။ လက်ရှိ v2.11.14 အတွက် အောက်တွင်ဖော်ပြထားသော B0 bootstrap checkpoint နှင့် v2.11.15 preparation evidence ကို source-of-truth အဖြစ် ထပ်မံသတ်မှတ်ထားပြီး legacy checkbox များထဲမှ အချို့သည် historical planning record ဖြစ်နိုင်သဖြင့် current acceptance ကို release gates နှင့် bootstrap contracts များဖြင့် ထပ်မံအတည်ပြုရမည်။
 
 ## အခြေအနေသင်္ကေတ
 
@@ -73,7 +73,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] macOS ARM64 target-native web-server regression ကို test client half-close မလိုအပ်ကြောင်း သတ်မှတ်ပြီး platform-sensitive local-socket reset race မဖြစ်စေရန် ပြင်ဆင်ခြင်း၊ full Zap CI matrix ဖြင့် ပြန်လည်စစ်ဆေးခြင်း။
 - [x] v2.11.13 corrective release ကို new immutable tag ဖြင့် publish လုပ်ပြီး source၊ Linux၊ macOS၊ Windows၊ Publish နှင့် public artifact/signature verification အားလုံး အောင်မြင်ကြောင်း မှတ်တမ်းတင်ခြင်း။
 
-## နောက် v2.11.14 B0-safe preparation
+## v2.11.14 B0-safe published evidence နှင့် နောက် v2.11.15 preparation
 
 - [x] Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ direct bool-literal annotation ကို နောက် bounded type-system increment အဖြစ် ရွေးချယ်ရန်။
 - [x] Tracked variable တစ်ခုတွင် direct `true`/`false` literal ကို `bool` annotation သို့ assign လုပ်ပါက လက်ခံပြီး direct numeric literal ကို `bool` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'enabled' expects bool, got number` diagnostic ဖြင့် reject လုပ်ရန်။
@@ -85,7 +85,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Exact `[1, 2]` list literal ကို `list<number>` အဖြစ် လက်ခံပြီး ထို literal ကို `text` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'wrong' expects text, got list<number>` diagnostic ဖြင့် reject လုပ်ရန်။
 - [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct list-literal acceptance/rejection evidence ထည့်ရန်။
 - [x] Provisional ownership ledger တွင် `BOOT-030` နှင့် `bootstrap/fixtures/typecheck/list_annotation_incompatible.zp` ထည့်ရန်။
-- [ ] နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
+- [ ] v2.11.15 preparation အတွက် နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety

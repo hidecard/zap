@@ -1,10 +1,10 @@
 # Zap v2.11.14
 
-**Release status:** Candidate preparation; publication requires complete validation. Zap remains B0.
+**Release status:** Published after complete validation and public artifact/signature verification. Zap remains B0.
 
 ## Summary
 
-Zap v2.11.14 prepares a provisional, corpus-limited B2 type-checker increment for one direct list-number literal annotation shape. The candidate recognizes the exact literal `[1, 2]` as `list<number>` and accepts `let numbers: list<number> = [1, 2]`. A paired negative fixture rejects assigning the same direct list-number literal to `text` with the stable diagnostic `variable 'wrong' expects text, got list<number>` at line 1, column 1.
+Zap v2.11.14 publishes a provisional, corpus-limited B2 type-checker increment for one direct list-number literal annotation shape. The published candidate recognizes the exact literal `[1, 2]` as `list<number>` and accepts `let numbers: list<number> = [1, 2]`. A paired negative fixture rejects assigning the same direct list-number literal to `text` with the stable diagnostic `variable 'wrong' expects text, got list<number>` at line 1, column 1.
 
 This is evidence for one deterministic fixture pair only. It does not implement general list-literal inference, arbitrary list contents, variable aliases, nested list construction, collection expression inference, or complete static type checking.
 
@@ -21,7 +21,7 @@ This is evidence for one deterministic fixture pair only. It does not implement 
 
 ## Verification contract
 
-The candidate must pass the native and Zap candidate B2 verifiers, malformed-source safety, native tests, typecheck matrix parity, specification ownership, Markdown links, VS Code packaging, formatting, release-version validation, documentation consistency, and the exact committed release preflight. The public workflow must independently pass source validation, Linux x86_64, macOS ARM64, Windows x86_64, and Publish jobs. Published artifacts must pass checksum, manifest, provenance, and detached-signature verification.
+The published candidate passed the native and Zap candidate B2 verifiers, malformed-source safety, native tests, typecheck matrix parity, specification ownership, Markdown links, VS Code packaging, formatting, release-version validation, documentation consistency, and the exact committed release preflight. The public workflow independently passed source validation, Linux x86_64, macOS ARM64, Windows x86_64, and Publish jobs. Published artifacts passed checksum, manifest, provenance, and detached-signature verification.
 
 ## Deferred scope
 
@@ -29,7 +29,7 @@ General list-literal inference, arbitrary list element expressions, nested list 
 
 ## Bootstrap boundary
 
-Zap remains **B0**. Rust remains the complete/reference compiler and runtime owner. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` remains provisional and corpus-limited. This candidate does not claim a fully Zap-only, self-hosted, B1, B2, B3, or B4 compiler.
+Zap remains **B0**. Rust remains the complete/reference compiler and runtime owner. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` remains provisional and corpus-limited. This release does not claim a fully Zap-only, self-hosted, B1, B2, B3, or B4 compiler.
 
 ## References
 

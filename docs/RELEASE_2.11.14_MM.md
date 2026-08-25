@@ -1,10 +1,10 @@
 # Zap v2.11.14
 
-**Release အခြေအနေ:** Candidate preparation ဖြစ်ပြီး complete validation အောင်မြင်မှသာ publish လုပ်မည်။ Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
+**Release အခြေအနေ:** Complete validation နှင့် public artifact/signature verification အောင်မြင်ပြီး publish လုပ်ထားသည်။ Zap သည် B0 အဖြစ်သာ ဆက်ရှိသည်။
 
 ## အကျဉ်းချုပ်
 
-Zap v2.11.14 တွင် provisional၊ corpus-limited B2 type-checker increment အဖြစ် direct list-number literal annotation shape တစ်ခုကို ပြင်ဆင်ထားသည်။ Candidate သည် exact literal `[1, 2]` ကို `list<number>` အဖြစ် သတ်မှတ်ပြီး `let numbers: list<number> = [1, 2]` ကို လက်ခံသည်။ Paired negative fixture သည် ထို direct list-number literal ကို `text` သို့ assign လုပ်ပါက line 1၊ column 1 တွင် `variable 'wrong' expects text, got list<number>` diagnostic ဖြင့် reject လုပ်သည်။
+Zap v2.11.14 တွင် provisional၊ corpus-limited B2 type-checker increment အဖြစ် publish လုပ်ထားသည်။ direct list-number literal annotation shape တစ်ခုကို ပြင်ဆင်ထားသည်။ Published candidate သည် exact literal `[1, 2]` ကို `list<number>` အဖြစ် သတ်မှတ်ပြီး `let numbers: list<number> = [1, 2]` ကို လက်ခံသည်။ Paired negative fixture သည် ထို direct list-number literal ကို `text` သို့ assign လုပ်ပါက line 1၊ column 1 တွင် `variable 'wrong' expects text, got list<number>` diagnostic ဖြင့် reject လုပ်သည်။
 
 ဤအရာသည် deterministic fixture pair တစ်ခုအတွက် evidence သာဖြစ်သည်။ General list-literal inference၊ arbitrary list contents၊ variable alias၊ nested list construction၊ collection expression inference သို့မဟုတ် static type checking အပြည့်အစုံကို မဆိုလိုပါ။
 
@@ -21,7 +21,7 @@ Zap v2.11.14 တွင် provisional၊ corpus-limited B2 type-checker incremen
 
 ## Verification contract
 
-Candidate သည် native နှင့် Zap candidate B2 verifier၊ malformed-source safety၊ native tests၊ typecheck matrix parity၊ specification ownership၊ Markdown links၊ VS Code packaging၊ formatting၊ release-version validation၊ documentation consistency နှင့် exact committed release preflight အားလုံးကို အောင်မြင်ရမည်။ Public workflow တွင် source validation၊ Linux x86_64၊ macOS ARM64၊ Windows x86_64 နှင့် Publish jobs အားလုံး အောင်မြင်ရမည်။ Publish ပြီးသော artifact များသည် checksum၊ manifest၊ provenance နှင့် detached-signature verification များကို အောင်မြင်ရမည်။
+Published candidate သည် native နှင့် Zap candidate B2 verifier၊ malformed-source safety၊ native tests၊ typecheck matrix parity၊ specification ownership၊ Markdown links၊ VS Code packaging၊ formatting၊ release-version validation၊ documentation consistency နှင့် exact committed release preflight အားလုံးကို အောင်မြင်ခဲ့သည်။ Public workflow တွင် source validation၊ Linux x86_64၊ macOS ARM64၊ Windows x86_64 နှင့် Publish jobs အားလုံး အောင်မြင်ခဲ့သည်။ Publish ပြီးသော artifact များသည် checksum၊ manifest၊ provenance နှင့် detached-signature verification များကို အောင်မြင်ခဲ့သည်။
 
 ## Deferred scope
 
@@ -29,7 +29,7 @@ General list-literal inference၊ arbitrary list element expression၊ nested li
 
 ## Bootstrap boundary
 
-Zap သည် **B0** အဖြစ်သာ ဆက်ရှိသည်။ Rust သည် complete/reference compiler နှင့် runtime owner ဖြစ်နေဆဲဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited ဖြစ်သည်။ ဤ candidate သည် fully Zap-only၊ self-hosted၊ B1၊ B2၊ B3 သို့မဟုတ် B4 compiler ဖြစ်ကြောင်း မဆိုလိုပါ။
+Zap သည် **B0** အဖြစ်သာ ဆက်ရှိသည်။ Rust သည် complete/reference compiler နှင့် runtime owner ဖြစ်နေဆဲဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited ဖြစ်သည်။ ဤ release သည် fully Zap-only၊ self-hosted၊ B1၊ B2၊ B3 သို့မဟုတ် B4 compiler ဖြစ်ကြောင်း မဆိုလိုပါ။
 
 ## References
 
