@@ -6744,7 +6744,10 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
 
         let root =
             request("GET / HTTP/1.1\r\nHost: localhost\r\nX-Request-Id: test-request\r\n\r\n");
-        assert!(root.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(
+            root.starts_with("HTTP/1.1 200 OK\r\n"),
+            "unexpected root response: {root:?}"
+        );
         assert!(root.contains("X-Request-Id: test-request\r\n"));
         assert!(root.contains(r#""path":"/""#));
         assert!(root.contains(r#""request_id":"test-request""#));
