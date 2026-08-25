@@ -42,3 +42,4 @@ BOOT-040	b2-typechecker-cross-module-generic-signatures	B2 candidate status	B2 c
 BOOT-041	b2-typechecker-generic-constraint-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_constraint_where.zp	provisional
 BOOT-042	b2-typechecker-explicit-generic-call-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_explicit_call_deferred.zp	provisional
 BOOT-043	b2-typechecker-generic-class-alias-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_alias_deferred.zp	provisional
+BOOT-044	b2-typed-ir-generic-identity-metadata	B2 candidate status	B2 candidate status	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_identity.zp	provisional

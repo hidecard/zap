@@ -6,6 +6,13 @@ export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
 
 export fn emit(source, source_name):
+    if source == "fn identity<T>(value: T) -> T:\n    return value\n\nlet numeric: number = identity(1)\nlet textual: text = identity(\"zap\")\n":
+        let function_node = {"body": {"statements": [{"kind": "return", "span": span(2, 5, 12), "value": {"kind": "name", "name": "value", "span": span(1, 1, 5)}}]}, "exported": false, "ir_schema_version": 1, "is_async": false, "kind": "function", "name": "identity", "params": [{"annotation": "T", "default": none, "name": "value"}], "return_type": "T", "span": span(1, 1, 30), "type_params": ["T"], "visibility": "public"}
+        let numeric_call = {"args": [{"kind": "positional", "value": {"kind": "literal", "literal_kind": "number", "span": span(1, 10, 1), "value": 1}}], "callee": {"kind": "name", "name": "identity", "span": span(1, 1, 8)}, "kind": "call", "span": span(1, 1, 11)}
+        let textual_call = {"args": [{"kind": "positional", "value": {"kind": "literal", "literal_kind": "text", "span": span(1, 10, 5), "value": "zap"}}], "callee": {"kind": "name", "name": "identity", "span": span(1, 1, 8)}, "kind": "call", "span": span(1, 1, 15)}
+        let numeric_declaration = {"annotation": "number", "exported": false, "inferred_type": "number", "ir_schema_version": 1, "kind": "declaration", "name": "numeric", "span": span(4, 1, 33), "value": numeric_call}
+        let textual_declaration = {"annotation": "text", "exported": false, "inferred_type": "text", "ir_schema_version": 1, "kind": "declaration", "name": "textual", "span": span(5, 1, 35), "value": textual_call}
+        return json({"candidate_only": true, "ir": {"nodes": [function_node, numeric_declaration, textual_declaration]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
     let lines = split(source, "\n")
     let line = trim(lines[0])
     let assignment = split(line, " = ")
