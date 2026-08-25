@@ -2,7 +2,7 @@
 
 ## Current status
 
-Zap's current development baseline is the published v2.11.15 release for bounded bootstrap evidence. The published v2.11.11, v2.11.13, v2.11.14, and v2.11.15 tags and assets remain immutable; the v2.11.12 tag is preserved as a failed macOS ARM64 release-workflow record and has no public GitHub Release. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections remain tracked on `master` with explicit production-boundary limitations, and the next active line is v2.11.16. The v2.11.15 release records exact direct map-literal annotation evidence and test-only macOS HTTP response-reader hardening. The v2.11.16 preparation adds exact direct `some(1)` option-constructor annotation evidence; neither checkpoint changes the B0 ownership boundary.
+Zap's current development baseline is the published v2.11.16 release for bounded bootstrap evidence. The published v2.11.11, v2.11.13, v2.11.14, v2.11.15, and v2.11.16 tags and assets remain immutable; the v2.11.12 tag is preserved as a failed macOS ARM64 release-workflow record and has no public GitHub Release. P2 package, async, registry, editor, standard-library, runtime, and documentation corrections remain tracked on `master` with explicit production-boundary limitations, and the next active line is v2.11.17. The v2.11.16 release records exact direct `some(1)` option-constructor annotation evidence and the earlier test-only macOS HTTP response-reader hardening; neither checkpoint changes the B0 ownership boundary.
 
 | Milestone | Status | Notes |
 |---|---|---|

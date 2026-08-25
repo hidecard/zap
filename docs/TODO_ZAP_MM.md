@@ -94,7 +94,8 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Exact `some(1)` expression ကို `option<number>` အဖြစ် လက်ခံပြီး ထို expression ကို `text` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'wrong' expects text, got option<number>` diagnostic ဖြင့် reject လုပ်ရန်။
 - [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct option-constructor acceptance/rejection evidence ထည့်ရန်။
 - [x] Provisional ownership ledger တွင် `BOOT-032` နှင့် `bootstrap/fixtures/typecheck/option_annotation_incompatible.zp` ထည့်ရန်။
-- [ ] v2.11.16 exact preflight၊ cross-platform release workflow နှင့် public artifact/signature verification များ အားလုံး အောင်မြင်ပြီးမှသာ v2.11.16 ကို published ဟု မှတ်တမ်းတင်ရန်။
+- [x] v2.11.16 exact preflight၊ cross-platform release workflow နှင့် public artifact/signature verification များ အားလုံး အောင်မြင်ပြီး v2.11.16 ကို published အဖြစ် မှတ်တမ်းတင်ရန်။
+- [ ] v2.11.17 အတွက် နောက် B0-safe increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety
