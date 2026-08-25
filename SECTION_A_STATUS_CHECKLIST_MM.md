@@ -74,6 +74,8 @@
 
 - [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
 
+- [x] Compound `is_option_none(...) and ...` guard — bounded true-branch narrowing to `none` with existing else-branch restoration.
+
 - [x] Flat sequence final-line handling — sentinel normalization preserves the last statement when source has no trailing newline.
 
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.

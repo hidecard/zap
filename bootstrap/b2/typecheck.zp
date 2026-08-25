@@ -324,6 +324,15 @@ export fn check(source, source_name):
                 narrowed_name = option_name
                 narrowed_type = option_payload
                 branch_indent = indent
+        if starts_with(declaration, "if is_option_none(") and contains(declaration, ") and ") and ends_with(declaration, "):"):
+            let compound_none_body = substring(declaration, len("if is_option_none("), len(declaration))
+            let compound_none_parts = split(compound_none_body, ")")
+            if len(compound_none_parts) >= 2:
+                let compound_none_name = trim(compound_none_parts[0])
+                if compound_none_name == option_name:
+                    narrowed_name = option_name
+                    narrowed_type = "none"
+                    branch_indent = indent
         if starts_with(declaration, "if is_option_none(") and ends_with(declaration, "):"):
             let guarded_name = trim(substring(declaration, len("if is_option_none("), len(declaration) - 2))
             if guarded_name == option_name:
