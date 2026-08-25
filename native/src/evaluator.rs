@@ -3473,6 +3473,31 @@ fn ast_expression_with_context_inner(
         }
         Expr::Binary { left, op, right } => {
             let left = ast_expression_with_context(left, vars, funcs, context)?;
+            if matches!(op, BinaryOp::And | BinaryOp::Or) {
+                let Value::Bool(left_bool) = left else {
+                    let right = ast_expression_with_context(right, vars, funcs, context)?;
+                    let token = if matches!(op, BinaryOp::And) {
+                        Token::And
+                    } else {
+                        Token::Or
+                    };
+                    return operate(left, token, right)
+                        .and_then(|value| charge_ast_value(value, context));
+                };
+                let short_circuit = matches!(op, BinaryOp::And) && !left_bool
+                    || matches!(op, BinaryOp::Or) && left_bool;
+                if short_circuit {
+                    return charge_ast_value(Value::Bool(left_bool), context);
+                }
+                let right = ast_expression_with_context(right, vars, funcs, context)?;
+                let token = if matches!(op, BinaryOp::And) {
+                    Token::And
+                } else {
+                    Token::Or
+                };
+                return operate(Value::Bool(left_bool), token, right)
+                    .and_then(|value| charge_ast_value(value, context));
+            }
             let right = ast_expression_with_context(right, vars, funcs, context)?;
             let token = match op {
                 BinaryOp::Add => Token::Plus,

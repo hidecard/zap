@@ -6046,3 +6046,24 @@ fn web_cli_commands_are_documented_in_help() {
     assert!(help.contains("zap db migrate [dir] [--dry-run]"));
     assert!(help.contains("zap db migrate [dir] [--check]"));
 }
+
+#[test]
+fn logical_operators_short_circuit_unreachable_rhs() {
+    let file = std::env::temp_dir().join("zap_short_circuit_test.zp");
+    std::fs::write(
+        &file,
+        "let left = false and (1 / 0 == 0)\nlet right = true or (1 / 0 == 0)\nassert(left == false, \"false and must short-circuit\")\nassert(right == true, \"true or must short-circuit\")\nsay \"short circuit passed\"\n",
+    )
+    .unwrap();
+    let output = Command::new(binary()).arg(&file).output().unwrap();
+    let _ = std::fs::remove_file(&file);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "short circuit passed\n"
+    );
+}
