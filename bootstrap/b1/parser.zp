@@ -356,11 +356,12 @@ export fn parse_choose_function():
 
 export fn parse_flat_sequence(lines):
     let statements = []
+    let input = append(lines, "")
     let index = 0
-    while index + 1 < len(lines):
-        let current = trim(lines[index])
+    while index + 1 < len(input):
+        let current = trim(input[index])
         if current != "":
-            let statement = parse_statement(lines[index], index + 1, 1)
+            let statement = parse_statement(input[index], index + 1, 1)
             statements = append(statements, statement)
         index = index + 1
     return statements
