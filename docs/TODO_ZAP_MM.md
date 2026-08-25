@@ -90,7 +90,11 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Provisional ownership ledger တွင် `BOOT-031` နှင့် `bootstrap/fixtures/typecheck/map_annotation_incompatible.zp` ထည့်ရန်။
 - [x] macOS native web-server test harness တွင် socket EOF ကို မစောင့်ဘဲ declared `Content-Length` အတိုင်း response ဖတ်ရန် harden လုပ်ပြီး focused regression test 5 ကြိမ် အောင်မြင်ကြောင်း စစ်ဆေးရန်။
 - [x] v2.11.15 ကို immutable `v2.11.15` tag ဖြင့် publish လုပ်ပြီး source၊ Linux၊ macOS၊ Windows၊ Publish နှင့် public artifact/signature verification အားလုံး အောင်မြင်ကြောင်း မှတ်တမ်းတင်ရန်။
-- [ ] v2.11.16 preparation အတွက် နောက် B0-safe type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
+- [x] v2.11.16 preparation အတွက် direct `some(1)` option-constructor annotation ကို နောက် B0-safe type-system increment အဖြစ် Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
+- [x] Exact `some(1)` expression ကို `option<number>` အဖြစ် လက်ခံပြီး ထို expression ကို `text` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'wrong' expects text, got option<number>` diagnostic ဖြင့် reject လုပ်ရန်။
+- [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct option-constructor acceptance/rejection evidence ထည့်ရန်။
+- [x] Provisional ownership ledger တွင် `BOOT-032` နှင့် `bootstrap/fixtures/typecheck/option_annotation_incompatible.zp` ထည့်ရန်။
+- [ ] v2.11.16 exact preflight၊ cross-platform release workflow နှင့် public artifact/signature verification များ အားလုံး အောင်မြင်ပြီးမှသာ v2.11.16 ကို published ဟု မှတ်တမ်းတင်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 
 # 2။ P0 — Foundation နှင့် Production Safety

@@ -2,7 +2,7 @@
 
 ## လက်ရှိအခြေအနေ
 
-Zap ၏ လက်ရှိ development baseline သည် bounded bootstrap evidence အတွက် publish လုပ်ပြီးသော v2.11.15 release ဖြစ်ပါသည်။ Published v2.11.11၊ v2.11.13၊ v2.11.14 နှင့် v2.11.15 tag/asset များသည် immutable ဖြစ်ပြီး v2.11.12 tag ကို macOS ARM64 release workflow မအောင်မြင်ခဲ့သော record အဖြစ် ထိန်းသိမ်းထားကာ public GitHub Release မရှိပါ။ P2 package၊ async၊ registry၊ editor၊ standard-library၊ runtime နှင့် documentation correction များကို explicit production-boundary limitation များနှင့်အတူ `master` တွင် ဆက်လက် track လုပ်နေပြီး နောက် active line သည် v2.11.16 ဖြစ်သည်။ v2.11.15 release တွင် exact direct map-literal annotation evidence နှင့် test-only macOS HTTP response-reader hardening ကို မှတ်တမ်းတင်ထားပြီး ၎င်းတို့သည် B0 ownership boundary ကို မပြောင်းလဲပါ။
+Zap ၏ လက်ရှိ development baseline သည် bounded bootstrap evidence အတွက် publish လုပ်ပြီးသော v2.11.15 release ဖြစ်ပါသည်။ Published v2.11.11၊ v2.11.13၊ v2.11.14 နှင့် v2.11.15 tag/asset များသည် immutable ဖြစ်ပြီး v2.11.12 tag ကို macOS ARM64 release workflow မအောင်မြင်ခဲ့သော record အဖြစ် ထိန်းသိမ်းထားကာ public GitHub Release မရှိပါ။ P2 package၊ async၊ registry၊ editor၊ standard-library၊ runtime နှင့် documentation correction များကို explicit production-boundary limitation များနှင့်အတူ `master` တွင် ဆက်လက် track လုပ်နေပြီး နောက် active line သည် v2.11.16 ဖြစ်သည်။ v2.11.15 release တွင် exact direct map-literal annotation evidence နှင့် test-only macOS HTTP response-reader hardening ကို မှတ်တမ်းတင်ထားပါသည်။ v2.11.16 preparation တွင် exact direct `some(1)` option-constructor annotation evidence ကို ထည့်ထားပြီး checkpoint နှစ်ခုလုံးသည် B0 ownership boundary ကို မပြောင်းလဲပါ။
 
 | Milestone | အခြေအနေ | မှတ်ချက် |
 |---|---|---|

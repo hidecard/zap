@@ -208,3 +208,18 @@ if [[ "$status" -eq 0 ]]; then
 fi
 jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got map<text,number>"))' <<<"$map_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible direct map annotation\n'
+
+option_annotation_check=$(run_check option_annotation)
+jq -e '.ok == true' <<<"$option_annotation_check" >/dev/null
+printf 'B2 type-check acceptance passed: direct option constructor annotation\n'
+
+set +e
+option_annotation_incompatible=$(run_check option_annotation_incompatible 2>/tmp/zap-b2-option-annotation-typecheck-error)
+status=$?
+set -e
+if [[ "$status" -eq 0 ]]; then
+  printf 'option_annotation_incompatible fixture unexpectedly passed\n' >&2
+  exit 1
+fi
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$option_annotation_incompatible" >/dev/null
+printf 'B2 type-check rejection passed: incompatible direct option annotation\n'
