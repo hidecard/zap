@@ -36,3 +36,4 @@ BOOT-034	b2-typechecker-collection-expression-matrix	B2 candidate status	B2 cand
 BOOT-035	b2-typechecker-generic-declaration-matrix	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_conflict.zp	provisional
 BOOT-036	b2-typechecker-generic-structural-substitution	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_option_wrapper.zp	provisional
 BOOT-037	b2-typechecker-generic-wrapper-runtime-and-arity	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_runtime_wrappers.zp	provisional
+BOOT-038	b2-typechecker-generic-list-wrapper	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_list_wrapper_incompatible.zp	provisional

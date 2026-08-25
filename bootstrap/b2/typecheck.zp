@@ -69,7 +69,7 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
     if function_name != "" and starts_with(value, function_name + "("):
         let call_parts = split(value, "(")
         let argument = trim(substring(call_parts[1], 0, len(call_parts[1]) - 1))
-        if function_name == "identity" or function_name == "keep":
+        if function_name == "identity" or function_name == "keep" or function_name == "list_keep":
             return expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if function_name == "first":
             let arguments = split(argument, ",")

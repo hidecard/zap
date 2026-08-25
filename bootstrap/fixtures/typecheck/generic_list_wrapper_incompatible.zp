@@ -1,0 +1,4 @@
+fn list_keep<T>(value: list<T>) -> list<T>:
+    return value
+
+let wrong: text = list_keep([1, 2])
