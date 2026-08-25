@@ -5268,7 +5268,7 @@ mod tests {
     use std::{
         collections::HashMap,
         fs,
-        io::{ErrorKind, Read, Write},
+        io::{Read, Write},
         net::{TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
@@ -6706,18 +6706,39 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
                 .write_all(raw.as_bytes())
                 .expect("test request should be written");
             // The parser stops after CRLF-terminated headers; an EOF is not required.
-            // Keeping the write side open avoids a platform-specific local-socket
-            // half-close/reset race while the server writes its response.
+            // Read the response through Content-Length instead of waiting for socket EOF.
+            // This avoids a platform-specific reset race after the complete response arrives.
             let mut response_bytes = Vec::new();
             let mut buffer = [0_u8; 4096];
-            loop {
+            let response_end = loop {
+                if let Some(header_end) = response_bytes
+                    .windows(4)
+                    .position(|window| window == b"\r\n\r\n")
+                    .map(|position| position + 4)
+                {
+                    let header = std::str::from_utf8(&response_bytes[..header_end])
+                        .expect("test response headers should be valid UTF-8");
+                    let content_length = header
+                        .split("\r\n")
+                        .find_map(|line| {
+                            let (name, value) = line.split_once(':')?;
+                            name.eq_ignore_ascii_case("content-length").then(|| {
+                                value.trim().parse::<usize>().expect("valid Content-Length")
+                            })
+                        })
+                        .expect("test response should contain Content-Length");
+                    let response_end = header_end + content_length;
+                    if response_bytes.len() >= response_end {
+                        break response_end;
+                    }
+                }
                 match stream.read(&mut buffer) {
-                    Ok(0) => break,
+                    Ok(0) => panic!("test response closed before Content-Length bytes arrived"),
                     Ok(read) => response_bytes.extend_from_slice(&buffer[..read]),
-                    Err(error) if error.kind() == ErrorKind::ConnectionReset => break,
                     Err(error) => panic!("test response should be readable: {error}"),
                 }
-            }
+            };
+            response_bytes.truncate(response_end);
             String::from_utf8(response_bytes).expect("test response should be valid UTF-8")
         };
 
