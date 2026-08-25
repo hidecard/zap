@@ -1,0 +1,1 @@
+{"ast":{"statements":[{"annotation":null,"exported":false,"kind":"declaration","name":"café","span":{"column":1,"length":12,"line":1},"value":{"kind":"literal","literal_kind":"number","span":{"column":1,"length":1,"line":1},"value":1}}]},"kind":"zap.ast","schema_version":1,"source_name":"bootstrap/fixtures/parser/unicode_identifier.zp"}

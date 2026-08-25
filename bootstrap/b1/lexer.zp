@@ -2,9 +2,9 @@
 # It is intentionally a transition artifact: B0 Rust remains the reference
 # implementation until differential parity is proven for the owned corpus.
 
-let ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+let ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_éλ"
 let DIGITS = "0123456789"
-let ALPHA_DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"
+let ALPHA_DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789éλ"
 
 export fn is_identifier_start(ch):
     return contains(ALPHA, ch)
