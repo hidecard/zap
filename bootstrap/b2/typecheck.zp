@@ -297,6 +297,12 @@ export fn check(source, source_name):
             pending_else_name = ""
             pending_else_type = ""
             pending_else_indent = -1
+        if narrowed_name != "" and contains(declaration, " = ") and not starts_with(declaration, "let "):
+            let reassignment = split(declaration, " = ")
+            if len(reassignment) == 2 and trim(reassignment[0]) == narrowed_name:
+                narrowed_name = ""
+                narrowed_type = ""
+                branch_indent = -1
         let error = check_line(line, line_number, source_name, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if error != none:
             return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
