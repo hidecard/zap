@@ -1,0 +1,3 @@
+if ready:
+    say 1
+  say 2

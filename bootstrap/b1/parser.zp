@@ -405,6 +405,19 @@ export fn parse(source, source_name):
     let statement = parse_statement(lines[0], 1, 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
+export fn indentation_diagnostic(source, source_name):
+    let lines = split(source, "\n")
+    let index = 0
+    while index + 1 < len(lines):
+        let line = lines[index]
+        let trimmed = trim(line)
+        if trimmed != "":
+            let indentation = len(line) - len(substring(line, len(line) - len(trimmed), len(line)))
+            if indentation > 0 and indentation % 4 != 0:
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "invalid indentation at line " + str(index + 1), "severity": "error", "source_name": source_name}
+        index = index + 1
+    return none
+
 export fn delimiter_diagnostics(tokens, source_name):
     let bracket_depth = 0
     let brace_depth = 0
@@ -450,6 +463,9 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     let delimiter = delimiter_diagnostics(tokens, source_name)
     if delimiter != none:
         return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let indentation = indentation_diagnostic(source, source_name)
+    if indentation != none:
+        return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if contains(source, "."):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if not contains(source, " = "):
