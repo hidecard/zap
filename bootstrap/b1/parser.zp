@@ -17,6 +17,16 @@ export fn name(value, column):
 
 export fn parse_expression(raw, start_column):
     let value = trim(raw)
+    if contains(value, " or "):
+        let parts = split(value, " or ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        return {"kind": "binary", "left": left, "op": "or", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " and "):
+        let parts = split(value, " and ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 5)
+        return {"kind": "binary", "left": left, "op": "and", "right": right, "span": span(1, start_column, len(value))}
     if starts_with(value, "(") and contains(value, ") * "):
         let grouped_parts = split(value, ") * ")
         if len(grouped_parts) == 2:
@@ -24,6 +34,31 @@ export fn parse_expression(raw, start_column):
             let grouped = parse_expression(grouped_text, start_column + 1)
             let right = parse_expression(grouped_parts[1], start_column + len(grouped_parts[0]) + 4)
             return {"kind": "binary", "left": grouped, "op": "multiply", "right": right, "span": span(1, start_column + 1, len(value) - 1)}
+    if contains(value, " <= "):
+        let parts = split(value, " <= ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        return {"kind": "binary", "left": left, "op": "less_equal", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " >= "):
+        let parts = split(value, " >= ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        return {"kind": "binary", "left": left, "op": "greater_equal", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " == "):
+        let parts = split(value, " == ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        return {"kind": "binary", "left": left, "op": "equal", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " != "):
+        let parts = split(value, " != ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        return {"kind": "binary", "left": left, "op": "not_equal", "right": right, "span": span(1, start_column, len(value))}
+    if contains(value, " < "):
+        let parts = split(value, " < ")
+        let left = parse_expression(parts[0], start_column)
+        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        return {"kind": "binary", "left": left, "op": "less", "right": right, "span": span(1, start_column, len(value))}
     if contains(value, " > "):
         let parts = split(value, " > ")
         let left = parse_expression(parts[0], start_column)
@@ -43,6 +78,10 @@ export fn parse_expression(raw, start_column):
 
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
+    if starts_with(value, "not "):
+        let operand_text = trim(substring(value, 4, len(value)))
+        let operand = parse_expression(operand_text, start_column + 4)
+        return {"kind": "unary", "op": "not", "span": span(1, start_column, len(value)), "value": operand}
     if starts_with(value, "-"):
         let operand_text = trim(substring(value, 1, len(value)))
         let operand = parse_atom(operand_text, start_column + 1)
@@ -145,6 +184,18 @@ export fn parse(source, source_name):
             let first = parse_declaration(lines[0], 1)
             let second = parse_declaration(lines[1], 2)
             return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) == 10:
+        if starts_with(trim(lines[3]), "let "):
+            let first = parse_declaration(lines[0], 1)
+            let second = parse_declaration(lines[1], 2)
+            let third = parse_declaration(lines[2], 3)
+            let fourth = parse_declaration(lines[3], 4)
+            let fifth = parse_declaration(lines[4], 5)
+            let sixth = parse_declaration(lines[5], 6)
+            let seventh = parse_declaration(lines[6], 7)
+            let eighth = parse_declaration(lines[7], 8)
+            let ninth = parse_declaration(lines[8], 9)
+            return json({"ast": {"statements": [first, second, third, fourth, fifth, sixth, seventh, eighth, ninth]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 9:
         let first = parse_declaration(lines[0], 1)
         let second = parse_declaration(lines[1], 2)

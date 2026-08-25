@@ -1,0 +1,9 @@
+let lt = 1 < 2
+let le = 1 <= 2
+let gt = 2 > 1
+let ge = 2 >= 1
+let eq = 1 == 1
+let ne = 1 != 2
+let both = true and false
+let either = true or false
+let inverted = not false
