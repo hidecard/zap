@@ -263,6 +263,21 @@ export fn parse_return(line, line_number):
     let value = parse_expression(value_text, 1)
     return {"kind": "return", "span": span(line_number, 9, len(trim(line))), "value": value}
 
+export fn parse_statement(line, line_number, body_column):
+    let statement = trim(line)
+    if starts_with(statement, "let "):
+        let declaration = parse_declaration(line, line_number)
+        return {"annotation": declaration["annotation"], "exported": declaration["exported"], "kind": declaration["kind"], "name": declaration["name"], "span": span(line_number, body_column, len(statement)), "value": declaration["value"]}
+    if starts_with(statement, "return "):
+        let value_text = trim(substring(statement, 7, len(statement)))
+        let value = parse_expression(value_text, body_column + 7)
+        return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": value}
+    if starts_with(statement, "say "):
+        let value_text = trim(substring(statement, 4, len(statement)))
+        let value = parse_expression(value_text, body_column + 4)
+        return {"kind": "say", "span": span(line_number, body_column, len(statement)), "value": value}
+    return parse_assignment(line, line_number)
+
 export fn parse_simple_function(lines):
     let header = trim(lines[0])
     let header_parts = split(header, "(")
@@ -360,7 +375,7 @@ export fn parse(source, source_name):
         let final = {"kind": "say", "span": span(9, 1, 18), "value": parse_expression("choose(result)", 1)}
         return json({"ast": {"statements": [first, second, third, function, final]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     let first_line = trim(lines[0])
-    let statement = if starts_with(first_line, "let ") then parse_declaration(lines[0], 1) else parse_assignment(lines[0], 1)
+    let statement = parse_statement(lines[0], 1, 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
 export fn delimiter_diagnostics(tokens, source_name):
