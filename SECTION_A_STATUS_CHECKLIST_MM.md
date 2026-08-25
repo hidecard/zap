@@ -82,6 +82,12 @@
 
 - [x] Recursive block parser foundation — cursor-based `parse_block_from` သည် nested `if`/`for`/`while` body နှင့် sibling statements များကို arbitrary-depth bounded cases အတွက် စုစည်းနိုင်သည်။
 
+- [x] `if/else` body ownership — same-level `else:` နှင့် indented body ကို recursive block result အဖြစ် attach လုပ်နိုင်သည်။
+
+- [x] `elif/else` chain lowering — bounded chain ကို nested `if` representation သို့ ပြောင်းပြီး final `else` body ကို ထိန်းသိမ်းနိုင်သည်။
+
+- [x] Missing-block diagnostics — `if`/`elif`/`else` header များတွင် indented body မရှိပါက stable syntax diagnostic ပြနိုင်သည်။
+
 - [x] Boolean expression inference slice — unary `not`, comparison matrix, and logical `and/or` expressions infer as `bool` in the candidate.
 
 - [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
@@ -100,11 +106,13 @@
 
 - [x] B1 recursive block ၁၀-case verifier — nested branch/loop ownership၊ sibling dedent နှင့် generic `if` entrypoint cases pass.
 
+- [x] B1 branch-chain ၁၀-case verifier — `if/elif/else` ownership၊ valid/inconsistent dedent နှင့် missing-body diagnostics pass.
+
 ## လက်ရှိနောက်တစ်ဆင့်
 
 1. Token span line/column များမှ parser-owned full indentation stack တည်ဆောက်ရန်။ History/depth foundation ပြီးသော်လည်း token-native ownership နှင့် all grammar interaction မပြီးသေးပါ။
 
-1. Recursive `parse_block(indent)` နှင့် statement-list builder ကို line-count dispatch မပါဘဲ ပြောင်းရန်။
+1. Recursive `parse_block(indent)` နှင့် statement-list builder ကို remaining function/class/control-flow grammar အားလုံးအတွက် line-count dispatch မပါဘဲ ပြောင်းရန်။ `if` route သည် bounded generic path အဖြစ် စတင်ပြီးဖြစ်သည်။
 
 1. Token-derived indentation stack နှင့် arbitrary-depth block diagnostics ကို broaden လုပ်ရန်။
 

@@ -463,7 +463,31 @@ export fn parse_block_from(lines, start_index, indent):
                 let body = {"statements": nested["statements"]}
                 if starts_with(current, "if "):
                     let condition_text = trim(substring(current, 3, len(current) - 1))
-                    statements = append(statements, {"condition": parse_expression(condition_text, indent + 4), "else_branch": none, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
+                    let else_branch = none
+                    let final_next = nested["next"]
+                    if nested["next"] + 1 < len(lines):
+                        let else_line = lines[nested["next"]]
+                        if indentation_width(else_line) == indent and (trim(else_line) == "else:" or starts_with(trim(else_line), "elif ")):
+                            let else_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                            if trim(else_line) == "else:":
+                                else_branch = {"statements": else_nested["statements"]}
+                            else:
+                                let elif_text = trim(else_line)
+                                let elif_condition = trim(substring(elif_text, 5, len(elif_text) - 1))
+                                let chained_else = none
+                                let chained_next = else_nested["next"]
+                                if else_nested["next"] + 1 < len(lines):
+                                    let chained_line = lines[else_nested["next"]]
+                                    if trim(chained_line) == "else:" and indentation_width(chained_line) == indent:
+                                        let chained_body = parse_block_from(lines, else_nested["next"] + 1, indent + 4)
+                                        chained_else = {"statements": chained_body["statements"]}
+                                        chained_next = chained_body["next"]
+                                else_branch = {"statements": [{"condition": parse_expression(elif_condition, indent + 4), "else_branch": chained_else, "kind": "if", "span": span(nested["next"] + 1, indent + 1, len(elif_text)), "then_branch": {"statements": else_nested["statements"]}}]}
+                                final_next = chained_next
+                            if trim(else_line) == "else:":
+                                final_next = else_nested["next"]
+                    statements = append(statements, {"condition": parse_expression(condition_text, indent + 4), "else_branch": else_branch, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
+                    cursor = {"index": final_next, "lines": lines}
                 else:
                     if starts_with(current, "for "):
                         let header_parts = split(current, " in ")
@@ -473,7 +497,8 @@ export fn parse_block_from(lines, start_index, indent):
                     else:
                         let condition_text = trim(substring(current, 6, len(current) - 1))
                         statements = append(statements, {"body": body, "condition": parse_expression(condition_text, indent + 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
-                cursor = {"index": nested["next"], "lines": lines}
+                if not starts_with(current, "if "):
+                    cursor = {"index": nested["next"], "lines": lines}
             else:
                 statements = append(statements, parse_statement(line, index + 1, indent + 1))
                 cursor = line_cursor_advance(cursor)
@@ -482,6 +507,26 @@ export fn parse_block_from(lines, start_index, indent):
 export fn parse_block_program(lines):
     let result = parse_block_from(lines, 0, 0)
     return result["statements"]
+
+export fn is_branch_header(line):
+    let value = trim(line)
+    return value == "else:" or starts_with(value, "elif ")
+
+export fn missing_block_diagnostic(lines, source_name):
+    let cursor = line_cursor(lines)
+    while not line_cursor_done(cursor):
+        let index = cursor["index"]
+        let line = line_cursor_peek(cursor)
+        let value = trim(line)
+        if is_block_header(line) or is_branch_header(line):
+            let current_indent = indentation_width(line)
+            if index + 1 >= len(lines):
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "add an indented block", "line": index + 1, "message": "block requires an indented body at line " + str(index + 1), "severity": "error", "source_name": source_name}
+            let next_line = lines[index + 1]
+            if trim(next_line) == "" or indentation_width(next_line) <= current_indent:
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "add an indented block", "line": index + 1, "message": "block requires an indented body at line " + str(index + 1), "severity": "error", "source_name": source_name}
+        cursor = line_cursor_advance(cursor)
+    return none
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
@@ -664,6 +709,9 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     if delimiter != none:
         return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     let indentation = indentation_diagnostic(source, source_name)
+    let missing_block = missing_block_diagnostic(split(source, "\n"), source_name)
+    if missing_block != none:
+        return json({"diagnostics": [missing_block], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if indentation != none:
         return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if contains(source, "."):
