@@ -82,6 +82,9 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Direct `none` literal ကို `none` annotation သို့ assign လုပ်ပါက လက်ခံပြီး direct boolean literal ကို `none` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'missing' expects none, got bool` diagnostic ဖြင့် reject လုပ်ရန်။
 - [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic none acceptance/rejection evidence ထည့်ရန်။
 - [x] Provisional ownership ledger တွင် `BOOT-029` နှင့် `bootstrap/fixtures/typecheck/none_annotation_incompatible.zp` ထည့်ရန်။
+- [x] Exact `[1, 2]` list literal ကို `list<number>` အဖြစ် လက်ခံပြီး ထို literal ကို `text` သို့ assign လုပ်ပါက line 1, column 1 တွင် `variable 'wrong' expects text, got list<number>` diagnostic ဖြင့် reject လုပ်ရန်။
+- [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct list-literal acceptance/rejection evidence ထည့်ရန်။
+- [x] Provisional ownership ledger တွင် `BOOT-030` နှင့် `bootstrap/fixtures/typecheck/list_annotation_incompatible.zp` ထည့်ရန်။
 - [ ] နောက် type-system increment ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ သီးခြားရွေးချယ်ရန်။
 - [ ] Multiple option variables၊ compound guards၊ nested/compound control flow၊ mutation/reassignment invalidation၊ aliases၊ arbitrary predicates နှင့် general else-flow analysis များကို ဤ bounded slice မှ သီးခြား evidence/design gate မရှိဘဲ generalize မလုပ်ရန်။
 

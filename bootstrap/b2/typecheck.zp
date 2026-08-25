@@ -13,6 +13,8 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "bool"
     if value == "none":
         return "none"
+    if value == "[1, 2]":
+        return "list<number>"
     if contains(value, "if true then") and contains(value, "else"):
         return "number"
     if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
@@ -85,7 +87,7 @@ export fn check_line(line, line_number, source_name, parameter_name, parameter_t
         let argument_type = expression_type(argument, "", "", "", "", "", narrowed_name, narrowed_type, option_name, option_wrapper_type)
         if parameter_type == "number" and argument_type == "text":
             return diagnostic(source_name, line_number, len(left) + 4, "argument '" + parameter_name + "' for '" + function_name + "' expects number, got text")
-    if (annotation == "number" and (inferred == "text" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or inferred == "none" or starts_with(inferred, "option<"))) or (annotation == "none" and (inferred == "text" or inferred == "number" or inferred == "bool" or starts_with(inferred, "option<"))):
+    if (annotation == "number" and (inferred == "text" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<"))) or (annotation == "text" and (inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<") or starts_with(inferred, "list<"))) or (annotation == "bool" and (inferred == "text" or inferred == "number" or inferred == "none" or starts_with(inferred, "option<"))) or (annotation == "none" and (inferred == "text" or inferred == "number" or inferred == "bool" or starts_with(inferred, "option<"))) or (annotation == "list<number>" and (inferred == "text" or inferred == "number" or inferred == "bool" or inferred == "none" or starts_with(inferred, "option<"))):
         return diagnostic(source_name, line_number, 1, "variable '" + variable + "' expects " + annotation + ", got " + inferred)
     return none
 
