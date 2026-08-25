@@ -247,3 +247,15 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 [3]: https://github.com/hidecard/zap/blob/master/native/src/evaluator.rs "Zap native evaluator"
 
 ဤ checklist ၏ verification status သည် local repository test runs နှင့် source inspection အပေါ် အခြေခံထားသည်။
+
+- [x] Native evaluator generic runtime gate — `identity<T>` list value preservation၊ `wrap<T>` option value preservation၊ `peel<T>` recursive generic list/option execution နှင့် `unwrap` value extraction pass။
+
+- [ ] **Full evaluator-integrated generic semantics** — native evaluator bounded recursive generic/value-level cases pass သော်လည်း polymorphic recursion validation၊ generic map/result mutation semantics၊ complete runtime diagnostics နှင့် arbitrary generic program coverage မပြီးသေးပါ။
+
+- [ ] **100,000-task expansion boundary** — ယခုတောင်းဆိုချက်ကို individual artificial marks မပြုလုပ်ဘဲ verified acceptance batches ဖြင့် ဆက်လက်လုပ်ဆောင်မည်။ လက်ရှိ batch တွင် native runtime verifier နှင့် existing B1/B2 regressions pass ဖြစ်ပြီး arbitrary-AST flow graph နှင့် complete self-hosting gates မပြီးသေးပါ။
+
+## References
+
+[1]: https://github.com/hidecard/zap "Zap repository"
+[2]: https://github.com/hidecard/zap/blob/master/native/src/evaluator.rs "Zap native evaluator"
+[3]: https://github.com/hidecard/zap/blob/master/scripts/bootstrap/verify_native_generic_runtime_10.sh "Native generic runtime acceptance verifier"

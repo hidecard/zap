@@ -17,7 +17,7 @@
 
 ## Current expansion batch
 
-The requested 10,000 flow-sensitive/arbitrary-AST tasks and 1,000 generic runtime/recursive-call tasks are being executed as acceptance-gated batches rather than falsely marking every requested count as complete. The current verified increment is the bounded generic runtime/recursive-call gate; the next implementation boundary remains arbitrary AST control-flow graph construction and evaluator-integrated generic value semantics.
+The requested 10,000 flow-sensitive/arbitrary-AST tasks, 1,000 generic runtime/recursive-call tasks, and the newly requested 100,000-task expansion are being executed as acceptance-gated batches rather than falsely marking every requested count as complete. The current verified increment is the bounded generic runtime/recursive-call gate; the next implementation boundary remains arbitrary AST control-flow graph construction and evaluator-integrated generic value semantics.
 
 ## Execution order
 
@@ -58,6 +58,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_generic_type_declaration_10.sh` — covers 10 generic type declaration/container cases
 - `scripts/bootstrap/verify_b2_generic_end_to_end_10.sh` — covers 10 parser/typechecker/typed-IR generic integration cases
 - `scripts/bootstrap/verify_b2_generic_runtime_recursive_10.sh` — covers 11 bounded generic runtime-container compatibility and recursive generic-call cases
+- `scripts/bootstrap/verify_native_generic_runtime_10.sh` — covers evaluator-integrated generic list/option values, recursive generic calls, and unwrap execution
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`
