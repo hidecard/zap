@@ -16,7 +16,7 @@
 
 - [ ] **Complete collection inference** — homogeneous AST list/map နှင့် environment-aware collection foundation ရှိသော်လည်း arbitrary nested collection/index inference မပြီးသေးပါ။
 
-- [ ] **Nested map/deeper nested inference** — reference-only/bounded evidence ရှိသော်လည်း candidate general support မပြီးသေးပါ။
+- [ ] **Nested map/deeper nested inference** — nested list/map/index foundation ရှိသော်လည်း arbitrary map key/value nesting နှင့် full environment propagation မပြီးသေးပါ။
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
@@ -110,7 +110,13 @@
 
 - [x] Generic declaration metadata foundation — generic parameter extraction၊ canonical function name၊ duplicate/invalid parameter validation နှင့် nested list/map/option/result substitution ကို စစ်ဆေးနိုင်သည်။
 
-- [x] B2 Type/Generic ၁၀-case verifier — environment inference၊ nested collections၊ generic metadata၊ validation နှင့် substitution cases pass.
+- [x] Environment-aware recursive inference — explicit environment မှ name၊ unary၊ binary၊ homogeneous collection နှင့် generic identity call များကို recursive AST အဖြစ် ခန့်မှန်းနိုင်သည်။
+
+- [x] Nested collection/index inference foundation — nested list indexing နှင့် key-compatible map indexing အတွက် element/value type ပြန်လည်ခန့်မှန်းနိုင်သည်။
+
+- [x] Multi-parameter generic substitution foundation — `T`/`U` စသည့် parameter များကို nested return wrapper ထဲသို့ instantiate လုပ်နိုင်ပြီး simple constraint check ပြုလုပ်နိုင်သည်။
+
+- [x] B2 Type/Generic ၁၅-case verifier — environment inference၊ nested collection/indexing၊ generic metadata၊ validation၊ substitution နှင့် simple constraints cases pass.
 
 - [x] B1 unexpected indentation differential — multi-level indentation jump fixture နှင့် reference diagnostic pass.
 

@@ -49,6 +49,18 @@ export fn ast_expression_type_env(node, environment):
         if callee == "identity" and len(node["args"]) == 1:
             return ast_expression_type_env(node["args"][0]["value"], environment)
         return "any"
+    if kind == "index":
+        let target_type = ast_expression_type_env(node["target"], environment)
+        let index_type = ast_expression_type_env(node["index"], environment)
+        if starts_with(target_type, "list<") and ends_with(target_type, ">"):
+            if index_type == "number":
+                return substring(target_type, 5, len(target_type) - 1)
+            return "any"
+        if starts_with(target_type, "map<") and ends_with(target_type, ">"):
+            let parts = split(substring(target_type, 4, len(target_type) - 1), ",")
+            if len(parts) == 2 and index_type == trim(parts[0]):
+                return trim(parts[1])
+        return "any"
     return "any"
 
 export fn generic_parameter_names(line):
@@ -159,6 +171,23 @@ export fn generic_type_substitute(type_template, parameter, argument_type):
 
 export fn generic_identity_result(argument_type, return_template):
     return generic_type_substitute(return_template, "T", argument_type)
+
+export fn generic_instantiate_return(parameters, argument_types, return_template):
+    let result = return_template
+    let index = 0
+    for parameter in parameters:
+        if index < len(argument_types):
+            result = generic_type_substitute(result, parameter, argument_types[index])
+        index = index + 1
+    return result
+
+export fn generic_constraint_satisfied(argument_types, constraint):
+    for argument_type in argument_types:
+        if constraint == "number" and argument_type != "number":
+            return false
+        if constraint == "text" and argument_type != "text":
+            return false
+    return true
 
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
