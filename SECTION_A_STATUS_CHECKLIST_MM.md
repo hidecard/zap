@@ -1,6 +1,6 @@
 # Zap Section A — လက်ရှိ Status Checklist
 
-**နောက်ဆုံးစစ်ဆေးမှု:** `master` / `d52e214`  
+**နောက်ဆုံးစစ်ဆေးမှု:** `master` / `3cb059a` + local verified type-inference changes
 **Contract status:** B0 — native Rust reference owner; `self_hosted = false`  
 **အဓိပ္ပါယ်:** `[x]` သည် bounded/provisional gate သို့မဟုတ် foundation evidence ပြီးစီးခြင်းကို ဆိုလိုသည်။ `[ ]` သည် checklist တွင် သတ်မှတ်ထားသည့် full/general/ownership acceptance မပြီးသေးခြင်းကို ဆိုလိုသည်။
 
@@ -40,6 +40,7 @@
 - [x] Mixed recursive top-level sequence — nested call, `say`, and parenthesized declaration in one flat sequence.
 - [x] Append-backed flat declaration sequence — native `append(list, value)` builtin နှင့် bounded parser path ထည့်ထားသည်။
 - [x] Boolean expression inference slice — unary `not`, comparison matrix, and logical `and/or` expressions infer as `bool` in the candidate.
+- [x] Arithmetic expression inference slice — parenthesized expressions, unary negation, subtraction, division, and remainder infer numeric types for compatible operands.
 - [x] B0/B1/B2/B3/VM regression scripts — နောက်ဆုံး consolidated run တွင် pass.
 
 ## လက်ရှိနောက်တစ်ဆင့်

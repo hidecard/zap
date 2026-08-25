@@ -59,12 +59,33 @@ export fn expression_type(expression, parameter_name, parameter_type, function_n
         return "bool"
     if value == "none":
         return "none"
+    if starts_with(value, "(") and ends_with(value, ")"):
+        let inner = trim(substring(value, 1, len(value) - 1))
+        return expression_type(inner, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+    if starts_with(value, "-") and len(value) > 1:
+        let operand_type = expression_type(trim(substring(value, 1, len(value))), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+        if operand_type == "number":
+            return "number"
+        return "any"
     if starts_with(value, "not "):
         return "bool"
     if (contains(value, " < ") or contains(value, " <= ") or contains(value, " > ") or contains(value, " >= ") or contains(value, " == ") or contains(value, " != ")) and not starts_with(value, "[") and not starts_with(value, "{"):
         return "bool"
     if (contains(value, " and ") or contains(value, " or ")) and not starts_with(value, "[") and not starts_with(value, "{"):
         return "bool"
+    if (contains(value, " - ") or contains(value, " / ") or contains(value, " % ")) and not starts_with(value, "[") and not starts_with(value, "{"):
+        let operator = " - "
+        if contains(value, " / "):
+            operator = " / "
+        if contains(value, " % "):
+            operator = " % "
+        let arithmetic_parts = split(value, operator)
+        if len(arithmetic_parts) == 2:
+            let left_type = expression_type(trim(arithmetic_parts[0]), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+            let right_type = expression_type(trim(arithmetic_parts[1]), parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type)
+            if left_type == "number" and right_type == "number":
+                return "number"
+            return "any"
     if not starts_with(value, "[") and not starts_with(value, "{") and contains(value, " + "):
         let binary_parts = split(value, " + ")
         if len(binary_parts) == 2:
