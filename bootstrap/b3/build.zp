@@ -12,5 +12,11 @@ export fn build_manifest(plan, artifacts):
 export fn build_is_reproducible(first, second):
     return first == second
 
+export fn build_manifest_bytes(plan, artifacts):
+    return json(build_manifest(plan, artifacts))
+
+export fn build_bytes_reproducible(plan, first_artifacts, second_artifacts):
+    return build_manifest_bytes(plan, first_artifacts) == build_manifest_bytes(plan, second_artifacts)
+
 export fn build_network_policy():
     return {"allow_network": false, "require_lock": true, "require_seed": true}

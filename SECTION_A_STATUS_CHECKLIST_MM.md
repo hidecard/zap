@@ -32,7 +32,7 @@
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
-- [ ] **Zap-owned package/build pipeline** — B3 manifest/lock/offline build foundation သည် native Rust-owned ဖြစ်နေသေးသည်။
+- [ ] **Zap-owned package/build pipeline** — Zap-written manifest/lock/offline build foundation နှင့် deterministic serialized manifest contract ရှိလာသော်လည်း actual compiler artifact production နှင့် native Rust ownership transfer မပြီးသေးပါ။
 
 - [ ] **Zap-owned VM execution** — native VM smoke foundation ရှိသော်လည်း bootstrap-side VM ownership မပြီးသေးပါ။
 
@@ -322,7 +322,7 @@ The three main Section A workstreams now have additional verifier-backed increme
 - [ ] Main-3 native-independent package/build/VM ownership and B4 self-rebuild.
 
 - [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး nested list/map decomposition နှင့် index element inference အပါအဝင် complete-inference verifier ကို ၁၅ cases အထိ တိုးချဲ့ pass။
-- [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions pass။
+- [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ structural/serialized manifest reproducibility၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions နှင့် byte-serialization contract pass။
 
 - [x] B4 rebuild-plan orchestration gate — seed-to-lexer/parser/typecheck/VM stage descriptors၊ deterministic artifact manifest နှင့် reproducibility စုစုပေါင်း ၁၅ assertions pass။
 
