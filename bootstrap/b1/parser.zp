@@ -97,6 +97,8 @@ export fn rebase_statement_spans(node, line_delta):
         return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
     if kind == "raise":
         return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
+    if kind == "expression":
+        return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
     if kind == "declaration":
         return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
     if kind == "assignment":
@@ -364,6 +366,20 @@ export fn parse_postfix(raw, start_column):
         let operand_text = trim(substring(value, 4, len(value)))
         let operand = parse_expression(operand_text, start_column + 4)
         return {"kind": "unary", "op": "not", "span": span(1, start_column, len(value)), "value": operand}
+    if starts_with(value, "super().") and ends_with(value, ")"):
+        let call_text = substring(value, 8, len(value))
+        let open_index = 0
+        while open_index < len(call_text):
+            if char_at(call_text, open_index) == "(":
+                break
+            open_index = open_index + 1
+        let close_index = find_matching_close(call_text, open_index)
+        let method = trim(substring(call_text, 0, open_index))
+        let target = {"args": [], "callee": name("super", start_column), "kind": "call", "span": span(1, start_column, 7), "type_args": []}
+        let callee = {"kind": "member", "member": method, "span": span(1, start_column, len(value)), "target": target}
+        let argument_text = substring(call_text, open_index + 1, close_index)
+        let arguments = parse_call_arguments(argument_text, start_column + 9)
+        return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, len(value)), "type_args": []}
     if starts_with(value, "-"):
         let operand_text = trim(substring(value, 1, len(value)))
         let operand = parse_atom(operand_text, start_column + 1)
@@ -391,6 +407,11 @@ export fn parse_postfix(raw, start_column):
             callee_name = trim(callee_parts[0])
             explicit_type_args = generic_parameters_from_name(raw_callee)
         let callee = name(callee_name, start_column)
+        if callee_name == "super" and close_index + 1 < len(raw_callee):
+            let suffix = trim(substring(raw_callee, close_index + 1, len(raw_callee)))
+            if starts_with(suffix, "."):
+                let target = {"args": [], "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1), "type_args": []}
+                callee = {"kind": "member", "member": trim(substring(suffix, 1, len(suffix))), "span": span(1, start_column, len(raw_callee)), "target": target}
         let argument_text = substring(value, open_index + 1, close_index)
         let arguments = parse_call_arguments(argument_text, start_column + open_index + 1)
         return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1), "type_args": explicit_type_args}
@@ -576,6 +597,9 @@ export fn parse_statement(line, line_number, body_column):
         return {"kind": "break", "span": span(line_number, body_column, len(statement))}
     if statement == "continue":
         return {"kind": "continue", "span": span(line_number, body_column, len(statement))}
+    if starts_with(statement, "super()."):
+        let value = rebase_expression_span(parse_expression(statement, 1), line_number - 1, 0)
+        return {"kind": "expression", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
     return parse_assignment(line, line_number, body_column)
 
 export fn parse_simple_function(lines):
@@ -869,6 +893,8 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
     if kind == "return":
         return {"kind": kind, "span": rebased_span, "value": node["value"]}
     if kind == "say" or kind == "raise":
+        return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
+    if kind == "expression":
         return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
     if kind == "declaration":
         return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}

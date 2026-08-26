@@ -49,6 +49,8 @@ export fn lower_expression(node):
                 instructions = append(instructions, instruction)
         if node["callee"]["kind"] == "member":
             let receiver = node["callee"]["target"]
+            if receiver["kind"] == "call" and receiver["callee"]["kind"] == "name" and receiver["callee"]["name"] == "super":
+                return {"error": none, "instructions": append(instructions, {"argc": len(node["args"]), "method": node["callee"]["member"], "op": "super_call"})}
             if receiver["kind"] != "name":
                 return {"error": "unsupported_method_receiver", "instructions": []}
             return {"error": none, "instructions": append(instructions, {"argc": len(node["args"]), "method": node["callee"]["member"], "op": "method_call", "receiver": receiver["name"]})}
@@ -364,12 +366,14 @@ export fn lower_ast_node(node):
             if len(pieces) == 2:
                 return {"error": none, "instructions": append(lowered_value["instructions"], {"field": trim(pieces[1]), "op": "field_store", "receiver": trim(pieces[0])})}
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
-    if kind == "say" or kind == "return" or kind == "raise":
+    if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
         if kind == "return" and node["value"] == none:
             return {"error": none, "instructions": [{"op": "return_none"}]}
         let lowered = lower_expression(node["value"])
         if lowered["error"] != none:
             return lowered
+        if kind == "expression":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "pop"})}
         if kind == "say":
             return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
         if kind == "return":

@@ -125,6 +125,23 @@ export fn seed_expression(source, locals):
         if lowered["error"] != none:
             return lowered
         return {"error": none, "instructions": append(lowered["instructions"], {"argc": 1, "name": "abs", "op": "call"})}
+    if starts_with(value, "super().") and ends_with(value, ")"):
+        let call_text = substring(value, 8, len(value))
+        let open_index = seed_find_open_paren(call_text, 0)
+        if open_index <= 0:
+            return {"error": "invalid_super_call", "instructions": []}
+        let method = trim(substring(call_text, 0, open_index))
+        let argument_text = trim(substring(call_text, open_index + 1, len(call_text) - 1))
+        let instructions = []
+        let argc = 0
+        if argument_text != "":
+            for argument in split(argument_text, ","):
+                let lowered_argument = seed_expression(argument, locals)
+                if lowered_argument["error"] != none:
+                    return lowered_argument
+                instructions = seed_append_all(instructions, lowered_argument["instructions"])
+                argc = argc + 1
+        return {"error": none, "instructions": append(instructions, {"argc": argc, "method": method, "op": "super_call"})}
     if starts_with(value, "not "):
         let inner = substring(value, 4, len(value))
         let lowered = seed_expression(inner, locals)
@@ -223,6 +240,12 @@ export fn seed_compile_line(line, instructions, locals):
             return {"error": lowered["error"], "instructions": instructions, "locals": locals}
         let next = seed_append_all(instructions, lowered["instructions"])
         return {"error": none, "instructions": append(next, {"op": "raise"}), "locals": locals}
+    if starts_with(value, "super()."):
+        let lowered = seed_expression(value, locals)
+        if lowered["error"] != none:
+            return {"error": lowered["error"], "instructions": instructions, "locals": locals}
+        let next = seed_append_all(instructions, lowered["instructions"])
+        return {"error": none, "instructions": append(next, {"op": "pop"}), "locals": locals}
     if starts_with(value, "set ") and contains(value, " = "):
         let assignment = split(value, " = ")
         if len(assignment) != 2:
