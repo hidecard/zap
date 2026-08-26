@@ -283,10 +283,19 @@ export fn parse_statement(line, line_number, body_column):
     if starts_with(statement, "let "):
         let declaration = parse_declaration(line, line_number)
         return {"annotation": declaration["annotation"], "exported": declaration["exported"], "kind": declaration["kind"], "name": declaration["name"], "span": span(line_number, body_column, len(statement)), "value": declaration["value"]}
+    if statement == "return":
+        return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": none}
     if starts_with(statement, "return "):
         let value_text = trim(substring(statement, 7, len(statement)))
         let value = parse_expression(value_text, 1)
         return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": value}
+    if starts_with(statement, "raise "):
+        let value_text = trim(substring(statement, 6, len(statement)))
+        return {"kind": "raise", "span": span(line_number, body_column, len(statement)), "value": parse_expression(value_text, 1)}
+    if starts_with(statement, "import "):
+        return {"explicit": false, "kind": "import", "path": trim(substring(statement, 7, len(statement))), "span": span(line_number, body_column, len(statement))}
+    if starts_with(statement, "module "):
+        return {"kind": "module", "name": trim(substring(statement, 7, len(statement))), "span": span(line_number, body_column, len(statement))}
     if starts_with(statement, "say "):
         let value_text = trim(substring(statement, 4, len(statement)))
         let value = parse_expression(value_text, 1)

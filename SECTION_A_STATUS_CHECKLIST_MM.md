@@ -291,3 +291,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 arbitrary typed-IR ၁၀-case gate — non-empty control-statement sequence များအတွက် `if`၊ `say`၊ `while`၊ `return` နှင့် `for` nodes၊ source spans နှင့် successor metadata ထုတ်ပေးခြင်း pass။
 
 - [ ] **General typed-IR production ownership** — arbitrary control-statement sequence emission foundation ရှိလာသော်လည်း parser AST ၏ complete statement/expression/block metadata၊ flow annotations၊ generic runtime IR နှင့် Zap-owned production emitter မပြီးသေးပါ။
+
+- [x] B1 statement coverage gate — empty `return`၊ `raise`၊ `import` နှင့် `module` AST statement nodes စုစုပေါင်း ၈ assertions pass။
+
+- [ ] **Arbitrary-program parser ownership** — statement coverage တိုးချဲ့ထားသော်လည်း all valid/invalid grammar၊ function/class/module nesting၊ try/catch၊ token-native arbitrary parse နှင့် full B0 diagnostic parity မပြီးသေးပါ။

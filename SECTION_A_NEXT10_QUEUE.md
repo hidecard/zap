@@ -6,7 +6,7 @@
 |---:|---|---|---|
 | 1 | Token cursor abstraction | [x] foundation | Immutable cursor with peek/advance/eof and peek-kind; `verify_b1_token_cursor.sh` passes. |
 | 2 | Span-based indentation stack | [x] partial | Parser-owned history/depth stack validates one-level nesting, valid prior-level dedent, inconsistent dedent, and jump errors; token-native full ownership remains pending. |
-| 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-based `parse_block_from` handles bounded arbitrary-depth bodies, same-level sibling dedent, and generic top-level `if`; function/class and all control-flow grammar replacement remains pending. |
+| 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-based `parse_block_from` handles bounded arbitrary-depth bodies, same-level sibling dedent, generic top-level `if`, and additional `return`/`raise`/`import`/`module` statement nodes; function/class and all control-flow grammar replacement remains pending. |
 | 4 | Arbitrary mixed top-level sequence | [x] partial | Recursive CFG and flow-transfer helpers now handle arbitrary mixed statement fixtures with exact branch/fallthrough successors and real assignment propagation; all parser statement kinds and full ownership remain pending. |
 | 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, missing-body diagnostics, nested live-path merge, short-circuit path states, recursive CFG nodes, and exact branch/fallthrough successors pass; arbitrary condition-expression edge ownership remains pending. |
 | 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes, `break`/`continue` AST nodes, automatic normal-body back-edge, stable/divergent fixpoint convergence, and nested break/continue ownership pass focused cases; arbitrary loop CFG/dataflow integration remains pending. |
@@ -36,6 +36,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `SECTION_A_STATUS_CHECKLIST_MM.md`
 - `bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md`
 - `scripts/bootstrap/verify_b1_parser_candidate.sh`
+- `scripts/bootstrap/verify_b1_statement_coverage_8.sh` — covers 8 empty-return, raise, import, and module parser statement cases
 - `scripts/bootstrap/verify_b1_token_cursor.sh`
 - `scripts/bootstrap/verify_b1_recursive_blocks.sh`
 - `scripts/bootstrap/verify_b1_branch_chain.sh`
