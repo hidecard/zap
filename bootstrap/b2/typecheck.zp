@@ -939,7 +939,7 @@ export fn generic_type_substitute(type_template, parameter, argument_type):
         return "result<" + generic_type_substitute(inner, parameter, argument_type) + ">"
     if starts_with(type_template, "map<") and ends_with(type_template, ">"):
         let inner = substring(type_template, 4, len(type_template) - 1)
-        let parts = split(inner, ",")
+        let parts = generic_type_arguments(inner)
         if len(parts) == 2:
             return "map<" + generic_type_substitute(trim(parts[0]), parameter, argument_type) + "," + generic_type_substitute(trim(parts[1]), parameter, argument_type) + ">"
     return type_template

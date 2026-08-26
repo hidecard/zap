@@ -12,7 +12,7 @@
 
 - [ ] **Broader basic-type inference** — environment-aware inference သည် explicit number/text/bool/none၊ arithmetic၊ comparison၊ logical၊ nested list/map နှင့် index paths ကို တိုးချဲ့ support လုပ်ထားသော်လည်း real-world arbitrary expression coverage နှင့် complete reference parity မပြီးသေးပါ။
 
-- [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
+- [ ] **Generic declarations** — function signature/call-site substitution၊ depth-aware nested map/list return substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
 - [ ] **Complete collection inference** — recursive AST list/map collection typing သည် collection entries အားလုံးကို စစ်ဆေးပြီး nested wrapper/index inference ကို အသုံးပြုနိုင်ပြီဖြစ်သော်လည်း arbitrary heterogeneous collection diagnostics နှင့် full parser/typechecker integration မပြီးသေးပါ။
 
