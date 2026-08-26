@@ -555,6 +555,10 @@ export fn missing_block_diagnostic(lines, source_name):
 
 export fn parse(source, source_name):
     let lines = split(source, "\n")
+    let first_line = trim(lines[0])
+    if len(lines) > 1 and (starts_with(first_line, "if ") or starts_with(first_line, "for ") or starts_with(first_line, "while ") or first_line == "try:") and indentation_width(lines[1]) > indentation_width(lines[0]):
+        let statements = parse_block_program(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if starts_with(trim(lines[0]), "if "):
         let statements = parse_block_program(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})

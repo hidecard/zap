@@ -24,7 +24,7 @@
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
-- [ ] **Arbitrary-program parser coverage** — functions၊ loops၊ classes၊ nested calls၊ parenthesized expressions နှင့် selected nested blocks fixtures ရှိသော်လည်း parser သည် line-count/fixture dispatch ကို ဆက်သုံးနေသေးသည်။ Symbol graph collection သည် parser-independent bounded foundation သာ ဖြစ်သည်။
+- [ ] **Arbitrary-program parser coverage** — top-level `if`/`for`/`while`/`try` block များအတွက် indentation-based recursive route ကို fixture dispatch မတိုင်မီ ထည့်ပြီး regression gates pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
