@@ -1162,8 +1162,8 @@ export fn inferred_value_type(value, environment):
         if len(elements) == 0:
             return "list<any>"
         let element_type = inferred_value_type(elements[0], environment)
-        if len(elements) > 1:
-            if inferred_value_type(elements[1], environment) != element_type:
+        for element in elements:
+            if inferred_value_type(element, environment) != element_type:
                 return "list<any>"
         return "list<" + element_type + ">"
     if kind == "map":
@@ -1172,10 +1172,10 @@ export fn inferred_value_type(value, environment):
             return "map<any,any>"
         let key_type = inferred_value_type(entries[0]["key"], environment)
         let value_type = inferred_value_type(entries[0]["value"], environment)
-        if len(entries) > 1:
-            if inferred_value_type(entries[1]["key"], environment) != key_type:
+        for entry in entries:
+            if inferred_value_type(entry["key"], environment) != key_type:
                 key_type = "any"
-            if inferred_value_type(entries[1]["value"], environment) != value_type:
+            if inferred_value_type(entry["value"], environment) != value_type:
                 value_type = "any"
         return "map<" + key_type + "," + value_type + ">"
     if kind == "binary":
@@ -1192,12 +1192,7 @@ export fn inferred_value_type(value, environment):
         return inferred_value_type(value["value"], environment)
     if kind == "index":
         let target_type = inferred_value_type(value["target"], environment)
-        if starts_with(target_type, "list<"):
-            return substring(target_type, 5, len(target_type) - 1)
-        if starts_with(target_type, "map<") and contains(target_type, ","):
-            let pieces = split(target_type, ",")
-            return substring(pieces[1], 0, len(pieces[1]) - 1)
-        return "any"
+        return generic_container_element(target_type)
     if kind == "call":
         let callee = value["callee"]["name"]
         if callee == "identity" and len(value["args"]) == 1:

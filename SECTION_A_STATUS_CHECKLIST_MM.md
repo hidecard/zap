@@ -14,9 +14,9 @@
 
 - [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
-- [ ] **Complete collection inference** — recursive AST list/map collection typing နှင့် nested wrapper/index inference ကို တိုးချဲ့ထားသော်လည်း arbitrary heterogeneous collection diagnostics နှင့် full parser/typechecker integration မပြီးသေးပါ။
+- [ ] **Complete collection inference** — recursive AST list/map collection typing သည် collection entries အားလုံးကို စစ်ဆေးပြီး nested wrapper/index inference ကို အသုံးပြုနိုင်ပြီဖြစ်သော်လည်း arbitrary heterogeneous collection diagnostics နှင့် full parser/typechecker integration မပြီးသေးပါ။
 
-- [ ] **Nested map/deeper nested inference** — nested list/map/index decomposition နှင့် nested wrapper validity ကို ၁၅-case verifier ဖြင့် တိုးချဲ့ pass ထားသော်လည်း arbitrary program-wide environment propagation မပြီးသေးပါ။
+- [ ] **Nested map/deeper nested inference** — nested list/map/index decomposition၊ environment-aware collection iteration နှင့် recursive container element extraction ကို ၁၅-case verifier ဖြင့် pass ထားသော်လည်း arbitrary program-wide environment propagation မပြီးသေးပါ။
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
