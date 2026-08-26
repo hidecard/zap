@@ -26,10 +26,17 @@ export fn vm_step(state, instruction):
     let advanced = {"halted": state["halted"], "ip": state["ip"] + 1, "output": state["output"], "stack": state["stack"]}
     if op == "const":
         return vm_push(advanced, instruction["value"])
-    if op == "add":
+    if op == "add" or op == "subtract" or op == "multiply" or op == "divide":
         let right = vm_pop(advanced)
         let left = vm_pop(right["state"])
-        return vm_push(left["state"], left["value"] + right["value"])
+        let value = left["value"] + right["value"]
+        if op == "subtract":
+            value = left["value"] - right["value"]
+        if op == "multiply":
+            value = left["value"] * right["value"]
+        if op == "divide":
+            value = left["value"] / right["value"]
+        return vm_push(left["state"], value)
     if op == "print":
         let item = vm_pop(advanced)
         return {"halted": item["state"]["halted"], "ip": item["state"]["ip"], "output": append(item["state"]["output"], item["value"]), "stack": item["state"]["stack"]}
