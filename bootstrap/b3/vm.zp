@@ -66,7 +66,8 @@ export fn vm_step(state, instruction):
             return {"error": none, "halted": false, "handlers": condition["state"]["handlers"], "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
         return condition["state"]
     if op == "try_begin":
-        return {"error": none, "halted": false, "handlers": append(advanced["handlers"], instruction["target"]), "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+        let handler = {"binding": instruction["binding"], "target": instruction["target"]}
+        return {"error": none, "halted": false, "handlers": append(advanced["handlers"], handler), "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
     if op == "try_end":
         return {"error": none, "halted": false, "handlers": vm_handlers_without_last(advanced["handlers"]), "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
     if op == "raise":
@@ -76,8 +77,11 @@ export fn vm_step(state, instruction):
         if len(raised["state"]["handlers"]) == 0:
             return vm_fail(raised["state"], "raised")
         let handlers = raised["state"]["handlers"]
-        let target = handlers[len(handlers) - 1]
-        return {"error": none, "halted": false, "handlers": vm_handlers_without_last(handlers), "ip": target, "locals": raised["state"]["locals"], "output": raised["state"]["output"], "stack": raised["state"]["stack"]}
+        let handler = handlers[len(handlers) - 1]
+        let bound_state = raised["state"]
+        if handler["binding"] != none:
+            bound_state = vm_store(bound_state, handler["binding"], raised["value"])
+        return {"error": none, "halted": false, "handlers": vm_handlers_without_last(handlers), "ip": handler["target"], "locals": bound_state["locals"], "output": bound_state["output"], "stack": bound_state["stack"]}
     if op == "dup":
         let top = vm_pop(advanced)
         if top["error"] != none:

@@ -133,6 +133,10 @@ export fn seed_compile_line(line, instructions, locals):
             return {"error": lowered["error"], "instructions": instructions, "locals": locals}
         let next = seed_append_all(instructions, lowered["instructions"])
         return {"error": none, "instructions": append(next, {"op": "raise"}), "locals": locals}
+    if value == "break":
+        return {"error": none, "instructions": append(instructions, {"op": "break_jump"}), "locals": locals}
+    if value == "continue":
+        return {"error": none, "instructions": append(instructions, {"op": "continue_jump"}), "locals": locals}
     if contains(value, " = "):
         let assignment = split(value, " = ")
         if len(assignment) == 2:
@@ -155,7 +159,18 @@ export fn seed_patch_target(instructions, target_index, target, index, result):
         instruction = {"op": instruction["op"], "target": target}
     return seed_patch_target(instructions, target_index, target, index + 1, append(result, instruction))
 
-export fn seed_compile_while(lines, index, instructions, locals, indent):
+export fn seed_patch_loop_controls_range(instructions, start_index, end_index, break_target, continue_target, index, result):
+    if index >= len(instructions):
+        return result
+    let instruction = instructions[index]
+    if index >= start_index and index < end_index:
+        if instruction["op"] == "break_jump" and break_target >= 0:
+            instruction = {"op": "jump", "target": break_target}
+        if instruction["op"] == "continue_jump" and continue_target >= 0:
+            instruction = {"op": "jump", "target": continue_target}
+    return seed_patch_loop_controls_range(instructions, start_index, end_index, break_target, continue_target, index + 1, append(result, instruction))
+
+export fn seed_compile_while(lines, index, instructions, locals, indent, loop_depth):
     let header = trim(lines[index])
     let condition_text = trim(substring(header, 6, len(header) - 1))
     let condition = seed_expression(condition_text, locals)
@@ -165,16 +180,18 @@ export fn seed_compile_while(lines, index, instructions, locals, indent):
     let prefix = seed_append_all(instructions, condition["instructions"])
     let jump_false_index = len(prefix)
     let with_false = append(prefix, {"op": "jump_if_false", "target": 0})
-    let body = seed_compile_lines(lines, index + 1, with_false, locals, indent)
+    let body_start = len(with_false)
+    let body = seed_compile_lines(lines, index + 1, with_false, locals, indent, loop_depth + 1)
     if body["next"] == index + 1:
         return {"error": "missing_while_body", "instructions": instructions, "locals": locals, "next": index}
     if body["error"] != none:
         return body
     let with_back = append(body["instructions"], {"op": "jump", "target": condition_index})
-    let patched = seed_patch_target(with_back, jump_false_index, len(with_back), 0, [])
+    let patched_controls = seed_patch_loop_controls_range(with_back, body_start, len(with_back) - 1, len(with_back), condition_index, 0, [])
+    let patched = seed_patch_target(patched_controls, jump_false_index, len(patched_controls), 0, [])
     return {"error": none, "instructions": patched, "locals": body["locals"], "next": body["next"]}
 
-export fn seed_compile_for(lines, index, instructions, locals, indent):
+export fn seed_compile_for(lines, index, instructions, locals, indent, loop_depth):
     let header = trim(lines[index])
     let body = trim(substring(header, 4, len(header) - 1))
     let parts = split(body, " in ")
@@ -185,87 +202,116 @@ export fn seed_compile_for(lines, index, instructions, locals, indent):
     if not (starts_with(iterable_text, "[") and ends_with(iterable_text, "]")):
         return {"error": "unsupported_for_iterable", "instructions": instructions, "locals": locals, "next": index}
     let items = from_json(iterable_text)
-    let probe = seed_compile_lines(lines, index + 1, instructions, seed_add_local(locals, binding), indent)
+    let probe = seed_compile_lines(lines, index + 1, instructions, seed_add_local(locals, binding), indent, loop_depth + 1)
     if probe["next"] == index + 1:
         return {"error": "missing_for_body", "instructions": instructions, "locals": locals, "next": index}
     if probe["error"] != none:
         return probe
     let current_instructions = instructions
     let current_locals = locals
+    let loop_body_start = len(instructions)
     for item in items:
+        let iteration_start = len(current_instructions)
         let with_value = append(current_instructions, {"op": "const", "value": item})
         with_value = append(with_value, {"name": binding, "op": "store"})
-        let iteration = seed_compile_lines(lines, index + 1, with_value, seed_add_local(current_locals, binding), indent)
+        let iteration = seed_compile_lines(lines, index + 1, with_value, seed_add_local(current_locals, binding), indent, loop_depth + 1)
         if iteration["error"] != none:
             return iteration
-        current_instructions = iteration["instructions"]
+        let patched_iteration = seed_patch_loop_controls_range(iteration["instructions"], iteration_start, len(iteration["instructions"]), -1, len(iteration["instructions"]), 0, [])
+        current_instructions = patched_iteration
         current_locals = iteration["locals"]
-    return {"error": none, "instructions": current_instructions, "locals": current_locals, "next": probe["next"]}
+    let patched_breaks = seed_patch_loop_controls_range(current_instructions, loop_body_start, len(current_instructions), len(current_instructions), -1, 0, [])
+    return {"error": none, "instructions": patched_breaks, "locals": current_locals, "next": probe["next"]}
 
-export fn seed_compile_try(lines, index, instructions, locals, indent):
+export fn seed_patch_handler_binding(instructions, target_index, binding, index, result):
+    if index >= len(instructions):
+        return result
+    let instruction = instructions[index]
+    if index == target_index:
+        instruction = {"binding": binding, "op": instruction["op"], "target": instruction["target"]}
+    return seed_patch_handler_binding(instructions, target_index, binding, index + 1, append(result, instruction))
+
+export fn seed_compile_try(lines, index, instructions, locals, indent, loop_depth):
     let try_index = len(instructions)
-    let with_begin = append(instructions, {"op": "try_begin", "target": 0})
-    let body = seed_compile_lines(lines, index + 1, with_begin, locals, indent)
+    let with_begin = append(instructions, {"binding": none, "op": "try_begin", "target": 0})
+    let body = seed_compile_lines(lines, index + 1, with_begin, locals, indent, loop_depth)
     if body["next"] == index + 1:
         return {"error": "missing_try_body", "instructions": instructions, "locals": locals, "next": index}
     if body["error"] != none:
         return body
     let catch_index = body["next"]
-    if catch_index >= len(lines) or seed_indent(lines[catch_index]) != indent or trim(lines[catch_index]) != "catch:":
+    if catch_index >= len(lines) or seed_indent(lines[catch_index]) != indent:
         return {"error": "missing_catch", "instructions": instructions, "locals": locals, "next": index}
+    let catch_header = trim(lines[catch_index])
+    let catch_binding = none
+    if catch_header == "catch:":
+        catch_binding = none
+    else:
+        if starts_with(catch_header, "catch ") and ends_with(catch_header, ":"):
+            catch_binding = trim(substring(catch_header, 6, len(catch_header) - 1))
+        else:
+            return {"error": "invalid_catch_binding", "instructions": instructions, "locals": locals, "next": index}
     let with_end = append(body["instructions"], {"op": "try_end"})
     let jump_index = len(with_end)
     let with_jump = append(with_end, {"op": "jump", "target": 0})
-    let alternate = seed_compile_lines(lines, catch_index + 1, with_jump, body["locals"], indent)
+    let catch_locals = body["locals"]
+    if catch_binding != none:
+        catch_locals = seed_add_local(catch_locals, catch_binding)
+    let alternate = seed_compile_lines(lines, catch_index + 1, with_jump, catch_locals, indent, loop_depth)
     if alternate["next"] == catch_index + 1:
         return {"error": "missing_catch_body", "instructions": instructions, "locals": locals, "next": index}
     if alternate["error"] != none:
         return alternate
     let catch_target = jump_index + 1
     let patched_begin = seed_patch_target(alternate["instructions"], try_index, catch_target, 0, [])
-    let patched_jump = seed_patch_target(patched_begin, jump_index, len(patched_begin), 0, [])
+    let with_binding = seed_patch_handler_binding(patched_begin, try_index, catch_binding, 0, [])
+    let patched_jump = seed_patch_target(with_binding, jump_index, len(with_binding), 0, [])
     return {"error": none, "instructions": patched_jump, "locals": alternate["locals"], "next": alternate["next"]}
 
-export fn seed_compile_lines(lines, index, instructions, locals, base_indent):
+export fn seed_compile_lines(lines, index, instructions, locals, base_indent, loop_depth):
     if index >= len(lines):
         return {"error": none, "instructions": instructions, "locals": locals, "next": index}
     let line = lines[index]
     let value = trim(line)
     if value == "":
-        return seed_compile_lines(lines, index + 1, instructions, locals, base_indent)
+        return seed_compile_lines(lines, index + 1, instructions, locals, base_indent, loop_depth)
     let indent = seed_indent(line)
     if indent <= base_indent:
         return {"error": none, "instructions": instructions, "locals": locals, "next": index}
     if value == "while:":
         return {"error": "invalid_while_header", "instructions": instructions, "locals": locals, "next": index}
     if starts_with(value, "while ") and ends_with(value, ":"):
-        let looping = seed_compile_while(lines, index, instructions, locals, indent)
+        let looping = seed_compile_while(lines, index, instructions, locals, indent, loop_depth)
         if looping["error"] != none:
             return looping
-        return seed_compile_lines(lines, looping["next"], looping["instructions"], looping["locals"], base_indent)
+        return seed_compile_lines(lines, looping["next"], looping["instructions"], looping["locals"], base_indent, loop_depth)
     if starts_with(value, "for ") and ends_with(value, ":"):
-        let looping = seed_compile_for(lines, index, instructions, locals, indent)
+        let looping = seed_compile_for(lines, index, instructions, locals, indent, loop_depth)
         if looping["error"] != none:
             return looping
-        return seed_compile_lines(lines, looping["next"], looping["instructions"], looping["locals"], base_indent)
+        return seed_compile_lines(lines, looping["next"], looping["instructions"], looping["locals"], base_indent, loop_depth)
     if value == "try:":
-        let guarded = seed_compile_try(lines, index, instructions, locals, indent)
+        let guarded = seed_compile_try(lines, index, instructions, locals, indent, loop_depth)
         if guarded["error"] != none:
             return guarded
-        return seed_compile_lines(lines, guarded["next"], guarded["instructions"], guarded["locals"], base_indent)
+        return seed_compile_lines(lines, guarded["next"], guarded["instructions"], guarded["locals"], base_indent, loop_depth)
     if starts_with(value, "if ") and ends_with(value, ":"):
-        let conditional = seed_compile_if(lines, index, instructions, locals, indent)
+        let conditional = seed_compile_if(lines, index, instructions, locals, indent, loop_depth)
         if conditional["error"] != none:
             return conditional
-        return seed_compile_lines(lines, conditional["next"], conditional["instructions"], conditional["locals"], base_indent)
+        return seed_compile_lines(lines, conditional["next"], conditional["instructions"], conditional["locals"], base_indent, loop_depth)
     if value == "else:":
         return {"error": "unexpected_else", "instructions": instructions, "locals": locals, "next": index}
+    if value == "break" and loop_depth <= 0:
+        return {"error": "break_outside_loop", "instructions": instructions, "locals": locals, "next": index}
+    if value == "continue" and loop_depth <= 0:
+        return {"error": "continue_outside_loop", "instructions": instructions, "locals": locals, "next": index}
     let compiled = seed_compile_line(line, instructions, locals)
     if compiled["error"] != none:
         return {"error": compiled["error"], "instructions": instructions, "locals": locals, "next": index}
-    return seed_compile_lines(lines, index + 1, compiled["instructions"], compiled["locals"], base_indent)
+    return seed_compile_lines(lines, index + 1, compiled["instructions"], compiled["locals"], base_indent, loop_depth)
 
-export fn seed_compile_if(lines, index, instructions, locals, indent):
+export fn seed_compile_if(lines, index, instructions, locals, indent, loop_depth):
     let header = trim(lines[index])
     let condition_text = trim(substring(header, 3, len(header) - 1))
     let condition = seed_expression(condition_text, locals)
@@ -274,7 +320,7 @@ export fn seed_compile_if(lines, index, instructions, locals, indent):
     let prefix = seed_append_all(instructions, condition["instructions"])
     let jump_false_index = len(prefix)
     let with_false = append(prefix, {"op": "jump_if_false", "target": 0})
-    let body = seed_compile_lines(lines, index + 1, with_false, locals, indent)
+    let body = seed_compile_lines(lines, index + 1, with_false, locals, indent, loop_depth)
     if body["next"] == index + 1:
         return {"error": "missing_if_body", "instructions": instructions, "locals": locals, "next": index}
     if body["error"] != none:
@@ -285,7 +331,7 @@ export fn seed_compile_if(lines, index, instructions, locals, indent):
     if next_index < len(lines) and seed_indent(lines[next_index]) == indent and trim(lines[next_index]) == "else:":
         let jump_end_index = len(body_instructions)
         let with_end_jump = append(body_instructions, {"op": "jump", "target": 0})
-        let alternate = seed_compile_lines(lines, next_index + 1, with_end_jump, body_locals, indent)
+        let alternate = seed_compile_lines(lines, next_index + 1, with_end_jump, body_locals, indent, loop_depth)
         if alternate["next"] == next_index + 1:
             return {"error": "missing_else_body", "instructions": instructions, "locals": locals, "next": index}
         if alternate["error"] != none:
@@ -299,7 +345,7 @@ export fn seed_compile_if(lines, index, instructions, locals, indent):
 
 export fn seed_compile_source(source, source_name):
     let lines = split(source, "\n")
-    let compiled = seed_compile_lines(lines, 0, [], [], -1)
+    let compiled = seed_compile_lines(lines, 0, [], [], -1, 0)
     if compiled["error"] != none:
         return {"artifact_kind": "bytecode", "error": compiled["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
     return {"artifact_kind": "bytecode", "instructions": append(compiled["instructions"], {"op": "halt"}), "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
