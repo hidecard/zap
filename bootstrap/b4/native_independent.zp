@@ -275,32 +275,49 @@ export fn seed_patch_function(instructions, target_index, entry, end, index, res
         return result
     let instruction = instructions[index]
     if index == target_index:
-        instruction = {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "params": instruction["params"]}
+        instruction = {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "owner": instruction["owner"], "params": instruction["params"]}
     return seed_patch_function(instructions, target_index, entry, end, index + 1, append(result, instruction))
 
-export fn seed_patch_class(instructions, target_index, end, index, result):
+export fn seed_patch_class(instructions, target_index, end, base, index, result):
     if index >= len(instructions):
         return result
     let instruction = instructions[index]
     if index == target_index:
-        instruction = {"end": end, "name": instruction["name"], "op": "class_def"}
-    return seed_patch_class(instructions, target_index, end, index + 1, append(result, instruction))
+        instruction = {"base": base, "end": end, "name": instruction["name"], "op": "class_def"}
+    return seed_patch_class(instructions, target_index, end, base, index + 1, append(result, instruction))
+
+export fn seed_patch_class_methods(instructions, start_index, end_index, owner, index, result):
+    if index >= len(instructions):
+        return result
+    let instruction = instructions[index]
+    if index >= start_index and index < end_index and instruction["op"] == "function_def":
+        instruction = {"binding": instruction["binding"], "captures": instruction["captures"], "end": instruction["end"], "entry": instruction["entry"], "name": instruction["name"], "op": "function_def", "owner": owner, "params": instruction["params"]}
+    return seed_patch_class_methods(instructions, start_index, end_index, owner, index + 1, append(result, instruction))
 
 export fn seed_compile_class(lines, index, instructions, locals, indent, loop_depth, function_depth):
     if loop_depth > 0 or function_depth > 0:
         return {"error": "nested_class_unsupported", "instructions": instructions, "locals": locals, "next": index}
     let header = trim(lines[index])
-    let name = trim(substring(header, 6, len(header) - 1))
+    let declaration = trim(substring(header, 6, len(header) - 1))
+    let name = declaration
+    let base = none
+    if contains(declaration, " extends "):
+        let parts = split(declaration, " extends ")
+        if len(parts) != 2:
+            return {"error": "invalid_class_header", "instructions": instructions, "locals": locals, "next": index}
+        name = trim(parts[0])
+        base = trim(parts[1])
     if name == "":
         return {"error": "invalid_class_name", "instructions": instructions, "locals": locals, "next": index}
     let class_index = len(instructions)
-    let with_class = append(instructions, {"end": 0, "name": name, "op": "class_def"})
+    let with_class = append(instructions, {"base": base, "end": 0, "name": name, "op": "class_def"})
     let body = seed_compile_lines(lines, index + 1, with_class, locals, indent, loop_depth, function_depth)
     if body["error"] != none:
         return body
     if body["next"] == index + 1:
         return {"error": "missing_class_body", "instructions": instructions, "locals": locals, "next": index}
-    let patched = seed_patch_class(body["instructions"], class_index, len(body["instructions"]), 0, [])
+    let owned = seed_patch_class_methods(body["instructions"], class_index + 1, len(body["instructions"]), name, 0, [])
+    let patched = seed_patch_class(owned, class_index, len(owned), base, 0, [])
     return {"error": none, "instructions": patched, "locals": body["locals"], "next": body["next"]}
 
 export fn seed_compile_function(lines, index, instructions, locals, indent, loop_depth, function_depth):
@@ -326,7 +343,7 @@ export fn seed_compile_function(lines, index, instructions, locals, indent, loop
         binding = name
     let definition_index = len(instructions)
     let entry = definition_index + 1
-    let with_definition = append(instructions, {"binding": binding, "captures": captures, "end": 0, "entry": entry, "name": name, "op": "function_def", "params": params})
+    let with_definition = append(instructions, {"binding": binding, "captures": captures, "end": 0, "entry": entry, "name": name, "op": "function_def", "owner": none, "params": params})
     let body = seed_compile_lines(lines, index + 1, with_definition, body_locals, indent, 0, function_depth + 1)
     if body["error"] != none:
         return body

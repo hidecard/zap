@@ -144,7 +144,7 @@ export fn patch_function(instructions, index, entry, end):
     let cursor = 0
     for instruction in instructions:
         if cursor == index:
-            patched = append(patched, {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "params": instruction["params"]})
+            patched = append(patched, {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "owner": instruction["owner"], "params": instruction["params"]})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -155,7 +155,7 @@ export fn patch_class(instructions, index, end):
     let cursor = 0
     for instruction in instructions:
         if cursor == index:
-            patched = append(patched, {"end": end, "name": instruction["name"], "op": "class_def"})
+            patched = append(patched, {"base": instruction["base"], "end": end, "name": instruction["name"], "op": "class_def"})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -167,11 +167,11 @@ export fn lower_parameter_names(params):
         names = append(names, parameter["name"])
     return names
 
-export fn lower_function_node(node, prefix):
+export fn lower_function_node_owned(node, prefix, owner):
     let definition_index = len(prefix)
     let entry = definition_index + 1
     let params = lower_parameter_names(node["params"])
-    let with_definition = append(prefix, {"binding": none, "captures": [], "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "params": params})
+    let with_definition = append(prefix, {"binding": none, "captures": [], "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": owner, "params": params})
     let body = lower_ast_block_with_prefix(node["body"], with_definition)
     if body["error"] != none:
         return body
@@ -180,10 +180,26 @@ export fn lower_function_node(node, prefix):
     let end = len(with_return)
     return {"error": none, "instructions": patch_function(with_return, definition_index, entry, end), "next": end}
 
+export fn lower_function_node(node, prefix):
+    return lower_function_node_owned(node, prefix, none)
+
+export fn lower_class_body(body, prefix, owner):
+    let instructions = prefix
+    for node in body["statements"]:
+        let lowered = none
+        if node["kind"] == "function":
+            lowered = lower_function_node_owned(node, instructions, owner)
+        else:
+            lowered = lower_ast_node_with_prefix(node, instructions)
+        if lowered["error"] != none:
+            return lowered
+        instructions = lowered["instructions"]
+    return {"error": none, "instructions": instructions}
+
 export fn lower_class_node(node, prefix):
     let class_index = len(prefix)
-    let with_class = append(prefix, {"end": 0, "name": node["name"], "op": "class_def"})
-    let body = lower_ast_block_with_prefix(node["body"], with_class)
+    let with_class = append(prefix, {"base": node["base"], "end": 0, "name": node["name"], "op": "class_def"})
+    let body = lower_class_body(node["body"], with_class, node["name"])
     if body["error"] != none:
         return body
     let combined = body["instructions"]

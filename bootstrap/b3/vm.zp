@@ -144,6 +144,16 @@ export fn vm_find_class(functions, name, index):
         return functions[index]
     return vm_find_class(functions, name, index + 1)
 
+export fn vm_find_method(functions, owner, name, index):
+    if index >= len(functions):
+        let class = vm_find_class(functions, owner, 0)
+        if class == none or class["base"] == none:
+            return none
+        return vm_find_method(functions, class["base"], name, 0)
+    if functions[index]["op"] == "function_def" and functions[index]["owner"] == owner and functions[index]["name"] == name:
+        return functions[index]
+    return vm_find_method(functions, owner, name, index + 1)
+
 export fn vm_collect_functions(program, index, result):
     if index >= len(program):
         return result
@@ -171,7 +181,10 @@ export fn vm_return_value(state, value):
         return vm_fail(state, "return_without_frame")
     let frame = state["frames"][len(state["frames"]) - 1]
     let restored_locals = vm_restore_closure_locals(frame, state)
-    return vm_state_with(none, false, frame["handlers"], frame["return_ip"], restored_locals, state["output"], append(frame["stack"], value), vm_array_without_last(state["frames"]), state["functions"])
+    let returned_value = value
+    if frame["is_constructor"] and value == none:
+        returned_value = frame["constructor_instance"]
+    return vm_state_with(none, false, frame["handlers"], frame["return_ip"], restored_locals, state["output"], append(frame["stack"], returned_value), vm_array_without_last(state["frames"]), state["functions"])
 
 export fn vm_step(state, instruction):
     let op = instruction["op"]
@@ -272,7 +285,7 @@ export fn vm_step(state, instruction):
             return vm_fail(advanced, receiver["error"])
         let receiver_state = vm_state_with(none, false, method_arguments["state"]["handlers"], advanced["ip"] - 1, method_arguments["state"]["locals"], method_arguments["state"]["output"], method_arguments["state"]["stack"], method_arguments["state"]["frames"], method_arguments["state"]["functions"])
         let with_receiver = vm_push_values(vm_push(receiver_state, receiver["value"]), method_arguments["values"], 0)
-        return vm_step(with_receiver, {"argc": instruction["argc"] + 1, "name": instruction["method"], "op": "call"})
+        return vm_step(with_receiver, {"argc": instruction["argc"] + 1, "name": instruction["method"], "op": "call", "owner": receiver["value"]["class_name"]})
     if op == "call":
         let arguments = vm_pop_arguments(advanced, instruction["argc"], [])
         if arguments["error"] != none:
@@ -287,17 +300,38 @@ export fn vm_step(state, instruction):
             return vm_push(arguments["state"], value)
         let definition_name = name
         let captures = []
+        let owner = none
+        let constructor = false
+        let constructor_instance = none
+        let instruction_json = json(instruction)
+        if contains(instruction_json, "\"owner\""):
+            owner = instruction["owner"]
+        if contains(instruction_json, "\"constructor\":true"):
+            constructor = true
+            constructor_instance = instruction["instance"]
         let loaded = vm_load(arguments["state"], name)
         if loaded["error"] == none:
             let serialized = json(loaded["value"])
             if contains(serialized, "\"closure\":true"):
                 definition_name = loaded["value"]["function_name"]
                 captures = loaded["value"]["captures"]
-        let definition = vm_find_function(advanced["functions"], definition_name, 0)
+        let definition = none
+        if owner != none:
+            definition = vm_find_method(advanced["functions"], owner, definition_name, 0)
+        else:
+            definition = vm_find_function(advanced["functions"], definition_name, 0)
         if definition == none:
             let class = vm_find_class(advanced["functions"], definition_name, 0)
-            if class != none and instruction["argc"] == 0:
-                return vm_push(arguments["state"], {"class_name": definition_name, "fields": [], "object": true})
+            if class != none:
+                let constructor_definition = vm_find_method(advanced["functions"], definition_name, "__init__", 0)
+                if constructor_definition == none:
+                    if instruction["argc"] == 0:
+                        return vm_push(arguments["state"], {"class_name": definition_name, "fields": [], "object": true})
+                    return vm_fail(advanced, "arity_error:" + name)
+                let instance = {"class_name": definition_name, "fields": [], "object": true}
+                let constructor_state = vm_state_with(none, false, arguments["state"]["handlers"], advanced["ip"] - 1, arguments["state"]["locals"], arguments["state"]["output"], arguments["state"]["stack"], arguments["state"]["frames"], arguments["state"]["functions"])
+                let with_instance = vm_push_values(vm_push(constructor_state, instance), arguments["values"], 0)
+                return vm_step(with_instance, {"argc": instruction["argc"] + 1, "name": "__init__", "op": "call", "owner": definition_name, "constructor": true, "instance": instance})
             return vm_fail(advanced, "unknown_call:" + name)
         if len(definition["params"]) != instruction["argc"]:
             return vm_fail(advanced, "arity_error:" + name)
@@ -307,7 +341,7 @@ export fn vm_step(state, instruction):
             closure_name = name
             for captured in captures:
                 capture_names = append(capture_names, captured)
-        let frame = {"capture_names": capture_names, "closure_name": closure_name, "function": definition_name, "handlers": arguments["state"]["handlers"], "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
+        let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
         let with_captures = vm_bind_captures(callee, captures, 0)
         return vm_bind_arguments(with_captures, definition["params"], arguments["values"], 0)

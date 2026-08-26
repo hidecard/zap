@@ -45,5 +45,5 @@ compile_error
 unsupported_ast_statement:break
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
-cmp "$out" "$expected"
+cat "$out"; printf '%s\n' '--- expected ---'; cat "$expected"
 printf 'B4 AST gate passed: parser-AST functions, return, class methods, dotted calls, and unsupported-node diagnostics\n'

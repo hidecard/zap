@@ -901,9 +901,16 @@ export fn parse_class_body_walk(lines, index, statements):
 
 export fn parse_class_arbitrary(lines):
     let header = trim(lines[0])
-    let class_name = trim(substring(header, 6, len(header) - 1))
+    let declaration = trim(substring(header, 6, len(header) - 1))
+    let class_name = declaration
+    let base = none
+    if contains(declaration, " extends "):
+        let parts = split(declaration, " extends ")
+        if len(parts) == 2:
+            class_name = trim(parts[0])
+            base = trim(parts[1])
     let class_statements = parse_class_body_walk(lines, 1, [])
-    return [{"base": none, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
+    return [{"base": base, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
 
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}
