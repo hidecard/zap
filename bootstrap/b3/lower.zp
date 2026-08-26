@@ -185,6 +185,8 @@ export fn lower_node(node):
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
         let payload = node["payload"]
+        if kind == "return" and payload == none:
+            return {"error": none, "instructions": [{"op": "return_none"}]}
         if payload == none:
             return {"error": "missing_payload:" + kind, "instructions": []}
         let lowered = lower_expression(payload)
@@ -192,6 +194,10 @@ export fn lower_node(node):
             return lowered
         if kind == "say":
             return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
+        if kind == "return":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "return_value"})}
+        if kind == "raise":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "raise"})}
         return lowered
     return {"error": "unsupported_statement:" + kind, "instructions": []}
 
@@ -256,12 +262,16 @@ export fn lower_ast_node(node):
             return lowered_value
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise":
+        if kind == "return" and node["value"] == none:
+            return {"error": none, "instructions": [{"op": "return_none"}]}
         let lowered = lower_expression(node["value"])
         if lowered["error"] != none:
             return lowered
         if kind == "say":
             return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
-        return lowered
+        if kind == "return":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "return_value"})}
+        return {"error": none, "instructions": append(lowered["instructions"], {"op": "raise"})}
     return {"error": "unsupported_ast_statement:" + kind, "instructions": []}
 
 export fn lower_ast_program(ast):
