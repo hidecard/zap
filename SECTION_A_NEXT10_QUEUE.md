@@ -1,6 +1,6 @@
 # Zap Section A — Next Ten Compiler/Self-hosting Tasks
 
-**Baseline:** `master` at `346f7d5` plus verified working-tree follow-up history. The checklist uses `[x]` only for bounded/provisional evidence; full/general/self-hosting acceptance remains `[ ]` until the corresponding acceptance gate passes.
+**Baseline:** `master` at `8f8a823` with clean working tree and all verifier-backed follow-up commits published. The checklist uses `[x]` only for bounded/provisional evidence; full/general/self-hosting acceptance remains `[ ]` until the corresponding acceptance gate passes.
 
 | Order | Task | Current status | Evidence/next acceptance |
 |---:|---|---|---|
@@ -17,7 +17,7 @@
 
 ## Current expansion batch
 
-The requested 10,000 flow-sensitive/arbitrary-AST tasks, 1,000 generic runtime/recursive-call tasks, and the newly requested 100,000-task expansion are being executed as acceptance-gated batches rather than falsely marking every requested count as complete. The current verified increment is the bounded generic runtime/recursive-call gate; the next implementation boundary remains arbitrary AST control-flow graph construction and evaluator-integrated generic value semantics.
+The requested 10,000 flow-sensitive/arbitrary-AST tasks, 1,000 generic runtime/recursive-call tasks, and 100,000-task expansion are represented by verifier-backed batches rather than artificial per-task marks. Verified increments now include arbitrary CFG/reassignment/diagnostic flow, arbitrary control-statement typed IR, B3 Zap-written package/VM foundations, and B4 seed preflight. Full parser/type-inference ownership, native-independent package/VM execution, and B4 self-rebuild remain open.
 
 ## Execution order
 
