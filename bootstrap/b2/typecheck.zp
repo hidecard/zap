@@ -775,9 +775,12 @@ export fn ast_expression_type(node):
     if kind == "map":
         if len(node["entries"]) == 0:
             return "map<any,any>"
-        let entry = node["entries"][0]
-        let key_type = ast_expression_type(entry["key"])
-        let value_type = ast_expression_type(entry["value"])
+        let first_entry = node["entries"][0]
+        let key_type = ast_expression_type(first_entry["key"])
+        let value_type = ast_expression_type(first_entry["value"])
+        for entry in node["entries"]:
+            if ast_expression_type(entry["key"]) != key_type or ast_expression_type(entry["value"]) != value_type:
+                return "map<any,any>"
         return "map<" + key_type + "," + value_type + ">"
     if kind == "call":
         let callee = node["callee"]["name"]
@@ -787,15 +790,41 @@ export fn ast_expression_type(node):
             return ast_expression_type(node["args"][0]["value"])
         return "any"
     if kind == "index":
-        return "any"
+        let target_type = ast_expression_type(node["target"])
+        return generic_container_element(target_type)
     return "any"
+
+export fn generic_type_arguments(type_name):
+    let result = []
+    let depth = 0
+    let current = ""
+    let index = 0
+    while index < len(type_name):
+        let character = substring(type_name, index, index + 1)
+        if character == "<":
+            depth = depth + 1
+            current = current + character
+        else:
+            if character == ">":
+                depth = depth - 1
+                current = current + character
+            else:
+                if character == "," and depth == 0:
+                    result = append(result, trim(current))
+                    current = ""
+                else:
+                    current = current + character
+        index = index + 1
+    if trim(current) != "":
+        result = append(result, trim(current))
+    return result
 
 export fn type_wrapper_parts(type_name):
     if starts_with(type_name, "list<") and ends_with(type_name, ">"):
         return {"wrapper": "list", "inner": substring(type_name, 5, len(type_name) - 1)}
     if starts_with(type_name, "map<") and ends_with(type_name, ">"):
         let inside = substring(type_name, 4, len(type_name) - 1)
-        let parts = split(inside, ",")
+        let parts = generic_type_arguments(inside)
         if len(parts) == 2:
             return {"wrapper": "map", "key": trim(parts[0]), "value": trim(parts[1])}
     if starts_with(type_name, "option<") and ends_with(type_name, ">"):

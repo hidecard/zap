@@ -35,6 +35,9 @@ say inferred_value_type(plus, base)
 say inferred_value_type(identity_call, base)
 say inferred_value_type(known_call, call_environment)
 say ast_lookup_type(infer_program_types(program, base), "x")
+say type_wrapper_parts("map<text,map<number,list<bool>>>")["value"]
+say generic_container_element("map<text,map<number,list<bool>>>")
+say generic_container_valid("map<text,map<number,list<bool>>>")
 EOF
 cat > "$expected" <<'EOF'
 number
@@ -49,7 +52,10 @@ number
 text
 number
 text
+map<number,list<bool>>
+map<number,list<bool>>
+true
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
-printf 'B2 complete-inference gate passed: 12 recursive value, call, and program-flow cases\n'
+printf 'B2 complete-inference gate passed: 15 recursive value, call, nested-container, and program-flow cases\n'

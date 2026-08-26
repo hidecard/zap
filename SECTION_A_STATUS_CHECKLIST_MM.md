@@ -14,9 +14,9 @@
 
 - [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 
-- [ ] **Complete collection inference** — recursive AST list/map collection helpers နှင့် nested wrapper unification foundation ရှိသော်လည်း arbitrary nested collection/index inference နှင့် heterogeneous collection diagnostics မပြီးသေးပါ။
+- [ ] **Complete collection inference** — recursive AST list/map collection typing နှင့် nested wrapper/index inference ကို တိုးချဲ့ထားသော်လည်း arbitrary heterogeneous collection diagnostics နှင့် full parser/typechecker integration မပြီးသေးပါ။
 
-- [ ] **Nested map/deeper nested inference** — nested list/map/index foundation ရှိသော်လည်း arbitrary map key/value nesting နှင့် full environment propagation မပြီးသေးပါ။
+- [ ] **Nested map/deeper nested inference** — nested list/map/index decomposition နှင့် nested wrapper validity ကို ၁၅-case verifier ဖြင့် တိုးချဲ့ pass ထားသော်လည်း arbitrary program-wide environment propagation မပြီးသေးပါ။
 
 - [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
 
@@ -321,7 +321,7 @@ The three main Section A workstreams now have additional verifier-backed increme
 - [ ] Main-2 full arbitrary parser/typed-IR/diagnostic ownership.
 - [ ] Main-3 native-independent package/build/VM ownership and B4 self-rebuild.
 
-- [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး complete-inference verifier ကို ၁၂ cases အထိ တိုးချဲ့ pass။
+- [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး nested list/map decomposition နှင့် index element inference အပါအဝင် complete-inference verifier ကို ၁၅ cases အထိ တိုးချဲ့ pass။
 - [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions pass။
 
 - [x] B4 rebuild-plan orchestration gate — seed-to-lexer/parser/typecheck/VM stage descriptors၊ deterministic artifact manifest နှင့် reproducibility စုစုပေါင်း ၁၅ assertions pass။
