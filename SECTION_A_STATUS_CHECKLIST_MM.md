@@ -263,3 +263,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 general typed-IR expression gate — call၊ nested call၊ binary expression နှင့် declaration value emission ၁၀ cases pass။
 
 - [ ] **General typed-IR full ownership** — expression/call/binary bounded emission ထပ်တိုးထားသော်လည်း arbitrary statement blocks၊ complete typed AST spans၊ flow-sensitive annotations နှင့် Zap-owned production IR pipeline မပြီးသေးပါ။
+
+- [x] B2 flow-sensitive ၁၀-case gate — multi-path branch merge၊ branch-local declaration presence၊ reassignment invalidation၊ multi-state loop fixpoint နှင့် nested scope restoration pass။
+
+- [ ] **Full flow-sensitive ownership** — multi-path helper layer နှင့် bounded verifier တိုးချဲ့ပြီးသော်လည်း arbitrary AST CFG တည်ဆောက်ခြင်း၊ condition-derived narrowing၊ nested loop/branch convergence နှင့် reference diagnostic parity မပြီးသေးပါ။
