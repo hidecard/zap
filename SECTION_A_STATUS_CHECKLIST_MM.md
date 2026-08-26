@@ -311,3 +311,12 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] Main-2 parser/typed-IR expansion gate — parser `try/catch` AST node နှင့် typed-IR `raise`၊ `import`၊ `module`၊ `try`၊ `catch` node classification စုစုပေါင်း ၅ cases pass။ Existing B1 control-flow regressions များလည်း pass။
 
 - [ ] **Main-2 full ownership** — Additional statement coverage ရှိလာသော်လည်း all grammar၊ complete nested function/class/module AST၊ arbitrary expression/control metadata၊ full diagnostic matrix နှင့် production Zap-owned parser/typed-IR pipeline မပြီးသေးပါ။
+
+## Main-3 consolidated status
+
+The three main Section A workstreams now have additional verifier-backed increments. Main-1 has recursive value/program inference coverage; Main-2 has `try/catch` parser coverage plus additional typed-IR statement classifications; Main-3 has Zap-written package/VM foundations and deterministic seed preflight. These are verified partial gates, not full self-hosting completion.
+
+- [x] Consolidated Main-3 regression run — B1 parser/control flow, B2 inference/flow/CFG/diagnostic/typed-IR/generic, B3 foundation/ownership, B4 seed preflight, native generic runtime, and VM/platform suites pass.
+- [ ] Main-1 full type-inference ownership.
+- [ ] Main-2 full arbitrary parser/typed-IR/diagnostic ownership.
+- [ ] Main-3 native-independent package/build/VM ownership and B4 self-rebuild.
