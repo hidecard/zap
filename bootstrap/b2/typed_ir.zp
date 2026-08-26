@@ -29,7 +29,7 @@ export fn expression_node(expression):
         return {"kind": "await", "value": expression_node(trim(substring(value, 6, len(value)))), "span": span(1, 1, len(value))}
     if starts_with(value, "try "):
         return {"kind": "propagate", "value": expression_node(trim(substring(value, 4, len(value)))), "span": span(1, 1, len(value))}
-    if ends_with(value, "]") and contains(value, "["):
+    if ends_with(value, "]") and contains(value, "[") and not starts_with(value, "["):
         let open_index = 0
         while open_index < len(value):
             if char_at(value, open_index) == "[":
