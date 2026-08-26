@@ -274,7 +274,13 @@ export fn emit_arbitrary_program(source, source_name):
             if starts_with(value, "let ") and contains(value, " = "):
                 let parts = split(value, " = ")
                 let left = trim(substring(parts[0], 4, len(parts[0])))
-                nodes = append(nodes, declaration_node(left, none, inferred_type_for(parts[1]), expression_node(parts[1]), line_number, len(value)))
+                let variable = left
+                let annotation = none
+                if contains(left, ":"):
+                    let annotation_parts = split(left, ":")
+                    variable = trim(annotation_parts[0])
+                    annotation = trim(annotation_parts[1])
+                nodes = append(nodes, declaration_node(variable, annotation, inferred_type_for(parts[1]), expression_node(parts[1]), line_number, len(value)))
             else:
                 if contains(value, " = ") and not starts_with(value, "if ") and not starts_with(value, "while "):
                     let parts = split(value, " = ")

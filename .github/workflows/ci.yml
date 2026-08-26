@@ -75,6 +75,9 @@ jobs:
       - name: Run documentation consistency regression
         run: scripts/test_validate_documentation_consistency.sh
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
       - name: Run developer environment doctor regression
         run: bash scripts/test_doctor.sh
 
@@ -83,9 +86,6 @@ jobs:
 
       - name: Validate repository Markdown links
         run: python3 scripts/validate_markdown_links.py
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --version 0.22.2 --locked
 
       - name: Run native RustSec audit
         run: cargo audit --file native/Cargo.lock
