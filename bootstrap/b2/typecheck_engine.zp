@@ -13,7 +13,77 @@
 #
 # It uses the existing canonical type strings and parser AST node shapes.
 
-import "bootstrap/b2/typecheck.zp"
+export fn b2c_list_contains(values, value):
+    for item in values:
+        if item == value:
+            return true
+    return false
+
+export fn b2c_generic_type_arguments(type_name):
+    let result = []
+    let depth = 0
+    let current = ""
+    let index = 0
+    while index < len(type_name):
+        let character = substring(type_name, index, index + 1)
+        if character == "<":
+            depth = depth + 1
+            current = current + character
+        else:
+            if character == ">":
+                depth = depth - 1
+                current = current + character
+            else:
+                if character == "," and depth == 0:
+                    result = append(result, trim(current))
+                    current = ""
+                else:
+                    current = current + character
+        index = index + 1
+    if trim(current) != "":
+        result = append(result, trim(current))
+    return result
+
+export fn b2c_type_wrapper_parts(type_name):
+    if starts_with(type_name, "list<") and ends_with(type_name, ">"):
+        return {"wrapper": "list", "inner": substring(type_name, 5, len(type_name) - 1)}
+    if starts_with(type_name, "map<") and ends_with(type_name, ">"):
+        let inside = substring(type_name, 4, len(type_name) - 1)
+        let parts = b2c_generic_type_arguments(inside)
+        if len(parts) == 2:
+            return {"wrapper": "map", "key": trim(parts[0]), "value": trim(parts[1])}
+    if starts_with(type_name, "option<") and ends_with(type_name, ">"):
+        return {"wrapper": "option", "inner": substring(type_name, 7, len(type_name) - 1)}
+    if starts_with(type_name, "result<") and ends_with(type_name, ">"):
+        return {"wrapper": "result", "inner": substring(type_name, 7, len(type_name) - 1)}
+    return {"wrapper": "", "inner": type_name}
+
+export fn b2c_generic_type_substitute(type_template, parameter, argument_type):
+    if type_template == parameter:
+        return argument_type
+    if starts_with(type_template, "list<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 5, len(type_template) - 1)
+        return "list<" + b2c_generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "option<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 7, len(type_template) - 1)
+        return "option<" + b2c_generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "result<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 7, len(type_template) - 1)
+        return "result<" + b2c_generic_type_substitute(inner, parameter, argument_type) + ">"
+    if starts_with(type_template, "map<") and ends_with(type_template, ">"):
+        let inner = substring(type_template, 4, len(type_template) - 1)
+        let parts = b2c_generic_type_arguments(inner)
+        if len(parts) == 2:
+            return "map<" + b2c_generic_type_substitute(trim(parts[0]), parameter, argument_type) + "," + b2c_generic_type_substitute(trim(parts[1]), parameter, argument_type) + ">"
+    return type_template
+
+export fn b2c_generic_container_element(type_name):
+    let parts = b2c_type_wrapper_parts(type_name)
+    if parts["wrapper"] == "list" or parts["wrapper"] == "option" or parts["wrapper"] == "result":
+        return parts["inner"]
+    if parts["wrapper"] == "map":
+        return parts["value"]
+    return "any"
 
 export fn b2c_state(environment, errors, reachable):
     return {"breaks": [], "continues": [], "environment": environment, "errors": errors, "reachable": reachable}
@@ -35,7 +105,7 @@ export fn b2c_lookup(environment, name):
     return result
 
 export fn b2c_names_add(names, name):
-    if list_contains(names, name):
+    if b2c_list_contains(names, name):
         return names
     return append(names, name)
 
@@ -95,8 +165,8 @@ export fn b2c_assignable(expected, actual):
         return true
     if expected == actual:
         return true
-    let expected_parts = type_wrapper_parts(expected)
-    let actual_parts = type_wrapper_parts(actual)
+    let expected_parts = b2c_type_wrapper_parts(expected)
+    let actual_parts = b2c_type_wrapper_parts(actual)
     if expected_parts["wrapper"] == "" or expected_parts["wrapper"] != actual_parts["wrapper"]:
         return false
     if expected_parts["wrapper"] == "map":
@@ -118,8 +188,8 @@ export fn b2c_join_type(left, right):
         return "result<" + right + ">"
     if right == "error" and left != "error":
         return "result<" + left + ">"
-    let left_parts = type_wrapper_parts(left)
-    let right_parts = type_wrapper_parts(right)
+    let left_parts = b2c_type_wrapper_parts(left)
+    let right_parts = b2c_type_wrapper_parts(right)
     if left_parts["wrapper"] != right_parts["wrapper"]:
         return "any"
     if left_parts["wrapper"] == "list" or left_parts["wrapper"] == "option" or left_parts["wrapper"] == "result":
@@ -196,15 +266,15 @@ export fn b2c_binary_errors(node, operator, left, right, source_name):
     return errors
 
 export fn b2c_unify_template(template, actual, parameters, substitutions):
-    if list_contains(parameters, template):
+    if b2c_list_contains(parameters, template):
         for binding in substitutions:
             if binding["name"] == template:
                 if b2c_assignable(binding["type"], actual) and b2c_assignable(actual, binding["type"]):
                     return substitutions
                 return append(substitutions, {"name": template, "type": "any"})
         return append(substitutions, {"name": template, "type": actual})
-    let template_parts = type_wrapper_parts(template)
-    let actual_parts = type_wrapper_parts(actual)
+    let template_parts = b2c_type_wrapper_parts(template)
+    let actual_parts = b2c_type_wrapper_parts(actual)
     if template_parts["wrapper"] == "" or template_parts["wrapper"] != actual_parts["wrapper"]:
         return substitutions
     if template_parts["wrapper"] == "map":
@@ -221,7 +291,7 @@ export fn b2c_substitution_lookup(substitutions, name):
 export fn b2c_substitute(type_name, parameters, substitutions):
     let result = type_name
     for parameter in parameters:
-        result = generic_type_substitute(result, parameter, b2c_substitution_lookup(substitutions, parameter))
+        result = b2c_generic_type_substitute(result, parameter, b2c_substitution_lookup(substitutions, parameter))
     return result
 
 export fn b2c_find_function(functions, name):
@@ -318,7 +388,7 @@ export fn b2c_infer_expr(node, environment, functions, source_name):
         let target = b2c_infer_expr(node["target"], environment, functions, source_name)
         let index = b2c_infer_expr(node["index"], environment, functions, source_name)
         let errors = b2c_append_errors(target["errors"], index["errors"])
-        let parts = type_wrapper_parts(target["type"])
+        let parts = b2c_type_wrapper_parts(target["type"])
         if parts["wrapper"] == "list":
             if index["type"] != "number" and index["type"] != "any":
                 errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-007", "list index expects number, got " + index["type"]))
@@ -344,7 +414,7 @@ export fn b2c_condition_fact(environment, condition, positive):
         if len(condition["args"]) == 1 and condition["args"][0]["value"]["kind"] == "name":
             let variable = condition["args"][0]["value"]["name"]
             let current = b2c_lookup(environment, variable)["current"]
-            let parts = type_wrapper_parts(current)
+            let parts = b2c_type_wrapper_parts(current)
             if name == "is_some" and parts["wrapper"] == "option":
                 if positive:
                     return b2c_narrow(environment, variable, parts["inner"])
@@ -371,7 +441,7 @@ export fn b2c_condition_fact(environment, condition, positive):
             if is_none_test:
                 return b2c_narrow(environment, left["name"], "none")
             let current = b2c_lookup(environment, left["name"])["current"]
-            let parts = type_wrapper_parts(current)
+            let parts = b2c_type_wrapper_parts(current)
             if parts["wrapper"] == "option":
                 return b2c_narrow(environment, left["name"], parts["inner"])
     return environment
@@ -495,7 +565,7 @@ export fn b2c_check_while(statement, state, functions, expected_return, source_n
 export fn b2c_check_for(statement, state, functions, expected_return, source_name):
     let iterable = b2c_infer_expr(statement["iterable"], state["environment"], functions, source_name)
     let errors = b2c_append_errors(state["errors"], iterable["errors"])
-    let element_type = generic_container_element(iterable["type"])
+    let element_type = b2c_generic_container_element(iterable["type"])
     let loop_environment = b2c_bind(state["environment"], statement["binding"], element_type, element_type, true)
     let body = b2c_check_block(statement["body"]["statements"], b2c_state_with_edges(loop_environment, errors, true, [], []), functions, expected_return, source_name)
     let merged = b2c_merge_env(state["environment"], state["environment"], body["environment"])
