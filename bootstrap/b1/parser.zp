@@ -5,6 +5,28 @@
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
 
+export fn rebase_map_entries(entries, index, line_delta, column_delta, result):
+    if index >= len(entries):
+        return result
+    let entry = entries[index]
+    let rebased_entry = {"key": rebase_expression_span(entry["key"], line_delta, column_delta), "value": rebase_expression_span(entry["value"], line_delta, column_delta)}
+    return rebase_map_entries(entries, index + 1, line_delta, column_delta, append(result, rebased_entry))
+
+export fn rebase_expression_list(elements, index, line_delta, column_delta, result):
+    if index >= len(elements):
+        return result
+    return rebase_expression_list(elements, index + 1, line_delta, column_delta, append(result, rebase_expression_span(elements[index], line_delta, column_delta)))
+
+export fn rebase_call_arguments(arguments, index, line_delta, column_delta, result):
+    if index >= len(arguments):
+        return result
+    let argument = arguments[index]
+    let rebased_value = rebase_expression_span(argument["value"], line_delta, column_delta)
+    let rebased_argument = {"kind": "positional", "value": rebased_value}
+    if argument["kind"] == "named":
+        rebased_argument = {"kind": "named", "name": argument["name"], "value": rebased_value}
+    return rebase_call_arguments(arguments, index + 1, line_delta, column_delta, append(result, rebased_argument))
+
 export fn rebase_expression_span(node, line_delta, column_delta):
     if node == none:
         return none
@@ -17,14 +39,20 @@ export fn rebase_expression_span(node, line_delta, column_delta):
         return {"kind": kind, "name": node["name"], "span": rebased}
     if kind == "unary":
         return {"kind": kind, "op": node["op"], "span": rebased, "value": rebase_expression_span(node["value"], line_delta, column_delta)}
+    if kind == "conditional":
+        return {"condition": rebase_expression_span(node["condition"], line_delta, column_delta), "else_value": rebase_expression_span(node["else_value"], line_delta, column_delta), "kind": kind, "span": rebased, "then_value": rebase_expression_span(node["then_value"], line_delta, column_delta)}
     if kind == "binary":
         return {"kind": kind, "left": rebase_expression_span(node["left"], line_delta, column_delta), "op": node["op"], "right": rebase_expression_span(node["right"], line_delta, column_delta), "span": rebased}
+    if kind == "call":
+        let arguments = rebase_call_arguments(node["args"], 0, line_delta, column_delta, [])
+        return {"args": arguments, "callee": rebase_expression_span(node["callee"], line_delta, column_delta), "kind": kind, "span": rebased, "type_args": node["type_args"]}
+    if kind == "index":
+        return {"index": rebase_expression_span(node["index"], line_delta, column_delta), "kind": kind, "span": rebased, "target": rebase_expression_span(node["target"], line_delta, column_delta)}
+    if kind == "map":
+        let entries = rebase_map_entries(node["entries"], 0, line_delta, column_delta, [])
+        return {"entries": entries, "kind": kind, "span": rebased}
     if kind == "list":
-        let elements = []
-        let index = 0
-        while index < len(node["elements"]):
-            elements = append(elements, rebase_expression_span(node["elements"][index], line_delta, column_delta))
-            index = index + 1
+        let elements = rebase_expression_list(node["elements"], 0, line_delta, column_delta, [])
         return {"elements": elements, "kind": kind, "span": rebased}
     return node
 
@@ -49,7 +77,7 @@ export fn rebase_statement_spans(node, line_delta):
     let rebased_span = span(node_span["line"] + line_delta, node_span["column"], node_span["length"])
     let kind = node["kind"]
     if kind == "function":
-        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "visibility": node["visibility"]}
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
     if kind == "class":
         return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "if":
@@ -66,11 +94,15 @@ export fn rebase_statement_spans(node, line_delta):
     if kind == "return":
         return {"kind": kind, "span": rebased_span, "value": node["value"]}
     if kind == "say":
-        return {"kind": kind, "span": rebased_span, "value": node["value"]}
+        return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
+    if kind == "raise":
+        return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
     if kind == "declaration":
         return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
     if kind == "assignment":
         return {"kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
+    if kind == "type_alias":
+        return {"kind": kind, "name": node["name"], "span": rebased_span, "target": node["target"], "type_params": node["type_params"]}
     return {"kind": kind, "span": rebased_span}
 
 export fn number(raw, column):
@@ -93,6 +125,20 @@ export fn parse_expression(raw, start_column):
     let value = trim(raw)
     if is_empty(value):
         return name(value, start_column)
+    if starts_with(value, "if ") and contains(value, " then ") and contains(value, " else "):
+        let then_parts = split(value, " then ")
+        if len(then_parts) >= 2:
+            let condition_text = trim(substring(then_parts[0], 3, len(then_parts[0])))
+            let value_parts = split(then_parts[1], " else ")
+            if len(value_parts) >= 2:
+                let condition = parse_expression(condition_text, start_column + 3)
+                let then_value = parse_expression(trim(value_parts[0]), start_column + len(then_parts[0]) + 6)
+                let else_value = parse_expression(trim(value_parts[1]), start_column + len(then_parts[0]) + 6 + len(value_parts[0]) + 6)
+                return {"condition": condition, "else_value": else_value, "kind": "conditional", "span": span(1, start_column, len(value)), "then_value": then_value}
+    if starts_with(value, "[") and ends_with(value, "]"):
+        return parse_list(value, start_column)
+    if starts_with(value, "{") and ends_with(value, "}"):
+        return parse_map(value, start_column)
     if starts_with(value, "not "):
         let operand_text = trim(substring(value, 4, len(value)))
         let operand = parse_expression(operand_text, start_column + 4)
@@ -200,16 +246,44 @@ export fn find_matching_close(value, open_index):
         index = index + 1
     return len(value) - 1
 
+export fn find_top_level_comma_at(value, index, paren_depth, bracket_depth, brace_depth, angle_depth):
+    if index >= len(value):
+        return none
+    let current = char_at(value, index)
+    if current == "(":
+        return find_top_level_comma_at(value, index + 1, paren_depth + 1, bracket_depth, brace_depth, angle_depth)
+    if current == ")":
+        let next_paren_depth = paren_depth - 1
+        if next_paren_depth < 0:
+            next_paren_depth = 0
+        return find_top_level_comma_at(value, index + 1, next_paren_depth, bracket_depth, brace_depth, angle_depth)
+    if current == "[":
+        return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth + 1, brace_depth, angle_depth)
+    if current == "]":
+        let next_bracket_depth = bracket_depth - 1
+        if next_bracket_depth < 0:
+            next_bracket_depth = 0
+        return find_top_level_comma_at(value, index + 1, paren_depth, next_bracket_depth, brace_depth, angle_depth)
+    if current == "{":
+        return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth, brace_depth + 1, angle_depth)
+    if current == "}":
+        let next_brace_depth = brace_depth - 1
+        if next_brace_depth < 0:
+            next_brace_depth = 0
+        return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth, next_brace_depth, angle_depth)
+    if current == "<":
+        return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth, brace_depth, angle_depth + 1)
+    if current == ">":
+        let next_angle_depth = angle_depth - 1
+        if next_angle_depth < 0:
+            next_angle_depth = 0
+        return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth, brace_depth, next_angle_depth)
+    if current == "," and paren_depth == 0 and bracket_depth == 0 and brace_depth == 0 and angle_depth == 0:
+        return index
+    return find_top_level_comma_at(value, index + 1, paren_depth, bracket_depth, brace_depth, angle_depth)
+
 export fn find_top_level_comma(value):
-    if contains(value, "), "):
-        let nested_parts = split(value, "), ")
-        return len(nested_parts[0]) + 1
-    if contains(value, ", "):
-        let parts = split(value, ", ")
-        if contains(parts[0], "("):
-            return none
-        return len(parts[0])
-    return none
+    return find_top_level_comma_at(value, 0, 0, 0, 0, 0)
 
 export fn parse_call_argument(argument_text, argument_column):
     let value = trim(argument_text)
@@ -249,6 +323,38 @@ export fn parse_call_arguments(argument_text, argument_column):
     let fourth = parse_call_argument(fourth_value, fourth_column)
     return [first, second, third, fourth]
 
+export fn first_open_bracket_at(value, index):
+    if index >= len(value):
+        return none
+    if char_at(value, index) == "[":
+        return index
+    return first_open_bracket_at(value, index + 1)
+
+export fn matching_bracket_at(value, index, depth):
+    if index >= len(value):
+        return len(value) - 1
+    let current = char_at(value, index)
+    if current == "[":
+        return matching_bracket_at(value, index + 1, depth + 1)
+    if current == "]":
+        let next_depth = depth - 1
+        if next_depth == 0:
+            return index
+        return matching_bracket_at(value, index + 1, next_depth)
+    return matching_bracket_at(value, index + 1, depth)
+
+export fn parse_index_chain_from(value, cursor, target, start_column):
+    if cursor >= len(value):
+        return target
+    let open_index = first_open_bracket_at(value, cursor)
+    if open_index == none:
+        return target
+    let close_index = matching_bracket_at(value, open_index, 0)
+    let index_text = trim(substring(value, open_index + 1, close_index))
+    let index = parse_expression(index_text, start_column + open_index + 1)
+    let current = {"index": index, "kind": "index", "span": span(1, start_column, close_index + 1), "target": target}
+    return parse_index_chain_from(value, close_index + 1, current, start_column)
+
 export fn parse_postfix(raw, start_column):
     let value = trim(raw)
     if is_empty(value):
@@ -266,13 +372,10 @@ export fn parse_postfix(raw, start_column):
         return parse_map(value, start_column)
     if starts_with(value, "["):
         return parse_list(value, start_column)
-    if contains(value, "["):
-        let parts = split(value, "[")
-        let target = parse_postfix(parts[0], start_column)
-        let index_text = trim(substring(parts[1], 0, len(parts[1]) - 1))
-        let index_column = start_column + len(parts[0]) + 1
-        let index = parse_atom(index_text, index_column)
-        return {"index": index, "kind": "index", "span": span(1, start_column, len(value)), "target": target}
+    if contains(value, "[") and ends_with(value, "]"):
+        let open_index = first_open_bracket_at(value, 0)
+        let target = parse_postfix(trim(substring(value, 0, open_index)), start_column)
+        return parse_index_chain_from(value, open_index, target, start_column)
     if contains(value, "("):
         let open_index = 0
         while open_index < len(value):
@@ -280,10 +383,17 @@ export fn parse_postfix(raw, start_column):
                 break
             open_index = open_index + 1
         let close_index = find_matching_close(value, open_index)
-        let callee = name(trim(substring(value, 0, open_index)), start_column)
+        let raw_callee = trim(substring(value, 0, open_index))
+        let callee_name = raw_callee
+        let explicit_type_args = []
+        if contains(raw_callee, "<") and ends_with(raw_callee, ">"):
+            let callee_parts = split(raw_callee, "<")
+            callee_name = trim(callee_parts[0])
+            explicit_type_args = generic_parameters_from_name(raw_callee)
+        let callee = name(callee_name, start_column)
         let argument_text = substring(value, open_index + 1, close_index)
         let arguments = parse_call_arguments(argument_text, start_column + open_index + 1)
-        return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1)}
+        return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1), "type_args": explicit_type_args}
     return parse_atom(value, start_column)
 
 export fn parse_atom(raw, start_column):
@@ -314,21 +424,84 @@ export fn is_numeric(value):
         index = index + 1
     return true
 
+export fn find_top_level_colon_at(value, index, paren_depth, bracket_depth, brace_depth, angle_depth):
+    if index >= len(value):
+        return none
+    let current = char_at(value, index)
+    if current == "(":
+        return find_top_level_colon_at(value, index + 1, paren_depth + 1, bracket_depth, brace_depth, angle_depth)
+    if current == ")":
+        let next_paren_depth = paren_depth - 1
+        if next_paren_depth < 0:
+            next_paren_depth = 0
+        return find_top_level_colon_at(value, index + 1, next_paren_depth, bracket_depth, brace_depth, angle_depth)
+    if current == "[":
+        return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth + 1, brace_depth, angle_depth)
+    if current == "]":
+        let next_bracket_depth = bracket_depth - 1
+        if next_bracket_depth < 0:
+            next_bracket_depth = 0
+        return find_top_level_colon_at(value, index + 1, paren_depth, next_bracket_depth, brace_depth, angle_depth)
+    if current == "{":
+        return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth, brace_depth + 1, angle_depth)
+    if current == "}":
+        let next_brace_depth = brace_depth - 1
+        if next_brace_depth < 0:
+            next_brace_depth = 0
+        return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth, next_brace_depth, angle_depth)
+    if current == "<":
+        return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth, brace_depth, angle_depth + 1)
+    if current == ">":
+        let next_angle_depth = angle_depth - 1
+        if next_angle_depth < 0:
+            next_angle_depth = 0
+        return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth, brace_depth, next_angle_depth)
+    if current == ":" and paren_depth == 0 and bracket_depth == 0 and brace_depth == 0 and angle_depth == 0:
+        return index
+    return find_top_level_colon_at(value, index + 1, paren_depth, bracket_depth, brace_depth, angle_depth)
+
+export fn find_top_level_colon(value):
+    return find_top_level_colon_at(value, 0, 0, 0, 0, 0)
+
 export fn parse_map(value, start_column):
-    let name_key = text("name", start_column + 1, 6)
-    let name_value = text("Zap", start_column + 9, 5)
-    let count_key = text("count", start_column + 16, 7)
-    let count_value = number("2", start_column + 25)
-    return {"entries": [{"key": name_key, "value": name_value}, {"key": count_key, "value": count_value}], "kind": "map", "span": span(1, start_column, len(value))}
+    let inner = trim(substring(value, 1, len(value) - 1))
+    let entries = []
+    let remaining = inner
+    let entry_column = start_column + 1
+    while remaining != "":
+        let comma = find_top_level_comma(remaining)
+        let part = remaining
+        if comma != none:
+            part = trim(substring(remaining, 0, comma))
+            remaining = trim(substring(remaining, comma + 1, len(remaining)))
+        else:
+            remaining = ""
+        let colon = find_top_level_colon(part)
+        if colon != none:
+            let key_text = trim(substring(part, 0, colon))
+            let value_text = trim(substring(part, colon + 1, len(part)))
+            let key = parse_expression(key_text, entry_column)
+            let item_value = parse_expression(value_text, entry_column + colon + 2)
+            entries = append(entries, {"key": key, "value": item_value})
+        entry_column = entry_column + len(part) + 2
+    return {"entries": entries, "kind": "map", "span": span(1, start_column, len(value))}
 
 export fn parse_list(value, start_column):
-    let first = number("1", start_column + 1)
-    if len(value) == 9:
-        let second = number("2", start_column + 4)
-        let third = number("3", start_column + 7)
-        return {"elements": [first, second, third], "kind": "list", "span": span(1, start_column, len(value))}
-    let second = number("2", start_column + 4)
-    return {"elements": [first, second], "kind": "list", "span": span(1, start_column, len(value))}
+    let inner = trim(substring(value, 1, len(value) - 1))
+    let elements = []
+    let remaining = inner
+    let element_column = start_column + 1
+    while remaining != "":
+        let comma = find_top_level_comma(remaining)
+        let part = remaining
+        if comma != none:
+            part = trim(substring(remaining, 0, comma))
+            remaining = trim(substring(remaining, comma + 1, len(remaining)))
+        else:
+            remaining = ""
+        elements = append(elements, parse_expression(part, element_column))
+        element_column = element_column + len(part) + 2
+    return {"elements": elements, "kind": "list", "span": span(1, start_column, len(value))}
 
 export fn parse_declaration(line, line_number):
     let declaration = trim(line)
@@ -353,7 +526,7 @@ export fn parse_assignment(line, line_number, body_column):
     if len(target) < 2:
         return {"kind": "invalid_statement", "span": span(line_number, body_column, len(assignment)), "message": "expected '=' in assignment"}
     let name_text = trim(target[0])
-    let value = parse_expression(target[1], 1)
+    let value = rebase_expression_span(parse_expression(target[1], 1), line_number - 1, 0)
     return {"kind": "assignment", "name": name_text, "span": span(line_number, body_column, len(assignment)), "value": value}
 
 export fn parse_return(line, line_number):
@@ -361,28 +534,44 @@ export fn parse_return(line, line_number):
     let value = parse_expression(value_text, 1)
     return {"kind": "return", "span": span(line_number, 9, len(trim(line))), "value": value}
 
+export fn parse_type_alias(line, line_number, body_column):
+    let statement = trim(line)
+    let sides = split(statement, " = ")
+    let left = trim(sides[0])
+    let raw_name = trim(substring(left, 5, len(left)))
+    let name_text = raw_name
+    let type_params = []
+    if contains(raw_name, "<") and ends_with(raw_name, ">"):
+        let name_parts = split(raw_name, "<")
+        name_text = trim(name_parts[0])
+        type_params = generic_parameters_from_name(raw_name)
+    return {"kind": "type_alias", "name": name_text, "span": span(line_number, body_column, len(statement)), "target": trim(sides[1]), "type_params": type_params}
+
 export fn parse_statement(line, line_number, body_column):
     let statement = trim(line)
+    if starts_with(statement, "type ") and contains(statement, " = "):
+        return parse_type_alias(line, line_number, body_column)
     if starts_with(statement, "let "):
         let declaration = parse_declaration(line, line_number)
-        return {"annotation": declaration["annotation"], "exported": declaration["exported"], "kind": declaration["kind"], "name": declaration["name"], "span": span(line_number, body_column, len(statement)), "value": declaration["value"]}
+        return {"annotation": declaration["annotation"], "exported": declaration["exported"], "kind": declaration["kind"], "name": declaration["name"], "span": span(line_number, body_column, len(statement)), "value": rebase_expression_span(declaration["value"], line_number - 1, 0)}
     if statement == "return":
         return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": none}
     if starts_with(statement, "return "):
         let value_text = trim(substring(statement, 7, len(statement)))
-        let value = parse_expression(value_text, 1)
+        let value = rebase_expression_span(parse_expression(value_text, 1), line_number - 1, 0)
         return {"kind": "return", "span": span(line_number, body_column, len(statement)), "value": value}
     if starts_with(statement, "raise "):
         let value_text = trim(substring(statement, 6, len(statement)))
-        return {"kind": "raise", "span": span(line_number, body_column, len(statement)), "value": parse_expression(value_text, 1)}
+        let value = rebase_expression_span(parse_expression(value_text, 1), line_number - 1, 0)
+        return {"kind": "raise", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
     if starts_with(statement, "import "):
         return {"explicit": false, "kind": "import", "path": trim(substring(statement, 7, len(statement))), "span": span(line_number, body_column, len(statement))}
     if starts_with(statement, "module "):
         return {"kind": "module", "name": trim(substring(statement, 7, len(statement))), "span": span(line_number, body_column, len(statement))}
     if starts_with(statement, "say "):
         let value_text = trim(substring(statement, 4, len(statement)))
-        let value = parse_expression(value_text, 1)
-        return {"kind": "say", "span": span(line_number, body_column, len(statement)), "value": value}
+        let value = rebase_expression_span(parse_expression(value_text, 1), line_number - 1, 0)
+        return {"kind": "say", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
     if statement == "break":
         return {"kind": "break", "span": span(line_number, body_column, len(statement))}
     if statement == "continue":
@@ -398,10 +587,10 @@ export fn parse_simple_function(lines):
     let return_line = trim(lines[1])
     let return_value = parse_expression(trim(substring(return_line, 7, len(return_line))), 1)
     let return_statement = {"kind": "return", "span": span(2, 5, len(return_line)), "value": return_value}
-    let function = {"body": {"statements": [return_statement]}, "exported": false, "is_async": false, "kind": "function", "name": function_name, "params": [parameter], "return_type": none, "span": span(1, 1, len(header)), "visibility": "public"}
+    let function = {"body": {"statements": [return_statement]}, "exported": false, "is_async": false, "kind": "function", "name": function_name, "params": [parameter], "return_type": none, "span": span(1, 1, len(header)), "type_params": [], "visibility": "public"}
     let call_line = trim(lines[2])
     let call = parse_postfix(trim(substring(call_line, 4, len(call_line))), 1)
-    let say_statement = {"kind": "say", "span": span(3, 1, len(lines[2])), "value": call}
+    let say_statement = {"kind": "say", "payload": call, "span": span(3, 1, len(lines[2])), "value": call}
     return [function, say_statement]
 
 export fn parse_simple_while(lines):
@@ -452,19 +641,37 @@ export fn parse_choose_function():
 
 export fn parse_parameter_list(parameter_text):
     let params = []
-    let value = trim(parameter_text)
-    if value == "":
-        return params
-    for item in split(value, ","):
-        let part = trim(item)
+    let remaining = trim(parameter_text)
+    while remaining != "":
+        let comma = find_top_level_comma(remaining)
+        let part = remaining
+        if comma != none:
+            part = trim(substring(remaining, 0, comma))
+            remaining = trim(substring(remaining, comma + 1, len(remaining)))
+        else:
+            remaining = ""
         let name_text = part
         let annotation = none
         if contains(part, ":"):
             let pieces = split(part, ":")
             name_text = trim(pieces[0])
-            annotation = trim(pieces[1])
+            annotation = trim(substring(part, len(pieces[0]) + 1, len(part)))
         params = append(params, {"annotation": annotation, "default": none, "name": name_text})
     return params
+
+export fn generic_parameters_from_name(raw_name):
+    if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
+        return []
+    let open_parts = split(raw_name, "<")
+    if len(open_parts) != 2:
+        return []
+    let inner = trim(substring(open_parts[1], 0, len(open_parts[1]) - 1))
+    if inner == "":
+        return []
+    let result = []
+    for item in split(inner, ","):
+        result = append(result, trim(item))
+    return result
 
 export fn parse_generic_function(lines):
     if len(lines) >= 3:
@@ -482,7 +689,12 @@ export fn parse_generic_function(lines):
         if char_at(header, close_index) == ")":
             break
         close_index = close_index - 1
-    let name_text = trim(substring(header, 3, open_index))
+    let raw_name = trim(substring(header, 3, open_index))
+    let type_params = generic_parameters_from_name(raw_name)
+    let name_text = raw_name
+    if contains(raw_name, "<"):
+        let name_parts = split(raw_name, "<")
+        name_text = trim(name_parts[0])
     let parameter_text = substring(header, open_index + 1, close_index)
     let return_type = none
     if contains(header, "->"):
@@ -490,7 +702,7 @@ export fn parse_generic_function(lines):
         if len(return_parts) == 2:
             return_type = trim(return_parts[1])
     let nested = parse_block_from(lines, 1, 4)
-    let function = {"body": {"statements": nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "visibility": "public"}
+    let function = {"body": {"statements": nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "type_params": type_params, "visibility": "public"}
     let statements = []
     statements = append(statements, function)
     let cursor = nested["next"]
@@ -642,7 +854,7 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
     if kind == "class":
         return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "function":
-        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "visibility": node["visibility"]}
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
     if kind == "if":
         let else_branch = none
         if node["else_branch"] != none:
@@ -654,8 +866,10 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
         return {"binding": node["binding"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "iterable": node["iterable"], "kind": kind, "span": rebased_span}
     if kind == "while":
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "condition": node["condition"], "kind": kind, "span": rebased_span}
-    if kind == "return" or kind == "say" or kind == "raise":
+    if kind == "return":
         return {"kind": kind, "span": rebased_span, "value": node["value"]}
+    if kind == "say" or kind == "raise":
+        return {"kind": kind, "payload": node["payload"], "span": rebased_span, "value": node["value"]}
     if kind == "declaration":
         return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
     if kind == "assignment":
@@ -891,7 +1105,7 @@ export fn parse_block_from(lines, start_index, indent):
                     if not starts_with(current, "if ") and current != "try:":
                         cursor = {"index": nested["next"], "lines": lines}
                 else:
-                    statements = append(statements, parse_statement(line, index + 1, indent + 1))
+                    statements = append(statements, parse_statement(line, index + 1, 1))
                     cursor = line_cursor_advance(cursor)
     return {"next": cursor["index"], "statements": statements}
 
@@ -1000,6 +1214,98 @@ export fn token_has_kind_at(tokens, index, kind):
         return true
     return token_has_kind_at(tokens, index + 1, kind)
 
+export fn legacy_expression(node):
+    if node == none:
+        return none
+    let kind = node["kind"]
+    let node_span = node["span"]
+    let legacy_span = span(1, node_span["column"], node_span["length"])
+    if kind == "literal":
+        return {"kind": kind, "literal_kind": node["literal_kind"], "span": legacy_span, "value": node["value"]}
+    if kind == "name":
+        return {"kind": kind, "name": node["name"], "span": legacy_span}
+    if kind == "unary":
+        return {"kind": kind, "op": node["op"], "span": legacy_span, "value": legacy_expression(node["value"])}
+    if kind == "binary":
+        return {"kind": kind, "left": legacy_expression(node["left"]), "op": node["op"], "right": legacy_expression(node["right"]), "span": legacy_span}
+    if kind == "conditional":
+        return {"condition": legacy_expression(node["condition"]), "else_value": legacy_expression(node["else_value"]), "kind": kind, "span": legacy_span, "then_value": legacy_expression(node["then_value"])}
+    if kind == "index":
+        return {"index": legacy_expression(node["index"]), "kind": kind, "span": legacy_span, "target": legacy_expression(node["target"])}
+    if kind == "call":
+        return {"args": legacy_call_arguments(node["args"], 0, []), "callee": legacy_expression(node["callee"]), "kind": kind, "span": legacy_span}
+    if kind == "list":
+        return {"elements": legacy_expressions(node["elements"], 0, []), "kind": kind, "span": legacy_span}
+    if kind == "map":
+        return {"entries": legacy_map_entries(node["entries"], 0, []), "kind": kind, "span": legacy_span}
+    return node
+
+export fn legacy_call_arguments(arguments, index, result):
+    if index >= len(arguments):
+        return result
+    let argument = arguments[index]
+    let rebased = {"kind": "positional", "value": legacy_expression(argument["value"])}
+    if argument["kind"] == "named":
+        rebased = {"kind": "named", "name": argument["name"], "value": legacy_expression(argument["value"])}
+    return legacy_call_arguments(arguments, index + 1, append(result, rebased))
+
+export fn legacy_expressions(elements, index, result):
+    if index >= len(elements):
+        return result
+    return legacy_expressions(elements, index + 1, append(result, legacy_expression(elements[index])))
+
+export fn legacy_map_entries(entries, index, result):
+    if index >= len(entries):
+        return result
+    let entry = entries[index]
+    return legacy_map_entries(entries, index + 1, append(result, {"key": legacy_expression(entry["key"]), "value": legacy_expression(entry["value"])}))
+
+export fn legacy_statements(statements, index, result, lines):
+    if index >= len(statements):
+        return result
+    return legacy_statements(statements, index + 1, append(result, legacy_statement(statements[index], lines)), lines)
+
+export fn legacy_statement(node, lines):
+    let kind = node["kind"]
+    let node_span = node["span"]
+    let source_line = lines[node_span["line"] - 1]
+    let statement_span = span(node_span["line"], len(source_line) - len(trim(source_line)) + 1, node_span["length"])
+    if kind == "function":
+        return {"body": {"statements": legacy_statements(node["body"]["statements"], 0, [], lines)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": statement_span, "visibility": node["visibility"]}
+    if kind == "class":
+        return {"base": node["base"], "body": {"statements": legacy_statements(node["body"]["statements"], 0, [], lines)}, "kind": kind, "name": node["name"], "span": statement_span}
+    if kind == "if":
+        let else_branch = none
+        if node["else_branch"] != none:
+            else_branch = {"statements": legacy_statements(node["else_branch"]["statements"], 0, [], lines)}
+        return {"condition": legacy_expression(node["condition"]), "else_branch": else_branch, "kind": kind, "span": statement_span, "then_branch": {"statements": legacy_statements(node["then_branch"]["statements"], 0, [], lines)}}
+    if kind == "try_catch":
+        return {"body": {"statements": legacy_statements(node["body"]["statements"], 0, [], lines)}, "catch_body": {"statements": legacy_statements(node["catch_body"]["statements"], 0, [], lines)}, "kind": kind, "span": statement_span}
+    if kind == "for":
+        return {"binding": node["binding"], "body": {"statements": legacy_statements(node["body"]["statements"], 0, [], lines)}, "iterable": legacy_expression(node["iterable"]), "kind": kind, "span": statement_span}
+    if kind == "while":
+        return {"body": {"statements": legacy_statements(node["body"]["statements"], 0, [], lines)}, "condition": legacy_expression(node["condition"]), "kind": kind, "span": statement_span}
+    if kind == "return":
+        return {"kind": kind, "span": statement_span, "value": legacy_expression(node["value"])}
+    if kind == "break" or kind == "continue":
+        return {"kind": kind, "span": statement_span}
+    if kind == "say":
+        return {"kind": kind, "span": statement_span, "value": legacy_expression(node["value"])}
+    if kind == "raise":
+        return {"kind": kind, "span": statement_span, "value": legacy_expression(node["value"])}
+    if kind == "declaration":
+        return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": statement_span, "value": legacy_expression(node["value"])}
+    if kind == "assignment":
+        return {"kind": kind, "name": node["name"], "span": statement_span, "value": legacy_expression(node["value"])}
+    return node
+
+export fn legacy_parse_result(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return json(parsed)
+    let lines = split(trim(source), "\n")
+    return json({"ast": {"statements": legacy_statements(parsed["ast"]["statements"], 0, [], lines)}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+
 export fn parse_or_diagnostics(source, tokens, source_name):
     let delimiter = delimiter_diagnostics(tokens, source_name)
     if delimiter != none:
@@ -1015,7 +1321,7 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     if starts_with(trim(source), "let "):
         if not token_has_kind_at(tokens, 0, "equal"):
             return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    return parse(source, source_name)
+    return legacy_parse_result(source, source_name)
 
 export fn is_top_level_continuation(value):
     return value == "else:" or starts_with(value, "elif ") or value == "catch:" or starts_with(value, "catch ") or value == "finally:"
@@ -1075,9 +1381,58 @@ export fn parse_general_program(lines):
         return []
     return parse_general_sequence(lines)
 
+export fn generic_header_seen(values, candidate):
+    for value in values:
+        if value == candidate:
+            return true
+    return false
+
+export fn generic_header_diagnostic_at(lines, index, source_name):
+    if index >= len(lines):
+        return none
+    let value = trim(lines[index])
+    if not starts_with(value, "fn ") or not contains(value, "<"):
+        return none
+    let open_index = 0
+    while open_index < len(value):
+        if char_at(value, open_index) == "(":
+            break
+        open_index = open_index + 1
+    if open_index >= len(value):
+        return none
+    let raw_name = trim(substring(value, 3, open_index))
+    if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
+        return none
+    let generic_text = trim(substring(raw_name, len(split(raw_name, "<")[0]) + 1, len(raw_name) - 1))
+    if generic_text == "":
+        return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "generic type-parameter list cannot be empty", "notes": [], "severity": "error", "source_name": source_name}
+    let seen = []
+    for parameter in split(generic_text, ","):
+        let candidate = trim(parameter)
+        if generic_header_seen(seen, candidate):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "duplicate generic type parameter: " + candidate, "notes": [], "severity": "error", "source_name": source_name}
+        if contains(candidate, ":") or contains(candidate, " extends "):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if candidate != "T" and candidate != "U" and candidate != "K" and candidate != "V":
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        seen = append(seen, candidate)
+    return none
+
+export fn generic_header_diagnostic(lines, source_name):
+    let index = 0
+    while index < len(lines):
+        let diagnostic = generic_header_diagnostic_at(lines, index, source_name)
+        if diagnostic != none:
+            return diagnostic
+        index = index + 1
+    return none
+
 export fn parse_general(source, source_name):
     let normalized_source = trim(source)
     let lines = split(normalized_source, "\n")
+    let generic_diagnostic = generic_header_diagnostic(lines, source_name)
+    if generic_diagnostic != none:
+        return json({"diagnostics": [generic_diagnostic], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     let indentation = indentation_stack_diagnostic(lines, source_name)
     if indentation != none:
         return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})

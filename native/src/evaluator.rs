@@ -4904,6 +4904,29 @@ fn execute_ast_program_with_frame(
     Ok(Flow::Continue)
 }
 
+fn attach_module_function_scope(
+    module_funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    let visible = module_funcs
+        .iter()
+        .filter_map(|(key, function)| {
+            if key.starts_with("__zap_export_fn__:") {
+                None
+            } else {
+                Some((key.clone(), function.clone()))
+            }
+        })
+        .collect::<Vec<_>>();
+    for function in module_funcs.values() {
+        for (name, imported) in &visible {
+            function
+                .closure
+                .try_insert_local(name.clone(), Value::Callable(imported.clone()))?;
+        }
+    }
+    Ok(())
+}
+
 fn load_module_with_context(
     raw: &str,
     vars: &mut HashMap<String, Value>,
@@ -5035,6 +5058,7 @@ fn load_module_with_context(
     if !matches!(flow, Flow::Continue) {
         return Ok(flow);
     }
+    attach_module_function_scope(&module_funcs)?;
     context.state_mut().module_cache_mut().insert(
         canonical.clone(),
         (module_vars.clone(), module_funcs.clone()),

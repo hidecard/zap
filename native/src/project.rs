@@ -1375,17 +1375,35 @@ fn resolve_registry_dependencies(
     }
     Ok(resolved_locked)
 }
+fn qualified_project_root(base: &Path, raw: &str) -> Option<PathBuf> {
+    if !raw.starts_with("bootstrap/") {
+        return None;
+    }
+    let mut current = base;
+    loop {
+        if current.join("bootstrap").is_dir() {
+            return Some(current.to_path_buf());
+        }
+        current = current.parent()?;
+    }
+}
+
 pub(crate) fn resolve_module(base: &Path, raw: &str) -> Option<PathBuf> {
     let candidate = if Path::new(raw).extension().is_some() {
         raw.to_string()
     } else {
         format!("{raw}.zp")
     };
-    let candidates = [
+    let mut candidates = vec![
         base.join(&candidate),
         base.join("modules").join(&candidate),
         base.join("lib").join(&candidate),
     ];
+    if let Some(root) = qualified_project_root(base, raw) {
+        candidates.push(root.join(&candidate));
+        candidates.push(root.join("modules").join(&candidate));
+        candidates.push(root.join("lib").join(&candidate));
+    }
     candidates.into_iter().find(|p| p.is_file())
 }
 
@@ -1570,11 +1588,28 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
 mod lockfile_security_tests {
     use super::{
         collect_test_files, package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile,
-        validate_locked_cache, validate_locked_registry_set, validate_project,
+        resolve_module, validate_locked_cache, validate_locked_registry_set, validate_project,
         validate_project_locked, DependencySpec, LockedRegistryPackage,
     };
     use crate::registry::sha256_hex;
     use std::{collections::BTreeMap, fs, path::Path};
+
+    #[test]
+    fn qualified_bootstrap_imports_resolve_from_nested_modules() {
+        let root = std::env::temp_dir().join(format!("zap-resolve-module-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("bootstrap/b1")).expect("create parser directory");
+        fs::create_dir_all(root.join("bootstrap/b2")).expect("create checker directory");
+        let parser = root.join("bootstrap/b1/parser.zp");
+        fs::write(&parser, "export fn parse():\n    return none\n").expect("write parser fixture");
+        let nested = root.join("bootstrap/b2");
+        assert_eq!(
+            resolve_module(&nested, "bootstrap/b1/parser.zp"),
+            Some(parser.clone())
+        );
+        assert_eq!(resolve_module(&nested, "bootstrap/b1/parser"), Some(parser));
+        let _ = fs::remove_dir_all(root);
+    }
 
     #[test]
     fn malformed_lockfile_corpus_is_deterministic_and_panic_free() {
