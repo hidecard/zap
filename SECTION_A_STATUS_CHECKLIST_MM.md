@@ -275,3 +275,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 short-circuit/loop-edge ၁၂-case gate — `and`/`or` path-state widening၊ nested branch live-path merge၊ loop back-edge၊ `break` exit edge နှင့် `continue` condition edge ownership pass။
 
 - [ ] **Full short-circuit/nested control-flow ownership** — bounded path-state and edge ownership helpers pass ဖြစ်သော်လည်း parser-produced arbitrary nested `if/elif/else` CFG၊ exact short-circuit condition AST semantics၊ loop back-edge dataflow convergence နှင့် full diagnostic parity မပြီးသေးပါ။
+
+- [x] B2 recursive-CFG/loop-convergence ၁၂-case gate — parser-shaped nested `if/elif/else` AST ကို recursive CFG nodes အဖြစ် တည်ဆောက်ခြင်း၊ normal loop-body back-edge၊ loop exit၊ nested `break/continue` edge ownership နှင့် stable/divergent loop environment convergence pass။
+
+- [ ] **Full arbitrary CFG ownership** — recursive nested CFG foundation pass ဖြစ်သော်လည်း arbitrary parser AST တွင် condition edges၊ fallthrough joins၊ nested loop break labels၊ `elif` chain semantics၊ dataflow widening နှင့် reference diagnostic parity အပြည့်အစုံ မပြီးသေးပါ။

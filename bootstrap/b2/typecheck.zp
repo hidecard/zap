@@ -180,6 +180,12 @@ export fn cfg_node(identifier, kind, successors, environment):
 export fn cfg_add_node(graph, node):
     return append(graph, node)
 
+export fn cfg_append_graph(target, source):
+    let result = target
+    for node in source:
+        result = append(result, node)
+    return result
+
 export fn cfg_add_edge(graph, from_id, to_id):
     let result = graph
     for node in graph:
@@ -206,6 +212,72 @@ export fn cfg_loop_edges(graph, condition_id, exit_id, break_ids, continue_ids):
 
 export fn cfg_loop_back_edge(graph, body_exit_id, condition_id):
     return cfg_add_edge(graph, body_exit_id, condition_id)
+
+export fn cfg_recursive_sequence(statements, path, loop_condition, loop_exit):
+    let graph = []
+    let index = 0
+    for statement in statements:
+        let statement_path = path + "." + str(index)
+        let kind = statement["kind"]
+        if kind == "if":
+            let then_path = statement_path + ".then"
+            let else_path = statement_path + ".else"
+            let node = cfg_node(statement_path, "if", [then_path, else_path], [])
+            graph = append(graph, node)
+            graph = cfg_append_graph(graph, cfg_recursive_sequence(statement["then_branch"]["statements"], then_path, loop_condition, loop_exit))
+            if statement["else_branch"] != none:
+                graph = cfg_append_graph(graph, cfg_recursive_sequence(statement["else_branch"]["statements"], else_path, loop_condition, loop_exit))
+        else:
+            if kind == "while" or kind == "for":
+                let body_path = statement_path + ".body"
+                let exit_path = statement_path + ".exit"
+                let node = cfg_node(statement_path, kind, [body_path, exit_path], [])
+                graph = append(graph, node)
+                let body_statements = statement["body"]["statements"]
+                graph = cfg_append_graph(graph, cfg_recursive_sequence(body_statements, body_path, statement_path, exit_path))
+                if len(body_statements) > 0:
+                    let last_statement = body_statements[len(body_statements) - 1]
+                    if last_statement["kind"] != "break" and last_statement["kind"] != "continue" and last_statement["kind"] != "return":
+                        let body_last_id = body_path + "." + str(len(body_statements) - 1)
+                        graph = cfg_add_edge(graph, body_last_id, statement_path)
+                graph = append(graph, cfg_node(exit_path, "loop_exit", [], []))
+            else:
+                let successors = []
+                if kind == "break" and loop_exit != "":
+                    successors = [loop_exit]
+                else:
+                    if kind == "continue" and loop_condition != "":
+                        successors = [loop_condition]
+                    else:
+                        if kind != "return" and kind != "break" and kind != "continue":
+                            successors = [path + "." + str(index + 1)]
+                graph = append(graph, cfg_node(statement_path, kind, successors, []))
+        index = index + 1
+    return graph
+
+export fn cfg_from_ast(statements, environment):
+    let graph = cfg_recursive_sequence(statements, "root", "", "")
+    let result = []
+    for node in graph:
+        result = append(result, cfg_node(node["id"], node["kind"], node["successors"], environment))
+    return result
+
+export fn flow_environment_equal(left, right, names):
+    for name in names:
+        if ast_lookup_type(left, name) != ast_lookup_type(right, name):
+            return false
+    return true
+
+export fn loop_backedge_converge(before, body_states, mutated_names, max_iterations):
+    let current = before
+    let iterations = 0
+    while iterations < max_iterations:
+        let next = loop_fixpoint_many(current, body_states, mutated_names, 1)
+        iterations = iterations + 1
+        if flow_environment_equal(next, current, mutated_names):
+            return {"converged": true, "environment": next, "iterations": iterations}
+        current = next
+    return {"converged": false, "environment": current, "iterations": iterations}
 
 export fn cfg_sequence_nodes(statements, environment, start_id):
     let graph = []

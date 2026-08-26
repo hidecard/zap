@@ -8,8 +8,8 @@
 | 2 | Span-based indentation stack | [x] partial | Parser-owned history/depth stack validates one-level nesting, valid prior-level dedent, inconsistent dedent, and jump errors; token-native full ownership remains pending. |
 | 3 | Recursive `parse_block(indent)` | [x] partial | Cursor-based `parse_block_from` handles bounded arbitrary-depth bodies, same-level sibling dedent, and generic top-level `if`; function/class and all control-flow grammar replacement remains pending. |
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
-| 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, missing-body diagnostics, nested live-path merge, and short-circuit path-state foundations pass; parser-produced arbitrary nested branch flow remains pending. |
-| 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes, `break`/`continue` AST nodes, loop back-edge foundation, and break/continue edge ownership pass focused cases; arbitrary loop CFG/dataflow integration remains pending. |
+| 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, missing-body diagnostics, nested live-path merge, short-circuit path states, and recursive parser-shaped CFG nodes pass; arbitrary condition-edge/fallthrough ownership remains pending. |
+| 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes, `break`/`continue` AST nodes, automatic normal-body back-edge, stable/divergent fixpoint convergence, and nested break/continue ownership pass focused cases; arbitrary loop CFG/dataflow integration remains pending. |
 | 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive list/map environment typing, function-aware call inference, condition-derived option/result narrowing, compound path states, program expression propagation, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
 | 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans၊ generic function/type-alias metadata၊ recursive type-unification၊ generic end-to-end နှင့် bounded call/nested-call/binary expression nodes pass; arbitrary block and full ownership remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint and cycle foundations pass in focused verifiers; complete reference error matrix remains pending. |
@@ -63,6 +63,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_flow_sensitive_10.sh` — covers 10 multi-path branch, invalidation, loop-fixpoint, and scope-restoration cases
 - `scripts/bootstrap/verify_b2_condition_cfg_10.sh` — covers 10 condition-derived narrowing, compound path, CFG node, and edge cases
 - `scripts/bootstrap/verify_b2_short_circuit_loop_edges_12.sh` — covers 12 short-circuit and/or, nested branch, loop back-edge, break, and continue ownership cases
+- `scripts/bootstrap/verify_b2_recursive_cfg_loop_convergence_12.sh` — covers 12 recursive nested-AST CFG, loop back-edge convergence, and nested break/continue ownership cases
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`
