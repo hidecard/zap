@@ -11,6 +11,25 @@ export fn literal_node(literal_kind, value, line, column, length):
 export fn declaration_node(name, annotation, inferred_type, value, line, length):
     return {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": name, "span": span(line, 1, length), "value": value}
 
+export fn expression_node(expression):
+    let value = trim(expression)
+    if contains(value, "(") and ends_with(value, ")"):
+        let open_index = 0
+        while open_index < len(value):
+            if char_at(value, open_index) == "(":
+                break
+            open_index = open_index + 1
+        let callee = trim(substring(value, 0, open_index))
+        let argument_text = trim(substring(value, open_index + 1, len(value) - 1))
+        let args = []
+        if argument_text != "":
+            args = append(args, {"kind": "positional", "value": expression_node(argument_text)})
+        return {"args": args, "callee": {"kind": "name", "name": callee, "span": span(1, 1, len(callee))}, "kind": "call", "span": span(1, 1, len(value))}
+    if contains(value, " + "):
+        let parts = split(value, " + ")
+        return {"kind": "binary", "left": expression_node(parts[0]), "op": "add", "right": expression_node(parts[1]), "span": span(1, 1, len(value))}
+    return inferred_literal(value)
+
 export fn inferred_literal(expression):
     let value = trim(expression)
     if starts_with(value, "\""):
@@ -121,7 +140,7 @@ export fn emit_declarations(source, source_name):
             let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
             let annotation = trim(annotation_parts[1])
             let expression = trim(assignment[1])
-            let literal = inferred_literal(expression)
+            let literal = expression_node(expression)
             nodes = append(nodes, declaration_node(variable, annotation, inferred_type_for(expression), literal, line_number, len(value)))
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
@@ -151,7 +170,7 @@ export fn emit(source, source_name):
     let variable = trim(substring(annotation_parts[0], 4, len(annotation_parts[0])))
     let annotation = trim(annotation_parts[1])
     let expression = trim(assignment[1])
-    let literal = inferred_literal(expression)
+    let literal = expression_node(expression)
     let inferred_type = inferred_type_for(expression)
     let declaration = {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
     let ir = {"nodes": [declaration]}

@@ -259,3 +259,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 [1]: https://github.com/hidecard/zap "Zap repository"
 [2]: https://github.com/hidecard/zap/blob/master/native/src/evaluator.rs "Zap native evaluator"
 [3]: https://github.com/hidecard/zap/blob/master/scripts/bootstrap/verify_native_generic_runtime_10.sh "Native generic runtime acceptance verifier"
+
+- [x] B2 general typed-IR expression gate — call၊ nested call၊ binary expression နှင့် declaration value emission ၁၀ cases pass။
+
+- [ ] **General typed-IR full ownership** — expression/call/binary bounded emission ထပ်တိုးထားသော်လည်း arbitrary statement blocks၊ complete typed AST spans၊ flow-sensitive annotations နှင့် Zap-owned production IR pipeline မပြီးသေးပါ။
