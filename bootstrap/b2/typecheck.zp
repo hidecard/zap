@@ -100,6 +100,19 @@ export fn condition_path_states(environment, name, guard):
     let negative = condition_derived_environment(environment, name, guard, false)
     return {"then": positive, "else": negative}
 
+export fn condition_expression_paths(environment, condition):
+    if condition["kind"] == "guard":
+        return condition_path_states(environment, condition["name"], condition["guard"])
+    if condition["kind"] == "logical":
+        let left_paths = condition_expression_paths(environment, condition["left"])
+        if condition["operator"] == "and":
+            let right_paths = condition_expression_paths(left_paths["then"], condition["right"])
+            return {"then": right_paths["then"], "else": branch_environment_merge_many(environment, [left_paths["else"], right_paths["else"]])}
+        if condition["operator"] == "or":
+            let right_paths = condition_expression_paths(left_paths["else"], condition["right"])
+            return {"then": branch_environment_merge_many(environment, [left_paths["then"], right_paths["then"]]), "else": right_paths["else"]}
+    return {"then": environment, "else": environment}
+
 export fn compound_condition_paths(environment, conditions):
     let then_environment = environment
     let else_environment = environment

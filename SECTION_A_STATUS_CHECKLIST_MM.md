@@ -18,7 +18,7 @@
 
 - [ ] **Nested map/deeper nested inference** — nested list/map/index decomposition၊ environment-aware collection iteration နှင့် recursive container element extraction ကို ၁၅-case verifier ဖြင့် pass ထားသော်လည်း arbitrary program-wide environment propagation မပြီးသေးပါ။
 
-- [ ] **Compound type guards** — direct `is_some`/`is_option_none` bounded narrowing ရှိသော်လည်း arbitrary compound/nested guards မပြီးသေးပါ။
+- [ ] **Compound type guards** — recursive guard AST သည် `and`/`or` short-circuit path များအတွက် true/false environment merge ကို ၈-case verifier ဖြင့် pass ထားသော်လည်း arbitrary parser-derived guard expressions နှင့် complete reference parity မပြီးသေးပါ။
 
 - [ ] **Loop mutation analysis** — loop mutation widening နှင့် bounded fixpoint foundation ရှိသော်လည်း arbitrary loop assignments၊ nested scopes၊ multiple iterations နှင့် full fixpoint convergence analysis မပြီးသေးပါ။
 
@@ -321,7 +321,7 @@ The three main Section A workstreams now have additional verifier-backed increme
 - [ ] Main-2 full arbitrary parser/typed-IR/diagnostic ownership.
 - [ ] Main-3 native-independent package/build/VM ownership and B4 self-rebuild.
 
-- [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး nested list/map decomposition နှင့် index element inference အပါအဝင် complete-inference verifier ကို ၁၅ cases အထိ တိုးချဲ့ pass။
+- [x] Main-1 call-inference expansion — identity generic call return type၊ known environment function return type၊ nested list/map decomposition၊ index element inference နှင့် recursive compound guard path များအပါအဝင် inference verifiers pass။
 - [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ structural/serialized manifest reproducibility၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions နှင့် byte-serialization contract pass။
 
 - [x] B4 rebuild-plan orchestration gate — seed-to-lexer/parser/typecheck/VM stage descriptors၊ deterministic artifact manifest၊ Zap-owner policy နှင့် native-owner deny boundary စုစုပေါင်း ၁၇ assertions pass။
