@@ -30,13 +30,23 @@ let loop_ir = {"ir": {"nodes": [{"body": {"statements": [{"kind": "say", "payloa
 let loop = lower_typed_ir(loop_ir)
 let loop_state = vm_run(loop["instructions"])
 say len(loop_state["output"])
+let mutation_ir = {"ir": {"nodes": [{"kind": "declaration", "name": "i", "value": expression_node("0")}, {"body": {"statements": [{"kind": "say", "payload": expression_node("i")}, {"kind": "assignment", "name": "i", "value": expression_node("i + 1")}]}, "condition": expression_node("i < 3"), "kind": "while"}]}, "kind": "zap.typed_ir"}
+let mutation = lower_typed_ir(mutation_ir)
+let mutation_state = vm_run(mutation["instructions"])
+say mutation_state["output"][0]
+say mutation_state["output"][1]
+say mutation_state["output"][2]
+let logical_ir = {"ir": {"nodes": [{"condition": expression_node("true and not false"), "else_branch": {"statements": [{"kind": "say", "payload": expression_node("0")}]}, "kind": "if", "then_branch": {"statements": [{"kind": "say", "payload": expression_node("7")}]}}]}, "kind": "zap.typed_ir"}
+let logical = lower_typed_ir(logical_ir)
+let logical_state = vm_run(logical["instructions"])
+say logical_state["output"][0]
 say rejected_state["error"]
 ZP
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["zap.bytecode", "1", "14", "1", "9", "0", "unknown_call:missing"]:
+if lines != ["zap.bytecode", "1", "14", "1", "9", "0", "0", "1", "2", "7", "unknown_call:missing"]:
     raise SystemExit(f"unexpected lowering output: {lines!r}")
 PY
 printf 'Typed-IR to bytecode lowering gate passed: arithmetic, say/VM handoff, schema, and deny-by-default rejection\n'

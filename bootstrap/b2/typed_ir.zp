@@ -11,6 +11,9 @@ export fn literal_node(literal_kind, value, line, column, length):
 export fn declaration_node(name, annotation, inferred_type, value, line, length):
     return {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": name, "span": span(line, 1, length), "value": value}
 
+export fn assignment_node(name, value, line, length):
+    return {"kind": "assignment", "name": name, "span": span(line, 1, length), "value": value}
+
 export fn binary_expression_node(value, marker, operator):
     let parts = split(value, marker)
     return {"kind": "binary", "left": expression_node(parts[0]), "op": operator, "right": expression_node(parts[1]), "span": span(1, 1, len(value))}
@@ -37,6 +40,8 @@ export fn expression_node(expression):
         return {"kind": "await", "value": expression_node(trim(substring(value, 6, len(value)))), "span": span(1, 1, len(value))}
     if starts_with(value, "try "):
         return {"kind": "propagate", "value": expression_node(trim(substring(value, 4, len(value)))), "span": span(1, 1, len(value))}
+    if starts_with(value, "not "):
+        return {"kind": "unary", "op": "not", "value": expression_node(trim(substring(value, 4, len(value)))), "span": span(1, 1, len(value))}
     if ends_with(value, "]") and contains(value, "[") and not starts_with(value, "["):
         let open_index = 0
         while open_index < len(value):
@@ -250,7 +255,16 @@ export fn emit_arbitrary_program(source, source_name):
         let value = trim(line)
         if value != "":
             line_number = line_number + 1
-            nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
+            if starts_with(value, "let ") and contains(value, " = "):
+                let parts = split(value, " = ")
+                let left = trim(substring(parts[0], 4, len(parts[0])))
+                nodes = append(nodes, declaration_node(left, none, inferred_type_for(parts[1]), expression_node(parts[1]), line_number, len(value)))
+            else:
+                if contains(value, " = ") and not starts_with(value, "if ") and not starts_with(value, "while "):
+                    let parts = split(value, " = ")
+                    nodes = append(nodes, assignment_node(trim(parts[0]), expression_node(parts[1]), line_number, len(value)))
+                else:
+                    nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit_declarations(source, source_name):

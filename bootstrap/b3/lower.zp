@@ -7,6 +7,16 @@ export fn lower_expression(node):
     let kind = node["kind"]
     if kind == "literal":
         return {"error": none, "instructions": lower_literal(node)}
+    if kind == "name":
+        let instructions = []
+        return {"error": none, "instructions": append(instructions, {"op": "load", "name": node["name"]})}
+    if kind == "unary":
+        let operand = lower_expression(node["value"])
+        if operand["error"] != none:
+            return operand
+        if node["op"] == "not":
+            return {"error": none, "instructions": append(operand["instructions"], {"op": "not"})}
+        return {"error": "unsupported_unary_operator:" + node["op"], "instructions": []}
     if kind == "call":
         let instructions = []
         for argument in node["args"]:
@@ -28,7 +38,7 @@ export fn lower_expression(node):
         for instruction in right["instructions"]:
             instructions = append(instructions, instruction)
         let op = node["op"]
-        if op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder":
+        if op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or":
             return {"error": none, "instructions": append(instructions, {"op": op})}
         return {"error": "unsupported_binary_operator:" + op, "instructions": []}
     return {"error": "unsupported_expression:" + kind, "instructions": []}
@@ -36,7 +46,10 @@ export fn lower_expression(node):
 export fn lower_block(body):
     let instructions = []
     for node in body["statements"]:
-        let lowered = lower_node(node)
+        let lowering_node = node
+        if node["kind"] == "while":
+            lowering_node = {"body": node["body"], "condition": node["condition"], "kind": "while", "loop_start": len(instructions)}
+        let lowered = lower_node(lowering_node)
         if lowered["error"] != none:
             return lowered
         for instruction in lowered["instructions"]:
@@ -97,10 +110,16 @@ export fn lower_node(node):
         instructions = append(instructions, {"op": "jump", "target": 0})
         let end_target = len(instructions)
         instructions = patch_jump(instructions, false_jump_index, end_target)
-        instructions = patch_jump(instructions, end_target - 1, 0)
+        let loop_start = 0
+        if node["loop_start"] != none:
+            loop_start = node["loop_start"]
+        instructions = patch_jump(instructions, end_target - 1, loop_start)
         return {"error": none, "instructions": instructions}
-    if kind == "declaration":
-        return lower_expression(node["value"])
+    if kind == "declaration" or kind == "assignment":
+        let lowered_value = lower_expression(node["value"])
+        if lowered_value["error"] != none:
+            return lowered_value
+        return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
         let payload = node["payload"]
         if payload == none:
@@ -118,7 +137,10 @@ export fn lower_typed_ir(ir):
         return {"error": "invalid_typed_ir_kind", "instructions": []}
     let instructions = []
     for node in ir["ir"]["nodes"]:
-        let lowered = lower_node(node)
+        let lowering_node = node
+        if node["kind"] == "while":
+            lowering_node = {"body": node["body"], "condition": node["condition"], "kind": "while", "loop_start": len(instructions)}
+        let lowered = lower_node(lowering_node)
         if lowered["error"] != none:
             return {"error": lowered["error"], "instructions": []}
         for instruction in lowered["instructions"]:
