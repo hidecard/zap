@@ -26,7 +26,7 @@
 
 - [ ] **Arbitrary-program parser coverage** — indentation-based recursive route နှင့် typed/untyped declaration parsing ကို တိုးချဲ့ပြီး regression gates pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
 
-- [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
+- [ ] **Full diagnostic parity** — native reference parser/diagnostic/typed-IR fixtures ၁၈ ခုအတွက် repeated byte-determinism နှင့် schema differential matrix pass ထားသော်လည်း Zap candidate နှင့် field-by-field full parity မပြီးသေးပါ။
 
 - [ ] **General typed-IR production** — declaration/list/map emission၊ generic type-alias node၊ generic/function metadata၊ arithmetic/comparison/logical binary expression၊ multi-argument positional call၊ index/member/await/propagate expression nodes နှင့် return/say/raise/if/while/for payload metadata ကို တိုးချဲ့ပြီး regressions pass ထားသော်လည်း nested argument splitting၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
 
