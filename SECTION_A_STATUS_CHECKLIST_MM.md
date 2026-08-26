@@ -320,3 +320,6 @@ The three main Section A workstreams now have additional verifier-backed increme
 - [ ] Main-1 full type-inference ownership.
 - [ ] Main-2 full arbitrary parser/typed-IR/diagnostic ownership.
 - [ ] Main-3 native-independent package/build/VM ownership and B4 self-rebuild.
+
+- [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး complete-inference verifier ကို ၁၂ cases အထိ တိုးချဲ့ pass။
+- [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions pass။

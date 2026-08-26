@@ -19,6 +19,9 @@ let base = [{"name": "items", "type": "list<number>"}, {"name": "data", "type": 
 let index_list = {"kind": "index", "target": {"kind": "name", "name": "items"}, "index": number}
 let index_map = {"kind": "index", "target": {"kind": "name", "name": "data"}, "index": text}
 let plus = {"kind": "binary", "left": number, "op": "add", "right": number}
+let identity_call = {"kind": "call", "callee": {"kind": "name", "name": "identity"}, "args": [{"kind": "positional", "value": text}]}
+let known_call = {"kind": "call", "callee": {"kind": "name", "name": "make_number"}, "args": []}
+let call_environment = [{"name": "make_number", "type": "number"}]
 let program = [{"kind": "declaration", "name": "x", "annotation": none, "value": number}, {"kind": "assignment", "name": "x", "value": text}]
 say inferred_value_type(number, base)
 say inferred_value_type(text, base)
@@ -29,6 +32,8 @@ say inferred_value_type(map, base)
 say inferred_value_type(index_list, base)
 say inferred_value_type(index_map, base)
 say inferred_value_type(plus, base)
+say inferred_value_type(identity_call, base)
+say inferred_value_type(known_call, call_environment)
 say ast_lookup_type(infer_program_types(program, base), "x")
 EOF
 cat > "$expected" <<'EOF'
@@ -42,7 +47,9 @@ number
 list<number>
 number
 text
+number
+text
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
-printf 'B2 complete-inference gate passed: 10 recursive value and program-flow cases\n'
+printf 'B2 complete-inference gate passed: 12 recursive value, call, and program-flow cases\n'

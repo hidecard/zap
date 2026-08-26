@@ -1170,6 +1170,12 @@ export fn inferred_value_type(value, environment):
             return substring(pieces[1], 0, len(pieces[1]) - 1)
         return "any"
     if kind == "call":
+        let callee = value["callee"]["name"]
+        if callee == "identity" and len(value["args"]) == 1:
+            return inferred_value_type(value["args"][0]["value"], environment)
+        let return_type = ast_lookup_type(environment, callee)
+        if return_type != "any":
+            return return_type
         return "any"
     return "any"
 

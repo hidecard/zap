@@ -1,0 +1,16 @@
+# B3 candidate build planner. Native Rust remains the reference owner until B4.
+
+export fn build_plan(package_manifest, lockfile_value, target, seed_version):
+    return {"artifacts": ["typed_ir", "bytecode", "runtime"], "lock_schema": lockfile_value["schema_version"], "package": package_manifest["name"], "seed_version": seed_version, "target": target}
+
+export fn artifact_descriptor(plan, kind, digest):
+    return {"digest": digest, "kind": kind, "package": plan["package"], "target": plan["target"]}
+
+export fn build_manifest(plan, artifacts):
+    return {"artifacts": artifacts, "lock_schema": plan["lock_schema"], "package": plan["package"], "seed_version": plan["seed_version"], "target": plan["target"]}
+
+export fn build_is_reproducible(first, second):
+    return first == second
+
+export fn build_network_policy():
+    return {"allow_network": false, "require_lock": true, "require_seed": true}
