@@ -24,7 +24,7 @@
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
-- [ ] **Arbitrary-program parser coverage** — indentation-based recursive route နှင့် typed/untyped declaration parsing ကို တိုးချဲ့ပြီး regression gates pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
+- [ ] **Arbitrary-program parser coverage** — indentation-based recursive route၊ typed/untyped declaration parsing နှင့် declaration-route ၆-case verifier ကို တိုးချဲ့ပြီး regression gates pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
 
 - [ ] **Full diagnostic parity** — native reference parser/diagnostic/typed-IR fixtures ၁၈ ခုအတွက် repeated byte-determinism နှင့် schema differential matrix pass ထားသော်လည်း Zap candidate နှင့် field-by-field full parity မပြီးသေးပါ။
 
