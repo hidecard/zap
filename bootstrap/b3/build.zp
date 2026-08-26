@@ -18,5 +18,17 @@ export fn build_manifest_bytes(plan, artifacts):
 export fn build_bytes_reproducible(plan, first_artifacts, second_artifacts):
     return build_manifest_bytes(plan, first_artifacts) == build_manifest_bytes(plan, second_artifacts)
 
+export fn build_artifacts_valid(plan, artifacts):
+    if len(artifacts) != len(plan["artifacts"]):
+        return false
+    for expected_kind in plan["artifacts"]:
+        let found = false
+        for artifact in artifacts:
+            if artifact["kind"] == expected_kind and artifact["package"] == plan["package"] and artifact["target"] == plan["target"]:
+                found = true
+        if not found:
+            return false
+    return true
+
 export fn build_network_policy():
     return {"allow_network": false, "require_lock": true, "require_seed": true}
