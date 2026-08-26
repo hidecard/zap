@@ -17,6 +17,24 @@ export fn lower_expression(node):
         if node["op"] == "not":
             return {"error": none, "instructions": append(operand["instructions"], {"op": "not"})}
         return {"error": "unsupported_unary_operator:" + node["op"], "instructions": []}
+    if kind == "index":
+        let target = lower_expression(node["target"])
+        if target["error"] != none:
+            return target
+        let index = lower_expression(node["index"])
+        if index["error"] != none:
+            return index
+        let instructions = target["instructions"]
+        for instruction in index["instructions"]:
+            instructions = append(instructions, instruction)
+        return {"error": none, "instructions": append(instructions, {"op": "index"})}
+    if kind == "member":
+        let target = lower_expression(node["target"])
+        if target["error"] != none:
+            return target
+        let instructions = target["instructions"]
+        instructions = append(instructions, {"op": "const", "value": node["member"]})
+        return {"error": none, "instructions": append(instructions, {"op": "index"})}
     if kind == "call":
         let instructions = []
         for argument in node["args"]:
@@ -176,6 +194,83 @@ export fn lower_node(node):
             return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
         return lowered
     return {"error": "unsupported_statement:" + kind, "instructions": []}
+
+export fn lower_ast_block(body):
+    let instructions = []
+    for node in body["statements"]:
+        let lowered = lower_ast_node(node)
+        if lowered["error"] != none:
+            return lowered
+        for instruction in lowered["instructions"]:
+            instructions = append(instructions, instruction)
+    return {"error": none, "instructions": instructions}
+
+export fn lower_ast_node(node):
+    let kind = node["kind"]
+    if kind == "if":
+        let condition = lower_expression(node["condition"])
+        if condition["error"] != none:
+            return condition
+        let then_branch = lower_ast_block(node["then_branch"])
+        if then_branch["error"] != none:
+            return then_branch
+        let else_branch = {"error": none, "instructions": []}
+        if node["else_branch"] != none:
+            else_branch = lower_ast_block(node["else_branch"])
+            if else_branch["error"] != none:
+                return else_branch
+        let instructions = condition["instructions"]
+        let false_jump_index = len(instructions)
+        instructions = append(instructions, {"op": "jump_if_false", "target": 0})
+        for instruction in then_branch["instructions"]:
+            instructions = append(instructions, instruction)
+        let end_jump_index = len(instructions)
+        instructions = append(instructions, {"op": "jump", "target": 0})
+        let else_start = len(instructions)
+        for instruction in else_branch["instructions"]:
+            instructions = append(instructions, instruction)
+        let end_target = len(instructions)
+        instructions = patch_jump(instructions, false_jump_index, else_start)
+        instructions = patch_jump(instructions, end_jump_index, end_target)
+        return {"error": none, "instructions": instructions}
+    if kind == "while":
+        let condition = lower_expression(node["condition"])
+        if condition["error"] != none:
+            return condition
+        let body = lower_ast_block(node["body"])
+        if body["error"] != none:
+            return body
+        let instructions = condition["instructions"]
+        let false_jump_index = len(instructions)
+        instructions = append(instructions, {"op": "jump_if_false", "target": 0})
+        for instruction in body["instructions"]:
+            instructions = append(instructions, instruction)
+        instructions = append(instructions, {"op": "jump", "target": 0})
+        let end_target = len(instructions)
+        instructions = patch_jump(instructions, false_jump_index, end_target)
+        instructions = patch_jump(instructions, end_target - 1, 0)
+        return {"error": none, "instructions": instructions}
+    if kind == "declaration" or kind == "assignment":
+        let lowered_value = lower_expression(node["value"])
+        if lowered_value["error"] != none:
+            return lowered_value
+        return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
+    if kind == "say" or kind == "return" or kind == "raise":
+        let lowered = lower_expression(node["value"])
+        if lowered["error"] != none:
+            return lowered
+        if kind == "say":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
+        return lowered
+    return {"error": "unsupported_ast_statement:" + kind, "instructions": []}
+
+export fn lower_ast_program(ast):
+    if ast["kind"] != "zap.ast":
+        return {"error": "invalid_ast_kind", "instructions": []}
+    let lowered = lower_ast_block({"statements": ast["ast"]["statements"]})
+    if lowered["error"] != none:
+        return {"error": lowered["error"], "instructions": []}
+    return {"error": none, "instructions": append(lowered["instructions"], {"op": "halt"}), "kind": "zap.bytecode", "schema_version": 1}
 
 export fn lower_typed_ir(ir):
     if ir["kind"] != "zap.typed_ir":

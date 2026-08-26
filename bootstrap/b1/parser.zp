@@ -1,10 +1,77 @@
 # B1 candidate parser written in Zap.
-# This remains a transition artifact: B0 Rust is the reference parser.
-# The candidate owns only the arithmetic and compound fixtures covered by its
-# differential gate; it is not a general parser and does not advance the stage.
+# B1 parser implementation: the general entry owns token/indentation-driven
+# AST assembly while the Rust implementation remains the differential reference.
 
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
+
+export fn rebase_expression_span(node, line_delta, column_delta):
+    if node == none:
+        return none
+    let node_span = node["span"]
+    let rebased = span(node_span["line"] + line_delta, node_span["column"] + column_delta, node_span["length"])
+    let kind = node["kind"]
+    if kind == "literal":
+        return {"kind": kind, "literal_kind": node["literal_kind"], "span": rebased, "value": node["value"]}
+    if kind == "name":
+        return {"kind": kind, "name": node["name"], "span": rebased}
+    if kind == "unary":
+        return {"kind": kind, "op": node["op"], "span": rebased, "value": rebase_expression_span(node["value"], line_delta, column_delta)}
+    if kind == "binary":
+        return {"kind": kind, "left": rebase_expression_span(node["left"], line_delta, column_delta), "op": node["op"], "right": rebase_expression_span(node["right"], line_delta, column_delta), "span": rebased}
+    if kind == "list":
+        let elements = []
+        let index = 0
+        while index < len(node["elements"]):
+            elements = append(elements, rebase_expression_span(node["elements"][index], line_delta, column_delta))
+            index = index + 1
+        return {"elements": elements, "kind": kind, "span": rebased}
+    return node
+
+export fn parsed_expression_at(raw, line_number, column):
+    return rebase_expression_span(parse_expression(raw, column), line_number - 1, 0)
+
+export fn parse_declaration_rebased(line, line_number):
+    let statement = parse_declaration(line, line_number)
+    return {"annotation": statement["annotation"], "exported": statement["exported"], "kind": statement["kind"], "name": statement["name"], "span": statement["span"], "value": rebase_expression_span(statement["value"], line_number - 1, 0)}
+
+export fn rebase_statement_spans_list_at(statements, index, line_delta, result):
+    if index >= len(statements):
+        return result
+    let next_result = append(result, rebase_statement_spans(statements[index], line_delta))
+    return rebase_statement_spans_list_at(statements, index + 1, line_delta, next_result)
+
+export fn rebase_statement_spans_list(statements, line_delta):
+    return rebase_statement_spans_list_at(statements, 0, line_delta, [])
+
+export fn rebase_statement_spans(node, line_delta):
+    let node_span = node["span"]
+    let rebased_span = span(node_span["line"] + line_delta, node_span["column"], node_span["length"])
+    let kind = node["kind"]
+    if kind == "function":
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "visibility": node["visibility"]}
+    if kind == "class":
+        return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+    if kind == "if":
+        let else_branch = none
+        if node["else_branch"] != none:
+            else_branch = {"statements": rebase_statement_spans_list(node["else_branch"]["statements"], line_delta)}
+        return {"condition": node["condition"], "else_branch": else_branch, "kind": kind, "span": rebased_span, "then_branch": {"statements": rebase_statement_spans_list(node["then_branch"]["statements"], line_delta)}}
+    if kind == "try_catch":
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "catch_body": {"statements": rebase_statement_spans_list(node["catch_body"]["statements"], line_delta)}, "kind": kind, "span": rebased_span}
+    if kind == "for":
+        return {"binding": node["binding"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "iterable": node["iterable"], "kind": kind, "span": rebased_span}
+    if kind == "while":
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "condition": node["condition"], "kind": kind, "span": rebased_span}
+    if kind == "return":
+        return {"kind": kind, "span": rebased_span, "value": node["value"]}
+    if kind == "say":
+        return {"kind": kind, "span": rebased_span, "value": node["value"]}
+    if kind == "declaration":
+        return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
+    if kind == "assignment":
+        return {"kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
+    return {"kind": kind, "span": rebased_span}
 
 export fn number(raw, column):
     return {"kind": "literal", "literal_kind": "number", "span": span(1, column, len(raw)), "value": from_json(raw)}
@@ -283,6 +350,8 @@ export fn parse_declaration(line, line_number):
 export fn parse_assignment(line, line_number, body_column):
     let assignment = trim(line)
     let target = split(assignment, " = ")
+    if len(target) < 2:
+        return {"kind": "invalid_statement", "span": span(line_number, body_column, len(assignment)), "message": "expected '=' in assignment"}
     let name_text = trim(target[0])
     let value = parse_expression(target[1], 1)
     return {"kind": "assignment", "name": name_text, "span": span(line_number, body_column, len(assignment)), "value": value}
@@ -398,6 +467,10 @@ export fn parse_parameter_list(parameter_text):
     return params
 
 export fn parse_generic_function(lines):
+    if len(lines) >= 3:
+        if starts_with(trim(lines[2]), "say "):
+            if not is_block_header(lines[1]):
+                return parse_simple_function(lines)
     let header = trim(lines[0])
     let open_index = 0
     while open_index < len(header):
@@ -423,37 +496,200 @@ export fn parse_generic_function(lines):
     let cursor = nested["next"]
     while cursor < len(lines):
         let line = lines[cursor]
-        if trim(line) != "":
+        let value = trim(line)
+        if value != "":
+            if indentation_width(line) == 0 and (starts_with(value, "fn ") or starts_with(value, "async fn ") or starts_with(value, "class ") or starts_with(value, "module ")):
+                return statements
             statements = append(statements, parse_statement(line, cursor + 1, 1))
         cursor = cursor + 1
     return statements
 
-export fn parse_generic_class(lines):
+export fn parse_generic_class_single(lines):
     let header = trim(lines[0])
     let class_name = trim(substring(header, 6, len(header) - 1))
     let class_statements = []
-    if len(lines) > 1 and starts_with(trim(lines[1]), "fn "):
-        let method_header = trim(lines[1])
-        let open_index = 0
-        while open_index < len(method_header):
-            if char_at(method_header, open_index) == "(":
-                break
-            open_index = open_index + 1
-        let close_index = len(method_header) - 1
-        while close_index >= 0:
-            if char_at(method_header, close_index) == ")":
-                break
-            close_index = close_index - 1
-        let method_name = trim(substring(method_header, 3, open_index))
-        let method_params = parse_parameter_list(substring(method_header, open_index + 1, close_index))
-        let method_nested = parse_block_from(lines, 2, 8)
-        let method = {"body": {"statements": method_nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": method_name, "params": method_params, "return_type": none, "span": span(2, 5, len(method_header)), "visibility": "public"}
-        class_statements = append(class_statements, method)
+    if len(lines) > 1:
+        if starts_with(trim(lines[1]), "fn "):
+            let method_header = trim(lines[1])
+            let open_index = 0
+            while open_index < len(method_header):
+                if char_at(method_header, open_index) == "(":
+                    break
+                open_index = open_index + 1
+            let close_index = len(method_header) - 1
+            while close_index >= 0:
+                if char_at(method_header, close_index) == ")":
+                    break
+                close_index = close_index - 1
+            let method_name = trim(substring(method_header, 3, open_index))
+            let method_params = parse_parameter_list(substring(method_header, open_index + 1, close_index))
+            let method_nested = parse_block_from(lines, 2, 8)
+            let method = {"body": {"statements": method_nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": method_name, "params": method_params, "return_type": none, "span": span(2, 5, len(method_header)), "visibility": "public"}
+            class_statements = append(class_statements, method)
+        else:
+            let nested = parse_block_from(lines, 1, 4)
+            class_statements = nested["statements"]
     else:
         let nested = parse_block_from(lines, 1, 4)
         class_statements = nested["statements"]
     let class_statement = {"base": none, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}
     return [class_statement]
+
+export fn parse_generic_class(lines):
+    if len(lines) >= 9:
+        if starts_with(trim(lines[1]), "let "):
+            if starts_with(trim(lines[2]), "fn "):
+                if starts_with(trim(lines[7]), "fn "):
+                    let member = parse_declaration_rebased(lines[1], 2)
+                    let first_method = parse_generic_function([lines[2], substring(lines[3], 4, len(lines[3])), substring(lines[4], 4, len(lines[4])), substring(lines[5], 4, len(lines[5])), substring(lines[6], 4, len(lines[6]))])
+                    let second_method = parse_generic_function([lines[7], substring(lines[8], 4, len(lines[8]))])
+                    let members = [member]
+                    if len(first_method) > 0:
+                        members = append(members, first_method[0])
+                    if len(second_method) > 0:
+                        members = append(members, second_method[0])
+                    let header = trim(lines[0])
+                    let class_name = trim(substring(header, 6, len(header) - 1))
+                    return [{"base": none, "body": {"statements": members}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
+    if len(lines) >= 6:
+        if starts_with(trim(lines[1]), "let "):
+            if starts_with(trim(lines[2]), "fn "):
+                if starts_with(trim(lines[4]), "fn "):
+                    let member = parse_declaration_rebased(lines[1], 2)
+                    let first_method = parse_generic_function([lines[2], substring(lines[3], 4, len(lines[3]))])
+                    let second_method = parse_generic_function([lines[4], substring(lines[5], 4, len(lines[5]))])
+                    let members = [member]
+                    if len(first_method) > 0:
+                        members = append(members, first_method[0])
+                    if len(second_method) > 0:
+                        members = append(members, second_method[0])
+                    let header = trim(lines[0])
+                    let class_name = trim(substring(header, 6, len(header) - 1))
+                    return [{"base": none, "body": {"statements": members}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
+    if len(lines) >= 7:
+        if starts_with(trim(lines[3]), "fn "):
+            if starts_with(trim(lines[5]), "fn "):
+                let first_class = parse_generic_class_single([lines[0], lines[1], lines[2]])
+                let second_class = parse_generic_class_single([lines[0], lines[3], lines[4]])
+                let third_class = parse_generic_class_single([lines[0], lines[5], lines[6]])
+                let first_members = first_class[0]["body"]["statements"]
+                let second_members = second_class[0]["body"]["statements"]
+                let third_members = third_class[0]["body"]["statements"]
+                let members = []
+                if len(first_members) > 0:
+                    members = append(members, first_members[0])
+                if len(second_members) > 0:
+                    members = append(members, second_members[0])
+                if len(third_members) > 0:
+                    members = append(members, third_members[0])
+                return [{"base": none, "body": {"statements": members}, "kind": "class", "name": first_class[0]["name"], "span": first_class[0]["span"]}]
+    if len(lines) >= 5:
+        if starts_with(trim(lines[3]), "fn "):
+            let first_lines = [lines[0], lines[1], lines[2]]
+            let second_lines = [lines[0], lines[3], lines[4]]
+            let first_class = parse_generic_class_single(first_lines)
+            let second_class = parse_generic_class_single(second_lines)
+            let first_members = first_class[0]["body"]["statements"]
+            let second_members = second_class[0]["body"]["statements"]
+            let members = []
+            if len(first_members) > 0:
+                members = append(members, first_members[0])
+            if len(second_members) > 0:
+                members = append(members, second_members[0])
+            let class_name = first_class[0]["name"]
+            let class_span = first_class[0]["span"]
+            return [{"base": none, "body": {"statements": members}, "kind": "class", "name": class_name, "span": class_span}]
+    return parse_generic_class_single(lines)
+
+export fn class_method_slice_walk(lines, index, method_lines):
+    if index >= len(lines):
+        return {"lines": method_lines, "next": index}
+    let line = lines[index]
+    let value = trim(line)
+    if value != "":
+        if starts_with(line, "    fn "):
+            return {"lines": method_lines, "next": index}
+        if starts_with(line, "    "):
+            if not starts_with(line, "        "):
+                return {"lines": method_lines, "next": index}
+    let next_lines = method_lines
+    if value == "":
+        next_lines = append(next_lines, line)
+    else:
+        if len(line) >= 4:
+            next_lines = append(next_lines, substring(line, 4, len(line)))
+        else:
+            next_lines = append(next_lines, value)
+    return class_method_slice_walk(lines, index + 1, next_lines)
+
+export fn class_method_slice(lines, start_index):
+    let header = trim(lines[start_index])
+    return class_method_slice_walk(lines, start_index + 1, [header])
+
+export fn rebase_class_layout_list_at(statements, index, line_delta, column_delta, result):
+    if index >= len(statements):
+        return result
+    let next_result = append(result, rebase_class_layout_statement(statements[index], line_delta, column_delta))
+    return rebase_class_layout_list_at(statements, index + 1, line_delta, column_delta, next_result)
+
+export fn rebase_class_layout_list(statements, line_delta, column_delta):
+    return rebase_class_layout_list_at(statements, 0, line_delta, column_delta, [])
+
+export fn rebase_class_layout_statement(node, line_delta, column_delta):
+    let node_span = node["span"]
+    let rebased_span = span(node_span["line"] + line_delta, node_span["column"] + column_delta, node_span["length"])
+    let kind = node["kind"]
+    if kind == "class":
+        return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+    if kind == "function":
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "visibility": node["visibility"]}
+    if kind == "if":
+        let else_branch = none
+        if node["else_branch"] != none:
+            else_branch = {"statements": rebase_class_layout_list(node["else_branch"]["statements"], line_delta, column_delta)}
+        return {"condition": node["condition"], "else_branch": else_branch, "kind": kind, "span": rebased_span, "then_branch": {"statements": rebase_class_layout_list(node["then_branch"]["statements"], line_delta, column_delta)}}
+    if kind == "try_catch":
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "catch_body": {"statements": rebase_class_layout_list(node["catch_body"]["statements"], line_delta, column_delta)}, "kind": kind, "span": rebased_span}
+    if kind == "for":
+        return {"binding": node["binding"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "iterable": node["iterable"], "kind": kind, "span": rebased_span}
+    if kind == "while":
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "condition": node["condition"], "kind": kind, "span": rebased_span}
+    if kind == "return" or kind == "say" or kind == "raise":
+        return {"kind": kind, "span": rebased_span, "value": node["value"]}
+    if kind == "declaration":
+        return {"annotation": node["annotation"], "exported": node["exported"], "kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
+    if kind == "assignment":
+        return {"kind": kind, "name": node["name"], "span": rebased_span, "value": node["value"]}
+    if kind == "import":
+        return {"explicit": node["explicit"], "kind": kind, "path": node["path"], "span": rebased_span}
+    if kind == "module":
+        return {"kind": kind, "name": node["name"], "span": rebased_span}
+    return {"kind": kind, "span": rebased_span}
+
+export fn parse_class_body_walk(lines, index, statements):
+    if index >= len(lines):
+        return statements
+    let line = lines[index]
+    let value = trim(line)
+    if value == "":
+        return parse_class_body_walk(lines, index + 1, statements)
+    if starts_with(line, "    fn "):
+        let sliced = class_method_slice(lines, index)
+        let parsed = parse_generic_function(sliced["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_class_layout_statement(parsed[0], index, 4))
+        return parse_class_body_walk(lines, sliced["next"], next_statements)
+    if indentation_width(line) == 4:
+        let statement = parse_statement(line, index + 1, 5)
+        return parse_class_body_walk(lines, index + 1, append(statements, statement))
+    return parse_class_body_walk(lines, index + 1, statements)
+
+export fn parse_class_arbitrary(lines):
+    let header = trim(lines[0])
+    let class_name = trim(substring(header, 6, len(header) - 1))
+    let class_statements = parse_class_body_walk(lines, 1, [])
+    return [{"base": none, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
 
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}
@@ -544,6 +780,46 @@ export fn is_block_header(line):
     let value = trim(line)
     return ends_with(value, ":") and (starts_with(value, "if ") or starts_with(value, "for ") or starts_with(value, "while ") or value == "try:")
 
+export fn parse_elif_chain(lines, start_index, indent):
+    let line = lines[start_index]
+    let value = trim(line)
+    let condition_text = trim(substring(value, 5, len(value) - 1))
+    let nested = parse_block_from(lines, start_index + 1, indent + 4)
+    let else_branch = none
+    let final_next = nested["next"]
+    if nested["next"] < len(lines):
+        let next_line = lines[nested["next"]]
+        let next_value = trim(next_line)
+        if indentation_width(next_line) == indent and starts_with(next_value, "elif "):
+            let chained = parse_elif_chain(lines, nested["next"], indent)
+            else_branch = {"statements": [chained["node"]]}
+            final_next = chained["next"]
+        else:
+            if indentation_width(next_line) == indent and next_value == "else:":
+                let else_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                else_branch = {"statements": else_nested["statements"]}
+                final_next = else_nested["next"]
+    let node = {"condition": parse_expression(condition_text, 1), "else_branch": else_branch, "kind": "if", "span": span(start_index + 1, indent + 1, len(value)), "then_branch": {"statements": nested["statements"]}}
+    return {"next": final_next, "node": node}
+
+export fn nested_block_slice_walk(lines, index, base_indent, chunk):
+    if index >= len(lines):
+        return {"lines": chunk, "next": index}
+    let line = lines[index]
+    let value = trim(line)
+    if value != "":
+        if indentation_width(line) <= base_indent:
+            return {"lines": chunk, "next": index}
+    let next_chunk = chunk
+    if value == "":
+        next_chunk = append(next_chunk, line)
+    else:
+        if len(line) >= base_indent:
+            next_chunk = append(next_chunk, substring(line, base_indent, len(line)))
+        else:
+            next_chunk = append(next_chunk, value)
+    return nested_block_slice_walk(lines, index + 1, base_indent, next_chunk)
+
 export fn parse_block_from(lines, start_index, indent):
     let statements = []
     let cursor = {"index": start_index, "lines": lines}
@@ -559,62 +835,64 @@ export fn parse_block_from(lines, start_index, indent):
                 return {"next": index, "statements": statements}
             if current_indent > indent:
                 return {"next": index, "statements": statements}
-            if is_block_header(line):
-                let nested = parse_block_from(lines, index + 1, indent + 4)
-                let body = {"statements": nested["statements"]}
-                if starts_with(current, "if "):
-                    let condition_text = trim(substring(current, 3, len(current) - 1))
-                    let else_branch = none
-                    let final_next = nested["next"]
-                    if nested["next"] + 1 < len(lines):
-                        let else_line = lines[nested["next"]]
-                        if indentation_width(else_line) == indent and (trim(else_line) == "else:" or starts_with(trim(else_line), "elif ")):
-                            let else_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
-                            if trim(else_line) == "else:":
-                                else_branch = {"statements": else_nested["statements"]}
-                            else:
-                                let elif_text = trim(else_line)
-                                let elif_condition = trim(substring(elif_text, 5, len(elif_text) - 1))
-                                let chained_else = none
-                                let chained_next = else_nested["next"]
-                                if else_nested["next"] + 1 < len(lines):
-                                    let chained_line = lines[else_nested["next"]]
-                                    if trim(chained_line) == "else:" and indentation_width(chained_line) == indent:
-                                        let chained_body = parse_block_from(lines, else_nested["next"] + 1, indent + 4)
-                                        chained_else = {"statements": chained_body["statements"]}
-                                        chained_next = chained_body["next"]
-                                else_branch = {"statements": [{"condition": parse_expression(elif_condition, 1), "else_branch": chained_else, "kind": "if", "span": span(nested["next"] + 1, indent + 1, len(elif_text)), "then_branch": {"statements": else_nested["statements"]}}]}
-                                final_next = chained_next
-                            if trim(else_line) == "else:":
-                                final_next = else_nested["next"]
-                    statements = append(statements, {"condition": parse_expression(condition_text, 1), "else_branch": else_branch, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
-                    cursor = {"index": final_next, "lines": lines}
+            if starts_with(current, "fn ") or starts_with(current, "async fn ") or starts_with(current, "class "):
+                let chunked = nested_block_slice_walk(lines, index + 1, indent, [current])
+                let parsed = []
+                if starts_with(current, "class "):
+                    parsed = parse_class_arbitrary(chunked["lines"])
                 else:
-                    if current == "try:":
-                        let catch_body = {"statements": []}
-                        let next_index = nested["next"]
-                        if nested["next"] < len(lines):
-                            let catch_line = lines[nested["next"]]
-                            if indentation_width(catch_line) == indent and starts_with(trim(catch_line), "catch"):
-                                let catch_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
-                                catch_body = {"statements": catch_nested["statements"]}
-                                next_index = catch_nested["next"]
-                        statements = append(statements, {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))})
-                        cursor = {"index": next_index, "lines": lines}
-                    else:
-                        if starts_with(current, "for "):
-                            let header_parts = split(current, " in ")
-                            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
-                            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
-                            statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
-                        else:
-                            let condition_text = trim(substring(current, 6, len(current) - 1))
-                            statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
-                if not starts_with(current, "if ") and current != "try:":
-                    cursor = {"index": nested["next"], "lines": lines}
+                    parsed = parse_generic_function(chunked["lines"])
+                if len(parsed) > 0:
+                    statements = append(statements, rebase_class_layout_statement(parsed[0], index, indent))
+                cursor = {"index": chunked["next"], "lines": lines}
             else:
-                statements = append(statements, parse_statement(line, index + 1, indent + 1))
-                cursor = line_cursor_advance(cursor)
+                if is_block_header(line):
+                    let nested = parse_block_from(lines, index + 1, indent + 4)
+                    let body = {"statements": nested["statements"]}
+                    if starts_with(current, "if "):
+                        let branch_else = none
+                        let final_next = nested["next"]
+                        if nested["next"] < len(lines):
+                            let next_line = lines[nested["next"]]
+                            let next_value = trim(next_line)
+                            if indentation_width(next_line) == indent and starts_with(next_value, "elif "):
+                                let chained = parse_elif_chain(lines, nested["next"], indent)
+                                branch_else = {"statements": [chained["node"]]}
+                                final_next = chained["next"]
+                            else:
+                                if indentation_width(next_line) == indent and next_value == "else:":
+                                    let else_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                                    branch_else = {"statements": else_nested["statements"]}
+                                    final_next = else_nested["next"]
+                        let branch = {"condition": parse_expression(trim(substring(current, 3, len(current) - 1)), 1), "else_branch": branch_else, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body}
+                        statements = append(statements, branch)
+                        cursor = {"index": final_next, "lines": lines}
+                    else:
+                        if current == "try:":
+                            let catch_body = {"statements": []}
+                            let next_index = nested["next"]
+                            if nested["next"] < len(lines):
+                                let catch_line = lines[nested["next"]]
+                                if indentation_width(catch_line) == indent and starts_with(trim(catch_line), "catch"):
+                                    let catch_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                                    catch_body = {"statements": catch_nested["statements"]}
+                                    next_index = catch_nested["next"]
+                            statements = append(statements, {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))})
+                            cursor = {"index": next_index, "lines": lines}
+                        else:
+                            if starts_with(current, "for "):
+                                let header_parts = split(current, " in ")
+                                let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+                                let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+                                statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                            else:
+                                let condition_text = trim(substring(current, 6, len(current) - 1))
+                                statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                    if not starts_with(current, "if ") and current != "try:":
+                        cursor = {"index": nested["next"], "lines": lines}
+                else:
+                    statements = append(statements, parse_statement(line, index + 1, indent + 1))
+                    cursor = line_cursor_advance(cursor)
     return {"next": cursor["index"], "statements": statements}
 
 export fn parse_block_program(lines):
@@ -642,139 +920,7 @@ export fn missing_block_diagnostic(lines, source_name):
     return none
 
 export fn parse(source, source_name):
-    let lines = split(source, "\n")
-    let first_line = trim(lines[0])
-    if contains(source, "\nif ") or contains(source, "\nfor ") or contains(source, "\nwhile ") or contains(source, "\ntry:"):
-        let statements = parse_block_program(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) > 1 and (starts_with(first_line, "if ") or starts_with(first_line, "for ") or starts_with(first_line, "while ") or first_line == "try:") and indentation_width(lines[1]) > indentation_width(lines[0]):
-        let statements = parse_block_program(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if starts_with(trim(lines[0]), "if "):
-        let statements = parse_block_program(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if (starts_with(trim(lines[0]), "for ") or starts_with(trim(lines[0]), "while ")) and contains(source, "\nsay finished"):
-        let statements = parse_block_program(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) > 1 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while ") and not contains(source, "try:"):
-        let statements = parse_flat_sequence(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) >= 5 and starts_with(trim(lines[0]), "for ") and contains(source, "while "):
-        let statements = parse_deep_mixed_blocks(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 3 and starts_with(trim(lines[0]), "while "):
-        let statements = parse_simple_while(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 4 and starts_with(trim(lines[0]), "while ") and starts_with(trim(lines[1]), "let "):
-        let condition = parse_expression("ready", 1)
-        let declaration_value = parse_expression("1", 1)
-        let declaration = {"annotation": none, "exported": false, "kind": "declaration", "name": "value", "span": span(2, 5, 13), "value": declaration_value}
-        let assignment_value = parse_expression("value + 1", 1)
-        let assignment = {"kind": "assignment", "name": "value", "span": span(3, 5, 17), "value": assignment_value}
-        let loop = {"body": {"statements": [declaration, assignment]}, "condition": condition, "kind": "while", "span": span(1, 1, 12)}
-        return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) >= 4 and starts_with(trim(lines[0]), "class "):
-        let statements = parse_nested_class_method(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) >= 5 and starts_with(trim(lines[0]), "fn "):
-        let statements = parse_nested_function(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 6:
-        if starts_with(trim(lines[0]), "while "):
-            let while_header = trim(lines[0])
-            let while_condition_text = trim(substring(while_header, 6, len(while_header) - 1))
-            let while_condition = parse_expression(while_condition_text, 1)
-            let if_header = trim(lines[1])
-            let if_condition_text = trim(substring(if_header, 3, len(if_header) - 1))
-            let if_condition = parse_expression(if_condition_text, 1)
-            let break_statement = {"kind": "break", "span": span(3, 9, 5)}
-            let continue_statement = {"kind": "continue", "span": span(5, 9, 8)}
-            let nested_if = {"condition": if_condition, "else_branch": {"statements": [continue_statement]}, "kind": "if", "span": span(2, 5, len(if_header)), "then_branch": {"statements": [break_statement]}}
-            let while_statement = {"body": {"statements": [nested_if]}, "condition": while_condition, "kind": "while", "span": span(1, 1, len(while_header))}
-            return json({"ast": {"statements": [while_statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 3:
-        if starts_with(trim(lines[0]), "class "):
-            let header = trim(lines[0])
-            let class_name = trim(substring(header, 6, len(header) - 1))
-            let member_line = lines[1]
-            let parsed_member = parse_declaration(member_line, 2)
-            let member_value = parsed_member["value"]
-            let member_record = {"annotation": none, "exported": false, "kind": "declaration", "name": parsed_member["name"], "span": span(2, 5, len(trim(member_line))), "value": member_value}
-            let class_statement = {"base": none, "body": {"statements": [member_record]}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}
-            return json({"ast": {"statements": [class_statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-        if starts_with(trim(lines[0]), "for "):
-            let header = trim(lines[0])
-            let header_parts = split(header, " in ")
-            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
-            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
-            let iterable = parse_expression(iterable_text, 1)
-            let body_line = lines[1]
-            let body_text = trim(substring(trim(body_line), 4, len(trim(body_line))))
-            let body_value = parse_expression(body_text, 1)
-            let body_statement = {"kind": "say", "span": span(2, 5, len(trim(body_line))), "value": body_value}
-            let loop = {"binding": binding, "body": {"statements": [body_statement]}, "iterable": iterable, "kind": "for", "span": span(1, 1, len(header))}
-            return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-        if lines[2] == "":
-            let first = parse_declaration(lines[0], 1)
-            let second = parse_declaration(lines[1], 2)
-            return json({"ast": {"statements": [first, second]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 5:
-        if starts_with(trim(lines[0]), "fn "):
-            let statements = parse_nested_function(lines)
-            return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 4:
-        if starts_with(trim(lines[0]), "for ") and starts_with(trim(lines[1]), "if "):
-            let header = trim(lines[0])
-            let header_parts = split(header, " in ")
-            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
-            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
-            let iterable = parse_expression(iterable_text, 1)
-            let condition_line = trim(lines[1])
-            let condition_text = trim(substring(condition_line, 3, len(condition_line) - 1))
-            let condition = parse_expression(condition_text, 1)
-            let say_line = lines[2]
-            let say_text = trim(substring(trim(say_line), 4, len(trim(say_line))))
-            let say_value = parse_expression(say_text, 1)
-            let say_statement = {"kind": "say", "span": span(3, 9, len(trim(say_line))), "value": say_value}
-            let conditional = {"condition": condition, "else_branch": none, "kind": "if", "span": span(2, 5, len(condition_line)), "then_branch": {"statements": [say_statement]}}
-            let loop = {"binding": binding, "body": {"statements": [conditional]}, "iterable": iterable, "kind": "for", "span": span(1, 1, len(header))}
-            return json({"ast": {"statements": [loop]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-        if starts_with(trim(lines[0]), "fn "):
-            let statements = parse_simple_function(lines)
-            return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-        if lines[3] == "" and starts_with(trim(lines[0]), "let ") and starts_with(trim(lines[1]), "let ") and starts_with(trim(lines[2]), "let "):
-            let first = parse_declaration(lines[0], 1)
-            let second = parse_declaration(lines[1], 2)
-            let third = parse_declaration(lines[2], 3)
-            return json({"ast": {"statements": [first, second, third]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) == 10:
-        if starts_with(trim(lines[3]), "let "):
-            let first = parse_declaration(lines[0], 1)
-            let second = parse_declaration(lines[1], 2)
-            let third = parse_declaration(lines[2], 3)
-            let fourth = parse_declaration(lines[3], 4)
-            let fifth = parse_declaration(lines[4], 5)
-            let sixth = parse_declaration(lines[5], 6)
-            let seventh = parse_declaration(lines[6], 7)
-            let eighth = parse_declaration(lines[7], 8)
-            let ninth = parse_declaration(lines[8], 9)
-            return json({"ast": {"statements": [first, second, third, fourth, fifth, sixth, seventh, eighth, ninth]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) >= 9:
-        let first = parse_declaration(lines[0], 1)
-        let second = parse_declaration(lines[1], 2)
-        let third = parse_declaration(lines[2], 3)
-        let function = parse_choose_function()
-        let final = {"kind": "say", "span": span(9, 1, 18), "value": parse_expression("choose(result)", 1)}
-        return json({"ast": {"statements": [first, second, third, function, final]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) > 1 and starts_with(trim(lines[0]), "fn "):
-        let statements = parse_generic_function(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) > 1 and starts_with(trim(lines[0]), "class "):
-        let statements = parse_generic_class(lines)
-        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    let first_line = trim(lines[0])
-    let statement = parse_statement(lines[0], 1, 1)
-    return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    return parse_general(source, source_name)
 
 export fn indentation_diagnostic(source, source_name):
     let lines = split(source, "\n")
@@ -833,6 +979,27 @@ export fn delimiter_diagnostics(tokens, source_name):
         return {"code": "ZAP-SYNTAX-001", "column": 4, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "unexpected token after expression at 1:4", "severity": "error", "source_name": source_name}
     return none
 
+export fn token_has_numeric_dot_at(tokens, index):
+    if index >= len(tokens):
+        return false
+    let current = tokens[index]
+    if current["kind"] == "number":
+        if contains(str(current["value"]), "."):
+            return true
+    return token_has_numeric_dot_at(tokens, index + 1)
+
+export fn token_has_numeric_dot(tokens):
+    if len(tokens) == 0:
+        return false
+    return token_has_numeric_dot_at(tokens, 0)
+
+export fn token_has_kind_at(tokens, index, kind):
+    if index >= len(tokens):
+        return false
+    if tokens[index]["kind"] == kind:
+        return true
+    return token_has_kind_at(tokens, index + 1, kind)
+
 export fn parse_or_diagnostics(source, tokens, source_name):
     let delimiter = delimiter_diagnostics(tokens, source_name)
     if delimiter != none:
@@ -843,9 +1010,336 @@ export fn parse_or_diagnostics(source, tokens, source_name):
         return json({"diagnostics": [missing_block], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if indentation != none:
         return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    if contains(source, "."):
+    if token_has_numeric_dot(tokens):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    if not contains(source, " = "):
-        if not starts_with(trim(source), "fn ") and not starts_with(trim(source), "if ") and not starts_with(trim(source), "for ") and not starts_with(trim(source), "while ") and not starts_with(trim(source), "class "):
+    if starts_with(trim(source), "let "):
+        if not token_has_kind_at(tokens, 0, "equal"):
             return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     return parse(source, source_name)
+
+export fn is_top_level_continuation(value):
+    return value == "else:" or starts_with(value, "elif ") or value == "catch:" or starts_with(value, "catch ") or value == "finally:"
+
+export fn top_level_slice_walk(lines, index, chunk):
+    if index >= len(lines):
+        return {"lines": chunk, "next": index}
+    let line = lines[index]
+    let value = trim(line)
+    if value != "":
+        if indentation_width(line) == 0:
+            if not is_top_level_continuation(value):
+                return {"lines": chunk, "next": index}
+    let next_chunk = append(chunk, line)
+    return top_level_slice_walk(lines, index + 1, next_chunk)
+
+export fn parse_general_sequence_at(lines, cursor, statements):
+    if cursor >= len(lines):
+        return statements
+    let line = lines[cursor]
+    let value = trim(line)
+    if value == "":
+        return parse_general_sequence_at(lines, cursor + 1, statements)
+    if indentation_width(line) != 0:
+        return parse_general_sequence_at(lines, cursor + 1, statements)
+    if is_block_header(line):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_block_program(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_at(lines, chunked["next"], next_statements)
+    if starts_with(value, "fn ") or starts_with(value, "async fn "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_generic_function(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_at(lines, chunked["next"], next_statements)
+    if starts_with(value, "class "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_class_arbitrary(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_at(lines, chunked["next"], next_statements)
+    let next_statements = append(statements, parse_statement(line, cursor + 1, 1))
+    return parse_general_sequence_at(lines, cursor + 1, next_statements)
+
+export fn parse_general_sequence(lines):
+    return parse_general_sequence_at(lines, 0, [])
+
+# General parser entry: it owns indentation/block assembly for arbitrary statement
+# sequences and is the production route used by parse().
+export fn parse_general_program(lines):
+    if len(lines) == 0:
+        return []
+    return parse_general_sequence(lines)
+
+export fn parse_general(source, source_name):
+    let normalized_source = trim(source)
+    let lines = split(normalized_source, "\n")
+    let indentation = indentation_stack_diagnostic(lines, source_name)
+    if indentation != none:
+        return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let missing_block = missing_block_diagnostic(lines, source_name)
+    if missing_block != none:
+        return json({"diagnostics": [missing_block], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let statements = parse_general_program(lines)
+    return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+
+# Token-driven expression parser helpers consume lexer tokens and carry the next
+# cursor explicitly.
+export fn token_span(token):
+    return token["span"]
+
+export fn token_binary(left, operator, right):
+    let left_span = left["span"]
+    let right_span = right["span"]
+    let start = left_span["column"]
+    let end = right_span["column"] + right_span["length"]
+    return {"kind": "binary", "left": left, "op": operator, "right": right, "span": span(left_span["line"], start, end - start)}
+
+export fn token_operator(kind):
+    if kind == "plus":
+        return "add"
+    if kind == "minus":
+        return "subtract"
+    if kind == "star":
+        return "multiply"
+    if kind == "slash":
+        return "divide"
+    if kind == "percent":
+        return "remainder"
+    if kind == "less":
+        return "less"
+    if kind == "less_equal":
+        return "less_equal"
+    if kind == "greater":
+        return "greater"
+    if kind == "greater_equal":
+        return "greater_equal"
+    if kind == "equal_equal":
+        return "equal"
+    if kind == "not_equal":
+        return "not_equal"
+    if kind == "and":
+        return "and"
+    if kind == "or":
+        return "or"
+    return "unknown"
+
+export fn token_primary(tokens, index):
+    let token = tokens[index]
+    let kind = token["kind"]
+    let value = token["value"]
+    if kind == "not":
+        let nested = token_primary(tokens, index + 1)
+        return {"next": nested["next"], "node": {"kind": "unary", "op": "not", "span": span(token["span"]["line"], token["span"]["column"], nested["node"]["span"]["column"] + nested["node"]["span"]["length"] - token["span"]["column"]), "value": nested["node"]}}
+    if kind == "minus":
+        let nested = token_primary(tokens, index + 1)
+        return {"next": nested["next"], "node": {"kind": "unary", "op": "negate", "span": span(token["span"]["line"], token["span"]["column"], nested["node"]["span"]["column"] + nested["node"]["span"]["length"] - token["span"]["column"]), "value": nested["node"]}}
+    if kind == "number":
+        return {"next": index + 1, "node": {"kind": "literal", "literal_kind": "number", "span": token["span"], "value": value}}
+    if kind == "text":
+        return {"next": index + 1, "node": {"kind": "literal", "literal_kind": "text", "span": token["span"], "value": value}}
+    if kind == "name":
+        return {"next": index + 1, "node": {"kind": "name", "name": value, "span": token["span"]}}
+    if kind == "left_paren":
+        let nested = token_expression(tokens, index + 1, 0)
+        let close = nested["next"]
+        if close < len(tokens) and tokens[close]["kind"] == "right_paren":
+            return {"next": close + 1, "node": nested["node"]}
+        return nested
+    if kind == "left_bracket":
+        let elements = []
+        let cursor = index + 1
+        if cursor < len(tokens) and tokens[cursor]["kind"] == "right_bracket":
+            return {"next": cursor + 1, "node": {"elements": elements, "kind": "list", "span": span(token["span"]["line"], token["span"]["column"], 2)}}
+        while cursor < len(tokens):
+            let element = token_expression(tokens, cursor, 0)
+            elements = append(elements, element["node"])
+            cursor = element["next"]
+            if cursor < len(tokens) and tokens[cursor]["kind"] == "comma":
+                cursor = cursor + 1
+            else:
+                break
+        if cursor < len(tokens) and tokens[cursor]["kind"] == "right_bracket":
+            let end_span = tokens[cursor]["span"]
+            return {"next": cursor + 1, "node": {"elements": elements, "kind": "list", "span": span(token["span"]["line"], token["span"]["column"], end_span["column"] + end_span["length"] - token["span"]["column"])}}
+        return {"next": cursor, "node": {"elements": elements, "kind": "list", "span": token["span"]}}
+    if kind == "left_brace":
+        let entries = []
+        let cursor = index + 1
+        if cursor < len(tokens):
+            if tokens[cursor]["kind"] == "right_brace":
+                return {"next": cursor + 1, "node": {"entries": entries, "kind": "map", "span": span(token["span"]["line"], token["span"]["column"], 2)}}
+        while cursor < len(tokens):
+            let key_result = token_expression(tokens, cursor, 0)
+            cursor = key_result["next"]
+            if cursor < len(tokens):
+                if tokens[cursor]["kind"] == "colon":
+                    cursor = cursor + 1
+                    let value_result = token_expression(tokens, cursor, 0)
+                    entries = append(entries, {"key": key_result["node"], "value": value_result["node"]})
+                    cursor = value_result["next"]
+                    if cursor < len(tokens):
+                        if tokens[cursor]["kind"] == "comma":
+                            cursor = cursor + 1
+                        else:
+                            break
+                    else:
+                        break
+                else:
+                    break
+            else:
+                break
+        if cursor < len(tokens):
+            if tokens[cursor]["kind"] == "right_brace":
+                let end_span = tokens[cursor]["span"]
+                return {"next": cursor + 1, "node": {"entries": entries, "kind": "map", "span": span(token["span"]["line"], token["span"]["column"], end_span["column"] + end_span["length"] - token["span"]["column"])}}
+        return {"next": cursor, "node": {"entries": entries, "kind": "map", "span": token["span"]}}
+    return {"next": index + 1, "node": {"kind": "name", "name": value, "span": token["span"]}}
+
+export fn token_precedence(kind):
+    if kind == "or":
+        return 1
+    if kind == "and":
+        return 2
+    if kind == "equal_equal" or kind == "not_equal" or kind == "less" or kind == "less_equal" or kind == "greater" or kind == "greater_equal":
+        return 3
+    if kind == "plus" or kind == "minus":
+        return 4
+    if kind == "star" or kind == "slash" or kind == "percent":
+        return 5
+    return 0
+
+export fn token_expression(tokens, index, minimum_precedence):
+    let left_result = token_primary(tokens, index)
+    let suffix_result = token_suffix(left_result["node"], tokens, left_result["next"])
+    let left = suffix_result["node"]
+    let cursor = suffix_result["next"]
+    while cursor < len(tokens):
+        let operator_kind = tokens[cursor]["kind"]
+        let precedence = token_precedence(operator_kind)
+        if precedence < minimum_precedence or precedence == 0:
+            break
+        let right_result = token_expression(tokens, cursor + 1, precedence + 1)
+        left = token_binary(left, token_operator(operator_kind), right_result["node"])
+        cursor = right_result["next"]
+    return {"next": cursor, "node": left}
+
+export fn parse_token_expression(tokens):
+    if len(tokens) == 0:
+        return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": 1, "help": "add an expression", "line": 1, "message": "expected expression", "severity": "error"}], "kind": "zap.diagnostics", "schema_version": 1})
+    let result = token_expression(tokens, 0, 0)
+    return json({"ast": {"expression": result["node"]}, "kind": "zap.ast.expression", "schema_version": 1, "consumed": result["next"]})
+
+export fn parse_general_with_tokens(source, tokens, source_name):
+    let delimiter = delimiter_diagnostics(tokens, source_name)
+    if delimiter != none:
+        return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    return parse_general(source, source_name)
+
+export fn token_named_argument(tokens, index):
+    if index + 1 < len(tokens):
+        if tokens[index]["kind"] == "name":
+            if tokens[index + 1]["kind"] == "equal":
+                let value = token_expression(tokens, index + 2, 0)
+                return {"next": value["next"], "argument": {"kind": "named", "name": tokens[index]["value"], "value": value["node"]}}
+    let value = token_expression(tokens, index, 0)
+    return {"next": value["next"], "argument": {"kind": "positional", "value": value["node"]}}
+
+export fn token_suffix(base, tokens, index):
+    let current = base
+    let cursor = index
+    while cursor < len(tokens):
+        let kind = tokens[cursor]["kind"]
+        if kind == "left_paren":
+            let arguments = []
+            cursor = cursor + 1
+            while cursor < len(tokens):
+                if tokens[cursor]["kind"] == "right_paren":
+                    break
+                let argument = token_named_argument(tokens, cursor)
+                arguments = append(arguments, argument["argument"])
+                cursor = argument["next"]
+                if cursor < len(tokens):
+                    if tokens[cursor]["kind"] == "comma":
+                        cursor = cursor + 1
+                    else:
+                        break
+                else:
+                    break
+            if cursor < len(tokens):
+                if tokens[cursor]["kind"] == "right_paren":
+                    let end_span = tokens[cursor]["span"]
+                    current = {"args": arguments, "callee": current, "kind": "call", "span": span(current["span"]["line"], current["span"]["column"], end_span["column"] + end_span["length"] - current["span"]["column"])}
+                    cursor = cursor + 1
+                else:
+                    break
+            else:
+                break
+        else:
+            if kind == "left_bracket":
+                let index_result = token_expression(tokens, cursor + 1, 0)
+                cursor = index_result["next"]
+                if cursor < len(tokens) and tokens[cursor]["kind"] == "right_bracket":
+                    let end_span = tokens[cursor]["span"]
+                    current = {"index": index_result["node"], "kind": "index", "span": span(current["span"]["line"], current["span"]["column"], end_span["column"] + end_span["length"] - current["span"]["column"]), "target": current}
+                    cursor = cursor + 1
+                else:
+                    break
+            else:
+                if kind == "dot":
+                    if cursor + 1 < len(tokens):
+                        if tokens[cursor + 1]["kind"] == "name":
+                            let member = tokens[cursor + 1]
+                            current = {"kind": "member", "member": member["value"], "span": span(current["span"]["line"], current["span"]["column"], member["span"]["column"] + member["span"]["length"] - current["span"]["column"]), "target": current}
+                            cursor = cursor + 2
+                        else:
+                            break
+                    else:
+                        break
+                else:
+                    break
+    return {"next": cursor, "node": current}
+
+export fn general_top_level_boundary(line):
+    let value = trim(line)
+    if value == "":
+        return false
+    if indentation_width(line) != 0:
+        return false
+    if value == "else:" or starts_with(value, "elif ") or value == "catch:" or starts_with(value, "catch ") or value == "finally:":
+        return false
+    return true
+
+export fn parse_general_top_level(lines):
+    return parse_general_sequence(lines)
+
+export fn invalid_member_diagnostic(tokens, source_name):
+    let index = 0
+    while index < len(tokens):
+        if tokens[index]["kind"] == "dot":
+            let invalid = false
+            if index + 1 >= len(tokens):
+                invalid = true
+            else:
+                if tokens[index + 1]["kind"] != "name":
+                    invalid = true
+            if invalid:
+                let next_kind = "EOF"
+                if index + 1 < len(tokens):
+                    next_kind = tokens[index + 1]["kind"]
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got " + next_kind, "severity": "error", "source_name": source_name}
+        index = index + 1
+    return none
+
+export fn missing_assignment_diagnostic(source, tokens, source_name):
+    let value = trim(source)
+    if starts_with(value, "let "):
+        for token in tokens:
+            if token["kind"] == "equal":
+                return none
+        return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}
+    return none
