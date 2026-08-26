@@ -17,9 +17,11 @@ export fn vm_stack_without_last(stack):
 
 export fn vm_pop(state):
     let stack = state["stack"]
+    if len(stack) == 0:
+        return {"error": "stack_underflow", "value": none, "state": state}
     let index = len(stack) - 1
     let remaining = vm_stack_without_last(stack)
-    return {"value": stack[index], "state": {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": remaining}}
+    return {"error": none, "value": stack[index], "state": {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": remaining}}
 
 export fn vm_step(state, instruction):
     let op = instruction["op"]
