@@ -28,7 +28,7 @@
 
 - [ ] **Full diagnostic parity** — native reference parser/diagnostic/typed-IR fixtures ၁၈ ခုအတွက် repeated byte-determinism နှင့် schema differential matrix pass ထားသော်လည်း Zap candidate နှင့် field-by-field full parity မပြီးသေးပါ။
 
-- [ ] **General typed-IR production** — declaration/list/map emission၊ list/index disambiguation၊ generic type-alias node၊ generic/function metadata၊ arithmetic/comparison/logical binary expression၊ multi-argument positional call၊ index/member/await/propagate expression nodes နှင့် return/say/raise/if/while/for payload metadata ကို တိုးချဲ့ပြီး 100+ generic/type assertions နှင့် expression regressions pass ထားသော်လည်း nested argument splitting၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
+- [ ] **General typed-IR production** — declaration/list/map emission၊ list/index disambiguation၊ generic type-alias node၊ generic/function metadata၊ arithmetic/comparison/logical binary expression၊ positional/named multi-argument calls၊ index/member/await/propagate expression nodes နှင့် return/say/raise/if/while/for payload metadata ကို တိုးချဲ့ပြီး 100+ generic/type assertions၊ expression regressions နှင့် named-argument ၆ cases pass ထားသော်လည်း nested argument splitting၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
