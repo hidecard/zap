@@ -326,4 +326,4 @@ The three main Section A workstreams now have additional verifier-backed increme
 
 - [x] B4 rebuild-plan orchestration gate — seed-to-lexer/parser/typecheck/VM stage descriptors၊ deterministic artifact manifest၊ Zap-owner policy နှင့် native-owner deny boundary စုစုပေါင်း ၁၇ assertions pass။
 
-- [ ] **B4 native-independent self-rebuild** — Rebuild plan သည် stage contract၊ Zap-owner policy နှင့် native-owner deny boundary ကို သတ်မှတ်ထားသော်လည်း actual Zap compiler runner မရှိသေးပါ။ Verifier သည် `native_independent=false` ကို အတည်ပြုထားပြီး native Rust reference ကို မအစားထိုးရသေးပါ။
+- [ ] **B4 native-independent self-rebuild** — Rebuild plan တွင် stage execution artifact၊ input/output digest propagation၊ Zap-owner policy နှင့် native-owner deny boundary contract များ ထည့်ထားသော်လည်း actual Zap compiler runner မရှိသေးပါ။ Verifier သည် `native_independent=false` ကို အတည်ပြုထားပြီး native Rust reference ကို မအစားထိုးရသေးပါ။

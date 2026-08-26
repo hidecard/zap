@@ -10,6 +10,12 @@ export fn rebuild_plan(seed, stages):
 export fn rebuild_artifact(plan, stage_name, digest):
     return {"compiler_stage": plan["compiler_stage"], "digest": digest, "stage": stage_name, "version": plan["version"]}
 
+export fn rebuild_stage_execution(stage, input_digest, output_digest):
+    return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "owner": stage["owner"], "stage": stage["name"], "status": "planned"}
+
+export fn rebuild_execution_manifest(plan, executions):
+    return {"compiler_stage": plan["compiler_stage"], "executions": executions, "seed": plan["seed"], "version": plan["version"]}
+
 export fn rebuild_manifest(plan, artifacts):
     return {"artifacts": artifacts, "compiler_stage": plan["compiler_stage"], "seed": plan["seed"], "version": plan["version"]}
 
