@@ -299,3 +299,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B3 Zap ownership-transition gate — Zap-written deterministic manifest/lock/offline policy foundation နှင့် stack bytecode VM foundation စုစုပေါင်း ၂၀ cases pass။
 
 - [ ] **B3/B4 full ownership** — Candidate package/VM modules ရှိလာသော်လည်း native Rust CLI/package resolver/evaluator ကို bootstrap implementation ဖြင့် အစားထိုးပြီး reproducible platform-seed self-rebuild ပြုလုပ်ခြင်း မပြီးသေးပါ။
+
+- [x] B4 seed preflight gate — deterministic platform-seed descriptor၊ package-lock schema linkage၊ typed-IR schema linkage နှင့် repeated seed reproducibility စုစုပေါင်း ၁၀ cases pass။
+
+- [ ] **Full B4 self-hosting** — Seed preflight သာ pass ဖြစ်ပြီး Zap compiler ကို platform seed ဖြင့် မိမိ source အပေါ် ပြန် build/run လုပ်ခြင်း၊ byte-for-byte self-rebuild နှင့် native-independent compiler/VM execution မပြီးသေးပါ။

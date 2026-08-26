@@ -13,7 +13,7 @@
 | 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive list/map environment typing, function-aware call inference, condition-derived option/result narrowing, compound path states, program expression propagation, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
 | 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans၊ generic function/type-alias metadata၊ recursive type-unification၊ generic end-to-end၊ bounded expression nodes နှင့် arbitrary control-statement sequence nodes pass; complete parser AST/block metadata and full ownership remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint, cycle foundations, and bounded diagnostic field parity pass; complete reference error matrix remains pending. |
-| 10 | Bootstrap package/build/VM ownership | [x] partial | Zap-written B3 package/lock/offline-policy and stack-VM foundations pass 20 focused cases; native Rust ownership transfer, complete bytecode semantics, and seed rebuild remain pending. |
+| 10 | Bootstrap package/build/VM ownership | [x] partial | Zap-written B3 package/lock/offline-policy and stack-VM foundations pass 20 focused cases; deterministic B4 seed preflight passes 10 cases; native Rust ownership transfer, complete bytecode semantics, and self-rebuild remain pending. |
 
 ## Current expansion batch
 
@@ -38,6 +38,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b1_parser_candidate.sh`
 - `scripts/bootstrap/verify_b1_statement_coverage_8.sh` — covers 8 empty-return, raise, import, and module parser statement cases
 - `scripts/bootstrap/verify_b3_zap_ownership_20.sh` — covers 20 Zap-written package/lock/offline-policy and stack-VM foundation cases
+- `scripts/bootstrap/verify_b4_seed_preflight_10.sh` — covers 10 deterministic platform-seed descriptor and reproducibility cases
 - `scripts/bootstrap/verify_b1_token_cursor.sh`
 - `scripts/bootstrap/verify_b1_recursive_blocks.sh`
 - `scripts/bootstrap/verify_b1_branch_chain.sh`

@@ -1,0 +1,13 @@
+# B4 preflight seed descriptor. This is not a self-hosted compiler.
+
+export fn platform_seed(version, target, compiler_stage):
+    return {"compiler_stage": compiler_stage, "schema_version": 1, "target": target, "version": version}
+
+export fn seed_artifact(seed, package_lock, typed_ir_schema):
+    return {"lock_schema": package_lock["schema_version"], "seed": seed, "typed_ir_schema": typed_ir_schema}
+
+export fn seed_is_reproducible(first, second):
+    return first == second
+
+export fn seed_acceptance(seed, expected_stage, expected_target):
+    return {"accepted": seed["compiler_stage"] == expected_stage and seed["target"] == expected_target, "stage": seed["compiler_stage"], "target": seed["target"]}
