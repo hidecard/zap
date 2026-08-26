@@ -18,3 +18,13 @@ export fn seed_compile_source(source, source_name):
 
 export fn seed_compile_bytes(artifact):
     return json(artifact)
+
+export fn seed_self_rebuild(source, source_name):
+    let first = seed_compile_source(source, source_name)
+    let second = seed_compile_source(source, source_name)
+    let first_bytes = seed_compile_bytes(first)
+    let second_bytes = seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes:
+        status = "reproducible"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "second": second, "status": status}
