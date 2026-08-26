@@ -190,6 +190,21 @@ export fn emit_generic_type_aliases(source, source_name):
 export fn control_statement_node(line, line_number, next_line):
     let value = trim(line)
     let kind = "expression"
+    let payload = none
+    let condition = none
+    let iterable = none
+    if starts_with(value, "return "):
+        payload = expression_node(trim(substring(value, 7, len(value))))
+    if starts_with(value, "say "):
+        payload = expression_node(trim(substring(value, 4, len(value))))
+    if starts_with(value, "raise "):
+        payload = expression_node(trim(substring(value, 6, len(value))))
+    if starts_with(value, "if "):
+        condition = expression_node(trim(substring(value, 3, len(value) - 1)))
+    if starts_with(value, "while "):
+        condition = expression_node(trim(substring(value, 6, len(value) - 1)))
+    if starts_with(value, "for ") and contains(value, " in "):
+        iterable = expression_node(trim(split(value, " in ")[1]))
     if starts_with(value, "if "):
         kind = "if"
     if starts_with(value, "elif "):
@@ -217,7 +232,7 @@ export fn control_statement_node(line, line_number, next_line):
     let successors = []
     if kind != "return":
         successors = [next_line]
-    return {"kind": kind, "source": value, "span": span(line_number, 1, len(value)), "successors": successors}
+    return {"condition": condition, "iterable": iterable, "kind": kind, "payload": payload, "source": value, "span": span(line_number, 1, len(value)), "successors": successors}
 
 export fn emit_arbitrary_program(source, source_name):
     let lines = split(source, "\n")
