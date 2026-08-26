@@ -308,9 +308,9 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 
 - [ ] **Main-1 full ownership** — Recursive inference expansion pass ဖြစ်သော်လည်း all parser AST expression kinds၊ generic call return instantiation၊ aliasing/mutation၊ loop fixpoint transfer နှင့် complete reference parity မပြီးသေးပါ။
 
-- [x] Main-2 parser/typed-IR expansion gate — parser `try/catch` AST node နှင့် typed-IR `raise`၊ `import`၊ `module`၊ `try`၊ `catch` node classification စုစုပေါင်း ၅ cases pass။ Existing B1 control-flow regressions များလည်း pass။
+- [x] Main-2 parser/typed-IR expansion gate — parser `try/catch` AST node၊ typed-IR `raise/import/module/try/catch` classification ၅ cases နှင့် arithmetic/comparison/logical binary operator emission ၈ cases pass။ Generic indentation parser နှင့် existing B1 control-flow regressions များလည်း pass။
 
-- [ ] **Main-2 full ownership** — Additional statement coverage ရှိလာသော်လည်း all grammar၊ complete nested function/class/module AST၊ arbitrary expression/control metadata၊ full diagnostic matrix နှင့် production Zap-owned parser/typed-IR pipeline မပြီးသေးပါ။
+- [ ] **Main-2 full ownership** — Generic indentation route နှင့် binary operator emission တိုးချဲ့ထားသော်လည်း all grammar၊ complete nested function/class/module AST၊ arbitrary expression/control metadata၊ full diagnostic matrix နှင့် production Zap-owned parser/typed-IR pipeline မပြီးသေးပါ။
 
 ## Main-3 consolidated status
 
