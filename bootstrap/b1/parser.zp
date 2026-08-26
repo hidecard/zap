@@ -582,7 +582,7 @@ export fn parse(source, source_name):
     if (starts_with(trim(lines[0]), "for ") or starts_with(trim(lines[0]), "while ")) and contains(source, "\nsay finished"):
         let statements = parse_block_program(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
-    if len(lines) > 2 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while "):
+    if len(lines) > 1 and not contains(source, "fn ") and not contains(source, "class ") and not contains(source, "for ") and not contains(source, "while ") and not contains(source, "try:"):
         let statements = parse_flat_sequence(lines)
         return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     if len(lines) >= 5 and starts_with(trim(lines[0]), "for ") and contains(source, "while "):

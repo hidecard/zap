@@ -272,6 +272,8 @@ export fn emit_declarations(source, source_name):
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit(source, source_name):
+    if contains(source, "\n") and starts_with(trim(source), "let "):
+        return emit_arbitrary_program(source, source_name)
     if starts_with(trim(source), "if ") or starts_with(trim(source), "while ") or starts_with(trim(source), "for ") or starts_with(trim(source), "return") or starts_with(trim(source), "say ") or starts_with(trim(source), "raise ") or starts_with(trim(source), "import ") or starts_with(trim(source), "module ") or trim(source) == "try:" or starts_with(trim(source), "catch"):
 
         return emit_arbitrary_program(source, source_name)
