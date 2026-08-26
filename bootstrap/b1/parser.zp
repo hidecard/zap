@@ -381,6 +381,80 @@ export fn parse_choose_function():
     let parameter = {"annotation": "number", "default": none, "name": "value"}
     return {"body": body, "exported": false, "is_async": false, "kind": "function", "name": "choose", "params": [parameter], "return_type": "number", "span": span(4, 1, 35), "visibility": "public"}
 
+export fn parse_parameter_list(parameter_text):
+    let params = []
+    let value = trim(parameter_text)
+    if value == "":
+        return params
+    for item in split(value, ","):
+        let part = trim(item)
+        let name_text = part
+        let annotation = none
+        if contains(part, ":"):
+            let pieces = split(part, ":")
+            name_text = trim(pieces[0])
+            annotation = trim(pieces[1])
+        params = append(params, {"annotation": annotation, "default": none, "name": name_text})
+    return params
+
+export fn parse_generic_function(lines):
+    let header = trim(lines[0])
+    let open_index = 0
+    while open_index < len(header):
+        if char_at(header, open_index) == "(":
+            break
+        open_index = open_index + 1
+    let close_index = len(header) - 1
+    while close_index >= 0:
+        if char_at(header, close_index) == ")":
+            break
+        close_index = close_index - 1
+    let name_text = trim(substring(header, 3, open_index))
+    let parameter_text = substring(header, open_index + 1, close_index)
+    let return_type = none
+    if contains(header, "->"):
+        let return_parts = split(substring(header, close_index + 1, len(header) - 1), "->")
+        if len(return_parts) == 2:
+            return_type = trim(return_parts[1])
+    let nested = parse_block_from(lines, 1, 4)
+    let function = {"body": {"statements": nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "visibility": "public"}
+    let statements = []
+    statements = append(statements, function)
+    let cursor = nested["next"]
+    while cursor < len(lines):
+        let line = lines[cursor]
+        if trim(line) != "":
+            statements = append(statements, parse_statement(line, cursor + 1, 1))
+        cursor = cursor + 1
+    return statements
+
+export fn parse_generic_class(lines):
+    let header = trim(lines[0])
+    let class_name = trim(substring(header, 6, len(header) - 1))
+    let class_statements = []
+    if len(lines) > 1 and starts_with(trim(lines[1]), "fn "):
+        let method_header = trim(lines[1])
+        let open_index = 0
+        while open_index < len(method_header):
+            if char_at(method_header, open_index) == "(":
+                break
+            open_index = open_index + 1
+        let close_index = len(method_header) - 1
+        while close_index >= 0:
+            if char_at(method_header, close_index) == ")":
+                break
+            close_index = close_index - 1
+        let method_name = trim(substring(method_header, 3, open_index))
+        let method_params = parse_parameter_list(substring(method_header, open_index + 1, close_index))
+        let method_nested = parse_block_from(lines, 2, 8)
+        let method = {"body": {"statements": method_nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": method_name, "params": method_params, "return_type": none, "span": span(2, 5, len(method_header)), "visibility": "public"}
+        class_statements = append(class_statements, method)
+    else:
+        let nested = parse_block_from(lines, 1, 4)
+        class_statements = nested["statements"]
+    let class_statement = {"base": none, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}
+    return [class_statement]
+
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}
 
@@ -692,6 +766,12 @@ export fn parse(source, source_name):
         let function = parse_choose_function()
         let final = {"kind": "say", "span": span(9, 1, 18), "value": parse_expression("choose(result)", 1)}
         return json({"ast": {"statements": [first, second, third, function, final]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) > 1 and starts_with(trim(lines[0]), "fn "):
+        let statements = parse_generic_function(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+    if len(lines) > 1 and starts_with(trim(lines[0]), "class "):
+        let statements = parse_generic_class(lines)
+        return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
     let first_line = trim(lines[0])
     let statement = parse_statement(lines[0], 1, 1)
     return json({"ast": {"statements": [statement]}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
