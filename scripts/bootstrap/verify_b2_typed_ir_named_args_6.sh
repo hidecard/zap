@@ -9,7 +9,7 @@ expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
 import "bootstrap/b2/typed_ir.zp"
-let call = expression_node("render(title: \"Zap\", count: 2)")
+let call = expression_node("render(title = \"Zap\", count = 2)")
 say call["kind"]
 say len(call["args"])
 say call["args"][0]["kind"]

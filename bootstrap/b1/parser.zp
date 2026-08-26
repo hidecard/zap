@@ -146,8 +146,8 @@ export fn find_top_level_comma(value):
 
 export fn parse_call_argument(argument_text, argument_column):
     let value = trim(argument_text)
-    if contains(value, ":") and not starts_with(value, "{"):
-        let parts = split(value, ":")
+    if contains(value, " = ") and not starts_with(value, "{"):
+        let parts = split(value, " = ")
         if len(parts) == 2:
             return {"kind": "named", "name": trim(parts[0]), "value": parse_expression(trim(parts[1]), argument_column)}
     return {"kind": "positional", "value": parse_expression(value, argument_column)}

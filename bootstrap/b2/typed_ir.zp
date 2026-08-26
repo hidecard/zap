@@ -21,8 +21,8 @@ export fn expression_call_arguments(argument_text):
         return args
     for item in split(argument_text, ","):
         let argument = trim(item)
-        if contains(argument, ":") and not starts_with(argument, "{"):
-            let parts = split(argument, ":")
+        if contains(argument, " = ") and not starts_with(argument, "{"):
+            let parts = split(argument, " = ")
             if len(parts) == 2:
                 args = append(args, {"kind": "named", "name": trim(parts[0]), "value": expression_node(trim(parts[1]))})
             else:
