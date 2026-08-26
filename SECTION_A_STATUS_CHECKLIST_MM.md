@@ -24,7 +24,7 @@
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
-- [ ] **Arbitrary-program parser coverage** — mixed top-level sequence အတွင်း block header တွေ့ပါက indentation parser သို့ route ပြောင်းခြင်း၊ typed/untyped declaration parsing၊ declaration-route ၆-case verifier နှင့် native-compatible positional/named (`name = value`) call-argument AST route ကို တိုးချဲ့ပြီး B1/B2 parser-diagnostic regressions pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
+- [ ] **Arbitrary-program parser coverage** — mixed top-level sequence အတွင်း block header တွေ့ပါက indentation parser သို့ route ပြောင်းခြင်း၊ typed/untyped declaration parsing၊ declaration-route ၆-case verifier၊ nested assignment/block span parity နှင့် native-compatible positional/named (`name = value`) call-argument AST route ကို တိုးချဲ့ပြီး B1/B2 parser-diagnostic regressions နှင့် native differential matrix ၁၈ fixtures pass ထားသော်လည်း functions/classes နှင့် arbitrary mixed top-level sequences အတွက် full parser ownership မပြီးသေးပါ။
 
 - [ ] **Full diagnostic parity** — native reference parser/diagnostic/typed-IR fixtures ၁၈ ခုအတွက် repeated byte-determinism နှင့် schema differential matrix pass ထားသော်လည်း Zap candidate နှင့် field-by-field full parity မပြီးသေးပါ။
 

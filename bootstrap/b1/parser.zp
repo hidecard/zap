@@ -280,12 +280,12 @@ export fn parse_declaration(line, line_number):
     let statement = {"annotation": annotation, "exported": false, "kind": "declaration", "name": name_text, "span": span(line_number, 1, len(declaration)), "value": value}
     return statement
 
-export fn parse_assignment(line, line_number):
+export fn parse_assignment(line, line_number, body_column):
     let assignment = trim(line)
     let target = split(assignment, " = ")
     let name_text = trim(target[0])
     let value = parse_expression(target[1], 1)
-    return {"kind": "assignment", "name": name_text, "span": span(line_number, 1, len(assignment)), "value": value}
+    return {"kind": "assignment", "name": name_text, "span": span(line_number, body_column, len(assignment)), "value": value}
 
 export fn parse_return(line, line_number):
     let value_text = trim(substring(trim(line), 7, len(trim(line))))
@@ -318,7 +318,7 @@ export fn parse_statement(line, line_number, body_column):
         return {"kind": "break", "span": span(line_number, body_column, len(statement))}
     if statement == "continue":
         return {"kind": "continue", "span": span(line_number, body_column, len(statement))}
-    return parse_assignment(line, line_number)
+    return parse_assignment(line, line_number, body_column)
 
 export fn parse_simple_function(lines):
     let header = trim(lines[0])
@@ -509,11 +509,11 @@ export fn parse_block_from(lines, start_index, indent):
                                         let chained_body = parse_block_from(lines, else_nested["next"] + 1, indent + 4)
                                         chained_else = {"statements": chained_body["statements"]}
                                         chained_next = chained_body["next"]
-                                else_branch = {"statements": [{"condition": parse_expression(elif_condition, indent + 4), "else_branch": chained_else, "kind": "if", "span": span(nested["next"] + 1, indent + 1, len(elif_text)), "then_branch": {"statements": else_nested["statements"]}}]}
+                                else_branch = {"statements": [{"condition": parse_expression(elif_condition, 1), "else_branch": chained_else, "kind": "if", "span": span(nested["next"] + 1, indent + 1, len(elif_text)), "then_branch": {"statements": else_nested["statements"]}}]}
                                 final_next = chained_next
                             if trim(else_line) == "else:":
                                 final_next = else_nested["next"]
-                    statements = append(statements, {"condition": parse_expression(condition_text, indent + 4), "else_branch": else_branch, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
+                    statements = append(statements, {"condition": parse_expression(condition_text, 1), "else_branch": else_branch, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
                     cursor = {"index": final_next, "lines": lines}
                 else:
                     if current == "try:":
@@ -532,10 +532,10 @@ export fn parse_block_from(lines, start_index, indent):
                             let header_parts = split(current, " in ")
                             let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
                             let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
-                            statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, indent + 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                            statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
                         else:
                             let condition_text = trim(substring(current, 6, len(current) - 1))
-                            statements = append(statements, {"body": body, "condition": parse_expression(condition_text, indent + 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                            statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
                 if not starts_with(current, "if ") and current != "try:":
                     cursor = {"index": nested["next"], "lines": lines}
             else:
