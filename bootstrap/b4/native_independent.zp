@@ -1,0 +1,20 @@
+# B4 seed compiler slice. This emits canonical bytecode for a bounded source form.
+# Full compiler ownership remains blocked until arbitrary Zap source is supported.
+
+export fn seed_number(value):
+    return from_json(trim(value))
+
+export fn seed_compile_source(source, source_name):
+    let words = split(trim(source), " ")
+    if len(words) == 4 and words[0] == "say" and words[2] == "+":
+        let instructions = []
+        instructions = append(instructions, {"op": "const", "value": seed_number(words[1])})
+        instructions = append(instructions, {"op": "const", "value": seed_number(words[3])})
+        instructions = append(instructions, {"op": "add"})
+        instructions = append(instructions, {"op": "print"})
+        instructions = append(instructions, {"op": "halt"})
+        return {"artifact_kind": "bytecode", "instructions": instructions, "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
+    return {"artifact_kind": "bytecode", "instructions": [], "native_independent": false, "source_name": source_name, "status": "unsupported_source"}
+
+export fn seed_compile_bytes(artifact):
+    return json(artifact)
