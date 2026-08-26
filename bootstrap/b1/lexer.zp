@@ -69,10 +69,23 @@ export fn lex(source, source_name):
                             break
                         i = i + 1
                         column = column + 1
+                    if i + 1 < source_length and char_at(input, i) == "." and is_digit(char_at(input, i + 1)):
+                        i = i + 1
+                        column = column + 1
+                        while true:
+                            if i >= source_length:
+                                break
+                            if not is_digit(char_at(input, i)):
+                                break
+                            i = i + 1
+                            column = column + 1
                     let raw = substring(input, start, i)
                     if len(raw) > 19:
                         return lexer_error(source_name, "ZAP-LEX-INT-001", "invalid integer literal at " + str(start_line) + ":" + str(start_column) + ": " + raw, start_line, start_column)
-                    let emitted = append_token(tokens, first, token("number", raw, start_line, start_column, i - start))
+                    let numeric_value = raw
+                    if contains(raw, "."):
+                        numeric_value = quoted(raw)
+                    let emitted = append_token(tokens, first, token("number", numeric_value, start_line, start_column, i - start))
                     tokens = emitted["tokens"]
                     first = emitted["first"]
                 else:
@@ -100,6 +113,10 @@ export fn lex(source, source_name):
                             if word == "or":
                                 kind = "or"
                                 value_json = "null"
+                            else:
+                                if word == "not":
+                                    kind = "not"
+                                    value_json = "null"
                         let emitted = append_token(tokens, first, token(kind, value_json, start_line, start_column, i - start))
                         tokens = emitted["tokens"]
                         first = emitted["first"]

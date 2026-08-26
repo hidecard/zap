@@ -1,0 +1,53 @@
+
+export fn lower_literal(node):
+    let instructions = []
+    return append(instructions, {"op": "const", "value": node["value"]})
+
+export fn lower_expression(node):
+    let kind = node["kind"]
+    if kind == "literal":
+        return {"error": none, "instructions": lower_literal(node)}
+    if kind == "binary":
+        let left = lower_expression(node["left"])
+        if left["error"] != none:
+            return left
+        let right = lower_expression(node["right"])
+        if right["error"] != none:
+            return right
+        let instructions = left["instructions"]
+        for instruction in right["instructions"]:
+            instructions = append(instructions, instruction)
+        let op = node["op"]
+        if op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder":
+            return {"error": none, "instructions": append(instructions, {"op": op})}
+        return {"error": "unsupported_binary_operator:" + op, "instructions": []}
+    return {"error": "unsupported_expression:" + kind, "instructions": []}
+
+export fn lower_node(node):
+    let kind = node["kind"]
+    if kind == "declaration":
+        return lower_expression(node["value"])
+    if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
+        let payload = node["payload"]
+        if payload == none:
+            return {"error": "missing_payload:" + kind, "instructions": []}
+        let lowered = lower_expression(payload)
+        if lowered["error"] != none:
+            return lowered
+        if kind == "say":
+            return {"error": none, "instructions": append(lowered["instructions"], {"op": "print"})}
+        return lowered
+    return {"error": "unsupported_statement:" + kind, "instructions": []}
+
+export fn lower_typed_ir(ir):
+    if ir["kind"] != "zap.typed_ir":
+        return {"error": "invalid_typed_ir_kind", "instructions": []}
+    let instructions = []
+    for node in ir["ir"]["nodes"]:
+        let lowered = lower_node(node)
+        if lowered["error"] != none:
+            return {"error": lowered["error"], "instructions": []}
+        for instruction in lowered["instructions"]:
+            instructions = append(instructions, instruction)
+    let final_instructions = append(instructions, {"op": "halt"})
+    return {"error": none, "instructions": final_instructions, "kind": "zap.bytecode", "schema_version": 1}
