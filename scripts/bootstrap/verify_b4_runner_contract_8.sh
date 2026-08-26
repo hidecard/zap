@@ -16,6 +16,8 @@ let plan = rebuild_plan("platform-seed-0", [lexer, parser])
 let acceptance = runner_acceptance(plan)
 let record = runner_stage_record(lexer, "source-digest", "token-digest")
 let handoff = runner_artifact_handoff(lexer, "source-digest", "token-digest")
+let executed = runner_execute_stage(lexer, "source", "source-digest", "token-digest")
+let rejected = runner_execute_stage(parser, "source", "source-digest", "ast-digest")
 say runner_capability_allowed("console")
 say runner_capability_allowed("file")
 say runner_capability_allowed("network")
@@ -24,6 +26,10 @@ say acceptance["status"]
 say acceptance["native_independent"]
 say acceptance["structurally_valid"]
 say handoff["status"]
+say executed["status"]
+say executed["output_kind"]
+say rejected["status"]
+say rejected["error"]
 say record["owner"]
 say record["native_owner"]
 EOF
@@ -36,9 +42,13 @@ contract_only
 false
 true
 produced
+executed
+tokens
+rejected
+input_kind_mismatch
 zap
 false
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
-printf 'B4 runner-contract gate passed: 10 capability, structural-validity, ownership, and artifact-handoff cases\n'
+printf 'B4 runner-contract gate passed: 15 capability, structural-validity, execution, ownership, and artifact-handoff cases\n'

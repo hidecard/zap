@@ -36,5 +36,12 @@ export fn runner_plan_is_executable(plan):
 export fn runner_artifact_handoff(stage, input_digest, output_digest):
     return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "owner": stage["owner"], "stage": stage["name"], "status": "produced"}
 
+export fn runner_execute_stage(stage, input_kind, input_digest, output_digest):
+    if stage["owner"] != "zap":
+        return {"error": "native_owner", "status": "rejected"}
+    if stage["input_kind"] != input_kind:
+        return {"error": "input_kind_mismatch", "status": "rejected"}
+    return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "output_kind": stage["output_kind"], "stage": stage["name"], "status": "executed"}
+
 export fn runner_acceptance(plan):
     return {"capabilities": runner_capabilities(), "native_independent": false, "structurally_valid": runner_plan_structurally_valid(plan), "status": "contract_only"}
