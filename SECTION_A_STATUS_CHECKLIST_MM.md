@@ -271,3 +271,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 condition-derived narrowing/CFG ၁၀-case gate — option/result guard positive/negative path narrowing၊ compound guard path states၊ CFG sequence nodes နှင့် explicit edge addition pass။
 
 - [ ] **Full condition-derived narrowing and arbitrary CFG** — bounded guard/path/CFG helpers pass ဖြစ်သော်လည်း parser-produced arbitrary AST မှ complete CFG၊ nested condition semantics၊ short-circuit path sensitivity၊ loop back-edge convergence နှင့် full reference diagnostic parity မပြီးသေးပါ။
+
+- [x] B2 short-circuit/loop-edge ၁၂-case gate — `and`/`or` path-state widening၊ nested branch live-path merge၊ loop back-edge၊ `break` exit edge နှင့် `continue` condition edge ownership pass။
+
+- [ ] **Full short-circuit/nested control-flow ownership** — bounded path-state and edge ownership helpers pass ဖြစ်သော်လည်း parser-produced arbitrary nested `if/elif/else` CFG၊ exact short-circuit condition AST semantics၊ loop back-edge dataflow convergence နှင့် full diagnostic parity မပြီးသေးပါ။

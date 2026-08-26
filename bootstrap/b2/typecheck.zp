@@ -109,6 +109,25 @@ export fn compound_condition_paths(environment, conditions):
         else_environment = paths["else"]
     return {"then": then_environment, "else": else_environment}
 
+export fn short_circuit_condition_paths(environment, left, right, operator):
+    let left_paths = condition_path_states(environment, left["name"], left["guard"])
+    if operator == "and":
+        let right_paths = condition_path_states(left_paths["then"], right["name"], right["guard"])
+        return {"then": right_paths["then"], "else": branch_environment_merge_many(environment, [left_paths["else"], right_paths["else"]])}
+    if operator == "or":
+        let right_paths = condition_path_states(left_paths["else"], right["name"], right["guard"])
+        return {"then": branch_environment_merge_many(environment, [left_paths["then"], right_paths["then"]]), "else": right_paths["else"]}
+    return {"then": environment, "else": environment}
+
+export fn nested_branch_flow(base, branches):
+    let live_paths = []
+    for branch in branches:
+        if not branch["returns"]:
+            live_paths = append(live_paths, branch["environment"])
+    if len(live_paths) == 0:
+        return base
+    return branch_environment_merge_many(base, live_paths)
+
 export fn branch_environment_merge_many(base, environments):
     let merged = base
     for binding in base:
@@ -169,6 +188,24 @@ export fn cfg_add_edge(graph, from_id, to_id):
             result = append(result, cfg_node(node["id"], node["kind"], successors, node["environment"]))
             return result
     return result
+
+export fn cfg_last_node(graph, identifier):
+    let result = {"environment": [], "id": identifier, "kind": "missing", "successors": []}
+    for node in graph:
+        if node["id"] == identifier:
+            result = node
+    return result
+
+export fn cfg_loop_edges(graph, condition_id, exit_id, break_ids, continue_ids):
+    let result = graph
+    for break_id in break_ids:
+        result = cfg_add_edge(result, break_id, exit_id)
+    for continue_id in continue_ids:
+        result = cfg_add_edge(result, continue_id, condition_id)
+    return result
+
+export fn cfg_loop_back_edge(graph, body_exit_id, condition_id):
+    return cfg_add_edge(graph, body_exit_id, condition_id)
 
 export fn cfg_sequence_nodes(statements, environment, start_id):
     let graph = []
