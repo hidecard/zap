@@ -27,6 +27,25 @@ export fn lower_expression(node):
                 instructions = append(instructions, instruction)
         let call_instruction = {"argc": len(node["args"]), "name": node["callee"]["name"], "op": "call"}
         return {"error": none, "instructions": append(instructions, call_instruction)}
+    if kind == "binary" and (node["op"] == "and" or node["op"] == "or"):
+        let left = lower_expression(node["left"])
+        if left["error"] != none:
+            return left
+        let right = lower_expression(node["right"])
+        if right["error"] != none:
+            return right
+        let instructions = left["instructions"]
+        instructions = append(instructions, {"op": "dup"})
+        let branch_index = len(instructions)
+        if node["op"] == "and":
+            instructions = append(instructions, {"op": "jump_if_false", "target": 0})
+        else:
+            instructions = append(instructions, {"op": "jump_if_true", "target": 0})
+        instructions = append(instructions, {"op": "pop"})
+        for instruction in right["instructions"]:
+            instructions = append(instructions, instruction)
+        instructions = patch_jump(instructions, branch_index, len(instructions))
+        return {"error": none, "instructions": instructions}
     if kind == "binary":
         let left = lower_expression(node["left"])
         if left["error"] != none:
@@ -42,6 +61,28 @@ export fn lower_expression(node):
             return {"error": none, "instructions": append(instructions, {"op": op})}
         return {"error": "unsupported_binary_operator:" + op, "instructions": []}
     return {"error": "unsupported_expression:" + kind, "instructions": []}
+
+export fn lower_loop_body(body, loop_start):
+    let instructions = []
+    for node in body["statements"]:
+        let lowering_node = node
+        if node["kind"] == "continue":
+            lowering_node = {"kind": "continue", "target": loop_start}
+        let lowered = lower_node(lowering_node)
+        if lowered["error"] != none:
+            return lowered
+        for instruction in lowered["instructions"]:
+            instructions = append(instructions, instruction)
+    return {"error": none, "instructions": instructions}
+
+export fn patch_breaks(instructions, target):
+    let patched = []
+    for instruction in instructions:
+        if instruction["op"] == "break_jump":
+            patched = append(patched, {"op": "jump", "target": target})
+        else:
+            patched = append(patched, instruction)
+    return patched
 
 export fn lower_block(body):
     let instructions = []
@@ -99,7 +140,7 @@ export fn lower_node(node):
         let condition = lower_expression(node["condition"])
         if condition["error"] != none:
             return condition
-        let body = lower_block(node["body"])
+        let body = lower_loop_body(node["body"], node["loop_start"])
         if body["error"] != none:
             return body
         let instructions = condition["instructions"]
@@ -109,12 +150,16 @@ export fn lower_node(node):
             instructions = append(instructions, instruction)
         instructions = append(instructions, {"op": "jump", "target": 0})
         let end_target = len(instructions)
-        instructions = patch_jump(instructions, false_jump_index, end_target)
-        let loop_start = 0
-        if node["loop_start"] != none:
-            loop_start = node["loop_start"]
-        instructions = patch_jump(instructions, end_target - 1, loop_start)
+        instructions = patch_jump(instructions, false_jump_index, node["loop_start"] + end_target)
+        instructions = patch_jump(instructions, end_target - 1, node["loop_start"])
+        instructions = patch_breaks(instructions, node["loop_start"] + end_target)
         return {"error": none, "instructions": instructions}
+    if kind == "break":
+        let instructions = []
+        return {"error": none, "instructions": append(instructions, {"op": "break_jump"})}
+    if kind == "continue":
+        let instructions = []
+        return {"error": none, "instructions": append(instructions, {"op": "jump", "target": node["target"]})}
     if kind == "declaration" or kind == "assignment":
         let lowered_value = lower_expression(node["value"])
         if lowered_value["error"] != none:

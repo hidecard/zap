@@ -40,13 +40,29 @@ let logical_ir = {"ir": {"nodes": [{"condition": expression_node("true and not f
 let logical = lower_typed_ir(logical_ir)
 let logical_state = vm_run(logical["instructions"])
 say logical_state["output"][0]
+let short_and_ir = {"ir": {"nodes": [{"condition": expression_node("false and missing(1)"), "else_branch": {"statements": [{"kind": "say", "payload": expression_node("2")}]}, "kind": "if", "then_branch": {"statements": [{"kind": "say", "payload": expression_node("1")}]}}]}, "kind": "zap.typed_ir"}
+let short_and = lower_typed_ir(short_and_ir)
+let short_and_state = vm_run(short_and["instructions"])
+say short_and_state["output"][0]
+let short_or_ir = {"ir": {"nodes": [{"condition": expression_node("true or missing(1)"), "else_branch": {"statements": [{"kind": "say", "payload": expression_node("2")}]}, "kind": "if", "then_branch": {"statements": [{"kind": "say", "payload": expression_node("3")}]}}]}, "kind": "zap.typed_ir"}
+let short_or = lower_typed_ir(short_or_ir)
+let short_or_state = vm_run(short_or["instructions"])
+say short_or_state["output"][0]
+let break_ir = {"ir": {"nodes": [{"body": {"statements": [{"kind": "say", "payload": expression_node("1")}, {"kind": "break"}]}, "condition": expression_node("true"), "kind": "while"}]}, "kind": "zap.typed_ir"}
+let broken = lower_typed_ir(break_ir)
+let break_state = vm_run(broken["instructions"])
+say break_state["output"][0]
+let continue_ir = {"ir": {"nodes": [{"kind": "declaration", "name": "i", "value": expression_node("0")}, {"body": {"statements": [{"kind": "assignment", "name": "i", "value": expression_node("i + 1")}, {"kind": "continue"}]}, "condition": expression_node("i < 2"), "kind": "while"}]}, "kind": "zap.typed_ir"}
+let continued = lower_typed_ir(continue_ir)
+let continue_state = vm_run(continued["instructions"])
+say len(continue_state["output"])
 say rejected_state["error"]
 ZP
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["zap.bytecode", "1", "14", "1", "9", "0", "0", "1", "2", "7", "unknown_call:missing"]:
+if lines != ["zap.bytecode", "1", "14", "1", "9", "0", "0", "1", "2", "7", "2", "3", "1", "0", "unknown_call:missing"]:
     raise SystemExit(f"unexpected lowering output: {lines!r}")
 PY
 printf 'Typed-IR to bytecode lowering gate passed: arithmetic, say/VM handoff, schema, and deny-by-default rejection\n'

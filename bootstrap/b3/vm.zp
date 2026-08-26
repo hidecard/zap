@@ -43,6 +43,13 @@ export fn vm_step(state, instruction):
     let advanced = {"error": state["error"], "halted": state["halted"], "ip": state["ip"] + 1, "locals": state["locals"], "output": state["output"], "stack": state["stack"]}
     if op == "jump":
         return {"error": none, "halted": false, "ip": instruction["target"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+    if op == "jump_if_true":
+        let condition = vm_pop(advanced)
+        if condition["error"] != none:
+            return vm_fail(advanced, condition["error"])
+        if condition["value"]:
+            return {"error": none, "halted": false, "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
+        return condition["state"]
     if op == "jump_if_false":
         let condition = vm_pop(advanced)
         if condition["error"] != none:
@@ -50,6 +57,17 @@ export fn vm_step(state, instruction):
         if not condition["value"]:
             return {"error": none, "halted": false, "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
         return condition["state"]
+    if op == "dup":
+        let top = vm_pop(advanced)
+        if top["error"] != none:
+            return vm_fail(advanced, top["error"])
+        let restored = vm_push(top["state"], top["value"])
+        return vm_push(restored, top["value"])
+    if op == "pop":
+        let discarded = vm_pop(advanced)
+        if discarded["error"] != none:
+            return vm_fail(advanced, discarded["error"])
+        return discarded["state"]
     if op == "load":
         let loaded = vm_load(advanced, instruction["name"])
         if loaded["error"] != none:

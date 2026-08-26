@@ -53,6 +53,10 @@ export fn expression_node(expression):
         let parts = split(value, ".")
         if len(parts) == 2 and not contains(value, " "):
             return {"kind": "member", "object": expression_node(trim(parts[0])), "property": trim(parts[1]), "span": span(1, 1, len(value))}
+    if contains(value, " or "):
+        return binary_expression_node(value, " or ", "or")
+    if contains(value, " and "):
+        return binary_expression_node(value, " and ", "and")
     if contains(value, "(") and ends_with(value, ")"):
         let open_index = 0
         while open_index < len(value):
