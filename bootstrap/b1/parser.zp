@@ -454,7 +454,7 @@ export fn indentation_stack_diagnostic(lines, source_name):
 
 export fn is_block_header(line):
     let value = trim(line)
-    return ends_with(value, ":") and (starts_with(value, "if ") or starts_with(value, "for ") or starts_with(value, "while "))
+    return ends_with(value, ":") and (starts_with(value, "if ") or starts_with(value, "for ") or starts_with(value, "while ") or value == "try:")
 
 export fn parse_block_from(lines, start_index, indent):
     let statements = []
@@ -502,15 +502,27 @@ export fn parse_block_from(lines, start_index, indent):
                     statements = append(statements, {"condition": parse_expression(condition_text, indent + 4), "else_branch": else_branch, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body})
                     cursor = {"index": final_next, "lines": lines}
                 else:
-                    if starts_with(current, "for "):
-                        let header_parts = split(current, " in ")
-                        let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
-                        let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
-                        statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, indent + 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                    if current == "try:":
+                        let catch_body = {"statements": []}
+                        let next_index = nested["next"]
+                        if nested["next"] < len(lines):
+                            let catch_line = lines[nested["next"]]
+                            if indentation_width(catch_line) == indent and starts_with(trim(catch_line), "catch"):
+                                let catch_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                                catch_body = {"statements": catch_nested["statements"]}
+                                next_index = catch_nested["next"]
+                        statements = append(statements, {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))})
+                        cursor = {"index": next_index, "lines": lines}
                     else:
-                        let condition_text = trim(substring(current, 6, len(current) - 1))
-                        statements = append(statements, {"body": body, "condition": parse_expression(condition_text, indent + 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
-                if not starts_with(current, "if "):
+                        if starts_with(current, "for "):
+                            let header_parts = split(current, " in ")
+                            let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+                            let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+                            statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, indent + 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                        else:
+                            let condition_text = trim(substring(current, 6, len(current) - 1))
+                            statements = append(statements, {"body": body, "condition": parse_expression(condition_text, indent + 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                if not starts_with(current, "if ") and current != "try:":
                     cursor = {"index": nested["next"], "lines": lines}
             else:
                 statements = append(statements, parse_statement(line, index + 1, indent + 1))
