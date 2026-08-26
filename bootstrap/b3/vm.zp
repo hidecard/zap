@@ -6,14 +6,19 @@ export fn vm_state():
 export fn vm_push(state, value):
     return {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": append(state["stack"], value)}
 
+export fn vm_stack_without_last(stack):
+    let remaining = []
+    let index = 0
+    while index < len(stack):
+        if index < len(stack) - 1:
+            remaining = append(remaining, stack[index])
+        index = index + 1
+    return remaining
+
 export fn vm_pop(state):
     let stack = state["stack"]
     let index = len(stack) - 1
-    let remaining = []
-    if len(stack) == 2:
-        remaining = [stack[0]]
-    if len(stack) > 2:
-        remaining = stack
+    let remaining = vm_stack_without_last(stack)
     return {"value": stack[index], "state": {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": remaining}}
 
 export fn vm_step(state, instruction):
