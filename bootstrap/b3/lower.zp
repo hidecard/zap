@@ -8,6 +8,10 @@ export fn lower_expression(node):
     if kind == "literal":
         return {"error": none, "instructions": lower_literal(node)}
     if kind == "name":
+        if contains(node["name"], "."):
+            let pieces = split(node["name"], ".")
+            if len(pieces) == 2:
+                return {"error": none, "instructions": [{"field": trim(pieces[1]), "op": "field_load", "receiver": trim(pieces[0])}]}
         let instructions = []
         return {"error": none, "instructions": append(instructions, {"op": "load", "name": node["name"]})}
     if kind == "unary":
@@ -339,6 +343,10 @@ export fn lower_ast_node(node):
         let lowered_value = lower_expression(node["value"])
         if lowered_value["error"] != none:
             return lowered_value
+        if kind == "assignment" and contains(node["name"], "."):
+            let pieces = split(node["name"], ".")
+            if len(pieces) == 2:
+                return {"error": none, "instructions": append(lowered_value["instructions"], {"field": trim(pieces[1]), "op": "field_store", "receiver": trim(pieces[0])})}
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise":
         if kind == "return" and node["value"] == none:

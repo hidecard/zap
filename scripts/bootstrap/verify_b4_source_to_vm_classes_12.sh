@@ -30,7 +30,7 @@ say nested_class["error"]
 EOF
 cat > "$expected" <<'EOF'
 none
-{"class_name":"Counter","object":true}
+{"class_name":"Counter","fields":[],"object":true}
 7
 1
 2

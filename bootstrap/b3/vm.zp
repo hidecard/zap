@@ -85,10 +85,50 @@ export fn vm_bind_captures(state, captures, index):
     let bound = vm_store(state, captures[index]["name"], captures[index]["value"])
     return vm_bind_captures(bound, captures, index + 1)
 
+export fn vm_local_load(locals, name, index, found):
+    if index >= len(locals):
+        return found
+    if locals[index]["name"] == name:
+        return locals[index]["value"]
+    return vm_local_load(locals, name, index + 1, found)
+
+export fn vm_sync_captures(caller_locals, closure_name, captures, callee_state, index, result):
+    if index >= len(captures):
+        let original = vm_local_load(caller_locals, closure_name, 0, none)
+        let updated = {"captures": result, "closure": true, "function_name": original["function_name"]}
+        return append(caller_locals, {"name": closure_name, "value": updated})
+    let captured = captures[index]
+    let loaded = vm_load(callee_state, captured["name"])
+    if loaded["error"] == none:
+        captured = {"name": captured["name"], "value": loaded["value"]}
+    return vm_sync_captures(caller_locals, closure_name, captures, callee_state, index + 1, append(result, captured))
+
+export fn vm_restore_closure_locals(frame, callee_state):
+    if frame["closure_name"] == none:
+        return frame["locals"]
+    let closure = vm_local_load(frame["locals"], frame["closure_name"], 0, none)
+    if closure == none:
+        return frame["locals"]
+    return vm_sync_captures(frame["locals"], frame["closure_name"], closure["captures"], callee_state, 0, [])
+
 export fn vm_push_values(state, values, index):
     if index >= len(values):
         return state
     return vm_push_values(vm_push(state, values[index]), values, index + 1)
+
+export fn vm_object_field(object, field, index):
+    if index < 0:
+        return {"error": "unknown_field:" + field, "value": none}
+    if object["fields"][index]["name"] == field:
+        return {"error": none, "value": object["fields"][index]["value"]}
+    return vm_object_field(object, field, index - 1)
+
+export fn vm_object_set_field(object, field, value, index, result):
+    if index >= len(object["fields"]):
+        return append(result, {"name": field, "value": value})
+    if object["fields"][index]["name"] == field:
+        return vm_object_set_field(object, field, value, index + 1, result)
+    return vm_object_set_field(object, field, value, index + 1, append(result, object["fields"][index]))
 
 export fn vm_find_function(functions, name, index):
     if index >= len(functions):
@@ -130,7 +170,8 @@ export fn vm_return_value(state, value):
     if len(state["frames"]) == 0:
         return vm_fail(state, "return_without_frame")
     let frame = state["frames"][len(state["frames"]) - 1]
-    return vm_state_with(none, false, frame["handlers"], frame["return_ip"], frame["locals"], state["output"], append(frame["stack"], value), vm_array_without_last(state["frames"]), state["functions"])
+    let restored_locals = vm_restore_closure_locals(frame, state)
+    return vm_state_with(none, false, frame["handlers"], frame["return_ip"], restored_locals, state["output"], append(frame["stack"], value), vm_array_without_last(state["frames"]), state["functions"])
 
 export fn vm_step(state, instruction):
     let op = instruction["op"]
@@ -198,6 +239,23 @@ export fn vm_step(state, instruction):
         if stored["error"] != none:
             return vm_fail(advanced, stored["error"])
         return vm_store(stored["state"], instruction["name"], stored["value"])
+    if op == "field_load":
+        let receiver = vm_load(advanced, instruction["receiver"])
+        if receiver["error"] != none:
+            return vm_fail(advanced, receiver["error"])
+        let field = vm_object_field(receiver["value"], instruction["field"], len(receiver["value"]["fields"]) - 1)
+        if field["error"] != none:
+            return vm_fail(advanced, field["error"])
+        return vm_push(advanced, field["value"])
+    if op == "field_store":
+        let stored = vm_pop(advanced)
+        if stored["error"] != none:
+            return vm_fail(advanced, stored["error"])
+        let receiver = vm_load(stored["state"], instruction["receiver"])
+        if receiver["error"] != none:
+            return vm_fail(stored["state"], receiver["error"])
+        let updated = {"class_name": receiver["value"]["class_name"], "fields": vm_object_set_field(receiver["value"], instruction["field"], stored["value"], 0, []), "object": true}
+        return vm_store(stored["state"], instruction["receiver"], updated)
     if op == "const":
         return vm_push(advanced, instruction["value"])
     if op == "not":
@@ -239,11 +297,17 @@ export fn vm_step(state, instruction):
         if definition == none:
             let class = vm_find_class(advanced["functions"], definition_name, 0)
             if class != none and instruction["argc"] == 0:
-                return vm_push(arguments["state"], {"class_name": definition_name, "object": true})
+                return vm_push(arguments["state"], {"class_name": definition_name, "fields": [], "object": true})
             return vm_fail(advanced, "unknown_call:" + name)
         if len(definition["params"]) != instruction["argc"]:
             return vm_fail(advanced, "arity_error:" + name)
-        let frame = {"function": definition_name, "handlers": arguments["state"]["handlers"], "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
+        let closure_name = none
+        let capture_names = []
+        if len(captures) > 0:
+            closure_name = name
+            for captured in captures:
+                capture_names = append(capture_names, captured)
+        let frame = {"capture_names": capture_names, "closure_name": closure_name, "function": definition_name, "handlers": arguments["state"]["handlers"], "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
         let with_captures = vm_bind_captures(callee, captures, 0)
         return vm_bind_arguments(with_captures, definition["params"], arguments["values"], 0)
