@@ -1,12 +1,20 @@
 
 export fn vm_state():
-    return {"error": none, "halted": false, "ip": 0, "locals": [], "output": [], "stack": []}
+    return {"error": none, "halted": false, "handlers": [], "ip": 0, "locals": [], "output": [], "stack": []}
+
+export fn vm_handlers_without_last(handlers):
+    let remaining = []
+    let index = 0
+    while index + 1 < len(handlers):
+        remaining = append(remaining, handlers[index])
+        index = index + 1
+    return remaining
 
 export fn vm_push(state, value):
-    return {"error": state["error"], "halted": state["halted"], "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": append(state["stack"], value)}
+    return {"error": state["error"], "halted": state["halted"], "handlers": state["handlers"], "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": append(state["stack"], value)}
 
 export fn vm_store(state, name, value):
-    return {"error": state["error"], "halted": state["halted"], "ip": state["ip"], "locals": append(state["locals"], {"name": name, "value": value}), "output": state["output"], "stack": state["stack"]}
+    return {"error": state["error"], "halted": state["halted"], "handlers": state["handlers"], "ip": state["ip"], "locals": append(state["locals"], {"name": name, "value": value}), "output": state["output"], "stack": state["stack"]}
 
 export fn vm_load(state, name):
     let found = none
@@ -32,31 +40,44 @@ export fn vm_pop(state):
         return {"error": "stack_underflow", "value": none, "state": state}
     let index = len(stack) - 1
     let remaining = vm_stack_without_last(stack)
-    let next = {"error": state["error"], "halted": state["halted"], "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": remaining}
+    let next = {"error": state["error"], "halted": state["halted"], "handlers": state["handlers"], "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": remaining}
     return {"error": none, "value": stack[index], "state": next}
 
 export fn vm_fail(state, message):
-    return {"error": message, "halted": true, "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": state["stack"]}
+    return {"error": message, "halted": true, "handlers": state["handlers"], "ip": state["ip"], "locals": state["locals"], "output": state["output"], "stack": state["stack"]}
 
 export fn vm_step(state, instruction):
     let op = instruction["op"]
-    let advanced = {"error": state["error"], "halted": state["halted"], "ip": state["ip"] + 1, "locals": state["locals"], "output": state["output"], "stack": state["stack"]}
+    let advanced = {"error": state["error"], "halted": state["halted"], "handlers": state["handlers"], "ip": state["ip"] + 1, "locals": state["locals"], "output": state["output"], "stack": state["stack"]}
     if op == "jump":
-        return {"error": none, "halted": false, "ip": instruction["target"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+        return {"error": none, "halted": false, "handlers": advanced["handlers"], "ip": instruction["target"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
     if op == "jump_if_true":
         let condition = vm_pop(advanced)
         if condition["error"] != none:
             return vm_fail(advanced, condition["error"])
         if condition["value"]:
-            return {"error": none, "halted": false, "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
+            return {"error": none, "halted": false, "handlers": condition["state"]["handlers"], "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
         return condition["state"]
     if op == "jump_if_false":
         let condition = vm_pop(advanced)
         if condition["error"] != none:
             return vm_fail(advanced, condition["error"])
         if not condition["value"]:
-            return {"error": none, "halted": false, "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
+            return {"error": none, "halted": false, "handlers": condition["state"]["handlers"], "ip": instruction["target"], "locals": condition["state"]["locals"], "output": condition["state"]["output"], "stack": condition["state"]["stack"]}
         return condition["state"]
+    if op == "try_begin":
+        return {"error": none, "halted": false, "handlers": append(advanced["handlers"], instruction["target"]), "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+    if op == "try_end":
+        return {"error": none, "halted": false, "handlers": vm_handlers_without_last(advanced["handlers"]), "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+    if op == "raise":
+        let raised = vm_pop(advanced)
+        if raised["error"] != none:
+            return vm_fail(advanced, raised["error"])
+        if len(raised["state"]["handlers"]) == 0:
+            return vm_fail(raised["state"], "raised")
+        let handlers = raised["state"]["handlers"]
+        let target = handlers[len(handlers) - 1]
+        return {"error": none, "halted": false, "handlers": vm_handlers_without_last(handlers), "ip": target, "locals": raised["state"]["locals"], "output": raised["state"]["output"], "stack": raised["state"]["stack"]}
     if op == "dup":
         let top = vm_pop(advanced)
         if top["error"] != none:
@@ -139,9 +160,9 @@ export fn vm_step(state, instruction):
         let item = vm_pop(advanced)
         if item["error"] != none:
             return vm_fail(advanced, item["error"])
-        return {"error": none, "halted": item["state"]["halted"], "ip": item["state"]["ip"], "locals": item["state"]["locals"], "output": append(item["state"]["output"], item["value"]), "stack": item["state"]["stack"]}
+        return {"error": none, "halted": item["state"]["halted"], "handlers": item["state"]["handlers"], "ip": item["state"]["ip"], "locals": item["state"]["locals"], "output": append(item["state"]["output"], item["value"]), "stack": item["state"]["stack"]}
     if op == "halt":
-        return {"error": none, "halted": true, "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
+        return {"error": none, "halted": true, "handlers": advanced["handlers"], "ip": advanced["ip"], "locals": advanced["locals"], "output": advanced["output"], "stack": advanced["stack"]}
     return vm_fail(advanced, "unknown_opcode:" + op)
 
 export fn vm_run(program):
