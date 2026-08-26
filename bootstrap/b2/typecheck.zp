@@ -1113,6 +1113,86 @@ export fn infer_map_literal(value, parameter_name, parameter_type, function_name
         return "map<any,any>"
     return "map<" + key_type + "," + value_type + ">"
 
+export fn inferred_value_type(value, environment):
+    let kind = value["kind"]
+    if kind == "literal":
+        if value["literal_kind"] == "number":
+            return "number"
+        if value["literal_kind"] == "text":
+            return "text"
+        if value["literal_kind"] == "bool":
+            return "bool"
+        return "none"
+    if kind == "name":
+        let found = ast_lookup_type(environment, value["name"])
+        if found == none:
+            return "any"
+        return found
+    if kind == "list":
+        let elements = value["elements"]
+        if len(elements) == 0:
+            return "list<any>"
+        let element_type = inferred_value_type(elements[0], environment)
+        if len(elements) > 1:
+            if inferred_value_type(elements[1], environment) != element_type:
+                return "list<any>"
+        return "list<" + element_type + ">"
+    if kind == "map":
+        let entries = value["entries"]
+        if len(entries) == 0:
+            return "map<any,any>"
+        let key_type = inferred_value_type(entries[0]["key"], environment)
+        let value_type = inferred_value_type(entries[0]["value"], environment)
+        if len(entries) > 1:
+            if inferred_value_type(entries[1]["key"], environment) != key_type:
+                key_type = "any"
+            if inferred_value_type(entries[1]["value"], environment) != value_type:
+                value_type = "any"
+        return "map<" + key_type + "," + value_type + ">"
+    if kind == "binary":
+        let left_type = inferred_value_type(value["left"], environment)
+        let right_type = inferred_value_type(value["right"], environment)
+        if value["op"] == "add" and left_type == "text" and right_type == "text":
+            return "text"
+        if left_type == "number" and right_type == "number":
+            return "number"
+        return "any"
+    if kind == "unary":
+        if value["op"] == "not":
+            return "bool"
+        return inferred_value_type(value["value"], environment)
+    if kind == "index":
+        let target_type = inferred_value_type(value["target"], environment)
+        if starts_with(target_type, "list<"):
+            return substring(target_type, 5, len(target_type) - 1)
+        if starts_with(target_type, "map<") and contains(target_type, ","):
+            let pieces = split(target_type, ",")
+            return substring(pieces[1], 0, len(pieces[1]) - 1)
+        return "any"
+    if kind == "call":
+        return "any"
+    return "any"
+
+export fn infer_program_types(statements, environment):
+    let current = environment
+    for statement in statements:
+        if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+            let inferred = inferred_value_type(statement["value"], current)
+            if statement["kind"] == "declaration" and statement["annotation"] != none:
+                inferred = statement["annotation"]
+            current = symbol_environment_bind(current, statement["name"], inferred)
+        else:
+            if statement["kind"] == "if":
+                let then_state = infer_program_types(statement["then_branch"]["statements"], current)
+                let else_state = current
+                if statement["else_branch"] != none:
+                    else_state = infer_program_types(statement["else_branch"]["statements"], current)
+                current = branch_environment_merge_many(current, [then_state, else_state])
+            else:
+                if statement["kind"] == "while" or statement["kind"] == "for":
+                    current = infer_program_types(statement["body"]["statements"], current)
+    return current
+
 export fn expression_type(expression, parameter_name, parameter_type, function_name, collection_name, collection_element_type, narrowed_name, narrowed_type, option_name, option_wrapper_type):
     let value = trim(expression)
     if starts_with(value, "\"") and ends_with(value, "\""):

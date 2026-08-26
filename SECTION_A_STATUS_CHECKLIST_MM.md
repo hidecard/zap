@@ -303,3 +303,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B4 seed preflight gate — deterministic platform-seed descriptor၊ package-lock schema linkage၊ typed-IR schema linkage နှင့် repeated seed reproducibility စုစုပေါင်း ၁၀ cases pass။
 
 - [ ] **Full B4 self-hosting** — Seed preflight သာ pass ဖြစ်ပြီး Zap compiler ကို platform seed ဖြင့် မိမိ source အပေါ် ပြန် build/run လုပ်ခြင်း၊ byte-for-byte self-rebuild နှင့် native-independent compiler/VM execution မပြီးသေးပါ။
+
+- [x] Main-1 complete-inference expansion gate — recursive literal၊ nested list/map၊ list/map indexing၊ binary expression နှင့် program-wide declaration/reassignment environment propagation စုစုပေါင်း ၁၀ cases pass။
+
+- [ ] **Main-1 full ownership** — Recursive inference expansion pass ဖြစ်သော်လည်း all parser AST expression kinds၊ generic call return instantiation၊ aliasing/mutation၊ loop fixpoint transfer နှင့် complete reference parity မပြီးသေးပါ။
