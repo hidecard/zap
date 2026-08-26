@@ -1,0 +1,58 @@
+# Native-independent seed pipeline description.
+# The current repository validates the deterministic stage contract;
+# an actual Zap compiler binary is required before full self-hosting.
+
+export fn seed_stage(name, input_kind, output_kind):
+    return {"input_kind": input_kind, "name": name, "output_kind": output_kind, "owner": "zap"}
+
+export fn seed_pipeline_stages():
+    let stages = []
+    stages = append(stages, seed_stage("lexer", "source", "tokens"))
+    stages = append(stages, seed_stage("parser", "tokens", "ast"))
+    stages = append(stages, seed_stage("typecheck", "ast", "typed_ast"))
+    stages = append(stages, seed_stage("typed_ir", "typed_ast", "typed_ir"))
+    stages = append(stages, seed_stage("bytecode", "typed_ir", "bytecode"))
+    stages = append(stages, seed_stage("vm", "bytecode", "execution"))
+    return stages
+
+export fn seed_pipeline_plan(seed):
+    return {"compiler_stage": "B4", "network": false, "seed": seed, "stages": seed_pipeline_stages(), "version": 1}
+
+export fn seed_execute_stage(stage, input_kind, input_digest, output_digest):
+    if stage["owner"] != "zap":
+        return {"error": "native_owner", "status": "rejected"}
+    if stage["input_kind"] != input_kind:
+        return {"error": "input_kind_mismatch", "status": "rejected"}
+    return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "output_kind": stage["output_kind"], "stage": stage["name"], "status": "executed"}
+
+export fn seed_pipeline_execute(seed, source_digest, stage_digests):
+    let plan = seed_pipeline_plan(seed)
+    if len(stage_digests) != len(plan["stages"]):
+        return {"error": "digest_count_mismatch", "status": "rejected"}
+    let executions = []
+    let current_kind = "source"
+    let current_digest = source_digest
+    let index = 0
+    for stage in plan["stages"]:
+        let execution = seed_execute_stage(stage, current_kind, current_digest, stage_digests[index])
+        if execution["status"] != "executed":
+            return {"error": execution["error"], "status": "rejected"}
+        executions = append(executions, execution)
+        current_kind = stage["output_kind"]
+        current_digest = stage_digests[index]
+        index = index + 1
+    return {"executions": executions, "final_digest": current_digest, "final_kind": current_kind, "status": "executed"}
+
+export fn seed_pipeline_artifacts(plan, stage_digests):
+    let artifacts = []
+    let index = 0
+    for stage in plan["stages"]:
+        artifacts = append(artifacts, {"artifact_kind": stage["output_kind"], "bytes": stage["name"] + ":artifact", "compiler_stage": plan["compiler_stage"], "digest": stage_digests[index], "stage": stage["name"], "version": plan["version"]})
+        index = index + 1
+    return artifacts
+
+export fn seed_pipeline_manifest(seed, source_digest, stage_digests):
+    let plan = seed_pipeline_plan(seed)
+    let execution = seed_pipeline_execute(seed, source_digest, stage_digests)
+    let artifacts = seed_pipeline_artifacts(plan, stage_digests)
+    return {"artifacts": artifacts, "execution": execution, "native_independent": false, "seed": seed, "status": "contract_only"}
