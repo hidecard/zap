@@ -25,6 +25,21 @@ export fn expression_call_arguments(argument_text):
 
 export fn expression_node(expression):
     let value = trim(expression)
+    if starts_with(value, "await "):
+        return {"kind": "await", "value": expression_node(trim(substring(value, 6, len(value)))), "span": span(1, 1, len(value))}
+    if starts_with(value, "try "):
+        return {"kind": "propagate", "value": expression_node(trim(substring(value, 4, len(value)))), "span": span(1, 1, len(value))}
+    if ends_with(value, "]") and contains(value, "["):
+        let open_index = 0
+        while open_index < len(value):
+            if char_at(value, open_index) == "[":
+                break
+            open_index = open_index + 1
+        return {"index": expression_node(trim(substring(value, open_index + 1, len(value) - 1))), "kind": "index", "target": expression_node(trim(substring(value, 0, open_index))), "span": span(1, 1, len(value))}
+    if contains(value, ".") and not starts_with(value, "["):
+        let parts = split(value, ".")
+        if len(parts) == 2 and not contains(value, " "):
+            return {"kind": "member", "object": expression_node(trim(parts[0])), "property": trim(parts[1]), "span": span(1, 1, len(value))}
     if contains(value, "(") and ends_with(value, ")"):
         let open_index = 0
         while open_index < len(value):
@@ -63,8 +78,21 @@ export fn expression_node(expression):
         return binary_expression_node(value, " % ", "remainder")
     return inferred_literal(value)
 
+export fn typed_ir_number_literal(value):
+    if value == "0" or value == "1" or value == "2" or value == "3" or value == "4" or value == "5" or value == "6" or value == "7" or value == "8" or value == "9":
+        return true
+    if starts_with(value, "-") and len(value) > 1:
+        return typed_ir_number_literal(substring(value, 1, len(value)))
+    if contains(value, "."):
+        let parts = split(value, ".")
+        if len(parts) == 2 and typed_ir_number_literal(parts[0]) and typed_ir_number_literal(parts[1]):
+            return true
+    return false
+
 export fn inferred_literal(expression):
     let value = trim(expression)
+    if value != "" and not starts_with(value, "\"") and not starts_with(value, "[") and not starts_with(value, "{") and value != "true" and value != "false" and value != "none" and not typed_ir_number_literal(value):
+        return {"kind": "name", "name": value, "span": span(1, 1, len(value))}
     if starts_with(value, "\""):
         return {"kind": "literal", "literal_kind": "text", "span": span(1, 1, len(value)), "value": substring(value, 1, len(value) - 1)}
     if value == "true":
