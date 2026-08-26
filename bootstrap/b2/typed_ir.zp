@@ -15,6 +15,14 @@ export fn binary_expression_node(value, marker, operator):
     let parts = split(value, marker)
     return {"kind": "binary", "left": expression_node(parts[0]), "op": operator, "right": expression_node(parts[1]), "span": span(1, 1, len(value))}
 
+export fn expression_call_arguments(argument_text):
+    let args = []
+    if trim(argument_text) == "":
+        return args
+    for item in split(argument_text, ","):
+        args = append(args, {"kind": "positional", "value": expression_node(trim(item))})
+    return args
+
 export fn expression_node(expression):
     let value = trim(expression)
     if contains(value, "(") and ends_with(value, ")"):
@@ -25,9 +33,7 @@ export fn expression_node(expression):
             open_index = open_index + 1
         let callee = trim(substring(value, 0, open_index))
         let argument_text = trim(substring(value, open_index + 1, len(value) - 1))
-        let args = []
-        if argument_text != "":
-            args = append(args, {"kind": "positional", "value": expression_node(argument_text)})
+        let args = expression_call_arguments(argument_text)
         return {"args": args, "callee": {"kind": "name", "name": callee, "span": span(1, 1, len(callee))}, "kind": "call", "span": span(1, 1, len(value))}
     if contains(value, " or "):
         return binary_expression_node(value, " or ", "or")
