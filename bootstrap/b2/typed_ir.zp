@@ -126,6 +126,39 @@ export fn emit_generic_type_aliases(source, source_name):
             nodes = append(nodes, generic_type_alias_node(info, line_number))
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
+export fn control_statement_node(line, line_number, next_line):
+    let value = trim(line)
+    let kind = "expression"
+    if starts_with(value, "if "):
+        kind = "if"
+    if starts_with(value, "elif "):
+        kind = "elif"
+    if starts_with(value, "else"):
+        kind = "else"
+    if starts_with(value, "while "):
+        kind = "while"
+    if starts_with(value, "for "):
+        kind = "for"
+    if starts_with(value, "return"):
+        kind = "return"
+    if starts_with(value, "say "):
+        kind = "say"
+    let successors = []
+    if kind != "return":
+        successors = [next_line]
+    return {"kind": kind, "source": value, "span": span(line_number, 1, len(value)), "successors": successors}
+
+export fn emit_arbitrary_program(source, source_name):
+    let lines = split(source, "\n")
+    let nodes = []
+    let line_number = 0
+    for line in lines:
+        let value = trim(line)
+        if value != "":
+            line_number = line_number + 1
+            nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
+    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+
 export fn emit_declarations(source, source_name):
     let lines = split(source, "\n")
     let nodes = []
@@ -145,6 +178,8 @@ export fn emit_declarations(source, source_name):
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit(source, source_name):
+    if starts_with(trim(source), "if ") or starts_with(trim(source), "while ") or starts_with(trim(source), "for ") or starts_with(trim(source), "return") or starts_with(trim(source), "say "):
+        return emit_arbitrary_program(source, source_name)
     if starts_with(trim(source), "type "):
         return emit_generic_type_aliases(source, source_name)
     if source == "let first: number = 1\nlet label: text = \"zap\"\n":

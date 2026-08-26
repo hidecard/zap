@@ -287,3 +287,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] Section A next-20 gate — CFG statement categories၊ exact condition metadata၊ try/catch edge node၊ function/class scope node၊ real reassignment invalidation၊ diagnostic field/failure parity စုစုပေါင်း ၂၀ assertions pass။
 
 - [ ] **Remaining Section A ownership** — next-20 foundation pass ဖြစ်သော်လည်း complete parser ownership၊ full typed-IR production၊ Zap-owned package/build/VM pipeline၊ platform-seed reproducibility နှင့် B4 self-hosting မပြီးသေးပါ။
+
+- [x] B2 arbitrary typed-IR ၁၀-case gate — non-empty control-statement sequence များအတွက် `if`၊ `say`၊ `while`၊ `return` နှင့် `for` nodes၊ source spans နှင့် successor metadata ထုတ်ပေးခြင်း pass။
+
+- [ ] **General typed-IR production ownership** — arbitrary control-statement sequence emission foundation ရှိလာသော်လည်း parser AST ၏ complete statement/expression/block metadata၊ flow annotations၊ generic runtime IR နှင့် Zap-owned production emitter မပြီးသေးပါ။
