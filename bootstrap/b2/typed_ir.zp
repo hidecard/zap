@@ -52,7 +52,7 @@ export fn expression_node(expression):
     if contains(value, ".") and not starts_with(value, "["):
         let parts = split(value, ".")
         if len(parts) == 2 and not contains(value, " "):
-            return {"kind": "member", "object": expression_node(trim(parts[0])), "property": trim(parts[1]), "span": span(1, 1, len(value))}
+            return {"kind": "member", "member": trim(parts[1]), "target": expression_node(trim(parts[0])), "span": span(1, 1, len(value))}
     if contains(value, " or "):
         return binary_expression_node(value, " or ", "or")
     if contains(value, " and "):
@@ -119,9 +119,21 @@ export fn inferred_literal(expression):
     if value == "none":
         return {"kind": "literal", "literal_kind": "none", "span": span(1, 1, 4), "value": none}
     if starts_with(value, "["):
-        return {"kind": "literal", "literal_kind": "list", "span": span(1, 1, len(value)), "value": from_json(value)}
+        let inner = trim(substring(value, 1, len(value) - 1))
+        let elements = []
+        if inner != "":
+            for item in split(inner, ","):
+                elements = append(elements, expression_node(trim(item)))
+        return {"elements": elements, "kind": "list", "span": span(1, 1, len(value))}
     if starts_with(value, "{"):
-        return {"kind": "literal", "literal_kind": "map", "span": span(1, 1, len(value)), "value": from_json(value)}
+        let inner = trim(substring(value, 1, len(value) - 1))
+        let entries = []
+        if inner != "":
+            for item in split(inner, ","):
+                let parts = split(item, ":")
+                if len(parts) == 2:
+                    entries = append(entries, {"key": expression_node(trim(parts[0])), "value": expression_node(trim(parts[1]))})
+        return {"entries": entries, "kind": "map", "span": span(1, 1, len(value))}
     return {"kind": "literal", "literal_kind": "number", "span": span(1, 1, len(value)), "value": from_json(value)}
 
 export fn inferred_type_for(expression):

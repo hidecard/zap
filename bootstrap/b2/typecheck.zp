@@ -756,7 +756,8 @@ export fn generic_type_declaration_info(line):
     let body = ""
     if contains(declaration, "="):
         body = trim(split(declaration, "=")[1])
-    return {"body": body, "name": name, "parameters": parameters, "valid": generic_parameters_valid(parameters) and body != ""}
+    let body_valid = generic_type_body_valid(body, parameters)
+    return {"body": body, "body_valid": body_valid, "name": name, "parameters": parameters, "valid": generic_parameters_valid(parameters) and body != "" and body_valid}
 
 export fn generic_type_declaration_instance(line, argument_types):
     let info = generic_type_declaration_info(line)
@@ -858,7 +859,27 @@ export fn type_wrapper_parts(type_name):
         return {"wrapper": "result", "inner": substring(type_name, 7, len(type_name) - 1)}
     return {"wrapper": "", "inner": type_name}
 
+export fn generic_parameter_present(parameters, name):
+    for parameter in parameters:
+        if parameter == name:
+            return true
+    return false
+
+export fn generic_type_body_valid(type_name, parameters):
+    let value = trim(type_name)
+    if value == "any" or value == "number" or value == "text" or value == "bool" or value == "none":
+        return true
+    if generic_parameter_present(parameters, value):
+        return true
+    let parts = type_wrapper_parts(value)
+    if parts["wrapper"] == "map":
+        return generic_type_body_valid(parts["key"], parameters) and generic_type_body_valid(parts["value"], parameters)
+    if parts["wrapper"] == "list" or parts["wrapper"] == "option" or parts["wrapper"] == "result":
+        return generic_type_body_valid(parts["inner"], parameters)
+    return false
+
 export fn type_unify(expected, actual):
+
     if expected == "any" or actual == "any":
         return true
     if expected == actual:
@@ -992,6 +1013,14 @@ export fn generic_constraints_satisfied(argument_types, parameters, constraints)
             return false
     return true
 
+export fn generic_constraints_well_formed(parameters, constraints):
+    for constraint in constraints:
+        if not generic_parameter_present(parameters, constraint["parameter"]):
+            return false
+        if not generic_type_body_valid(constraint["bound"], []):
+            return false
+    return true
+
 export fn function_signature_info(signature):
     let value = trim(signature)
     let name_area = split(value, "(")[0]
@@ -1032,6 +1061,8 @@ export fn infer_function_call(functions, callee, argument_types):
             return "arity_error"
         let generic_parameters = function["generic_parameters"]
         if len(generic_parameters) > 0:
+            if not generic_constraints_well_formed(generic_parameters, function["constraints"]):
+                return "constraint_error"
             if not generic_constraint_satisfied(argument_types, function["constraint"]):
                 return "constraint_error"
             if not generic_constraints_satisfied(argument_types, generic_parameters, function["constraints"]):
@@ -1558,3 +1589,160 @@ export fn check(source, source_name):
         if error != none:
             return json({"diagnostics": [error], "kind": "zap.typecheck", "ok": false, "schema_version": 1, "source_name": source_name})
     return json({"diagnostics": [], "kind": "zap.typecheck", "ok": true, "schema_version": 1, "source_name": source_name})
+
+# AST-owned inference entry points. These operate on parser nodes rather than
+# source-string pattern matching and are the transition path to full ownership.
+export fn ast_literal_type(node):
+    let kind = node["literal_kind"]
+    if kind == "text":
+        return "text"
+    if kind == "number":
+        return "number"
+    if kind == "bool":
+        return "bool"
+    if kind == "none":
+        return "none"
+    return "any"
+
+export fn ast_type_join(left, right):
+    if left == right:
+        return left
+    if left == "any":
+        return right
+    if right == "any":
+        return left
+    return "any"
+
+export fn ast_generic_substitute(type_name, generic_name, argument_type):
+    if type_name == generic_name:
+        return argument_type
+    if starts_with(type_name, "list<") and ends_with(type_name, ">"):
+        let inner = substring(type_name, 5, len(type_name) - 1)
+        return "list<" + ast_generic_substitute(inner, generic_name, argument_type) + ">"
+    if starts_with(type_name, "option<") and ends_with(type_name, ">"):
+        let inner = substring(type_name, 7, len(type_name) - 1)
+        return "option<" + ast_generic_substitute(inner, generic_name, argument_type) + ">"
+    if starts_with(type_name, "result<") and ends_with(type_name, ">"):
+        let inner = substring(type_name, 7, len(type_name) - 1)
+        return "result<" + ast_generic_substitute(inner, generic_name, argument_type) + ">"
+    if starts_with(type_name, "map<") and ends_with(type_name, ">"):
+        let inner = substring(type_name, 4, len(type_name) - 1)
+        let parts = split(inner, ",")
+        if len(parts) == 2:
+            return "map<" + ast_generic_substitute(trim(parts[0]), generic_name, argument_type) + "," + ast_generic_substitute(trim(parts[1]), generic_name, argument_type) + ">"
+    return type_name
+
+export fn ast_function_return(functions, name, argument_types):
+    for function in functions:
+        if function["kind"] == "function" and function["name"] == name:
+            let return_type = function["return_type"]
+            if return_type == none:
+                return "any"
+            let params = function["params"]
+            if len(params) > 0 and len(argument_types) > 0:
+                let parameter_type = params[0]["annotation"]
+                if parameter_type == none:
+                    return return_type
+                return ast_generic_substitute(return_type, parameter_type, argument_types[0])
+            return return_type
+    return "any"
+
+export fn infer_ast_expression(node, environment, functions):
+    let kind = node["kind"]
+    if kind == "literal":
+        return ast_literal_type(node)
+    if kind == "name":
+        return ast_lookup_type(environment, node["name"])
+    if kind == "unary":
+        if node["op"] == "not":
+            return "bool"
+        let operand_type = infer_ast_expression(node["value"], environment, functions)
+        if operand_type == "number":
+            return "number"
+        return "any"
+    if kind == "binary":
+        let left_type = infer_ast_expression(node["left"], environment, functions)
+        let right_type = infer_ast_expression(node["right"], environment, functions)
+        let op = node["op"]
+        if op == "add":
+            if left_type == "number" and right_type == "number":
+                return "number"
+            if left_type == "text" and right_type == "text":
+                return "text"
+            return "any"
+        if op == "subtract" or op == "multiply" or op == "divide" or op == "remainder":
+            if left_type == "number" and right_type == "number":
+                return "number"
+            return "any"
+        if op == "and" or op == "or" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "equal" or op == "not_equal":
+            return "bool"
+        return "any"
+    if kind == "list":
+        let element_type = "any"
+        for element in node["elements"]:
+            element_type = ast_type_join(element_type, infer_ast_expression(element, environment, functions))
+        return "list<" + element_type + ">"
+    if kind == "map":
+        return ast_map_type_env(node["entries"], environment)
+    if kind == "index":
+        let collection_type = infer_ast_expression(node["target"], environment, functions)
+        if starts_with(collection_type, "list<") and ends_with(collection_type, ">"):
+            return substring(collection_type, 5, len(collection_type) - 1)
+        if starts_with(collection_type, "map<") and ends_with(collection_type, ">"):
+            let parts = split(substring(collection_type, 4, len(collection_type) - 1), ",")
+            if len(parts) == 2:
+                return trim(parts[1])
+        return "any"
+    if kind == "member":
+        let target_type = infer_ast_expression(node["target"], environment, functions)
+        if target_type == "any":
+            return "any"
+        return "any"
+    if kind == "call":
+        let argument_types = []
+        for argument in node["args"]:
+            argument_types = append(argument_types, infer_ast_expression(argument["value"], environment, functions))
+        let callee = node["callee"]
+        if callee["kind"] == "name":
+            return ast_function_return(functions, callee["name"], argument_types)
+        return "any"
+    return "any"
+
+export fn infer_ast_statements(statements, environment, functions):
+    let current = environment
+    let function_table = functions
+    for statement in statements:
+        if statement["kind"] == "function":
+            function_table = append(function_table, statement)
+        else:
+            if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+                let inferred = infer_ast_expression(statement["value"], current, function_table)
+                current = symbol_environment_bind(current, statement["name"], inferred)
+            else:
+                if statement["kind"] == "if":
+                    let then_state = infer_ast_statements(statement["then_branch"]["statements"], current, function_table)
+                    let else_state = current
+                    if statement["else_branch"] != none:
+                        else_state = infer_ast_statements(statement["else_branch"]["statements"], current, function_table)
+                    current = branch_environment_merge(current, then_state, else_state)
+                else:
+                    if statement["kind"] == "try_catch":
+                        let try_state = infer_ast_statements(statement["body"]["statements"], current, function_table)
+                        let catch_state = infer_ast_statements(statement["catch_body"]["statements"], current, function_table)
+                        current = branch_environment_merge(current, try_state, catch_state)
+                    else:
+                        if statement["kind"] == "while":
+                            let loop_state = infer_ast_statements(statement["body"]["statements"], current, function_table)
+                            let loop_state_again = infer_ast_statements(statement["body"]["statements"], loop_state, function_table)
+                            current = branch_environment_merge(current, loop_state, loop_state_again)
+                        else:
+                            if statement["kind"] == "for":
+                                let iterable_type = infer_ast_expression(statement["iterable"], current, function_table)
+                                let element_type = generic_container_element(iterable_type)
+                                let loop_environment = symbol_environment_bind(current, statement["binding"], element_type)
+                                let loop_state = infer_ast_statements(statement["body"]["statements"], loop_environment, function_table)
+                                current = branch_environment_merge(current, loop_state, current)
+    return {"environment": current, "functions": function_table}
+
+export fn infer_ast_program(ast):
+    return infer_ast_statements(ast["statements"], [], [])
