@@ -259,11 +259,17 @@ export fn parse_declaration(line, line_number):
     let declaration = trim(line)
     let target = split(declaration, " = ")
     let left = trim(target[0])
-    let name_text = substring(left, 4, len(left))
+    let name_area = trim(substring(left, 4, len(left)))
+    let name_text = name_area
+    let annotation = none
+    if contains(name_area, ":"):
+        let name_parts = split(name_area, ":")
+        name_text = trim(name_parts[0])
+        annotation = trim(name_parts[1])
     let value_text = target[1]
     let value_column = 1
     let value = parse_expression(value_text, value_column)
-    let statement = {"annotation": none, "exported": false, "kind": "declaration", "name": name_text, "span": span(line_number, 1, len(declaration)), "value": value}
+    let statement = {"annotation": annotation, "exported": false, "kind": "declaration", "name": name_text, "span": span(line_number, 1, len(declaration)), "value": value}
     return statement
 
 export fn parse_assignment(line, line_number):
