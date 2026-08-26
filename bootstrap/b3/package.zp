@@ -20,3 +20,23 @@ export fn offline_policy(manifest_value):
 
 export fn lock_is_reproducible(first, second):
     return first == second
+
+export fn manifest_valid(manifest_value):
+    return trim(manifest_value["name"]) != "" and trim(manifest_value["version"]) != "" and trim(manifest_value["main"]) != ""
+
+export fn lock_entry_matches_dependency(entry, required):
+    return entry["name"] == required["name"] and entry["version"] == required["version"] and entry["checksum"] == required["checksum"]
+
+export fn lock_satisfies_manifest(manifest_value, entries):
+    for required in manifest_value["dependencies"]:
+        let found = false
+        for entry in entries:
+            if lock_entry_matches_dependency(entry, required):
+                found = true
+        if not found:
+            return false
+    return true
+
+export fn package_offline_contract(manifest_value, entries):
+    let policy = offline_policy(manifest_value)
+    return {"allow_network": policy["allow_network"], "lock_matches": lock_satisfies_manifest(manifest_value, entries), "manifest_valid": manifest_valid(manifest_value)}
