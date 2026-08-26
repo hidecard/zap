@@ -10,7 +10,7 @@
 
 - [ ] **Complete type inference** — recursive AST flow၊ nested scope graph၊ branch-local merge၊ loop fixpoint၊ call-cycle နှင့် recursive type-unification foundations ထည့်ထားသော်လည်း full AST-driven graph construction၊ branch path completeness၊ mutation convergence နှင့် flow-sensitive inference မပြီးသေးပါ။
 
-- [ ] **Broader basic-type inference** — number/text/bool/list/map/none တို့အတွက် အချို့ direct fixtures ရှိသော်လည်း real-world arbitrary inference မပြီးသေးပါ။
+- [ ] **Broader basic-type inference** — environment-aware inference သည် explicit number/text/bool/none၊ arithmetic၊ comparison၊ logical၊ nested list/map နှင့် index paths ကို တိုးချဲ့ support လုပ်ထားသော်လည်း real-world arbitrary expression coverage နှင့် complete reference parity မပြီးသေးပါ။
 
 - [ ] **Generic declarations** — function signature/call-site substitution၊ parameter-specific bounds၊ recursive unification၊ generic type-alias node၊ end-to-end foundation နှင့် bounded runtime-container/recursive-call verifier ရှိသော်လည်း language-level generic semantics၊ full bounds/unification နှင့် arbitrary call inference မပြီးသေးပါ။
 

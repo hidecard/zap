@@ -1151,7 +1151,9 @@ export fn inferred_value_type(value, environment):
             return "text"
         if value["literal_kind"] == "bool":
             return "bool"
-        return "none"
+        if value["literal_kind"] == "none":
+            return "none"
+        return "any"
     if kind == "name":
         let found = ast_lookup_type(environment, value["name"])
         if found == none:
@@ -1181,9 +1183,12 @@ export fn inferred_value_type(value, environment):
     if kind == "binary":
         let left_type = inferred_value_type(value["left"], environment)
         let right_type = inferred_value_type(value["right"], environment)
-        if value["op"] == "add" and left_type == "text" and right_type == "text":
+        let operator = value["op"]
+        if operator == "and" or operator == "or" or operator == "equal" or operator == "not_equal" or operator == "less" or operator == "less_equal" or operator == "greater" or operator == "greater_equal":
+            return "bool"
+        if operator == "add" and left_type == "text" and right_type == "text":
             return "text"
-        if left_type == "number" and right_type == "number":
+        if (operator == "add" or operator == "subtract" or operator == "multiply" or operator == "divide" or operator == "remainder") and left_type == "number" and right_type == "number":
             return "number"
         return "any"
     if kind == "unary":
