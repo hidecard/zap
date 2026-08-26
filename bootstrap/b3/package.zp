@@ -1,0 +1,22 @@
+# B3 candidate package layer. Native Rust remains the reference owner until B4.
+
+export fn manifest(name, version, main, dependencies):
+    return {"dependencies": dependencies, "main": main, "name": name, "version": version}
+
+export fn dependency(name, version, checksum):
+    return {"checksum": checksum, "name": name, "version": version}
+
+export fn lock_entry(name, version, checksum, source):
+    return {"checksum": checksum, "name": name, "source": source, "version": version}
+
+export fn lockfile(manifest_value, entries):
+    return {"dependencies": entries, "manifest": manifest_value, "schema_version": 1}
+
+export fn package_identity(entry):
+    return entry["name"] + "@" + entry["version"] + ":" + entry["checksum"]
+
+export fn offline_policy(manifest_value):
+    return {"allow_network": false, "main": manifest_value["main"], "package": manifest_value["name"], "schema_version": 1}
+
+export fn lock_is_reproducible(first, second):
+    return first == second

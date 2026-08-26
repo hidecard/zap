@@ -1,0 +1,40 @@
+# B3 candidate VM layer. Native evaluator remains the reference owner until B4.
+
+export fn vm_state():
+    return {"halted": false, "ip": 0, "output": [], "stack": []}
+
+export fn vm_push(state, value):
+    return {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": append(state["stack"], value)}
+
+export fn vm_pop(state):
+    let stack = state["stack"]
+    let index = len(stack) - 1
+    let remaining = []
+    if len(stack) == 2:
+        remaining = [stack[0]]
+    if len(stack) > 2:
+        remaining = stack
+    return {"value": stack[index], "state": {"halted": state["halted"], "ip": state["ip"], "output": state["output"], "stack": remaining}}
+
+export fn vm_step(state, instruction):
+    let op = instruction["op"]
+    let advanced = {"halted": state["halted"], "ip": state["ip"] + 1, "output": state["output"], "stack": state["stack"]}
+    if op == "const":
+        return vm_push(advanced, instruction["value"])
+    if op == "add":
+        let right = vm_pop(advanced)
+        let left = vm_pop(right["state"])
+        return vm_push(left["state"], left["value"] + right["value"])
+    if op == "print":
+        let item = vm_pop(advanced)
+        return {"halted": item["state"]["halted"], "ip": item["state"]["ip"], "output": append(item["state"]["output"], item["value"]), "stack": item["state"]["stack"]}
+    if op == "halt":
+        return {"halted": true, "ip": advanced["ip"], "output": advanced["output"], "stack": advanced["stack"]}
+    return advanced
+
+export fn vm_run(program):
+    let state = vm_state()
+    for instruction in program:
+        if not state["halted"]:
+            state = vm_step(state, instruction)
+    return state

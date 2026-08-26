@@ -295,3 +295,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B1 statement coverage gate — empty `return`၊ `raise`၊ `import` နှင့် `module` AST statement nodes စုစုပေါင်း ၈ assertions pass။
 
 - [ ] **Arbitrary-program parser ownership** — statement coverage တိုးချဲ့ထားသော်လည်း all valid/invalid grammar၊ function/class/module nesting၊ try/catch၊ token-native arbitrary parse နှင့် full B0 diagnostic parity မပြီးသေးပါ။
+
+- [x] B3 Zap ownership-transition gate — Zap-written deterministic manifest/lock/offline policy foundation နှင့် stack bytecode VM foundation စုစုပေါင်း ၂၀ cases pass။
+
+- [ ] **B3/B4 full ownership** — Candidate package/VM modules ရှိလာသော်လည်း native Rust CLI/package resolver/evaluator ကို bootstrap implementation ဖြင့် အစားထိုးပြီး reproducible platform-seed self-rebuild ပြုလုပ်ခြင်း မပြီးသေးပါ။
