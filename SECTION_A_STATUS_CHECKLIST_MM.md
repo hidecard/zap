@@ -279,3 +279,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 recursive-CFG/loop-convergence ၁၂-case gate — parser-shaped nested `if/elif/else` AST ကို recursive CFG nodes အဖြစ် တည်ဆောက်ခြင်း၊ normal loop-body back-edge၊ loop exit၊ nested `break/continue` edge ownership နှင့် stable/divergent loop environment convergence pass။
 
 - [ ] **Full arbitrary CFG ownership** — recursive nested CFG foundation pass ဖြစ်သော်လည်း arbitrary parser AST တွင် condition edges၊ fallthrough joins၊ nested loop break labels၊ `elif` chain semantics၊ dataflow widening နှင့် reference diagnostic parity အပြည့်အစုံ မပြီးသေးပါ။
+
+- [x] B2 arbitrary-flow/diagnostic ၁၄-case gate — parser-shaped arbitrary statement sequence CFG၊ exact branch/fallthrough successors၊ real-program assignment propagation နှင့် diagnostic field parity (`kind/code/line/column/message/severity`) pass။
+
+- [ ] **Full arbitrary-program CFG and diagnostic ownership** — bounded arbitrary flow transfer and parity helpers pass ဖြစ်သော်လည်း all parser AST statement kinds၊ condition expression edges၊ complete join/fallthrough dataflow၊ reference diagnostic matrix နှင့် Rust/native ownership parity အပြည့်အစုံ မပြီးသေးပါ။

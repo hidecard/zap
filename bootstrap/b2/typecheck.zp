@@ -255,12 +255,92 @@ export fn cfg_recursive_sequence(statements, path, loop_condition, loop_exit):
         index = index + 1
     return graph
 
+export fn cfg_recursive_block(statements, path, continuation, loop_condition, loop_exit):
+    let graph = []
+    let index = 0
+    for statement in statements:
+        let statement_path = path + "." + str(index)
+        let next_path = continuation
+        if index + 1 < len(statements):
+            next_path = path + "." + str(index + 1)
+        let kind = statement["kind"]
+        if kind == "if":
+            let then_path = statement_path + ".then"
+            let else_path = statement_path + ".else"
+            let successors = [then_path, next_path]
+            if statement["else_branch"] != none:
+                successors = [then_path, else_path]
+            graph = append(graph, cfg_node(statement_path, "if", successors, []))
+            graph = cfg_append_graph(graph, cfg_recursive_block(statement["then_branch"]["statements"], then_path, next_path, loop_condition, loop_exit))
+            if statement["else_branch"] != none:
+                graph = cfg_append_graph(graph, cfg_recursive_block(statement["else_branch"]["statements"], else_path, next_path, loop_condition, loop_exit))
+        else:
+            if kind == "while" or kind == "for":
+                let body_path = statement_path + ".body"
+                let exit_path = statement_path + ".exit"
+                graph = append(graph, cfg_node(statement_path, kind, [body_path, exit_path], []))
+                let body_graph = cfg_recursive_block(statement["body"]["statements"], body_path, statement_path, statement_path, exit_path)
+                graph = cfg_append_graph(graph, body_graph)
+                graph = append(graph, cfg_node(exit_path, "loop_exit", [next_path], []))
+            else:
+                let successors = [next_path]
+                if kind == "return":
+                    successors = []
+                else:
+                    if kind == "break":
+                        successors = []
+                        if loop_exit != "":
+                            successors = [loop_exit]
+                    else:
+                        if kind == "continue":
+                            successors = []
+                            if loop_condition != "":
+                                successors = [loop_condition]
+                graph = append(graph, cfg_node(statement_path, kind, successors, []))
+        index = index + 1
+    return graph
+
 export fn cfg_from_ast(statements, environment):
-    let graph = cfg_recursive_sequence(statements, "root", "", "")
+    let graph = cfg_recursive_block(statements, "root", "", "", "")
     let result = []
     for node in graph:
         result = append(result, cfg_node(node["id"], node["kind"], node["successors"], environment))
     return result
+
+export fn cfg_flow_statement(statement, environment):
+    let kind = statement["kind"]
+    if kind == "assignment":
+        return symbol_environment_bind(environment, statement["name"], ast_expression_type_env(statement["value"], environment))
+    if kind == "declaration":
+        let declared_type = statement["annotation"]
+        if declared_type == none:
+            declared_type = ast_expression_type_env(statement["value"], environment)
+        return symbol_environment_bind(environment, statement["name"], declared_type)
+    return environment
+
+export fn cfg_flow_block(statements, environment):
+    let current = environment
+    for statement in statements:
+        if statement["kind"] == "if":
+            let then_state = cfg_flow_block(statement["then_branch"]["statements"], current)
+            let else_state = current
+            if statement["else_branch"] != none:
+                else_state = cfg_flow_block(statement["else_branch"]["statements"], current)
+            current = branch_environment_merge_many(current, [then_state, else_state])
+        else:
+            if statement["kind"] == "while" or statement["kind"] == "for":
+                let body_state = cfg_flow_block(statement["body"]["statements"], current)
+                let convergence = loop_backedge_converge(current, [body_state], [], 4)
+                current = convergence["environment"]
+            else:
+                current = cfg_flow_statement(statement, current)
+    return current
+
+export fn cfg_flow_program(statements, environment):
+    return cfg_flow_block(statements, environment)
+
+export fn flow_reassignment_propagate(statements, environment, name):
+    return ast_lookup_type(cfg_flow_program(statements, environment), name)
 
 export fn flow_environment_equal(left, right, names):
     for name in names:
@@ -922,6 +1002,16 @@ export fn infer_ast_function_call(node, functions, environment):
         else:
             argument_types = append(argument_types, ast_expression_type_env(argument_value, environment))
     return infer_function_call(functions, node["callee"]["name"], argument_types)
+
+export fn diagnostic_fields_equal(reference, candidate):
+    let fields = ["kind", "code", "line", "column", "message", "severity"]
+    for field in fields:
+        if reference[field] != candidate[field]:
+            return false
+    return true
+
+export fn diagnostic_parity(reference, candidate):
+    return {"equal": diagnostic_fields_equal(reference, candidate), "reference": reference, "candidate": candidate}
 
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}
