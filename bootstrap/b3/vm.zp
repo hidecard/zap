@@ -26,6 +26,31 @@ export fn vm_pop(state):
 export fn vm_step(state, instruction):
     let op = instruction["op"]
     let advanced = {"halted": state["halted"], "ip": state["ip"] + 1, "output": state["output"], "stack": state["stack"]}
+    if op == "jump":
+        return {"error": none, "halted": false, "ip": instruction["target"], "output": advanced["output"], "stack": advanced["stack"]}
+    if op == "jump_if_false":
+        let condition = vm_pop(advanced)
+        if condition["error"] != none:
+            return {"error": condition["error"], "halted": true, "ip": advanced["ip"], "output": advanced["output"], "stack": advanced["stack"]}
+        if not condition["value"]:
+            return {"error": none, "halted": false, "ip": instruction["target"], "output": advanced["output"], "stack": condition["state"]["stack"]}
+        return condition["state"]
+    if op == "call":
+        let name = instruction["name"]
+        let argc = instruction["argc"]
+        if argc == 1:
+            let argument = vm_pop(advanced)
+            if argument["error"] != none:
+                return {"error": argument["error"], "halted": true, "ip": advanced["ip"], "output": advanced["output"], "stack": advanced["stack"]}
+            let value = argument["value"]
+            if name == "identity":
+                return vm_push(argument["state"], value)
+            if name == "abs":
+                if value < 0:
+                    value = 0 - value
+                return vm_push(argument["state"], value)
+            return {"error": "unknown_call:" + name, "halted": true, "ip": advanced["ip"], "output": advanced["output"], "stack": advanced["stack"]}
+        return {"error": "unsupported_call_arity", "halted": true, "ip": advanced["ip"], "output": advanced["output"], "stack": advanced["stack"]}
     if op == "const":
         return vm_push(advanced, instruction["value"])
     if op == "add" or op == "subtract" or op == "multiply" or op == "divide":
@@ -54,7 +79,9 @@ export fn vm_step(state, instruction):
 
 export fn vm_run(program):
     let state = vm_state()
-    for instruction in program:
-        if not state["halted"]:
-            state = vm_step(state, instruction)
+    while state["ip"] < len(program):
+        if state["halted"]:
+            break
+        let instruction = program[state["ip"]]
+        state = vm_step(state, instruction)
     return state
