@@ -144,34 +144,42 @@ export fn find_top_level_comma(value):
         return len(parts[0])
     return none
 
+export fn parse_call_argument(argument_text, argument_column):
+    let value = trim(argument_text)
+    if contains(value, ":") and not starts_with(value, "{"):
+        let parts = split(value, ":")
+        if len(parts) == 2:
+            return {"kind": "named", "name": trim(parts[0]), "value": parse_expression(trim(parts[1]), argument_column)}
+    return {"kind": "positional", "value": parse_expression(value, argument_column)}
+
 export fn parse_call_arguments(argument_text, argument_column):
     let value = trim(argument_text)
     if is_empty(value):
         return []
     let comma = find_top_level_comma(value)
     if comma == none:
-        return [{"kind": "positional", "value": parse_expression(value, argument_column)}]
+        return [parse_call_argument(value, argument_column)]
     let first_text = trim(substring(value, 0, comma))
     let second_text = trim(substring(value, comma + 1, len(value)))
-    let first = {"kind": "positional", "value": parse_expression(first_text, argument_column)}
+    let first = parse_call_argument(first_text, argument_column)
     let second_column = argument_column + comma + 2
     let second_comma = find_top_level_comma(second_text)
     if second_comma == none:
-        let second = {"kind": "positional", "value": parse_expression(second_text, second_column)}
+        let second = parse_call_argument(second_text, second_column)
         return [first, second]
     let second_value = trim(substring(second_text, 0, second_comma))
     let remaining_text = trim(substring(second_text, second_comma + 1, len(second_text)))
-    let second = {"kind": "positional", "value": parse_expression(second_value, second_column)}
+    let second = parse_call_argument(second_value, second_column)
     let third_column = second_column + second_comma + 2
     let third_comma = find_top_level_comma(remaining_text)
     if third_comma == none:
-        let third = {"kind": "positional", "value": parse_expression(remaining_text, third_column)}
+        let third = parse_call_argument(remaining_text, third_column)
         return [first, second, third]
     let third_value = trim(substring(remaining_text, 0, third_comma))
     let fourth_value = trim(substring(remaining_text, third_comma + 1, len(remaining_text)))
-    let third = {"kind": "positional", "value": parse_expression(third_value, third_column)}
+    let third = parse_call_argument(third_value, third_column)
     let fourth_column = third_column + third_comma + 2
-    let fourth = {"kind": "positional", "value": parse_expression(fourth_value, fourth_column)}
+    let fourth = parse_call_argument(fourth_value, fourth_column)
     return [first, second, third, fourth]
 
 export fn parse_postfix(raw, start_column):
