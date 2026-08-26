@@ -22,6 +22,12 @@ export fn rebuild_manifest(plan, artifacts):
 export fn rebuild_is_reproducible(first, second):
     return first == second
 
+export fn rebuild_manifest_bytes(manifest):
+    return json(manifest)
+
+export fn rebuild_bytes_reproducible(first, second):
+    return rebuild_manifest_bytes(first) == rebuild_manifest_bytes(second)
+
 export fn rebuild_owner_policy(stages):
     let zap_owned = true
     for stage in stages:
