@@ -1,0 +1,31 @@
+import "bootstrap/b2/typecheck_engine.zp"
+
+let number = {"kind": "literal", "literal_kind": "number", "value": 1, "span": {"line": 1, "column": 1, "length": 1}}
+let text = {"kind": "literal", "literal_kind": "text", "value": "zap", "span": {"line": 1, "column": 1, "length": 5}}
+let option_value = {"kind": "name", "name": "value", "span": {"line": 2, "column": 4, "length": 5}}
+let is_some = {"kind": "call", "callee": {"kind": "name", "name": "is_some"}, "args": [{"kind": "positional", "value": option_value}], "span": {"line": 3, "column": 1, "length": 14}}
+let nested = {"kind": "list", "elements": [{"kind": "list", "elements": [number, number]}], "span": {"line": 1, "column": 1, "length": 9}}
+let map = {"kind": "map", "entries": [{"key": text, "value": nested}], "span": {"line": 1, "column": 1, "length": 20}}
+let identity = {"kind": "function", "name": "identity", "type_params": ["T"], "params": [{"name": "value", "annotation": "T"}], "return_type": "T", "body": {"statements": []}}
+let identity_call = {"kind": "call", "callee": {"kind": "name", "name": "identity"}, "args": [{"kind": "positional", "value": number}], "span": {"line": 4, "column": 1, "length": 11}}
+let base = [b2c_binding("value", "option<number>", "option<number>", true)]
+let positive = b2c_condition_fact(base, is_some, true)
+let negative = b2c_condition_fact(base, is_some, false)
+let restored = b2c_merge_env(base, positive, negative)
+let nested_result = b2c_infer_expr(nested, base, [], "flow_engine.zp")
+let map_result = b2c_infer_expr(map, base, [], "flow_engine.zp")
+let call_result = b2c_infer_expr(identity_call, [], [identity], "flow_engine.zp")
+let wrong = {"kind": "binary", "left": number, "op": "add", "right": text, "span": {"line": 5, "column": 1, "length": 9}}
+let wrong_result = b2c_infer_expr(wrong, base, [], "flow_engine.zp")
+let program = {"statements": [{"kind": "declaration", "name": "value", "annotation": "option<number>", "value": {"kind": "call", "callee": {"kind": "name", "name": "some"}, "args": [{"kind": "positional", "value": number}]}, "span": {"line": 1, "column": 1, "length": 30}}, {"kind": "if", "condition": is_some, "then_branch": {"statements": [{"kind": "declaration", "name": "inside", "annotation": "number", "value": option_value, "span": {"line": 3, "column": 1, "length": 25}}]}, "else_branch": none}]}
+let program_result = b2c_check_program(program, "flow_engine.zp")
+
+say nested_result["type"]
+say map_result["type"]
+say b2c_lookup(positive, "value")["current"]
+say b2c_lookup(restored, "value")["current"]
+say call_result["type"]
+say wrong_result["type"]
+say len(wrong_result["errors"])
+say program_result["ok"]
+say len(program_result["diagnostics"])
