@@ -11,6 +11,10 @@ export fn literal_node(literal_kind, value, line, column, length):
 export fn declaration_node(name, annotation, inferred_type, value, line, length):
     return {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": name, "span": span(line, 1, length), "value": value}
 
+export fn binary_expression_node(value, marker, operator):
+    let parts = split(value, marker)
+    return {"kind": "binary", "left": expression_node(parts[0]), "op": operator, "right": expression_node(parts[1]), "span": span(1, 1, len(value))}
+
 export fn expression_node(expression):
     let value = trim(expression)
     if contains(value, "(") and ends_with(value, ")"):
@@ -25,9 +29,32 @@ export fn expression_node(expression):
         if argument_text != "":
             args = append(args, {"kind": "positional", "value": expression_node(argument_text)})
         return {"args": args, "callee": {"kind": "name", "name": callee, "span": span(1, 1, len(callee))}, "kind": "call", "span": span(1, 1, len(value))}
+    if contains(value, " or "):
+        return binary_expression_node(value, " or ", "or")
+    if contains(value, " and "):
+        return binary_expression_node(value, " and ", "and")
+    if contains(value, " == "):
+        return binary_expression_node(value, " == ", "equal")
+    if contains(value, " != "):
+        return binary_expression_node(value, " != ", "not_equal")
+    if contains(value, " <= "):
+        return binary_expression_node(value, " <= ", "less_equal")
+    if contains(value, " >= "):
+        return binary_expression_node(value, " >= ", "greater_equal")
+    if contains(value, " < "):
+        return binary_expression_node(value, " < ", "less")
+    if contains(value, " > "):
+        return binary_expression_node(value, " > ", "greater")
     if contains(value, " + "):
-        let parts = split(value, " + ")
-        return {"kind": "binary", "left": expression_node(parts[0]), "op": "add", "right": expression_node(parts[1]), "span": span(1, 1, len(value))}
+        return binary_expression_node(value, " + ", "add")
+    if contains(value, " - "):
+        return binary_expression_node(value, " - ", "subtract")
+    if contains(value, " * "):
+        return binary_expression_node(value, " * ", "multiply")
+    if contains(value, " / "):
+        return binary_expression_node(value, " / ", "divide")
+    if contains(value, " % "):
+        return binary_expression_node(value, " % ", "remainder")
     return inferred_literal(value)
 
 export fn inferred_literal(expression):

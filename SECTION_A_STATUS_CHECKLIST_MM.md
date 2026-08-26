@@ -28,7 +28,7 @@
 
 - [ ] **Full diagnostic parity** — delimiter/function edge diagnostics အချို့ရှိသော်လည်း error kind/message/position/failure behavior အားလုံး မညီသေးပါ။
 
-- [ ] **General typed-IR production** — declaration/list/map emission၊ generic type-alias node နှင့် generic/function metadata foundation ရှိသော်လည်း inferred function/call expressions၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
+- [ ] **General typed-IR production** — declaration/list/map emission၊ generic type-alias node၊ generic/function metadata နှင့် arithmetic/comparison/logical binary expression emission ကို တိုးချဲ့ထားသော်လည်း inferred function/call expressions၊ arbitrary blocks နှင့် complete typed-IR integration မပြီးသေးပါ။
 
 - [x] **AST expression-to-type bridge — bounded foundation** — literal၊ unary၊ binary၊ list နှင့် empty-list AST node များအတွက် node-kind-based inference gate pass; environment-aware arbitrary expression inference မပြီးသေးပါ။
 
