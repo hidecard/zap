@@ -16,5 +16,13 @@ export fn rebuild_manifest(plan, artifacts):
 export fn rebuild_is_reproducible(first, second):
     return first == second
 
+export fn rebuild_owner_policy(stages):
+    let zap_owned = true
+    for stage in stages:
+        if stage["owner"] != "zap":
+            zap_owned = false
+    return {"all_zap_owned": zap_owned, "native_owner_allowed": false}
+
 export fn rebuild_acceptance(plan, expected_seed, expected_stage):
-    return {"native_independent": false, "seed_matches": plan["seed"] == expected_seed, "stage_matches": plan["compiler_stage"] == expected_stage}
+    let ownership = rebuild_owner_policy(plan["stages"])
+    return {"all_zap_owned": ownership["all_zap_owned"], "native_independent": false, "native_owner_allowed": ownership["native_owner_allowed"], "seed_matches": plan["seed"] == expected_seed, "stage_matches": plan["compiler_stage"] == expected_stage}

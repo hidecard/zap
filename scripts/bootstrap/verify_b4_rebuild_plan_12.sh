@@ -36,6 +36,8 @@ say rebuild_is_reproducible(manifest, manifest)
 say acceptance["seed_matches"]
 say acceptance["stage_matches"]
 say acceptance["native_independent"]
+say acceptance["all_zap_owned"]
+say acceptance["native_owner_allowed"]
 EOF
 cat > "$expected" <<'EOF'
 B4
@@ -53,7 +55,9 @@ true
 true
 true
 false
+true
+false
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
-printf 'B4 rebuild-plan gate passed: 15 deterministic orchestration cases; native-independent flag remains false\n'
+printf 'B4 rebuild-plan gate passed: 17 deterministic orchestration and ownership-policy cases; native-independent flag remains false\n'
