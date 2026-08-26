@@ -4,6 +4,9 @@
 # Zap-owned and executable through the bootstrap VM, but full self-hosting still
 # requires the compiler to rebuild itself from Zap source.
 
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b3/lower.zp"
+
 export fn seed_is_digit(character):
     return contains("0123456789", character)
 
@@ -60,6 +63,38 @@ export fn seed_parse_parameters(parameter_text):
         if contains(name, ":"):
             name = trim(split(name, ":")[0])
         result = append(result, name)
+    return result
+
+export fn seed_merge_names(left, right, index, result):
+    if index >= len(left):
+        if len(right) == 0:
+            return result
+        return seed_merge_names(right, [], len(right), append(result, right[0]))
+    let next = result
+    let found = false
+    for item in next:
+        if item == left[index]:
+            found = true
+    if not found:
+        next = append(next, left[index])
+    return seed_merge_names(left, right, index + 1, next)
+
+export fn seed_merge_name_lists(left, right):
+    let result = []
+    for item in left:
+        let found = false
+        for existing in result:
+            if existing == item:
+                found = true
+        if not found:
+            result = append(result, item)
+    for item in right:
+        let found = false
+        for existing in result:
+            if existing == item:
+                found = true
+        if not found:
+            result = append(result, item)
     return result
 
 export fn seed_find_top_level_operator(value, operator, index, depth):
@@ -128,6 +163,10 @@ export fn seed_expression(source, locals):
                     return lowered_argument
                 instructions = seed_append_all(instructions, lowered_argument["instructions"])
                 argc = argc + 1
+        if contains(call_name, "."):
+            let pieces = split(call_name, ".")
+            if len(pieces) == 2:
+                return {"error": none, "instructions": append(instructions, {"argc": argc, "method": trim(pieces[1]), "op": "method_call", "receiver": trim(pieces[0])})}
         return {"error": none, "instructions": append(instructions, {"argc": argc, "name": call_name, "op": "call"})}
     if starts_with(value, "[") and ends_with(value, "]"):
         return {"error": none, "instructions": [{"op": "const", "value": from_json(value)}]}
@@ -219,11 +258,36 @@ export fn seed_patch_function(instructions, target_index, entry, end, index, res
         return result
     let instruction = instructions[index]
     if index == target_index:
-        instruction = {"end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "params": instruction["params"]}
+        instruction = {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "params": instruction["params"]}
     return seed_patch_function(instructions, target_index, entry, end, index + 1, append(result, instruction))
 
+export fn seed_patch_class(instructions, target_index, end, index, result):
+    if index >= len(instructions):
+        return result
+    let instruction = instructions[index]
+    if index == target_index:
+        instruction = {"end": end, "name": instruction["name"], "op": "class_def"}
+    return seed_patch_class(instructions, target_index, end, index + 1, append(result, instruction))
+
+export fn seed_compile_class(lines, index, instructions, locals, indent, loop_depth, function_depth):
+    if loop_depth > 0 or function_depth > 0:
+        return {"error": "nested_class_unsupported", "instructions": instructions, "locals": locals, "next": index}
+    let header = trim(lines[index])
+    let name = trim(substring(header, 6, len(header) - 1))
+    if name == "":
+        return {"error": "invalid_class_name", "instructions": instructions, "locals": locals, "next": index}
+    let class_index = len(instructions)
+    let with_class = append(instructions, {"end": 0, "name": name, "op": "class_def"})
+    let body = seed_compile_lines(lines, index + 1, with_class, locals, indent, loop_depth, function_depth)
+    if body["error"] != none:
+        return body
+    if body["next"] == index + 1:
+        return {"error": "missing_class_body", "instructions": instructions, "locals": locals, "next": index}
+    let patched = seed_patch_class(body["instructions"], class_index, len(body["instructions"]), 0, [])
+    return {"error": none, "instructions": patched, "locals": body["locals"], "next": body["next"]}
+
 export fn seed_compile_function(lines, index, instructions, locals, indent, loop_depth, function_depth):
-    if function_depth > 0 or loop_depth > 0:
+    if loop_depth > 0:
         return {"error": "nested_function_unsupported", "instructions": instructions, "locals": locals, "next": index}
     let header = trim(lines[index])
     let open_index = seed_find_open_paren(header, 3)
@@ -236,10 +300,17 @@ export fn seed_compile_function(lines, index, instructions, locals, indent, loop
     if name == "":
         return {"error": "invalid_function_name", "instructions": instructions, "locals": locals, "next": index}
     let params = seed_parse_parameters(substring(header, open_index + 1, close_index))
+    let captures = []
+    let body_locals = params
+    let binding = none
+    if function_depth > 0:
+        captures = locals
+        body_locals = seed_merge_name_lists(params, captures)
+        binding = name
     let definition_index = len(instructions)
     let entry = definition_index + 1
-    let with_definition = append(instructions, {"end": 0, "entry": entry, "name": name, "op": "function_def", "params": params})
-    let body = seed_compile_lines(lines, index + 1, with_definition, params, indent, 0, function_depth + 1)
+    let with_definition = append(instructions, {"binding": binding, "captures": captures, "end": 0, "entry": entry, "name": name, "op": "function_def", "params": params})
+    let body = seed_compile_lines(lines, index + 1, with_definition, body_locals, indent, 0, function_depth + 1)
     if body["error"] != none:
         return body
     if body["next"] == index + 1:
@@ -247,7 +318,10 @@ export fn seed_compile_function(lines, index, instructions, locals, indent, loop
     let with_fallthrough = append(body["instructions"], {"op": "return_none"})
     let end = len(with_fallthrough)
     let patched = seed_patch_function(with_fallthrough, definition_index, entry, end, 0, [])
-    return {"error": none, "instructions": patched, "locals": locals, "next": body["next"]}
+    let next_locals = locals
+    if binding != none:
+        next_locals = seed_add_local(next_locals, binding)
+    return {"error": none, "instructions": patched, "locals": next_locals, "next": body["next"]}
 
 export fn seed_patch_loop_controls_range(instructions, start_index, end_index, break_target, continue_target, index, result):
     if index >= len(instructions):
@@ -370,6 +444,11 @@ export fn seed_compile_lines(lines, index, instructions, locals, base_indent, lo
         return {"error": none, "instructions": instructions, "locals": locals, "next": index}
     if value == "while:":
         return {"error": "invalid_while_header", "instructions": instructions, "locals": locals, "next": index}
+    if starts_with(value, "class ") and ends_with(value, ":"):
+        let class = seed_compile_class(lines, index, instructions, locals, indent, loop_depth, function_depth)
+        if class["error"] != none:
+            return class
+        return seed_compile_lines(lines, class["next"], class["instructions"], class["locals"], base_indent, loop_depth, function_depth)
     if starts_with(value, "fn "):
         let function = seed_compile_function(lines, index, instructions, locals, indent, loop_depth, function_depth)
         if function["error"] != none:
@@ -450,6 +529,15 @@ export fn seed_compile_source(source, source_name):
 
 export fn seed_compile_bytes(artifact):
     return json(artifact)
+
+export fn seed_compile_ast_source(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return {"artifact_kind": "bytecode", "error": "parse_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let lowered = lower_ast_program(parsed)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_ast_slice"}
 
 export fn seed_self_rebuild(source, source_name):
     let first = seed_compile_source(source, source_name)

@@ -71,18 +71,44 @@ export fn vm_bind_arguments(state, params, values, index):
     let bound = vm_store(state, params[index], values[index])
     return vm_bind_arguments(bound, params, values, index + 1)
 
+export fn vm_capture_values(state, names, index, result):
+    if index >= len(names):
+        return result
+    let loaded = vm_load(state, names[index])
+    if loaded["error"] != none:
+        return vm_capture_values(state, names, index + 1, result)
+    return vm_capture_values(state, names, index + 1, append(result, {"name": names[index], "value": loaded["value"]}))
+
+export fn vm_bind_captures(state, captures, index):
+    if index >= len(captures):
+        return state
+    let bound = vm_store(state, captures[index]["name"], captures[index]["value"])
+    return vm_bind_captures(bound, captures, index + 1)
+
+export fn vm_push_values(state, values, index):
+    if index >= len(values):
+        return state
+    return vm_push_values(vm_push(state, values[index]), values, index + 1)
+
 export fn vm_find_function(functions, name, index):
     if index >= len(functions):
         return none
-    if functions[index]["name"] == name:
+    if functions[index]["op"] == "function_def" and functions[index]["name"] == name:
         return functions[index]
     return vm_find_function(functions, name, index + 1)
+
+export fn vm_find_class(functions, name, index):
+    if index >= len(functions):
+        return none
+    if functions[index]["op"] == "class_def" and functions[index]["name"] == name:
+        return functions[index]
+    return vm_find_class(functions, name, index + 1)
 
 export fn vm_collect_functions(program, index, result):
     if index >= len(program):
         return result
     let instruction = program[index]
-    if instruction["op"] == "function_def":
+    if instruction["op"] == "function_def" or instruction["op"] == "class_def":
         result = append(result, instruction)
     return vm_collect_functions(program, index + 1, result)
 
@@ -110,6 +136,13 @@ export fn vm_step(state, instruction):
     let op = instruction["op"]
     let advanced = vm_state_with(state["error"], state["halted"], state["handlers"], state["ip"] + 1, state["locals"], state["output"], state["stack"], state["frames"], state["functions"])
     if op == "function_def":
+        let registered = advanced
+        if instruction["binding"] != none:
+            let captured = vm_capture_values(advanced, instruction["captures"], 0, [])
+            let closure = {"captures": captured, "closure": true, "function_name": instruction["name"]}
+            registered = vm_store(advanced, instruction["binding"], closure)
+        return vm_state_with(none, false, registered["handlers"], instruction["end"], registered["locals"], registered["output"], registered["stack"], registered["frames"], registered["functions"])
+    if op == "class_def":
         return vm_state_with(none, false, advanced["handlers"], instruction["end"], advanced["locals"], advanced["output"], advanced["stack"], advanced["frames"], advanced["functions"])
     if op == "jump":
         return vm_state_with(none, false, advanced["handlers"], instruction["target"], advanced["locals"], advanced["output"], advanced["stack"], advanced["frames"], advanced["functions"])
@@ -172,6 +205,16 @@ export fn vm_step(state, instruction):
         if operand["error"] != none:
             return vm_fail(advanced, operand["error"])
         return vm_push(operand["state"], not operand["value"])
+    if op == "method_call":
+        let method_arguments = vm_pop_arguments(advanced, instruction["argc"], [])
+        if method_arguments["error"] != none:
+            return vm_fail(advanced, method_arguments["error"])
+        let receiver = vm_load(method_arguments["state"], instruction["receiver"])
+        if receiver["error"] != none:
+            return vm_fail(advanced, receiver["error"])
+        let receiver_state = vm_state_with(none, false, method_arguments["state"]["handlers"], advanced["ip"] - 1, method_arguments["state"]["locals"], method_arguments["state"]["output"], method_arguments["state"]["stack"], method_arguments["state"]["frames"], method_arguments["state"]["functions"])
+        let with_receiver = vm_push_values(vm_push(receiver_state, receiver["value"]), method_arguments["values"], 0)
+        return vm_step(with_receiver, {"argc": instruction["argc"] + 1, "name": instruction["method"], "op": "call"})
     if op == "call":
         let arguments = vm_pop_arguments(advanced, instruction["argc"], [])
         if arguments["error"] != none:
@@ -184,14 +227,26 @@ export fn vm_step(state, instruction):
             if value < 0:
                 value = 0 - value
             return vm_push(arguments["state"], value)
-        let definition = vm_find_function(advanced["functions"], name, 0)
+        let definition_name = name
+        let captures = []
+        let loaded = vm_load(arguments["state"], name)
+        if loaded["error"] == none:
+            let serialized = json(loaded["value"])
+            if contains(serialized, "\"closure\":true"):
+                definition_name = loaded["value"]["function_name"]
+                captures = loaded["value"]["captures"]
+        let definition = vm_find_function(advanced["functions"], definition_name, 0)
         if definition == none:
+            let class = vm_find_class(advanced["functions"], definition_name, 0)
+            if class != none and instruction["argc"] == 0:
+                return vm_push(arguments["state"], {"class_name": definition_name, "object": true})
             return vm_fail(advanced, "unknown_call:" + name)
         if len(definition["params"]) != instruction["argc"]:
             return vm_fail(advanced, "arity_error:" + name)
-        let frame = {"function": name, "handlers": arguments["state"]["handlers"], "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
+        let frame = {"function": definition_name, "handlers": arguments["state"]["handlers"], "locals": arguments["state"]["locals"], "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
-        return vm_bind_arguments(callee, definition["params"], arguments["values"], 0)
+        let with_captures = vm_bind_captures(callee, captures, 0)
+        return vm_bind_arguments(with_captures, definition["params"], arguments["values"], 0)
     if op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or":
         let right = vm_pop(advanced)
         if right["error"] != none:

@@ -40,7 +40,6 @@ say arity_result["error"]
 say outside["status"]
 say outside["error"]
 say nested_function["status"]
-say nested_function["error"]
 EOF
 cat > "$expected" <<'EOF'
 none
@@ -56,8 +55,7 @@ none
 arity_error:one
 compile_error
 return_outside_function
-compile_error
-nested_function_unsupported
+compiled_slice
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
