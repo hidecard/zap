@@ -13,7 +13,7 @@
 | 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive literal/list/map/index/binary value inference, identity/known-return call inference, program declaration/reassignment propagation, condition-derived option/result narrowing, compound path states, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
 | 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans၊ generic function/type-alias metadata၊ recursive type-unification၊ generic end-to-end၊ bounded expression nodes၊ arbitrary control-statement sequence nodes၊ and `raise/import/module/try/catch` classification pass; complete parser AST/block metadata and full ownership remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint, cycle foundations, and bounded diagnostic field parity pass; complete reference error matrix remains pending. |
-| 10 | Bootstrap package/build/VM ownership | [x] partial | Zap-written package/lock/offline-policy, stack-VM, deterministic build-plan/artifact manifest, and B4 seed preflight foundations pass focused cases; native Rust ownership transfer, complete bytecode semantics, and self-rebuild remain pending. |
+| 10 | Bootstrap package/build/VM ownership | [x] partial | Zap-written package/lock/offline-policy, stack-VM, deterministic build-plan/artifact manifest, and B4 seed/rebuild-plan foundations pass focused cases; actual native-independent compiler runner, native Rust ownership transfer, complete bytecode semantics, and self-rebuild remain pending. |
 
 ## Current expansion batch
 
@@ -42,6 +42,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_typed_ir_additional_5.sh` — covers 5 raise/import/module/try/catch typed-IR cases
 - `scripts/bootstrap/verify_b3_zap_ownership_20.sh` — covers 20 Zap-written package/lock/offline-policy and stack-VM foundation cases
 - `scripts/bootstrap/verify_b4_seed_preflight_10.sh` — covers 10 deterministic platform-seed descriptor and reproducibility cases
+- `scripts/bootstrap/verify_b4_rebuild_plan_12.sh` — covers 15 deterministic B4 stage/artifact orchestration cases and explicitly checks the native-independent flag
 - `scripts/bootstrap/verify_b1_token_cursor.sh`
 - `scripts/bootstrap/verify_b1_recursive_blocks.sh`
 - `scripts/bootstrap/verify_b1_branch_chain.sh`

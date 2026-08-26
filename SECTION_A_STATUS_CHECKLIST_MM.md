@@ -323,3 +323,7 @@ The three main Section A workstreams now have additional verifier-backed increme
 
 - [x] Main-1 call-inference expansion — identity generic call return type နှင့် known environment function return type ကို recursive value inference ထဲသို့ ချိတ်ဆက်ပြီး complete-inference verifier ကို ၁၂ cases အထိ တိုးချဲ့ pass။
 - [x] Main-3 build ownership expansion — Zap-written deterministic build plan၊ artifact descriptors၊ build manifest နှင့် deny-network/lock/seed policy စုစုပေါင်း ၁၃ assertions pass။
+
+- [x] B4 rebuild-plan orchestration gate — seed-to-lexer/parser/typecheck/VM stage descriptors၊ deterministic artifact manifest နှင့် reproducibility စုစုပေါင်း ၁၅ assertions pass။
+
+- [ ] **B4 native-independent self-rebuild** — Rebuild plan သည် stage contract ကို သတ်မှတ်ထားသော်လည်း actual Zap compiler runner မရှိသေးပါ။ Verifier သည် `native_independent=false` ကို အတည်ပြုထားပြီး native Rust reference ကို မအစားထိုးရသေးပါ။

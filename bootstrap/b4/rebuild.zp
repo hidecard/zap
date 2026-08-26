@@ -1,0 +1,20 @@
+# B4 rebuild orchestration contract. Execution is still provisional until a
+# native-independent Zap compiler runner consumes this plan.
+
+export fn rebuild_stage(name, input_kind, output_kind, owner):
+    return {"input_kind": input_kind, "name": name, "output_kind": output_kind, "owner": owner}
+
+export fn rebuild_plan(seed, stages):
+    return {"compiler_stage": "B4", "network": false, "seed": seed, "stages": stages, "version": 1}
+
+export fn rebuild_artifact(plan, stage_name, digest):
+    return {"compiler_stage": plan["compiler_stage"], "digest": digest, "stage": stage_name, "version": plan["version"]}
+
+export fn rebuild_manifest(plan, artifacts):
+    return {"artifacts": artifacts, "compiler_stage": plan["compiler_stage"], "seed": plan["seed"], "version": plan["version"]}
+
+export fn rebuild_is_reproducible(first, second):
+    return first == second
+
+export fn rebuild_acceptance(plan, expected_seed, expected_stage):
+    return {"native_independent": false, "seed_matches": plan["seed"] == expected_seed, "stage_matches": plan["compiler_stage"] == expected_stage}
