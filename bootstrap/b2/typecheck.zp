@@ -516,6 +516,18 @@ export fn loop_fixpoint_update(before, body, mutated_names, remaining_iterations
 export fn loop_fixpoint_type(before, body, name, max_iterations):
     return ast_lookup_type(loop_fixpoint_update(before, body, [name], max_iterations), name)
 
+export fn loop_exit_environment(before, body, mutated_names, max_iterations):
+    return loop_fixpoint_update(before, body, mutated_names, max_iterations)
+
+export fn reassignment_invalidate_many(environment, assignments):
+    let result = environment
+    for assignment in assignments:
+        result = flow_reassignment_invalidate(result, assignment["name"], assignment["type"], assignment["narrowed_names"])
+    return result
+
+export fn scope_restore_after_loop(parent, loop_environment):
+    return symbol_environment_restore(parent)
+
 export fn loop_body_merge(body_states, name):
     let candidate = ""
     for state in body_states:

@@ -20,7 +20,7 @@
 
 - [ ] **Compound type guards** — recursive guard AST သည် `and`/`or` short-circuit path များအတွက် true/false environment merge ကို ၈-case verifier ဖြင့် pass ထားသော်လည်း arbitrary parser-derived guard expressions နှင့် complete reference parity မပြီးသေးပါ။
 
-- [ ] **Loop mutation analysis** — loop mutation widening နှင့် bounded fixpoint foundation ရှိသော်လည်း arbitrary loop assignments၊ nested scopes၊ multiple iterations နှင့် full fixpoint convergence analysis မပြီးသေးပါ။
+- [ ] **Loop mutation analysis** — loop exit environment၊ multi-name reassignment invalidation နှင့် parent scope restoration contract များ ထည့်ပြီး flow-sensitive regressions pass ထားသော်လည်း arbitrary loop CFG transfer၊ nested-loop convergence နှင့် complete reference parity မပြီးသေးပါ။
 
 - [x] **Reassignment invalidation — bounded candidate slice** — stale narrowing invalidation ကို candidate တွင် ထည့်ထားသည်။
 
