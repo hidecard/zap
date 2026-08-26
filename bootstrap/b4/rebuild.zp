@@ -10,6 +10,20 @@ export fn rebuild_plan(seed, stages):
 export fn rebuild_artifact(plan, stage_name, digest):
     return {"compiler_stage": plan["compiler_stage"], "digest": digest, "stage": stage_name, "version": plan["version"]}
 
+export fn rebuild_compiler_artifact(plan, stage_name, artifact_kind, artifact_bytes, digest):
+    return {"artifact_kind": artifact_kind, "bytes": artifact_bytes, "compiler_stage": plan["compiler_stage"], "digest": digest, "stage": stage_name, "version": plan["version"]}
+
+export fn rebuild_artifact_bytes(artifact):
+    return json({"artifact_kind": artifact["artifact_kind"], "bytes": artifact["bytes"], "compiler_stage": artifact["compiler_stage"], "digest": artifact["digest"], "stage": artifact["stage"], "version": artifact["version"]})
+
+export fn rebuild_two_pass(first, second):
+    let first_bytes = rebuild_artifact_bytes(first)
+    let second_bytes = rebuild_artifact_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes:
+        status = "reproducible"
+    return {"byte_equal": first_bytes == second_bytes, "first_bytes": first_bytes, "second_bytes": second_bytes, "status": status}
+
 export fn rebuild_stage_execution(stage, input_digest, output_digest):
     return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "owner": stage["owner"], "stage": stage["name"], "status": "planned"}
 

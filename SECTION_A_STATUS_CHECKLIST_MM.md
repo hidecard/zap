@@ -38,7 +38,7 @@
 
 - [ ] **Platform-seed acceptance** — Zap-written runner contract သည် clock/console/file/memory ကို allow၊ network/process ကို deny ပြီး stage ownership၊ structural validity၊ deterministic produced-artifact handoff၊ input-kind checked stage execution နှင့် multi-stage plan execution/digest-count rejection ကို စစ်ဆေးကာ ၁၅-case verifierနှင့် plan-executor acceptance pass ထားသော်လည်း status သည် `contract_only` ဖြစ်ပြီး bootstrap output ကို platform seed မှ self-build/run လုပ်နိုင်ကြောင်း မပြနိုင်သေးပါ။
 
-- [ ] **Full B4 self-hosting** — မရသေးပါ။ Runner contract နှင့် canonical rebuild-manifest byte comparison ၆ cases pass ထားသော်လည်း `native_independent=false` နှင့် `contract_only` အခြေအနေကို verifier က အတည်ပြုထားဆဲဖြစ်ပြီး actual self-rebuild မရှိသေးပါ။
+- [ ] **Full B4 self-hosting** — မရသေးပါ။ Runner contract၊ canonical rebuild-manifest byte comparison ၆ cases နှင့် compiler-artifact two-pass equality/mismatch verifier ၈ cases pass ထားသော်လည်း comparison သည် deterministic contract artifacts အပေါ်သာဖြစ်ပြီး `native_independent=false` နှင့် `contract_only` အခြေအနေကို verifier က အတည်ပြုထားဆဲဖြစ်ကာ actual Zap compiler self-rebuild မရှိသေးပါ။
 
 ## ပြီးစီး/အထောက်အထားရှိသော parser နှင့် foundation gates
 
