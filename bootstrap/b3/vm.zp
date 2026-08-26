@@ -145,20 +145,136 @@ export fn vm_find_class(functions, name, index):
     return vm_find_class(functions, name, index + 1)
 
 export fn vm_find_method(functions, owner, name, index):
-    if index >= len(functions):
-        let class = vm_find_class(functions, owner, 0)
-        if class == none or class["base"] == none:
-            return none
-        return vm_find_method(functions, class["base"], name, 0)
-    if functions[index]["op"] == "function_def" and functions[index]["owner"] == owner and functions[index]["name"] == name:
-        return functions[index]
-    return vm_find_method(functions, owner, name, index + 1)
+    if index > 0:
+        return none
+    let visiting = []
+    let resolution = vm_class_mro(functions, owner, visiting)
+    if resolution["error"] != none:
+        return none
+    let method_owner = vm_mro_method_owner(functions, resolution["mro"], name, 0)
+    if method_owner == none:
+        return none
+    return vm_find_method_direct(functions, method_owner, name, 0)
 
 export fn vm_find_parent(functions, owner):
     let class = vm_find_class(functions, owner, 0)
     if class == none:
         return none
     return class["base"]
+
+export fn vm_contains_name(values, name, index):
+    if index >= len(values):
+        return false
+    if values[index] == name:
+        return true
+    return vm_contains_name(values, name, index + 1)
+
+export fn vm_mro_tail_has_name(sequences, name, sequence_index, item_index):
+    if sequence_index >= len(sequences):
+        return false
+    if item_index >= len(sequences[sequence_index]):
+        return vm_mro_tail_has_name(sequences, name, sequence_index + 1, 1)
+    if sequences[sequence_index][item_index] == name:
+        return true
+    return vm_mro_tail_has_name(sequences, name, sequence_index, item_index + 1)
+
+export fn vm_mro_pick_candidate(sequences, candidates, index):
+    if index >= len(candidates):
+        return none
+    let candidate = candidates[index]
+    if not vm_mro_tail_has_name(sequences, candidate, 0, 1):
+        return candidate
+    return vm_mro_pick_candidate(sequences, candidates, index + 1)
+
+export fn vm_mro_sequence_after_head(sequence, index, result):
+    if index >= len(sequence):
+        return result
+    return vm_mro_sequence_after_head(sequence, index + 1, append(result, sequence[index]))
+
+export fn vm_mro_remove_head(sequences, candidate):
+    let result = []
+    for sequence in sequences:
+        if len(sequence) == 0:
+            result = append(result, sequence)
+        else:
+            let head = sequence[0]
+            if head == candidate:
+                let empty_result = []
+                result = append(result, vm_mro_sequence_after_head(sequence, 1, empty_result))
+            else:
+                result = append(result, sequence)
+    return result
+
+export fn vm_c3_merge(sequences, result):
+    let active = []
+    for sequence in sequences:
+        if len(sequence) > 0:
+            active = append(active, sequence)
+    if len(active) == 0:
+        return result
+    let candidates = []
+    for sequence in active:
+        candidates = append(candidates, sequence[0])
+    let candidate = vm_mro_pick_candidate(active, candidates, 0)
+    if candidate == none:
+        return none
+    let reduced = vm_mro_remove_head(active, candidate)
+    return vm_c3_merge(reduced, append(result, candidate))
+
+export fn vm_prepend_name(name, values):
+    let result = [name]
+    for value in values:
+        result = append(result, value)
+    return result
+
+export fn vm_class_parents(class):
+    if contains(json(class), "\"parents\""):
+        return class["parents"]
+    if class["base"] == none:
+        return []
+    return [class["base"]]
+
+export fn vm_class_mro(functions, name, visiting):
+    if vm_contains_name(visiting, name, 0):
+        return {"error": "inheritance_cycle:" + name, "mro": []}
+    let class = vm_find_class(functions, name, 0)
+    if class == none:
+        return {"error": "unknown_class:" + name, "mro": []}
+    let parents = vm_class_parents(class)
+    let sequences = []
+    for parent in parents:
+        let parent_mro = vm_class_mro(functions, parent, append(visiting, name))
+        if parent_mro["error"] != none:
+            return parent_mro
+        sequences = append(sequences, parent_mro["mro"])
+    sequences = append(sequences, parents)
+    let empty_result = []
+    let merged = vm_c3_merge(sequences, empty_result)
+    if merged == none:
+        return {"error": "inconsistent_mro:" + name, "mro": []}
+    return {"error": none, "mro": vm_prepend_name(name, merged)}
+
+export fn vm_mro_method_owner(functions, mro, name, index):
+    if index >= len(mro):
+        return none
+    let method = vm_find_method_direct(functions, mro[index], name, 0)
+    if method != none:
+        return mro[index]
+    return vm_mro_method_owner(functions, mro, name, index + 1)
+
+export fn vm_find_mro_index(mro, owner, index):
+    if index >= len(mro):
+        return -1
+    if mro[index] == owner:
+        return index
+    return vm_find_mro_index(mro, owner, index + 1)
+
+export fn vm_find_method_direct(functions, owner, name, index):
+    if index >= len(functions):
+        return none
+    if functions[index]["op"] == "function_def" and functions[index]["owner"] == owner and functions[index]["name"] == name:
+        return functions[index]
+    return vm_find_method_direct(functions, owner, name, index + 1)
 
 export fn vm_collect_functions(program, index, result):
     if index >= len(program):
@@ -290,15 +406,24 @@ export fn vm_step(state, instruction):
         let current_frame = state["frames"][len(state["frames"]) - 1]
         if current_frame["owner"] == none:
             return vm_fail(advanced, "super_outside_class")
-        let parent = vm_find_parent(advanced["functions"], current_frame["owner"])
-        if parent == none:
-            return vm_fail(advanced, "super_no_parent:" + current_frame["owner"])
         let super_arguments = vm_pop_arguments(advanced, instruction["argc"], [])
         if super_arguments["error"] != none:
             return vm_fail(advanced, super_arguments["error"])
         let receiver = vm_load(super_arguments["state"], "self")
         if receiver["error"] != none:
             return vm_fail(advanced, receiver["error"])
+        let visiting = []
+        let resolution = vm_class_mro(advanced["functions"], receiver["value"]["class_name"], visiting)
+        if resolution["error"] != none:
+            return vm_fail(advanced, resolution["error"])
+        let current_index = vm_find_mro_index(resolution["mro"], current_frame["owner"], 0)
+        if current_index < 0:
+            return vm_fail(advanced, "super_owner_not_in_mro:" + current_frame["owner"])
+        if current_index + 1 >= len(resolution["mro"]):
+            return vm_fail(advanced, "super_no_parent:" + current_frame["owner"])
+        let parent = vm_mro_method_owner(advanced["functions"], resolution["mro"], instruction["method"], current_index + 1)
+        if parent == none:
+            return vm_fail(advanced, "unknown_super_method:" + instruction["method"])
         let receiver_state = vm_state_with(none, false, super_arguments["state"]["handlers"], advanced["ip"] - 1, super_arguments["state"]["locals"], super_arguments["state"]["output"], super_arguments["state"]["stack"], super_arguments["state"]["frames"], super_arguments["state"]["functions"])
         let with_receiver = vm_push_values(vm_push(receiver_state, receiver["value"]), super_arguments["values"], 0)
         return vm_step(with_receiver, {"argc": instruction["argc"] + 1, "name": instruction["method"], "op": "call", "owner": parent})
@@ -335,6 +460,11 @@ export fn vm_step(state, instruction):
         if contains(instruction_json, "\"constructor\":true"):
             constructor = true
             constructor_instance = instruction["instance"]
+        if owner != none:
+            let visiting = []
+            let hierarchy = vm_class_mro(advanced["functions"], owner, visiting)
+            if hierarchy["error"] != none:
+                return vm_fail(advanced, hierarchy["error"])
         let loaded = vm_load(arguments["state"], name)
         if loaded["error"] == none:
             let serialized = json(loaded["value"])
@@ -349,6 +479,10 @@ export fn vm_step(state, instruction):
         if definition == none:
             let class = vm_find_class(advanced["functions"], definition_name, 0)
             if class != none:
+                let visiting = []
+                let hierarchy = vm_class_mro(advanced["functions"], definition_name, visiting)
+                if hierarchy["error"] != none:
+                    return vm_fail(advanced, hierarchy["error"])
                 let constructor_definition = vm_find_method(advanced["functions"], definition_name, "__init__", 0)
                 if constructor_definition == none:
                     if instruction["argc"] == 0:
@@ -367,7 +501,10 @@ export fn vm_step(state, instruction):
             closure_name = name
             for captured in captures:
                 capture_names = append(capture_names, captured)
-        let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "owner": owner, "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
+        let frame_owner = owner
+        if owner != none:
+            frame_owner = definition["owner"]
+        let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "owner": frame_owner, "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
         let with_captures = vm_bind_captures(callee, captures, 0)
         return vm_bind_arguments(with_captures, definition["params"], arguments["values"], 0)

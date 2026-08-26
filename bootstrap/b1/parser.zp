@@ -79,6 +79,8 @@ export fn rebase_statement_spans(node, line_delta):
     if kind == "function":
         return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
     if kind == "class":
+        if contains(json(node), "\"parents\""):
+            return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span}
         return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "if":
         let else_branch = none
@@ -876,6 +878,8 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
     let rebased_span = span(node_span["line"] + line_delta, node_span["column"] + column_delta, node_span["length"])
     let kind = node["kind"]
     if kind == "class":
+        if contains(json(node), "\"parents\""):
+            return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span}
         return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "function":
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
@@ -936,7 +940,15 @@ export fn parse_class_arbitrary(lines):
             class_name = trim(parts[0])
             base = trim(parts[1])
     let class_statements = parse_class_body_walk(lines, 1, [])
-    return [{"base": base, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "span": span(1, 1, len(header))}]
+    let parents = []
+    if base != none:
+        for parent in split(base, ","):
+            let parent_name = trim(parent)
+            if parent_name != "":
+                parents = append(parents, parent_name)
+    if len(parents) > 0:
+        base = parents[0]
+    return [{"base": base, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "parents": parents, "span": span(1, 1, len(header))}]
 
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}

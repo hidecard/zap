@@ -152,12 +152,20 @@ export fn patch_function(instructions, index, entry, end):
         cursor = cursor + 1
     return patched
 
+export fn lower_class_parents(node):
+    if contains(json(node), "\"parents\""):
+        return node["parents"]
+    if node["base"] == none:
+        return []
+    return [node["base"]]
+
 export fn patch_class(instructions, index, end):
     let patched = []
     let cursor = 0
     for instruction in instructions:
         if cursor == index:
-            patched = append(patched, {"base": instruction["base"], "end": end, "name": instruction["name"], "op": "class_def"})
+            let parents = lower_class_parents(instruction)
+            patched = append(patched, {"base": instruction["base"], "end": end, "name": instruction["name"], "op": "class_def", "parents": parents})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -200,7 +208,8 @@ export fn lower_class_body(body, prefix, owner):
 
 export fn lower_class_node(node, prefix):
     let class_index = len(prefix)
-    let with_class = append(prefix, {"base": node["base"], "end": 0, "name": node["name"], "op": "class_def"})
+    let parents = lower_class_parents(node)
+    let with_class = append(prefix, {"base": node["base"], "end": 0, "name": node["name"], "op": "class_def", "parents": parents})
     let body = lower_class_body(node["body"], with_class, node["name"])
     if body["error"] != none:
         return body
