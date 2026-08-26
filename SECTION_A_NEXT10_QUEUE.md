@@ -13,7 +13,7 @@
 | 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive list/map environment typing, function-aware call inference, condition-derived option/result narrowing, compound path states, program expression propagation, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
 | 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans၊ generic function/type-alias metadata၊ recursive type-unification၊ generic end-to-end နှင့် bounded call/nested-call/binary expression nodes pass; arbitrary block and full ownership remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint, cycle foundations, and bounded diagnostic field parity pass; complete reference error matrix remains pending. |
-| 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
+| 10 | Bootstrap package/build/VM ownership | [ ] | Next-20 CFG/flow/diagnostic foundation is verified; move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
 
 ## Current expansion batch
 
@@ -65,6 +65,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_b2_short_circuit_loop_edges_12.sh` — covers 12 short-circuit and/or, nested branch, loop back-edge, break, and continue ownership cases
 - `scripts/bootstrap/verify_b2_recursive_cfg_loop_convergence_12.sh` — covers 12 recursive nested-AST CFG, loop back-edge convergence, and nested break/continue ownership cases
 - `scripts/bootstrap/verify_b2_arbitrary_flow_diagnostics_14.sh` — covers 14 arbitrary-program CFG, exact branch/fallthrough, reassignment propagation, and diagnostic parity cases
+- `scripts/bootstrap/verify_b2_section_a_next20_20.sh` — covers 20 CFG category, condition metadata, exception/scope edge, reassignment, and diagnostic failure-parity assertions
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`

@@ -177,6 +177,26 @@ export fn flow_reassignment_invalidate(environment, name, assigned_type, narrowe
 export fn cfg_node(identifier, kind, successors, environment):
     return {"environment": environment, "id": identifier, "kind": kind, "successors": successors}
 
+export fn cfg_condition_node(identifier, condition, then_id, else_id, environment):
+    return {"condition": condition, "environment": environment, "id": identifier, "kind": "condition", "successors": [then_id, else_id]}
+
+export fn cfg_exception_node(identifier, body_id, catch_id, continuation, environment):
+    return {"environment": environment, "id": identifier, "kind": "try_catch", "successors": [body_id, catch_id, continuation]}
+
+export fn cfg_scope_node(identifier, scope_kind, entry_id, exit_id, environment):
+    return {"environment": environment, "id": identifier, "kind": scope_kind, "successors": [entry_id, exit_id]}
+
+export fn cfg_statement_category(kind):
+    if kind == "if" or kind == "while" or kind == "for":
+        return "control"
+    if kind == "try_catch":
+        return "exception"
+    if kind == "function" or kind == "class" or kind == "module":
+        return "scope"
+    if kind == "assignment" or kind == "declaration":
+        return "binding"
+    return "effect"
+
 export fn cfg_add_node(graph, node):
     return append(graph, node)
 
@@ -309,6 +329,12 @@ export fn cfg_from_ast(statements, environment):
 
 export fn cfg_flow_statement(statement, environment):
     let kind = statement["kind"]
+    if kind == "try_catch":
+        let body_state = cfg_flow_block(statement["body"]["statements"], environment)
+        let catch_state = cfg_flow_block(statement["catch_body"]["statements"], environment)
+        return branch_environment_merge_many(environment, [body_state, catch_state])
+    if kind == "function" or kind == "class" or kind == "module" or kind == "import":
+        return environment
     if kind == "assignment":
         return symbol_environment_bind(environment, statement["name"], ast_expression_type_env(statement["value"], environment))
     if kind == "declaration":
@@ -1012,6 +1038,13 @@ export fn diagnostic_fields_equal(reference, candidate):
 
 export fn diagnostic_parity(reference, candidate):
     return {"equal": diagnostic_fields_equal(reference, candidate), "reference": reference, "candidate": candidate}
+
+export fn diagnostic_failure_parity(reference, candidate):
+    if not diagnostic_fields_equal(reference, candidate):
+        return {"equal": false, "failure": "field_mismatch"}
+    if reference["severity"] == "error" and candidate["severity"] != "error":
+        return {"equal": false, "failure": "failure_behavior_mismatch"}
+    return {"equal": true, "failure": "none"}
 
 export fn diagnostic(source_name, line, column, message):
     return {"code": "ZAP-TYPE-001", "column": column, "help": "Use a compatible value or update the type annotation.", "kind": "TypeError", "line": line, "message": message, "notes": ["Check the expression type and the expected annotation."], "severity": "error", "source_name": source_name}

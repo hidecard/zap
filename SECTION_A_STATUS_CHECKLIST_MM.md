@@ -283,3 +283,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 arbitrary-flow/diagnostic ၁၄-case gate — parser-shaped arbitrary statement sequence CFG၊ exact branch/fallthrough successors၊ real-program assignment propagation နှင့် diagnostic field parity (`kind/code/line/column/message/severity`) pass။
 
 - [ ] **Full arbitrary-program CFG and diagnostic ownership** — bounded arbitrary flow transfer and parity helpers pass ဖြစ်သော်လည်း all parser AST statement kinds၊ condition expression edges၊ complete join/fallthrough dataflow၊ reference diagnostic matrix နှင့် Rust/native ownership parity အပြည့်အစုံ မပြီးသေးပါ။
+
+- [x] Section A next-20 gate — CFG statement categories၊ exact condition metadata၊ try/catch edge node၊ function/class scope node၊ real reassignment invalidation၊ diagnostic field/failure parity စုစုပေါင်း ၂၀ assertions pass။
+
+- [ ] **Remaining Section A ownership** — next-20 foundation pass ဖြစ်သော်လည်း complete parser ownership၊ full typed-IR production၊ Zap-owned package/build/VM pipeline၊ platform-seed reproducibility နှင့် B4 self-hosting မပြီးသေးပါ။
