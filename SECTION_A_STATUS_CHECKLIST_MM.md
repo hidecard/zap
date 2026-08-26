@@ -267,3 +267,7 @@ B section ကို မစတင်သေးပါ။ Section A ၏ full type in
 - [x] B2 flow-sensitive ၁၀-case gate — multi-path branch merge၊ branch-local declaration presence၊ reassignment invalidation၊ multi-state loop fixpoint နှင့် nested scope restoration pass။
 
 - [ ] **Full flow-sensitive ownership** — multi-path helper layer နှင့် bounded verifier တိုးချဲ့ပြီးသော်လည်း arbitrary AST CFG တည်ဆောက်ခြင်း၊ condition-derived narrowing၊ nested loop/branch convergence နှင့် reference diagnostic parity မပြီးသေးပါ။
+
+- [x] B2 condition-derived narrowing/CFG ၁၀-case gate — option/result guard positive/negative path narrowing၊ compound guard path states၊ CFG sequence nodes နှင့် explicit edge addition pass။
+
+- [ ] **Full condition-derived narrowing and arbitrary CFG** — bounded guard/path/CFG helpers pass ဖြစ်သော်လည်း parser-produced arbitrary AST မှ complete CFG၊ nested condition semantics၊ short-circuit path sensitivity၊ loop back-edge convergence နှင့် full reference diagnostic parity မပြီးသေးပါ။

@@ -77,6 +77,38 @@ export fn branch_environment_merge_paths(base, then_environment, else_environmen
 export fn function_body_environment(parameters, locals):
     return symbol_environment_extend(symbol_environment_from_parameters(parameters), locals)
 
+export fn flow_guard_type(type_name, positive):
+    let parts = type_wrapper_parts(type_name)
+    if positive and parts["wrapper"] == "option":
+        return parts["inner"]
+    if positive and parts["wrapper"] == "result":
+        return parts["inner"]
+    if not positive and parts["wrapper"] == "option":
+        return "none"
+    if not positive and parts["wrapper"] == "result":
+        return "error"
+    return type_name
+
+export fn condition_derived_environment(environment, name, guard, positive):
+    let current = ast_lookup_type(environment, name)
+    if guard == "is_some" or guard == "is_option_none" or guard == "is_ok" or guard == "is_err":
+        return symbol_environment_bind(environment, name, flow_guard_type(current, positive))
+    return environment
+
+export fn condition_path_states(environment, name, guard):
+    let positive = condition_derived_environment(environment, name, guard, true)
+    let negative = condition_derived_environment(environment, name, guard, false)
+    return {"then": positive, "else": negative}
+
+export fn compound_condition_paths(environment, conditions):
+    let then_environment = environment
+    let else_environment = environment
+    for condition in conditions:
+        let paths = condition_path_states(then_environment, condition["name"], condition["guard"])
+        then_environment = paths["then"]
+        else_environment = paths["else"]
+    return {"then": then_environment, "else": else_environment}
+
 export fn branch_environment_merge_many(base, environments):
     let merged = base
     for binding in base:
@@ -122,6 +154,34 @@ export fn flow_reassignment_invalidate(environment, name, assigned_type, narrowe
         result = symbol_environment_bind(result, name, assigned_type)
         return result
     return symbol_environment_bind(result, name, assigned_type)
+
+export fn cfg_node(identifier, kind, successors, environment):
+    return {"environment": environment, "id": identifier, "kind": kind, "successors": successors}
+
+export fn cfg_add_node(graph, node):
+    return append(graph, node)
+
+export fn cfg_add_edge(graph, from_id, to_id):
+    let result = graph
+    for node in graph:
+        if node["id"] == from_id:
+            let successors = append(node["successors"], to_id)
+            result = append(result, cfg_node(node["id"], node["kind"], successors, node["environment"]))
+            return result
+    return result
+
+export fn cfg_sequence_nodes(statements, environment, start_id):
+    let graph = []
+    let current_id = start_id
+    for statement in statements:
+        let kind = statement["kind"]
+        let next_id = current_id + 1
+        let successors = []
+        if kind != "return" and kind != "break" and kind != "continue":
+            successors = [next_id]
+        graph = cfg_add_node(graph, cfg_node(current_id, kind, successors, environment))
+        current_id = next_id
+    return graph
 
 export fn symbol_graph_bind(graph, name, kind, type, scope):
     return append(graph, {"kind": kind, "name": name, "scope": scope, "type": type})

@@ -10,7 +10,7 @@
 | 4 | Arbitrary mixed top-level sequence | [x] bounded | Flat append-backed sequence works for the current bounded statement corpus; arbitrary grammar remains pending. |
 | 5 | Recursive `if/elif/else` blocks | [x] partial | Same-level `else`, bounded `elif` lowering, chained final `else`, and missing-body diagnostics pass in 10-case and control-flow verifiers; full branch semantics remain pending. |
 | 6 | Recursive loop bodies and loop control | [x] partial | Generic top-level `for`/`while` routes and `break`/`continue` AST nodes pass focused cases; function/class integration remains pending. |
-| 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive list/map environment typing, function-aware call inference, program expression propagation, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
+| 7 | General expression-to-type bridge | [x] partial | Node-kind bridge now includes recursive list/map environment typing, function-aware call inference, condition-derived option/result narrowing, compound path states, program expression propagation, nested scope fallback, multi-path branch merge, reassignment invalidation, multi-state loop fixpoint, call-cycle foundations, and recursive wrapper unification; full AST-driven flow environment remains pending. |
 | 8 | General typed-IR emitter | [x] partial | Multi-line declaration/list/map emission၊ source spans၊ generic function/type-alias metadata၊ recursive type-unification၊ generic end-to-end နှင့် bounded call/nested-call/binary expression nodes pass; arbitrary block and full ownership remain pending. |
 | 9 | Diagnostic parity matrix | [x] partial | Delimiter, indentation, nested scope/branch merge, scope exit, loop mutation/fixpoint, call arity/type/constraint and cycle foundations pass in focused verifiers; complete reference error matrix remains pending. |
 | 10 | Bootstrap package/build/VM ownership | [ ] | Move compiler/build/VM execution ownership from native Rust boundary and prove seed rebuild. |
@@ -61,6 +61,7 @@ This queue does not claim that the fully arbitrary parser, complete type inferen
 - `scripts/bootstrap/verify_native_generic_runtime_10.sh` — covers evaluator-integrated generic list/option values, recursive generic calls, and unwrap execution
 - `scripts/bootstrap/verify_b2_typed_ir_expression_10.sh` — covers 10 typed-IR call, nested-call, binary-expression, and declaration-value cases
 - `scripts/bootstrap/verify_b2_flow_sensitive_10.sh` — covers 10 multi-path branch, invalidation, loop-fixpoint, and scope-restoration cases
+- `scripts/bootstrap/verify_b2_condition_cfg_10.sh` — covers 10 condition-derived narrowing, compound path, CFG node, and edge cases
 - `scripts/bootstrap/verify_b2_typecheck_candidate.sh`
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh`
 - `scripts/bootstrap/verify_vm_platform.sh`
