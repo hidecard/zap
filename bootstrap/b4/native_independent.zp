@@ -1,20 +1,144 @@
-# B4 seed compiler slice. This emits canonical bytecode for a bounded source form.
-# Full compiler ownership remains blocked until arbitrary Zap source is supported.
+# B4 executable seed compiler slice.
+#
+# This module intentionally keeps the native_independent flag false: the code is
+# Zap-owned and executable through the bootstrap VM, but full self-hosting still
+# requires the compiler to rebuild itself from Zap source.
+
+export fn seed_is_digit(character):
+    return contains("0123456789", character)
+
+export fn seed_is_number(value):
+    let text = trim(value)
+    if text == "":
+        return false
+    let index = 0
+    if substring(text, 0, 1) == "-":
+        index = 1
+    if index >= len(text):
+        return false
+    let digits = 0
+    let dots = 0
+    while index < len(text):
+        let character = substring(text, index, index + 1)
+        if character == ".":
+            dots = dots + 1
+            if dots > 1:
+                return false
+        else:
+            if not seed_is_digit(character):
+                return false
+            digits = digits + 1
+        index = index + 1
+    return digits > 0
 
 export fn seed_number(value):
     return from_json(trim(value))
 
+export fn seed_string_literal(value):
+    return substring(value, 1, len(value) - 1)
+
+export fn seed_append_all(left, right):
+    let result = left
+    for instruction in right:
+        result = append(result, instruction)
+    return result
+
+export fn seed_expression(source, locals):
+    let value = trim(source)
+    if value == "":
+        return {"error": "empty_expression", "instructions": []}
+    if starts_with(value, "identity(") and ends_with(value, ")"):
+        let inner = substring(value, 9, len(value) - 1)
+        let lowered = seed_expression(inner, locals)
+        if lowered["error"] != none:
+            return lowered
+        return {"error": none, "instructions": append(lowered["instructions"], {"argc": 1, "name": "identity", "op": "call"})}
+    if starts_with(value, "abs(") and ends_with(value, ")"):
+        let inner = substring(value, 4, len(value) - 1)
+        let lowered = seed_expression(inner, locals)
+        if lowered["error"] != none:
+            return lowered
+        return {"error": none, "instructions": append(lowered["instructions"], {"argc": 1, "name": "abs", "op": "call"})}
+    if starts_with(value, "not "):
+        let inner = substring(value, 4, len(value))
+        let lowered = seed_expression(inner, locals)
+        if lowered["error"] != none:
+            return lowered
+        return {"error": none, "instructions": append(lowered["instructions"], {"op": "not"})}
+    let operators = [" or ", " and ", " == ", " != ", " <= ", " >= ", " < ", " > ", " + ", " - ", " * ", " / ", " % "]
+    let op_names = ["or", "and", "equal", "not_equal", "less_equal", "greater_equal", "less", "greater", "add", "subtract", "multiply", "divide", "remainder"]
+    let operator_index = 0
+    for operator in operators:
+        if contains(value, operator):
+            let parts = split(value, operator)
+            if len(parts) != 2:
+                return {"error": "unsupported_expression:" + value, "instructions": []}
+            let left = seed_expression(parts[0], locals)
+            if left["error"] != none:
+                return left
+            let right = seed_expression(parts[1], locals)
+            if right["error"] != none:
+                return right
+            let instructions = seed_append_all(left["instructions"], right["instructions"])
+            return {"error": none, "instructions": append(instructions, {"op": op_names[operator_index]})}
+        operator_index = operator_index + 1
+    if starts_with(value, "[") and ends_with(value, "]"):
+        return {"error": none, "instructions": [{"op": "const", "value": from_json(value)}]}
+    if starts_with(value, "{") and ends_with(value, "}"):
+        return {"error": none, "instructions": [{"op": "const", "value": from_json(value)}]}
+    if starts_with(value, "\"") and ends_with(value, "\""):
+        return {"error": none, "instructions": [{"op": "const", "value": seed_string_literal(value)}]}
+    if value == "true" or value == "false":
+        return {"error": none, "instructions": [{"op": "const", "value": value == "true"}]}
+    if seed_is_number(value):
+        return {"error": none, "instructions": [{"op": "const", "value": seed_number(value)}]}
+    for name in locals:
+        if name == value:
+            return {"error": none, "instructions": [{"op": "load", "name": value}]}
+    return {"error": "unknown_name:" + value, "instructions": []}
+
+export fn seed_add_local(locals, name):
+    for item in locals:
+        if item == name:
+            return locals
+    return append(locals, name)
+
+export fn seed_compile_line(line, instructions, locals):
+    let value = trim(line)
+    if value == "":
+        return {"error": none, "instructions": instructions, "locals": locals}
+    if starts_with(value, "let ") and contains(value, " = "):
+        let assignment = split(value, " = ")
+        if len(assignment) != 2:
+            return {"error": "invalid_declaration", "instructions": instructions, "locals": locals}
+        let left = trim(substring(assignment[0], 4, len(assignment[0])))
+        let name = left
+        if contains(left, ":"):
+            name = trim(split(left, ":")[0])
+        let lowered = seed_expression(assignment[1], locals)
+        if lowered["error"] != none:
+            return {"error": lowered["error"], "instructions": instructions, "locals": locals}
+        let next = seed_append_all(instructions, lowered["instructions"])
+        next = append(next, {"name": name, "op": "store"})
+        return {"error": none, "instructions": next, "locals": seed_add_local(locals, name)}
+    if starts_with(value, "say "):
+        let lowered = seed_expression(substring(value, 4, len(value)), locals)
+        if lowered["error"] != none:
+            return {"error": lowered["error"], "instructions": instructions, "locals": locals}
+        let next = seed_append_all(instructions, lowered["instructions"])
+        return {"error": none, "instructions": append(next, {"op": "print"}), "locals": locals}
+    return {"error": "unsupported_statement:" + value, "instructions": instructions, "locals": locals}
+
 export fn seed_compile_source(source, source_name):
-    let words = split(trim(source), " ")
-    if len(words) == 4 and words[0] == "say" and words[2] == "+":
-        let instructions = []
-        instructions = append(instructions, {"op": "const", "value": seed_number(words[1])})
-        instructions = append(instructions, {"op": "const", "value": seed_number(words[3])})
-        instructions = append(instructions, {"op": "add"})
-        instructions = append(instructions, {"op": "print"})
-        instructions = append(instructions, {"op": "halt"})
-        return {"artifact_kind": "bytecode", "instructions": instructions, "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
-    return {"artifact_kind": "bytecode", "instructions": [], "native_independent": false, "source_name": source_name, "status": "unsupported_source"}
+    let instructions = []
+    let locals = []
+    for line in split(source, "\n"):
+        let compiled = seed_compile_line(line, instructions, locals)
+        if compiled["error"] != none:
+            return {"artifact_kind": "bytecode", "error": compiled["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+        instructions = compiled["instructions"]
+        locals = compiled["locals"]
+    return {"artifact_kind": "bytecode", "instructions": append(instructions, {"op": "halt"}), "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
 
 export fn seed_compile_bytes(artifact):
     return json(artifact)

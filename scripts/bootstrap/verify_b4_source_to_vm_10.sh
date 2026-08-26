@@ -24,6 +24,8 @@ say result["output"][0]
 say seed_compile_bytes(first) == seed_compile_bytes(second)
 say seed_compile_bytes(first) == seed_compile_bytes(changed)
 say changed["status"]
+say len(changed["instructions"])
+say vm_run(changed["instructions"])["output"][0]
 EOF
 cat > "$expected" <<'EOF'
 bytecode
@@ -35,7 +37,9 @@ none
 42
 true
 false
-unsupported_source
+compiled_slice
+5
+-2
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
