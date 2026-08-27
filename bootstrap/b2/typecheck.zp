@@ -2123,7 +2123,18 @@ export fn b2c_infer_call(node, environment, functions, source_name):
         return b2c_result("any", append(errors, b2c_error(source_name, node, "ZAP-TYPE-005", "unknown function '" + name + "'")))
     let parameters = function["type_params"]
     let substitutions = []
-    if len(parameters) > 0:
+    let explicit_type_args = []
+    if contains(json(node), "\"type_args\":"):
+        explicit_type_args = node["type_args"]
+    if len(parameters) > 0 and len(explicit_type_args) > 0:
+        if len(explicit_type_args) != len(parameters):
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-001", "function '" + function["name"] + "' expects " + str(len(parameters)) + " type arguments, got " + str(len(explicit_type_args))))
+        let explicit_index = 0
+        for parameter in parameters:
+            if explicit_index < len(explicit_type_args):
+                substitutions = append(substitutions, {"name": parameter, "type": explicit_type_args[explicit_index]})
+            explicit_index = explicit_index + 1
+    if len(parameters) > 0 and len(explicit_type_args) == 0:
         let index = 0
         for parameter in function["params"]:
             if index < len(argument_types):
