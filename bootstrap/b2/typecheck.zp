@@ -2218,7 +2218,16 @@ export fn b2c_infer_expr(node, environment, functions, source_name):
     if kind == "propagate":
         return b2c_infer_expr(node["value"], environment, functions, source_name)
     if kind == "member":
-        return b2c_result("any", [])
+        let target = b2c_infer_expr(node["target"], environment, functions, source_name)
+        if target["type"] == "any":
+            return b2c_result("any", target["errors"])
+        let classes = b2c_function_member_classes(functions)
+        let member = b2c_class_member_lookup(target["type"], node["member"], classes, [])
+        if member["found"]:
+            return b2c_result(member["type"], target["errors"])
+        if member["class_found"]:
+            return b2c_result("any", b2c_append_error_unique(target["errors"], b2c_error(source_name, node, "ZAP-TYPE-005", "class '" + target["type"] + "' has no member '" + node["member"] + "'")))
+        return b2c_result("any", target["errors"])
     return b2c_result("any", [])
 
 export fn b2c_condition_fact(environment, condition, positive):
@@ -2574,6 +2583,32 @@ export fn b2c_class_satisfies_bound(class_name, bound, classes, registry, seen):
             if b2c_class_satisfies_bound(parent, bound, classes, registry, next_seen):
                 return true
     return false
+
+export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
+    if b2c_list_contains(seen, class_name):
+        return {"class_found": false, "found": false, "type": "any"}
+    let next_seen = append(seen, class_name)
+    for class_node in classes:
+        if class_node["name"] != class_name:
+            continue
+        for statement in class_node["body"]["statements"]:
+            if statement["kind"] == "declaration" and statement["name"] == member_name:
+                let field_type = statement["annotation"]
+                if field_type == none:
+                    field_type = "any"
+                return {"class_found": true, "found": true, "type": field_type}
+        for parent in class_node["parents"]:
+            let inherited = b2c_class_member_lookup(parent, member_name, classes, next_seen)
+            if inherited["found"]:
+                return inherited
+        return {"class_found": true, "found": false, "type": "any"}
+    return {"class_found": false, "found": false, "type": "any"}
+
+export fn b2c_function_member_classes(functions):
+    for function in functions:
+        if contains(json(function), "\"bound_classes\":"):
+            return function["bound_classes"]
+    return []
 
 export fn b2c_function_bound_classes(function):
     if contains(json(function), "\"bound_classes\":"):

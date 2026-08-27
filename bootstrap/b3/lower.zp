@@ -36,6 +36,8 @@ export fn lower_expression(node):
         let target = lower_expression(node["target"])
         if target["error"] != none:
             return target
+        if node["target"]["kind"] == "name":
+            return {"error": none, "instructions": [{"field": node["member"], "op": "field_load", "receiver": node["target"]["name"]}]}
         let instructions = target["instructions"]
         instructions = append(instructions, {"op": "const", "value": node["member"]})
         return {"error": none, "instructions": append(instructions, {"op": "index"})}

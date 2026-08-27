@@ -443,6 +443,13 @@ export fn parse_postfix(raw, start_column):
         return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, close_index + 1), "type_args": explicit_type_args}
     return parse_atom(value, start_column)
 
+export fn parse_member_parts(parts, index, target, start_column, length):
+    if index >= len(parts):
+        return target
+    let member = trim(parts[index])
+    let next = {"kind": "member", "member": member, "span": span(1, start_column, length), "target": target}
+    return parse_member_parts(parts, index + 1, next, start_column, length)
+
 export fn parse_atom(raw, start_column):
     let value = trim(raw)
     if starts_with(value, "\""):
@@ -453,6 +460,10 @@ export fn parse_atom(raw, start_column):
         return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 5), "value": false}
     if value == "none":
         return {"kind": "literal", "literal_kind": "none", "span": span(1, start_column, 4), "value": none}
+    if contains(value, ".") and not is_numeric(value):
+        let parts = split(value, ".")
+        if len(parts) > 1 and trim(parts[0]) != "":
+            return parse_member_parts(parts, 1, name(trim(parts[0]), start_column), start_column, len(value))
     return if is_numeric(value) then number(value, start_column) else name(value, start_column)
 
 export fn is_numeric(value):
