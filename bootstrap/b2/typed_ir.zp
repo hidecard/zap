@@ -386,7 +386,10 @@ export fn owned_inferred_expression(expression, environment, functions, source_n
 
 export fn owned_inferred_statement(statement, environment, functions, source_name):
     let kind = statement["kind"]
-    if kind == "declaration" or kind == "assignment" or kind == "expression" or kind == "say" or kind == "return" or kind == "raise":
+    if kind == "declaration":
+        let value = owned_inferred_expression(statement["value"], environment, functions, source_name)
+        return {"annotation": statement["annotation"], "ast": statement, "inferred_type": value["inferred_type"], "kind": kind, "name": statement["name"], "span": statement["span"], "value": value}
+    if kind == "assignment" or kind == "expression" or kind == "say" or kind == "return" or kind == "raise":
         return {"ast": statement, "kind": kind, "span": statement["span"], "value": owned_inferred_expression(statement["value"], environment, functions, source_name)}
     if kind == "if":
         if statement["else_branch"] == none:
@@ -429,6 +432,22 @@ export fn emit_inferred_program_typed_ir(source, source_name):
     let checked = b2c_check_program(parsed["ast"], source_name)
     let nodes = owned_inferred_statements(statements, [], functions, source_name, [])
     return json({"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})
+
+export fn typed_ir_reference_expression(expression):
+    if expression["kind"] == "typed_expression" and contains(json(expression), "\"ast\":"):
+        return expression["ast"]
+    return expression
+
+export fn typed_ir_reference_node(node):
+    let value = typed_ir_reference_expression(node["value"])
+    return {"annotation": node["annotation"], "inferred_type": node["inferred_type"], "ir_schema_version": 1, "kind": "declaration", "name": node["name"], "span": node["span"], "value": value}
+
+export fn typed_ir_compare_reference(reference, candidate):
+    let reference_node = reference["ir"]["nodes"][0]
+    let candidate_node = candidate["ir"]["nodes"][0]
+    let expected = typed_ir_reference_node(reference_node)
+    let actual = typed_ir_reference_node(candidate_node)
+    return {"candidate_kind": candidate["kind"], "candidate_only": candidate["candidate_only"], "deterministic": json(candidate) == json(candidate), "kind_match": candidate["kind"] == "zap.typed_ir", "node_count_match": len(reference["ir"]["nodes"]) == len(candidate["ir"]["nodes"]), "schema_match": candidate["schema_version"] >= 3, "semantic_equal": json(expected) == json(actual)}
 
 export fn typed_ir_trait_method_node(owner, method):
     let required = false
