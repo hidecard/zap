@@ -2264,6 +2264,23 @@ export fn b2c_guard_paths(environment, condition):
         return {"then": b2c_merge_env(environment, left["then"], right["then"]), "else": right["else"]}
     return {"then": b2c_condition_fact(environment, condition, true), "else": b2c_condition_fact(environment, condition, false)}
 
+export fn b2c_flow_preserves_declared(declared, current):
+    if current == "any" or current == declared:
+        return true
+    if current == "none" and starts_with(declared, "option<") and ends_with(declared, ">"):
+        return true
+    if current == "error" and starts_with(declared, "result<") and ends_with(declared, ">"):
+        return true
+    let declared_parts = b2c_type_wrapper_parts(declared)
+    if declared_parts["wrapper"] == "option" or declared_parts["wrapper"] == "result":
+        return current == declared_parts["inner"]
+    return false
+
+export fn b2c_join_flow_type(declared, left, right):
+    if b2c_flow_preserves_declared(declared, left) and b2c_flow_preserves_declared(declared, right):
+        return declared
+    return b2c_join_type(left, right)
+
 export fn b2c_merge_env(base, left, right):
     let result = []
     let names = b2c_environment_names(base, left, right)
@@ -2278,7 +2295,7 @@ export fn b2c_merge_env(base, left, right):
             let declared = base_binding["declared"]
             if declared == "any":
                 declared = left_binding["declared"]
-            result = b2c_bind(result, name, declared, b2c_join_type(left_binding["current"], right_binding["current"]), true)
+            result = b2c_bind(result, name, declared, b2c_join_flow_type(declared, left_binding["current"], right_binding["current"]), true)
     return result
 
 export fn b2c_env_equal(left, right, names):
