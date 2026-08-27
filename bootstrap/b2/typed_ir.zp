@@ -2,6 +2,7 @@
 # This producer owns bounded typed-IR fixtures and is not a replacement for the
 # native reference typed-IR emitter.
 import "bootstrap/b1/parser.zp"
+import "bootstrap/b2/typecheck.zp"
 
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
@@ -289,6 +290,145 @@ export fn emit_arbitrary_program(source, source_name):
                 else:
                     nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+
+export fn owned_typed_expression(expression):
+    if expression["kind"] == "literal":
+        return {"ast": expression, "inferred_type": expression["literal_kind"], "kind": "typed_expression", "span": expression["span"]}
+    if expression["kind"] == "binary":
+        return {"ast": expression, "inferred_type": "any", "kind": "typed_expression", "left": owned_typed_expression(expression["left"]), "op": expression["op"], "right": owned_typed_expression(expression["right"]), "span": expression["span"]}
+    if expression["kind"] == "unary":
+        return {"ast": expression, "inferred_type": "any", "kind": "typed_expression", "operand": owned_typed_expression(expression["operand"]), "op": expression["op"], "span": expression["span"]}
+    if expression["kind"] == "call":
+        let arguments = []
+        for argument in expression["args"]:
+            arguments = append(arguments, {"kind": argument["kind"], "value": owned_typed_expression(argument["value"])})
+        return {"args": arguments, "ast": expression, "callee": owned_typed_expression(expression["callee"]), "inferred_type": "any", "kind": "typed_expression", "span": expression["span"]}
+    if expression["kind"] == "member":
+        return {"ast": expression, "inferred_type": "any", "kind": "typed_expression", "member": expression["member"], "span": expression["span"], "target": owned_typed_expression(expression["target"])}
+    if expression["kind"] == "list":
+        let items = []
+        for item in expression["elements"]:
+            items = append(items, owned_typed_expression(item))
+        return {"ast": expression, "inferred_type": "list<any>", "items": items, "kind": "typed_expression", "span": expression["span"]}
+    if expression["kind"] == "map":
+        let entries = []
+        for entry in expression["entries"]:
+            entries = append(entries, {"key": owned_typed_expression(entry["key"]), "value": owned_typed_expression(entry["value"])})
+        return {"ast": expression, "entries": entries, "inferred_type": "map<any,any>", "kind": "typed_expression", "span": expression["span"]}
+    return {"ast": expression, "inferred_type": "any", "kind": "typed_expression", "span": expression["span"]}
+
+export fn owned_typed_statements(statements, result):
+    for statement in statements:
+        result = append(result, owned_typed_statement(statement))
+    return result
+
+export fn owned_typed_statement(statement):
+    let kind = statement["kind"]
+    if kind == "declaration":
+        return {"annotation": statement["annotation"], "ast": statement, "inferred_type": statement["annotation"], "kind": kind, "name": statement["name"], "span": statement["span"], "value": owned_typed_expression(statement["value"])}
+    if kind == "assignment":
+        return {"ast": statement, "kind": kind, "name": statement["name"], "span": statement["span"], "value": owned_typed_expression(statement["value"])}
+    if kind == "expression" or kind == "say" or kind == "return" or kind == "raise":
+        return {"ast": statement, "kind": kind, "span": statement["span"], "value": owned_typed_expression(statement["value"])}
+    if kind == "if":
+        if statement["else_branch"] == none:
+            return {"ast": statement, "condition": owned_typed_expression(statement["condition"]), "kind": kind, "span": statement["span"], "then_branch": {"statements": owned_typed_statements(statement["then_branch"]["statements"], [])}}
+        return {"ast": statement, "condition": owned_typed_expression(statement["condition"]), "else_branch": {"statements": owned_typed_statements(statement["else_branch"]["statements"], [])}, "kind": kind, "span": statement["span"], "then_branch": {"statements": owned_typed_statements(statement["then_branch"]["statements"], [])}}
+    if kind == "while":
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "condition": owned_typed_expression(statement["condition"]), "kind": kind, "span": statement["span"]}
+    if kind == "for":
+        return {"ast": statement, "binding": statement["binding"], "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "iterable": owned_typed_expression(statement["iterable"]), "kind": kind, "span": statement["span"]}
+    if kind == "try_catch":
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "catch_binding": statement["catch_binding"], "catch_body": {"statements": owned_typed_statements(statement["catch_body"]["statements"], [])}, "kind": kind, "span": statement["span"]}
+    if kind == "function":
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
+    if kind == "class":
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
+    if kind == "trait" or kind == "interface":
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "kind": kind, "name": statement["name"], "span": statement["span"]}
+    return {"ast": statement, "kind": kind, "span": statement["span"]}
+
+export fn emit_program_typed_ir(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return json({"candidate_only": true, "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name})
+    let nodes = owned_typed_statements(parsed["ast"]["statements"], [])
+    return json({"candidate_only": true, "coverage": "owned_ast_statement_expression_nodes", "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name, "typed_metadata": true})
+
+export fn owned_inferred_expression_children(expression, environment, functions, source_name):
+    if expression["kind"] == "binary":
+        return [owned_inferred_expression(expression["left"], environment, functions, source_name), owned_inferred_expression(expression["right"], environment, functions, source_name)]
+    if expression["kind"] == "unary":
+        return [owned_inferred_expression(expression["operand"], environment, functions, source_name)]
+    if expression["kind"] == "member":
+        return [owned_inferred_expression(expression["target"], environment, functions, source_name)]
+    if expression["kind"] == "call":
+        let result = [owned_inferred_expression(expression["callee"], environment, functions, source_name)]
+        for argument in expression["args"]:
+            result = append(result, owned_inferred_expression(argument["value"], environment, functions, source_name))
+        return result
+    if expression["kind"] == "list":
+        let result = []
+        for element in expression["elements"]:
+            result = append(result, owned_inferred_expression(element, environment, functions, source_name))
+        return result
+    if expression["kind"] == "map":
+        let result = []
+        for entry in expression["entries"]:
+            result = append(result, owned_inferred_expression(entry["key"], environment, functions, source_name))
+            result = append(result, owned_inferred_expression(entry["value"], environment, functions, source_name))
+        return result
+    return []
+
+export fn owned_inferred_expression(expression, environment, functions, source_name):
+    let inferred = b2c_infer_expr(expression, environment, functions, source_name)
+    return {"ast": expression, "children": owned_inferred_expression_children(expression, environment, functions, source_name), "diagnostics": inferred["errors"], "inferred_type": inferred["type"], "kind": "typed_expression", "span": expression["span"]}
+
+export fn owned_inferred_statement(statement, environment, functions, source_name):
+    let kind = statement["kind"]
+    if kind == "declaration" or kind == "assignment" or kind == "expression" or kind == "say" or kind == "return" or kind == "raise":
+        return {"ast": statement, "kind": kind, "span": statement["span"], "value": owned_inferred_expression(statement["value"], environment, functions, source_name)}
+    if kind == "if":
+        if statement["else_branch"] == none:
+            return {"ast": statement, "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "kind": kind, "span": statement["span"], "then_branch": owned_inferred_statements(statement["then_branch"]["statements"], environment, functions, source_name, [])}
+        return {"ast": statement, "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "else_branch": owned_inferred_statements(statement["else_branch"]["statements"], environment, functions, source_name, []), "kind": kind, "span": statement["span"], "then_branch": owned_inferred_statements(statement["then_branch"]["statements"], environment, functions, source_name, [])}
+    if kind == "while":
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
+    if kind == "for":
+        return {"ast": statement, "binding": statement["binding"], "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "inferred_element_type": b2c_generic_container_element(owned_inferred_expression(statement["iterable"], environment, functions, source_name)["inferred_type"]), "iterable": owned_inferred_expression(statement["iterable"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
+    if kind == "try_catch":
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": statement["catch_binding"], "kind": kind, "span": statement["span"]}
+    if kind == "function":
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
+    if kind == "class":
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
+    if kind == "trait" or kind == "interface":
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "name": statement["name"], "span": statement["span"]}
+    return {"ast": statement, "kind": kind, "span": statement["span"]}
+
+export fn owned_inferred_statements(statements, environment, functions, source_name, result):
+    let current = environment
+    for statement in statements:
+        result = append(result, owned_inferred_statement(statement, current, functions, source_name))
+        if statement["kind"] == "declaration":
+            let inferred = b2c_infer_expr(statement["value"], current, functions, source_name)
+            let declared = statement["annotation"]
+            if declared == none:
+                declared = inferred["type"]
+            current = append(current, b2c_binding(statement["name"], declared, declared, true))
+    return result
+
+export fn emit_inferred_program_typed_ir(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return json({"candidate_only": true, "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name})
+    let statements = parsed["ast"]["statements"]
+    let classes = b2c_collect_classes(statements, [])
+    let registry = b2c_collect_trait_registry(statements, [])
+    let functions = b2c_enrich_functions(b2c_collect_functions(statements, []), classes, registry, [])
+    let checked = b2c_check_program(parsed["ast"], source_name)
+    let nodes = owned_inferred_statements(statements, [], functions, source_name, [])
+    return json({"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})
 
 export fn typed_ir_trait_method_node(owner, method):
     let required = false

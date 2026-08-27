@@ -623,6 +623,44 @@ export fn seed_self_rebuild_typed_ir(source, source_name):
         status = "reproducible_typed_ir_slice"
     return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
 
+export fn seed_typed_ir_ast_statements(nodes, result):
+    for node in nodes:
+        if contains(json(node), "\"ast\":"):
+            result = append(result, node["ast"])
+    return result
+
+export fn seed_compile_inferred_typed_ir(typed, source_name):
+    if typed["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "invalid_typed_ir_kind", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let ast = {"ast": {"statements": seed_typed_ir_ast_statements(typed["ir"]["nodes"], [])}, "kind": "zap.ast"}
+    let lowered = lower_ast_program(ast)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_inferred_typed_ir_slice", "typed_ir": typed}
+
+export fn seed_emit_inferred_program_typed_ir(source, source_name):
+    return emit_inferred_program_typed_ir(source, source_name)
+
+export fn seed_compile_inferred_typed_ir_source(source, source_name):
+    let emitted = from_json(seed_emit_inferred_program_typed_ir(source, source_name))
+    if emitted["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "typed_ir_emit_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return seed_compile_inferred_typed_ir(emitted, source_name)
+
+export fn seed_self_rebuild_inferred_typed_ir(source, source_name):
+    let first = seed_compile_inferred_typed_ir_source(source, source_name)
+    let second = seed_compile_inferred_typed_ir_source(source, source_name)
+    let first_bytes = seed_compile_bytes(first)
+    let second_bytes = seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes and first["status"] == "compiled_inferred_typed_ir_slice":
+        status = "reproducible_inferred_typed_ir_slice"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
+
+export fn seed_self_compile_acceptance(source, source_name):
+    let rebuild = seed_self_rebuild_inferred_typed_ir(source, source_name)
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_inferred_typed_ir_slice"}
+
 export fn seed_compile_ast_source(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
     if parsed["kind"] != "zap.ast":
