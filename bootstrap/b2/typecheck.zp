@@ -2199,6 +2199,8 @@ export fn b2c_call_errors(node, function, argument_types, parameters, substituti
     let index = 0
     for parameter in function["params"]:
         let expected = parameter["annotation"]
+        if expected == none:
+            expected = "any"
         if len(parameters) > 0:
             expected = b2c_substitute(expected, parameters, substitutions)
         if not b2c_type_assignable(expected, argument_types[index], classes) and argument_types[index] != "any":

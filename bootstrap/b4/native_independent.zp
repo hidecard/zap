@@ -719,3 +719,18 @@ export fn seed_pipeline_replay(source, source_name):
     let first = seed_execute_owned_pipeline(source, source_name)
     let second = seed_execute_owned_pipeline(source, source_name)
     return {"byte_equal": json(first) == json(second), "first": first, "native_independent": false, "second": second, "status": "candidate_pipeline_replay"}
+
+export fn seed_supported_subset_run(sources, source_names, index, result):
+    if index >= len(sources):
+        return result
+    result = append(result, seed_execute_owned_pipeline(sources[index], source_names[index]))
+    return seed_supported_subset_run(sources, source_names, index + 1, result)
+
+export fn seed_supported_subset_rebuild(sources, source_names):
+    let first = seed_supported_subset_run(sources, source_names, 0, [])
+    let second = seed_supported_subset_run(sources, source_names, 0, [])
+    let all_successful = true
+    for result in first:
+        if result["status"] != "candidate_pipeline_executed":
+            all_successful = false
+    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_supported_subset_rebuild"}
