@@ -74,18 +74,29 @@ export fn manifest_valid(manifest_value):
 export fn lock_entry_matches_dependency(entry, required):
     return entry["name"] == required["name"] and entry["version"] == required["version"] and entry["checksum"] == required["checksum"]
 
+export fn dependency_names_unique(entries):
+    let seen = ""
+    for entry in entries:
+        let marker = "|" + entry["name"] + "|"
+        if contains(seen, marker):
+            return false
+        seen = seen + marker
+    return true
+
 export fn lock_entries_unique(entries):
-    let index = 0
-    while index < len(entries):
-        let other = index + 1
-        while other < len(entries):
-            if package_identity(entries[index]) == package_identity(entries[other]):
-                return false
-            other = other + 1
-        index = index + 1
+    if not dependency_names_unique(entries):
+        return false
+    let seen = ""
+    for entry in entries:
+        let marker = "|" + package_identity(entry) + "|"
+        if contains(seen, marker):
+            return false
+        seen = seen + marker
     return true
 
 export fn lock_satisfies_manifest(manifest_value, entries):
+    if not dependency_names_unique(manifest_value["dependencies"]):
+        return false
     if not lock_entries_unique(entries):
         return false
     if len(manifest_value["dependencies"]) != len(entries):

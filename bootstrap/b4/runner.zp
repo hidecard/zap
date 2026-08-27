@@ -40,7 +40,12 @@ export fn runner_plan_is_executable(plan):
             return false
     return true
 
+export fn runner_digest_valid(digest):
+    return trim(digest) != ""
+
 export fn runner_artifact_handoff(stage, input_digest, output_digest):
+    if not runner_digest_valid(input_digest) or not runner_digest_valid(output_digest):
+        return {"error": "digest_missing", "native_owner": false, "owner": stage["owner"], "stage": stage["name"], "status": "rejected"}
     return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "owner": stage["owner"], "stage": stage["name"], "status": "produced"}
 
 export fn runner_execute_stage(stage, input_kind, input_digest, output_digest):
@@ -48,11 +53,15 @@ export fn runner_execute_stage(stage, input_kind, input_digest, output_digest):
         return {"error": "native_owner", "status": "rejected"}
     if stage["input_kind"] != input_kind:
         return {"error": "input_kind_mismatch", "status": "rejected"}
+    if not runner_digest_valid(input_digest) or not runner_digest_valid(output_digest):
+        return {"error": "digest_missing", "status": "rejected"}
     return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "output_kind": stage["output_kind"], "stage": stage["name"], "status": "executed"}
 
 export fn runner_execute_plan(plan, initial_kind, initial_digest, output_digests):
     if not runner_plan_structurally_valid(plan):
         return {"error": "invalid_plan", "status": "rejected"}
+    if not runner_digest_valid(initial_digest):
+        return {"error": "digest_missing", "status": "rejected"}
     if len(output_digests) != len(plan["stages"]):
         return {"error": "digest_count_mismatch", "status": "rejected"}
     let executions = []
