@@ -133,6 +133,33 @@ export fn vm_object_set_field(object, field, value, index, result):
         return vm_object_set_field(object, field, value, index + 1, result)
     return vm_object_set_field(object, field, value, index + 1, append(result, object["fields"][index]))
 
+export fn vm_dynamic_object():
+    return {"class_name": "Dynamic", "fields": [], "object": true}
+
+export fn vm_object_get_path(object, path, index):
+    if not contains(json(object), "\"object\":true"):
+        return {"error": "not_object", "value": none}
+    let field = vm_object_field(object, path[index], len(object["fields"]) - 1)
+    if field["error"] != none:
+        return field
+    if index + 1 >= len(path):
+        return field
+    return vm_object_get_path(field["value"], path, index + 1)
+
+export fn vm_object_set_path(object, path, index, value):
+    if not contains(json(object), "\"object\":true"):
+        return {"error": "not_object", "value": none}
+    if index + 1 >= len(path):
+        return {"error": none, "value": {"class_name": object["class_name"], "fields": vm_object_set_field(object, path[index], value, 0, []), "object": true}}
+    let child = vm_object_field(object, path[index], len(object["fields"]) - 1)
+    let child_object = child["value"]
+    if child["error"] != none:
+        child_object = vm_dynamic_object()
+    let updated_child = vm_object_set_path(child_object, path, index + 1, value)
+    if updated_child["error"] != none:
+        return updated_child
+    return {"error": none, "value": {"class_name": object["class_name"], "fields": vm_object_set_field(object, path[index], updated_child["value"], 0, []), "object": true}}
+
 export fn vm_find_function(functions, name, index):
     if index >= len(functions):
         return none
@@ -454,6 +481,23 @@ export fn vm_step(state, instruction):
         if field["error"] != none:
             return vm_fail(advanced, field["error"])
         return vm_push(advanced, field["value"])
+    if op == "field_load_value":
+        let receiver = vm_pop(advanced)
+        if receiver["error"] != none:
+            return vm_fail(advanced, receiver["error"])
+        let field = vm_object_field(receiver["value"], instruction["field"], len(receiver["value"]["fields"]) - 1)
+        if field["error"] != none:
+            return vm_fail(receiver["state"], field["error"])
+        return vm_push(receiver["state"], field["value"])
+    if op == "field_load_path":
+        let path = instruction["path"]
+        let receiver = vm_load(advanced, path[0])
+        if receiver["error"] != none:
+            return vm_fail(advanced, receiver["error"])
+        let field = vm_object_get_path(receiver["value"], path, 1)
+        if field["error"] != none:
+            return vm_fail(advanced, field["error"])
+        return vm_push(advanced, field["value"])
     if op == "field_store":
         let stored = vm_pop(advanced)
         if stored["error"] != none:
@@ -463,6 +507,18 @@ export fn vm_step(state, instruction):
             return vm_fail(stored["state"], receiver["error"])
         let updated = {"class_name": receiver["value"]["class_name"], "fields": vm_object_set_field(receiver["value"], instruction["field"], stored["value"], 0, []), "object": true}
         return vm_store(stored["state"], instruction["receiver"], updated)
+    if op == "field_store_path":
+        let stored = vm_pop(advanced)
+        if stored["error"] != none:
+            return vm_fail(advanced, stored["error"])
+        let path = instruction["path"]
+        let receiver = vm_load(stored["state"], path[0])
+        if receiver["error"] != none:
+            return vm_fail(stored["state"], receiver["error"])
+        let updated = vm_object_set_path(receiver["value"], path, 1, stored["value"])
+        if updated["error"] != none:
+            return vm_fail(stored["state"], updated["error"])
+        return vm_store(stored["state"], path[0], updated["value"])
     if op == "const":
         return vm_push(advanced, instruction["value"])
     if op == "not":

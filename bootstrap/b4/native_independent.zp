@@ -192,6 +192,8 @@ export fn seed_expression(source, locals):
         let pieces = split(value, ".")
         if len(pieces) == 2:
             return {"error": none, "instructions": [{"field": trim(pieces[1]), "op": "field_load", "receiver": trim(pieces[0])}]}
+        if len(pieces) > 2:
+            return {"error": none, "instructions": [{"op": "field_load_path", "path": pieces}]}
     if starts_with(value, "{") and ends_with(value, "}"):
         return {"error": none, "instructions": [{"op": "const", "value": from_json(value)}]}
     if starts_with(value, "\"") and ends_with(value, "\""):
@@ -253,13 +255,15 @@ export fn seed_compile_line(line, instructions, locals):
             return {"error": "invalid_field_assignment", "instructions": instructions, "locals": locals}
         let target = trim(substring(assignment[0], 4, len(assignment[0])))
         let pieces = split(target, ".")
-        if len(pieces) != 2:
+        if len(pieces) < 2:
             return {"error": "invalid_field_assignment", "instructions": instructions, "locals": locals}
         let lowered = seed_expression(assignment[1], locals)
         if lowered["error"] != none:
             return {"error": lowered["error"], "instructions": instructions, "locals": locals}
         let next = seed_append_all(instructions, lowered["instructions"])
-        return {"error": none, "instructions": append(next, {"field": trim(pieces[1]), "op": "field_store", "receiver": trim(pieces[0])}), "locals": locals}
+        if len(pieces) == 2:
+            return {"error": none, "instructions": append(next, {"field": trim(pieces[1]), "op": "field_store", "receiver": trim(pieces[0])}), "locals": locals}
+        return {"error": none, "instructions": append(next, {"op": "field_store_path", "path": pieces}), "locals": locals}
     if value == "return":
         return {"error": none, "instructions": append(instructions, {"op": "return_none"}), "locals": locals}
     if starts_with(value, "return "):

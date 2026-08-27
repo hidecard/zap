@@ -39,8 +39,7 @@ export fn lower_expression(node):
         if node["target"]["kind"] == "name":
             return {"error": none, "instructions": [{"field": node["member"], "op": "field_load", "receiver": node["target"]["name"]}]}
         let instructions = target["instructions"]
-        instructions = append(instructions, {"op": "const", "value": node["member"]})
-        return {"error": none, "instructions": append(instructions, {"op": "index"})}
+        return {"error": none, "instructions": append(instructions, {"field": node["member"], "op": "field_load_value"})}
     if kind == "call":
         let instructions = []
         for argument in node["args"]:
@@ -430,6 +429,8 @@ export fn lower_ast_node(node):
             let pieces = split(node["name"], ".")
             if len(pieces) == 2:
                 return {"error": none, "instructions": append(lowered_value["instructions"], {"field": trim(pieces[1]), "op": "field_store", "receiver": trim(pieces[0])})}
+            if len(pieces) > 2:
+                return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "field_store_path", "path": pieces})}
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
         if kind == "return" and node["value"] == none:

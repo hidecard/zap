@@ -2405,12 +2405,18 @@ export fn b2c_check_assignment(statement, state, functions, source_name):
     let errors = b2c_append_errors(state["errors"], b2c_shift_call_errors(value["errors"], statement))
     if contains(statement["name"], "."):
         let pieces = split(statement["name"], ".")
-        if len(pieces) == 2:
+        if len(pieces) > 1:
             let receiver = b2c_lookup(state["environment"], trim(pieces[0]))
             if not receiver["initialized"]:
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + trim(pieces[0]) + "'"))
                 return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
-            let member = b2c_class_member_lookup(receiver["current"], trim(pieces[1]), b2c_function_member_classes(functions), [])
+            let member_names = []
+            let piece_index = 1
+            for piece in pieces:
+                if piece_index < len(pieces):
+                    member_names = append(member_names, trim(pieces[piece_index]))
+                piece_index = piece_index + 1
+            let member = b2c_nested_member_lookup(receiver["current"], member_names, 0, b2c_function_member_classes(functions))
             if member["found"] and not b2c_assignable(member["type"], value["type"]):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "member '" + statement["name"] + "' expects " + member["type"] + ", got " + value["type"]))
             return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
@@ -2648,6 +2654,16 @@ export fn b2c_method_callable(method, classes, registry):
     if contains(json(method), "\"required\""):
         return {"body": method["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(method), "exported": method["exported"], "is_async": method["is_async"], "kind": method["kind"], "name": method["name"], "params": params, "required": method["required"], "return_type": method["return_type"], "span": method["span"], "type_params": method["type_params"], "visibility": method["visibility"]}
     return {"body": method["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(method), "exported": method["exported"], "is_async": method["is_async"], "kind": method["kind"], "name": method["name"], "params": params, "return_type": method["return_type"], "span": method["span"], "type_params": method["type_params"], "visibility": method["visibility"]}
+
+export fn b2c_nested_member_lookup(class_name, member_names, index, classes):
+    if index >= len(member_names):
+        return {"class_found": true, "found": true, "type": class_name}
+    let member = b2c_class_member_lookup(class_name, member_names[index], classes, [])
+    if not member["found"]:
+        return member
+    if index + 1 >= len(member_names):
+        return member
+    return b2c_nested_member_lookup(member["type"], member_names, index + 1, classes)
 
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
     let nominal = b2c_nominal_class_name(class_name)
