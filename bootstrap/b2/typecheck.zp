@@ -2403,6 +2403,17 @@ export fn b2c_check_declaration(statement, state, functions, source_name):
 export fn b2c_check_assignment(statement, state, functions, source_name):
     let value = b2c_infer_expr(statement["value"], state["environment"], functions, source_name)
     let errors = b2c_append_errors(state["errors"], b2c_shift_call_errors(value["errors"], statement))
+    if contains(statement["name"], "."):
+        let pieces = split(statement["name"], ".")
+        if len(pieces) == 2:
+            let receiver = b2c_lookup(state["environment"], trim(pieces[0]))
+            if not receiver["initialized"]:
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + trim(pieces[0]) + "'"))
+                return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+            let member = b2c_class_member_lookup(receiver["current"], trim(pieces[1]), b2c_function_member_classes(functions), [])
+            if member["found"] and not b2c_assignable(member["type"], value["type"]):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "member '" + statement["name"] + "' expects " + member["type"] + ", got " + value["type"]))
+            return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
     let old = b2c_lookup(state["environment"], statement["name"])
     if not old["initialized"]:
         errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + statement["name"] + "'"))
@@ -2601,7 +2612,15 @@ export fn b2c_class_satisfies_bound(class_name, bound, classes, registry, seen):
                 return true
     return false
 
+export fn b2c_nominal_class_name(type_name):
+    if starts_with(type_name, "object<") and ends_with(type_name, ">"):
+        return substring(type_name, 7, len(type_name) - 1)
+    return type_name
+
 export fn b2c_class_method_lookup(class_name, method_name, classes, seen):
+    let nominal = b2c_nominal_class_name(class_name)
+    if nominal != class_name:
+        return b2c_class_method_lookup(nominal, method_name, classes, seen)
     if b2c_list_contains(seen, class_name):
         return none
     let next_seen = append(seen, class_name)
@@ -2631,6 +2650,9 @@ export fn b2c_method_callable(method, classes, registry):
     return {"body": method["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(method), "exported": method["exported"], "is_async": method["is_async"], "kind": method["kind"], "name": method["name"], "params": params, "return_type": method["return_type"], "span": method["span"], "type_params": method["type_params"], "visibility": method["visibility"]}
 
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
+    let nominal = b2c_nominal_class_name(class_name)
+    if nominal != class_name:
+        return b2c_class_member_lookup(nominal, member_name, classes, seen)
     if b2c_list_contains(seen, class_name):
         return {"class_found": false, "found": false, "type": "any"}
     let next_seen = append(seen, class_name)
@@ -2642,6 +2664,9 @@ export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
                 let field_type = statement["annotation"]
                 if field_type == none:
                     field_type = "any"
+                    if contains(json(statement), "\"value\":"):
+                        let inferred_field = b2c_infer_expr(statement["value"], [], [], "<class-field>")
+                        field_type = inferred_field["type"]
                 return {"class_found": true, "found": true, "type": field_type}
         for parent in class_node["parents"]:
             let inherited = b2c_class_member_lookup(parent, member_name, classes, next_seen)
