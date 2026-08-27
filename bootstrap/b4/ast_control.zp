@@ -178,7 +178,7 @@ export fn ast_capture_names_expr(expression, excluded, result):
 export fn ast_capture_locals(statements, result):
     let locals = result
     for statement in statements:
-        if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+        if statement["kind"] == "declaration":
             locals = ast_append_name(locals, statement["name"])
         if statement["kind"] == "if":
             locals = ast_capture_locals(statement["then_branch"]["statements"], locals)
@@ -194,7 +194,11 @@ export fn ast_capture_locals(statements, result):
 export fn ast_capture_from_statements(statements, excluded, result):
     let captured = result
     for statement in statements:
-        if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+        if statement["kind"] == "declaration":
+            captured = ast_capture_names_expr(statement["value"], excluded, captured)
+        if statement["kind"] == "assignment":
+            if not ast_name_in_list(excluded, statement["name"], 0):
+                captured = ast_append_name(captured, statement["name"])
             captured = ast_capture_names_expr(statement["value"], excluded, captured)
         if statement["kind"] == "say" or statement["kind"] == "return" or statement["kind"] == "raise" or statement["kind"] == "expression":
             captured = ast_capture_names_expr(statement["value"], excluded, captured)
