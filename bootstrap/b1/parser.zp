@@ -632,6 +632,9 @@ export fn parse_statement(line, line_number, body_column):
     if starts_with(statement, "super()."):
         let value = rebase_expression_span(parse_expression(statement, 1), line_number - 1, 0)
         return {"kind": "expression", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
+    if contains(statement, "(") and ends_with(statement, ")"):
+        let value = rebase_expression_span(parse_expression(statement, 1), line_number - 1, 0)
+        return {"kind": "expression", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
     return parse_assignment(line, line_number, body_column)
 
 export fn parse_simple_function(lines):

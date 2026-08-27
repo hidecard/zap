@@ -36,7 +36,10 @@ export fn lower_rebase_targets(instructions, offset):
             if instruction["op"] == "try_begin":
                 result = append(result, {"binding": instruction["binding"], "op": "try_begin", "target": instruction["target"] + offset})
             else:
-                result = append(result, instruction)
+                if instruction["op"] == "function_def":
+                    result = append(result, {"binding": instruction["binding"], "captures": instruction["captures"], "end": instruction["end"] + offset, "entry": instruction["entry"] + offset, "name": instruction["name"], "op": "function_def", "owner": instruction["owner"], "params": instruction["params"], "required": instruction["required"]})
+                else:
+                    result = append(result, instruction)
     return result
 
 export fn lower_ast_if_for_loop(node, loop_start):
@@ -54,12 +57,14 @@ export fn lower_ast_if_for_loop(node, loop_start):
     let instructions = condition["instructions"]
     let false_jump_index = len(instructions)
     instructions = append(instructions, {"op": "jump_if_false", "target": 0})
-    for instruction in then_branch["instructions"]:
+    let then_rebased = lower_rebase_targets(then_branch["instructions"], len(instructions))
+    for instruction in then_rebased:
         instructions = append(instructions, instruction)
     let end_jump_index = len(instructions)
     instructions = append(instructions, {"op": "jump", "target": 0})
     let else_start = len(instructions)
-    for instruction in else_branch["instructions"]:
+    let else_rebased = lower_rebase_targets(else_branch["instructions"], else_start)
+    for instruction in else_rebased:
         instructions = append(instructions, instruction)
     let end_target = len(instructions)
     instructions = patch_ast_jump(instructions, false_jump_index, else_start)
@@ -74,6 +79,12 @@ export fn lower_ast_loop_statements(statements, loop_start):
             lowering_node = {"kind": "break"}
         if node["kind"] == "continue":
             lowering_node = {"kind": "continue", "loop_control": true}
+        if node["kind"] == "function":
+            let nested = lower_ast_function_node_owned(node, instructions, node["name"])
+            if nested["error"] != none:
+                return nested
+            instructions = nested["instructions"]
+            continue
         if node["kind"] == "while":
             lowering_node = {"body": node["body"], "condition": node["condition"], "kind": "while"}
         let lowered = none
@@ -101,7 +112,8 @@ export fn lower_ast_for_node(node):
             return body
         let chunk = lowered_element["instructions"]
         chunk = append(chunk, {"name": node["binding"], "op": "store"})
-        for instruction in body["instructions"]:
+        let body_rebased = lower_rebase_targets(body["instructions"], len(chunk))
+        for instruction in body_rebased:
             chunk = append(chunk, instruction)
         chunks = append(chunks, chunk)
     let instructions = []
@@ -127,13 +139,15 @@ export fn lower_ast_try_node(node):
     if contains(json(node), "\"catch_binding\":"):
         binding = node["catch_binding"]
     let instructions = [{"binding": binding, "op": "try_begin", "target": 0}]
-    for instruction in body["instructions"]:
+    let body_rebased = lower_rebase_targets(body["instructions"], len(instructions))
+    for instruction in body_rebased:
         instructions = append(instructions, instruction)
     instructions = append(instructions, {"op": "try_end"})
     let end_jump_index = len(instructions)
     instructions = append(instructions, {"op": "jump", "target": 0})
     let catch_target = len(instructions)
-    for instruction in catch_body["instructions"]:
+    let catch_rebased = lower_rebase_targets(catch_body["instructions"], catch_target)
+    for instruction in catch_rebased:
         instructions = append(instructions, instruction)
     let end_target = len(instructions)
     instructions = patch_ast_jump(instructions, 0, catch_target)
@@ -173,6 +187,17 @@ export fn ast_capture_names_expr(expression, excluded, result):
         for argument in expression["args"]:
             captured = ast_capture_names_expr(argument["value"], excluded, captured)
         return captured
+    if kind == "list":
+        let captured = result
+        for element in expression["elements"]:
+            captured = ast_capture_names_expr(element, excluded, captured)
+        return captured
+    if kind == "map":
+        let captured = result
+        for entry in expression["entries"]:
+            captured = ast_capture_names_expr(entry["key"], excluded, captured)
+            captured = ast_capture_names_expr(entry["value"], excluded, captured)
+        return captured
     return result
 
 export fn ast_capture_locals(statements, result):
@@ -180,14 +205,21 @@ export fn ast_capture_locals(statements, result):
     for statement in statements:
         if statement["kind"] == "declaration":
             locals = ast_append_name(locals, statement["name"])
+        if statement["kind"] == "function":
+            locals = ast_append_name(locals, statement["name"])
         if statement["kind"] == "if":
             locals = ast_capture_locals(statement["then_branch"]["statements"], locals)
             if statement["else_branch"] != none:
                 locals = ast_capture_locals(statement["else_branch"]["statements"], locals)
-        if statement["kind"] == "while" or statement["kind"] == "for":
+        if statement["kind"] == "while":
+            locals = ast_capture_locals(statement["body"]["statements"], locals)
+        if statement["kind"] == "for":
+            locals = ast_append_name(locals, statement["binding"])
             locals = ast_capture_locals(statement["body"]["statements"], locals)
         if statement["kind"] == "try_catch":
             locals = ast_capture_locals(statement["body"]["statements"], locals)
+            if contains(json(statement), "\"catch_binding\":"):
+                locals = ast_append_name(locals, statement["catch_binding"])
             locals = ast_capture_locals(statement["catch_body"]["statements"], locals)
     return locals
 
@@ -196,6 +228,11 @@ export fn ast_capture_from_statements(statements, excluded, result):
     for statement in statements:
         if statement["kind"] == "declaration":
             captured = ast_capture_names_expr(statement["value"], excluded, captured)
+        if statement["kind"] == "function":
+            let child_captures = ast_function_captures(statement)
+            for child_name in child_captures:
+                if not ast_name_in_list(excluded, child_name, 0):
+                    captured = ast_append_name(captured, child_name)
         if statement["kind"] == "assignment":
             if not ast_name_in_list(excluded, statement["name"], 0):
                 captured = ast_append_name(captured, statement["name"])
@@ -210,6 +247,8 @@ export fn ast_capture_from_statements(statements, excluded, result):
         if statement["kind"] == "while" or statement["kind"] == "for":
             if statement["kind"] == "while":
                 captured = ast_capture_names_expr(statement["condition"], excluded, captured)
+            if statement["kind"] == "for":
+                captured = ast_capture_names_expr(statement["iterable"], excluded, captured)
             captured = ast_capture_from_statements(statement["body"]["statements"], excluded, captured)
         if statement["kind"] == "try_catch":
             captured = ast_capture_from_statements(statement["body"]["statements"], excluded, captured)

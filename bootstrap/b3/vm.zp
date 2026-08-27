@@ -35,6 +35,9 @@ export fn vm_load(state, name):
         if item["name"] == name:
             found = item["value"]
     if found == none:
+        let definition = vm_find_function(state["functions"], name, 0)
+        if definition != none:
+            return {"error": none, "value": {"captures": [], "closure": true, "function_name": name}, "state": state}
         return {"error": "unknown_local:" + name, "value": none, "state": state}
     return {"error": none, "value": found, "state": state}
 
@@ -585,7 +588,12 @@ export fn vm_step(state, instruction):
         let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "owner": frame_owner, "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
         let with_captures = vm_bind_captures(callee, captures, 0)
-        return vm_bind_arguments(with_captures, definition["params"], arguments["values"], 0)
+        let with_self = with_captures
+        if loaded["error"] == none:
+            let loaded_json = json(loaded["value"])
+            if contains(loaded_json, "\"closure\":true"):
+                with_self = vm_store(with_captures, name, loaded["value"])
+        return vm_bind_arguments(with_self, definition["params"], arguments["values"], 0)
     if op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or":
         let right = vm_pop(advanced)
         if right["error"] != none:
