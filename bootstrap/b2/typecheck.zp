@@ -1888,8 +1888,9 @@ export fn b2c_append_errors(left, right):
     return result
 
 export fn b2c_location(node):
-    if node["span"] != none:
-        return node["span"]
+    if contains(json(node), "\"span\":"):
+        if node["span"] != none:
+            return node["span"]
     return {"line": 1, "column": 1, "length": 1}
 
 export fn b2c_error(source_name, node, code, message):
@@ -2203,6 +2204,8 @@ export fn b2c_infer_expr(node, environment, functions, source_name):
     return b2c_result("any", [])
 
 export fn b2c_condition_fact(environment, condition, positive):
+    if condition["kind"] == "unary" and condition["op"] == "not":
+        return b2c_condition_fact(environment, condition["value"], not positive)
     if condition["kind"] == "call":
         let name = condition["callee"]["name"]
         if len(condition["args"]) == 1 and condition["args"][0]["value"]["kind"] == "name":
@@ -2238,6 +2241,16 @@ export fn b2c_condition_fact(environment, condition, positive):
             let parts = b2c_type_wrapper_parts(current)
             if parts["wrapper"] == "option":
                 return b2c_narrow(environment, left["name"], parts["inner"])
+        if right["kind"] == "name" and left["kind"] == "literal" and left["literal_kind"] == "none":
+            let is_none_test = condition["op"] == "equal"
+            if not positive:
+                is_none_test = not is_none_test
+            if is_none_test:
+                return b2c_narrow(environment, right["name"], "none")
+            let current = b2c_lookup(environment, right["name"])["current"]
+            let parts = b2c_type_wrapper_parts(current)
+            if parts["wrapper"] == "option":
+                return b2c_narrow(environment, right["name"], parts["inner"])
     return environment
 
 export fn b2c_guard_paths(environment, condition):
@@ -2392,7 +2405,10 @@ export fn b2c_check_if(statement, state, functions, expected_return, source_name
 
 export fn b2c_check_try(statement, state, functions, expected_return, source_name, function_name):
     let try_state = b2c_check_block(statement["body"]["statements"], state, functions, expected_return, source_name, function_name)
-    let catch_state = b2c_check_block(statement["catch_body"]["statements"], state, functions, expected_return, source_name, function_name)
+    let catch_environment = state["environment"]
+    if contains(json(statement), "\"catch_binding\":"):
+        catch_environment = b2c_bind(catch_environment, statement["catch_binding"], "any", "any", true)
+    let catch_state = b2c_check_block(statement["catch_body"]["statements"], b2c_state_with_edges(catch_environment, state["errors"], true, [], []), functions, expected_return, source_name, function_name)
     return b2c_merge_path_states(state, try_state, catch_state)
 
 export fn b2c_check_statement(statement, state, functions, expected_return, source_name, function_name):
