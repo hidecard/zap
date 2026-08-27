@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$ROOT_DIR"
+source "$HOME/.cargo/env"
+runner=$(mktemp "$ROOT_DIR/.zap-b4-ast-closures.XXXXXX.zp")
+out=$(mktemp)
+trap 'rm -f "$runner" "$out"' EXIT
+cat >"$runner" <<'ZP'
+import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b3/vm.zp"
+let source = "fn make_adder(base):\n    fn add(value):\n        return base + value\n    return add\nlet add2 = make_adder(2)\nlet add5 = make_adder(5)\nsay add2(3)\nsay add5(3)"
+let compiled = seed_compile_ast_source(source, "ast-closures.zp")
+let state = vm_run(compiled["instructions"])
+say compiled["status"]
+say state["error"]
+say state["output"][0]
+say state["output"][1]
+ZP
+cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+python3 - "$out" <<'PY'
+import pathlib, sys
+lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
+if lines != ["compiled_ast_slice", "none", "5", "8"]:
+    raise SystemExit(f"unexpected AST closure output: {lines!r}")
+PY
+printf 'B4 canonical AST closure gate passed: captured values and independent closure instances\n'

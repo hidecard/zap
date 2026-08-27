@@ -140,10 +140,118 @@ export fn lower_ast_try_node(node):
     instructions = patch_ast_jump(instructions, end_jump_index, end_target)
     return {"error": none, "instructions": instructions}
 
+export fn ast_name_in_list(names, name, index):
+    if index >= len(names):
+        return false
+    if names[index] == name:
+        return true
+    return ast_name_in_list(names, name, index + 1)
+
+export fn ast_append_name(names, name):
+    if ast_name_in_list(names, name, 0):
+        return names
+    return append(names, name)
+
+export fn ast_capture_names_expr(expression, excluded, result):
+    let kind = expression["kind"]
+    if kind == "name":
+        if not ast_name_in_list(excluded, expression["name"], 0):
+            return ast_append_name(result, expression["name"])
+        return result
+    if kind == "binary":
+        let left = ast_capture_names_expr(expression["left"], excluded, result)
+        return ast_capture_names_expr(expression["right"], excluded, left)
+    if kind == "unary":
+        return ast_capture_names_expr(expression["value"], excluded, result)
+    if kind == "index":
+        let target = ast_capture_names_expr(expression["target"], excluded, result)
+        return ast_capture_names_expr(expression["index"], excluded, target)
+    if kind == "member":
+        return ast_capture_names_expr(expression["target"], excluded, result)
+    if kind == "call":
+        let captured = ast_capture_names_expr(expression["callee"], excluded, result)
+        for argument in expression["args"]:
+            captured = ast_capture_names_expr(argument["value"], excluded, captured)
+        return captured
+    return result
+
+export fn ast_capture_locals(statements, result):
+    let locals = result
+    for statement in statements:
+        if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+            locals = ast_append_name(locals, statement["name"])
+        if statement["kind"] == "if":
+            locals = ast_capture_locals(statement["then_branch"]["statements"], locals)
+            if statement["else_branch"] != none:
+                locals = ast_capture_locals(statement["else_branch"]["statements"], locals)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            locals = ast_capture_locals(statement["body"]["statements"], locals)
+        if statement["kind"] == "try_catch":
+            locals = ast_capture_locals(statement["body"]["statements"], locals)
+            locals = ast_capture_locals(statement["catch_body"]["statements"], locals)
+    return locals
+
+export fn ast_capture_from_statements(statements, excluded, result):
+    let captured = result
+    for statement in statements:
+        if statement["kind"] == "declaration" or statement["kind"] == "assignment":
+            captured = ast_capture_names_expr(statement["value"], excluded, captured)
+        if statement["kind"] == "say" or statement["kind"] == "return" or statement["kind"] == "raise" or statement["kind"] == "expression":
+            captured = ast_capture_names_expr(statement["value"], excluded, captured)
+        if statement["kind"] == "if":
+            captured = ast_capture_names_expr(statement["condition"], excluded, captured)
+            captured = ast_capture_from_statements(statement["then_branch"]["statements"], excluded, captured)
+            if statement["else_branch"] != none:
+                captured = ast_capture_from_statements(statement["else_branch"]["statements"], excluded, captured)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            if statement["kind"] == "while":
+                captured = ast_capture_names_expr(statement["condition"], excluded, captured)
+            captured = ast_capture_from_statements(statement["body"]["statements"], excluded, captured)
+        if statement["kind"] == "try_catch":
+            captured = ast_capture_from_statements(statement["body"]["statements"], excluded, captured)
+            captured = ast_capture_from_statements(statement["catch_body"]["statements"], excluded, captured)
+    return captured
+
+export fn ast_function_captures(node):
+    let excluded = []
+    for parameter in node["params"]:
+        excluded = ast_append_name(excluded, parameter["name"])
+    let locals = ast_capture_locals(node["body"]["statements"], [])
+    for local_name in locals:
+        excluded = ast_append_name(excluded, local_name)
+    return ast_capture_from_statements(node["body"]["statements"], excluded, [])
+
+export fn lower_ast_function_block(body, prefix):
+    let instructions = prefix
+    for node in body["statements"]:
+        let lowered = none
+        if node["kind"] == "function":
+            lowered = lower_ast_function_node_owned(node, instructions, node["name"])
+        else:
+            lowered = lower_ast_node_with_prefix(node, instructions)
+        if lowered["error"] != none:
+            return lowered
+        instructions = lowered["instructions"]
+    return {"error": none, "instructions": instructions}
+
+export fn lower_ast_function_node_owned(node, prefix, binding):
+    let definition_index = len(prefix)
+    let entry = definition_index + 1
+    let captures = []
+    if binding != none:
+        captures = ast_function_captures(node)
+    let with_definition = append(prefix, {"binding": binding, "captures": captures, "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": none, "params": lower_parameter_names(node["params"]), "required": false})
+    let body = lower_ast_function_block(node["body"], with_definition)
+    if body["error"] != none:
+        return body
+    let with_return = append(body["instructions"], {"op": "return_none"})
+    let end = len(with_return)
+    return {"error": none, "instructions": patch_function(with_return, definition_index, entry, end), "next": end}
+
 export fn lower_ast_node(node):
     let kind = node["kind"]
     if kind == "function":
-        return lower_function_node(node, [])
+        return lower_ast_function_node_owned(node, [], none)
     if kind == "class":
         return lower_class_node(node, [])
     if kind == "trait" or kind == "interface":
@@ -205,7 +313,7 @@ export fn lower_ast_node(node):
 export fn lower_ast_node_with_prefix(node, prefix):
     let kind = node["kind"]
     if kind == "function":
-        return lower_function_node(node, prefix)
+        return lower_ast_function_node_owned(node, prefix, none)
     if kind == "class":
         return lower_class_node(node, prefix)
     if kind == "trait" or kind == "interface":
