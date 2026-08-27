@@ -2112,8 +2112,25 @@ export fn b2c_infer_call(node, environment, functions, source_name):
         let value = b2c_infer_expr(argument["value"], environment, functions, source_name)
         errors = b2c_append_errors(errors, value["errors"])
         argument_types = append(argument_types, value["type"])
-    let name = node["callee"]["name"]
-    let function = b2c_find_function(functions, name)
+    let name = ""
+    let function = none
+    let callee = node["callee"]
+    if callee["kind"] == "member":
+        let receiver = b2c_infer_expr(callee["target"], environment, functions, source_name)
+        errors = b2c_append_errors(errors, receiver["errors"])
+        if receiver["type"] != "any":
+            let classes = b2c_function_member_classes(functions)
+            let method = b2c_class_method_lookup(receiver["type"], callee["member"], classes, [])
+            if method != none:
+                function = b2c_method_callable(method, classes, [])
+            else:
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-005", "class '" + receiver["type"] + "' has no method '" + callee["member"] + "'"))
+        if function == none:
+            return b2c_result("any", errors)
+        name = function["name"]
+    else:
+        name = callee["name"]
+        function = b2c_find_function(functions, name)
     let builtin = b2c_builtin_call_type(name, argument_types)
     if function == none and builtin != "":
         if name == "same" and len(argument_types) == 2 and argument_types[0] != argument_types[1]:
@@ -2583,6 +2600,35 @@ export fn b2c_class_satisfies_bound(class_name, bound, classes, registry, seen):
             if b2c_class_satisfies_bound(parent, bound, classes, registry, next_seen):
                 return true
     return false
+
+export fn b2c_class_method_lookup(class_name, method_name, classes, seen):
+    if b2c_list_contains(seen, class_name):
+        return none
+    let next_seen = append(seen, class_name)
+    for class_node in classes:
+        if class_node["name"] != class_name:
+            continue
+        for statement in class_node["body"]["statements"]:
+            if statement["kind"] == "function" and statement["name"] == method_name:
+                return statement
+        for parent in class_node["parents"]:
+            let inherited = b2c_class_method_lookup(parent, method_name, classes, next_seen)
+            if inherited != none:
+                return inherited
+    return none
+
+export fn b2c_method_params_without_receiver(parameters, index, result):
+    if index >= len(parameters):
+        return result
+    if index > 0:
+        result = append(result, parameters[index])
+    return b2c_method_params_without_receiver(parameters, index + 1, result)
+
+export fn b2c_method_callable(method, classes, registry):
+    let params = b2c_method_params_without_receiver(method["params"], 0, [])
+    if contains(json(method), "\"required\""):
+        return {"body": method["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(method), "exported": method["exported"], "is_async": method["is_async"], "kind": method["kind"], "name": method["name"], "params": params, "required": method["required"], "return_type": method["return_type"], "span": method["span"], "type_params": method["type_params"], "visibility": method["visibility"]}
+    return {"body": method["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(method), "exported": method["exported"], "is_async": method["is_async"], "kind": method["kind"], "name": method["name"], "params": params, "return_type": method["return_type"], "span": method["span"], "type_params": method["type_params"], "visibility": method["visibility"]}
 
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
     if b2c_list_contains(seen, class_name):

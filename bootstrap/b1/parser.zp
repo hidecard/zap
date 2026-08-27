@@ -433,6 +433,10 @@ export fn parse_postfix(raw, start_column):
             callee_name = trim(callee_parts[0])
             explicit_type_args = generic_parameters_from_name(raw_callee)
         let callee = name(callee_name, start_column)
+        if contains(callee_name, ".") and callee_name != "super":
+            let callee_parts = split(callee_name, ".")
+            if len(callee_parts) > 1:
+                callee = parse_member_parts(callee_parts, 1, name(trim(callee_parts[0]), start_column), start_column, len(raw_callee))
         if callee_name == "super" and close_index + 1 < len(raw_callee):
             let suffix = trim(substring(raw_callee, close_index + 1, len(raw_callee)))
             if starts_with(suffix, "."):
