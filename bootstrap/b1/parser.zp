@@ -63,6 +63,11 @@ export fn parse_declaration_rebased(line, line_number):
     let statement = parse_declaration(line, line_number)
     return {"annotation": statement["annotation"], "exported": statement["exported"], "kind": statement["kind"], "name": statement["name"], "span": statement["span"], "value": rebase_expression_span(statement["value"], line_number - 1, 0)}
 
+export fn parsed_function_constraints(node):
+    if contains(json(node), "\"constraints\":"):
+        return node["constraints"]
+    return []
+
 export fn rebase_statement_spans_list_at(statements, index, line_delta, result):
     if index >= len(statements):
         return result
@@ -78,8 +83,8 @@ export fn rebase_statement_spans(node, line_delta):
     let kind = node["kind"]
     if kind == "function":
         if contains(json(node), "\"required\""):
-            return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
-        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
+            return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "constraints": parsed_function_constraints(node), "visibility": node["visibility"]}
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "constraints": parsed_function_constraints(node), "visibility": node["visibility"]}
     if kind == "trait" or kind == "interface":
         return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "trait_use":
@@ -732,6 +737,17 @@ export fn generic_parameters_from_name(raw_name):
         result = append(result, trim(item))
     return result
 
+export fn parse_generic_constraints(header):
+    let result = []
+    if not contains(header, " where "):
+        return result
+    let where_area = trim(split(header, " where ")[1])
+    for item in split(where_area, " and "):
+        let parts = split(trim(item), ":")
+        if len(parts) >= 2:
+            result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
+    return result
+
 export fn parse_generic_function(lines):
     if len(lines) >= 3:
         if starts_with(trim(lines[2]), "say "):
@@ -759,9 +775,11 @@ export fn parse_generic_function(lines):
     if contains(header, "->"):
         let return_parts = split(substring(header, close_index + 1, len(header) - 1), "->")
         if len(return_parts) == 2:
-            return_type = trim(return_parts[1])
+            let return_area = trim(return_parts[1])
+            return_type = return_area
+    let constraints = parse_generic_constraints(header)
     let nested = parse_block_from(lines, 1, 4)
-    let function = {"body": {"statements": nested["statements"]}, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "type_params": type_params, "visibility": "public"}
+    let function = {"body": {"statements": nested["statements"]}, "constraints": constraints, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "type_params": type_params, "visibility": "public"}
     let statements = []
     statements = append(statements, function)
     let cursor = nested["next"]
@@ -922,8 +940,8 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
         return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "span": rebased_span, "traits": traits}
     if kind == "function":
         if contains(json(node), "\"required\""):
-            return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
-        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
+            return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "constraints": parsed_function_constraints(node), "visibility": node["visibility"]}
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "constraints": parsed_function_constraints(node), "visibility": node["visibility"]}
     if kind == "trait" or kind == "interface":
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "trait_use":

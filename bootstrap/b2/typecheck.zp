@@ -2131,6 +2131,13 @@ export fn b2c_infer_call(node, environment, functions, source_name):
             index = index + 1
     if name == "same" and len(argument_types) == 2 and argument_types[0] != argument_types[1]:
         errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-001", "generic argument substitution for 'same' is inconsistent"))
+    if len(parameters) > 0 and not b2c_generic_constraints_satisfied(function, substitutions):
+        let constraints = b2c_function_constraints(function)
+        for constraint in constraints:
+            let actual = b2c_substitution_lookup(substitutions, constraint["parameter"])
+            let bound = b2c_substitute(constraint["bound"], parameters, substitutions)
+            if actual != "any" and not b2c_assignable(bound, actual):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-009", "generic parameter '" + constraint["parameter"] + "' requires " + bound + ", got " + actual))
     errors = b2c_append_errors(errors, b2c_call_errors(node, function, argument_types, parameters, substitutions, source_name))
     let return_type = function["return_type"]
     if return_type == none:
@@ -2475,17 +2482,45 @@ export fn b2c_collect_functions(statements, functions):
             result = b2c_collect_functions(statement["body"]["statements"], result)
     return result
 
-export fn b2c_generic_bound_errors(function, registry, source_name):
-    let errors = []
+export fn b2c_function_constraints(function):
+    if contains(json(function), "\"constraints\":"):
+        return function["constraints"]
+    let result = []
     for parameter in function["type_params"]:
         if contains(parameter, ":"):
             let parts = split(parameter, ":")
-            if len(parts) == 2:
-                let parameter_name = trim(parts[0])
-                let bound = trim(parts[1])
-                let target = b2c_trait_registry_find(registry, bound)
-                if target == none:
-                    errors = b2c_append_error_unique(errors, b2c_error(source_name, function, "ZAP-TRAIT-003", "unknown trait bound '" + bound + "' for generic parameter '" + parameter_name + "'"))
+            if len(parts) >= 2:
+                result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
+    return result
+
+export fn b2c_constraint_bound(constraints, parameter_name):
+    for constraint in constraints:
+        if constraint["parameter"] == parameter_name:
+            return constraint["bound"]
+    return ""
+
+export fn b2c_generic_constraints_satisfied(function, substitutions):
+    let constraints = b2c_function_constraints(function)
+    let parameters = function["type_params"]
+    for constraint in constraints:
+        let actual = b2c_substitution_lookup(substitutions, constraint["parameter"])
+        let bound = b2c_substitute(constraint["bound"], parameters, substitutions)
+        if actual == "any":
+            continue
+        if not b2c_assignable(bound, actual):
+            return false
+    return true
+
+export fn b2c_generic_bound_errors(function, registry, source_name):
+    let errors = []
+    let constraints = b2c_function_constraints(function)
+    for constraint in constraints:
+        let parameter_name = constraint["parameter"]
+        let bound = constraint["bound"]
+        let known_type = generic_type_body_valid(bound, function["type_params"])
+        let target = b2c_trait_registry_find(registry, bound)
+        if not known_type and target == none:
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, function, "ZAP-TRAIT-003", "unknown generic bound '" + bound + "' for parameter '" + parameter_name + "'"))
     return errors
 
 export fn b2c_generic_bound_errors_all(functions, registry, source_name):

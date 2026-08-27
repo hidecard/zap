@@ -307,6 +307,29 @@ export fn b2c_substitute(type_name, parameters, substitutions):
         result = b2c_generic_type_substitute(result, parameter, b2c_substitution_lookup(substitutions, parameter))
     return result
 
+export fn b2c_function_constraints(function):
+    if contains(json(function), "\"constraints\":"):
+        return function["constraints"]
+    let result = []
+    for parameter in function["type_params"]:
+        if contains(parameter, ":"):
+            let parts = split(parameter, ":")
+            if len(parts) >= 2:
+                result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
+    return result
+
+export fn b2c_generic_constraints_satisfied(function, substitutions):
+    let constraints = b2c_function_constraints(function)
+    let parameters = function["type_params"]
+    for constraint in constraints:
+        let actual = b2c_substitution_lookup(substitutions, constraint["parameter"])
+        let bound = b2c_substitute(constraint["bound"], parameters, substitutions)
+        if actual == "any":
+            continue
+        if not b2c_assignable(bound, actual):
+            return false
+    return true
+
 export fn b2c_find_function(functions, name):
     let result = none
     for function in functions:
@@ -361,6 +384,13 @@ export fn b2c_infer_call(node, environment, functions, source_name):
             if index < len(argument_types):
                 substitutions = b2c_unify_template(parameter["annotation"], argument_types[index], parameters, substitutions)
             index = index + 1
+    if len(parameters) > 0 and not b2c_generic_constraints_satisfied(function, substitutions):
+        let constraints = b2c_function_constraints(function)
+        for constraint in constraints:
+            let actual = b2c_substitution_lookup(substitutions, constraint["parameter"])
+            let bound = b2c_substitute(constraint["bound"], parameters, substitutions)
+            if actual != "any" and not b2c_assignable(bound, actual):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-009", "generic parameter '" + constraint["parameter"] + "' requires " + bound + ", got " + actual))
     errors = b2c_append_errors(errors, b2c_call_errors(node, function, argument_types, parameters, substitutions, source_name))
     let return_type = function["return_type"]
     if len(parameters) > 0:
