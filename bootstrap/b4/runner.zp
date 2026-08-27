@@ -31,7 +31,14 @@ export fn runner_plan_structurally_valid(plan):
     return true
 
 export fn runner_plan_is_executable(plan):
-    return false
+    if not runner_plan_structurally_valid(plan):
+        return false
+    for stage in plan["stages"]:
+        if stage["owner"] != "zap":
+            return false
+        if stage["input_kind"] == stage["output_kind"]:
+            return false
+    return true
 
 export fn runner_artifact_handoff(stage, input_digest, output_digest):
     return {"input_digest": input_digest, "native_owner": false, "output_digest": output_digest, "owner": stage["owner"], "stage": stage["name"], "status": "produced"}
@@ -63,4 +70,4 @@ export fn runner_execute_plan(plan, initial_kind, initial_digest, output_digests
     return {"executions": executions, "final_digest": current_digest, "final_kind": current_kind, "status": "executed"}
 
 export fn runner_acceptance(plan):
-    return {"capabilities": runner_capabilities(), "native_independent": false, "structurally_valid": runner_plan_structurally_valid(plan), "status": "contract_only"}
+    return {"capabilities": runner_capabilities(), "executable": runner_plan_is_executable(plan), "native_independent": false, "structurally_valid": runner_plan_structurally_valid(plan), "status": "contract_only"}

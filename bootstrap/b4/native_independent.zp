@@ -623,3 +623,17 @@ export fn seed_self_rebuild(source, source_name):
     if first_bytes == second_bytes:
         status = "reproducible"
     return {"byte_equal": first_bytes == second_bytes, "first": first, "second": second, "status": status}
+
+export fn seed_self_rebuild_ast(source, source_name):
+    let first = seed_compile_ast_source(source, source_name)
+    let second = seed_compile_ast_source(source, source_name)
+    let first_bytes = seed_compile_bytes(first)
+    let second_bytes = seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes and first["status"] == "compiled_ast_slice":
+        status = "reproducible_ast_slice"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
+
+export fn seed_rebuild_acceptance_ast(source, source_name):
+    let rebuild = seed_self_rebuild_ast(source, source_name)
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_ast_slice"}
