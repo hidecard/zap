@@ -5,6 +5,7 @@
 # requires the compiler to rebuild itself from Zap source.
 
 import "bootstrap/b1/parser.zp"
+import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b4/ast_control.zp"
 
@@ -603,7 +604,24 @@ export fn seed_compile_typed_ir(ir, source_name):
     let lowered = lower_typed_ir(ir)
     if lowered["error"] != none:
         return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
-    return {"artifact_kind": "bytecode", "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_typed_ir_slice"}
+    return {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_typed_ir_slice"}
+
+export fn seed_compile_typed_ir_source(source, source_name):
+    let emitted = from_json(emit(source, source_name))
+    if emitted["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "typed_ir_emit_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let artifact = seed_compile_typed_ir(emitted, source_name)
+    return {"artifact_kind": artifact["artifact_kind"], "error": artifact["error"], "instructions": artifact["instructions"], "native_independent": false, "source_name": source_name, "status": artifact["status"], "typed_ir": emitted}
+
+export fn seed_self_rebuild_typed_ir(source, source_name):
+    let first = seed_compile_typed_ir_source(source, source_name)
+    let second = seed_compile_typed_ir_source(source, source_name)
+    let first_bytes = seed_compile_bytes(first)
+    let second_bytes = seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes and first["status"] == "compiled_typed_ir_slice":
+        status = "reproducible_typed_ir_slice"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
 
 export fn seed_compile_ast_source(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
