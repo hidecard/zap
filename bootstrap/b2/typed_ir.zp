@@ -428,7 +428,7 @@ export fn emit_inferred_program_typed_ir(source, source_name):
     let statements = parsed["ast"]["statements"]
     let classes = b2c_collect_classes(statements, [])
     let registry = b2c_collect_trait_registry(statements, [])
-    let functions = b2c_enrich_functions(b2c_collect_functions(statements, []), classes, registry, [])
+    let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(statements, []), classes, registry, []), source_name)
     let checked = b2c_check_program(parsed["ast"], source_name)
     let nodes = owned_inferred_statements(statements, [], functions, source_name, [])
     return json({"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})

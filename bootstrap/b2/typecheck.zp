@@ -1985,27 +1985,61 @@ export fn b2c_join_type(left, right):
         return "map<" + b2c_join_type(left_parts["key"], right_parts["key"]) + "," + b2c_join_type(left_parts["value"], right_parts["value"]) + ">"
     return "any"
 
+export fn b2c_collection_type_conflict(left, right):
+    if left == "any" or right == "any" or left == right:
+        return false
+    if left == "none" or right == "none":
+        return false
+    if left == "error" or right == "error":
+        return false
+    let left_parts = b2c_type_wrapper_parts(left)
+    let right_parts = b2c_type_wrapper_parts(right)
+    if left_parts["wrapper"] != right_parts["wrapper"]:
+        return true
+    if left_parts["wrapper"] == "list" or left_parts["wrapper"] == "option" or left_parts["wrapper"] == "result":
+        return b2c_collection_type_conflict(left_parts["inner"], right_parts["inner"])
+    if left_parts["wrapper"] == "map":
+        return b2c_collection_type_conflict(left_parts["key"], right_parts["key"]) or b2c_collection_type_conflict(left_parts["value"], right_parts["value"])
+    return true
+
 export fn b2c_infer_list(node, environment, functions, source_name):
     let errors = []
     let element_type = "any"
+    let has_element = false
     for element in node["elements"]:
         let item = b2c_infer_expr(element, environment, functions, source_name)
         errors = b2c_append_errors(errors, item["errors"])
-        element_type = b2c_join_type(element_type, item["type"])
+        if has_element:
+            if b2c_collection_type_conflict(element_type, item["type"]):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, element, "ZAP-TYPE-008", "list elements have incompatible types: " + element_type + " and " + item["type"]))
+            element_type = b2c_join_type(element_type, item["type"])
+        else:
+            element_type = item["type"]
+            has_element = true
     return b2c_result("list<" + element_type + ">", errors)
-
 export fn b2c_infer_map(node, environment, functions, source_name):
     let errors = []
     let key_type = "any"
     let value_type = "any"
+    let has_entry = false
     for entry in node["entries"]:
         let key = b2c_infer_expr(entry["key"], environment, functions, source_name)
         let value = b2c_infer_expr(entry["value"], environment, functions, source_name)
         errors = b2c_append_errors(errors, key["errors"])
         errors = b2c_append_errors(errors, value["errors"])
-        key_type = b2c_join_type(key_type, key["type"])
-        value_type = b2c_join_type(value_type, value["type"])
+        if has_entry:
+            if b2c_collection_type_conflict(key_type, key["type"]):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, entry["key"], "ZAP-TYPE-008", "map keys have incompatible types: " + key_type + " and " + key["type"]))
+            if b2c_collection_type_conflict(value_type, value["type"]):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, entry["value"], "ZAP-TYPE-008", "map values have incompatible types: " + value_type + " and " + value["type"]))
+            key_type = b2c_join_type(key_type, key["type"])
+            value_type = b2c_join_type(value_type, value["type"])
+        else:
+            key_type = key["type"]
+            value_type = value["type"]
+            has_entry = true
     return b2c_result("map<" + key_type + "," + value_type + ">", errors)
+
 
 export fn b2c_binary_type(operator, left, right):
     if operator == "and" or operator == "or":
@@ -2334,8 +2368,10 @@ export fn b2c_condition_fact(environment, condition, positive):
     if condition["kind"] == "unary" and condition["op"] == "not":
         return b2c_condition_fact(environment, condition["value"], not positive)
     if condition["kind"] == "call":
-        let name = condition["callee"]["name"]
-        if len(condition["args"]) == 1 and condition["args"][0]["value"]["kind"] == "name":
+        let name = ""
+        if condition["callee"]["kind"] == "name":
+            name = condition["callee"]["name"]
+        if name != "" and len(condition["args"]) == 1 and condition["args"][0]["value"]["kind"] == "name":
             let variable = condition["args"][0]["value"]["name"]
             let current = b2c_lookup(environment, variable)["current"]
             let parts = b2c_type_wrapper_parts(current)
@@ -2443,15 +2479,34 @@ export fn b2c_mutated_names(before, after):
             result = append(result, name)
     return result
 
+export fn b2c_merge_edge_states(left, right, result):
+    for edge in left:
+        result = append(result, edge)
+    for edge in right:
+        result = append(result, edge)
+    return result
+
 export fn b2c_merge_path_states(base, left, right):
     let errors = b2c_append_errors(left["errors"], right["errors"])
+    let breaks = b2c_merge_edge_states(base["breaks"], left["breaks"], [])
+    breaks = b2c_merge_edge_states(breaks, right["breaks"], [])
+    let continues = b2c_merge_edge_states(base["continues"], left["continues"], [])
+    continues = b2c_merge_edge_states(continues, right["continues"], [])
     if left["reachable"] and right["reachable"]:
-        return b2c_state_with_edges(b2c_merge_env(base["environment"], left["environment"], right["environment"]), errors, true, base["breaks"], base["continues"])
+        return b2c_state_with_edges(b2c_merge_env(base["environment"], left["environment"], right["environment"]), errors, true, breaks, continues)
     if left["reachable"]:
-        return b2c_state_with_edges(left["environment"], errors, true, base["breaks"], base["continues"])
+        return b2c_state_with_edges(left["environment"], errors, true, breaks, continues)
     if right["reachable"]:
-        return b2c_state_with_edges(right["environment"], errors, true, base["breaks"], base["continues"])
-    return b2c_state_with_edges(base["environment"], errors, false, base["breaks"], base["continues"])
+        return b2c_state_with_edges(right["environment"], errors, true, breaks, continues)
+    return b2c_state_with_edges(base["environment"], errors, false, breaks, continues)
+
+export fn b2c_merge_loop_back_environment(base_environment, head_environment, body):
+    let result = head_environment
+    if body["reachable"]:
+        result = b2c_merge_env(base_environment, result, body["environment"])
+    for edge in body["continues"]:
+        result = b2c_merge_env(base_environment, result, edge["environment"])
+    return result
 
 export fn b2c_merge_break_states(states, base_environment):
     let result = base_environment
@@ -2533,7 +2588,7 @@ export fn b2c_check_while(statement, state, functions, expected_return, source_n
         let body = b2c_check_block(statement["body"]["statements"], b2c_state_with_edges(paths["then"], errors, true, [], []), functions, expected_return, source_name, function_name)
         exit_environment = b2c_merge_env(state["environment"], exit_environment, paths["else"])
         exit_environment = b2c_merge_break_states(body["breaks"], exit_environment)
-        let back_environment = b2c_merge_env(state["environment"], head_environment, body["environment"])
+        let back_environment = b2c_merge_loop_back_environment(state["environment"], head_environment, body)
         let names = b2c_mutated_names(state["environment"], back_environment)
         converged = b2c_env_equal(head_environment, back_environment, names)
         head_environment = back_environment
@@ -2555,7 +2610,13 @@ export fn b2c_check_for(statement, state, functions, expected_return, source_nam
             errors = b2c_append_error_unique(errors, b2c_error(source_name, statement["iterable"], "ZAP-TYPE-001", "for iterable expects list or map, got " + iterable["type"]))
     let loop_environment = b2c_bind(state["environment"], statement["binding"], element_type, element_type, true)
     let body = b2c_check_block(statement["body"]["statements"], b2c_state_with_edges(loop_environment, errors, true, [], []), functions, expected_return, source_name, function_name)
-    let merged = b2c_merge_env(state["environment"], state["environment"], body["environment"])
+    let merged = state["environment"]
+    if body["reachable"]:
+        merged = b2c_merge_env(state["environment"], merged, body["environment"])
+    for edge in body["continues"]:
+        merged = b2c_merge_env(state["environment"], merged, edge["environment"])
+    for edge in body["breaks"]:
+        merged = b2c_merge_env(state["environment"], merged, edge["environment"])
     return b2c_state_with_edges(merged, body["errors"], true, state["breaks"], state["continues"])
 
 export fn b2c_check_if(statement, state, functions, expected_return, source_name, function_name):
@@ -2636,6 +2697,71 @@ export fn b2c_enrich_functions(functions, classes, registry, result):
     for function in functions:
         result = append(result, b2c_enrich_function_with_registry(function, classes, registry))
     return result
+
+export fn b2c_function_parameter_environment(parameters, index, environment):
+    if index >= len(parameters):
+        return environment
+    let parameter_type = parameters[index]["annotation"]
+    if parameter_type == none:
+        parameter_type = "any"
+    return b2c_function_parameter_environment(parameters, index + 1, b2c_bind(environment, parameters[index]["name"], parameter_type, parameter_type, true))
+
+export fn b2c_infer_return_type_statements(statements, environment, functions, source_name, result):
+    let current = environment
+    let inferred_return = result
+    for statement in statements:
+        if statement["kind"] == "declaration":
+            let value = b2c_infer_expr(statement["value"], current, functions, source_name)
+            let declared = statement["annotation"]
+            if declared == none:
+                declared = value["type"]
+            current = b2c_bind(current, statement["name"], declared, declared, true)
+        if statement["kind"] == "assignment":
+            let value = b2c_infer_expr(statement["value"], current, functions, source_name)
+            current = b2c_reassign(current, statement["name"], value["type"])
+        if statement["kind"] == "return":
+            let value = b2c_infer_expr(statement["value"], current, functions, source_name)
+            inferred_return = b2c_join_type(inferred_return, value["type"])
+        if statement["kind"] == "if":
+            let paths = b2c_guard_paths(current, statement["condition"])
+            let then_result = b2c_infer_return_type_statements(statement["then_branch"]["statements"], paths["then"], functions, source_name, "any")
+            inferred_return = b2c_join_type(inferred_return, then_result)
+            if statement["else_branch"] != none:
+                let else_result = b2c_infer_return_type_statements(statement["else_branch"]["statements"], paths["else"], functions, source_name, "any")
+                inferred_return = b2c_join_type(inferred_return, else_result)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            let nested = b2c_infer_return_type_statements(statement["body"]["statements"], current, functions, source_name, "any")
+            inferred_return = b2c_join_type(inferred_return, nested)
+        if statement["kind"] == "try_catch":
+            let try_result = b2c_infer_return_type_statements(statement["body"]["statements"], current, functions, source_name, "any")
+            let catch_result = b2c_infer_return_type_statements(statement["catch_body"]["statements"], current, functions, source_name, "any")
+            inferred_return = b2c_join_type(inferred_return, b2c_join_type(try_result, catch_result))
+    return inferred_return
+
+export fn b2c_function_with_return_type(function, return_type):
+    return {"body": function["body"], "bound_classes": function["bound_classes"], "bound_registry": function["bound_registry"], "constraints": function["constraints"], "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "params": function["params"], "return_type": return_type, "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
+
+export fn b2c_infer_function_returns_once(functions, source_name):
+    let result = []
+    for function in functions:
+        let environment = b2c_function_parameter_environment(function["params"], 0, [])
+        let inferred = b2c_infer_return_type_statements(function["body"]["statements"], environment, functions, source_name, "any")
+        let return_type = function["return_type"]
+        if return_type == none:
+            return_type = inferred
+        result = append(result, b2c_function_with_return_type(function, return_type))
+    return result
+
+export fn b2c_infer_function_returns(functions, source_name):
+    let current = functions
+    let iteration = 0
+    let stable = false
+    while iteration < 8 and not stable:
+        let next = b2c_infer_function_returns_once(current, source_name)
+        stable = json(next) == json(current)
+        current = next
+        iteration = iteration + 1
+    return current
 
 export fn b2c_collect_functions(statements, functions):
     let result = functions
@@ -3036,7 +3162,7 @@ export fn b2c_check_program(ast, source_name):
     let registry = b2c_collect_trait_registry(ast["statements"], [])
     let trait_errors = b2c_collect_trait_class_errors(ast["statements"], registry, source_name, [])
     let classes = b2c_collect_classes(ast["statements"], [])
-    let functions = b2c_enrich_functions(b2c_collect_functions(ast["statements"], []), classes, registry, [])
+    let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(ast["statements"], []), classes, registry, []), source_name)
     let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
     let implementation_tables = b2c_collect_trait_implementation_tables(ast["statements"], registry, [])
     let errors = b2c_append_errors(trait_errors, bound_errors)
