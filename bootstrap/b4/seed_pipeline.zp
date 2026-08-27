@@ -56,3 +56,49 @@ export fn seed_pipeline_manifest(seed, source_digest, stage_digests):
     let execution = seed_pipeline_execute(seed, source_digest, stage_digests)
     let artifacts = seed_pipeline_artifacts(plan, stage_digests)
     return {"artifacts": artifacts, "execution": execution, "native_independent": false, "seed": seed, "status": "contract_only"}
+
+export fn seed_platform_record(target, artifact_bytes, artifact_digest, execution_status):
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "execution_status": execution_status, "target": target}
+
+export fn seed_platform_target_seen(records, target):
+    for record in records:
+        if record["target"] == target:
+            return true
+    return false
+
+export fn seed_platform_target_count(records, target):
+    let count = 0
+    for record in records:
+        if record["target"] == target:
+            count = count + 1
+    return count
+
+export fn seed_platform_expected_count(targets, target):
+    let count = 0
+    for value in targets:
+        if value == target:
+            count = count + 1
+    return count
+
+export fn seed_platform_matrix_valid(records, expected_targets):
+    if len(records) != len(expected_targets) or len(records) == 0:
+        return false
+    let first = records[0]
+    if first["execution_status"] != "executed" or trim(first["artifact_bytes"]) == "" or trim(first["artifact_digest"]) == "":
+        return false
+    for target in expected_targets:
+        if not seed_platform_target_seen(records, target) or seed_platform_expected_count(expected_targets, target) != 1:
+            return false
+    let index = 0
+    for record in records:
+        if seed_platform_target_count(records, record["target"]) != 1:
+            return false
+        if record["execution_status"] != "executed" or trim(record["artifact_bytes"]) == "" or trim(record["artifact_digest"]) == "":
+            return false
+        if index > 0 and (record["artifact_bytes"] != first["artifact_bytes"] or record["artifact_digest"] != first["artifact_digest"]):
+            return false
+        index = index + 1
+    return true
+
+export fn seed_platform_acceptance(seed, records, expected_targets):
+    return {"artifact_equal": seed_platform_matrix_valid(records, expected_targets), "native_independent": false, "seed": seed, "status": "contract_only", "targets": len(records)}
