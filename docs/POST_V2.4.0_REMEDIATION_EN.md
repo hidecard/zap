@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # Post-v2.4.0 Remediation and Provenance Record
 
 **Record baseline:** v2.11.16 current-master follow-up; v2.4.0 remains immutable

@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # Zap Generic Type Syntax Decision Record
 
 **Verified baseline:** Zap v2.11.16

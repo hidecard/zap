@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # A3 User-Defined Generic Declaration — Design နှင့် Acceptance Record
 
 **အခြေအနေ:** Design gate ဖြစ်ပြီး A3 မပြီးစီးသေးပါ။ Zap သည် B0 အဖြစ်သာ ရှိနေပြီး Rust သည် reference compiler၊ type checker၊ runtime နှင့် diagnostic owner ဖြစ်နေဆဲပါ။

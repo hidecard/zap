@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # MemoryBudget and ObjectStore Contract
 
 **Verified baseline:** Zap v2.11.16

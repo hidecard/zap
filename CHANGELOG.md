@@ -4,6 +4,11 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+## [2.11.17] - 2026-08-27
+
+### Release summary
+- Canonical AST B4 closure lowering increment.
+
 ## [2.11.16] - 2026-08-25
 
 ### Release summary

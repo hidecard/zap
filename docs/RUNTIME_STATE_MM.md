@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # Runtime State နှင့် Execution Context
 
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16

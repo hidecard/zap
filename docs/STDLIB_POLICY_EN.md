@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # Standard-Library Stability Policy
 
 **Verified baseline:** Zap v2.11.16

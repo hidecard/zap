@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.17] — 2026-08-27
+
+### Release engineering
+- Captured value နှင့် deterministic VM execution coverage ပါသော bounded canonical AST closure lowering ကို ထည့်သွင်းထားပါသည်။
+
 ## [2.11.16] — 2026-08-25
 
 ### Release engineering

@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # Zap Generic Type Syntax ဆုံးဖြတ်ချက်မှတ်တမ်း
 
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16

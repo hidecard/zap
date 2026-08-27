@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # Zap Traits and Composition RFC
 
 **Verified baseline:** Zap v2.11.16

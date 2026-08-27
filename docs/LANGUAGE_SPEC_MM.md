@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # Zap Language Specification
 
 **ရည်ရွယ်ချက်:** Zap ၏ syntax၊ typing၊ runtime behavior၊ diagnostics၊ compatibility နှင့် version decision များအတွက် canonical normative owner ဖြစ်သည်။

@@ -8,6 +8,11 @@
 
 ## [Unreleased]
 
+## [2.11.17] — 2026-08-27
+
+### Release engineering
+- Added bounded canonical AST closure lowering with captured values and deterministic VM execution coverage.
+
 ## [2.11.16] — 2026-08-25
 
 ### Release engineering

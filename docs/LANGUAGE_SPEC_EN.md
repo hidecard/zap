@@ -1,3 +1,4 @@
+**Current release line:** v2.11.17
 # Zap Language Specification
 
 **Purpose:** Canonical normative owner for Zap syntax, typing, runtime behavior, diagnostics, compatibility, and version decisions.

@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # Zap အသုံးပြုနည်း လမ်းညွှန်
 
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16 development line

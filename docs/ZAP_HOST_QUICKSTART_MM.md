@@ -1,3 +1,4 @@
+**လက်ရှိ release line:** v2.11.17
 # zap-host စတင်အသုံးပြုခြင်းနှင့် Integration လမ်းညွှန်
 
 **အတည်ပြုထားသော baseline:** Zap v2.11.16
