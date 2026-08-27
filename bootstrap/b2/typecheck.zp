@@ -2420,7 +2420,13 @@ export fn b2c_check_while(statement, state, functions, expected_return, source_n
 export fn b2c_check_for(statement, state, functions, expected_return, source_name, function_name):
     let iterable = b2c_infer_expr(statement["iterable"], state["environment"], functions, source_name)
     let errors = b2c_append_errors(state["errors"], iterable["errors"])
-    let element_type = b2c_generic_container_element(iterable["type"])
+    let parts = b2c_type_wrapper_parts(iterable["type"])
+    let element_type = "any"
+    if parts["wrapper"] == "list" or parts["wrapper"] == "map":
+        element_type = b2c_generic_container_element(iterable["type"])
+    else:
+        if iterable["type"] != "any":
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, statement["iterable"], "ZAP-TYPE-001", "for iterable expects list or map, got " + iterable["type"]))
     let loop_environment = b2c_bind(state["environment"], statement["binding"], element_type, element_type, true)
     let body = b2c_check_block(statement["body"]["statements"], b2c_state_with_edges(loop_environment, errors, true, [], []), functions, expected_return, source_name, function_name)
     let merged = b2c_merge_env(state["environment"], state["environment"], body["environment"])
