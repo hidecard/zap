@@ -640,10 +640,27 @@ export fn seed_compile_inferred_typed_ir(typed, source_name):
         return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
     return {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_inferred_typed_ir_slice", "typed_ir": typed}
 
+export fn seed_incomplete_assignment_diagnostic(source, source_name):
+    let declaration = contains(source, "let ")
+    if not declaration:
+        declaration = contains(source, "set ")
+    if declaration:
+        let has_assignment = contains(source, " =")
+        if has_assignment:
+            let has_value = contains(source, " = ")
+            if not has_value:
+                return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": len(source) + 1, "help": "add an expression after '='", "line": 1, "message": "expected expression after '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    return none
 export fn seed_emit_inferred_program_typed_ir(source, source_name):
+    let preflight = seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return preflight
     return emit_inferred_program_typed_ir(source, source_name)
 
 export fn seed_compile_inferred_typed_ir_source(source, source_name):
+    let preflight = seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"artifact_kind": "bytecode", "diagnostics": [from_json(preflight)], "error": "syntax_diagnostic", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
     let emitted = from_json(seed_emit_inferred_program_typed_ir(source, source_name))
     if emitted["kind"] != "zap.typed_ir":
         return {"artifact_kind": "bytecode", "error": "typed_ir_emit_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
@@ -664,6 +681,9 @@ export fn seed_self_compile_acceptance(source, source_name):
     return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_inferred_typed_ir_slice"}
 
 export fn seed_compile_ast_source(source, source_name):
+    let preflight = seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"artifact_kind": "bytecode", "diagnostics": [from_json(preflight)], "error": "syntax_diagnostic", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
     let parsed = from_json(parse_general(source, source_name))
     if parsed["kind"] != "zap.ast":
         return {"artifact_kind": "bytecode", "error": "parse_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
@@ -700,6 +720,9 @@ export fn seed_pipeline_digest(kind, payload):
     return kind + ":" + json(payload)
 
 export fn seed_execute_owned_pipeline(source, source_name):
+    let preflight = seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"artifacts": [], "diagnostics": [from_json(preflight)], "error": "syntax_diagnostic", "execution": {"error": "syntax_diagnostic", "output": []}, "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
     let typed = from_json(seed_emit_inferred_program_typed_ir(source, source_name))
     if typed["kind"] != "zap.typed_ir":
         return {"artifacts": [], "error": "typed_ir_emit_error", "execution": {"error": "typed_ir_emit_error", "output": []}, "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
