@@ -1915,6 +1915,26 @@ export fn b2c_type_annotation_known(annotation):
         return false
     return true
 
+export fn b2c_class_subtype(actual, expected, classes, seen):
+    let actual_name = b2c_nominal_class_name(actual)
+    let expected_name = b2c_nominal_class_name(expected)
+    if actual_name == expected_name:
+        return true
+    if b2c_list_contains(seen, actual_name):
+        return false
+    let next_seen = append(seen, actual_name)
+    for class_node in classes:
+        if class_node["name"] == actual_name:
+            for parent in class_node["parents"]:
+                if b2c_class_subtype(parent, expected_name, classes, next_seen):
+                    return true
+    return false
+
+export fn b2c_type_assignable(expected, actual, classes):
+    if b2c_assignable(expected, actual):
+        return true
+    return b2c_class_subtype(actual, expected, classes, [])
+
 export fn b2c_assignable(expected, actual):
     if expected == "any" or actual == "any":
         return true
@@ -2069,6 +2089,53 @@ export fn b2c_find_function(functions, name):
             result = function
     return result
 
+export fn b2c_function_candidates(functions, name, result):
+    for function in functions:
+        if function["name"] == name:
+            result = append(result, function)
+    return result
+
+export fn b2c_overload_score(function, argument_types, classes):
+    if len(function["params"]) != len(argument_types):
+        return -1
+    let score = 0
+    let index = 0
+    for parameter in function["params"]:
+        let expected = parameter["annotation"]
+        let actual = argument_types[index]
+        if expected == none or expected == "any" or actual == "any":
+            score = score + 1
+        else:
+            let generic = false
+            for type_parameter in function["type_params"]:
+                if expected == type_parameter or contains(expected, type_parameter):
+                    generic = true
+            if generic:
+                score = score + 2
+            else:
+                if expected == actual:
+                    score = score + 4
+                else:
+                    if b2c_type_assignable(expected, actual, classes):
+                        score = score + 1
+                    else:
+                        return -1
+        index = index + 1
+    return score
+
+export fn b2c_select_overload(candidates, argument_types, classes, index, best, best_score, best_count):
+    if index >= len(candidates):
+        return {"ambiguous": best != none and best_count > 1, "count": best_count, "function": best, "found": best != none}
+    let candidate = candidates[index]
+    let score = b2c_overload_score(candidate, argument_types, classes)
+    if score < 0:
+        return b2c_select_overload(candidates, argument_types, classes, index + 1, best, best_score, best_count)
+    if best == none or score > best_score:
+        return b2c_select_overload(candidates, argument_types, classes, index + 1, candidate, score, 1)
+    if score == best_score:
+        return b2c_select_overload(candidates, argument_types, classes, index + 1, best, best_score, best_count + 1)
+    return b2c_select_overload(candidates, argument_types, classes, index + 1, best, best_score, best_count)
+
 export fn b2c_builtin_call_type(name, argument_types):
     if name == "option_none" and len(argument_types) == 0:
         return "option<any>"
@@ -2091,7 +2158,7 @@ export fn b2c_builtin_call_type(name, argument_types):
         return "bool"
     return ""
 
-export fn b2c_call_errors(node, function, argument_types, parameters, substitutions, source_name):
+export fn b2c_call_errors(node, function, argument_types, parameters, substitutions, classes, source_name):
     let errors = []
     if len(function["params"]) != len(argument_types):
         return append(errors, b2c_error(source_name, node, "ZAP-TYPE-001", "function '" + function["name"] + "' expects " + str(len(function["params"])) + " to " + str(len(function["params"])) + " arguments, got " + str(len(argument_types))))
@@ -2100,7 +2167,7 @@ export fn b2c_call_errors(node, function, argument_types, parameters, substituti
         let expected = parameter["annotation"]
         if len(parameters) > 0:
             expected = b2c_substitute(expected, parameters, substitutions)
-        if not b2c_assignable(expected, argument_types[index]) and argument_types[index] != "any":
+        if not b2c_type_assignable(expected, argument_types[index], classes) and argument_types[index] != "any":
             errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-001", "argument '" + parameter["name"] + "' for '" + function["name"] + "' expects " + expected + ", got " + argument_types[index]))
         index = index + 1
     return errors
@@ -2120,17 +2187,33 @@ export fn b2c_infer_call(node, environment, functions, source_name):
         errors = b2c_append_errors(errors, receiver["errors"])
         if receiver["type"] != "any":
             let classes = b2c_function_member_classes(functions)
-            let method = b2c_class_method_lookup(receiver["type"], callee["member"], classes, [])
-            if method != none:
-                function = b2c_method_callable(method, classes, [])
+            let method_nodes = b2c_class_method_candidates(receiver["type"], callee["member"], classes, [])
+            let method_candidates = []
+            for method_node in method_nodes:
+                method_candidates = append(method_candidates, b2c_method_callable(method_node, classes, []))
+            let method_selection = b2c_select_overload(method_candidates, argument_types, classes, 0, none, -1, 0)
+            if method_selection["found"]:
+                function = method_selection["function"]
+                if method_selection["ambiguous"]:
+                    errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-010", "ambiguous method call '" + receiver["type"] + "." + callee["member"] + "'"))
             else:
-                errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-005", "class '" + receiver["type"] + "' has no method '" + callee["member"] + "'"))
+                if len(method_candidates) > 0:
+                    function = method_candidates[0]
+                else:
+                    errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-005", "class '" + receiver["type"] + "' has no method '" + callee["member"] + "'"))
         if function == none:
             return b2c_result("any", errors)
         name = function["name"]
     else:
         name = callee["name"]
-        function = b2c_find_function(functions, name)
+        let candidates = b2c_function_candidates(functions, name, [])
+        let selection = b2c_select_overload(candidates, argument_types, b2c_function_member_classes(functions), 0, none, -1, 0)
+        if selection["found"]:
+            function = selection["function"]
+            if selection["ambiguous"]:
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-010", "ambiguous call to '" + name + "'"))
+        else:
+            function = b2c_find_function(functions, name)
     let builtin = b2c_builtin_call_type(name, argument_types)
     if function == none and builtin != "":
         if name == "same" and len(argument_types) == 2 and argument_types[0] != argument_types[1]:
@@ -2166,7 +2249,7 @@ export fn b2c_infer_call(node, environment, functions, source_name):
             let bound = b2c_substitute(constraint["bound"], parameters, substitutions)
             if actual != "any" and not b2c_generic_bound_satisfied(function, bound, actual):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-009", "generic parameter '" + constraint["parameter"] + "' requires " + bound + ", got " + actual))
-    errors = b2c_append_errors(errors, b2c_call_errors(node, function, argument_types, parameters, substitutions, source_name))
+    errors = b2c_append_errors(errors, b2c_call_errors(node, function, argument_types, parameters, substitutions, b2c_function_member_classes(functions), source_name))
     let return_type = function["return_type"]
     if return_type == none:
         return_type = "any"
@@ -2395,7 +2478,7 @@ export fn b2c_check_declaration(statement, state, functions, source_name):
             errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "unknown type annotation '" + declared + "'"))
             declared = "any"
         else:
-            if not b2c_assignable(declared, value["type"]):
+            if not b2c_type_assignable(declared, value["type"], b2c_function_member_classes(functions)):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "variable '" + statement["name"] + "' expects " + declared + ", got " + value["type"]))
     let environment = b2c_bind(state["environment"], statement["name"], declared, declared, true)
     return b2c_state_with_edges(environment, errors, state["reachable"], state["breaks"], state["continues"])
@@ -2417,14 +2500,14 @@ export fn b2c_check_assignment(statement, state, functions, source_name):
                     member_names = append(member_names, trim(pieces[piece_index]))
                 piece_index = piece_index + 1
             let member = b2c_nested_member_lookup(receiver["current"], member_names, 0, b2c_function_member_classes(functions))
-            if member["found"] and not b2c_assignable(member["type"], value["type"]):
+            if member["found"] and not b2c_type_assignable(member["type"], value["type"], b2c_function_member_classes(functions)):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "member '" + statement["name"] + "' expects " + member["type"] + ", got " + value["type"]))
             return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
     let old = b2c_lookup(state["environment"], statement["name"])
     if not old["initialized"]:
         errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + statement["name"] + "'"))
         return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
-    if not b2c_assignable(old["declared"], value["type"]):
+    if not b2c_type_assignable(old["declared"], value["type"], b2c_function_member_classes(functions)):
         errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "variable '" + statement["name"] + "' expects " + old["declared"] + ", got " + value["type"]))
     return b2c_state_with_edges(b2c_reassign(state["environment"], statement["name"], value["type"]), errors, state["reachable"], state["breaks"], state["continues"])
 
@@ -2511,7 +2594,7 @@ export fn b2c_check_statement(statement, state, functions, expected_return, sour
     if statement["kind"] == "return":
         let value = b2c_infer_expr(statement["value"], state["environment"], functions, source_name)
         let errors = b2c_append_errors(state["errors"], value["errors"])
-        if expected_return != "any" and not b2c_assignable(expected_return, value["type"]):
+        if expected_return != "any" and not b2c_type_assignable(expected_return, value["type"], b2c_function_member_classes(functions)):
             errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "return from '" + function_name + "' expects " + expected_return + ", got " + value["type"]))
         return b2c_state_with_edges(state["environment"], errors, false, state["breaks"], state["continues"])
     if statement["kind"] == "break":
@@ -2622,6 +2705,28 @@ export fn b2c_nominal_class_name(type_name):
     if starts_with(type_name, "object<") and ends_with(type_name, ">"):
         return substring(type_name, 7, len(type_name) - 1)
     return type_name
+
+export fn b2c_class_method_candidates(class_name, method_name, classes, seen):
+    let nominal = b2c_nominal_class_name(class_name)
+    if nominal != class_name:
+        return b2c_class_method_candidates(nominal, method_name, classes, seen)
+    if b2c_list_contains(seen, class_name):
+        return []
+    let next_seen = append(seen, class_name)
+    for class_node in classes:
+        if class_node["name"] != class_name:
+            continue
+        let methods = []
+        for statement in class_node["body"]["statements"]:
+            if statement["kind"] == "function" and statement["name"] == method_name:
+                methods = append(methods, statement)
+        if len(methods) > 0:
+            return methods
+        for parent in class_node["parents"]:
+            let inherited = b2c_class_method_candidates(parent, method_name, classes, next_seen)
+            if len(inherited) > 0:
+                return inherited
+    return []
 
 export fn b2c_class_method_lookup(class_name, method_name, classes, seen):
     let nominal = b2c_nominal_class_name(class_name)

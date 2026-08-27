@@ -167,6 +167,13 @@ export fn vm_find_function(functions, name, index):
         return functions[index]
     return vm_find_function(functions, name, index + 1)
 
+export fn vm_find_function_arity(functions, name, argc, index):
+    if index >= len(functions):
+        return none
+    if functions[index]["op"] == "function_def" and functions[index]["name"] == name and len(functions[index]["params"]) == argc:
+        return functions[index]
+    return vm_find_function_arity(functions, name, argc, index + 1)
+
 export fn vm_find_class(functions, name, index):
     if index >= len(functions):
         return none
@@ -234,6 +241,51 @@ export fn vm_resolve_method_in_mro(functions, mro, name, index):
         if trait_method["method"] != none:
             return trait_method
     return vm_resolve_method_in_mro(functions, mro, name, index + 1)
+
+export fn vm_resolve_trait_method_arity(functions, class, name, argc):
+    if contains(json(class), "\"trait_selections\":"):
+        for selection in class["trait_selections"]:
+            if selection["as"] == name:
+                let selected = vm_find_method_direct_arity(functions, selection["trait"], selection["method"], argc, 0)
+                if selected == none:
+                    return {"error": "unknown_trait_method:" + selection["trait"] + "." + selection["method"], "method": none, "owner": none}
+                return {"error": none, "method": selected, "owner": selection["trait"]}
+    let trait_names = vm_class_trait_names(class)
+    let candidates = []
+    for trait_name in trait_names:
+        let method = vm_find_method_direct_arity(functions, trait_name, name, argc, 0)
+        if method != none:
+            candidates = append(candidates, {"method": method, "owner": trait_name})
+    if len(candidates) > 1:
+        return {"error": "trait_conflict:" + class["name"] + ":" + name, "method": none, "owner": none}
+    if len(candidates) == 1:
+        return {"error": none, "method": candidates[0]["method"], "owner": candidates[0]["owner"]}
+    return {"error": none, "method": none, "owner": none}
+
+export fn vm_resolve_method_in_mro_arity(functions, mro, name, argc, index):
+    if index >= len(mro):
+        return {"error": none, "method": none, "owner": none}
+    let class_method = vm_find_method_direct_arity(functions, mro[index], name, argc, 0)
+    if class_method != none:
+        return {"error": none, "method": class_method, "owner": mro[index]}
+    let class = vm_find_class(functions, mro[index], 0)
+    if class != none:
+        let trait_method = vm_resolve_trait_method_arity(functions, class, name, argc)
+        if trait_method["error"] != none:
+            return trait_method
+        if trait_method["method"] != none:
+            return trait_method
+    return vm_resolve_method_in_mro_arity(functions, mro, name, argc, index + 1)
+
+export fn vm_resolve_method_arity(functions, owner, name, argc):
+    let trait = vm_find_trait(functions, owner, 0)
+    if trait != none:
+        return {"error": none, "method": vm_find_method_direct_arity(functions, owner, name, argc, 0), "owner": owner}
+    let visiting = []
+    let hierarchy = vm_class_mro(functions, owner, visiting)
+    if hierarchy["error"] != none:
+        return {"error": hierarchy["error"], "method": none, "owner": none}
+    return vm_resolve_method_in_mro_arity(functions, hierarchy["mro"], name, argc, 0)
 
 export fn vm_resolve_method(functions, owner, name):
     let trait = vm_find_trait(functions, owner, 0)
@@ -372,6 +424,14 @@ export fn vm_find_method_direct(functions, owner, name, index):
         if not contains(json(functions[index]), "\"required\":true"):
             return functions[index]
     return vm_find_method_direct(functions, owner, name, index + 1)
+
+export fn vm_find_method_direct_arity(functions, owner, name, argc, index):
+    if index >= len(functions):
+        return none
+    if functions[index]["op"] == "function_def" and functions[index]["owner"] == owner and functions[index]["name"] == name and len(functions[index]["params"]) == argc:
+        if not contains(json(functions[index]), "\"required\":true"):
+            return functions[index]
+    return vm_find_method_direct_arity(functions, owner, name, argc, index + 1)
 
 export fn vm_collect_functions(program, index, result):
     if index >= len(program):
@@ -604,24 +664,30 @@ export fn vm_step(state, instruction):
                 captures = loaded["value"]["captures"]
         let definition = none
         if owner != none:
-            let method_resolution = vm_resolve_method(advanced["functions"], owner, definition_name)
+            let method_resolution = vm_resolve_method_arity(advanced["functions"], owner, definition_name, instruction["argc"])
             if method_resolution["error"] != none:
                 return vm_fail(advanced, method_resolution["error"])
             definition = method_resolution["method"]
         else:
-            definition = vm_find_function(advanced["functions"], definition_name, 0)
+            definition = vm_find_function_arity(advanced["functions"], definition_name, instruction["argc"], 0)
         if definition == none:
+            let any_definition = vm_find_function(advanced["functions"], definition_name, 0)
+            if any_definition != none:
+                return vm_fail(advanced, "arity_error:" + name)
             let class = vm_find_class(advanced["functions"], definition_name, 0)
             if class != none:
                 let visiting = []
                 let hierarchy = vm_class_mro(advanced["functions"], definition_name, visiting)
                 if hierarchy["error"] != none:
                     return vm_fail(advanced, hierarchy["error"])
-                let constructor_resolution = vm_resolve_method(advanced["functions"], definition_name, "__init__")
+                let constructor_resolution = vm_resolve_method_arity(advanced["functions"], definition_name, "__init__", instruction["argc"] + 1)
                 if constructor_resolution["error"] != none:
                     return vm_fail(advanced, constructor_resolution["error"])
                 let constructor_definition = constructor_resolution["method"]
                 if constructor_definition == none:
+                    let any_constructor = vm_resolve_method(advanced["functions"], definition_name, "__init__")
+                    if any_constructor["method"] != none:
+                        return vm_fail(advanced, "arity_error:__init__")
                     if instruction["argc"] == 0:
                         return vm_push(arguments["state"], {"class_name": definition_name, "fields": [], "object": true})
                     return vm_fail(advanced, "arity_error:" + name)
