@@ -8,6 +8,7 @@ import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b4/ast_control.zp"
+import "bootstrap/b3/vm.zp"
 
 export fn seed_is_digit(character):
     return contains("0123456789", character)
@@ -693,3 +694,28 @@ export fn seed_self_rebuild_ast(source, source_name):
 export fn seed_rebuild_acceptance_ast(source, source_name):
     let rebuild = seed_self_rebuild_ast(source, source_name)
     return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_ast_slice"}
+
+export fn seed_pipeline_digest(kind, payload):
+    return kind + ":" + json(payload)
+
+export fn seed_execute_owned_pipeline(source, source_name):
+    let typed = from_json(seed_emit_inferred_program_typed_ir(source, source_name))
+    if typed["kind"] != "zap.typed_ir":
+        return {"artifacts": [], "error": "typed_ir_emit_error", "execution": {"error": "typed_ir_emit_error", "output": []}, "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
+    let typed_digest = seed_pipeline_digest("typed_ir", typed)
+    let compiled = seed_compile_inferred_typed_ir(typed, source_name)
+    if compiled["status"] != "compiled_inferred_typed_ir_slice":
+        return {"artifacts": [{"bytes": json(typed), "digest": typed_digest, "kind": "typed_ir"}], "error": compiled["error"], "execution": {"error": compiled["error"], "output": []}, "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
+    let bytecode_digest = seed_pipeline_digest("bytecode", compiled["instructions"])
+    let execution = vm_run(compiled["instructions"])
+    let source_digest = seed_pipeline_digest("source", source)
+    let stages = [{"input_digest": source_digest, "input_kind": "source", "output_digest": typed_digest, "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_digest": typed_digest, "input_kind": "typed_ir", "output_digest": bytecode_digest, "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_digest": bytecode_digest, "input_kind": "bytecode", "output_digest": seed_pipeline_digest("execution", execution), "output_kind": "execution", "stage": "bytecode_to_vm"}]
+    let status = "candidate_pipeline_executed"
+    if execution["error"] != none:
+        status = "candidate_pipeline_error"
+    return {"artifacts": [{"bytes": json(typed), "digest": typed_digest, "kind": "typed_ir"}, {"bytes": json(compiled["instructions"]), "digest": bytecode_digest, "kind": "bytecode"}], "error": execution["error"], "execution": execution, "native_independent": false, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
+
+export fn seed_pipeline_replay(source, source_name):
+    let first = seed_execute_owned_pipeline(source, source_name)
+    let second = seed_execute_owned_pipeline(source, source_name)
+    return {"byte_equal": json(first) == json(second), "first": first, "native_independent": false, "second": second, "status": "candidate_pipeline_replay"}
