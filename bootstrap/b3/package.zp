@@ -53,11 +53,66 @@ export fn registry_lock_satisfies_trait_dependencies(manifest_value, registry_en
                 return false
     return true
 
+# B3 bounded registry transport contract. Actual socket/HTTP I/O remains native-owned;
+# these helpers make policy, response and cache boundaries machine-checkable.
+export fn registry_transport_scheme(source):
+    let text = trim(source)
+    if starts_with(text, "https://"):
+        return "https"
+    if starts_with(text, "http://"):
+        return "http"
+    if starts_with(text, "file://"):
+        return "file"
+    return ""
+
+export fn registry_transport_url_valid(source, allow_insecure_http):
+    let text = trim(source)
+    let scheme = registry_transport_scheme(text)
+    if text == "" or contains(text, " ") or contains(text, "?") or contains(text, "#") or contains(text, "\\") or contains(text, ".."):
+        return false
+    if scheme == "https" or scheme == "file":
+        return len(text) > len(scheme) + 3
+    if scheme == "http":
+        return allow_insecure_http and len(text) > len(scheme) + 3
+    return false
+
+export fn registry_transport_request(source, method, resource, timeout_ms, max_bytes, allow_insecure_http):
+    if not registry_transport_url_valid(source, allow_insecure_http):
+        return {"error": "registry_url_rejected", "ok": false, "status": "rejected"}
+    if method != "GET" and method != "POST":
+        return {"error": "registry_method_rejected", "ok": false, "status": "rejected"}
+    if trim(resource) == "" or timeout_ms <= 0 or max_bytes <= 0:
+        return {"error": "registry_request_limits_invalid", "ok": false, "status": "rejected"}
+    return {"allow_insecure_http": allow_insecure_http, "max_bytes": max_bytes, "method": method, "ok": true, "resource": resource, "scheme": registry_transport_scheme(source), "source": source, "status": "ready", "timeout_ms": timeout_ms}
+
+export fn registry_transport_response(status_code, content_type, body, max_bytes):
+    if status_code != 200:
+        return {"error": "registry_http_status", "ok": false, "status": "rejected"}
+    if not starts_with(trim(content_type), "application/json"):
+        return {"error": "registry_content_type_rejected", "ok": false, "status": "rejected"}
+    if max_bytes <= 0 or len(body) == 0 or len(body) > max_bytes:
+        return {"error": "registry_response_too_large_or_empty", "ok": false, "status": "rejected"}
+    return {"body": body, "content_type": content_type, "ok": true, "size": len(body), "status": "accepted"}
+
+export fn registry_cache_key(name, version, checksum):
+    return name + "@" + version + ":" + checksum
+
+export fn registry_cache_entry(package, body, actual_checksum):
+    let expected = package["checksum"]
+    return {"cache_key": registry_cache_key(package["name"], package["version"], expected), "checksum": expected, "name": package["name"], "size": len(body), "status": "verified", "version": package["version"]}
+
+export fn registry_cache_verify(package, actual_checksum):
+    if trim(actual_checksum) == "":
+        return {"error": "cache_checksum_missing", "ok": false, "status": "rejected"}
+    if actual_checksum != package["checksum"]:
+        return {"error": "cache_checksum_mismatch", "ok": false, "status": "rejected"}
+    return {"cache_key": registry_cache_key(package["name"], package["version"], package["checksum"]), "ok": true, "status": "verified"}
+
 export fn lock_entry(name, version, checksum, source):
     return {"checksum": checksum, "name": name, "source": source, "version": version}
 
-# B3 bounded registry package record. Resolution intentionally uses exact versions;
-# range solving and registry transport remain outside this candidate contract.
+# B3 bounded registry package record. Requirements may use exact, caret, tilde,
+# or comma-separated comparator clauses; network I/O remains native-owned.
 export fn registry_package(name, version, checksum, dependencies):
     return {"checksum": checksum, "dependencies": dependencies, "name": name, "source": "registry", "version": version}
 
@@ -70,35 +125,176 @@ export fn graph_find_resolved(resolved, name):
             return entry
     return none
 
-export fn graph_find_registry(registry, name, version):
+export fn semver_digits(value, index):
+    if index >= len(value):
+        return true
+    let character = substring(value, index, index + 1)
+    if not contains("0123456789", character):
+        return false
+    return semver_digits(value, index + 1)
+
+export fn semver_component(value):
+    if value == "" or not semver_digits(value, 0):
+        return none
+    return from_json(value)
+
+export fn semver_parse(raw):
+    let text = trim(raw)
+    if text == "":
+        return {"major": 0, "minor": 0, "ok": false, "patch": 0, "raw": raw}
+    if contains(text, "-"):
+        text = split(text, "-")[0]
+    if contains(text, "+"):
+        text = split(text, "+")[0]
+    let parts = split(text, ".")
+    if len(parts) == 0 or len(parts) > 3:
+        return {"major": 0, "minor": 0, "ok": false, "patch": 0, "raw": raw}
+    let major = semver_component(parts[0])
+    if major == none:
+        return {"major": 0, "minor": 0, "ok": false, "patch": 0, "raw": raw}
+    let minor = 0
+    let patch = 0
+    if len(parts) >= 2:
+        minor = semver_component(parts[1])
+        if minor == none:
+            return {"major": 0, "minor": 0, "ok": false, "patch": 0, "raw": raw}
+    if len(parts) == 3:
+        patch = semver_component(parts[2])
+        if patch == none:
+            return {"major": 0, "minor": 0, "ok": false, "patch": 0, "raw": raw}
+    return {"major": major, "minor": minor, "ok": true, "patch": patch, "raw": raw}
+
+export fn semver_compare_parts(left, right):
+    if left["major"] < right["major"]:
+        return -1
+    if left["major"] > right["major"]:
+        return 1
+    if left["minor"] < right["minor"]:
+        return -1
+    if left["minor"] > right["minor"]:
+        return 1
+    if left["patch"] < right["patch"]:
+        return -1
+    if left["patch"] > right["patch"]:
+        return 1
+    return 0
+
+export fn semver_compare_versions(left, right):
+    let left_value = semver_parse(left)
+    let right_value = semver_parse(right)
+    if not left_value["ok"] or not right_value["ok"]:
+        return {"ok": false, "order": 0}
+    return {"ok": true, "order": semver_compare_parts(left_value, right_value)}
+
+export fn semver_caret_upper(version):
+    if version["major"] > 0:
+        return {"major": version["major"] + 1, "minor": 0, "ok": true, "patch": 0, "raw": ""}
+    if version["minor"] > 0:
+        return {"major": 0, "minor": version["minor"] + 1, "ok": true, "patch": 0, "raw": ""}
+    return {"major": 0, "minor": 0, "ok": true, "patch": version["patch"] + 1, "raw": ""}
+
+export fn semver_tilde_upper(version):
+    return {"major": version["major"], "minor": version["minor"] + 1, "ok": true, "patch": 0, "raw": ""}
+
+export fn semver_clause_matches(version, token):
+    let clause = trim(token)
+    if clause == "":
+        return true
+    let operator = ""
+    let value_text = clause
+    if starts_with(clause, ">=") or starts_with(clause, "<="):
+        operator = substring(clause, 0, 2)
+        value_text = trim(substring(clause, 2, len(clause)))
+    else:
+        if starts_with(clause, ">") or starts_with(clause, "<") or starts_with(clause, "^") or starts_with(clause, "~"):
+            operator = substring(clause, 0, 1)
+            value_text = trim(substring(clause, 1, len(clause)))
+    let required = semver_parse(value_text)
+    if not required["ok"] or not version["ok"]:
+        return false
+    if operator == "^":
+        let upper = semver_caret_upper(required)
+        return semver_compare_parts(version, required) >= 0 and semver_compare_parts(version, upper) < 0
+    if operator == "~":
+        let upper = semver_tilde_upper(required)
+        return semver_compare_parts(version, required) >= 0 and semver_compare_parts(version, upper) < 0
+    let order = semver_compare_parts(version, required)
+    if operator == ">":
+        return order > 0
+    if operator == ">=":
+        return order >= 0
+    if operator == "<":
+        return order < 0
+    if operator == "<=":
+        return order <= 0
+    return order == 0
+
+export fn semver_requirement_valid(requirement):
+    if trim(requirement) == "":
+        return false
+    for raw_token in split(requirement, ","):
+        let token = trim(raw_token)
+        if token == "":
+            return false
+        let value_text = token
+        if starts_with(token, ">=") or starts_with(token, "<="):
+            value_text = trim(substring(token, 2, len(token)))
+        else:
+            if starts_with(token, ">") or starts_with(token, "<") or starts_with(token, "^") or starts_with(token, "~"):
+                value_text = trim(substring(token, 1, len(token)))
+        if not semver_parse(value_text)["ok"]:
+            return false
+    return true
+
+export fn semver_satisfies(version_text, requirement):
+    let version = semver_parse(version_text)
+    if not version["ok"] or not semver_requirement_valid(requirement):
+        return false
+    for token in split(requirement, ","):
+        if not semver_clause_matches(version, token):
+            return false
+    return true
+
+export fn graph_find_registry(registry, name, requirement):
+    let selected = none
     for entry in registry:
-        if entry["name"] == name and entry["version"] == version:
-            return entry
-    return none
+        if entry["name"] == name and semver_satisfies(entry["version"], requirement):
+            if selected == none:
+                selected = entry
+            else:
+                let comparison = semver_compare_versions(entry["version"], selected["version"])
+                if comparison["ok"] and comparison["order"] > 0:
+                    selected = entry
+    return selected
 
 export fn graph_error(errors, code, name, version, message):
     return append(errors, {"code": code, "message": message, "name": name, "version": version})
 
 export fn graph_resolve_node(required, registry, visiting, resolved, errors):
     let name = required["name"]
-    let version = required["version"]
+    let requirement = required["version"]
     let checksum = required["checksum"]
+    if not semver_requirement_valid(requirement):
+        return {"errors": graph_error(errors, "ZAP-PKG-VERSION-INVALID-001", name, requirement, "invalid version requirement '" + requirement + "' for '" + name + "'"), "resolved": resolved}
+    let existing = graph_find_resolved(resolved, name)
+    let package = graph_find_registry(registry, name, requirement)
+    if package == none:
+        if existing != none and not semver_satisfies(existing["version"], requirement):
+            return {"errors": graph_error(errors, "ZAP-PKG-VERSION-001", name, requirement, "version conflict for '" + name + "': selected " + existing["version"] + " does not satisfy " + requirement), "resolved": resolved}
+        return {"errors": graph_error(errors, "ZAP-PKG-MISSING-001", name, requirement, "missing registry package '" + name + "' satisfying " + requirement), "resolved": resolved}
+    let version = package["version"]
     let key = graph_package_key(name, version)
     if contains(visiting, key):
         return {"errors": graph_error(errors, "ZAP-PKG-CYCLE-001", name, version, "dependency cycle detected at " + key), "resolved": resolved}
-    let existing = graph_find_resolved(resolved, name)
     if existing != none:
-        if existing["version"] != version:
-            return {"errors": graph_error(errors, "ZAP-PKG-VERSION-001", name, version, "version conflict for '" + name + "': " + existing["version"] + " and " + version), "resolved": resolved}
-        if existing["checksum"] != checksum:
-            return {"errors": graph_error(errors, "ZAP-PKG-CHECKSUM-001", name, version, "checksum conflict for '" + name + "' version " + version), "resolved": resolved}
+        if not semver_satisfies(existing["version"], requirement):
+            return {"errors": graph_error(errors, "ZAP-PKG-VERSION-001", name, requirement, "version conflict for '" + name + "': selected " + existing["version"] + " does not satisfy " + requirement), "resolved": resolved}
+        if checksum != "" and existing["checksum"] != checksum:
+            return {"errors": graph_error(errors, "ZAP-PKG-CHECKSUM-001", name, requirement, "checksum conflict for '" + name + "' version " + existing["version"]), "resolved": resolved}
         return {"errors": errors, "resolved": resolved}
-    let package = graph_find_registry(registry, name, version)
-    if package == none:
-        return {"errors": graph_error(errors, "ZAP-PKG-MISSING-001", name, version, "missing registry package '" + name + "' version " + version), "resolved": resolved}
-    if package["checksum"] != checksum:
+    if checksum != "" and package["checksum"] != checksum:
         return {"errors": graph_error(errors, "ZAP-PKG-CHECKSUM-001", name, version, "checksum mismatch for '" + name + "' version " + version), "resolved": resolved}
-    let next_resolved = append(resolved, {"checksum": checksum, "name": name, "source": package["source"], "version": version})
+    let next_resolved = append(resolved, {"checksum": package["checksum"], "name": name, "source": package["source"], "version": version})
     let next_visiting = append(visiting, key)
     let next_errors = errors
     for child in package["dependencies"]:
