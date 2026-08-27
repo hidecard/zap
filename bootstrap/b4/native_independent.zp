@@ -6,6 +6,7 @@
 
 import "bootstrap/b1/parser.zp"
 import "bootstrap/b3/lower.zp"
+import "bootstrap/b4/ast_control.zp"
 
 export fn seed_is_digit(character):
     return contains("0123456789", character)
@@ -593,6 +594,12 @@ export fn seed_compile_source(source, source_name):
 
 export fn seed_compile_bytes(artifact):
     return json(artifact)
+
+export fn seed_compile_typed_ir(ir, source_name):
+    let lowered = lower_typed_ir(ir)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_typed_ir_slice"}
 
 export fn seed_compile_ast_source(source, source_name):
     let parsed = from_json(parse_general(source, source_name))

@@ -103,7 +103,11 @@ export fn rebase_statement_spans(node, line_delta):
             else_branch = {"statements": rebase_statement_spans_list(node["else_branch"]["statements"], line_delta)}
         return {"condition": node["condition"], "else_branch": else_branch, "kind": kind, "span": rebased_span, "then_branch": {"statements": rebase_statement_spans_list(node["then_branch"]["statements"], line_delta)}}
     if kind == "try_catch":
-        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "catch_body": {"statements": rebase_statement_spans_list(node["catch_body"]["statements"], line_delta)}, "kind": kind, "span": rebased_span}
+        let body = {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}
+        let catch_body = {"statements": rebase_statement_spans_list(node["catch_body"]["statements"], line_delta)}
+        if contains(json(node), "\"catch_binding\""):
+            return {"body": body, "catch_binding": node["catch_binding"], "catch_body": catch_body, "kind": kind, "span": rebased_span}
+        return {"body": body, "catch_body": catch_body, "kind": kind, "span": rebased_span}
     if kind == "for":
         return {"binding": node["binding"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "iterable": node["iterable"], "kind": kind, "span": rebased_span}
     if kind == "while":
@@ -927,7 +931,11 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
             else_branch = {"statements": rebase_class_layout_list(node["else_branch"]["statements"], line_delta, column_delta)}
         return {"condition": node["condition"], "else_branch": else_branch, "kind": kind, "span": rebased_span, "then_branch": {"statements": rebase_class_layout_list(node["then_branch"]["statements"], line_delta, column_delta)}}
     if kind == "try_catch":
-        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "catch_body": {"statements": rebase_class_layout_list(node["catch_body"]["statements"], line_delta, column_delta)}, "kind": kind, "span": rebased_span}
+        let body = {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}
+        let catch_body = {"statements": rebase_class_layout_list(node["catch_body"]["statements"], line_delta, column_delta)}
+        if contains(json(node), "\"catch_binding\""):
+            return {"body": body, "catch_binding": node["catch_binding"], "catch_body": catch_body, "kind": kind, "span": rebased_span}
+        return {"body": body, "catch_body": catch_body, "kind": kind, "span": rebased_span}
     if kind == "for":
         return {"binding": node["binding"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "iterable": node["iterable"], "kind": kind, "span": rebased_span}
     if kind == "while":
@@ -1224,6 +1232,19 @@ export fn nested_block_slice_walk(lines, index, base_indent, chunk):
             next_chunk = append(next_chunk, value)
     return nested_block_slice_walk(lines, index + 1, base_indent, next_chunk)
 
+export fn parse_catch_binding(header):
+    let value = trim(header)
+    if not starts_with(value, "catch"):
+        return none
+    if len(value) <= 5:
+        return none
+    let remainder = trim(substring(value, 5, len(value)))
+    if ends_with(remainder, ":"):
+        remainder = trim(substring(remainder, 0, len(remainder) - 1))
+    if remainder == "":
+        return none
+    return remainder
+
 export fn parse_block_from(lines, start_index, indent):
     let statements = []
     let cursor = {"index": start_index, "lines": lines}
@@ -1287,7 +1308,15 @@ export fn parse_block_from(lines, start_index, indent):
                                     let catch_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
                                     catch_body = {"statements": catch_nested["statements"]}
                                     next_index = catch_nested["next"]
-                            statements = append(statements, {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))})
+                            let catch_binding = none
+                            if nested["next"] < len(lines):
+                                let catch_header = lines[nested["next"]]
+                                if indentation_width(catch_header) == indent and starts_with(trim(catch_header), "catch"):
+                                    catch_binding = parse_catch_binding(catch_header)
+                            let try_node = {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))}
+                            if catch_binding != none:
+                                try_node = {"body": body, "catch_binding": catch_binding, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))}
+                            statements = append(statements, try_node)
                             cursor = {"index": next_index, "lines": lines}
                         else:
                             if starts_with(current, "for "):

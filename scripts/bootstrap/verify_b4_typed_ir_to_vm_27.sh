@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$ROOT_DIR"
+source "$HOME/.cargo/env"
+runner=$(mktemp "$ROOT_DIR/.zap-b4-typed-ir.XXXXXX.zp")
+out=$(mktemp)
+trap 'rm -f "$runner" "$out"' EXIT
+cat >"$runner" <<'ZP'
+import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b3/vm.zp"
+let typed = {"candidate_only": true, "ir": {"nodes": [{"kind": "say", "payload": {"kind": "literal", "literal_kind": "number", "value": 7}}]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": "typed-ir.zp"}
+let artifact = seed_compile_typed_ir(typed, "typed-ir.zp")
+let state = vm_run(artifact["instructions"])
+say artifact["status"]
+say artifact["native_independent"]
+say state["error"]
+say state["output"][0]
+ZP
+cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+python3 - "$out" <<'PY'
+import pathlib, sys
+lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
+if lines != ["compiled_typed_ir_slice", "false", "none", "7"]:
+    raise SystemExit(f"unexpected typed IR output: {lines!r}")
+PY
+printf 'B4 typed-IR to VM gate passed: legacy payload lowering and executable handoff\n'
