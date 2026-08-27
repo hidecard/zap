@@ -144,6 +144,13 @@ export fn vm_find_class(functions, name, index):
         return functions[index]
     return vm_find_class(functions, name, index + 1)
 
+export fn vm_find_trait(functions, name, index):
+    if index >= len(functions):
+        return none
+    if functions[index]["op"] == "trait_def" and functions[index]["name"] == name:
+        return functions[index]
+    return vm_find_trait(functions, name, index + 1)
+
 export fn vm_class_trait_names(class):
     let result = []
     if contains(json(class), "\"traits\""):
@@ -199,6 +206,10 @@ export fn vm_resolve_method_in_mro(functions, mro, name, index):
     return vm_resolve_method_in_mro(functions, mro, name, index + 1)
 
 export fn vm_resolve_method(functions, owner, name):
+    let trait = vm_find_trait(functions, owner, 0)
+    if trait != none:
+        let trait_method = vm_find_method_direct(functions, owner, name, 0)
+        return {"error": none, "method": trait_method, "owner": owner}
     let visiting = []
     let hierarchy = vm_class_mro(functions, owner, visiting)
     if hierarchy["error"] != none:
@@ -336,7 +347,7 @@ export fn vm_collect_functions(program, index, result):
     if index >= len(program):
         return result
     let instruction = program[index]
-    if instruction["op"] == "function_def" or instruction["op"] == "class_def":
+    if instruction["op"] == "function_def" or instruction["op"] == "class_def" or instruction["op"] == "trait_def":
         result = append(result, instruction)
     return vm_collect_functions(program, index + 1, result)
 
@@ -520,10 +531,12 @@ export fn vm_step(state, instruction):
             constructor = true
             constructor_instance = instruction["instance"]
         if owner != none:
-            let visiting = []
-            let hierarchy = vm_class_mro(advanced["functions"], owner, visiting)
-            if hierarchy["error"] != none:
-                return vm_fail(advanced, hierarchy["error"])
+            let owner_trait = vm_find_trait(advanced["functions"], owner, 0)
+            if owner_trait == none:
+                let visiting = []
+                let hierarchy = vm_class_mro(advanced["functions"], owner, visiting)
+                if hierarchy["error"] != none:
+                    return vm_fail(advanced, hierarchy["error"])
         let loaded = vm_load(arguments["state"], name)
         if loaded["error"] == none:
             let serialized = json(loaded["value"])

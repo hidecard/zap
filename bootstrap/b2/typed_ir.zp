@@ -303,16 +303,65 @@ export fn typed_ir_trait_declaration_node(statement):
             methods = append(methods, typed_ir_trait_method_node(statement["name"], method))
     return {"kind": "trait_declaration", "methods": methods, "name": statement["name"], "trait_kind": statement["kind"], "span": statement["span"]}
 
-export fn typed_ir_trait_class_node(statement):
+export fn typed_ir_class_has_method(statement, method_name):
+    for member in statement["body"]["statements"]:
+        if member["kind"] == "function" and member["name"] == method_name:
+            return true
+    return false
+
+export fn typed_ir_trait_statement(statements, name):
+    for statement in statements:
+        if (statement["kind"] == "trait" or statement["kind"] == "interface") and statement["name"] == name:
+            return statement
+    return none
+
+export fn typed_ir_class_selection_for(statement, method_name):
+    if not contains(json(statement), "\"trait_selections\""):
+        return none
+    for selection in statement["trait_selections"]:
+        if selection["as"] == method_name:
+            return selection
+    return none
+
+export fn typed_ir_trait_implementation_table(class_statement, trait_statement):
+    let rows = []
+    for method in trait_statement["body"]["statements"]:
+        if method["kind"] != "function":
+            continue
+        let required = false
+        if contains(json(method), "\"required\":true"):
+            required = true
+        let status = "trait_default"
+        if typed_ir_class_has_method(class_statement, method["name"]):
+            status = "class_implementation"
+        else:
+            if required:
+                status = "missing"
+        let selection = typed_ir_class_selection_for(class_statement, method["name"])
+        if selection != none:
+            if selection["trait"] == trait_statement["name"]:
+                status = "explicit_selection"
+        rows = append(rows, {"method": method["name"], "required": required, "status": status})
+    return rows
+
+export fn typed_ir_trait_class_node(statement, all_statements):
     let traits = []
     let interfaces = []
+    let implementation_table = []
     if contains(json(statement), "\"traits\""):
         traits = statement["traits"]
     if contains(json(statement), "\"interfaces\""):
         interfaces = statement["interfaces"]
+    let compositions = traits
+    for interface_name in interfaces:
+        compositions = append(compositions, interface_name)
+    for composition in compositions:
+        let trait_statement = typed_ir_trait_statement(all_statements, composition)
+        if trait_statement != none:
+            implementation_table = append(implementation_table, {"methods": typed_ir_trait_implementation_table(statement, trait_statement), "trait": composition})
     if len(traits) == 0 and len(interfaces) == 0:
         return none
-    return {"class": statement["name"], "interfaces": interfaces, "kind": "trait_conformance", "span": statement["span"], "traits": traits}
+    return {"class": statement["name"], "implementation_table": implementation_table, "interfaces": interfaces, "kind": "trait_conformance", "span": statement["span"], "traits": traits}
 
 export fn typed_ir_generic_bound_nodes(function, result):
     for parameter in function["type_params"]:
@@ -328,7 +377,7 @@ export fn typed_ir_trait_nodes(statements, result):
         if statement["kind"] == "trait" or statement["kind"] == "interface":
             nodes = append(nodes, typed_ir_trait_declaration_node(statement))
         if statement["kind"] == "class":
-            let conformance = typed_ir_trait_class_node(statement)
+            let conformance = typed_ir_trait_class_node(statement, statements)
             if conformance != none:
                 nodes = append(nodes, conformance)
             nodes = typed_ir_trait_nodes(statement["body"]["statements"], nodes)

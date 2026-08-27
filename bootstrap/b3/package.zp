@@ -20,6 +20,39 @@ export fn manifest_traits_compatible(manifest_value):
 export fn dependency(name, version, checksum):
     return {"checksum": checksum, "name": name, "version": version}
 
+export fn trait_dependency(name, version, checksum, required_traits):
+    return {"checksum": checksum, "name": name, "required_traits": required_traits, "version": version}
+
+export fn registry_trait_entry(name, version, checksum, provided_traits):
+    return {"checksum": checksum, "name": name, "provided_traits": provided_traits, "version": version}
+
+export fn dependency_traits_match(required, registry_entry):
+    if required["name"] != registry_entry["name"] or required["version"] != registry_entry["version"] or required["checksum"] != registry_entry["checksum"]:
+        return false
+    if not contains(json(required), "\"required_traits\""):
+        return true
+    if not contains(json(registry_entry), "\"provided_traits\""):
+        return false
+    for required_trait in required["required_traits"]:
+        let found = false
+        for provided_trait in registry_entry["provided_traits"]:
+            if required_trait == provided_trait:
+                found = true
+        if not found:
+            return false
+    return true
+
+export fn registry_lock_satisfies_trait_dependencies(manifest_value, registry_entries):
+    for required in manifest_value["dependencies"]:
+        if contains(json(required), "\"required_traits\""):
+            let found = false
+            for entry in registry_entries:
+                if dependency_traits_match(required, entry):
+                    found = true
+            if not found:
+                return false
+    return true
+
 export fn lock_entry(name, version, checksum, source):
     return {"checksum": checksum, "name": name, "source": source, "version": version}
 

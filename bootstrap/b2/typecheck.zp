@@ -2582,6 +2582,39 @@ export fn b2c_trait_conflict_errors(class_node, compositions, registry, source_n
                         seen_methods = append(seen_methods, method["name"])
     return errors
 
+export fn b2c_trait_implementation_rows(class_node, trait):
+    let rows = []
+    for method in trait["methods"]:
+        let status = "provided"
+        if b2c_trait_method_required(method):
+            status = "missing"
+        if b2c_class_has_method(class_node, method["name"]):
+            status = "class_override"
+        if b2c_class_has_trait_selection(class_node, method["name"]):
+            status = "explicit_selection"
+        rows = append(rows, {"method": method["name"], "required": b2c_trait_method_required(method), "status": status})
+    return rows
+
+export fn b2c_collect_trait_implementation_tables(statements, registry, result):
+    let tables = result
+    for statement in statements:
+        if statement["kind"] == "class":
+            let compositions = b2c_class_compositions(statement)
+            for composition in compositions:
+                let trait = b2c_trait_registry_find(registry, composition["name"])
+                if trait != none:
+                    tables = append(tables, {"class": statement["name"], "methods": b2c_trait_implementation_rows(statement, trait), "trait": composition["name"], "trait_kind": composition["kind"]})
+        if statement["kind"] == "if":
+            tables = b2c_collect_trait_implementation_tables(statement["then_branch"]["statements"], registry, tables)
+            if statement["else_branch"] != none:
+                tables = b2c_collect_trait_implementation_tables(statement["else_branch"]["statements"], registry, tables)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            tables = b2c_collect_trait_implementation_tables(statement["body"]["statements"], registry, tables)
+        if statement["kind"] == "try_catch":
+            tables = b2c_collect_trait_implementation_tables(statement["body"]["statements"], registry, tables)
+            tables = b2c_collect_trait_implementation_tables(statement["catch_body"]["statements"], registry, tables)
+    return tables
+
 export fn b2c_trait_class_errors(class_node, registry, source_name):
     let errors = []
     let compositions = b2c_class_compositions(class_node)
@@ -2616,18 +2649,19 @@ export fn b2c_check_program(ast, source_name):
     let trait_errors = b2c_collect_trait_class_errors(ast["statements"], registry, source_name, [])
     let functions = b2c_collect_functions(ast["statements"], [])
     let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
+    let implementation_tables = b2c_collect_trait_implementation_tables(ast["statements"], registry, [])
     let errors = b2c_append_errors(trait_errors, bound_errors)
     for function in functions:
         let function_state = b2c_check_function(function, functions, source_name)
         errors = b2c_append_errors(errors, function_state["errors"])
     let state = b2c_check_block(ast["statements"], b2c_state([], errors, true), functions, "any", source_name, "")
-    return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "ok": len(state["errors"]) == 0, "traits": registry}
+    return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "implementations": implementation_tables, "ok": len(state["errors"]) == 0, "traits": registry}
 
 # Canonical AST-owned checker entry point. The legacy check(source, source_name)
 # remains available until parser/diagnostic parity is accepted.
 export fn check_ast_complete(ast, source_name):
     let result = b2c_check_program(ast, source_name)
-    return {"diagnostics": result["diagnostics"], "kind": "zap.typecheck", "ok": result["ok"], "schema_version": 1, "source_name": source_name}
+    return {"diagnostics": result["diagnostics"], "implementations": result["implementations"], "kind": "zap.typecheck", "ok": result["ok"], "schema_version": 1, "source_name": source_name}
 
 export fn check(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
