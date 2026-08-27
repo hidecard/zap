@@ -3158,18 +3158,127 @@ export fn b2c_collect_trait_class_errors(statements, registry, source_name, erro
             result = b2c_collect_trait_class_errors(statement["catch_body"]["statements"], registry, source_name, result)
     return result
 
+export fn b2c_collect_type_aliases(statements, result):
+    let aliases = result
+    for statement in statements:
+        if statement["kind"] == "type_alias":
+            aliases = append(aliases, statement)
+        if statement["kind"] == "if":
+            aliases = b2c_collect_type_aliases(statement["then_branch"]["statements"], aliases)
+            if statement["else_branch"] != none:
+                aliases = b2c_collect_type_aliases(statement["else_branch"]["statements"], aliases)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
+        if statement["kind"] == "try_catch":
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
+            aliases = b2c_collect_type_aliases(statement["catch_body"]["statements"], aliases)
+        if statement["kind"] == "class":
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
+    return aliases
+
+export fn b2c_alias_base_name(type_name):
+    if contains(type_name, "<") and ends_with(type_name, ">"):
+        return trim(split(type_name, "<")[0])
+    return type_name
+
+export fn b2c_alias_find(aliases, name):
+    for alias in aliases:
+        if alias["name"] == name:
+            return alias
+    return none
+
+export fn b2c_alias_substitute(target, parameters, arguments, index):
+    if index >= len(parameters) or index >= len(arguments):
+        return target
+    let substituted = b2c_generic_type_substitute(target, parameters[index], arguments[index])
+    return b2c_alias_substitute(substituted, parameters, arguments, index + 1)
+
+export fn b2c_expand_alias_type(type_name, aliases, depth):
+    if type_name == none or depth > 8:
+        return type_name
+    let base_name = b2c_alias_base_name(type_name)
+    let alias = b2c_alias_find(aliases, base_name)
+    if alias != none:
+        let parameters = alias["type_params"]
+        let arguments = []
+        if contains(type_name, "<") and ends_with(type_name, ">"):
+            let inside = substring(type_name, len(base_name) + 1, len(type_name) - 1)
+            arguments = b2c_generic_type_arguments(inside)
+        if len(parameters) == 0 and len(arguments) == 0:
+            return b2c_expand_alias_type(alias["target"], aliases, depth + 1)
+        if len(parameters) == len(arguments):
+            let substituted = b2c_alias_substitute(alias["target"], parameters, arguments, 0)
+            return b2c_expand_alias_type(substituted, aliases, depth + 1)
+        return type_name
+    let parts = b2c_type_wrapper_parts(type_name)
+    if parts["wrapper"] == "list" or parts["wrapper"] == "option" or parts["wrapper"] == "result":
+        return parts["wrapper"] + "<" + b2c_expand_alias_type(parts["inner"], aliases, depth + 1) + ">"
+    if parts["wrapper"] == "map":
+        return "map<" + b2c_expand_alias_type(parts["key"], aliases, depth + 1) + "," + b2c_expand_alias_type(parts["value"], aliases, depth + 1) + ">"
+    return type_name
+
+export fn b2c_expand_alias_parameters(parameters, aliases, result):
+    for parameter in parameters:
+        let expanded = parameter
+        let annotation = parameter["annotation"]
+        if annotation != none:
+            expanded = {"annotation": b2c_expand_alias_type(annotation, aliases, 0), "default": parameter["default"], "name": parameter["name"]}
+        result = append(result, expanded)
+    return result
+
+export fn b2c_expand_alias_statements(statements, aliases, result):
+    for statement in statements:
+        let kind = statement["kind"]
+        if kind == "declaration":
+            result = append(result, {"annotation": b2c_expand_alias_type(statement["annotation"], aliases, 0), "exported": statement["exported"], "kind": kind, "name": statement["name"], "span": statement["span"], "value": statement["value"]})
+        else:
+            if kind == "function":
+                let constraints = []
+                if contains(json(statement), "\"constraints\":"):
+                    constraints = statement["constraints"]
+                let expanded_function = {"body": {"statements": b2c_expand_alias_statements(statement["body"]["statements"], aliases, [])}, "constraints": constraints, "exported": statement["exported"], "is_async": statement["is_async"], "kind": kind, "name": statement["name"], "params": b2c_expand_alias_parameters(statement["params"], aliases, []), "return_type": b2c_expand_alias_type(statement["return_type"], aliases, 0), "span": statement["span"], "type_params": statement["type_params"], "visibility": statement["visibility"]}
+                if contains(json(statement), "\"required\":true"):
+                    expanded_function = {"body": expanded_function["body"], "constraints": expanded_function["constraints"], "exported": expanded_function["exported"], "is_async": expanded_function["is_async"], "kind": kind, "name": statement["name"], "params": expanded_function["params"], "required": true, "return_type": expanded_function["return_type"], "span": statement["span"], "type_params": statement["type_params"], "visibility": statement["visibility"]}
+                result = append(result, expanded_function)
+            else:
+                if kind == "class":
+                    result = append(result, {"base": statement["base"], "body": {"statements": b2c_expand_alias_statements(statement["body"]["statements"], aliases, [])}, "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "trait_selections": statement["trait_selections"], "traits": statement["traits"]})
+                else:
+                    if kind == "if":
+                        let else_branch = none
+                        if statement["else_branch"] != none:
+                            else_branch = {"statements": b2c_expand_alias_statements(statement["else_branch"]["statements"], aliases, [])}
+                        result = append(result, {"condition": statement["condition"], "else_branch": else_branch, "kind": kind, "span": statement["span"], "then_branch": {"statements": b2c_expand_alias_statements(statement["then_branch"]["statements"], aliases, [])}})
+                    else:
+                        if kind == "while":
+                            result = append(result, {"body": {"statements": b2c_expand_alias_statements(statement["body"]["statements"], aliases, [])}, "condition": statement["condition"], "kind": kind, "span": statement["span"]})
+                        else:
+                            if kind == "for":
+                                result = append(result, {"binding": statement["binding"], "body": {"statements": b2c_expand_alias_statements(statement["body"]["statements"], aliases, [])}, "iterable": statement["iterable"], "kind": kind, "span": statement["span"]})
+                            else:
+                                if kind == "try_catch":
+                                    let expanded_try = {"body": {"statements": b2c_expand_alias_statements(statement["body"]["statements"], aliases, [])}, "catch_body": {"statements": b2c_expand_alias_statements(statement["catch_body"]["statements"], aliases, [])}, "kind": kind, "span": statement["span"]}
+                                    if contains(json(statement), "\"catch_binding\":"):
+                                        expanded_try = {"body": expanded_try["body"], "catch_binding": statement["catch_binding"], "catch_body": expanded_try["catch_body"], "kind": kind, "span": statement["span"]}
+                                    result = append(result, expanded_try)
+                                else:
+                                    result = append(result, statement)
+    return result
+
 export fn b2c_check_program(ast, source_name):
-    let registry = b2c_collect_trait_registry(ast["statements"], [])
-    let trait_errors = b2c_collect_trait_class_errors(ast["statements"], registry, source_name, [])
-    let classes = b2c_collect_classes(ast["statements"], [])
-    let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(ast["statements"], []), classes, registry, []), source_name)
+    let aliases = b2c_collect_type_aliases(ast["statements"], [])
+    let normalized_ast = {"statements": b2c_expand_alias_statements(ast["statements"], aliases, [])}
+    let registry = b2c_collect_trait_registry(normalized_ast["statements"], [])
+    let trait_errors = b2c_collect_trait_class_errors(normalized_ast["statements"], registry, source_name, [])
+    let classes = b2c_collect_classes(normalized_ast["statements"], [])
+    let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(normalized_ast["statements"], []), classes, registry, []), source_name)
     let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
-    let implementation_tables = b2c_collect_trait_implementation_tables(ast["statements"], registry, [])
+    let implementation_tables = b2c_collect_trait_implementation_tables(normalized_ast["statements"], registry, [])
     let errors = b2c_append_errors(trait_errors, bound_errors)
     for function in functions:
         let function_state = b2c_check_function(function, functions, source_name)
         errors = b2c_append_errors(errors, function_state["errors"])
-    let state = b2c_check_block(ast["statements"], b2c_state([], errors, true), functions, "any", source_name, "")
+    let state = b2c_check_block(normalized_ast["statements"], b2c_state([], errors, true), functions, "any", source_name, "")
     return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "implementations": implementation_tables, "ok": len(state["errors"]) == 0, "traits": registry}
 
 # Canonical AST-owned checker entry point. The legacy check(source, source_name)
