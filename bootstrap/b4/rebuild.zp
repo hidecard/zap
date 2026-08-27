@@ -42,6 +42,38 @@ export fn rebuild_manifest_bytes(manifest):
 export fn rebuild_bytes_reproducible(first, second):
     return rebuild_manifest_bytes(first) == rebuild_manifest_bytes(second)
 
+export fn rebuild_provenance_record(plan, stage, input_digest, output_digest):
+    return {"compiler_stage": plan["compiler_stage"], "input_digest": input_digest, "input_kind": stage["input_kind"], "output_digest": output_digest, "output_kind": stage["output_kind"], "seed": plan["seed"], "stage": stage["name"], "version": plan["version"]}
+
+export fn rebuild_provenance_record_valid(plan, stage, record, previous_output_digest):
+    if record["compiler_stage"] != plan["compiler_stage"] or record["seed"] != plan["seed"] or record["version"] != plan["version"]:
+        return false
+    if record["stage"] != stage["name"] or record["input_kind"] != stage["input_kind"] or record["output_kind"] != stage["output_kind"]:
+        return false
+    if trim(record["input_digest"]) == "" or trim(record["output_digest"]) == "":
+        return false
+    if previous_output_digest != "" and record["input_digest"] != previous_output_digest:
+        return false
+    return true
+
+export fn rebuild_provenance_chain_valid(plan, records):
+    if len(records) != len(plan["stages"]) or len(records) == 0:
+        return false
+    let previous_output_digest = ""
+    let index = 0
+    for record in records:
+        if index >= len(plan["stages"]):
+            return false
+        let stage = plan["stages"][index]
+        if not rebuild_provenance_record_valid(plan, stage, record, previous_output_digest):
+            return false
+        previous_output_digest = record["output_digest"]
+        index = index + 1
+    return true
+
+export fn rebuild_provenance_acceptance(plan, records):
+    return {"chain_valid": rebuild_provenance_chain_valid(plan, records), "native_independent": false, "records": len(records), "status": "contract_only"}
+
 export fn rebuild_owner_policy(stages):
     let zap_owned = true
     for stage in stages:

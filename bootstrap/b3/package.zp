@@ -107,6 +107,21 @@ export fn graph_resolve_node(required, registry, visiting, resolved, errors):
         next_errors = child_result["errors"]
     return {"errors": next_errors, "resolved": next_resolved}
 
+export fn graph_resolved_key(entry):
+    return graph_package_key(entry["name"], entry["version"])
+
+export fn graph_sort_resolved(resolved):
+    let keys = []
+    for entry in resolved:
+        keys = append(keys, graph_resolved_key(entry))
+    let sorted_keys = sort(keys)
+    let result = []
+    for key in sorted_keys:
+        for entry in resolved:
+            if graph_resolved_key(entry) == key:
+                result = append(result, entry)
+    return result
+
 export fn resolve_dependency_graph(requirements, registry):
     let resolved = []
     let errors = []
@@ -117,7 +132,7 @@ export fn resolve_dependency_graph(requirements, registry):
     let status = "resolved"
     if len(errors) > 0:
         status = "rejected"
-    return {"errors": errors, "ok": len(errors) == 0, "resolved": resolved, "status": status}
+    return {"errors": errors, "ok": len(errors) == 0, "resolved": graph_sort_resolved(resolved), "status": status}
 
 export fn resolved_graph_lockfile(manifest_value, graph_result):
     return lockfile(manifest_value, graph_result["resolved"])

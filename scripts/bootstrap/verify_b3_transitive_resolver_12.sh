@@ -25,7 +25,7 @@ let version = resolve_dependency_graph([dependency("root-a", "1.0.0", "root-a-su
 let checksum = resolve_dependency_graph([dependency("a", "1.0.0", "wrong-sum")], [a, b, c])
 let missing = resolve_dependency_graph([dependency("missing", "1.0.0", "missing-sum")], [])
 let repeat_one = resolve_dependency_graph([dependency("a", "1.0.0", "a-sum")], [a, b, c])
-let repeat_two = resolve_dependency_graph([dependency("a", "1.0.0", "a-sum")], [a, b, c])
+let repeat_two = resolve_dependency_graph([dependency("a", "1.0.0", "a-sum")], [c, b, a])
 let manifest_value = manifest("demo", "0.1.0", "main.zp", [dependency("a", "1.0.0", "a-sum")])
 let generated_lock = resolved_graph_lockfile(manifest_value, positive)
 say positive["ok"]
@@ -35,6 +35,9 @@ say positive["resolved"][0]["name"]
 say positive["resolved"][2]["name"]
 say shared_result["ok"]
 say len(shared_result["resolved"])
+say shared_result["resolved"][0]["name"]
+say shared_result["resolved"][1]["name"]
+say shared_result["resolved"][2]["name"]
 say cycle["ok"]
 say cycle["errors"][0]["code"]
 say version["ok"]
@@ -48,7 +51,7 @@ say lock_satisfies_manifest(generated_lock["manifest"], generated_lock["dependen
 ZP
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "true resolved 3 a c true 3 false ZAP-PKG-CYCLE-001 false ZAP-PKG-VERSION-001 false ZAP-PKG-CHECKSUM-001 false ZAP-PKG-MISSING-001 true true" ]]; then
+if [[ "${lines[*]}" != "true resolved 3 a c true 3 d e shared false ZAP-PKG-CYCLE-001 false ZAP-PKG-VERSION-001 false ZAP-PKG-CHECKSUM-001 false ZAP-PKG-MISSING-001 true true" ]]; then
   echo "unexpected transitive resolver output: ${lines[*]}" >&2
   exit 1
 fi
