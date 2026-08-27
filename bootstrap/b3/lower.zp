@@ -146,7 +146,10 @@ export fn patch_function(instructions, index, entry, end):
     let cursor = 0
     for instruction in instructions:
         if cursor == index:
-            patched = append(patched, {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "owner": instruction["owner"], "params": instruction["params"]})
+            let required = false
+            if contains(json(instruction), "\"required\":true"):
+                required = true
+            patched = append(patched, {"binding": instruction["binding"], "captures": instruction["captures"], "end": end, "entry": entry, "name": instruction["name"], "op": "function_def", "owner": instruction["owner"], "params": instruction["params"], "required": required})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -169,6 +172,11 @@ export fn lower_class_interfaces(node):
         return node["interfaces"]
     return []
 
+export fn lower_class_trait_selections(node):
+    if contains(json(node), "\"trait_selections\""):
+        return node["trait_selections"]
+    return []
+
 export fn patch_class(instructions, index, end):
     let patched = []
     let cursor = 0
@@ -177,7 +185,8 @@ export fn patch_class(instructions, index, end):
             let parents = lower_class_parents(instruction)
             let traits = lower_class_traits(instruction)
             let interfaces = lower_class_interfaces(instruction)
-            patched = append(patched, {"base": instruction["base"], "end": end, "interfaces": interfaces, "name": instruction["name"], "op": "class_def", "parents": parents, "traits": traits})
+            let trait_selections = lower_class_trait_selections(instruction)
+            patched = append(patched, {"base": instruction["base"], "end": end, "interfaces": interfaces, "name": instruction["name"], "op": "class_def", "parents": parents, "trait_selections": trait_selections, "traits": traits})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -193,7 +202,10 @@ export fn lower_function_node_owned(node, prefix, owner):
     let definition_index = len(prefix)
     let entry = definition_index + 1
     let params = lower_parameter_names(node["params"])
-    let with_definition = append(prefix, {"binding": none, "captures": [], "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": owner, "params": params})
+    let required = false
+    if contains(json(node), "\"required\":true"):
+        required = true
+    let with_definition = append(prefix, {"binding": none, "captures": [], "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": owner, "params": params, "required": required})
     let body = lower_ast_block_with_prefix(node["body"], with_definition)
     if body["error"] != none:
         return body
@@ -212,18 +224,42 @@ export fn lower_class_body(body, prefix, owner):
         if node["kind"] == "function":
             lowered = lower_function_node_owned(node, instructions, owner)
         else:
-            lowered = lower_ast_node_with_prefix(node, instructions)
+            if node["kind"] == "trait_use":
+                lowered = {"error": none, "instructions": instructions}
+            else:
+                lowered = lower_ast_node_with_prefix(node, instructions)
         if lowered["error"] != none:
             return lowered
         instructions = lowered["instructions"]
     return {"error": none, "instructions": instructions}
+
+export fn patch_trait(instructions, index, end):
+    let patched = []
+    let cursor = 0
+    for instruction in instructions:
+        if cursor == index:
+            patched = append(patched, {"end": end, "kind": instruction["kind"], "name": instruction["name"], "op": "trait_def"})
+        else:
+            patched = append(patched, instruction)
+        cursor = cursor + 1
+    return patched
+
+export fn lower_trait_node(node, prefix):
+    let trait_index = len(prefix)
+    let with_trait = append(prefix, {"end": 0, "kind": node["kind"], "name": node["name"], "op": "trait_def"})
+    let body = lower_class_body(node["body"], with_trait, node["name"])
+    if body["error"] != none:
+        return body
+    let combined = body["instructions"]
+    return {"error": none, "instructions": patch_trait(combined, trait_index, len(combined)), "next": len(combined)}
 
 export fn lower_class_node(node, prefix):
     let class_index = len(prefix)
     let parents = lower_class_parents(node)
     let traits = lower_class_traits(node)
     let interfaces = lower_class_interfaces(node)
-    let with_class = append(prefix, {"base": node["base"], "end": 0, "interfaces": interfaces, "name": node["name"], "op": "class_def", "parents": parents, "traits": traits})
+    let trait_selections = lower_class_trait_selections(node)
+    let with_class = append(prefix, {"base": node["base"], "end": 0, "interfaces": interfaces, "name": node["name"], "op": "class_def", "parents": parents, "trait_selections": trait_selections, "traits": traits})
     let body = lower_class_body(node["body"], with_class, node["name"])
     if body["error"] != none:
         return body
@@ -323,6 +359,8 @@ export fn lower_ast_node_with_prefix(node, prefix):
         return lower_function_node(node, prefix)
     if kind == "class":
         return lower_class_node(node, prefix)
+    if kind == "trait" or kind == "interface":
+        return lower_trait_node(node, prefix)
     let lowered = lower_ast_node(node)
     if lowered["error"] != none:
         return lowered
@@ -337,6 +375,8 @@ export fn lower_ast_node(node):
         return lower_function_node(node, [])
     if kind == "class":
         return lower_class_node(node, [])
+    if kind == "trait" or kind == "interface":
+        return lower_trait_node(node, [])
     if kind == "if":
         let condition = lower_expression(node["condition"])
         if condition["error"] != none:

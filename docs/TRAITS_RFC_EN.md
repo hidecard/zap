@@ -2,7 +2,7 @@
 
 **Verified baseline:** Zap v2.11.16
 
-**RFC status:** T1 contract-frozen bounded language contract. T2 canonical parser/AST and T3 checker-registry implementation are present; runtime dispatch, typed-IR integration, and production enablement remain separately gated.
+**RFC status:** T1 contract-frozen bounded language contract. T2 canonical parser/AST, T3 checker registry, T4 bounded typed-IR obligations/generic bounds, T5 bounded lowerer/VM dispatch, and T6 package metadata/LSP catalog integrations are present; production release enablement remains separately gated.
 **Verified baseline:** Zap v2.11.16
 **Decision target:** Treat this as a post-v2.11 additive feature proposal. It is not release-supported until parser, checker, typed-IR, lowerer, runtime, diagnostics, tooling, and compatibility gates pass.
 **Audience:** Language designers, runtime maintainers, package authors, and reviewers of future compatibility changes.
@@ -12,7 +12,7 @@
 
 This RFC proposes a composition-first design for reusable behavior in Zap. The proposal adds named behavioral contracts and explicit composition without replacing the current single-inheritance model in v2.2.0. It defines the conceptual model, surface syntax, method lookup, visibility, diagnostics, migration rules, dispatch choices, rejected alternatives, and compatibility boundaries required before implementation begins.
 
-> **T1 decision:** Keep `extends` as nominal class inheritance. Freeze the syntax, terminology, required/provided method contract, conflict rules, and diagnostic codes for `trait`, `interface`, `with`, and `implements`. The current milestone reaches only canonical parser/AST and static registry/conformance checking; evaluator/runtime dispatch is not enabled.
+> **T1–T6 decision:** Keep `extends` as nominal class inheritance. Freeze the contract for `trait`, `interface`, `with`, `implements`, and bounded `use Trait.method as name`. The implementation now covers canonical parser/AST, static registry, typed-IR nodes, canonical lowerer/VM dispatch, package metadata, and the LSP catalog. The full production evaluator/runtime contract is not enabled.
 
 ## 1. Problem statement
 
@@ -37,7 +37,7 @@ The proposal addresses composition as a separate design problem. It does not cla
 
 The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line is v2.4.0, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
 
-The T1–T3 milestone extends only the canonical parser/AST and checker contract; it does not change the B4 line compiler, VM runtime dispatch, or release feature flag:
+The T2–T6 milestone extends the canonical parser/AST, checker/typed-IR, bounded canonical lowerer/VM path, package metadata, and LSP catalog, but does not change the B4 `native_independent:false` boundary or release feature flag:
 
 ```zap
 class Animal:
@@ -49,7 +49,7 @@ class Dog extends Animal:
         return "woof"
 ```
 
-The example still means single inheritance. Under the T2 milestone, the canonical parser may represent `trait`, `interface`, `with`, and `implements` as AST metadata, while the B4 line compiler/runtime does not yet support them as executable features.
+The example still means single inheritance. Under the T2–T5 milestone, the canonical parser represents `trait`, `interface`, `with`, `implements`, and bounded `use Trait.method as name`; the canonical VM exercises provided-method dispatch. The B4 line compiler does not yet provide a full independent executable feature.
 
 ## 4. Terminology
 
@@ -281,7 +281,7 @@ Rejected by project policy. The parser and runtime must not gain broad language 
 
 ## 14. Implementation gates after approval
 
-This RFC is complete as a design milestone only when the following gates are satisfied before implementation begins:
+This RFC remains the implementation contract source of truth. T2–T6 work may land only within the bounded gates already evidenced below; runtime release enablement still requires the remaining gates.
 
 | Gate | Required evidence |
 |---|---|
@@ -297,13 +297,13 @@ This RFC is complete as a design milestone only when the following gates are sat
 | Platforms | Native Linux, Windows, and macOS behavior where the feature touches runtime state |
 | Release | Changelog, bilingual docs, version decision, and full quality gates |
 
-No implementation commit should be accepted by this RFC alone. A later implementation milestone must cite this document and update the specification ownership index.
+The T2–T6 parser, checker, typed-IR, canonical VM, package metadata, and LSP changes are not by themselves release enablement. T4+ milestones must cite this document and update the specification ownership index as each normative boundary becomes supported.
 
 ## 15. Explicit version decision
 
-**Decision for v2.2.0:** Traits, interfaces, composition syntax, new conflict-resolution syntax, and related parser/runtime behavior remain **deferred**. The v2.2.0 release may ship this RFC as a reviewed design record, but it must not advertise the proposed syntax as supported.
+**Decision for current post-v2.11 development:** The T1–T6 bounded subset is enabled in canonical parser/AST, B2 checker/typed-IR, canonical lowerer/VM, package metadata, and the LSP catalog. Full visibility semantics, generic conformance inference, production runtime contracts, and release-facing syntax remain **deferred**. `native_independent:false` and the B4 runtime boundary remain unchanged.
 
-**Future decision point:** A later release proposal may enable an additive subset only after this RFC is reviewed, the diagnostics and lookup rules are frozen, the bilingual contract is updated, and conformance fixtures pass on supported targets. Any change to existing inheritance semantics requires a separate compatibility and major-version decision.
+**Future release decision:** T4+ runtime/typed-IR work may become an additive release feature only after diagnostic parity, bilingual contract updates, conformance fixtures, package metadata, LSP behavior, and the supported-platform matrix all pass. Any change to existing inheritance semantics requires a separate compatibility and version decision.
 
 ## References
 

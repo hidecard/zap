@@ -439,6 +439,11 @@ fn completion_response(message: &Value, state: &LspState) -> Value {
         ("for", "Start a loop"),
         ("while", "Start a loop"),
         ("class", "Declare a class"),
+        ("trait", "Declare a reusable behavior contract"),
+        ("interface", "Declare a required-method contract"),
+        ("with", "Compose traits into a class"),
+        ("implements", "Declare interface conformance"),
+        ("use", "Select a trait-provided method explicitly"),
         ("module", "Declare a module"),
         ("import", "Import a module"),
         ("return", "Return a value from a function"),
@@ -638,6 +643,26 @@ fn async_builtin_hover(name: &str) -> Option<String> {
     })
 }
 
+fn trait_keyword_hover(name: &str) -> Option<String> {
+    match name {
+        "trait" => Some(
+            "trait: a named reusable behavior contract with required or provided methods"
+                .to_string(),
+        ),
+        "interface" => {
+            Some("interface: a required-method contract without provided method bodies".to_string())
+        }
+        "with" => Some("with: explicitly compose one or more traits into a class".to_string()),
+        "implements" => {
+            Some("implements: declare that a class satisfies an interface contract".to_string())
+        }
+        "use" => {
+            Some("use: explicitly select a trait-provided method to resolve a conflict".to_string())
+        }
+        _ => None,
+    }
+}
+
 fn is_valid_identifier(name: &str) -> bool {
     let mut characters = name.chars();
     let Some(first) = characters.next() else {
@@ -679,6 +704,11 @@ fn rename_keyword(name: &str) -> bool {
             | "for"
             | "while"
             | "class"
+            | "trait"
+            | "interface"
+            | "with"
+            | "implements"
+            | "use"
             | "module"
             | "import"
             | "return"
@@ -1117,7 +1147,9 @@ fn hover_response(message: &Value, state: &LspState) -> Value {
                 _ => None,
             })
     });
-    let description = description.or_else(|| async_builtin_hover(&word));
+    let description = description
+        .or_else(|| trait_keyword_hover(&word))
+        .or_else(|| async_builtin_hover(&word));
     let result = description
         .map(|value| json!({"contents": {"kind": "markdown", "value": value}}))
         .unwrap_or(Value::Null);
@@ -2019,8 +2051,29 @@ mod tests {
         }
         assert_eq!(
             labels.len(),
-            12 + crate::stdlib_catalog::PUBLIC_BUILTINS.len()
+            17 + crate::stdlib_catalog::PUBLIC_BUILTINS.len()
         );
+        for expected in ["trait", "interface", "with", "implements", "use"] {
+            assert!(
+                labels.contains(&expected),
+                "missing trait completion item: {expected}"
+            );
+        }
+    }
+
+    #[test]
+    fn trait_keywords_have_hover_descriptions() {
+        for (keyword, expected) in [
+            ("trait", "reusable behavior contract"),
+            ("interface", "required-method contract"),
+            ("with", "compose one or more traits"),
+            ("implements", "satisfies an interface contract"),
+            ("use", "select a trait-provided method"),
+        ] {
+            assert!(super::trait_keyword_hover(keyword)
+                .unwrap()
+                .contains(expected));
+        }
     }
 
     #[test]

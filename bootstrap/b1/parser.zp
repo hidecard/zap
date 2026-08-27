@@ -82,16 +82,21 @@ export fn rebase_statement_spans(node, line_delta):
         return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
     if kind == "trait" or kind == "interface":
         return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+    if kind == "trait_use":
+        return {"kind": kind, "method": node["method"], "name": node["name"], "span": rebased_span, "trait": node["trait"]}
     if kind == "class":
         let traits = []
         let interfaces = []
+        let trait_selections = []
         if contains(json(node), "\"traits\""):
             traits = node["traits"]
         if contains(json(node), "\"interfaces\""):
             interfaces = node["interfaces"]
+        if contains(json(node), "\"trait_selections\""):
+            trait_selections = node["trait_selections"]
         if contains(json(node), "\"parents\""):
-            return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span, "traits": traits}
-        return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "span": rebased_span, "traits": traits}
+            return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span, "trait_selections": trait_selections, "traits": traits}
+        return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "span": rebased_span, "trait_selections": trait_selections, "traits": traits}
     if kind == "if":
         let else_branch = none
         if node["else_branch"] != none:
@@ -580,8 +585,19 @@ export fn parse_type_alias(line, line_number, body_column):
         type_params = generic_parameters_from_name(raw_name)
     return {"kind": "type_alias", "name": name_text, "span": span(line_number, body_column, len(statement)), "target": trim(sides[1]), "type_params": type_params}
 
+export fn parse_trait_use(line, line_number, body_column):
+    let statement = trim(line)
+    let selection = trim(substring(statement, 4, len(statement)))
+    let parts = split(selection, " as ")
+    if len(parts) != 2 or not contains(parts[0], "."):
+        return {"kind": "trait_use", "span": span(line_number, body_column, len(statement)), "trait": "", "method": "", "name": ""}
+    let target_parts = split(trim(parts[0]), ".")
+    return {"kind": "trait_use", "span": span(line_number, body_column, len(statement)), "trait": trim(target_parts[0]), "method": trim(target_parts[1]), "name": trim(parts[1])}
+
 export fn parse_statement(line, line_number, body_column):
     let statement = trim(line)
+    if starts_with(statement, "use "):
+        return parse_trait_use(line, line_number, body_column)
     if starts_with(statement, "type ") and contains(statement, " = "):
         return parse_type_alias(line, line_number, body_column)
     if starts_with(statement, "let "):
@@ -903,6 +919,8 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
     if kind == "trait" or kind == "interface":
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+    if kind == "trait_use":
+        return {"kind": kind, "method": node["method"], "name": node["name"], "span": rebased_span, "trait": node["trait"]}
     if kind == "if":
         let else_branch = none
         if node["else_branch"] != none:
@@ -1007,6 +1025,14 @@ export fn parse_trait_arbitrary(lines, kind):
     let methods = parse_trait_body_walk(lines, 1, [], kind == "interface")
     return [{"body": {"statements": methods}, "kind": kind, "name": name, "span": span(1, 1, len(header))}]
 
+export fn parse_class_trait_selections(statements, result):
+    let selections = result
+    for statement in statements:
+        if statement["kind"] == "trait_use":
+            if statement["trait"] != "" and statement["method"] != "" and statement["name"] != "":
+                selections = append(selections, {"as": statement["name"], "method": statement["method"], "trait": statement["trait"]})
+    return selections
+
 export fn parse_class_arbitrary(lines):
     let header = trim(lines[0])
     let declaration = trim(substring(header, 6, len(header) - 1))
@@ -1066,7 +1092,8 @@ export fn parse_class_arbitrary(lines):
         if len(parents) > 0:
             base = parents[0]
     let class_statements = parse_class_body_walk(lines, 1, [])
-    return [{"base": base, "body": {"statements": class_statements}, "interfaces": interfaces, "kind": "class", "name": class_name, "parents": parents, "span": span(1, 1, len(header)), "traits": traits}]
+    let trait_selections = parse_class_trait_selections(class_statements, [])
+    return [{"base": base, "body": {"statements": class_statements}, "interfaces": interfaces, "kind": "class", "name": class_name, "parents": parents, "span": span(1, 1, len(header)), "trait_selections": trait_selections, "traits": traits}]
 
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}
@@ -1592,13 +1619,23 @@ export fn generic_header_diagnostic_at(lines, index, source_name):
     let seen = []
     for parameter in split(generic_text, ","):
         let candidate = trim(parameter)
-        if generic_header_seen(seen, candidate):
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "duplicate generic type parameter: " + candidate, "notes": [], "severity": "error", "source_name": source_name}
-        if contains(candidate, ":") or contains(candidate, " extends "):
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-        if candidate != "T" and candidate != "U" and candidate != "K" and candidate != "V":
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-        seen = append(seen, candidate)
+        let parameter_name = candidate
+        let bound = ""
+        if contains(candidate, ":"):
+            let bound_parts = split(candidate, ":")
+            if len(bound_parts) != 2:
+                return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic bound '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+            parameter_name = trim(bound_parts[0])
+            bound = trim(bound_parts[1])
+            if bound == "" or contains(bound, ":") or contains(bound, " ") or bound == "any" or bound == "number" or bound == "text" or bound == "bool" or bound == "none" or starts_with(bound, "list<") or starts_with(bound, "map<") or starts_with(bound, "option<") or starts_with(bound, "result<"):
+                return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if generic_header_seen(seen, parameter_name):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "duplicate generic type parameter: " + parameter_name, "notes": [], "severity": "error", "source_name": source_name}
+        if contains(candidate, " extends "):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if parameter_name != "T" and parameter_name != "U" and parameter_name != "K" and parameter_name != "V":
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        seen = append(seen, parameter_name)
     return none
 
 export fn generic_header_diagnostic(lines, source_name):

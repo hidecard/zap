@@ -1,6 +1,7 @@
 # B2 candidate typed-IR producer written in Zap.
-# This producer owns only the annotated declaration fixture and is not a
-# replacement for the native reference typed-IR emitter.
+# This producer owns bounded typed-IR fixtures and is not a replacement for the
+# native reference typed-IR emitter.
+import "bootstrap/b1/parser.zp"
 
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
@@ -289,6 +290,68 @@ export fn emit_arbitrary_program(source, source_name):
                     nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
     return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
+export fn typed_ir_trait_method_node(owner, method):
+    let required = false
+    if contains(json(method), "\"required\":true"):
+        required = true
+    return {"body": method["body"], "kind": "trait_method", "name": method["name"], "owner": owner, "params": method["params"], "required": required, "return_type": method["return_type"], "span": method["span"]}
+
+export fn typed_ir_trait_declaration_node(statement):
+    let methods = []
+    for method in statement["body"]["statements"]:
+        if method["kind"] == "function":
+            methods = append(methods, typed_ir_trait_method_node(statement["name"], method))
+    return {"kind": "trait_declaration", "methods": methods, "name": statement["name"], "trait_kind": statement["kind"], "span": statement["span"]}
+
+export fn typed_ir_trait_class_node(statement):
+    let traits = []
+    let interfaces = []
+    if contains(json(statement), "\"traits\""):
+        traits = statement["traits"]
+    if contains(json(statement), "\"interfaces\""):
+        interfaces = statement["interfaces"]
+    if len(traits) == 0 and len(interfaces) == 0:
+        return none
+    return {"class": statement["name"], "interfaces": interfaces, "kind": "trait_conformance", "span": statement["span"], "traits": traits}
+
+export fn typed_ir_generic_bound_nodes(function, result):
+    for parameter in function["type_params"]:
+        if contains(parameter, ":"):
+            let parts = split(parameter, ":")
+            if len(parts) == 2:
+                result = append(result, {"kind": "generic_bound", "parameter": trim(parts[0]), "span": function["span"], "trait": trim(parts[1])})
+    return result
+
+export fn typed_ir_trait_nodes(statements, result):
+    let nodes = result
+    for statement in statements:
+        if statement["kind"] == "trait" or statement["kind"] == "interface":
+            nodes = append(nodes, typed_ir_trait_declaration_node(statement))
+        if statement["kind"] == "class":
+            let conformance = typed_ir_trait_class_node(statement)
+            if conformance != none:
+                nodes = append(nodes, conformance)
+            nodes = typed_ir_trait_nodes(statement["body"]["statements"], nodes)
+        if statement["kind"] == "function":
+            nodes = typed_ir_generic_bound_nodes(statement, nodes)
+        if statement["kind"] == "if":
+            nodes = typed_ir_trait_nodes(statement["then_branch"]["statements"], nodes)
+            if statement["else_branch"] != none:
+                nodes = typed_ir_trait_nodes(statement["else_branch"]["statements"], nodes)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            nodes = typed_ir_trait_nodes(statement["body"]["statements"], nodes)
+        if statement["kind"] == "try_catch":
+            nodes = typed_ir_trait_nodes(statement["body"]["statements"], nodes)
+            nodes = typed_ir_trait_nodes(statement["catch_body"]["statements"], nodes)
+    return nodes
+
+export fn emit_trait_typed_ir(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return json({"candidate_only": true, "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name})
+    let nodes = typed_ir_trait_nodes(parsed["ast"]["statements"], [])
+    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name, "trait_obligations": true})
+
 export fn emit_declarations(source, source_name):
     let lines = split(source, "\n")
     let nodes = []
@@ -313,6 +376,8 @@ export fn emit(source, source_name):
     if starts_with(trim(source), "if ") or starts_with(trim(source), "while ") or starts_with(trim(source), "for ") or starts_with(trim(source), "return") or starts_with(trim(source), "say ") or starts_with(trim(source), "raise ") or starts_with(trim(source), "import ") or starts_with(trim(source), "module ") or trim(source) == "try:" or starts_with(trim(source), "catch"):
 
         return emit_arbitrary_program(source, source_name)
+    if starts_with(trim(source), "trait ") or starts_with(trim(source), "interface ") or contains(source, " with ") or contains(source, " implements "):
+        return emit_trait_typed_ir(source, source_name)
     if starts_with(trim(source), "type "):
         return emit_generic_type_aliases(source, source_name)
     if source == "let first: number = 1\nlet label: text = \"zap\"\n":

@@ -2438,7 +2438,28 @@ export fn b2c_collect_functions(statements, functions):
         if statement["kind"] == "try_catch":
             result = b2c_collect_functions(statement["body"]["statements"], result)
             result = b2c_collect_functions(statement["catch_body"]["statements"], result)
+        if statement["kind"] == "class":
+            result = b2c_collect_functions(statement["body"]["statements"], result)
     return result
+
+export fn b2c_generic_bound_errors(function, registry, source_name):
+    let errors = []
+    for parameter in function["type_params"]:
+        if contains(parameter, ":"):
+            let parts = split(parameter, ":")
+            if len(parts) == 2:
+                let parameter_name = trim(parts[0])
+                let bound = trim(parts[1])
+                let target = b2c_trait_registry_find(registry, bound)
+                if target == none:
+                    errors = b2c_append_error_unique(errors, b2c_error(source_name, function, "ZAP-TRAIT-003", "unknown trait bound '" + bound + "' for generic parameter '" + parameter_name + "'"))
+    return errors
+
+export fn b2c_generic_bound_errors_all(functions, registry, source_name):
+    let errors = []
+    for function in functions:
+        errors = b2c_append_errors(errors, b2c_generic_bound_errors(function, registry, source_name))
+    return errors
 
 export fn b2c_check_function(function, functions, source_name):
     let environment = []
@@ -2510,6 +2531,27 @@ export fn b2c_class_has_method(class_node, name):
             return true
     return false
 
+export fn b2c_class_has_trait_selection(class_node, name):
+    if not contains(json(class_node), "\"trait_selections\""):
+        return false
+    for selection in class_node["trait_selections"]:
+        if selection["as"] == name:
+            return true
+    return false
+
+export fn b2c_trait_selection_errors(class_node, composition, trait, source_name, errors):
+    if not contains(json(class_node), "\"trait_selections\""):
+        return errors
+    for selection in class_node["trait_selections"]:
+        if selection["trait"] == composition["name"]:
+            valid_method = false
+            for method in trait["methods"]:
+                if method["name"] == selection["method"] and not b2c_trait_method_required(method):
+                    valid_method = true
+            if not valid_method:
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-005", "invalid trait selection '" + selection["trait"] + "." + selection["method"] + "'"))
+    return errors
+
 export fn b2c_trait_provider_count(compositions, registry, method_name):
     let count = 0
     for composition in compositions:
@@ -2533,7 +2575,7 @@ export fn b2c_trait_conflict_errors(class_node, compositions, registry, source_n
         let trait = b2c_trait_registry_find(registry, composition["name"])
         if trait != none:
             for method in trait["methods"]:
-                if not b2c_trait_method_required(method) and not b2c_class_has_method(class_node, method["name"]):
+                if not b2c_trait_method_required(method) and not b2c_class_has_method(class_node, method["name"]) and not b2c_class_has_trait_selection(class_node, method["name"]):
                     if b2c_list_contains(seen_methods, method["name"]):
                         errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-002", "class '" + class_node["name"] + "' has conflicting provided method '" + method["name"] + "'"))
                     else:
@@ -2549,6 +2591,7 @@ export fn b2c_trait_class_errors(class_node, registry, source_name):
             errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-003", "unknown " + composition["kind"] + " '" + composition["name"] + "'"))
         else:
             errors = b2c_trait_required_errors(class_node, composition, trait, source_name, errors)
+            errors = b2c_trait_selection_errors(class_node, composition, trait, source_name, errors)
     errors = b2c_trait_conflict_errors(class_node, compositions, registry, source_name, errors)
     return errors
 
@@ -2572,7 +2615,8 @@ export fn b2c_check_program(ast, source_name):
     let registry = b2c_collect_trait_registry(ast["statements"], [])
     let trait_errors = b2c_collect_trait_class_errors(ast["statements"], registry, source_name, [])
     let functions = b2c_collect_functions(ast["statements"], [])
-    let errors = trait_errors
+    let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
+    let errors = b2c_append_errors(trait_errors, bound_errors)
     for function in functions:
         let function_state = b2c_check_function(function, functions, source_name)
         errors = b2c_append_errors(errors, function_state["errors"])

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$ROOT_DIR"
+source "$HOME/.cargo/env"
+runner=$(mktemp "$ROOT_DIR/.zap-b4-traits.XXXXXX.zp")
+out=$(mktemp)
+trap 'rm -f "$runner" "$out"' EXIT
+cat >"$runner" <<'EOF'
+import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b3/vm.zp"
+let provided = seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait-render\"\nclass Report with Printable:\n    fn name(self) -> text:\n        return \"report\"\nlet item = Report()\nsay item.render()", "provided.zp")
+let selected = seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    use JsonView.render as render\nlet item = Report()\nsay item.render()", "selected.zp")
+let conflict = seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    fn name(self):\n        return \"report\"\nlet item = Report()\nsay item.render()", "conflict.zp")
+let provided_state = vm_run(provided["instructions"])
+let selected_state = vm_run(selected["instructions"])
+let conflict_state = vm_run(conflict["instructions"])
+say provided["status"]
+say provided_state["error"]
+say provided_state["output"][0]
+say selected_state["error"]
+say selected_state["output"][0]
+say conflict_state["error"]
+EOF
+cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+python3 - "$out" <<'PY'
+import pathlib, sys
+lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
+if lines != ["compiled_ast_slice", "none", "trait-render", "none", "json", "trait_conflict:Report:render"]:
+    raise SystemExit(f"unexpected trait VM output: {lines!r}")
+PY
+printf 'B4 trait VM gate passed: provided dispatch, explicit selection, and deterministic conflict\n'

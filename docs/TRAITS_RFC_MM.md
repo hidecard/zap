@@ -2,7 +2,7 @@
 
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16
 
-**RFC အခြေအနေ:** T1 contract freeze ပြီးစီးထားသော bounded language contract ဖြစ်သည်။ T2 canonical parser/AST နှင့် T3 checker registry implementation ရှိပြီး runtime dispatch၊ typed-IR နှင့် production enablement များကို သီးခြား gate အဖြစ် ဆက်လက်ထားသည်။
+**RFC အခြေအနေ:** T1 contract freeze ပြီးစီးထားသော bounded language contract ဖြစ်သည်။ T2 canonical parser/AST၊ T3 checker registry၊ T4 bounded typed-IR obligations/generic bounds၊ T5 bounded lowerer/VM dispatch နှင့် T6 package metadata/LSP catalog implementation များ ရှိပြီး production release enablement ကို သီးခြား gate အဖြစ် ဆက်လက်ထားသည်။
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16
 **ဆုံးဖြတ်မည့် version:** Post-v2.11 additive feature proposal အဖြစ်သာ review လုပ်မည်။ Release-supported feature ဟု မကြေညာမီ parser၊ checker၊ typed-IR၊ lowerer၊ runtime၊ diagnostics၊ tooling နှင့် compatibility gates အားလုံး pass ရမည်။
 **ဖတ်ရှုသင့်သူများ:** Language designer၊ runtime maintainer၊ package author နှင့် အနာဂတ် compatibility change reviewer များ။
@@ -12,7 +12,7 @@
 
 ဤ RFC သည် Zap တွင် reusable behavior များကို composition-first ပုံစံဖြင့် ဒီဇိုင်းဆွဲရန် အဆိုပြုချက်ဖြစ်သည်။ အဆိုပြုချက်သည် named behavioral contract များနှင့် explicit composition ကို ထည့်သွင်းစဉ်းစားသော်လည်း v2.4.0 တွင် လက်ရှိ single-inheritance model ကို မဖယ်ရှားပါ။ Implementation မစမီ conceptual model၊ surface syntax၊ method lookup၊ visibility၊ diagnostic၊ migration rule၊ dispatch choice၊ rejected alternative နှင့် compatibility boundary များကို သတ်မှတ်ထားရန် ရည်ရွယ်သည်။
 
-> **T1 ဆုံးဖြတ်ချက်:** `extends` ကို nominal class inheritance အဖြစ် ဆက်လက်ထားရှိမည်။ `trait`၊ `interface`၊ `with` နှင့် `implements` တို့၏ syntax၊ terminology၊ required/provided method contract၊ conflict rule နှင့် diagnostic code များကို freeze လုပ်ထားသည်။ လက်ရှိ milestone သည် canonical parser/AST နှင့် static registry/conformance checking အထိသာ ဖြစ်ပြီး evaluator/runtime dispatch ကို မဖွင့်သေးပါ။
+> **T1–T6 ဆုံးဖြတ်ချက်:** `extends` ကို nominal class inheritance အဖြစ် ဆက်လက်ထားရှိမည်။ `trait`၊ `interface`၊ `with`၊ `implements` နှင့် bounded `use Trait.method as name` တို့၏ contract ကို freeze လုပ်ထားပြီး canonical parser/AST၊ static registry၊ typed-IR nodes၊ canonical lowerer/VM dispatch၊ package metadata နှင့် LSP catalog အထိ implementation ရှိသည်။ Full production evaluator/runtime contract မဖွင့်သေးပါ။
 
 ## ၁။ ပြဿနာသတ်မှတ်ချက်
 

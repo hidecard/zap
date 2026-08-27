@@ -3,6 +3,20 @@
 export fn manifest(name, version, main, dependencies):
     return {"dependencies": dependencies, "main": main, "name": name, "version": version}
 
+export fn trait_feature_metadata():
+    return {"canonical_parser": true, "checker_registry": true, "release_supported": false, "runtime_dispatch": false, "schema_version": 1}
+
+export fn manifest_with_traits(name, version, main, dependencies):
+    return {"dependencies": dependencies, "features": {"traits": trait_feature_metadata()}, "main": main, "name": name, "version": version}
+
+export fn manifest_traits_compatible(manifest_value):
+    if not contains(json(manifest_value), "\"features\""):
+        return true
+    if not contains(json(manifest_value["features"]), "\"traits\""):
+        return true
+    let feature = manifest_value["features"]["traits"]
+    return feature["canonical_parser"] and feature["checker_registry"] and not feature["release_supported"] and not feature["runtime_dispatch"]
+
 export fn dependency(name, version, checksum):
     return {"checksum": checksum, "name": name, "version": version}
 
