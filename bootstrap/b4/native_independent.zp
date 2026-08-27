@@ -9,6 +9,7 @@ import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b4/ast_control.zp"
 import "bootstrap/b3/vm.zp"
+import "bootstrap/b3/package.zp"
 
 export fn seed_is_digit(character):
     return contains("0123456789", character)
@@ -734,3 +735,15 @@ export fn seed_supported_subset_rebuild(sources, source_names):
         if result["status"] != "candidate_pipeline_executed":
             all_successful = false
     return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_supported_subset_rebuild"}
+
+export fn seed_build_package_owned(package_name, package_version, main, requirements, registry, source, source_name):
+    let manifest_value = manifest(package_name, package_version, main, requirements)
+    let graph = resolve_dependency_graph(requirements, registry)
+    if not graph["ok"]:
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
+    let pipeline = seed_execute_owned_pipeline(source, source_name)
+    if pipeline["status"] != "candidate_pipeline_executed":
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": [{"code": "ZAP-BUILD-001", "message": pipeline["error"]}], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
+    let artifact_bytes = json(pipeline["artifacts"])
+    let artifact_digest = seed_pipeline_digest("package_artifact", artifact_bytes)
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": pipeline["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "candidate_package_build_executed"}
