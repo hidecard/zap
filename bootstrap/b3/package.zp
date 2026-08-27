@@ -56,6 +56,72 @@ export fn registry_lock_satisfies_trait_dependencies(manifest_value, registry_en
 export fn lock_entry(name, version, checksum, source):
     return {"checksum": checksum, "name": name, "source": source, "version": version}
 
+# B3 bounded registry package record. Resolution intentionally uses exact versions;
+# range solving and registry transport remain outside this candidate contract.
+export fn registry_package(name, version, checksum, dependencies):
+    return {"checksum": checksum, "dependencies": dependencies, "name": name, "source": "registry", "version": version}
+
+export fn graph_package_key(name, version):
+    return name + "@" + version
+
+export fn graph_find_resolved(resolved, name):
+    for entry in resolved:
+        if entry["name"] == name:
+            return entry
+    return none
+
+export fn graph_find_registry(registry, name, version):
+    for entry in registry:
+        if entry["name"] == name and entry["version"] == version:
+            return entry
+    return none
+
+export fn graph_error(errors, code, name, version, message):
+    return append(errors, {"code": code, "message": message, "name": name, "version": version})
+
+export fn graph_resolve_node(required, registry, visiting, resolved, errors):
+    let name = required["name"]
+    let version = required["version"]
+    let checksum = required["checksum"]
+    let key = graph_package_key(name, version)
+    if contains(visiting, key):
+        return {"errors": graph_error(errors, "ZAP-PKG-CYCLE-001", name, version, "dependency cycle detected at " + key), "resolved": resolved}
+    let existing = graph_find_resolved(resolved, name)
+    if existing != none:
+        if existing["version"] != version:
+            return {"errors": graph_error(errors, "ZAP-PKG-VERSION-001", name, version, "version conflict for '" + name + "': " + existing["version"] + " and " + version), "resolved": resolved}
+        if existing["checksum"] != checksum:
+            return {"errors": graph_error(errors, "ZAP-PKG-CHECKSUM-001", name, version, "checksum conflict for '" + name + "' version " + version), "resolved": resolved}
+        return {"errors": errors, "resolved": resolved}
+    let package = graph_find_registry(registry, name, version)
+    if package == none:
+        return {"errors": graph_error(errors, "ZAP-PKG-MISSING-001", name, version, "missing registry package '" + name + "' version " + version), "resolved": resolved}
+    if package["checksum"] != checksum:
+        return {"errors": graph_error(errors, "ZAP-PKG-CHECKSUM-001", name, version, "checksum mismatch for '" + name + "' version " + version), "resolved": resolved}
+    let next_resolved = append(resolved, {"checksum": checksum, "name": name, "source": package["source"], "version": version})
+    let next_visiting = append(visiting, key)
+    let next_errors = errors
+    for child in package["dependencies"]:
+        let child_result = graph_resolve_node(child, registry, next_visiting, next_resolved, next_errors)
+        next_resolved = child_result["resolved"]
+        next_errors = child_result["errors"]
+    return {"errors": next_errors, "resolved": next_resolved}
+
+export fn resolve_dependency_graph(requirements, registry):
+    let resolved = []
+    let errors = []
+    for required in requirements:
+        let result = graph_resolve_node(required, registry, [], resolved, errors)
+        resolved = result["resolved"]
+        errors = result["errors"]
+    let status = "resolved"
+    if len(errors) > 0:
+        status = "rejected"
+    return {"errors": errors, "ok": len(errors) == 0, "resolved": resolved, "status": status}
+
+export fn resolved_graph_lockfile(manifest_value, graph_result):
+    return lockfile(manifest_value, graph_result["resolved"])
+
 export fn lockfile(manifest_value, entries):
     return {"dependencies": entries, "manifest": manifest_value, "schema_version": 1}
 
@@ -99,7 +165,7 @@ export fn lock_satisfies_manifest(manifest_value, entries):
         return false
     if not lock_entries_unique(entries):
         return false
-    if len(manifest_value["dependencies"]) != len(entries):
+    if len(manifest_value["dependencies"]) > len(entries):
         return false
     for required in manifest_value["dependencies"]:
         let found = false
