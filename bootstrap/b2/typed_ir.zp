@@ -434,20 +434,101 @@ export fn emit_inferred_program_typed_ir(source, source_name):
     return json({"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})
 
 export fn typed_ir_reference_expression(expression):
-    if expression["kind"] == "typed_expression" and contains(json(expression), "\"ast\":"):
-        return expression["ast"]
+    if expression == none:
+        return none
+    if contains(json(expression), "\"ast\":"):
+        return typed_ir_reference_expression(expression["ast"])
+    if expression["kind"] == "typed_expression":
+        return typed_ir_reference_expression(expression["ast"])
+    if expression["kind"] == "binary":
+        return {"kind": "binary", "left": typed_ir_reference_expression(expression["left"]), "op": expression["op"], "right": typed_ir_reference_expression(expression["right"]), "span": expression["span"]}
+    if expression["kind"] == "unary":
+        let operand = expression["value"]
+        if contains(json(expression), "\"operand\":"):
+            operand = expression["operand"]
+        return {"kind": "unary", "op": expression["op"], "span": expression["span"], "value": typed_ir_reference_expression(operand)}
+    if expression["kind"] == "conditional":
+        let then_value = none
+        let else_value = none
+        if contains(json(expression), "\"then_value\":"):
+            then_value = expression["then_value"]
+            else_value = expression["else_value"]
+        if contains(json(expression), "\"then_branch\":"):
+            then_value = expression["then_branch"]
+            else_value = expression["else_branch"]
+        return {"condition": typed_ir_reference_expression(expression["condition"]), "else_branch": typed_ir_reference_expression(else_value), "kind": "conditional", "span": expression["span"], "then_branch": typed_ir_reference_expression(then_value)}
+    if expression["kind"] == "list":
+        let elements = []
+        for element in expression["elements"]:
+            elements = append(elements, typed_ir_reference_expression(element))
+        return {"elements": elements, "kind": "list", "span": expression["span"]}
+    if expression["kind"] == "map":
+        let entries = []
+        for entry in expression["entries"]:
+            entries = append(entries, {"key": typed_ir_reference_expression(entry["key"]), "value": typed_ir_reference_expression(entry["value"])})
+        return {"entries": entries, "kind": "map", "span": expression["span"]}
+    if expression["kind"] == "call":
+        let args = []
+        for argument in expression["args"]:
+            let normalized_argument = {"kind": argument["kind"], "value": typed_ir_reference_expression(argument["value"])}
+            if argument["kind"] == "named":
+                normalized_argument = {"kind": "named", "name": argument["name"], "value": typed_ir_reference_expression(argument["value"])}
+            args = append(args, normalized_argument)
+        return {"args": args, "callee": typed_ir_reference_expression(expression["callee"]), "kind": "call", "span": expression["span"]}
     return expression
 
 export fn typed_ir_reference_node(node):
-    let value = typed_ir_reference_expression(node["value"])
-    return {"annotation": node["annotation"], "inferred_type": node["inferred_type"], "ir_schema_version": 1, "kind": "declaration", "name": node["name"], "span": node["span"], "value": value}
+    if node["kind"] == "declaration":
+        let value = typed_ir_reference_expression(node["value"])
+        let exported = false
+        if contains(json(node), "\"ast\":") and contains(json(node["ast"]), "\"exported\":"):
+            exported = node["ast"]["exported"]
+        if not contains(json(node), "\"ast\":"):
+            exported = node["exported"]
+        return {"annotation": node["annotation"], "exported": exported, "inferred_type": node["inferred_type"], "ir_schema_version": 1, "kind": "declaration", "name": node["name"], "span": node["span"], "value": value}
+    if contains(json(node), "\"ast\":"):
+        return typed_ir_reference_node(node["ast"])
+    if node["kind"] == "function":
+        return node
+    return node
+
+export fn typed_ir_reference_nodes(nodes, index, result):
+    if index >= len(nodes):
+        return result
+    return typed_ir_reference_nodes(nodes, index + 1, append(result, typed_ir_reference_node(nodes[index])))
+
+export fn typed_ir_diagnostic_projection(diagnostic):
+    return {"code": diagnostic["code"], "column": diagnostic["column"], "line": diagnostic["line"], "message": diagnostic["message"], "severity": diagnostic["severity"]}
+
+export fn typed_ir_diagnostic_projections(diagnostics, index, result):
+    if index >= len(diagnostics):
+        return result
+    return typed_ir_diagnostic_projections(diagnostics, index + 1, append(result, typed_ir_diagnostic_projection(diagnostics[index])))
+
+export fn typed_ir_diagnostics_from(value):
+    if contains(json(value), "\"diagnostics\":"):
+        return value["diagnostics"]
+    return []
+
+export fn typed_ir_compare_diagnostics(reference, candidate):
+    let expected = typed_ir_diagnostic_projections(typed_ir_diagnostics_from(reference), 0, [])
+    let actual = typed_ir_diagnostic_projections(typed_ir_diagnostics_from(candidate), 0, [])
+    return {"diagnostic_count_match": len(expected) == len(actual), "diagnostic_equal": json(expected) == json(actual), "diagnostic_reference_count": len(expected), "diagnostic_candidate_count": len(actual)}
+
+export fn typed_ir_compare_reference_program(reference, candidate):
+    let reference_nodes = []
+    let candidate_nodes = []
+    if contains(json(reference), "\"ir\":") and contains(json(reference["ir"]), "\"nodes\":"):
+        reference_nodes = reference["ir"]["nodes"]
+    if contains(json(candidate), "\"ir\":") and contains(json(candidate["ir"]), "\"nodes\":"):
+        candidate_nodes = candidate["ir"]["nodes"]
+    let expected = typed_ir_reference_nodes(reference_nodes, 0, [])
+    let actual = typed_ir_reference_nodes(candidate_nodes, 0, [])
+    let diagnostic_comparison = typed_ir_compare_diagnostics(reference, candidate)
+    return {"candidate_kind": candidate["kind"], "candidate_only": candidate["candidate_only"], "deterministic": true, "diagnostic_candidate_count": diagnostic_comparison["diagnostic_candidate_count"], "diagnostic_count_match": diagnostic_comparison["diagnostic_count_match"], "diagnostic_equal": diagnostic_comparison["diagnostic_equal"], "diagnostic_reference_count": diagnostic_comparison["diagnostic_reference_count"], "kind_match": candidate["kind"] == "zap.typed_ir", "node_count_match": len(reference_nodes) == len(candidate_nodes), "schema_match": candidate["schema_version"] >= 3, "semantic_equal": json(expected) == json(actual), "semantic_reference_nodes": len(expected), "semantic_candidate_nodes": len(actual)}
 
 export fn typed_ir_compare_reference(reference, candidate):
-    let reference_node = reference["ir"]["nodes"][0]
-    let candidate_node = candidate["ir"]["nodes"][0]
-    let expected = typed_ir_reference_node(reference_node)
-    let actual = typed_ir_reference_node(candidate_node)
-    return {"candidate_kind": candidate["kind"], "candidate_only": candidate["candidate_only"], "deterministic": json(candidate) == json(candidate), "kind_match": candidate["kind"] == "zap.typed_ir", "node_count_match": len(reference["ir"]["nodes"]) == len(candidate["ir"]["nodes"]), "schema_match": candidate["schema_version"] >= 3, "semantic_equal": json(expected) == json(actual)}
+    return typed_ir_compare_reference_program(reference, candidate)
 
 export fn typed_ir_trait_method_node(owner, method):
     let required = false

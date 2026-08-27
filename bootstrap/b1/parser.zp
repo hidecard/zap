@@ -1,6 +1,7 @@
 # B1 candidate parser written in Zap.
 # B1 parser implementation: the general entry owns token/indentation-driven
 # AST assembly while the Rust implementation remains the differential reference.
+import "bootstrap/b1/lexer.zp"
 
 export fn span(line, column, length):
     return {"column": column, "length": length, "line": line}
@@ -1714,6 +1715,12 @@ export fn generic_header_diagnostic(lines, source_name):
 
 export fn parse_general(source, source_name):
     let normalized_source = trim(source)
+    let lexed = from_json(lex(source, source_name))
+    if lexed["kind"] == "zap.diagnostics":
+        return json(lexed)
+    let delimiter = delimiter_diagnostics(lexed["tokens"], source_name)
+    if delimiter != none:
+        return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     let lines = split(normalized_source, "\n")
     let generic_diagnostic = generic_header_diagnostic(lines, source_name)
     if generic_diagnostic != none:
