@@ -159,13 +159,25 @@ export fn lower_class_parents(node):
         return []
     return [node["base"]]
 
+export fn lower_class_traits(node):
+    if contains(json(node), "\"traits\""):
+        return node["traits"]
+    return []
+
+export fn lower_class_interfaces(node):
+    if contains(json(node), "\"interfaces\""):
+        return node["interfaces"]
+    return []
+
 export fn patch_class(instructions, index, end):
     let patched = []
     let cursor = 0
     for instruction in instructions:
         if cursor == index:
             let parents = lower_class_parents(instruction)
-            patched = append(patched, {"base": instruction["base"], "end": end, "name": instruction["name"], "op": "class_def", "parents": parents})
+            let traits = lower_class_traits(instruction)
+            let interfaces = lower_class_interfaces(instruction)
+            patched = append(patched, {"base": instruction["base"], "end": end, "interfaces": interfaces, "name": instruction["name"], "op": "class_def", "parents": parents, "traits": traits})
         else:
             patched = append(patched, instruction)
         cursor = cursor + 1
@@ -209,7 +221,9 @@ export fn lower_class_body(body, prefix, owner):
 export fn lower_class_node(node, prefix):
     let class_index = len(prefix)
     let parents = lower_class_parents(node)
-    let with_class = append(prefix, {"base": node["base"], "end": 0, "name": node["name"], "op": "class_def", "parents": parents})
+    let traits = lower_class_traits(node)
+    let interfaces = lower_class_interfaces(node)
+    let with_class = append(prefix, {"base": node["base"], "end": 0, "interfaces": interfaces, "name": node["name"], "op": "class_def", "parents": parents, "traits": traits})
     let body = lower_class_body(node["body"], with_class, node["name"])
     if body["error"] != none:
         return body

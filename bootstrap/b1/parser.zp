@@ -77,11 +77,21 @@ export fn rebase_statement_spans(node, line_delta):
     let rebased_span = span(node_span["line"] + line_delta, node_span["column"], node_span["length"])
     let kind = node["kind"]
     if kind == "function":
+        if contains(json(node), "\"required\""):
+            return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
         return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
+    if kind == "trait" or kind == "interface":
+        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "class":
+        let traits = []
+        let interfaces = []
+        if contains(json(node), "\"traits\""):
+            traits = node["traits"]
+        if contains(json(node), "\"interfaces\""):
+            interfaces = node["interfaces"]
         if contains(json(node), "\"parents\""):
-            return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span}
-        return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+            return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span, "traits": traits}
+        return {"base": node["base"], "body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "span": rebased_span, "traits": traits}
     if kind == "if":
         let else_branch = none
         if node["else_branch"] != none:
@@ -736,7 +746,7 @@ export fn parse_generic_function(lines):
         let line = lines[cursor]
         let value = trim(line)
         if value != "":
-            if indentation_width(line) == 0 and (starts_with(value, "fn ") or starts_with(value, "async fn ") or starts_with(value, "class ") or starts_with(value, "module ")):
+            if indentation_width(line) == 0 and (starts_with(value, "fn ") or starts_with(value, "async fn ") or starts_with(value, "class ") or starts_with(value, "trait ") or starts_with(value, "interface ") or starts_with(value, "module ")):
                 return statements
             statements = append(statements, parse_statement(line, cursor + 1, 1))
         cursor = cursor + 1
@@ -878,11 +888,21 @@ export fn rebase_class_layout_statement(node, line_delta, column_delta):
     let rebased_span = span(node_span["line"] + line_delta, node_span["column"] + column_delta, node_span["length"])
     let kind = node["kind"]
     if kind == "class":
+        let traits = []
+        let interfaces = []
+        if contains(json(node), "\"traits\""):
+            traits = node["traits"]
+        if contains(json(node), "\"interfaces\""):
+            interfaces = node["interfaces"]
         if contains(json(node), "\"parents\""):
-            return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span}
-        return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
+            return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "parents": node["parents"], "span": rebased_span, "traits": traits}
+        return {"base": node["base"], "body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "interfaces": interfaces, "kind": kind, "name": node["name"], "span": rebased_span, "traits": traits}
     if kind == "function":
+        if contains(json(node), "\"required\""):
+            return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "required": node["required"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
         return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "exported": node["exported"], "is_async": node["is_async"], "kind": kind, "name": node["name"], "params": node["params"], "return_type": node["return_type"], "span": rebased_span, "type_params": node["type_params"], "visibility": node["visibility"]}
+    if kind == "trait" or kind == "interface":
+        return {"body": {"statements": rebase_class_layout_list(node["body"]["statements"], line_delta, column_delta)}, "kind": kind, "name": node["name"], "span": rebased_span}
     if kind == "if":
         let else_branch = none
         if node["else_branch"] != none:
@@ -929,26 +949,124 @@ export fn parse_class_body_walk(lines, index, statements):
         return parse_class_body_walk(lines, index + 1, append(statements, statement))
     return parse_class_body_walk(lines, index + 1, statements)
 
+export fn parse_comma_names(text):
+    let result = []
+    for item in split(text, ","):
+        let name = trim(item)
+        if name != "":
+            result = append(result, name)
+    return result
+
+export fn parse_trait_method_header(line, required, line_number):
+    let header = trim(line)
+    let open_index = 0
+    while open_index < len(header):
+        if char_at(header, open_index) == "(":
+            break
+        open_index = open_index + 1
+    let close_index = len(header) - 1
+    while close_index >= 0:
+        if char_at(header, close_index) == ")":
+            break
+        close_index = close_index - 1
+    let name = trim(substring(header, 3, open_index))
+    let return_type = none
+    if contains(header, "->"):
+        let return_parts = split(substring(header, close_index + 1, len(header)), "->")
+        if len(return_parts) == 2:
+            return_type = trim(return_parts[1])
+    return {"body": {"statements": []}, "exported": false, "is_async": false, "kind": "function", "name": name, "params": parse_parameter_list(substring(header, open_index + 1, close_index)), "required": required, "return_type": return_type, "span": span(line_number, 5, len(header)), "type_params": [], "visibility": "public"}
+
+export fn parse_trait_body_walk(lines, index, statements, is_interface):
+    if index >= len(lines):
+        return statements
+    let line = lines[index]
+    let value = trim(line)
+    if value == "":
+        return parse_trait_body_walk(lines, index + 1, statements, is_interface)
+    if starts_with(line, "    fn "):
+        if ends_with(value, ":"):
+            let sliced = class_method_slice(lines, index)
+            let parsed = parse_generic_function(sliced["lines"])
+            let next_statements = statements
+            if len(parsed) > 0:
+                let provided = rebase_class_layout_statement(parsed[0], index, 4)
+                provided = {"body": provided["body"], "exported": provided["exported"], "is_async": provided["is_async"], "kind": provided["kind"], "name": provided["name"], "params": provided["params"], "required": false, "return_type": provided["return_type"], "span": provided["span"], "type_params": provided["type_params"], "visibility": provided["visibility"]}
+                next_statements = append(next_statements, provided)
+            return parse_trait_body_walk(lines, sliced["next"], next_statements, is_interface)
+        let required_method = parse_trait_method_header(value, true, index + 1)
+        return parse_trait_body_walk(lines, index + 1, append(statements, required_method), is_interface)
+    return parse_trait_body_walk(lines, index + 1, statements, is_interface)
+
+export fn parse_trait_arbitrary(lines, kind):
+    let header = trim(lines[0])
+    let keyword_length = 6
+    if kind == "interface":
+        keyword_length = 10
+    let name = trim(substring(header, keyword_length, len(header) - 1))
+    let methods = parse_trait_body_walk(lines, 1, [], kind == "interface")
+    return [{"body": {"statements": methods}, "kind": kind, "name": name, "span": span(1, 1, len(header))}]
+
 export fn parse_class_arbitrary(lines):
     let header = trim(lines[0])
     let declaration = trim(substring(header, 6, len(header) - 1))
     let class_name = declaration
+    let relationship = ""
+    let has_extends = false
     let base = none
-    if contains(declaration, " extends "):
-        let parts = split(declaration, " extends ")
-        if len(parts) == 2:
-            class_name = trim(parts[0])
-            base = trim(parts[1])
-    let class_statements = parse_class_body_walk(lines, 1, [])
     let parents = []
-    if base != none:
-        for parent in split(base, ","):
-            let parent_name = trim(parent)
-            if parent_name != "":
-                parents = append(parents, parent_name)
-    if len(parents) > 0:
-        base = parents[0]
-    return [{"base": base, "body": {"statements": class_statements}, "kind": "class", "name": class_name, "parents": parents, "span": span(1, 1, len(header))}]
+    let traits = []
+    let interfaces = []
+    if contains(declaration, " extends "):
+        let extension_parts = split(declaration, " extends ")
+        if len(extension_parts) == 2:
+            class_name = trim(extension_parts[0])
+            relationship = trim(extension_parts[1])
+            has_extends = true
+    else:
+        if contains(declaration, " with "):
+            let with_parts = split(declaration, " with ")
+            if len(with_parts) == 2:
+                class_name = trim(with_parts[0])
+                let composition = trim(with_parts[1])
+                if contains(composition, " implements "):
+                    let composition_parts = split(composition, " implements ")
+                    traits = parse_comma_names(composition_parts[0])
+                    interfaces = parse_comma_names(composition_parts[1])
+                else:
+                    traits = parse_comma_names(composition)
+        else:
+            if contains(declaration, " implements "):
+                let implementation_parts = split(declaration, " implements ")
+                if len(implementation_parts) == 2:
+                    class_name = trim(implementation_parts[0])
+                    relationship = trim(declaration)
+    if has_extends and contains(relationship, " with "):
+        let with_parts = split(relationship, " with ")
+        if len(with_parts) == 2:
+            if not has_extends:
+                class_name = trim(with_parts[0])
+            relationship = trim(with_parts[0])
+            let composition = trim(with_parts[1])
+            if contains(composition, " implements "):
+                let composition_parts = split(composition, " implements ")
+                traits = parse_comma_names(composition_parts[0])
+                interfaces = parse_comma_names(composition_parts[1])
+            else:
+                traits = parse_comma_names(composition)
+    if contains(relationship, " implements "):
+        let implementation_parts = split(relationship, " implements ")
+        if len(implementation_parts) == 2:
+            if not has_extends:
+                class_name = trim(implementation_parts[0])
+            relationship = trim(implementation_parts[0])
+            interfaces = parse_comma_names(implementation_parts[1])
+    if has_extends and relationship != "":
+        parents = parse_comma_names(relationship)
+        if len(parents) > 0:
+            base = parents[0]
+    let class_statements = parse_class_body_walk(lines, 1, [])
+    return [{"base": base, "body": {"statements": class_statements}, "interfaces": interfaces, "kind": "class", "name": class_name, "parents": parents, "span": span(1, 1, len(header)), "traits": traits}]
 
 export fn line_cursor(lines):
     return {"index": 0, "lines": lines}
@@ -1094,13 +1212,19 @@ export fn parse_block_from(lines, start_index, indent):
                 return {"next": index, "statements": statements}
             if current_indent > indent:
                 return {"next": index, "statements": statements}
-            if starts_with(current, "fn ") or starts_with(current, "async fn ") or starts_with(current, "class "):
+            if starts_with(current, "fn ") or starts_with(current, "async fn ") or starts_with(current, "class ") or starts_with(current, "trait ") or starts_with(current, "interface "):
                 let chunked = nested_block_slice_walk(lines, index + 1, indent, [current])
                 let parsed = []
                 if starts_with(current, "class "):
                     parsed = parse_class_arbitrary(chunked["lines"])
                 else:
-                    parsed = parse_generic_function(chunked["lines"])
+                    if starts_with(current, "trait "):
+                        parsed = parse_trait_arbitrary(chunked["lines"], "trait")
+                    else:
+                        if starts_with(current, "interface "):
+                            parsed = parse_trait_arbitrary(chunked["lines"], "interface")
+                        else:
+                            parsed = parse_generic_function(chunked["lines"])
                 if len(parsed) > 0:
                     statements = append(statements, rebase_class_layout_statement(parsed[0], index, indent))
                 cursor = {"index": chunked["next"], "lines": lines}
@@ -1409,6 +1533,20 @@ export fn parse_general_sequence_at(lines, cursor, statements):
     if starts_with(value, "class "):
         let chunked = top_level_slice_walk(lines, cursor + 1, [line])
         let parsed = parse_class_arbitrary(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_at(lines, chunked["next"], next_statements)
+    if starts_with(value, "trait "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_trait_arbitrary(chunked["lines"], "trait")
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_at(lines, chunked["next"], next_statements)
+    if starts_with(value, "interface "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_trait_arbitrary(chunked["lines"], "interface")
         let next_statements = statements
         if len(parsed) > 0:
             next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))

@@ -2456,14 +2456,128 @@ export fn b2c_check_function(function, functions, source_name):
     let state = b2c_state(environment, function_errors, true)
     return b2c_check_block(function["body"]["statements"], state, functions, expected_return, source_name, function["name"])
 
-export fn b2c_check_program(ast, source_name):
-    let functions = b2c_collect_functions(ast["statements"], [])
+export fn b2c_trait_method_required(method):
+    if contains(json(method), "\"required\":true"):
+        return true
+    return false
+
+export fn b2c_trait_methods(statements, required_only, result):
+    for statement in statements:
+        if statement["kind"] == "function":
+            if not required_only or b2c_trait_method_required(statement):
+                result = append(result, statement)
+    return result
+
+export fn b2c_trait_registry_add(registry, statement):
+    let methods = b2c_trait_methods(statement["body"]["statements"], false, [])
+    return append(registry, {"kind": statement["kind"], "methods": methods, "name": statement["name"], "node": statement})
+
+export fn b2c_collect_trait_registry(statements, registry):
+    let result = registry
+    for statement in statements:
+        if statement["kind"] == "trait" or statement["kind"] == "interface":
+            result = b2c_trait_registry_add(result, statement)
+        if statement["kind"] == "if":
+            result = b2c_collect_trait_registry(statement["then_branch"]["statements"], result)
+            if statement["else_branch"] != none:
+                result = b2c_collect_trait_registry(statement["else_branch"]["statements"], result)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            result = b2c_collect_trait_registry(statement["body"]["statements"], result)
+        if statement["kind"] == "try_catch":
+            result = b2c_collect_trait_registry(statement["body"]["statements"], result)
+            result = b2c_collect_trait_registry(statement["catch_body"]["statements"], result)
+    return result
+
+export fn b2c_trait_registry_find(registry, name):
+    for trait in registry:
+        if trait["name"] == name:
+            return trait
+    return none
+
+export fn b2c_class_compositions(class_node):
+    let result = []
+    if contains(json(class_node), "\"traits\""):
+        for name in class_node["traits"]:
+            result = append(result, {"kind": "trait", "name": name})
+    if contains(json(class_node), "\"interfaces\""):
+        for name in class_node["interfaces"]:
+            result = append(result, {"kind": "interface", "name": name})
+    return result
+
+export fn b2c_class_has_method(class_node, name):
+    for statement in class_node["body"]["statements"]:
+        if statement["kind"] == "function" and statement["name"] == name:
+            return true
+    return false
+
+export fn b2c_trait_provider_count(compositions, registry, method_name):
+    let count = 0
+    for composition in compositions:
+        let trait = b2c_trait_registry_find(registry, composition["name"])
+        if trait != none:
+            for method in trait["methods"]:
+                if method["name"] == method_name and not b2c_trait_method_required(method):
+                    count = count + 1
+    return count
+
+export fn b2c_trait_required_errors(class_node, composition, trait, source_name, errors):
+    let required_methods = b2c_trait_methods(trait["node"]["body"]["statements"], true, [])
+    for method in required_methods:
+        if not b2c_class_has_method(class_node, method["name"]):
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-001", "class '" + class_node["name"] + "' is missing required method '" + method["name"] + "' from " + composition["kind"] + " '" + trait["name"] + "'"))
+    return errors
+
+export fn b2c_trait_conflict_errors(class_node, compositions, registry, source_name, errors):
+    let seen_methods = []
+    for composition in compositions:
+        let trait = b2c_trait_registry_find(registry, composition["name"])
+        if trait != none:
+            for method in trait["methods"]:
+                if not b2c_trait_method_required(method) and not b2c_class_has_method(class_node, method["name"]):
+                    if b2c_list_contains(seen_methods, method["name"]):
+                        errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-002", "class '" + class_node["name"] + "' has conflicting provided method '" + method["name"] + "'"))
+                    else:
+                        seen_methods = append(seen_methods, method["name"])
+    return errors
+
+export fn b2c_trait_class_errors(class_node, registry, source_name):
     let errors = []
+    let compositions = b2c_class_compositions(class_node)
+    for composition in compositions:
+        let trait = b2c_trait_registry_find(registry, composition["name"])
+        if trait == none:
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, class_node, "ZAP-TRAIT-003", "unknown " + composition["kind"] + " '" + composition["name"] + "'"))
+        else:
+            errors = b2c_trait_required_errors(class_node, composition, trait, source_name, errors)
+    errors = b2c_trait_conflict_errors(class_node, compositions, registry, source_name, errors)
+    return errors
+
+export fn b2c_collect_trait_class_errors(statements, registry, source_name, errors):
+    let result = errors
+    for statement in statements:
+        if statement["kind"] == "class":
+            result = b2c_append_errors(result, b2c_trait_class_errors(statement, registry, source_name))
+        if statement["kind"] == "if":
+            result = b2c_collect_trait_class_errors(statement["then_branch"]["statements"], registry, source_name, result)
+            if statement["else_branch"] != none:
+                result = b2c_collect_trait_class_errors(statement["else_branch"]["statements"], registry, source_name, result)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            result = b2c_collect_trait_class_errors(statement["body"]["statements"], registry, source_name, result)
+        if statement["kind"] == "try_catch":
+            result = b2c_collect_trait_class_errors(statement["body"]["statements"], registry, source_name, result)
+            result = b2c_collect_trait_class_errors(statement["catch_body"]["statements"], registry, source_name, result)
+    return result
+
+export fn b2c_check_program(ast, source_name):
+    let registry = b2c_collect_trait_registry(ast["statements"], [])
+    let trait_errors = b2c_collect_trait_class_errors(ast["statements"], registry, source_name, [])
+    let functions = b2c_collect_functions(ast["statements"], [])
+    let errors = trait_errors
     for function in functions:
         let function_state = b2c_check_function(function, functions, source_name)
         errors = b2c_append_errors(errors, function_state["errors"])
     let state = b2c_check_block(ast["statements"], b2c_state([], errors, true), functions, "any", source_name, "")
-    return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "ok": len(state["errors"]) == 0}
+    return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "ok": len(state["errors"]) == 0, "traits": registry}
 
 # Canonical AST-owned checker entry point. The legacy check(source, source_name)
 # remains available until parser/diagnostic parity is accepted.

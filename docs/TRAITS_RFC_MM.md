@@ -2,9 +2,9 @@
 
 **စစ်ဆေးထားသော baseline:** Zap v2.11.16
 
-**RFC အခြေအနေ:** Design-only proposal ဖြစ်ပြီး parser သို့မဟုတ် runtime implementation မပါဝင်ပါ။
-**စစ်ဆေးထားသော baseline:** Zap v2.4.0
-**ဆုံးဖြတ်မည့် version:** Future post-v2.2 language version အတွက် review ပြုလုပ်ရန်။ v2.2.0 တွင် traits၊ interfaces သို့မဟုတ် inheritance semantics အသစ်များကို enable မလုပ်ပါ။
+**RFC အခြေအနေ:** T1 contract freeze ပြီးစီးထားသော bounded language contract ဖြစ်သည်။ T2 canonical parser/AST နှင့် T3 checker registry implementation ရှိပြီး runtime dispatch၊ typed-IR နှင့် production enablement များကို သီးခြား gate အဖြစ် ဆက်လက်ထားသည်။
+**စစ်ဆေးထားသော baseline:** Zap v2.11.16
+**ဆုံးဖြတ်မည့် version:** Post-v2.11 additive feature proposal အဖြစ်သာ review လုပ်မည်။ Release-supported feature ဟု မကြေညာမီ parser၊ checker၊ typed-IR၊ lowerer၊ runtime၊ diagnostics၊ tooling နှင့် compatibility gates အားလုံး pass ရမည်။
 **ဖတ်ရှုသင့်သူများ:** Language designer၊ runtime maintainer၊ package author နှင့် အနာဂတ် compatibility change reviewer များ။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax guide](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package guide](PACKAGE.md) · [English RFC](TRAITS_RFC_EN.md)
 
@@ -12,7 +12,7 @@
 
 ဤ RFC သည် Zap တွင် reusable behavior များကို composition-first ပုံစံဖြင့် ဒီဇိုင်းဆွဲရန် အဆိုပြုချက်ဖြစ်သည်။ အဆိုပြုချက်သည် named behavioral contract များနှင့် explicit composition ကို ထည့်သွင်းစဉ်းစားသော်လည်း v2.4.0 တွင် လက်ရှိ single-inheritance model ကို မဖယ်ရှားပါ။ Implementation မစမီ conceptual model၊ surface syntax၊ method lookup၊ visibility၊ diagnostic၊ migration rule၊ dispatch choice၊ rejected alternative နှင့် compatibility boundary များကို သတ်မှတ်ထားရန် ရည်ရွယ်သည်။
 
-> **ဆုံးဖြတ်ချက်:** `extends` ကို လက်ရှိ inheritance mechanism အဖြစ် ဆက်လက်ထားရှိမည်။ Traits/interfaces ကို deferred ထားမည်။ ဤ RFC ကို review ပြုလုပ်ပြီး နောက် version တစ်ခုတွင် explicit approval ရရှိသည်အထိ parser သို့မဟုတ် evaluator behavior မပြောင်းလဲရ။
+> **T1 ဆုံးဖြတ်ချက်:** `extends` ကို nominal class inheritance အဖြစ် ဆက်လက်ထားရှိမည်။ `trait`၊ `interface`၊ `with` နှင့် `implements` တို့၏ syntax၊ terminology၊ required/provided method contract၊ conflict rule နှင့် diagnostic code များကို freeze လုပ်ထားသည်။ လက်ရှိ milestone သည် canonical parser/AST နှင့် static registry/conformance checking အထိသာ ဖြစ်ပြီး evaluator/runtime dispatch ကို မဖွင့်သေးပါ။
 
 ## ၁။ ပြဿနာသတ်မှတ်ချက်
 
@@ -37,7 +37,7 @@ Zap တွင် လက်ရှိ `extends` ဖြင့် class၊ method �
 
 လက်ရှိ Zap baseline တွင် class declaration၊ method၊ constructor နှင့် `extends` ဖြင့် single inheritance ပါဝင်သည်။ လက်ရှိ specification သည် syntax နှင့် runtime semantics ကို ပိုင်ဆိုင်ပြီး structured diagnostic တွင် severity၊ stable code၊ message နှင့် ရနိုင်သည့် source location များ ပါရမည် [1]။ လက်ရှိ release line သည် v2.4.0 ဖြစ်ပြီး semantics change တစ်ခုအတွက် specification update၊ bilingual documentation၊ conformance fixture၊ changelog entry နှင့် explicit version decision လိုအပ်သည် [1]။
 
-ထို့ကြောင့် ဤ RFC ကြောင့် လက်ရှိ baseline မပြောင်းလဲပါ။
+ထို့ကြောင့် T1–T3 milestone သည် canonical parser/AST နှင့် checker contract ကိုသာ တိုးချဲ့ပြီး B4 line compiler၊ VM runtime dispatch နှင့် release feature flag ကို မပြောင်းလဲပါ။
 
 ```zap
 class Animal:
@@ -49,7 +49,7 @@ class Dog extends Animal:
         return "woof"
 ```
 
-ဤဥပမာသည် v2.2.0 တွင်လည်း single inheritance အဖြစ်သာ အဓိပ္ပာယ်ရမည်။ နောက်ပိုင်း approved implementation milestone မရမချင်း `trait`၊ `interface`၊ `with` သို့မဟုတ် conflict-resolution syntax များကို parser က လက်မခံရ။
+ဤဥပမာသည် single inheritance အဖြစ်သာ အဓိပ္ပာယ်ရမည်။ T2 milestone အရ canonical parser သည် `trait`၊ `interface`၊ `with` နှင့် `implements` ကို AST metadata အဖြစ် parse လုပ်နိုင်သော်လည်း B4 line compiler/runtime သည် ထို syntax ကို executable feature အဖြစ် မထောက်ပံ့သေးပါ။
 
 ## ၄။ ဝေါဟာရ
 
@@ -297,13 +297,13 @@ Project policy အရ ပယ်ချသည်။ Conformance၊ specification o
 | Platforms | Runtime state သက်ရောက်ပါက Linux၊ Windows နှင့် macOS native behavior |
 | Release | Changelog၊ bilingual docs၊ version decision နှင့် full quality gate များ |
 
-ဤ RFC တစ်ခုတည်းဖြင့် implementation commit ကို လက်မခံရ။ နောက်ပိုင်း implementation milestone သည် ဤစာတမ်းကို ရည်ညွှန်းပြီး specification ownership index ကို update လုပ်ရမည်။
+ဤ RFC သည် implementation contract ၏ source of truth ဖြစ်သည်။ T2–T3 parser/registry implementation သည် ဤစာတမ်း၏ bounded subset နှင့်သာ ကိုက်ညီရမည်။ Runtime dispatch နှင့် release enablement များသည် သီးခြား T4+ implementation gates၊ specification ownership index၊ conformance fixtures နှင့် bilingual documentation update များပြီးမှသာ လက်ခံရမည်။
 
 ## ၁၅။ Explicit version decision
 
-**v2.2.0 အတွက် ဆုံးဖြတ်ချက်:** Traits၊ interfaces၊ composition syntax၊ conflict-resolution syntax အသစ်နှင့် ဆက်စပ် parser/runtime behavior များသည် **deferred** ဖြစ်သည်။ v2.2.0 release တွင် ဤ RFC ကို reviewed design record အဖြစ် ထည့်သွင်းနိုင်သော်လည်း proposed syntax ကို supported ဟု မကြေညာရ။
+**လက်ရှိ post-v2.11 development အတွက် ဆုံးဖြတ်ချက်:** T1–T3 bounded subset ကို canonical parser/AST နှင့် B2 checker registry အတွင်းသာ enable လုပ်ထားသည်။ Trait/interface runtime dispatch၊ typed-IR obligations၊ lowerer descriptor နှင့် release-facing syntax များသည် **deferred** ဖြစ်နေဆဲဖြစ်သည်။ `native_independent:false` နှင့် B4 runtime boundary မပြောင်းလဲပါ။
 
-**အနာဂတ်ဆုံးဖြတ်မည့်အချိန်:** နောက် release proposal တစ်ခုသည် RFC review ပြီး၊ diagnostic နှင့် lookup rule များ freeze လုပ်ပြီး၊ bilingual contract update နှင့် conformance fixture များ supported target အားလုံးတွင် pass ပြီးမှ additive subset တစ်ခုကို enable လုပ်ရန် စဉ်းစားနိုင်သည်။ လက်ရှိ inheritance semantics ပြောင်းလဲမှုတိုင်းအတွက် သီးခြား compatibility နှင့် major-version decision လိုအပ်သည်။
+**အနာဂတ် release ဆုံးဖြတ်ချက်:** T4+ runtime/typed-IR implementation သည် RFC review၊ stable diagnostic parity၊ bilingual contract၊ conformance fixture၊ package metadata၊ LSP behavior နှင့် supported platform matrix အားလုံး pass ပြီးမှသာ additive release feature အဖြစ် စဉ်းစားနိုင်သည်။ လက်ရှိ inheritance semantics ပြောင်းလဲမှုတိုင်းအတွက် သီးခြား compatibility နှင့် version decision လိုအပ်သည်။
 
 ## References
 

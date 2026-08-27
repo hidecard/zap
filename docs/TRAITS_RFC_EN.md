@@ -2,9 +2,9 @@
 
 **Verified baseline:** Zap v2.11.16
 
-**RFC status:** Design-only proposal; no parser or runtime implementation is included.
-**Verified baseline:** Zap v2.4.0
-**Decision target:** Review for a future post-v2.2 language version; v2.2.0 does not enable traits, interfaces, or new inheritance semantics.
+**RFC status:** T1 contract-frozen bounded language contract. T2 canonical parser/AST and T3 checker-registry implementation are present; runtime dispatch, typed-IR integration, and production enablement remain separately gated.
+**Verified baseline:** Zap v2.11.16
+**Decision target:** Treat this as a post-v2.11 additive feature proposal. It is not release-supported until parser, checker, typed-IR, lowerer, runtime, diagnostics, tooling, and compatibility gates pass.
 **Audience:** Language designers, runtime maintainers, package authors, and reviewers of future compatibility changes.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package guide](PACKAGE_EN.md) · [Burmese RFC](TRAITS_RFC_MM.md)
 
@@ -12,7 +12,7 @@
 
 This RFC proposes a composition-first design for reusable behavior in Zap. The proposal adds named behavioral contracts and explicit composition without replacing the current single-inheritance model in v2.2.0. It defines the conceptual model, surface syntax, method lookup, visibility, diagnostics, migration rules, dispatch choices, rejected alternatives, and compatibility boundaries required before implementation begins.
 
-> **Decision:** Keep `extends` as the current inheritance mechanism, keep traits/interfaces deferred, and do not change parser or evaluator behavior until this RFC has been reviewed and a later version is explicitly approved.
+> **T1 decision:** Keep `extends` as nominal class inheritance. Freeze the syntax, terminology, required/provided method contract, conflict rules, and diagnostic codes for `trait`, `interface`, `with`, and `implements`. The current milestone reaches only canonical parser/AST and static registry/conformance checking; evaluator/runtime dispatch is not enabled.
 
 ## 1. Problem statement
 
@@ -37,7 +37,7 @@ The proposal addresses composition as a separate design problem. It does not cla
 
 The current Zap baseline uses class declarations, methods, constructors, and single inheritance with `extends`. The current specification owns syntax and runtime semantics, and structured diagnostics must retain severity, stable code, message, and source location where available [1]. The current release line is v2.4.0, and a semantics change requires specification updates, bilingual documentation, conformance fixtures, a changelog entry, and an explicit version decision [1].
 
-The current baseline therefore remains unchanged by this RFC:
+The T1–T3 milestone extends only the canonical parser/AST and checker contract; it does not change the B4 line compiler, VM runtime dispatch, or release feature flag:
 
 ```zap
 class Animal:
@@ -49,7 +49,7 @@ class Dog extends Animal:
         return "woof"
 ```
 
-The example continues to mean single inheritance in v2.2.0. No `trait`, `interface`, `with`, or conflict-resolution syntax is accepted until a later approved implementation milestone.
+The example still means single inheritance. Under the T2 milestone, the canonical parser may represent `trait`, `interface`, `with`, and `implements` as AST metadata, while the B4 line compiler/runtime does not yet support them as executable features.
 
 ## 4. Terminology
 
