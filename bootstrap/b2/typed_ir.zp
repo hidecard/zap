@@ -477,6 +477,48 @@ export fn typed_ir_reference_expression(expression):
         return {"args": args, "callee": typed_ir_reference_expression(expression["callee"]), "kind": "call", "span": expression["span"]}
     return expression
 
+export fn typed_ir_reference_statement_list(block):
+    if block == none:
+        return []
+    if contains(json(block), "\"statements\""):
+        return typed_ir_reference_nodes(block["statements"], 0, [])
+    return []
+export fn typed_ir_reference_control_node(node):
+    let ast = node
+    if contains(json(node), "\"ast\":"):
+        ast = node["ast"]
+    let kind = ast["kind"]
+    if kind == "say" or kind == "return" or kind == "raise":
+        let payload = none
+        if contains(json(ast), "\"payload\":"):
+            payload = ast["payload"]
+        if contains(json(ast), "\"value\":"):
+            payload = ast["value"]
+        return {"kind": kind, "payload": typed_ir_reference_expression(payload), "span": ast["span"]}
+    if kind == "if":
+        let then_branch = []
+        let else_branch = []
+        if contains(json(ast), "\"then_branch\""):
+            then_branch = typed_ir_reference_statement_list(ast["then_branch"])
+        if contains(json(ast), "\"else_branch\""):
+            else_branch = typed_ir_reference_statement_list(ast["else_branch"])
+        return {"condition": typed_ir_reference_expression(ast["condition"]), "else_branch": else_branch, "kind": "if", "span": ast["span"], "then_branch": then_branch}
+    if kind == "while":
+        let body = []
+        if contains(json(ast), "\"body\""):
+            body = typed_ir_reference_statement_list(ast["body"])
+        return {"body": body, "condition": typed_ir_reference_expression(ast["condition"]), "kind": "while", "span": ast["span"]}
+    if kind == "for":
+        let binding = ""
+        let body = []
+        if contains(json(ast), "\"binding\""):
+            binding = ast["binding"]
+        if contains(json(ast), "\"body\""):
+            body = typed_ir_reference_statement_list(ast["body"])
+        return {"binding": binding, "body": body, "iterable": typed_ir_reference_expression(ast["iterable"]), "kind": "for", "span": ast["span"]}
+    if kind == "else" or kind == "try":
+        return {"kind": kind, "span": ast["span"]}
+    return ast
 export fn typed_ir_reference_node(node):
     if node["kind"] == "declaration":
         let value = typed_ir_reference_expression(node["value"])
@@ -487,7 +529,12 @@ export fn typed_ir_reference_node(node):
             exported = node["exported"]
         return {"annotation": node["annotation"], "exported": exported, "inferred_type": node["inferred_type"], "ir_schema_version": 1, "kind": "declaration", "name": node["name"], "span": node["span"], "value": value}
     if contains(json(node), "\"ast\":"):
-        return typed_ir_reference_node(node["ast"])
+        let ast = node["ast"]
+        if ast["kind"] == "say" or ast["kind"] == "return" or ast["kind"] == "raise" or ast["kind"] == "if" or ast["kind"] == "while" or ast["kind"] == "for" or ast["kind"] == "else" or ast["kind"] == "try":
+            return typed_ir_reference_control_node(node)
+        return typed_ir_reference_node(ast)
+    if node["kind"] == "say" or node["kind"] == "return" or node["kind"] == "raise" or node["kind"] == "if" or node["kind"] == "while" or node["kind"] == "for" or node["kind"] == "else" or node["kind"] == "try":
+        return typed_ir_reference_control_node(node)
     if node["kind"] == "function":
         return node
     return node
@@ -697,3 +744,57 @@ export fn emit(source, source_name):
     let declaration = {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
     let ir = {"nodes": [declaration]}
     return json({"candidate_only": true, "ir": ir, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+
+export fn typed_ir_span_shape_valid(node):
+    if not contains(json(node), "\"span\""):
+        return false
+    let node_span = node["span"]
+    if not contains(json(node_span), "\"line\""):
+        return false
+    if not contains(json(node_span), "\"column\""):
+        return false
+    if not contains(json(node_span), "\"length\""):
+        return false
+    return node_span["line"] >= 1 and node_span["column"] >= 1 and node_span["length"] >= 0
+
+export fn typed_ir_node_shape_valid(node):
+    if not contains(json(node), "\"kind\""):
+        return false
+    if not typed_ir_span_shape_valid(node):
+        return false
+    let kind = node["kind"]
+    if kind == "declaration":
+        return contains(json(node), "\"name\"") and contains(json(node), "\"value\"") and contains(json(node), "\"inferred_type\"")
+    if kind == "assignment":
+        return contains(json(node), "\"name\"") and contains(json(node), "\"value\"")
+    if kind == "function":
+        return contains(json(node), "\"name\"") and contains(json(node), "\"body\"") and contains(json(node), "\"params\"")
+    if kind == "if":
+        return contains(json(node), "\"condition\"") and contains(json(node), "\"then_branch\"")
+    if kind == "while" or kind == "for":
+        return contains(json(node), "\"body\"")
+    if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
+        return contains(json(node), "\"value\"")
+    return true
+
+export fn typed_ir_nodes_shape_valid(nodes, index):
+    if index >= len(nodes):
+        return true
+    if not typed_ir_node_shape_valid(nodes[index]):
+        return false
+    return typed_ir_nodes_shape_valid(nodes, index + 1)
+
+export fn typed_ir_general_contract(first, second):
+    let first_nodes = []
+    let second_nodes = []
+    if contains(json(first), "\"ir\"") and contains(json(first["ir"]), "\"nodes\""):
+        first_nodes = first["ir"]["nodes"]
+    if contains(json(second), "\"ir\"") and contains(json(second["ir"]), "\"nodes\""):
+        second_nodes = second["ir"]["nodes"]
+    let first_schema = first["schema_version"]
+    let second_schema = second["schema_version"]
+    let candidate_only = first["candidate_only"]
+    let metadata = false
+    if contains(json(first), "\"typed_metadata\""):
+        metadata = first["typed_metadata"]
+    return {"candidate_only": candidate_only, "deterministic": json(first) == json(second), "node_count": len(first_nodes), "node_count_match": len(first_nodes) == len(second_nodes), "node_shapes_valid": typed_ir_nodes_shape_valid(first_nodes, 0), "schema_stable": first_schema == second_schema and first_schema >= 4, "typed_metadata": metadata, "valid": candidate_only and metadata and first_schema >= 4 and first_schema == second_schema and len(first_nodes) == len(second_nodes) and typed_ir_nodes_shape_valid(first_nodes, 0)}
