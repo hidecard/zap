@@ -991,3 +991,16 @@ export fn typed_ir_raw_expression_shape_valid(expression):
                 return false
         return true
     return true
+
+export fn typed_ir_diagnostic_contract(reference, candidate, repeat):
+    let comparison = typed_ir_compare_diagnostics(reference, candidate)
+    let deterministic = json(candidate) == json(repeat)
+    let valid = comparison["diagnostic_equal"]
+    if not comparison["diagnostic_count_match"]:
+        valid = false
+    if not deterministic:
+        valid = false
+    let status = "candidate_diagnostic_contract"
+    if not valid:
+        status = "candidate_diagnostic_contract_error"
+    return {"candidate_count": comparison["diagnostic_candidate_count"], "deterministic": deterministic, "diagnostic_equal": comparison["diagnostic_equal"], "reference_count": comparison["diagnostic_reference_count"], "status": status, "valid": valid}
