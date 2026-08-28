@@ -1004,3 +1004,25 @@ export fn typed_ir_diagnostic_contract(reference, candidate, repeat):
     if not valid:
         status = "candidate_diagnostic_contract_error"
     return {"candidate_count": comparison["diagnostic_candidate_count"], "deterministic": deterministic, "diagnostic_equal": comparison["diagnostic_equal"], "reference_count": comparison["diagnostic_reference_count"], "status": status, "valid": valid}
+
+export fn typed_ir_root_contract(first, second):
+    let root_valid = first["kind"] == "zap.typed_ir"
+    if not first["candidate_only"]:
+        root_valid = false
+    if first["schema_version"] < 4:
+        root_valid = false
+    if not contains(json(first), "\"source_name\""):
+        root_valid = false
+    if not contains(json(first), "\"ir\""):
+        root_valid = false
+    if root_valid:
+        if not contains(json(first["ir"]), "\"nodes\""):
+            root_valid = false
+    let deterministic = json(first) == json(second)
+    let valid = root_valid
+    if not deterministic:
+        valid = false
+    let status = "candidate_typed_ir_root"
+    if not valid:
+        status = "candidate_typed_ir_root_error"
+    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "schema_version": first["schema_version"], "status": status, "valid": valid}
