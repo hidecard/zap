@@ -768,3 +768,30 @@ export fn vm_run(program):
             break
         state = vm_step(state, program[state["ip"]])
     return state
+
+export fn vm_execution_contract(program):
+    let first = vm_run(program)
+    let second = vm_run(program)
+    let deterministic = json(first) == json(second)
+    let error_terminal = true
+    if first["error"] != none:
+        if not first["halted"]:
+            error_terminal = false
+    let state_shape = contains(json(first), "\"error\"")
+    if not contains(json(first), "\"halted\""):
+        state_shape = false
+    if not contains(json(first), "\"output\""):
+        state_shape = false
+    if not contains(json(first), "\"locals\""):
+        state_shape = false
+    if not contains(json(first), "\"stack\""):
+        state_shape = false
+    let valid = deterministic
+    if not error_terminal:
+        valid = false
+    if not state_shape:
+        valid = false
+    let status = "candidate_vm_contract"
+    if not valid:
+        status = "candidate_vm_contract_error"
+    return {"deterministic": deterministic, "error": first["error"], "error_terminal": error_terminal, "first": first, "native_independent": false, "second": second, "state_shape_valid": state_shape, "status": status, "valid": valid}
