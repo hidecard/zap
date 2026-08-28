@@ -436,6 +436,8 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
         return {"ast": statement, "explicit": statement["explicit"], "kind": kind, "path": statement["path"], "span": statement["span"]}
     if kind == "module":
         return {"ast": statement, "kind": kind, "name": statement["name"], "span": statement["span"]}
+    if kind == "type_alias":
+        return {"ast": statement, "body": statement["target"], "inferred_type": statement["target"], "kind": kind, "name": statement["name"], "span": statement["span"], "type_params": statement["type_params"]}
     return {"ast": statement, "kind": kind, "span": statement["span"]}
 
 export fn owned_inferred_statements(statements, environment, functions, source_name, result):
