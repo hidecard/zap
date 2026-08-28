@@ -102,3 +102,43 @@ export fn seed_platform_matrix_valid(records, expected_targets):
 
 export fn seed_platform_acceptance(seed, records, expected_targets):
     return {"artifact_equal": seed_platform_matrix_valid(records, expected_targets), "native_independent": false, "seed": seed, "status": "contract_only", "targets": len(records)}
+
+export fn seed_platform_record_evidence(target, artifact_bytes, artifact_digest, execution_status, source_digest, toolchain_digest, environment, execution_mode):
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "execution_mode": execution_mode, "execution_status": execution_status, "environment": environment, "source_digest": source_digest, "target": target, "toolchain_digest": toolchain_digest}
+
+export fn seed_platform_evidence_record_valid(record):
+    if not contains(json(record), "\"source_digest\""):
+        return false
+    if not contains(json(record), "\"toolchain_digest\""):
+        return false
+    if not contains(json(record), "\"environment\""):
+        return false
+    if not contains(json(record), "\"execution_mode\""):
+        return false
+    if record["execution_status"] != "executed":
+        return false
+    if record["environment"] != "clean":
+        return false
+    if record["execution_mode"] != "bootstrap-artifact":
+        return false
+    if trim(record["artifact_bytes"]) == "" or trim(record["artifact_digest"]) == "":
+        return false
+    if trim(record["source_digest"]) == "" or trim(record["toolchain_digest"]) == "":
+        return false
+    return true
+
+export fn seed_platform_evidence_matrix_valid(records, expected_targets):
+    if not seed_platform_matrix_valid(records, expected_targets):
+        return false
+    for record in records:
+        if not seed_platform_evidence_record_valid(record):
+            return false
+    return true
+
+export fn seed_self_rebuild_evidence(first_artifact, second_artifact, platform_records, expected_targets):
+    let byte_equal = first_artifact == second_artifact
+    let platform_evidence = seed_platform_evidence_matrix_valid(platform_records, expected_targets)
+    let status = "candidate_self_rebuild_evidence"
+    if not byte_equal or not platform_evidence:
+        status = "candidate_self_rebuild_blocked"
+    return {"byte_equal": byte_equal, "native_independent": false, "platform_evidence": platform_evidence, "status": status, "supported": byte_equal and platform_evidence}
