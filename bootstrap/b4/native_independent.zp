@@ -770,3 +770,16 @@ export fn seed_build_package_owned(package_name, package_version, main, requirem
     let artifact_bytes = json(pipeline["artifacts"])
     let artifact_digest = seed_pipeline_digest("package_artifact", artifact_bytes)
     return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": pipeline["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "candidate_package_build_executed"}
+
+export fn seed_a13_supported_rebuild_evidence(sources, source_names, platform_records, expected_targets):
+    let rebuild = seed_supported_subset_rebuild(sources, source_names)
+    let platform_valid = seed_platform_evidence_matrix_valid(platform_records, expected_targets)
+    let supported = rebuild["all_successful"]
+    if not rebuild["byte_equal"]:
+        supported = false
+    if not platform_valid:
+        supported = false
+    let status = "candidate_a13_supported_rebuild"
+    if not supported:
+        status = "candidate_a13_rebuild_blocked"
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "platform_evidence": platform_valid, "source_count": rebuild["count"], "status": status, "supported": supported, "vm_outputs": rebuild["first"]}
