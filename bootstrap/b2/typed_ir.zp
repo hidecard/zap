@@ -382,7 +382,7 @@ export fn owned_inferred_expression_children(expression, environment, functions,
 
 export fn owned_inferred_expression(expression, environment, functions, source_name):
     let inferred = b2c_infer_expr(expression, environment, functions, source_name)
-    return {"ast": expression, "children": owned_inferred_expression_children(expression, environment, functions, source_name), "diagnostics": inferred["errors"], "inferred_type": inferred["type"], "kind": "typed_expression", "span": expression["span"]}
+    return {"ast": expression, "children": owned_inferred_expression_children(expression, environment, functions, source_name), "diagnostics": inferred["errors"], "expression_kind": expression["kind"], "inferred_type": inferred["type"], "index_depth": typed_ir_index_depth(expression), "kind": "typed_expression", "member_path": typed_ir_member_path_for(expression), "span": expression["span"]}
 
 export fn typed_ir_function_return_type(function, functions, index):
     if index >= len(functions):
@@ -425,11 +425,12 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
     if kind == "try_catch":
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": statement["catch_binding"], "kind": kind, "span": statement["span"]}
     if kind == "function":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
+        let captures = typed_ir_function_captures(statement)
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "captures": captures, "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "is_closure": len(captures) > 0, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
     if kind == "class":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "member_semantics": typed_ir_member_semantics(statement["body"]["statements"], environment, functions, source_name, 0, []), "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
     if kind == "trait" or kind == "interface":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "name": statement["name"], "span": statement["span"]}
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "member_semantics": typed_ir_member_semantics(statement["body"]["statements"], environment, functions, source_name, 0, []), "name": statement["name"], "span": statement["span"], "trait_kind": statement["kind"]}
     if kind == "break" or kind == "continue":
         return {"ast": statement, "control": "loop_exit", "kind": kind, "span": statement["span"]}
     if kind == "import":
@@ -809,6 +810,10 @@ export fn typed_ir_node_shape_valid(node):
             return false
         if not contains(json(node), "\"inferred_parameters\""):
             return false
+        if not contains(json(node), "\"captures\""):
+            return false
+        if not contains(json(node), "\"is_closure\""):
+            return false
         return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "if":
         if not (contains(json(node), "\"condition\"") and contains(json(node), "\"then_branch\"")):
@@ -844,6 +849,8 @@ export fn typed_ir_node_shape_valid(node):
         return typed_ir_nested_nodes_shape_valid(node["catch_body"], 0)
     if kind == "class" or kind == "trait" or kind == "interface":
         if not (contains(json(node), "\"name\"") and contains(json(node), "\"body\"")):
+            return false
+        if not contains(json(node), "\"member_semantics\""):
             return false
         return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "type_alias":
@@ -888,7 +895,15 @@ export fn typed_ir_expression_shape_valid(expression, index):
     if expression["kind"] == "typed_expression":
         if not contains(json(expression), "\"ast\""):
             return false
+        if not contains(json(expression), "\"expression_kind\""):
+            return false
+        if not contains(json(expression), "\"inferred_type\""):
+            return false
         if not typed_ir_raw_expression_shape_valid(expression["ast"]):
+            return false
+        if expression["ast"]["kind"] == "member" and not contains(json(expression), "\"member_path\""):
+            return false
+        if expression["ast"]["kind"] == "index" and not contains(json(expression), "\"index_depth\""):
             return false
         if not contains(json(expression), "\"children\""):
             return true
@@ -1026,3 +1041,155 @@ export fn typed_ir_root_contract(first, second):
     if not valid:
         status = "candidate_typed_ir_root_error"
     return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "schema_version": first["schema_version"], "status": status, "valid": valid}
+
+export fn typed_ir_capture_name_seen(names, name, index):
+    if index >= len(names):
+        return false
+    if names[index] == name:
+        return true
+    return typed_ir_capture_name_seen(names, name, index + 1)
+
+export fn typed_ir_capture_append(names, name):
+    if typed_ir_capture_name_seen(names, name, 0):
+        return names
+    return append(names, name)
+
+export fn typed_ir_capture_expression(expression, excluded, result):
+    let kind = expression["kind"]
+    if kind == "name":
+        if not typed_ir_capture_name_seen(excluded, expression["name"], 0):
+            return typed_ir_capture_append(result, expression["name"])
+        return result
+    if kind == "binary":
+        let left = typed_ir_capture_expression(expression["left"], excluded, result)
+        return typed_ir_capture_expression(expression["right"], excluded, left)
+    if kind == "unary":
+        if contains(json(expression), "\"operand\""):
+            return typed_ir_capture_expression(expression["operand"], excluded, result)
+        return typed_ir_capture_expression(expression["value"], excluded, result)
+    if kind == "index":
+        let target = typed_ir_capture_expression(expression["target"], excluded, result)
+        return typed_ir_capture_expression(expression["index"], excluded, target)
+    if kind == "member":
+        return typed_ir_capture_expression(expression["target"], excluded, result)
+    if kind == "call":
+        let captured = typed_ir_capture_expression(expression["callee"], excluded, result)
+        for argument in expression["args"]:
+            captured = typed_ir_capture_expression(argument["value"], excluded, captured)
+        return captured
+    if kind == "list":
+        let captured = result
+        for element in expression["elements"]:
+            captured = typed_ir_capture_expression(element, excluded, captured)
+        return captured
+    if kind == "map":
+        let captured = result
+        for entry in expression["entries"]:
+            captured = typed_ir_capture_expression(entry["key"], excluded, captured)
+            captured = typed_ir_capture_expression(entry["value"], excluded, captured)
+        return captured
+    if kind == "conditional":
+        let captured = typed_ir_capture_expression(expression["condition"], excluded, result)
+        if contains(json(expression), "\"then_branch\""):
+            captured = typed_ir_capture_expression(expression["then_branch"], excluded, captured)
+        if contains(json(expression), "\"else_branch\""):
+            captured = typed_ir_capture_expression(expression["else_branch"], excluded, captured)
+        return captured
+    return result
+
+export fn typed_ir_capture_locals(statements, result):
+    let locals = result
+    for statement in statements:
+        if statement["kind"] == "declaration" or statement["kind"] == "function":
+            locals = typed_ir_capture_append(locals, statement["name"])
+        if statement["kind"] == "if":
+            locals = typed_ir_capture_locals(statement["then_branch"]["statements"], locals)
+            if statement["else_branch"] != none:
+                locals = typed_ir_capture_locals(statement["else_branch"]["statements"], locals)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            if statement["kind"] == "for":
+                locals = typed_ir_capture_append(locals, statement["binding"])
+            locals = typed_ir_capture_locals(statement["body"]["statements"], locals)
+        if statement["kind"] == "try_catch":
+            locals = typed_ir_capture_locals(statement["body"]["statements"], locals)
+            if contains(json(statement), "\"catch_binding\""):
+                locals = typed_ir_capture_append(locals, statement["catch_binding"])
+            locals = typed_ir_capture_locals(statement["catch_body"]["statements"], locals)
+    return locals
+
+export fn typed_ir_capture_statements(statements, excluded, result):
+    let captured = result
+    for statement in statements:
+        if statement["kind"] == "declaration":
+            captured = typed_ir_capture_expression(statement["value"], excluded, captured)
+        if statement["kind"] == "assignment":
+            if not typed_ir_capture_name_seen(excluded, statement["name"], 0):
+                captured = typed_ir_capture_append(captured, statement["name"])
+            captured = typed_ir_capture_expression(statement["value"], excluded, captured)
+        if statement["kind"] == "say" or statement["kind"] == "return" or statement["kind"] == "raise" or statement["kind"] == "expression":
+            captured = typed_ir_capture_expression(statement["value"], excluded, captured)
+        if statement["kind"] == "function":
+            let child_captures = typed_ir_function_captures(statement)
+            for child_name in child_captures:
+                if not typed_ir_capture_name_seen(excluded, child_name, 0):
+                    captured = typed_ir_capture_append(captured, child_name)
+        if statement["kind"] == "if":
+            captured = typed_ir_capture_expression(statement["condition"], excluded, captured)
+            captured = typed_ir_capture_statements(statement["then_branch"]["statements"], excluded, captured)
+            if statement["else_branch"] != none:
+                captured = typed_ir_capture_statements(statement["else_branch"]["statements"], excluded, captured)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            if statement["kind"] == "while":
+                captured = typed_ir_capture_expression(statement["condition"], excluded, captured)
+            if statement["kind"] == "for":
+                captured = typed_ir_capture_expression(statement["iterable"], excluded, captured)
+            captured = typed_ir_capture_statements(statement["body"]["statements"], excluded, captured)
+        if statement["kind"] == "try_catch":
+            captured = typed_ir_capture_statements(statement["body"]["statements"], excluded, captured)
+            captured = typed_ir_capture_statements(statement["catch_body"]["statements"], excluded, captured)
+    return captured
+
+export fn typed_ir_function_captures(function):
+    let excluded = []
+    for parameter in function["params"]:
+        excluded = typed_ir_capture_append(excluded, parameter["name"])
+    let locals = typed_ir_capture_locals(function["body"]["statements"], [])
+    for local_name in locals:
+        excluded = typed_ir_capture_append(excluded, local_name)
+    return typed_ir_capture_statements(function["body"]["statements"], excluded, [])
+
+export fn typed_ir_member_path(expression, result):
+    if expression["kind"] == "name":
+        return append(result, expression["name"])
+    if expression["kind"] == "member":
+        let path = typed_ir_member_path(expression["target"], result)
+        return append(path, expression["member"])
+    return result
+
+export fn typed_ir_member_path_for(expression):
+    if expression["kind"] != "member":
+        return []
+    return typed_ir_member_path(expression, [])
+
+export fn typed_ir_index_depth(expression):
+    if expression["kind"] != "index":
+        return 0
+    let depth = 1
+    let target = expression["target"]
+    if target["kind"] == "index":
+        depth = depth + typed_ir_index_depth(target)
+    return depth
+
+export fn typed_ir_member_semantics(statements, environment, functions, source_name, index, result):
+    if index >= len(statements):
+        return result
+    let statement = statements[index]
+    let kind = statement["kind"]
+    if kind == "declaration":
+        let inferred = b2c_infer_expr(statement["value"], environment, functions, source_name)
+        let declared_type = statement["annotation"]
+        return typed_ir_member_semantics(statements, environment, functions, source_name, index + 1, append(result, {"declared_type": declared_type, "inferred_type": inferred["type"], "kind": "field", "name": statement["name"], "span": statement["span"]}))
+    if kind == "function":
+        let inferred_return = typed_ir_function_return_type(statement, functions, 0)
+        return typed_ir_member_semantics(statements, environment, functions, source_name, index + 1, append(result, {"inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": inferred_return, "kind": "method", "name": statement["name"], "span": statement["span"], "type_params": statement["type_params"]}))
+    return typed_ir_member_semantics(statements, environment, functions, source_name, index + 1, append(result, {"kind": kind, "span": statement["span"]}))
