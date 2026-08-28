@@ -407,6 +407,12 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
     if kind == "trait" or kind == "interface":
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "name": statement["name"], "span": statement["span"]}
+    if kind == "break" or kind == "continue":
+        return {"ast": statement, "control": "loop_exit", "kind": kind, "span": statement["span"]}
+    if kind == "import":
+        return {"ast": statement, "explicit": statement["explicit"], "kind": kind, "path": statement["path"], "span": statement["span"]}
+    if kind == "module":
+        return {"ast": statement, "kind": kind, "name": statement["name"], "span": statement["span"]}
     return {"ast": statement, "kind": kind, "span": statement["span"]}
 
 export fn owned_inferred_statements(statements, environment, functions, source_name, result):
@@ -764,17 +770,61 @@ export fn typed_ir_node_shape_valid(node):
         return false
     let kind = node["kind"]
     if kind == "declaration":
-        return contains(json(node), "\"name\"") and contains(json(node), "\"value\"") and contains(json(node), "\"inferred_type\"")
+        if not (contains(json(node), "\"name\"") and contains(json(node), "\"value\"") and contains(json(node), "\"inferred_type\"")):
+            return false
+        return typed_ir_expression_shape_valid(node["value"], 0)
     if kind == "assignment":
-        return contains(json(node), "\"name\"") and contains(json(node), "\"value\"")
+        if not (contains(json(node), "\"name\"") and contains(json(node), "\"value\"")):
+            return false
+        return typed_ir_expression_shape_valid(node["value"], 0)
     if kind == "function":
-        return contains(json(node), "\"name\"") and contains(json(node), "\"body\"") and contains(json(node), "\"params\"")
+        if not (contains(json(node), "\"name\"") and contains(json(node), "\"body\"") and contains(json(node), "\"params\"")):
+            return false
+        return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "if":
-        return contains(json(node), "\"condition\"") and contains(json(node), "\"then_branch\"")
+        if not (contains(json(node), "\"condition\"") and contains(json(node), "\"then_branch\"")):
+            return false
+        if not typed_ir_expression_shape_valid(node["condition"], 0):
+            return false
+        if not typed_ir_nested_nodes_shape_valid(node["then_branch"], 0):
+            return false
+        let has_top_else = false
+        if not contains(json(node), "\"ast\":"):
+            has_top_else = contains(json(node), "\"else_branch\"")
+        if has_top_else:
+            if not typed_ir_nested_nodes_shape_valid(node["else_branch"], 0):
+                return false
+        return true
     if kind == "while" or kind == "for":
-        return contains(json(node), "\"body\"")
+        if not contains(json(node), "\"body\""):
+            return false
+        if kind == "while" and not typed_ir_expression_shape_valid(node["condition"], 0):
+            return false
+        if kind == "for" and not typed_ir_expression_shape_valid(node["iterable"], 0):
+            return false
+        return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
-        return contains(json(node), "\"value\"")
+        if not contains(json(node), "\"value\""):
+            return false
+        return typed_ir_expression_shape_valid(node["value"], 0)
+    if kind == "try_catch":
+        if not (contains(json(node), "\"body\"") and contains(json(node), "\"catch_body\"")):
+            return false
+        if not typed_ir_nested_nodes_shape_valid(node["body"], 0):
+            return false
+        return typed_ir_nested_nodes_shape_valid(node["catch_body"], 0)
+    if kind == "class" or kind == "trait" or kind == "interface":
+        if not (contains(json(node), "\"name\"") and contains(json(node), "\"body\"")):
+            return false
+        return typed_ir_nested_nodes_shape_valid(node["body"], 0)
+    if kind == "type_alias":
+        return contains(json(node), "\"name\"") and contains(json(node), "\"body\"")
+    if kind == "break" or kind == "continue":
+        return contains(json(node), "\"control\":\"loop_exit\"")
+    if kind == "import":
+        return contains(json(node), "\"path\"") and contains(json(node), "\"explicit\"")
+    if kind == "module":
+        return contains(json(node), "\"name\"")
     return true
 
 export fn typed_ir_nodes_shape_valid(nodes, index):
@@ -798,3 +848,117 @@ export fn typed_ir_general_contract(first, second):
     if contains(json(first), "\"typed_metadata\""):
         metadata = first["typed_metadata"]
     return {"candidate_only": candidate_only, "deterministic": json(first) == json(second), "node_count": len(first_nodes), "node_count_match": len(first_nodes) == len(second_nodes), "node_shapes_valid": typed_ir_nodes_shape_valid(first_nodes, 0), "schema_stable": first_schema == second_schema and first_schema >= 4, "typed_metadata": metadata, "valid": candidate_only and metadata and first_schema >= 4 and first_schema == second_schema and len(first_nodes) == len(second_nodes) and typed_ir_nodes_shape_valid(first_nodes, 0)}
+
+export fn typed_ir_expression_shape_valid(expression, index):
+    if expression == none:
+        return true
+    if not contains(json(expression), "\"span\""):
+        return false
+    if not contains(json(expression), "\"kind\""):
+        return false
+    if expression["kind"] == "typed_expression":
+        if not contains(json(expression), "\"ast\""):
+            return false
+        if not typed_ir_raw_expression_shape_valid(expression["ast"]):
+            return false
+        if not contains(json(expression), "\"children\""):
+            return true
+        let children = expression["children"]
+        if index >= len(children):
+            return true
+        if not typed_ir_expression_shape_valid(children[index], 0):
+            return false
+        return typed_ir_expression_shape_valid(expression, index + 1)
+    return true
+
+export fn typed_ir_nested_nodes_shape_valid(value, index):
+    if value == none:
+        return true
+    let encoded = json(value)
+    let is_block = starts_with(encoded, "{")
+    if is_block:
+        if contains(encoded, "\"statements\""):
+            return typed_ir_nodes_shape_valid(value["statements"], index)
+        return false
+    if index >= len(value):
+        return true
+    if not typed_ir_node_shape_valid(value[index]):
+        return false
+    return typed_ir_nested_nodes_shape_valid(value, index + 1)
+
+export fn typed_ir_call_args_shape_valid(args, index):
+    if index >= len(args):
+        return true
+    if not contains(json(args[index]), "\"value\""):
+        return false
+    if not typed_ir_raw_expression_shape_valid(args[index]["value"]):
+        return false
+    return typed_ir_call_args_shape_valid(args, index + 1)
+
+export fn typed_ir_raw_expression_shape_valid(expression):
+    if expression == none:
+        return true
+    if not contains(json(expression), "\"kind\""):
+        return false
+    if not contains(json(expression), "\"span\""):
+        return false
+    let kind = expression["kind"]
+    if kind == "binary":
+        if not (contains(json(expression), "\"left\"") and contains(json(expression), "\"right\"")):
+            return false
+        if not typed_ir_raw_expression_shape_valid(expression["left"]):
+            return false
+        return typed_ir_raw_expression_shape_valid(expression["right"])
+    if kind == "unary":
+        if contains(json(expression), "\"value\""):
+            return typed_ir_raw_expression_shape_valid(expression["value"])
+        if contains(json(expression), "\"operand\""):
+            return typed_ir_raw_expression_shape_valid(expression["operand"])
+        return false
+    if kind == "conditional":
+        if not contains(json(expression), "\"condition\""):
+            return false
+        if not typed_ir_raw_expression_shape_valid(expression["condition"]):
+            return false
+        if contains(json(expression), "\"then_branch\""):
+            if not typed_ir_raw_expression_shape_valid(expression["then_branch"]):
+                return false
+        if contains(json(expression), "\"else_branch\""):
+            if not typed_ir_raw_expression_shape_valid(expression["else_branch"]):
+                return false
+        return true
+    if kind == "index":
+        if not (contains(json(expression), "\"target\"") and contains(json(expression), "\"index\"")):
+            return false
+        if not typed_ir_raw_expression_shape_valid(expression["target"]):
+            return false
+        return typed_ir_raw_expression_shape_valid(expression["index"])
+    if kind == "member":
+        if not contains(json(expression), "\"target\""):
+            return false
+        return typed_ir_raw_expression_shape_valid(expression["target"])
+    if kind == "call":
+        if not (contains(json(expression), "\"callee\"") and contains(json(expression), "\"args\"")):
+            return false
+        if not typed_ir_raw_expression_shape_valid(expression["callee"]):
+            return false
+        return typed_ir_call_args_shape_valid(expression["args"], 0)
+    if kind == "list":
+        if not contains(json(expression), "\"elements\""):
+            return false
+        for element in expression["elements"]:
+            if not typed_ir_raw_expression_shape_valid(element):
+                return false
+        return true
+    if kind == "map":
+        if not contains(json(expression), "\"entries\""):
+            return false
+        for entry in expression["entries"]:
+            if not (contains(json(entry), "\"key\"") and contains(json(entry), "\"value\"")):
+                return false
+            if not typed_ir_raw_expression_shape_valid(entry["key"]):
+                return false
+            if not typed_ir_raw_expression_shape_valid(entry["value"]):
+                return false
+        return true
+    return true
