@@ -783,3 +783,49 @@ export fn seed_a13_supported_rebuild_evidence(sources, source_names, platform_re
     if not supported:
         status = "candidate_a13_rebuild_blocked"
     return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "platform_evidence": platform_valid, "source_count": rebuild["count"], "status": status, "supported": supported, "vm_outputs": rebuild["first"]}
+
+export fn seed_artifact_record_valid(record):
+    if not contains(json(record), "\"kind\""):
+        return false
+    if not contains(json(record), "\"bytes\""):
+        return false
+    if not contains(json(record), "\"digest\""):
+        return false
+    if record["kind"] == "":
+        return false
+    if record["bytes"] == "":
+        return false
+    return record["digest"] == record["kind"] + ":" + record["bytes"]
+
+export fn seed_pipeline_artifacts_valid(artifacts, index):
+    if index >= len(artifacts):
+        return true
+    if not seed_artifact_record_valid(artifacts[index]):
+        return false
+    return seed_pipeline_artifacts_valid(artifacts, index + 1)
+
+export fn seed_owned_pipeline_contract(pipeline):
+    let valid = pipeline["native_independent"] == false
+    if pipeline["status"] != "candidate_pipeline_executed":
+        valid = false
+    if not pipeline["stage_chain_valid"]:
+        valid = false
+    if len(pipeline["artifacts"]) != 2:
+        valid = false
+    if not seed_pipeline_artifacts_valid(pipeline["artifacts"], 0):
+        valid = false
+    if not contains(json(pipeline), "\"stages\""):
+        valid = false
+    let status = "candidate_owned_pipeline_contract"
+    if not valid:
+        status = "candidate_owned_pipeline_contract_error"
+    return {"artifact_count": len(pipeline["artifacts"]), "native_independent": pipeline["native_independent"], "stage_count": len(pipeline["stages"]), "status": status, "valid": valid}
+
+export fn seed_package_artifact_contract(artifact_bytes, artifact_digest):
+    let valid = artifact_bytes != ""
+    if artifact_digest != seed_pipeline_digest("package_artifact", artifact_bytes):
+        valid = false
+    let status = "candidate_package_artifact_contract"
+    if not valid:
+        status = "candidate_package_artifact_contract_error"
+    return {"artifact_bytes_nonempty": artifact_bytes != "", "artifact_digest": artifact_digest, "status": status, "valid": valid}
