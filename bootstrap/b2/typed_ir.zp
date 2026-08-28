@@ -384,6 +384,29 @@ export fn owned_inferred_expression(expression, environment, functions, source_n
     let inferred = b2c_infer_expr(expression, environment, functions, source_name)
     return {"ast": expression, "children": owned_inferred_expression_children(expression, environment, functions, source_name), "diagnostics": inferred["errors"], "inferred_type": inferred["type"], "kind": "typed_expression", "span": expression["span"]}
 
+export fn typed_ir_function_return_type(function, functions, index):
+    if index >= len(functions):
+        if function["return_type"] == none:
+            return "any"
+        return function["return_type"]
+    if functions[index]["name"] == function["name"]:
+        if functions[index]["return_type"] == none:
+            return "any"
+        return functions[index]["return_type"]
+    return typed_ir_function_return_type(function, functions, index + 1)
+
+export fn typed_ir_parameter_nodes(parameters, index, result):
+    if index >= len(parameters):
+        return result
+    let parameter = parameters[index]
+    let inferred_type = parameter["annotation"]
+    if inferred_type == none:
+        inferred_type = "any"
+    let default_value = none
+    if contains(json(parameter), "\"default\""):
+        default_value = parameter["default"]
+    return typed_ir_parameter_nodes(parameters, index + 1, append(result, {"annotation": parameter["annotation"], "default": default_value, "inferred_type": inferred_type, "name": parameter["name"]}))
+
 export fn owned_inferred_statement(statement, environment, functions, source_name):
     let kind = statement["kind"]
     if kind == "declaration":
@@ -402,7 +425,7 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
     if kind == "try_catch":
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": statement["catch_binding"], "kind": kind, "span": statement["span"]}
     if kind == "function":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
     if kind == "class":
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
     if kind == "trait" or kind == "interface":
@@ -779,6 +802,10 @@ export fn typed_ir_node_shape_valid(node):
         return typed_ir_expression_shape_valid(node["value"], 0)
     if kind == "function":
         if not (contains(json(node), "\"name\"") and contains(json(node), "\"body\"") and contains(json(node), "\"params\"")):
+            return false
+        if not contains(json(node), "\"inferred_return_type\""):
+            return false
+        if not contains(json(node), "\"inferred_parameters\""):
             return false
         return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "if":
