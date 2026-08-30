@@ -1,0 +1,4 @@
+fn identity<T: number>(value: T) -> T:
+    return value
+
+let result: number = identity<number>("invalid")

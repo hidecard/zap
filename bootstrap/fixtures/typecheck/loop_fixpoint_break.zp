@@ -1,0 +1,7 @@
+fn find_value(items: list<number>) -> option<number>:
+    for item in items:
+        if item > 10:
+            return some(item)
+    return none
+
+let result: option<number> = find_value([5, 15, 20])

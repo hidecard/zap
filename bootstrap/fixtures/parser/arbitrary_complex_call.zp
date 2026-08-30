@@ -1,0 +1,4 @@
+fn process(a: number, b: number, c: number) -> number:
+    return a + b + c
+
+let result: number = process(1, 2, 3)

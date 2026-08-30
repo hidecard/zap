@@ -1,0 +1,8 @@
+class Box<T>:
+    value: T
+    
+    fn get(self) -> T:
+        return self.value
+
+let b: Box<number> = Box{value: 42}
+let v: number = b.get()

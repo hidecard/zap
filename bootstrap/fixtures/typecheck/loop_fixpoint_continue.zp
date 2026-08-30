@@ -1,0 +1,9 @@
+fn sum_positive(items: list<number>) -> number:
+    let total: number = 0
+    for item in items:
+        if item < 0:
+            continue
+        total = total + item
+    return total
+
+let result: number = sum_positive([1, -2, 3, -4, 5])

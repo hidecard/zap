@@ -1,0 +1,4 @@
+type IntList = list<number>
+
+let values: IntList = [1, 2, 3]
+values = ["a", "b"]

@@ -1,0 +1,4 @@
+fn pair<T: number, U: text>(left: T, right: U) -> map<T, U>:
+    return {left: right}
+
+let result: map<number, text> = pair("invalid", 123)

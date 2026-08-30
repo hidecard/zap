@@ -1,0 +1,4 @@
+type Result<T> = result<T, text>
+
+fn process() -> Result<number>:
+    return ok(42)
