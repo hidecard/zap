@@ -1,0 +1,6 @@
+class Point:
+    x: number
+    y: number
+
+let p: Point = Point{x: 0, y: 0}
+p.x = 10

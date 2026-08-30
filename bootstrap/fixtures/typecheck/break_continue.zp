@@ -1,0 +1,5 @@
+let result: number = 0
+while result < 10:
+    if result == 5:
+        break
+    result = result + 1

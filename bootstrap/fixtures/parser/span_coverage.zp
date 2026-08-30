@@ -1,0 +1,4 @@
+let a: number = 1
+let b: text = "hello"
+fn add(x: number, y: number) -> number:
+    return x + y

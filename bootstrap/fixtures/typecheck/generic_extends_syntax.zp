@@ -1,0 +1,4 @@
+fn bounded<T extends number>(value: T) -> T:
+    return value
+
+let result: number = bounded(1)

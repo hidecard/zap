@@ -316,6 +316,16 @@ export fn b2c_function_constraints(function):
             let parts = split(parameter, ":")
             if len(parts) >= 2:
                 result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
+        if contains(parameter, "+"):
+            let parts = split(parameter, "+")
+            if len(parts) >= 2:
+                let param_name = trim(parts[0])
+                let bounds = []
+                for bound_part in parts:
+                    if trim(bound_part) != param_name:
+                        bounds = append(bounds, trim(bound_part))
+                for bound in bounds:
+                    result = append(result, {"bound": bound, "parameter": param_name})
     return result
 
 export fn b2c_generic_constraints_satisfied(function, substitutions):

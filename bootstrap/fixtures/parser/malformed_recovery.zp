@@ -1,0 +1,3 @@
+fn test():
+    return 1
+    unclosed_bracket = [

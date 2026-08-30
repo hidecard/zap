@@ -658,26 +658,6 @@ export fn parse_statement(line, line_number, body_column):
         return {"kind": "expression", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
     return parse_assignment(line, line_number, body_column)
 
-export fn parse_simple_function(lines):
-    let header = trim(lines[0])
-    let header_parts = split(header, "(")
-    let function_name = trim(substring(header_parts[0], 3, len(header_parts[0])))
-    let parameter_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 2))
-    let parameter = {"annotation": none, "default": none, "name": parameter_text}
-    let return_line = trim(lines[1])
-    let return_value = parse_expression(trim(substring(return_line, 7, len(return_line))), 1)
-    let return_statement = {"kind": "return", "span": span(2, 5, len(return_line)), "value": return_value}
-    let function = {"body": {"statements": [return_statement]}, "exported": false, "is_async": false, "kind": "function", "name": function_name, "params": [parameter], "return_type": none, "span": span(1, 1, len(header)), "type_params": [], "visibility": "public"}
-    let call_line = trim(lines[2])
-    let call = parse_postfix(trim(substring(call_line, 4, len(call_line))), 1)
-    let say_statement = {"kind": "say", "payload": call, "span": span(3, 1, len(lines[2])), "value": call}
-    return [function, say_statement]
-
-export fn parse_simple_while(lines):
-    let condition = parse_expression("ready", 1)
-    let body = {"statements": [{"kind": "break", "span": span(2, 5, 5)}]}
-    let loop = {"body": body, "condition": condition, "kind": "while", "span": span(1, 1, 12)}
-    return [loop]
 
 export fn parse_deep_mixed_blocks(lines):
     let iterable = parse_list("[1, 2]", 1)
@@ -743,14 +723,18 @@ export fn generic_parameters_from_name(raw_name):
     if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
         return []
     let open_parts = split(raw_name, "<")
-    if len(open_parts) != 2:
-        return []
     let inner = trim(substring(open_parts[1], 0, len(open_parts[1]) - 1))
-    if inner == "":
-        return []
     let result = []
-    for item in split(inner, ","):
-        result = append(result, trim(item))
+    for parameter in split(inner, ","):
+        let candidate = trim(parameter)
+        if contains(candidate, " extends "):
+            let parts = split(candidate, " extends ")
+            if len(parts) == 2:
+                result = append(result, trim(parts[0]) + ":" + trim(parts[1]))
+            else:
+                result = append(result, candidate)
+        else:
+            result = append(result, candidate)
     return result
 
 export fn parse_generic_constraints(header):
@@ -765,10 +749,6 @@ export fn parse_generic_constraints(header):
     return result
 
 export fn parse_generic_function(lines):
-    if len(lines) >= 3:
-        if starts_with(trim(lines[2]), "say "):
-            if not is_block_header(lines[1]):
-                return parse_simple_function(lines)
     let header = trim(lines[0])
     let open_index = 0
     while open_index < len(header):
@@ -1693,12 +1673,17 @@ export fn generic_header_diagnostic_at(lines, index, source_name):
                 return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic bound '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
             parameter_name = trim(bound_parts[0])
             bound = trim(bound_parts[1])
-            if bound == "" or contains(bound, ":") or contains(bound, " ") or bound == "any" or bound == "number" or bound == "text" or bound == "bool" or bound == "none" or starts_with(bound, "list<") or starts_with(bound, "map<") or starts_with(bound, "option<") or starts_with(bound, "result<"):
+        if contains(candidate, " extends "):
+            let parts = split(candidate, " extends ")
+            if len(parts) == 2:
+                parameter_name = trim(parts[0])
+                bound = trim(parts[1])
+            else:
                 return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if bound != "" and (contains(bound, ":") or contains(bound, " ") or bound == "any"):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
         if generic_header_seen(seen, parameter_name):
             return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "duplicate generic type parameter: " + parameter_name, "notes": [], "severity": "error", "source_name": source_name}
-        if contains(candidate, " extends "):
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
         if parameter_name != "T" and parameter_name != "U" and parameter_name != "K" and parameter_name != "V":
             return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
         seen = append(seen, parameter_name)

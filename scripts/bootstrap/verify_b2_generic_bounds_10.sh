@@ -35,4 +35,6 @@ true
 EOF
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
 cmp "$out" "$expected"
-printf 'B2 generic-bounds gate passed: 10 declaration, bound, and instantiation cases\n'
+#!/bin/bash
+# Verify B2 generic bounds
+set -e

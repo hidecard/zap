@@ -1,0 +1,7 @@
+fn add(a: number, b: number) -> number:
+    return a + b
+
+fn triple(x: number) -> number:
+    return add(x, add(x, x))
+
+let result: number = triple(5)

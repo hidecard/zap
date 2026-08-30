@@ -30,4 +30,7 @@ lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlin
 if lines != ["number", "0", "number", "1", "ZAP-TYPE-004", "1", "ZAP-TYPE-003"]:
     raise SystemExit(f"unexpected engine explicit generic output: {lines!r}")
 PY
+#!/bin/bash
+# Verify B2 explicit generic arguments
+set -e
 printf 'B2 engine explicit-generic gate passed: explicit substitution, mismatch/arity diagnostics\n'

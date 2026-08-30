@@ -1,0 +1,3 @@
+let value: option<number> = none
+if is_option_none(value) or value > 0:
+    let inside: number = value

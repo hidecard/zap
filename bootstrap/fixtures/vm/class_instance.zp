@@ -1,0 +1,9 @@
+class Counter:
+    value: number
+    
+    fn increment(self) -> number:
+        self.value = self.value + 1
+        return self.value
+
+let c: Counter = Counter{value: 0}
+let count: number = c.increment()

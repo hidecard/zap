@@ -3195,6 +3195,14 @@ export fn b2c_alias_substitute(target, parameters, arguments, index):
     let substituted = b2c_generic_type_substitute(target, parameters[index], arguments[index])
     return b2c_alias_substitute(substituted, parameters, arguments, index + 1)
 
+export fn b2c_alias_body_valid(body, parameters):
+    if len(parameters) == 0:
+        return true
+    for parameter in parameters:
+        if not contains(body, parameter):
+            return false
+    return true
+
 export fn b2c_expand_alias_type(type_name, aliases, depth):
     if type_name == none or depth > 8:
         return type_name
@@ -3267,8 +3275,17 @@ export fn b2c_expand_alias_statements(statements, aliases, result):
                                     result = append(result, statement)
     return result
 
+export fn b2c_check_alias_validity(alias, source_name):
+    let errors = []
+    if not b2c_alias_body_valid(alias["target"], alias["type_params"]):
+        errors = append(errors, b2c_error(source_name, alias, "ZAP-TYPE-010", "type alias '" + alias["name"] + "' references undeclared parameter in body"))
+    return errors
+
 export fn b2c_check_program(ast, source_name):
     let aliases = b2c_collect_type_aliases(ast["statements"], [])
+    let errors = []
+    for alias in aliases:
+        errors = b2c_append_errors(errors, b2c_check_alias_validity(alias, source_name))
     let normalized_ast = {"statements": b2c_expand_alias_statements(ast["statements"], aliases, [])}
     let registry = b2c_collect_trait_registry(normalized_ast["statements"], [])
     let trait_errors = b2c_collect_trait_class_errors(normalized_ast["statements"], registry, source_name, [])
@@ -3276,7 +3293,8 @@ export fn b2c_check_program(ast, source_name):
     let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(normalized_ast["statements"], []), classes, registry, []), source_name)
     let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
     let implementation_tables = b2c_collect_trait_implementation_tables(normalized_ast["statements"], registry, [])
-    let errors = b2c_append_errors(trait_errors, bound_errors)
+    errors = b2c_append_errors(errors, trait_errors)
+    errors = b2c_append_errors(errors, bound_errors)
     for function in functions:
         let function_state = b2c_check_function(function, functions, source_name)
         errors = b2c_append_errors(errors, function_state["errors"])

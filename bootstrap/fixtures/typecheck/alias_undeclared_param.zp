@@ -1,0 +1,3 @@
+type Box<T> = option<U>
+
+let boxed: Box<number> = some(42)

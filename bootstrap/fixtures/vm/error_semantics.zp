@@ -1,0 +1,6 @@
+fn might_fail(value: number) -> result<number, text>:
+    if value > 0:
+        return ok(value)
+    return err("negative")
+
+let result: result<number, text> = might_fail(5)

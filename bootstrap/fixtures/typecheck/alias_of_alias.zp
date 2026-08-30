@@ -1,0 +1,4 @@
+type Inner = list<number>
+type Outer = Inner
+
+let values: Outer = [1, 2, 3]

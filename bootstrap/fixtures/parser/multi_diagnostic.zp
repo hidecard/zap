@@ -1,0 +1,4 @@
+let x: number = "text"
+let y: text = 123
+fn bad():
+    return none

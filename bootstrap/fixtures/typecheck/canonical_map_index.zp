@@ -1,0 +1,2 @@
+let scores: map<text, number> = {"a": 1, "b": 2}
+let score: number = scores["a"]
