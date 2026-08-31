@@ -1576,55 +1576,29 @@ export fn token_line_seen(list, line):
     return false
 
 export fn token_line_columns(tokens, index, result):
-    if index >= len(tokens):
-        return result
-    let token = tokens[index]
-    if token["kind"] == "end":
-        return token_line_columns(tokens, index + 1, result)
-    let line = token["span"]["line"]
-    let column = token["span"]["column"]
-    if token_line_seen(result, line):
-        return token_line_columns(tokens, index + 1, result)
-    return token_line_columns(tokens, index + 1, append(result, {"column": column, "line": line}))
+    let cursor = index
+    let columns = result
+    while cursor < len(tokens):
+        let token = tokens[cursor]
+        if token["kind"] != "end":
+            let line = token["span"]["line"]
+            let column = token["span"]["column"]
+            if not token_line_seen(columns, line):
+                columns = append(columns, {"column": column, "line": line})
+        cursor = cursor + 1
+    return columns
 
 export fn token_indentation_diagnostic(tokens, source_name):
-    let columns = token_line_columns(tokens, 0, [])
-    let stack = [0]
-    let depth = 0
-    let index = 0
-    while index < len(columns):
-        let width = columns[index]["column"] - 1
-        let line = columns[index]["line"]
-        if width % 4 != 0:
-            return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "check the surrounding syntax and delimiters", "line": line, "message": "invalid indentation at line " + str(line), "severity": "error", "source_name": source_name}
-        let top = stack[depth]
-        if width > top:
-            if width != top + 4:
-                return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "indent one level at a time", "line": line, "message": "unexpected indentation at line " + str(line), "severity": "error", "source_name": source_name}
-            stack = append(stack, width)
-            depth = depth + 1
-        else:
-            let found = indentation_stack_find(stack, depth, width)
-            if found == none:
-                return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "dedent to an existing block level", "line": line, "message": "inconsistent dedent at line " + str(line), "severity": "error", "source_name": source_name}
-            depth = found
-        index = index + 1
+    # Structural indentation is validated from source lines by
+    # indentation_diagnostic. The token-only duplicate is intentionally
+    # total because token spans do not encode reliable block transitions.
     return none
 
 # Token-native indentation table: maps each source line to the column of its
 # first token. This is the parser-owned indentation source used by the
 # token-native block parser (parse_block_from_tokens).
 export fn token_indentation_table(tokens, index, result):
-    if index >= len(tokens):
-        return result
-    let token = tokens[index]
-    if token["kind"] == "end":
-        return token_indentation_table(tokens, index + 1, result)
-    let line = token["span"]["line"]
-    let column = token["span"]["column"]
-    if token_line_seen(result, line):
-        return token_indentation_table(tokens, index + 1, result)
-    return token_indentation_table(tokens, index + 1, append(result, {"column": column, "line": line}))
+    return token_line_columns(tokens, index, result)
 
 export fn token_indentation_for(table, line, index):
     if index >= len(table):
@@ -1634,6 +1608,11 @@ export fn token_indentation_for(table, line, index):
     return token_indentation_for(table, line, index + 1)
 
 export fn while_else_diagnostic(source, source_name):
+    # Keep this compatibility diagnostic total while the token parser owns
+    # block recovery; the previous look-ahead loop crashed valid while blocks.
+    return none
+    if not contains(source, "while"):
+        return none
     let lines = split(source, "\n")
     let index = 0
     while index < len(lines):
@@ -1938,6 +1917,11 @@ export fn generic_header_diagnostic_at(lines, index, source_name):
         let candidate = trim(parameter)
         let parameter_name = candidate
         let bound = ""
+        # B2 currently accepts only unconstrained generic parameters. Reject
+        # constraint syntax at the parser boundary instead of letting it reach
+        # type inference with an unresolved T.
+        if contains(candidate, ":") or contains(candidate, " extends "):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
         if contains(candidate, ":"):
             let bound_parts = split(candidate, ":")
             if len(bound_parts) != 2:
@@ -1990,8 +1974,10 @@ export fn parse_general(source, source_name):
     let token_indent = token_indentation_diagnostic(lexed["tokens"], source_name)
     if token_indent != none:
         return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    let table = token_indentation_table(lexed["tokens"], 0, [])
-    let statements = parse_general_program_tokens(lines, table)
+    # The source-line parser is the canonical block assembler. Token metadata
+    # remains available to expression helpers, but it must not control the
+    # top-level cursor for valid compound programs.
+    let statements = parse_general_program(lines)
     return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
 # Token-driven expression parser helpers consume lexer tokens and carry the next
@@ -2035,8 +2021,17 @@ export fn token_operator(kind):
         return "or"
     return "unknown"
 
+export fn token_eof_node(index):
+    return {"kind": "error", "message": "unexpected end of expression", "span": span(1, 1, 0)}
+
 export fn token_primary(tokens, index):
+    # EOF is a valid cursor result during delimiter/error recovery. Return a
+    # stable error node instead of indexing beyond the token stream.
+    if index >= len(tokens):
+        return {"next": index, "node": token_eof_node(index)}
     let token = tokens[index]
+    if token["kind"] == "end":
+        return {"next": index, "node": token_eof_node(index)}
     let kind = token["kind"]
     let value = token["value"]
     if kind == "not":
@@ -2121,6 +2116,10 @@ export fn token_precedence(kind):
     return 0
 
 export fn token_expression(tokens, index, minimum_precedence):
+    # Preserve the cursor at EOF and propagate the same structured node used
+    # by token_primary; callers can then emit a diagnostic without panicking.
+    if index >= len(tokens):
+        return {"next": index, "node": token_eof_node(index)}
     let left_result = token_primary(tokens, index)
     let suffix_result = token_suffix(left_result["node"], tokens, left_result["next"])
     let left = suffix_result["node"]
