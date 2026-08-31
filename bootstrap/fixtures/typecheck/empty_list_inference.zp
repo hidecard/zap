@@ -1,0 +1,2 @@
+let empty: list<number> = []
+let values: list<any> = []

@@ -28,6 +28,13 @@ use parser::{
     static_literal_type,
 };
 mod cli;
+
+mod stdlib;
+mod stdlib_collection;
+mod stdlib_system;
+mod stdlib_path;
+mod stdlib_file;
+mod stdlib_json;
 mod evaluator;
 mod lsp;
 mod runtime_state;

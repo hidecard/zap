@@ -1,1 +1,2 @@
 let missing: none = none
+let also_none: none = option_none()

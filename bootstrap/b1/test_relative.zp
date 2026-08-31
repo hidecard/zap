@@ -1,0 +1,2 @@
+import "lexer.zp"
+say "loaded lexer relatively"

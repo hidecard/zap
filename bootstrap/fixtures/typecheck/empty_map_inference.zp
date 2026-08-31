@@ -1,0 +1,2 @@
+let empty: map<text,number> = {}
+let data: map<any,any> = {}

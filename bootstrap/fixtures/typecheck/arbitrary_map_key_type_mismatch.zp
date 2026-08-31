@@ -1,0 +1,3 @@
+let data: map<text,number> = {"score": 7}
+let key: number = 123
+let value: number = data[key]

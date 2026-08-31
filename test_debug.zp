@@ -1,0 +1,4 @@
+import "bootstrap/b1/lexer.zp"
+let x = 1
+import "bootstrap/b1/parser.zp"
+say "done"

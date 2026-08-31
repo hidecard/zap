@@ -1,0 +1,20 @@
+# B1 candidate parser written in Zap.
+# B1 parser implementation: the general entry owns token/indentation-driven
+# AST assembly while the Rust implementation remains the differential reference.
+import "bootstrap/b1/lexer.zp"
+
+export fn span(line, column, length):
+    return {"column": column, "length": length, "line": line}
+
+export fn rebase_map_entries(entries, index, line_delta, column_delta, result):
+    if index >= len(entries):
+        return result
+    let entry = entries[index]
+    let rebased_entry = {"key": rebase_expression_span(entry["key"], line_delta, column_delta), "value": rebase_expression_span(entry["value"], line_delta, column_delta)}
+    return rebase_map_entries(entries, index + 1, line_delta, column_delta, append(result, rebased_entry))
+
+export fn rebase_expression_list(elements, index, line_delta, column_delta, result):
+    if index >= len(elements):
+        return result
+    return rebase_expression_list(elements, index + 1, line_delta, column_delta, append(result, rebase_expression_span(elements[index], line_delta, column_delta)))
+

@@ -1,0 +1,3 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/helper.zp"
+say "loaded two modules"

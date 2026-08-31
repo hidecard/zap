@@ -1,0 +1,2 @@
+import "lexer.zp"
+say "parser_test loaded lexer"

@@ -1,0 +1,3 @@
+let mixed: list<any> = [1, "text", true]
+let numbers: list<number> = [1, 2, 3]
+let texts: list<text> = ["a", "b", "c"]

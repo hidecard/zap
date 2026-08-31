@@ -18,6 +18,109 @@ use super::{
     validate_function_signatures,
 };
 
+/// Security validation for path operations to prevent directory traversal attacks
+pub(crate) fn validate_path_security(path: &Path, project_root: &Path) -> Result<(), String> {
+    // Reject absolute paths
+    if path.is_absolute() {
+        return Err(format!("security: absolute path not allowed: {}", path.display()));
+    }
+    
+    // Normalize the path and check for traversal components
+    let normalized = path.canonicalize().map_err(|e| {
+        format!("security: cannot canonicalize path {}: {}", path.display(), e)
+    })?;
+    
+    // Check if the normalized path is within project root
+    let canonical_root = project_root.canonicalize().map_err(|e| {
+        format!("security: cannot canonicalize project root {}: {}", project_root.display(), e)
+    })?;
+    
+    if !normalized.starts_with(&canonical_root) {
+        return Err(format!(
+            "security: path {} escapes project root {}",
+            normalized.display(),
+            canonical_root.display()
+        ));
+    }
+    
+    // Check for symlink components that could escape project boundary
+    check_symlink_security(&normalized, &canonical_root)?;
+    
+    Ok(())
+}
+
+/// Check that symlinks don't escape the project boundary
+fn check_symlink_security(path: &Path, project_root: &Path) -> Result<(), String> {
+    let mut current = path;
+    
+    while let Some(parent) = current.parent() {
+        if parent == project_root {
+            break;
+        }
+        
+        if let Ok(metadata) = fs::symlink_metadata(current) {
+            if metadata.is_symlink() {
+                let target = fs::read_link(current).map_err(|e| {
+                    format!("security: cannot read symlink {}: {}", current.display(), e)
+                })?;
+                
+                // Check if symlink target is absolute and outside project
+                if Path::new(&target).is_absolute() {
+                    let canonical_target = Path::new(&target).canonicalize().map_err(|e| {
+                        format!("security: cannot canonicalize symlink target {}: {}", target, e)
+                    })?;
+                    
+                    if !canonical_target.starts_with(project_root) {
+                        return Err(format!(
+                            "security: symlink {} points outside project root to {}",
+                            current.display(),
+                            canonical_target.display()
+                        ));
+                    }
+                }
+            }
+        }
+        
+        current = parent;
+    }
+    
+    Ok(())
+}
+
+/// Validate module path security to prevent escaping module boundaries
+pub(crate) fn validate_module_path_security(module_path: &Path, project_root: &Path) -> Result<(), String> {
+    validate_path_security(module_path, project_root)?;
+    
+    // Additional module-specific checks
+    if module_path.components().any(|c| c.as_os_str() == "..") {
+        return Err(format!(
+            "security: module path contains parent directory component: {}",
+            module_path.display()
+        ));
+    }
+    
+    Ok(())
+}
+
+/// Check for directory traversal attempts in path strings
+pub(crate) fn detect_path_traversal(path: &str) -> bool {
+    path.contains("..") || path.starts_with('/') || path.starts_with('\\')
+}
+
+/// Sanitize a path string to prevent traversal attacks
+pub(crate) fn sanitize_path(path: &str) -> Result<String, String> {
+    if detect_path_traversal(path) {
+        return Err(format!("security: path traversal detected in: {}", path));
+    }
+    
+    // Remove any suspicious patterns
+    let sanitized = path.replace("\\", "/")
+        .replace("//", "/")
+        .trim_matches('/');
+    
+    Ok(sanitized.to_string())
+}
+
 pub(crate) fn validate_project(dir: &Path) -> Result<String, String> {
     validate_project_with_lock_mode(dir, false)
 }

@@ -1,0 +1,15 @@
+# Comprehensive basic type checking matrix
+let num: number = 42
+let txt: text = "hello"
+let flag: bool = true
+let lst: list<number> = [1, 2, 3]
+let mp: map<text,number> = {"key": 7}
+let n: none = none
+
+# Valid assignments
+let another_num: number = num
+let another_txt: text = txt
+let another_flag: bool = flag
+let another_lst: list<number> = lst
+let another_mp: map<text,number> = mp
+let another_n: none = n

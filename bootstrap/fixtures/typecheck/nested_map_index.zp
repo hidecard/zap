@@ -1,0 +1,3 @@
+let nested: map<text,map<text,number>> = {"outer": {"inner": 5}}
+let inner_map: map<text,number> = nested["outer"]
+let value: number = nested["outer"]["inner"]

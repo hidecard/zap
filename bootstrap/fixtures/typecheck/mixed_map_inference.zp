@@ -1,0 +1,3 @@
+let mixed: map<any,any> = {"key": 123, 123: "value"}
+let text_number: map<text,number> = {"a": 1, "b": 2}
+let number_text: map<number,text> = {1: "a", 2: "b"}

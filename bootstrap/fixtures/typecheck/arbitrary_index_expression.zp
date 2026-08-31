@@ -1,0 +1,3 @@
+let values: list<number> = [1, 2, 3]
+let i: number = 0
+let first: number = values[i]

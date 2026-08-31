@@ -1,0 +1,8 @@
+fn divide(a: number, b: number) -> result<number>:
+    if b == 0:
+        return err("division by zero")
+    return ok(a / b)
+
+let result: result<number> = divide(10, 2)
+if is_ok(result):
+    let value: number = result

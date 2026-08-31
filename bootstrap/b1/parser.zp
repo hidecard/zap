@@ -177,18 +177,18 @@ export fn parse_expression(raw, start_column):
         return {"kind": "unary", "op": "not", "span": span(1, start_column, unary_length), "value": operand}
     if starts_with(value, "(") and contains(value, ")"):
         let grouped_close = find_matching_close(value, 0)
-        if grouped_close == len(value) - 1:
+        if grouped_close != none and grouped_close == len(value) - 1:
             let grouped_text = substring(value, 1, len(value) - 1)
             return parse_expression(grouped_text, start_column + 1)
     if contains(value, " or "):
         let parts = split(value, " or ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 4, len(value))), start_column + len(parts[0]) + 4)
         return binary_expression(left, "or", right)
     if contains(value, " and "):
         let parts = split(value, " and ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 5)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 5, len(value))), start_column + len(parts[0]) + 5)
         return binary_expression(left, "and", right)
     if starts_with(value, "(") and contains(value, ") * "):
         let grouped_parts = split(value, ") * ")
@@ -200,37 +200,37 @@ export fn parse_expression(raw, start_column):
     if contains(value, " <= "):
         let parts = split(value, " <= ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 4, len(value))), start_column + len(parts[0]) + 4)
         return binary_expression(left, "less_equal", right)
     if contains(value, " >= "):
         let parts = split(value, " >= ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 4, len(value))), start_column + len(parts[0]) + 4)
         return binary_expression(left, "greater_equal", right)
     if contains(value, " == "):
         let parts = split(value, " == ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 4, len(value))), start_column + len(parts[0]) + 4)
         return binary_expression(left, "equal", right)
     if contains(value, " != "):
         let parts = split(value, " != ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 4)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 4, len(value))), start_column + len(parts[0]) + 4)
         return binary_expression(left, "not_equal", right)
     if contains(value, " < "):
         let parts = split(value, " < ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "less", right)
     if contains(value, " > "):
         let parts = split(value, " > ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "greater", right)
     if contains(value, " - "):
         let parts = split(value, " - ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "subtract", right)
     if contains(value, " / ") and contains(value, " % "):
         let div_parts = split(value, " / ")
@@ -241,22 +241,22 @@ export fn parse_expression(raw, start_column):
     if contains(value, " / "):
         let parts = split(value, " / ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "divide", right)
     if contains(value, " % "):
         let parts = split(value, " % ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "remainder", right)
     if contains(value, " + "):
         let parts = split(value, " + ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "add", right)
     if contains(value, " * "):
         let parts = split(value, " * ")
         let left = parse_expression(parts[0], start_column)
-        let right = parse_expression(parts[1], start_column + len(parts[0]) + 3)
+        let right = parse_expression(trim(substring(value, len(parts[0]) + 3, len(value))), start_column + len(parts[0]) + 3)
         return binary_expression(left, "multiply", right)
     return parse_postfix(value, start_column)
 
@@ -273,7 +273,7 @@ export fn find_matching_close(value, open_index):
                 if depth == 0:
                     return index
         index = index + 1
-    return len(value) - 1
+    return none
 
 export fn find_top_level_comma_at(value, index, paren_depth, bracket_depth, brace_depth, angle_depth):
     if index >= len(value):
@@ -326,31 +326,23 @@ export fn parse_call_arguments(argument_text, argument_column):
     let value = trim(argument_text)
     if is_empty(value):
         return []
-    let comma = find_top_level_comma(value)
-    if comma == none:
-        return [parse_call_argument(value, argument_column)]
-    let first_text = trim(substring(value, 0, comma))
-    let second_text = trim(substring(value, comma + 1, len(value)))
-    let first = parse_call_argument(first_text, argument_column)
-    let second_column = argument_column + comma + 2
-    let second_comma = find_top_level_comma(second_text)
-    if second_comma == none:
-        let second = parse_call_argument(second_text, second_column)
-        return [first, second]
-    let second_value = trim(substring(second_text, 0, second_comma))
-    let remaining_text = trim(substring(second_text, second_comma + 1, len(second_text)))
-    let second = parse_call_argument(second_value, second_column)
-    let third_column = second_column + second_comma + 2
-    let third_comma = find_top_level_comma(remaining_text)
-    if third_comma == none:
-        let third = parse_call_argument(remaining_text, third_column)
-        return [first, second, third]
-    let third_value = trim(substring(remaining_text, 0, third_comma))
-    let fourth_value = trim(substring(remaining_text, third_comma + 1, len(remaining_text)))
-    let third = parse_call_argument(third_value, third_column)
-    let fourth_column = third_column + third_comma + 2
-    let fourth = parse_call_argument(fourth_value, fourth_column)
-    return [first, second, third, fourth]
+    let arguments = []
+    let remaining = value
+    let current_column = argument_column
+    while remaining != "":
+        let comma = find_top_level_comma(remaining)
+        let part = remaining
+        if comma != none:
+            part = trim(substring(remaining, 0, comma))
+            remaining = trim(substring(remaining, comma + 1, len(remaining)))
+        else:
+            remaining = ""
+        arguments = append(arguments, parse_call_argument(part, current_column))
+        if comma != none:
+            current_column = current_column + comma + 2
+        else:
+            current_column = current_column + len(part)
+    return arguments
 
 export fn first_open_bracket_at(value, index):
     if index >= len(value):
@@ -401,12 +393,23 @@ export fn parse_postfix(raw, start_column):
                 break
             open_index = open_index + 1
         let close_index = find_matching_close(call_text, open_index)
-        let method = trim(substring(call_text, 0, open_index))
-        let target = {"args": [], "callee": name("super", start_column), "kind": "call", "span": span(1, start_column, 7), "type_args": []}
-        let callee = {"kind": "member", "member": method, "span": span(1, start_column, len(value)), "target": target}
+        if close_index == none:
+            return parse_atom(value, start_column)
         let argument_text = substring(call_text, open_index + 1, close_index)
         let arguments = parse_call_arguments(argument_text, start_column + 9)
-        return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, len(value)), "type_args": []}
+        let member_text = trim(substring(call_text, 0, open_index))
+        let super_call = {"args": [], "callee": name("super", start_column), "kind": "call", "span": span(1, start_column, 7), "type_args": []}
+        let base = super_call
+        if member_text != "":
+            let member_parts = split(member_text, ".")
+            let part_index = 0
+            while part_index < len(member_parts) - 1:
+                let member_name = trim(member_parts[part_index])
+                base = {"kind": "member", "member": member_name, "span": span(1, start_column, len(value)), "target": base}
+                part_index = part_index + 1
+            let callee = {"kind": "member", "member": trim(member_parts[part_index]), "span": span(1, start_column, len(value)), "target": base}
+            return {"args": arguments, "callee": callee, "kind": "call", "span": span(1, start_column, len(value)), "type_args": []}
+        return {"args": arguments, "callee": super_call, "kind": "call", "span": span(1, start_column, len(value)), "type_args": []}
     if starts_with(value, "-"):
         let operand_text = trim(substring(value, 1, len(value)))
         let operand = parse_atom(operand_text, start_column + 1)
@@ -426,6 +429,8 @@ export fn parse_postfix(raw, start_column):
                 break
             open_index = open_index + 1
         let close_index = find_matching_close(value, open_index)
+        if close_index == none:
+            return parse_atom(value, start_column)
         let raw_callee = trim(substring(value, 0, open_index))
         let callee_name = raw_callee
         let explicit_type_args = []

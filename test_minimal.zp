@@ -1,0 +1,3 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+say "loaded both"

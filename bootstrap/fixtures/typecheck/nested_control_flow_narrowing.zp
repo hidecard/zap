@@ -1,0 +1,8 @@
+let value: option<number> = some(5)
+if is_some(value):
+    let num: number = value
+    if num > 0:
+        let positive: number = num
+else:
+    value = some(0)
+let final: number = value

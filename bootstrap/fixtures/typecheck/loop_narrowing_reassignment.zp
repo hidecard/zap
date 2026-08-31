@@ -1,0 +1,5 @@
+let value: option<number> = some(5)
+while is_some(value):
+    let num: number = value
+    value = some(num + 1)
+let final_num: number = value

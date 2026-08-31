@@ -1,0 +1,5 @@
+class Person:
+    fn new(name: text) -> Person:
+        # constructor implementation
+
+let person: Person = 123

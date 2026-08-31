@@ -1,5 +1,6 @@
-let value: option<number> = some(1)
+let value: option<number> = some(5)
 if is_some(value):
-    let inside: number = value
-    value = none
-let after: option<number> = value
+    let num: number = value
+else:
+    value = some(10)
+let another_num: number = value

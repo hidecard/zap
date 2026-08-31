@@ -1,0 +1,3 @@
+let values: list<number> = [1, 2, 3]
+let key: text = "invalid"
+let first: number = values[key]
