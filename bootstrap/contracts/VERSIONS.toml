@@ -28,6 +28,9 @@ version = 1
 stage = "B0"
 reference_owner = "native Rust implementation"
 self_hosted = false
+# The overall bootstrap remains B0 while the B1 lexer milestone is independently reached.
+lexer_stage = "B1"
+lexer_owner = "bootstrap/b1/lexer.zp"
 
 [platform_seed]
 version = "0"

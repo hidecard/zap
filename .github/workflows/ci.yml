@@ -111,6 +111,9 @@ jobs:
       - name: Verify B1 lexer differential corpus
         run: scripts/bootstrap/verify_b1_lexer.sh
 
+      - name: Verify B1 lexer ownership contract
+        run: scripts/bootstrap/verify_b1_lexer_contract.sh
+
       - name: Verify B1 reference parser differential corpus
         run: scripts/bootstrap/verify_b1_parser.sh
 

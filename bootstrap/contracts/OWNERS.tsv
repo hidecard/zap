@@ -1,7 +1,7 @@
 rule_id	domain	english_section	burmese_section	owner	fixture_path	status
 BOOT-001	stage	Bootstrap stages	Bootstrap အဆင့်များ	native/bootstrap	bootstrap/fixtures/metadata/b0_stage.json	stable
-BOOT-002	lexer	Ownership rules	Ownership rules	native/src/lexer.rs	bootstrap/fixtures/lexer/basic.zp	stable
-BOOT-003	spans	Artifact contract	Artifact contract	native/src/lexer.rs	bootstrap/fixtures/lexer/unicode.zp	stable
+BOOT-002	lexer	Ownership rules	Ownership rules	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/basic.zp	stable
+BOOT-003	spans	Artifact contract	Artifact contract	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.zp	stable
 BOOT-004	diagnostics	Capability contract	Capability contract	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/invalid_character.zp	stable
 BOOT-005	determinism	Reproducibility and differential gates	Reproducibility နှင့် differential gates	scripts/bootstrap	bootstrap/fixtures/lexer/basic.tokens.json	stable
 BOOT-006	stdlib	Ownership rules	Ownership rules	native/src/stdlib.rs	bootstrap/fixtures/stdlib/catalog.json	stable
