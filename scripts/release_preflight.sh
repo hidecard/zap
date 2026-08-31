@@ -189,6 +189,9 @@ check_release_files() {
     scripts/test_platform_archive.sh
     scripts/test_benchmark_regression.sh
     scripts/test_benchmark_provenance.sh
+    scripts/test_b2_typed_ir_benchmark.sh
+    scripts/test_b3_ast_schema_compatibility.sh
+    scripts/verify_b3_unified_evidence.sh
     scripts/test_stdlib_policy.sh
     scripts/test_lsp_semantic_parity.sh
     scripts/test_lsp_protocol_sync.sh

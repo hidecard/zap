@@ -152,6 +152,9 @@ jobs:
       - name: Verify Rust-free bootstrap seed pipeline
         run: scripts/bootstrap/verify_non_rust_seed_pipeline.sh
 
+      - name: Verify B3 AST schema compatibility matrix
+        run: scripts/test_b3_ast_schema_compatibility.sh
+
       - name: Run type-check conformance TC-001 through TC-005
         run: cargo test --manifest-path native/Cargo.toml --test core typecheck_p0_conformance_matrix_tc001_to_tc005 --all-features -- --exact --nocapture
 
@@ -171,6 +174,21 @@ jobs:
 
       - name: Run LSP protocol synchronization contract
         run: scripts/test_lsp_protocol_sync.sh
+
+      - name: Generate unified B3 evidence report
+        env:
+          B3_EVIDENCE_REPORT: target/b3-unified-evidence.tsv
+        run: scripts/verify_b3_unified_evidence.sh
+
+      - name: Upload unified B3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b3-unified-evidence-${{ github.sha }}
+          path: |
+            target/b3-unified-evidence.tsv
+            target/b3-unified-evidence-*.log
+          if-no-files-found: error
 
       - name: Run canonical VS Code extension package contract
         run: scripts/test_vscode_extension.sh

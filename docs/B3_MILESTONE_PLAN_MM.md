@@ -75,3 +75,22 @@ B2 typed-IR performance/RSS benchmark ကို CI နှင့် release prefl
 | P1 | CLI/LSP diagnostic parity and Rust-free seed aggregation | လက်ရှိ individual gates pass; unified B3 evidence/report ကို ဆက်လုပ်ရန် |
 
 ယခု increment ပြီးနောက် B1/B2 regression၊ B3 gates နှင့် benchmark contract အားလုံး local တွင် pass ဖြစ်သည်။ နောက်တစ်ဆင့်တွင် schema compatibility fixture matrix နှင့် unified B3 evidence report ကို ထည့်သွင်းခြင်းသည် အရေးကြီးဆုံးကျန်ရှိနေသော P1 အလုပ်ဖြစ်သည်။
+
+## Progress update — schema compatibility and unified evidence
+
+Schema v1 compatibility/breaking-change fixture matrix ကို ထည့်သွင်းပြီးဖြစ်သည်။ v1 minimal envelope၊ unknown envelope field နှင့် unknown node field သုံးမျိုးကို additive compatibility အဖြစ် လက်ခံပြီး၊ required field ဖယ်ရှားမှုနှင့် span shape ပြောင်းလဲမှု v2 နှစ်မျိုးကို breaking change အဖြစ် reject လုပ်မည်ဟု contract test ထဲတွင် တည်ငြိမ်စွာ မှတ်တမ်းတင်ထားသည်။
+
+CLI/LSP၊ Rust-free seed၊ canonical AST schema၊ B3 foundation နှင့် dependency graph gates များကို `scripts/verify_b3_unified_evidence.sh` မှ စုစည်း run လုပ်ပြီး `target/b3-unified-evidence.tsv` နှင့် per-gate log files များ ထုတ်ပေးသည်။ CI workflow သည် compatibility matrix ကို သီးခြားစစ်ပြီး unified report နှင့် logs များကို artifact အဖြစ် upload လုပ်သည်။ Release preflight သည် matrix/evidence scripts များကို required release inputs အဖြစ် ထည့်သွင်းထားသည်။
+
+### Updated P1 TODO status
+
+| P1 task | Status |
+|---|---|
+| Schema v1 additive unknown-field compatibility fixture | ပြီးစီး |
+| Schema breaking-change/version-increment fixture | ပြီးစီး |
+| Unified CLI/LSP/Rust-free seed evidence report | ပြီးစီး |
+| CI artifact upload for unified B3 evidence | ပြီးစီး |
+| Release preflight inclusion of compatibility/evidence scripts | ပြီးစီး |
+| Cross-version reader implementation beyond v1 contract | ဆက်လုပ်ရန် |
+| Baseline comparison for typed-IR peak RSS across platforms | ဆက်လုပ်ရန် |
+| Full release-tag preflight with current release documentation | ဆက်လုပ်ရန် |
