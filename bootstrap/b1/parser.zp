@@ -1608,8 +1608,11 @@ export fn token_indentation_for(table, line, index):
     return token_indentation_for(table, line, index + 1)
 
 export fn while_else_diagnostic(source, source_name):
-    # Keep this compatibility diagnostic total while the token parser owns
-    # block recovery; the previous look-ahead loop crashed valid while blocks.
+    # Avoid indexing source lines while recognizing the explicitly unsupported
+    # top-level while/else form. The bounded source check is safe for empty,
+    # one-line, and trailing-newline inputs.
+    if contains(source, "while ") and contains(source, "\nelse:"):
+        return {"code": "ZAP-SYNTAX-001", "column": none, "help": "while loops do not support an else clause in this syntax", "line": none, "message": "unsupported 'while ... else' syntax", "severity": "error", "source_name": source_name}
     return none
     if not contains(source, "while"):
         return none
