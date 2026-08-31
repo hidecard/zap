@@ -132,6 +132,17 @@ jobs:
       - name: Verify B2 Zap typed-IR candidate
         run: scripts/bootstrap/verify_b2_typed_ir_candidate.sh
 
+      - name: Verify B2 milestone aggregate contract
+        run: scripts/bootstrap/verify_b2_milestone.sh
+
+      - name: Upload B2 milestone evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b2-milestone-${{ github.sha }}
+          path: target/b2-milestone-report.tsv
+          if-no-files-found: error
+
       - name: Verify B3 package/build/test-runner foundations
         run: scripts/bootstrap/verify_b3_foundations.sh
 
