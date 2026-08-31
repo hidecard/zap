@@ -58,3 +58,20 @@ B3 ၏ canonical AST schema versioning အပိုင်းကို စတင�
 | ဆက်လုပ်ရန် P2 | CI action runtime deprecation notice နှင့် remaining compatibility/dead-code debt ကို owner/retirement condition ဖြင့် register လုပ်ရန် |
 
 Schema contract ပြင်ဆင်မှုများပြီးနောက် B1 parser၊ B2 aggregate နှင့် B3 canonical schema gate များကို ပြန်လည်စစ်ဆေးရမည်။ Release tag မတင်မီ `release_preflight.sh` ကို correct package version နှင့် clean tree ဖြင့် run လုပ်ရန်လိုအပ်သည်။
+
+## Progress update — P1 benchmark integration
+
+B2 typed-IR performance/RSS benchmark ကို CI နှင့် release preflight flow နှစ်ခုလုံးထဲ ချိတ်ဆက်ပြီးဖြစ်သည်။ `scripts/test_b2_typed_ir_benchmark.sh` သည် candidate/owned rows၊ elapsed time နှင့် peak RSS schema ကို စစ်ဆေးပြီး CI က baseline evidence ကို `benchmark-results/b2-typed-ir.csv` အဖြစ် သိမ်းဆည်းသည်။ Release preflight သည်လည်း အနည်းဆုံး candidate/owned measurement rows ခြောက်ခုနှင့် numeric timing/RSS fields များကို validate လုပ်သည်။
+
+### P0/P1 status after this increment
+
+| Priority | TODO | Status |
+|---|---|---|
+| P0 | Canonical AST schema versioning and release artifact contract | ပြီးစီး |
+| P0 | Package/build/test-runner foundation | ရှိပြီးသား gate pass; clean-release matrix ကို ဆက်စစ်ရန် |
+| P0 | Dependency graph cycle/duplicate diagnostics | ရှိပြီးသား gate pass; cross-version fixture expansion ကျန် |
+| P1 | Schema v1 unknown-field reader and breaking-change fixtures | ဆက်လုပ်ရန် |
+| P1 | Typed-IR performance/RSS benchmark in CI and release preflight | ပြီးစီး |
+| P1 | CLI/LSP diagnostic parity and Rust-free seed aggregation | လက်ရှိ individual gates pass; unified B3 evidence/report ကို ဆက်လုပ်ရန် |
+
+ယခု increment ပြီးနောက် B1/B2 regression၊ B3 gates နှင့် benchmark contract အားလုံး local တွင် pass ဖြစ်သည်။ နောက်တစ်ဆင့်တွင် schema compatibility fixture matrix နှင့် unified B3 evidence report ကို ထည့်သွင်းခြင်းသည် အရေးကြီးဆုံးကျန်ရှိနေသော P1 အလုပ်ဖြစ်သည်။

@@ -184,6 +184,16 @@ jobs:
       - name: Run benchmark provenance contract
         run: scripts/test_benchmark_provenance.sh
 
+      - name: Run B2 typed-IR benchmark contract
+        run: scripts/test_b2_typed_ir_benchmark.sh
+
+      - name: Run B2 typed-IR performance and memory baseline
+        env:
+          ZAP_TYPED_IR_BENCH_REPEATS: 5
+          ZAP_TYPED_IR_BENCH_WARMUPS: 1
+          ZAP_TYPED_IR_BENCH_OUTPUT: benchmark-results/b2-typed-ir.csv
+        run: scripts/benchmark_b2_typed_ir.sh
+
       - name: Run dependency-free benchmark regression gate
         env:
           ZAP_BENCH_REPEATS: 5

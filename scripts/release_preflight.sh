@@ -543,6 +543,16 @@ run_contract_validation() {
     "${ZAP_BENCH_MAX_REGRESSION_PERCENT:-200}" \
     >"$report_dir/benchmark-regression.log" 2>&1
   pass "benchmark regression validation passed"
+
+  local typed_ir_benchmark="$report_dir/b2-typed-ir.csv"
+  ZAP_TYPED_IR_BENCH_REPEATS="${ZAP_TYPED_IR_BENCH_REPEATS:-3}" \
+    ZAP_TYPED_IR_BENCH_WARMUPS="${ZAP_TYPED_IR_BENCH_WARMUPS:-1}" \
+    ZAP_TYPED_IR_BENCH_OUTPUT="$typed_ir_benchmark" \
+    bash scripts/benchmark_b2_typed_ir.sh
+  test "$(head -n 1 "$typed_ir_benchmark")" = 'suite,iteration,elapsed_seconds,peak_rss_kb'
+  test "$(awk 'END { print NR - 1 }' "$typed_ir_benchmark")" -eq 6
+  awk -F, 'NR > 1 && NF == 4 && $1 ~ /^(candidate|owned)$/ && $2 ~ /^[1-9][0-9]*$/ && $3 ~ /^[0-9]+([.][0-9]+)?$/ && $4 ~ /^[0-9]+$/ { valid++ } END { exit valid == 6 ? 0 : 1 }' "$typed_ir_benchmark"
+  pass "B2 typed-IR performance and peak-RSS baseline validation passed"
 }
 
 run_cargo_audit_gate() {
