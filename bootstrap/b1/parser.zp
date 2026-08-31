@@ -1614,32 +1614,6 @@ export fn while_else_diagnostic(source, source_name):
     if contains(source, "while ") and contains(source, "\nelse:"):
         return {"code": "ZAP-SYNTAX-001", "column": none, "help": "while loops do not support an else clause in this syntax", "line": none, "message": "unsupported 'while ... else' syntax", "severity": "error", "source_name": source_name}
     return none
-    if not contains(source, "while"):
-        return none
-    let lines = split(source, "\n")
-    let index = 0
-    while index < len(lines):
-        let line = lines[index]
-        let value = trim(line)
-        if starts_with(value, "while ") and ends_with(value, ":"):
-            let header_indent = indentation_width(line)
-            let body_index = index + 1
-            while body_index < len(lines):
-                let bl = lines[body_index]
-                let bv = trim(bl)
-                if bv == "":
-                    body_index = body_index + 1
-                    continue
-                if indentation_width(bl) <= header_indent:
-                    break
-                body_index = body_index + 1
-            if body_index < len(lines):
-                let next_line = lines[body_index]
-                let next_value = trim(next_line)
-                if indentation_width(next_line) == header_indent and next_value == "else:":
-                    return {"code": "ZAP-SYNTAX-001", "column": none, "help": "while loops do not support an else clause in this syntax", "line": body_index + 1, "message": "unsupported 'while ... else' syntax at line " + str(body_index + 1), "severity": "error", "source_name": source_name}
-        index = index + 1
-    return none
 
 export fn delimiter_diagnostics(tokens, source_name):
     let bracket_depth = 0

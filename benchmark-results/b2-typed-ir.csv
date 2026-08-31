@@ -1,0 +1,11 @@
+suite,iteration,elapsed_seconds,peak_rss_kb
+candidate,1,1.04,54004
+candidate,2,1.06,54040
+candidate,3,0.98,54176
+candidate,4,1.06,54140
+candidate,5,1.09,54140
+owned,1,1.05,55168
+owned,2,1.05,55488
+owned,3,1.09,55632
+owned,4,1.06,55492
+owned,5,1.06,55496
