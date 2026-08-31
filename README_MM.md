@@ -8,7 +8,7 @@
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/hidecard/zap/actions)
 [![Source: .zp](https://img.shields.io/badge/source-.zp-8A2BE2.svg)](README.md)
 
-**ဘာသာစကားရွေးချယ်ရန်:** [English README](README.md) · [မြန်မာ README](README_MM.md) · [မြန်မာ Documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) · [Zap Language Guide](docs/LEARN_ZAP_MM.md)
+**ဘာသာစကားရွေးချယ်ရန်:** [English README](README.md) · [မြန်မာ README](README_MM.md) · [မြန်မာ Documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) · [Zap Language Guide](docs/LEARN_ZAP_MM.md) · [Rust independence အသေးစိတ် TODO](docs/RUST_INDEPENDENCE_ROADMAP_MM.md)
 
 > **Zap** သည် `.zp` source file၊ indentation-based block၊ optional type check၊ explicit module၊ structured error နှင့် standalone native runtime ပါဝင်သော ဖတ်ရလွယ်ကူသည့် general-purpose programming language ဖြစ်ပါသည်။
 
