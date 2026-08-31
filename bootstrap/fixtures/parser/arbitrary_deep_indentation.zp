@@ -1,0 +1,6 @@
+fn outer():
+    fn middle():
+        fn inner():
+            return 42
+        return inner()
+    return middle()

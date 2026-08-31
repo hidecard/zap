@@ -1,6 +1,6 @@
 # Zap Section A — လက်ရှိ Status Checklist
 
-**နောက်ဆုံးစစ်ဆေးမှု:** `master` / verified follow-up changes through cursor-driven parser foundation
+**နောက်ဆုံးစစ်ဆေးမှု:** `master` @ `f88fc8f` / re-review 2026-08-30 via static source inspection of candidate modules (`bootstrap/b1|/b2|/b3|/b4`). Differential verifiers (scripts/bootstrap/verify_*.sh) **မြင်သာမရပါ** — ဤ environment တွင် Rust toolchain မရှိပဲ network လည်း ပိတ်ထား၍ native build မရနိုင်၊ ရရှိထားသော prebuilt `zap 2.0.2` binary သည် repo ၏ project-root module resolution နှင့် function-return-type semantics နှင့် မကိုက်ညီပါ။ ထို့ကြောင့် `[x]` claims များကို re-execute မလုပ်ဘဲ committed source/CI evidence အပေါ် သာ အခြေခံထားသည်။
 
 **Contract status:** B0 — native Rust reference owner; `self_hosted = false`
 
@@ -206,17 +206,41 @@
 
 - [x] B1 generic control-flow ၁၀-case verifier — recursive `for`/`while`/`if`၊ `break`/`continue` နှင့် indentation diagnostics pass.
 
+- [x] `while ... else` unsupported-syntax detection — `parse_or_diagnostics` သည် `while ... else:` header ကို `ZAP-SYNTAX-001` (unsupported 'while ... else' syntax) diagnostic အဖြစ် ငြင်းပယ်သည်။ Valid `while` loop (else မပါ) variants များ ဆက်လက် supported ဖြစ်သည်။ (foundation; full loop-else matrix pending toolchain verification.)
+
+- [x] Token-span-derived indentation stack — `parser.zp` တွင် `token_line_columns` / `token_indentation_diagnostic` ကို ထည့်ပြီး token `span.line`/`span.column` မှ ပထမ token column ဖြင့် indentation levels တည်ဆောက်သည် (existing `indentation_stack_find` ကို reuse)။ ၎င်းကို `parse_or_diagnostics` တွင် line-based check မတွေ့ပါက secondary diagnostic အဖြစ် ချိတ်ဆက်ထားသည် (existing line-based path ကို မထိဘဲ arbitrary-depth invalid/jump/inconsistent-dedent ကို broaden လုပ်သည်)။ (foundation; full token-native ownership နှင့် all grammar interaction pending.)
+
+- [x] Mixed-top-level / arbitrary-depth / invalid-indentation fixtures — `bootstrap/fixtures/parser/{mixed_top_level_statements,arbitrary_deep_indentation,invalid_indentation_jump,while_else_syntax,while_without_else,arbitrary_nested_blocks_complex}.zp` ကို candidate fixtures အဖြစ် ထည့်ထားသည်။ `invalid_indentation_jump.zp` ကို စစ်မှန်သော ၂-level indentation jump (0/4/12) အဖြစ် ပြင်ဆင်ပြီး။ `scripts/bootstrap/verify_b1_arbitrary_blocks.sh` ကို containment-based candidate assertions (while-else unsupported၊ invalid jump rejected၊ arbitrary/mixed parse to AST) ဖြင့် ထည့်ပြီး၊ CI နှင့် `make test` သို့ ချိတ်ထားသည်။ ဤ gate သည် Rust-reference differential parity claim မဟုတ်သေးပါ။ Verifier run သည် toolchain ရရှိမှသာ ပြေးနိုင်မည် (offline environment constraint).
+
+- [x] Non-Rust VM host (execution layer) — `host/zap-vm-host/run.py` သည် `bootstrap/b3/vm.zp` (`vm_run`/`vm_step`) ၏ faithful Python re-implementation ဖြစ်ပြီး Zap compiler (`bootstrap/b4/native_independent.zp` → `seed_execute_owned_pipeline`) ထုတ်ပေးသော bytecode ကို Rust reference မပါဘဲ execute လုပ်နိုင်သည်။ `const`/`store`/`load`/`dup`/`pop`/`not`/`print`/`halt`၊ `add`..`or` binary ops၊ `jump`/`jump_if_true`/`jump_if_false`၊ `function_def`/`call`/`return_value`/`return_none` နှင့် object field load/store (path)၊ `class_def`/`trait_def`၊ method dispatch with C3 MRO၊ `super_call`၊ `try_begin`/`try_end`/`raise` handlers တို့ကို ပံ့ပိုးပြီး self-test (Python ဖြင့် run ရနိုင်) pass ထားသည် (class constructor + field + method call၊ try/raise caught အပါအဝင်)။ Rust မပါဘဲ Zap bytecode execute လုပ်နိုင်သော foundation ပြီးစီးပြီ။
+
+- [x] Non-Rust VM host verifier (Rust-free CI gate) — `scripts/bootstrap/verify_non_rust_vm_host.sh` (→ `host/zap-vm-host/verify.py`) သည် Python 3 သာ လိုအပ်ပြီး Rust toolchain မလိုဘဲ ၇ ခုသော bytecode programs (arithmetic၊ function call+return၊ branch jump၊ loop/break pattern၊ class+method dispatch၊ try/raise caught၊ closure capture) ကို run ပြီး expected output များနှင့် တိုက်စစ်သည်။ `bash scripts/bootstrap/verify_non_rust_vm_host.sh` သည် ဤ environment တွင် pass ထားပြီ (execution layer ကို Rust မပါဘဲ verify လုပ်နိုင်)။ Compiler ထုတ်ပေးသော `break_jump`/`continue_jump`/`index` opcodes များကို vm_run မတိုင်ခင် `jump`/`field_*` အဖြစ် patch/lower လုပ်သောကြောင့် host သည် final opcodes များကိုသာ လိုသည် (loop control flow ကို jump-based အဖြစ် စစ်ဆေးထား)။
+
+- [x] Non-Rust bootstrap compiler (seed, Rust-free source→bytecode) — `host/zap-bootstrap/compile.py` သည် Python ဖြင့် Zap source (subset: let/say/fn/if/while + arithmetic/calls/comparisons) ကို `host/zap-vm-host/run.py` က ဖတ်နိုင်သော bytecode သို့ compile လုပ်သည်။ `scripts/bootstrap/verify_non_rust_bootstrap_compiler.sh` (→ `host/zap-bootstrap/verify.py`) သည် ၅ ခုသော စစ်တမ်း programs (function call၊ while loop၊ if/else၊ recursion factorial=120၊ string output) ကို source မှ စ၍ compile+execute လုပ်ပြီး expected output နှင့် တိုက်စစ်ရာ ဤ environment တွင် pass ထားသည်။ ဤသည် **source → bytecode → execution လမ်းကြောင်းကို Rust လုံးဝ မပါဘဲ** run နိုင်ကြောင်း သက်သေပြသော temporary seed path ဖြစ်သည်။ Python ကို သုံးနေသေးသောကြောင့် Zap-only/self-hosted compiler claim မဟုတ်ပါ။
+
+## Rust-independent roadmap
+
+လက်ရှိအချက်မှာ Zap compiler + VM သည် Zap ဘာသာစကားဖြင့် ရေးပြီးသား (`bootstrap/b1..b4`) ဖြစ်သော်လည်း ၎င်းကို execute လုပ်ရန် native Rust interpreter (bootstrap seed) ကို မှီခိုနေရသေးခြင်း ဖြစ်သည်။ Rust ကို မှီမခိုရအောင် လုပ်ရန် ကျန်ရှိသော အဆင့်များ:
+
+1. **Verification of the Zap-owned pipeline** — `verify_b4_owned_pipeline_42.sh` နှင့် `verify_b4_source_to_vm_*.sh` တို့ဖြင့် `seed_execute_owned_pipeline` (source → typed-IR → bytecode → VM) ကို toolchain ရရှိမှသာ run ပြီး confirm လုပ်ရန်။
+2. **Non-Rust execution host** — `host/zap-vm-host/run.py` ကို field/method/class/try/super opcodes အထိ ပြည့်စုံအောင် တိုးချဲ့ပြီး Zap bytecode ကို Rust မပါဘဲ run နိုင်အောင် လုပ်ရန် (core + object/field/class/method/try/super/closure ပြီးပြီ; self-test pass)။ Rust-free CI gate `verify_non_rust_vm_host.sh` ကို ထည့်ပြီး ဤ environment တွင် pass ထားပြီ (execution layer ကို Rust မပါဘဲ verify)။ ထို့ပြင် `host/zap-bootstrap/compile.py` (Rust-free seed compiler) ဖြင့် Zap source → bytecode → execution လမ်းကြောင်းကို Rust လုံးဝ မပါဘဲ သက်သေပြနိုင်ပြီ (`verify_non_rust_bootstrap_compiler.sh` pass)။
+3. **Self-rebuild reproducibility** — `seed_self_rebuild` / `seed_pipeline_replay` byte-for-byte equality ကို prove လုပ်ရန် (verify_b4_*_rebuild_*.sh ရှိပြီး toolchain run လိုအပ်)။
+4. **Flip ownership flags** — `native_independent=false` နှင့် `self_hosted=false` ကို `true` သို့ ပြောင်း၍ B0 contract ကို B4 သို့ ပြောင်းရန်။
+5. **Retire the Rust reference** — native Rust CLI/package-resolver/evaluator ကို optional seed သာ ထားရှိပြီး Zap-written components များက ပင်မ execution path ဖြစ်ရန်။
+
+မှတ်ချက်: ဤ environment တွင် Rust toolchain မရှိပဲ network လည်း ပိတ်ထား၍ steps 1/3 (toolchain run) များ မပြေးနိုင်သေးပါ; step 2 (Python VM host) ကိုသာ Python ဖြင့် အပြီးစီးနိုင်/verify လုပ်နိုင်သည်။
+
 ## လက်ရှိနောက်တစ်ဆင့်
 
-1. Token span line/column များမှ parser-owned full indentation stack တည်ဆောက်ရန်။ History/depth foundation ပြီးသော်လည်း token-native ownership နှင့် all grammar interaction မပြီးသေးပါ။
+1. Token span line/column များမှ parser-owned full indentation stack ကို `token_cursor.zp` (`token_indentation_diagnostic`) တွင် foundation အဖြစ် ထည့်ပြီး `parse_or_diagnostics` secondary check အဖြစ် ချိတ်ဆက်ပြီး။ Remaining: line-based `parse_block_from` ကို token-native indentation သို့ full migration နှင့် all grammar interaction (toolchain verification လိုအပ်)။
 
 1. Recursive `parse_block(indent)` နှင့် statement-list builder ကို remaining function/class/control-flow grammar အားလုံးအတွက် line-count dispatch မပါဘဲ ပြောင်းရန်။ `if` route သည် bounded generic path အဖြစ် စတင်ပြီးဖြစ်သည်။
 
-1. Token-derived indentation stack နှင့် arbitrary-depth block diagnostics ကို broaden လုပ်ရန်။
+1. Token-derived indentation stack နှင့် arbitrary-depth block diagnostics ကို `token_indentation_diagnostic` (token-span) ဖြင့် broaden လုပ်ပြီး (invalid indentation / unexpected jump / inconsistent dedent ကို token column မှ စစ်ဆေး)။ Remaining: full grammar-wide token-native integration နှင့် toolchain verification။
 
-1. `while ... else` ကို language reference syntax အဖြစ် မပံ့ပိုးသေးကြောင်း သတ်မှတ်ပြီး valid loop-block variants ကို ဆက်စစ်ရန်။
+1. `while ... else` ကို language reference syntax အဖြစ် မပံ့ပိုးကြောင်း `parse_or_diagnostics` တွင် `ZAP-SYNTAX-001` detection ထည့်ပြီးဖြစ်သည် (foundation)။ Remaining: full valid-loop-block variant matrix နှင့် toolchain verification။
 
-1. Mixed top-level statements၊ arbitrary-depth nested blocks နှင့် invalid indentation diagnostics fixtures ထည့်ရန်။
+1. Mixed top-level statements၊ arbitrary-depth nested blocks နှင့် invalid indentation diagnostics fixtures များကို `bootstrap/fixtures/parser/` တွင် ထည့်ပြီး (6 fixtures)၊ `invalid_indentation_jump.zp` ကို စစ်မှန်သော jump အဖြစ် ပြင်ဆင်ပြီး၊ `scripts/bootstrap/verify_b1_arbitrary_blocks.sh` verifier ကို containment-based assertions ဖြင့် ထည့်ပြီး။ Remaining: toolchain run ဖြင့် confirm (offline environment constraint)။
 
 1. ထို parser AST ကို general typed-IR နှင့် type-checker pipeline သို့ ဆက်စပ်ရန်။
 

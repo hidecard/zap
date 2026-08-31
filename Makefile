@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test test package clean
+.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-non-rust-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -25,16 +25,22 @@ bootstrap-test:
 bootstrap-b1-test:
 	./scripts/bootstrap/verify_b1_lexer.sh
 
+bootstrap-b1-arbitrary-test:
+	./scripts/bootstrap/verify_b1_arbitrary_blocks.sh
+
 bootstrap-b3-test:
 	./scripts/bootstrap/verify_b3_foundations.sh
 
 bootstrap-vm-test:
 	./scripts/bootstrap/verify_vm_platform.sh
 
+bootstrap-non-rust-test:
+	./scripts/bootstrap/verify_non_rust_seed_pipeline.sh
+
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
 
-test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b3-test bootstrap-vm-test
+test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b3-test bootstrap-vm-test bootstrap-non-rust-test
 
 package: native
 	./package_release.sh x86_64-unknown-linux-gnu

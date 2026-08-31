@@ -117,6 +117,9 @@ jobs:
       - name: Verify B1 Zap parser candidate differential corpus
         run: scripts/bootstrap/verify_b1_parser_candidate.sh
 
+      - name: Verify B1 arbitrary-block candidate coverage
+        run: scripts/bootstrap/verify_b1_arbitrary_blocks.sh
+
       - name: Verify B2 typed-IR and type-check conformance fixtures
         run: scripts/bootstrap/verify_b2_typecheck.sh
 
@@ -131,6 +134,9 @@ jobs:
 
       - name: Verify reference VM and platform seed
         run: scripts/bootstrap/verify_vm_platform.sh
+
+      - name: Verify Rust-free bootstrap seed pipeline
+        run: scripts/bootstrap/verify_non_rust_seed_pipeline.sh
 
       - name: Run type-check conformance TC-001 through TC-005
         run: cargo test --manifest-path native/Cargo.toml --test core typecheck_p0_conformance_matrix_tc001_to_tc005 --all-features -- --exact --nocapture

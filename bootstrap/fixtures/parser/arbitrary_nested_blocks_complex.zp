@@ -1,0 +1,7 @@
+fn outer():
+    if true:
+        if false:
+            while true:
+                break
+        else:
+            return 1

@@ -1355,6 +1355,179 @@ export fn parse_block_program(lines):
     let result = parse_block_from(lines, 0, 0)
     return result["statements"]
 
+# Token-native block parser: identical structure to parse_block_from but derives
+# indentation from the token-span table (token_indentation_for) instead of the
+# raw line prefix. This is the parser-owned indentation source for block assembly.
+export fn parse_elif_chain_tokens(lines, start_index, indent, table):
+    let line = lines[start_index]
+    let value = trim(line)
+    let condition_text = trim(substring(value, 5, len(value) - 1))
+    let nested = parse_block_from_tokens(lines, start_index + 1, indent + 4, table)
+    let else_branch = none
+    let final_next = nested["next"]
+    if nested["next"] < len(lines):
+        let next_line = lines[nested["next"]]
+        let next_value = trim(next_line)
+        if token_indentation_for(table, nested["next"] + 1, 0) == indent and starts_with(next_value, "elif "):
+            let chained = parse_elif_chain_tokens(lines, nested["next"], indent, table)
+            else_branch = {"statements": [chained["node"]]}
+            final_next = chained["next"]
+        else:
+            if token_indentation_for(table, nested["next"] + 1, 0) == indent and next_value == "else:":
+                let else_nested = parse_block_from_tokens(lines, nested["next"] + 1, indent + 4, table)
+                else_branch = {"statements": else_nested["statements"]}
+                final_next = else_nested["next"]
+    let node = {"condition": parse_expression(condition_text, 1), "else_branch": else_branch, "kind": "if", "span": span(start_index + 1, indent + 1, len(value)), "then_branch": {"statements": nested["statements"]}}
+    return {"next": final_next, "node": node}
+
+export fn parse_block_from_tokens(lines, start_index, indent, table):
+    let statements = []
+    let cursor = {"index": start_index, "lines": lines}
+    while not line_cursor_done(cursor):
+        let index = cursor["index"]
+        let line = line_cursor_peek(cursor)
+        let current = trim(line)
+        if current == "":
+            cursor = line_cursor_advance(cursor)
+        else:
+            let current_indent = token_indentation_for(table, index + 1, 0)
+            if current_indent < indent:
+                return {"next": index, "statements": statements}
+            if current_indent > indent:
+                return {"next": index, "statements": statements}
+            if starts_with(current, "fn ") or starts_with(current, "async fn ") or starts_with(current, "class ") or starts_with(current, "trait ") or starts_with(current, "interface "):
+                let chunked = nested_block_slice_walk(lines, index + 1, indent, [current])
+                let parsed = []
+                if starts_with(current, "class "):
+                    parsed = parse_class_arbitrary(chunked["lines"])
+                else:
+                    if starts_with(current, "trait "):
+                        parsed = parse_trait_arbitrary(chunked["lines"], "trait")
+                    else:
+                        if starts_with(current, "interface "):
+                            parsed = parse_trait_arbitrary(chunked["lines"], "interface")
+                        else:
+                            parsed = parse_generic_function(chunked["lines"])
+                if len(parsed) > 0:
+                    statements = append(statements, rebase_class_layout_statement(parsed[0], index, indent))
+                cursor = {"index": chunked["next"], "lines": lines}
+            else:
+                if is_block_header(line):
+                    let nested = parse_block_from_tokens(lines, index + 1, indent + 4, table)
+                    let body = {"statements": nested["statements"]}
+                    if starts_with(current, "if "):
+                        let branch_else = none
+                        let final_next = nested["next"]
+                        if nested["next"] < len(lines):
+                            let next_line = lines[nested["next"]]
+                            let next_value = trim(next_line)
+                            if token_indentation_for(table, nested["next"] + 1, 0) == indent and starts_with(next_value, "elif "):
+                                let chained = parse_elif_chain_tokens(lines, nested["next"], indent, table)
+                                branch_else = {"statements": [chained["node"]]}
+                                final_next = chained["next"]
+                            else:
+                                if token_indentation_for(table, nested["next"] + 1, 0) == indent and next_value == "else:":
+                                    let else_nested = parse_block_from_tokens(lines, nested["next"] + 1, indent + 4, table)
+                                    branch_else = {"statements": else_nested["statements"]}
+                                    final_next = else_nested["next"]
+                        let branch = {"condition": parse_expression(trim(substring(current, 3, len(current) - 1)), 1), "else_branch": branch_else, "kind": "if", "span": span(index + 1, indent + 1, len(current)), "then_branch": body}
+                        statements = append(statements, branch)
+                        cursor = {"index": final_next, "lines": lines}
+                    else:
+                        if current == "try:":
+                            let catch_body = {"statements": []}
+                            let next_index = nested["next"]
+                            if nested["next"] < len(lines):
+                                let catch_line = lines[nested["next"]]
+                                if token_indentation_for(table, nested["next"] + 1, 0) == indent and starts_with(trim(catch_line), "catch"):
+                                    let catch_nested = parse_block_from_tokens(lines, nested["next"] + 1, indent + 4, table)
+                                    catch_body = {"statements": catch_nested["statements"]}
+                                    next_index = catch_nested["next"]
+                            let catch_binding = none
+                            if nested["next"] < len(lines):
+                                let catch_header = lines[nested["next"]]
+                                if token_indentation_for(table, nested["next"] + 1, 0) == indent and starts_with(trim(catch_header), "catch"):
+                                    catch_binding = parse_catch_binding(catch_header)
+                            let try_node = {"body": body, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))}
+                            if catch_binding != none:
+                                try_node = {"body": body, "catch_binding": catch_binding, "catch_body": catch_body, "kind": "try_catch", "span": span(index + 1, indent + 1, len(current))}
+                            statements = append(statements, try_node)
+                            cursor = {"index": next_index, "lines": lines}
+                        else:
+                            if starts_with(current, "for "):
+                                let header_parts = split(current, " in ")
+                                let binding = trim(substring(header_parts[0], 4, len(header_parts[0])))
+                                let iterable_text = trim(substring(header_parts[1], 0, len(header_parts[1]) - 1))
+                                statements = append(statements, {"binding": binding, "body": body, "iterable": parse_expression(iterable_text, 1), "kind": "for", "span": span(index + 1, indent + 1, len(current))})
+                            else:
+                                let condition_text = trim(substring(current, 6, len(current) - 1))
+                                statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                    if not starts_with(current, "if ") and current != "try:":
+                        cursor = {"index": nested["next"], "lines": lines}
+                else:
+                    statements = append(statements, parse_statement(line, index + 1, 1))
+                    cursor = line_cursor_advance(cursor)
+    return {"next": cursor["index"], "statements": statements}
+
+export fn parse_block_program_tokens(lines, table):
+    let result = parse_block_from_tokens(lines, 0, 0, table)
+    return result["statements"]
+
+export fn parse_general_sequence_tokens_at(lines, cursor, statements, table):
+    if cursor >= len(lines):
+        return statements
+    let line = lines[cursor]
+    let value = trim(line)
+    if value == "":
+        return parse_general_sequence_tokens_at(lines, cursor + 1, statements, table)
+    if token_indentation_for(table, cursor + 1, 0) != 0:
+        return parse_general_sequence_tokens_at(lines, cursor + 1, statements, table)
+    if is_block_header(line):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_block_program_tokens(chunked["lines"], table)
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_tokens_at(lines, chunked["next"], next_statements, table)
+    if starts_with(value, "fn ") or starts_with(value, "async fn "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_generic_function(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_tokens_at(lines, chunked["next"], next_statements, table)
+    if starts_with(value, "class "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_class_arbitrary(chunked["lines"])
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_tokens_at(lines, chunked["next"], next_statements, table)
+    if starts_with(value, "trait "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_trait_arbitrary(chunked["lines"], "trait")
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_tokens_at(lines, chunked["next"], next_statements, table)
+    if starts_with(value, "interface "):
+        let chunked = top_level_slice_walk(lines, cursor + 1, [line])
+        let parsed = parse_trait_arbitrary(chunked["lines"], "interface")
+        let next_statements = statements
+        if len(parsed) > 0:
+            next_statements = append(next_statements, rebase_statement_spans(parsed[0], cursor))
+        return parse_general_sequence_tokens_at(lines, chunked["next"], next_statements, table)
+    let next_statements = append(statements, parse_statement(line, cursor + 1, 1))
+    return parse_general_sequence_tokens_at(lines, cursor + 1, next_statements, table)
+
+export fn parse_general_sequence_tokens(lines, table):
+    return parse_general_sequence_tokens_at(lines, 0, [], table)
+
+export fn parse_general_program_tokens(lines, table):
+    if len(lines) == 0:
+        return []
+    return parse_general_sequence_tokens(lines, table)
+
 export fn is_branch_header(line):
     let value = trim(line)
     return value == "else:" or starts_with(value, "elif ")
@@ -1391,6 +1564,98 @@ export fn indentation_diagnostic(source, source_name):
             let indentation = len(line) - len(substring(line, len(line) - len(trimmed), len(line)))
             if indentation > 0 and indentation % 4 != 0:
                 return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "invalid indentation at line " + str(index + 1), "severity": "error", "source_name": source_name}
+        index = index + 1
+    return none
+
+export fn token_line_seen(list, line):
+    let index = 0
+    while index < len(list):
+        if list[index]["line"] == line:
+            return true
+        index = index + 1
+    return false
+
+export fn token_line_columns(tokens, index, result):
+    if index >= len(tokens):
+        return result
+    let token = tokens[index]
+    if token["kind"] == "end":
+        return token_line_columns(tokens, index + 1, result)
+    let line = token["span"]["line"]
+    let column = token["span"]["column"]
+    if token_line_seen(result, line):
+        return token_line_columns(tokens, index + 1, result)
+    return token_line_columns(tokens, index + 1, append(result, {"column": column, "line": line}))
+
+export fn token_indentation_diagnostic(tokens, source_name):
+    let columns = token_line_columns(tokens, 0, [])
+    let stack = [0]
+    let depth = 0
+    let index = 0
+    while index < len(columns):
+        let width = columns[index]["column"] - 1
+        let line = columns[index]["line"]
+        if width % 4 != 0:
+            return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "check the surrounding syntax and delimiters", "line": line, "message": "invalid indentation at line " + str(line), "severity": "error", "source_name": source_name}
+        let top = stack[depth]
+        if width > top:
+            if width != top + 4:
+                return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "indent one level at a time", "line": line, "message": "unexpected indentation at line " + str(line), "severity": "error", "source_name": source_name}
+            stack = append(stack, width)
+            depth = depth + 1
+        else:
+            let found = indentation_stack_find(stack, depth, width)
+            if found == none:
+                return {"code": "ZAP-SYNTAX-001", "column": columns[index]["column"], "help": "dedent to an existing block level", "line": line, "message": "inconsistent dedent at line " + str(line), "severity": "error", "source_name": source_name}
+            depth = found
+        index = index + 1
+    return none
+
+# Token-native indentation table: maps each source line to the column of its
+# first token. This is the parser-owned indentation source used by the
+# token-native block parser (parse_block_from_tokens).
+export fn token_indentation_table(tokens, index, result):
+    if index >= len(tokens):
+        return result
+    let token = tokens[index]
+    if token["kind"] == "end":
+        return token_indentation_table(tokens, index + 1, result)
+    let line = token["span"]["line"]
+    let column = token["span"]["column"]
+    if token_line_seen(result, line):
+        return token_indentation_table(tokens, index + 1, result)
+    return token_indentation_table(tokens, index + 1, append(result, {"column": column, "line": line}))
+
+export fn token_indentation_for(table, line, index):
+    if index >= len(table):
+        return 0
+    if table[index]["line"] == line:
+        return table[index]["column"] - 1
+    return token_indentation_for(table, line, index + 1)
+
+export fn while_else_diagnostic(source, source_name):
+    let lines = split(source, "\n")
+    let index = 0
+    while index < len(lines):
+        let line = lines[index]
+        let value = trim(line)
+        if starts_with(value, "while ") and ends_with(value, ":"):
+            let header_indent = indentation_width(line)
+            let body_index = index + 1
+            while body_index < len(lines):
+                let bl = lines[body_index]
+                let bv = trim(bl)
+                if bv == "":
+                    body_index = body_index + 1
+                    continue
+                if indentation_width(bl) <= header_indent:
+                    break
+                body_index = body_index + 1
+            if body_index < len(lines):
+                let next_line = lines[body_index]
+                let next_value = trim(next_line)
+                if indentation_width(next_line) == header_indent and next_value == "else:":
+                    return {"code": "ZAP-SYNTAX-001", "column": none, "help": "while loops do not support an else clause in this syntax", "line": body_index + 1, "message": "unsupported 'while ... else' syntax at line " + str(body_index + 1), "severity": "error", "source_name": source_name}
         index = index + 1
     return none
 
@@ -1558,6 +1823,12 @@ export fn parse_or_diagnostics(source, tokens, source_name):
         return json({"diagnostics": [missing_block], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if indentation != none:
         return json({"diagnostics": [indentation], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let token_indent = token_indentation_diagnostic(tokens, source_name)
+    if token_indent != none:
+        return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let while_else = while_else_diagnostic(source, source_name)
+    if while_else != none:
+        return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if token_has_numeric_dot(tokens):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if starts_with(trim(source), "let "):
@@ -1716,7 +1987,11 @@ export fn parse_general(source, source_name):
     let missing_block = missing_block_diagnostic(lines, source_name)
     if missing_block != none:
         return json({"diagnostics": [missing_block], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    let statements = parse_general_program(lines)
+    let token_indent = token_indentation_diagnostic(lexed["tokens"], source_name)
+    if token_indent != none:
+        return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let table = token_indentation_table(lexed["tokens"], 0, [])
+    let statements = parse_general_program_tokens(lines, table)
     return json({"ast": {"statements": statements}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
 
 # Token-driven expression parser helpers consume lexer tokens and carry the next

@@ -1,0 +1,5 @@
+let x: number = 1
+say "hello"
+fn test():
+    return 42
+let y: text = "world"
