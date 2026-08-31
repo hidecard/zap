@@ -1,0 +1,6 @@
+# Generic function with list type parameter
+fn first_element<T>(items: list<T>) -> T:
+    return items[0]
+
+let numbers: list<number> = [1, 2, 3]
+let first: number = first_element<number>(numbers)

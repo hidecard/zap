@@ -703,7 +703,47 @@ export fn ast_expression_type_env(node, environment):
             if len(parts) == 2 and index_type == trim(parts[0]):
                 return trim(parts[1])
         return "any"
+    if kind == "nested_call":
+        return infer_nested_call_type(node, environment)
+    if kind == "collection_element":
+        return infer_collection_element_type(node, environment)
     return "any"
+
+export fn infer_nested_call_type(node, environment):
+    let callee = node["callee"]
+    let args = node["args"]
+    let callee_type = ast_expression_type_env(callee, environment)
+    if starts_with(callee_type, "fn("):
+        let return_part = split(callee_type, "->")[1]
+        return trim(return_part)
+    return "any"
+
+export fn infer_collection_element_type(node, environment):
+    let collection = node["collection"]
+    let index = node["index"]
+    let collection_type = ast_expression_type_env(collection, environment)
+    let index_type = ast_expression_type_env(index, environment)
+    if starts_with(collection_type, "list<") and ends_with(collection_type, ">"):
+        if index_type == "number":
+            return substring(collection_type, 5, len(collection_type) - 1)
+        return "any"
+    if starts_with(collection_type, "map<") and ends_with(collection_type, ">"):
+        let parts = split(substring(collection_type, 4, len(collection_type) - 1), ",")
+        if len(parts) == 2 and index_type == trim(parts[0]):
+            return trim(parts[1])
+    return "any"
+
+export fn check_nested_call_type_mismatch(node, environment, expected_type):
+    let actual_type = infer_nested_call_type(node, environment)
+    if actual_type != expected_type and actual_type != "any" and expected_type != "any":
+        return {"mismatch": true, "expected": expected_type, "actual": actual_type, "location": node["span"]}
+    return {"mismatch": false}
+
+export fn check_collection_element_type_mismatch(node, environment, expected_type):
+    let actual_type = infer_collection_element_type(node, environment)
+    if actual_type != expected_type and actual_type != "any" and expected_type != "any":
+        return {"mismatch": true, "expected": expected_type, "actual": actual_type, "location": node["span"]}
+    return {"mismatch": false}
 
 export fn generic_parameter_names(line):
     let header = trim(line)
@@ -742,6 +782,135 @@ export fn generic_declaration_info(line):
     if starts_with(raw_name, "fn "):
         raw_name = trim(substring(raw_name, 3, len(raw_name)))
     return {"generic": len(parameters) > 0, "name": raw_name, "parameters": parameters, "valid": generic_parameters_valid(parameters)}
+
+export fn generic_function_instantiate(generic_info, type_arguments):
+    if not generic_info["valid"]:
+        return {"instantiated": false, "reason": "invalid_generic_declaration"}
+    if len(generic_info["parameters"]) != len(type_arguments):
+        return {"instantiated": false, "reason": "arity_mismatch"}
+    return {"instantiated": true, "name": generic_info["name"], "type_arguments": type_arguments}
+
+export fn generic_list_type(element_type):
+    if element_type == "":
+        return "list<any>"
+    return "list<" + element_type + ">"
+
+export fn generic_map_type(key_type, value_type):
+    if key_type == "" or value_type == "":
+        return "map<any,any>"
+    return "map<" + key_type + "," + value_type + ">"
+
+export fn generic_function_type(return_type, parameter_types):
+    let params = ""
+    if len(parameter_types) > 0:
+        params = parameter_types[0]
+        for param in parameter_types[1:]:
+            params = params + "," + param
+    return "fn(" + params + ")->" + return_type
+
+export fn validate_generic_instantiation(generic_type, type_arguments):
+    let parts = type_wrapper_parts(generic_type)
+    if parts["wrapper"] == "":
+        return {"valid": false, "reason": "not_generic"}
+    if parts["wrapper"] == "list":
+        if len(type_arguments) != 1:
+            return {"valid": false, "reason": "list_requires_one_argument"}
+        return {"valid": true, "instantiated": "list<" + type_arguments[0] + ">"}
+    if parts["wrapper"] == "map":
+        if len(type_arguments) != 2:
+            return {"valid": false, "reason": "map_requires_two_arguments"}
+        return {"valid": true, "instantiated": "map<" + type_arguments[0] + "," + type_arguments[1] + ">"}
+    if parts["wrapper"] == "option":
+        if len(type_arguments) != 1:
+            return {"valid": false, "reason": "option_requires_one_argument"}
+        return {"valid": true, "instantiated": "option<" + type_arguments[0] + ">"}
+    if parts["wrapper"] == "result":
+        if len(type_arguments) != 1:
+            return {"valid": false, "reason": "result_requires_one_argument"}
+        return {"valid": true, "instantiated": "result<" + type_arguments[0] + ">"}
+    return {"valid": false, "reason": "unknown_generic_wrapper"}
+
+export fn infer_generic_list_literal(elements, environment):
+    if len(elements) == 0:
+        return "list<any>"
+    let first_type = ast_expression_type_env(elements[0], environment)
+    for element in elements:
+        if ast_expression_type_env(element, environment) != first_type:
+            return "list<any>"
+    return "list<" + first_type + ">"
+
+export fn infer_generic_map_literal(entries, environment):
+    if len(entries) == 0:
+        return "map<any,any>"
+    let first_key_type = ast_expression_type_env(entries[0]["key"], environment)
+    let first_value_type = ast_expression_type_env(entries[0]["value"], environment)
+    for entry in entries:
+        if ast_expression_type_env(entry["key"], environment) != first_key_type:
+            return "map<any,any>"
+        if ast_expression_type_env(entry["value"], environment) != first_value_type:
+            return "map<any,any>"
+    return "map<" + first_key_type + "," + first_value_type + ">"
+
+export fn check_generic_function_call(generic_function, type_arguments, argument_types):
+    let info = generic_declaration_info(generic_function)
+    if not info["generic"]:
+        return {"valid": false, "reason": "not_generic_function"}
+    if len(info["parameters"]) != len(type_arguments):
+        return {"valid": false, "reason": "arity_mismatch"}
+    let index = 0
+    while index < len(argument_types):
+        let expected = type_arguments[index]
+        let actual = argument_types[index]
+        if expected != actual and expected != "any" and actual != "any":
+            return {"valid": false, "reason": "argument_type_mismatch"}
+        index = index + 1
+    return {"valid": true, "instantiated_type": generic_function_type(info["return_type"], type_arguments)}
+
+export fn generic_type_compatible(type1, type2):
+    if type1 == type2:
+        return true
+    if type1 == "any" or type2 == "any":
+        return true
+    let parts1 = type_wrapper_parts(type1)
+    let parts2 = type_wrapper_parts(type2)
+    if parts1["wrapper"] == parts2["wrapper"] and parts1["wrapper"] != "":
+        if parts1["wrapper"] == "list":
+            return generic_type_compatible(parts1["inner"], parts2["inner"])
+        if parts1["wrapper"] == "option":
+            return generic_type_compatible(parts1["inner"], parts2["inner"])
+        if parts1["wrapper"] == "result":
+            return generic_type_compatible(parts1["inner"], parts2["inner"])
+        if parts1["wrapper"] == "map":
+            return generic_type_compatible(parts1["key"], parts2["key"]) and generic_type_compatible(parts1["value"], parts2["value"])
+    return false
+
+export fn infer_generic_return_type(generic_return, type_arguments, parameter_mapping):
+    if contains(generic_return, "<"):
+        let parts = type_wrapper_parts(generic_return)
+        if parts["wrapper"] == "list":
+            let inner = substitute_type_parameters(parts["inner"], type_arguments, parameter_mapping)
+            return "list<" + inner + ">"
+        if parts["wrapper"] == "map":
+            let key = substitute_type_parameters(parts["key"], type_arguments, parameter_mapping)
+            let value = substitute_type_parameters(parts["value"], type_arguments, parameter_mapping)
+            return "map<" + key + "," + value + ">"
+        if parts["wrapper"] == "option":
+            let inner = substitute_type_parameters(parts["inner"], type_arguments, parameter_mapping)
+            return "option<" + inner + ">"
+        if parts["wrapper"] == "result":
+            let inner = substitute_type_parameters(parts["inner"], type_arguments, parameter_mapping)
+            return "result<" + inner + ">"
+    return substitute_type_parameters(generic_return, type_arguments, parameter_mapping)
+
+export fn substitute_type_parameters(type_string, type_arguments, parameter_mapping):
+    let result = type_string
+    let index = 0
+    while index < len(parameter_mapping):
+        let param = parameter_mapping[index]
+        if result == param:
+            result = type_arguments[index]
+        index = index + 1
+    return result
 
 export fn generic_type_declaration_info(line):
     let value = trim(line)

@@ -1,0 +1,6 @@
+# Simple generic function with type parameter T
+fn identity<T>(value: T) -> T:
+    return value
+
+let number_result: number = identity<number>(42)
+let text_result: text = identity<text>("hello")

@@ -278,7 +278,86 @@ fn import_target_path(path: &str) -> Result<PathBuf, String> {
         if component.is_empty() || component == ".." || component == "." {
             return Err(format!("invalid explicit import path `{path}`"));
         }
-        relative.push(component);
+        relative.push(component)
+    }
+    Ok(relative)
+}
+
+pub(crate) fn resolve_relative_path(
+    base_path: &Path,
+    relative_spec: &str,
+) -> Result<PathBuf, String> {
+    let normalized = relative_spec.trim().trim_matches('"');
+    if normalized.is_empty() {
+        return Ok(base_path.to_path_buf());
+    }
+    
+    let base_parent = base_path.parent().unwrap_or_else(|| Path::new("."));
+    let mut result = base_parent.to_path_buf();
+    
+    for component in normalized.split("..") {
+        if !result.pop() {
+            return Err(format!("relative path goes beyond project root: {relative_spec}"));
+        }
+    }
+    
+    let remaining = normalized.split("..").last().unwrap_or("");
+    if !remaining.is_empty() {
+        for component in remaining.split('.') {
+            if component.is_empty() || component == "." {
+                continue;
+            }
+            result.push(component);
+        }
+    }
+    
+    Ok(result)
+}
+
+pub(crate) fn validate_package_name(name: &str) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("package name cannot be empty".to_string());
+    }
+    
+    if !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+        return Err(format!(
+            "package name can only contain alphanumeric characters, underscores, and hyphens: {name}"
+        ));
+    }
+    
+    if name.chars().next().map(|c| c.is_digit(10)).unwrap_or(false) {
+        return Err("package name cannot start with a digit".to_string());
+    }
+    
+    Ok(())
+}
+
+pub(crate) fn standard_module_resolution(
+    module_name: &str,
+    current_path: &Path,
+    root_dir: &Path,
+) -> Result<PathBuf, String> {
+    validate_package_name(module_name)?;
+    
+    // Try standard directories
+    let standard_dirs = ["modules", "lib", "src"];
+    
+    for dir in &standard_dirs {
+        let candidate = root_dir.join(dir).join(format!("{module_name}.zp"));
+        if candidate.is_file() {
+            return Ok(candidate);
+        }
+    }
+    
+    // Try relative to current file
+    let current_dir = current_path.parent().unwrap_or_else(|| Path::new("."));
+    let relative_candidate = current_dir.join(format!("{module_name}.zp"));
+    if relative_candidate.is_file() {
+        return Ok(relative_candidate);
+    }
+    
+    Err(format!("module not found: {module_name}"))
+};
     }
     if relative.extension().is_none() {
         relative.set_extension("zp");

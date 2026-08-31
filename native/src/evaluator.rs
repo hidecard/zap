@@ -2766,6 +2766,34 @@ fn percent_decode(value: &str) -> Result<String, String> {
     String::from_utf8(output).map_err(|_| "url_decode produced invalid UTF-8".into())
 }
 
+fn regex_match(pattern: &str, text: &str) -> Result<bool, String> {
+    if pattern.len() > MAX_REGEX_BYTES {
+        return Err(format!("regex pattern exceeds the {MAX_REGEX_BYTES} byte limit"));
+    }
+    if text.len() > MAX_REGEX_TEXT_BYTES {
+        return Err(format!("regex text exceeds the {MAX_REGEX_TEXT_BYTES} byte limit"));
+    }
+    
+    match regex::Regex::new(pattern) {
+        Ok(re) => Ok(re.is_match(text)),
+        Err(error) => Err(format!("invalid regex pattern: {error}")),
+    }
+}
+
+fn regex_replace(pattern: &str, text: &str, replacement: &str) -> Result<String, String> {
+    if pattern.len() > MAX_REGEX_BYTES {
+        return Err(format!("regex pattern exceeds the {MAX_REGEX_BYTES} byte limit"));
+    }
+    if text.len() > MAX_REGEX_TEXT_BYTES {
+        return Err(format!("regex text exceeds the {MAX_REGEX_TEXT_BYTES} byte limit"));
+    }
+    
+    match regex::Regex::new(pattern) {
+        Ok(re) => Ok(re.replace_all(text, replacement)),
+        Err(error) => Err(format!("invalid regex pattern: {error}")),
+    }
+}
+
 fn parse_url(value: &str) -> Result<Value, String> {
     if value.len() > MAX_URL_BYTES {
         return Err(format!(
@@ -3172,6 +3200,68 @@ pub(crate) fn direct_external_builtin_with_context(
             }
             let Value::Text(value) = &args[0] else {
                 return Err("url_decode expects text".into());
+            }
+            Ok(Some(Value::Text(url_decode(value)?)))
+        }
+        "regex_match" => {
+            if args.len() != 2 {
+                return Err(format!("regex_match expects 2 arguments, got {}", args.len()));
+            }
+            let Value::Text(pattern) = &args[0] else {
+                return Err("regex_match expects text pattern".into());
+            };
+            let Value::Text(text) = &args[1] else {
+                return Err("regex_match expects text to search".into());
+            };
+            match regex_match(pattern, text) {
+                Ok(matches) => Ok(Some(Value::Bool(matches))),
+                Err(error) => Err(error),
+            }
+        }
+        "regex_replace" => {
+            if args.len() != 3 {
+                return Err(format!("regex_replace expects 3 arguments, got {}", args.len()));
+            }
+            let Value::Text(pattern) = &args[0] else {
+                return Err("regex_replace expects text pattern".into());
+            };
+            let Value::Text(text) = &args[1] else {
+                return Err("regex_replace expects text to search".into());
+            };
+            let Value::Text(replacement) = &args[2] else {
+                return Err("regex_replace expects text replacement".into());
+            };
+            match regex_replace(pattern, text, replacement) {
+                Ok(result) => Ok(Some(Value::Text(result))),
+                Err(error) => Err(error),
+            }
+        }
+        "base64_encode" => {
+            if args.len() != 1 {
+                return Err(format!("base64_encode expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("base64_encode expects text".into());
+            };
+            Ok(Some(Value::Text(BASE64.encode(value.as_bytes()))))
+        }
+        "base64_decode" => {
+            if args.len() != 1 {
+                return Err(format!("base64_decode expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("base64_decode expects text".into());
+            };
+            match BASE64.decode(value) {
+                Ok(decoded) => Ok(Some(Value::Text(String::from_utf8(decoded).map_err(|_| "base64_decode produced invalid UTF-8".to_string())?))),
+                Err(error) => Err(format!("base64_decode failed: {error}")),
+            }
+        }
+            if args.len() != 1 {
+                return Err(format!("url_decode expects 1 argument, got {}", args.len()));
+            }
+            let Value::Text(value) = &args[0] else {
+                return Err("url_decode expects text".into());
             };
             Ok(Some(Value::Text(percent_decode(value)?)))
         }
@@ -3311,6 +3401,103 @@ pub(crate) fn constructor_delegates_to_parent(function: &Function) -> bool {
             .ast_body
             .as_ref()
             .is_some_and(ast_contains_super_init)
+}
+
+pub(crate) fn validate_constructor_call(
+    class_name: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    let constructor_key = format!("{class_name}.__init__");
+    if !funcs.contains_key(&constructor_key) {
+        return Err(format!("class {class_name} has no constructor"));
+    }
+    Ok(())
+}
+
+pub(crate) fn check_required_constructor(
+    class_name: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> bool {
+    let constructor_key = format!("{class_name}.__init__");
+    funcs.contains_key(&constructor_key)
+}
+
+pub(crate) fn validate_constructor_args(
+    class_name: &str,
+    args: &[Value],
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    let constructor_key = format!("{class_name}.__init__");
+    let constructor = funcs
+        .get(&constructor_key)
+        .ok_or_else(|| format!("class {class_name} has no constructor"))?;
+    
+    if args.len() != constructor.params.len() {
+        return Err(format!(
+            "constructor for {class_name} expects {} arguments, got {}",
+            constructor.params.len(),
+            args.len()
+        ));
+    }
+    
+    Ok(())
+}
+
+pub(crate) fn detect_circular_inheritance(
+    class_name: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> bool {
+    let mut visited = std::collections::HashSet::new();
+    let mut current = class_name.to_string();
+    
+    loop {
+        if !visited.insert(current.clone()) {
+            return true; // Circular inheritance detected
+        }
+        
+        match class_parent(&current, funcs) {
+            Some(parent) => current = parent,
+            None => return false, // No parent, no cycle
+        }
+    }
+}
+
+pub(crate) fn detect_duplicate_methods(
+    class_name: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Vec<String> {
+    let mut duplicates = Vec::new();
+    let mut method_names = std::collections::HashSet::new();
+    
+    for key in funcs.keys() {
+        if key.starts_with(&format!("{class_name}.")) && !key.contains("__") {
+            let method_name = key.strip_prefix(&format!("{class_name}.")).unwrap();
+            if !method_names.insert(method_name.to_string()) {
+                duplicates.push(method_name.to_string());
+            }
+        }
+    }
+    
+    duplicates
+}
+
+pub(crate) fn validate_inheritance_structure(
+    class_name: &str,
+    funcs: &HashMap<String, Rc<Function>>,
+) -> Result<(), String> {
+    if detect_circular_inheritance(class_name, funcs) {
+        return Err(format!("circular inheritance detected for class {class_name}"));
+    }
+    
+    let duplicates = detect_duplicate_methods(class_name, funcs);
+    if !duplicates.is_empty() {
+        return Err(format!(
+            "duplicate methods detected in class {class_name}: {}",
+            duplicates.join(", ")
+        ));
+    }
+    
+    Ok(())
 }
 
 pub(crate) fn initialize_object_fields(

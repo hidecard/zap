@@ -1,0 +1,6 @@
+# Generic function with wrong arity - should fail
+fn identity<T>(value: T) -> T:
+    return value
+
+# This should fail - expects 1 type argument but provides 2
+let result = identity<number, text>(42)
