@@ -36,3 +36,25 @@ B3 ကို ပြီးစီးသည်ဟု သတ်မှတ်ရန်
 ## လက်ရှိ blockers
 
 လက်ရှိ local Rust warning checks တွင် compiler warning မတွေ့ပါ။ GitHub Actions တွင် Node.js 20 forced-runtime deprecation annotation သည် upstream action runtime notice ဖြစ်ပြီး repository source warning မဟုတ်ပါ။ B3 ၏ နောက်ထပ်အလုပ်သည် canonical schema၊ build plan၊ dependency graph နှင့် benchmark regression integration ကို priority အလိုက် ဆက်လက်လုပ်ဆောင်ရန် ဖြစ်သည်။
+
+## Progress update — canonical AST schema versioning
+
+B3 ၏ canonical AST schema versioning အပိုင်းကို စတင်အကောင်အထည်ဖော်ပြီးဖြစ်သည်။ `bootstrap/contracts/AST_SCHEMA.toml` တွင် schema name `zap.ast`၊ stable version `1`၊ envelope/node/diagnostic required fields နှင့် minor-additive compatibility policy ကို သတ်မှတ်ထားသည်။ `bootstrap/contracts/VERSIONS.toml` သည် ထို contract ကို path ဖြင့် link လုပ်ထားပြီး schema version ကို language/compiler version များနှင့် သီးခြားထိန်းသိမ်းထားသည်။
+
+`verify_b3_canonical_ast_schema.sh` သည် contract metadata နှင့် parser မှ ထုတ်ပေးသော `zap.ast` envelope ၏ `schema_version = 1` ကို တိုက်ရိုက်စစ်ဆေးသည်။ Release flow တွင် Unix/Windows package နှစ်မျိုးလုံး၌ `contracts/AST_SCHEMA.toml` ပါဝင်ရမည်ဟု သတ်မှတ်ထားပြီး archive verification နှင့် release preflight တွင်လည်း required input အဖြစ် ထည့်သွင်းထားသည်။
+
+## Updated TODO status
+
+| အခြေအနေ | အလုပ် |
+|---|---|
+| ပြီးစီး | Versioned canonical AST schema v1 contract နှင့် B3 validation gate |
+| ပြီးစီး | Release preflight နှင့် Unix/Windows archive integration |
+| ဆက်လုပ်ရန် P0 | Canonical AST schema ကို typed-IR serialization နှင့် cross-version reader tests များဖြင့် ချိတ်ဆက်ရန် |
+| ဆက်လုပ်ရန် P0 | Package/build/test-runner foundation ကို clean checkout နှင့် release artifact အထိ ပြီးစီးအောင်လုပ်ရန် |
+| ဆက်လုပ်ရန် P0 | Dependency graph cycle/duplicate diagnostics ကို versioned contract အဖြစ် တည်ငြိမ်စေရန် |
+| ဆက်လုပ်ရန် P1 | Schema v1 fixture matrix၊ unknown-field reader compatibility နှင့် breaking-change test cases ထည့်ရန် |
+| ဆက်လုပ်ရန် P1 | B2 typed-IR performance/RSS benchmark ကို CI regression artifact နှင့် release preflight ထဲ ချိတ်ဆက်ရန် |
+| ဆက်လုပ်ရန် P1 | CLI/LSP diagnostic parity နှင့် Rust-free bootstrap seed pipeline ကို B3 gate အဖြစ် စုစည်းရန် |
+| ဆက်လုပ်ရန် P2 | CI action runtime deprecation notice နှင့် remaining compatibility/dead-code debt ကို owner/retirement condition ဖြင့် register လုပ်ရန် |
+
+Schema contract ပြင်ဆင်မှုများပြီးနောက် B1 parser၊ B2 aggregate နှင့် B3 canonical schema gate များကို ပြန်လည်စစ်ဆေးရမည်။ Release tag မတင်မီ `release_preflight.sh` ကို correct package version နှင့် clean tree ဖြင့် run လုပ်ရန်လိုအပ်သည်။

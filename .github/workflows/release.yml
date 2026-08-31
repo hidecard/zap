@@ -180,10 +180,11 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf package
-          mkdir -p package/zap/bin package/zap/docs package/zap/examples
+          mkdir -p package/zap/bin package/zap/docs package/zap/examples package/zap/contracts
           cp "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
           cp README.md CHANGELOG.md CHANGELOG_EN.md CHANGELOG_MM.md install.sh uninstall.sh package/zap/
           cp docs/USAGE.md docs/LANGUAGE_GUIDE.md docs/SYNTAX_GUIDE_EN.md package/zap/docs/
+          cp bootstrap/contracts/AST_SCHEMA.toml package/zap/contracts/
           cp examples/default_parameters.zp examples/hello.zp package/zap/examples/
           printf 'Zap release artifact\nVersion: %s\nTarget: %s\n' "${GITHUB_REF_NAME#v}" "${{ matrix.target }}" > package/zap/RELEASE.txt
           chmod 0755 package/zap/bin/${{ matrix.binary }}
@@ -195,10 +196,11 @@ jobs:
         shell: pwsh
         run: |
           Remove-Item -Recurse -Force package -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Force package/zap/bin, package/zap/docs, package/zap/examples | Out-Null
+          New-Item -ItemType Directory -Force package/zap/bin, package/zap/docs, package/zap/examples, package/zap/contracts | Out-Null
           Copy-Item "native/target/${{ matrix.target }}/release/${{ matrix.binary }}" package/zap/bin/
           Copy-Item README.md, CHANGELOG.md, CHANGELOG_EN.md, CHANGELOG_MM.md, install_windows.bat, uninstall_windows.bat package/zap/
           Copy-Item docs/USAGE.md, docs/LANGUAGE_GUIDE.md, docs/SYNTAX_GUIDE_EN.md package/zap/docs/
+          Copy-Item bootstrap/contracts/AST_SCHEMA.toml package/zap/contracts/
           Copy-Item examples/default_parameters.zp, examples/hello.zp package/zap/examples/
           "Zap release artifact`nVersion: $($env:GITHUB_REF_NAME -replace '^v','')`nTarget: ${{ matrix.target }}" | Out-File -Encoding utf8 package/zap/RELEASE.txt
           Add-Type -AssemblyName System.IO.Compression
@@ -238,7 +240,7 @@ jobs:
           python3 scripts/create_deterministic_tar_gz.py package/zap "$ARCHIVE.repro" --archive-root zap
           cmp -s "$ARCHIVE" "$ARCHIVE.repro" || { echo "Archive is not reproducible"; exit 1; }
           rm -f "$ARCHIVE.repro"
-          tar -tzf "$ARCHIVE" | grep -E 'zap/bin/zap|zap/README.md|zap/RELEASE.txt|zap/docs/SYNTAX_GUIDE_EN.md|zap/examples/hello.zp'
+          tar -tzf "$ARCHIVE" | grep -E 'zap/bin/zap|zap/README.md|zap/RELEASE.txt|zap/docs/SYNTAX_GUIDE_EN.md|zap/examples/hello.zp|zap/contracts/AST_SCHEMA.toml'
           tar -xOf "$ARCHIVE" zap/RELEASE.txt | grep -F "Version: ${GITHUB_REF_NAME#v}"
 
       - name: Verify packaged archive
@@ -279,7 +281,7 @@ jobs:
           if ($expected -ne $reproHash) { throw "Windows archive is not reproducible" }
           Remove-Item -Force "$env:ARCHIVE.repro"
           $entries = (tar -tf "$env:ARCHIVE")
-          foreach ($required in @('bin/zap.exe', 'README.md', 'RELEASE.txt', 'docs/SYNTAX_GUIDE_EN.md', 'examples/hello.zp')) {
+          foreach ($required in @('bin/zap.exe', 'README.md', 'RELEASE.txt', 'docs/SYNTAX_GUIDE_EN.md', 'examples/hello.zp', 'contracts/AST_SCHEMA.toml')) {
             if ($entries -notcontains "zap/$required") { throw "Missing archive entry: zap/$required" }
           }
           $releaseText = (tar -xOf "$env:ARCHIVE" zap/RELEASE.txt | Out-String)

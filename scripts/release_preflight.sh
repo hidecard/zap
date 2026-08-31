@@ -173,6 +173,7 @@ check_release_files() {
     LICENSE
     native/Cargo.toml
     native/Cargo.lock
+    bootstrap/contracts/AST_SCHEMA.toml
     .github/workflows/ci.yml
     .github/workflows/release.yml
     "docs/RELEASE_${EXPECTED_VERSION}_EN.md"

@@ -11,6 +11,9 @@ version = 1
 
 [ast_schema]
 version = 1
+contract = "bootstrap/contracts/AST_SCHEMA.toml"
+status = "stable"
+compatibility = "minor-additive-fields-only"
 
 [diagnostic_schema]
 version = 1

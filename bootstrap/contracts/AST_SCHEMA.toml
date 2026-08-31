@@ -1,0 +1,32 @@
+# Canonical Zap AST interchange contract.
+# This version is independent from the language and bootstrap-stage versions.
+schema = "zap.ast"
+version = 1
+status = "stable"
+compatibility = "minor-additive-fields-only"
+
+[envelope]
+required_fields = ["ast", "kind", "schema_version", "source_name"]
+kind = "zap.ast"
+schema_version = 1
+
+[ast]
+required_fields = ["statements"]
+statements_type = "array"
+
+[node]
+required_fields = ["kind", "span"]
+span_required_fields = ["line", "column", "length"]
+
+[expression]
+required_fields = ["kind", "span"]
+
+[diagnostics]
+required_fields = ["diagnostics", "kind", "schema_version"]
+kind = "zap.diagnostics"
+schema_version = 1
+
+[compatibility_policy]
+reader_must_ignore_unknown_fields = true
+writer_must_not_remove_required_fields = true
+breaking_change_requires_version_increment = true
