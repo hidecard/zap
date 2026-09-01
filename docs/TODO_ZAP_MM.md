@@ -204,24 +204,24 @@ fn add(a: number, b: number) -> number:
 - [x] Unknown function annotation များအတွက် `zap check` နှင့် `zap check --json` diagnostic ထုတ်ရန်။
 - [x] Function call ၏ argument count နှင့် literal argument type mismatch ကို `zap check --json` structured diagnostic အဖြစ် ထုတ်ရန်။
 - [x] Literal variable နှင့် ရိုးရိုး nested expression များ၏ inferred type mismatch ကို static diagnostic အဖြစ် ထုတ်ရန်။
-- [x] Complex nested call၊ collection element နှင့် control-flow expression များ၏ inferred type mismatch ကို တိုးချဲ့ရန်။ [`bootstrap/b2/typecheck.zp`](bootstrap/b2/typecheck.zp) တွင် nested call နှင့် collection element type checking functions ထည့်သွင်းပြီးပြီး။
+- [x] Complex nested call၊ collection element နှင့် control-flow expression များ၏ inferred type mismatch ကို တိုးချဲ့ရန်။ [`bootstrap/b2/typecheck.zp`](../bootstrap/b2/typecheck.zp) တွင် nested call နှင့် collection element type checking functions ထည့်သွင်းပြီးပြီး။
 - [x] v2.11.7 bounded checkpoint အဖြစ် `list<list<number>>` nested indexing ၏ inferred type နှင့် text/number mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Broader nested expression inference ကို ဆက်လက် deferred ထားသည်။
 - [x] v2.11.8 preparation bounded checkpoint အဖြစ် tracked `map<text,number>` variable ကို text literal key ဖြင့် index လုပ်သော inferred number element နှင့် text assignment mismatch ကို native/candidate paired fixtures၊ stable diagnostic နှင့် release-gated regression test ဖြင့် သက်သေပြရန်။ Nested map၊ arbitrary key expression နှင့် broader map inference ကို ဆက်လက် deferred ထားသည်။
 
 `zap check --json` သည် ယခု `file`၊ `line` နှင့် `column` fields များကို သီးခြားပြန်ပေးနိုင်ပြီး editor/CI tooling များက diagnostic location ကို တိုက်ရိုက်အသုံးပြုနိုင်သည်။
 - [x] `any` type ၏ လက်ရှိ permissive runtime semantics ကို documentation တွင် ဖော်ပြရန်။
-- [x] Generic list/map/function design ကို syntax မတည်ငြိမ်မီ အရင်ဆုံးရေးသားသတ်မှတ်ရန်။ [`bootstrap/b2/typecheck.zp`](bootstrap/b2/typecheck.zp) တွင် generic function implementation နှင့် test fixtures ထည့်သွင်းပြီးပြီး။။
+- [x] Generic list/map/function design ကို syntax မတည်ငြိမ်မီ အရင်ဆုံးရေးသားသတ်မှတ်ရန်။ [`bootstrap/b2/typecheck.zp`](../bootstrap/b2/typecheck.zp) တွင် generic function implementation နှင့် test fixtures ထည့်သွင်းပြီးပြီး။။
 
 ## 3.2 OOP ပြည့်စုံမှု
 
-- [x] `super.init()` ကို explicit အသုံးပြုနိုင်ရန်။ [`native/src/evaluator.rs`](native/src/evaluator.rs) တွင် ရှိနှင်းပြီးပြီး။
-- [x] `super.method()` ဖြင့် parent method ခေါ်နိုင်ရန်။ [`native/src/evaluator.rs`](native/src/evaluator.rs) တွင် ရှိနှင်းပြီးပြီး။
-- [x] Constructor မခေါ်သော object creation ကို စစ်ဆေးရန်။ [`native/src/evaluator.rs`](native/src/evaluator.rs) တွင် validation functions ထည့်သွင်းပြီးပြီး။
+- [x] `super.init()` ကို explicit အသုံးပြုနိုင်ရန်။ [`native/src/evaluator.rs`](../native/src/evaluator.rs) တွင် ရှိနှင်းပြီးပြီး။
+- [x] `super.method()` ဖြင့် parent method ခေါ်နိုင်ရန်။ [`native/src/evaluator.rs`](../native/src/evaluator.rs) တွင် ရှိနှင်းပြီးပြီး။
+- [x] Constructor မခေါ်သော object creation ကို စစ်ဆေးရန်။ [`native/src/evaluator.rs`](../native/src/evaluator.rs) တွင် validation functions ထည့်သွင်းပြီးပြီး။
 - [ ] Interface/trait စနစ်ကို single inheritance နှင့် မရှုပ်ထွေးအောင် ဒီဇိုင်းချရန်။
 - [ ] Abstract class နှင့် abstract method semantics သတ်မှတ်ရန်။
 - [ ] Public/private/protected visibility modifiers စဉ်းစားရန်။
 - [ ] Object equality၊ string representation နှင့် hash behavior သတ်မှတ်ရန်။
-- [x] Circular inheritance နှင့် duplicate method definitions ကို reject လုပ်ရန်။ [`native/src/evaluator.rs`](native/src/evaluator.rs) တွင် detection functions ထည့်သွင်းပြီးပြီး။
+- [x] Circular inheritance နှင့် duplicate method definitions ကို reject လုပ်ရန်။ [`native/src/evaluator.rs`](../native/src/evaluator.rs) တွင် detection functions ထည့်သွင်းပြီးပြီး။
 
 ## 3.3 Stable module system
 
@@ -229,7 +229,7 @@ fn add(a: number, b: number) -> number:
 - [x] Export မလုပ်ထားသော symbol ကို module အပြင်မှ မမြင်ရအောင်လုပ်ရန်။
 - [x] Module တစ်ခုကို နှစ်ကြိမ် load မဖြစ်စေရန် canonical-path module cache ထည့်ရန်။
 - [x] Circular import detection ထည့်ရန်။
-- [x] Relative path၊ package name နှင့် standard module resolution rules သတ်မှတ်ရန်။ [`native/src/project.rs`](native/src/project.rs) တွင် resolution functions ထည့်သွင်းပြီးပြီး။
+- [x] Relative path၊ package name နှင့် standard module resolution rules သတ်မှတ်ရန်။ [`native/src/project.rs`](../native/src/project.rs) တွင် resolution functions ထည့်သွင်းပြီးပြီး။
 - [x] Absolute module path များကို reject လုပ်ပြီး module boundary ကို မတော်တဆ ပြင်ပဖိုင်သို့ မချဲ့စေရန် ကာကွယ်ရန်။
 - [x] `../` traversal ကို project root အပြင် မထွက်စေရန် parent-directory traversal rejection policy ထည့်ရန်။ Project-root canonical/symlink policy သည် နောက်ထပ် hardening အဖြစ် ကျန်ရှိသည်။
 - [x] API documentation နှင့် module example များ ထည့်ရန်။

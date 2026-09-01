@@ -43,8 +43,12 @@ jobs:
             native
             host/zap-host
 
+      - name: Build native CLI for version validation
+        run: cargo build --manifest-path native/Cargo.toml --locked
+
       - name: Validate release version consistency
         env:
+          ZAP_CLI_BINARY: native/target/debug/zap
           ZAP_VERSION_REPORT: target/version-consistency.tsv
         run: scripts/validate_release_version.sh
 
