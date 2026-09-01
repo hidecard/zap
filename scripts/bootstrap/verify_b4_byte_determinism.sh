@@ -21,15 +21,21 @@ fail() {
 runner=$(mktemp "$ROOT_DIR/.zap-byte-det.XXXXXX.zp")
 out_a=$(mktemp)
 out_b=$(mktemp)
-trap 'rm -f "$runner" "$out_a" "$out_b"' EXIT
+expected_a=$(mktemp)
+expected_b=$(mktemp)
+expected_c=$(mktemp)
+trap 'rm -f "$runner" "$out_a" "$out_b" "$expected_a" "$expected_b" "$expected_c"' EXIT
 
 cat > "$runner" <<'EOF'
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b4/native_independent.zp"
 
 let source = "let x = 1 + 2\nsay x\n"
 
-let first_tokens = tokenize(source)
-let second_tokens = tokenize(source)
+let first_tokens = lex(source, "det_test")
+let second_tokens = lex(source, "det_test")
 let tokens_equal = json(first_tokens) == json(second_tokens)
 
 let first_ast = parse_general(source, "det_test")

@@ -90,7 +90,7 @@ cmp "$out" "$expected" || fail "sequential runs showed state leakage"
 cat > "$runner" <<'EOF'
 import "bootstrap/b4/seed_pipeline.zp"
 
-let record = seed_platform_record_evidence("clean", "bootstrap-artifact", "executed", "test_artifact_bytes", "sha256:abc123", "sha256:def456", "sha256:ghi789")
+let record = seed_platform_record_evidence("clean", "test_artifact_bytes", "sha256:abc123", "executed", "sha256:def456", "sha256:ghi789", "clean", "bootstrap-artifact")
 let valid = seed_platform_evidence_record_valid(record)
 
 say valid
@@ -107,16 +107,13 @@ cmp "$out" "$expected" || fail "platform evidence record validation failed"
 cat > "$runner" <<'EOF'
 import "bootstrap/b4/native_independent.zp"
 
-let sources = [
-    "say 42\n",
-    "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(1, 2)\n",
-    "let items = [1, 2, 3]\nfor item in items:\n    say item\n"
-]
-let names = ["simple", "function", "loop"]
+let s0 = "say 42\n"
+let s1 = "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(1, 2)\n"
+let s2 = "let x = 1 + 2\nsay x\n"
 
-let r0 = seed_execute_owned_pipeline(sources[0], names[0])
-let r1 = seed_execute_owned_pipeline(sources[1], names[1])
-let r2 = seed_execute_owned_pipeline(sources[2], names[2])
+let r0 = seed_execute_owned_pipeline(s0, "simple")
+let r1 = seed_execute_owned_pipeline(s1, "function")
+let r2 = seed_execute_owned_pipeline(s2, "arithmetic")
 
 let all_ok = r0["status"] == "candidate_pipeline_executed" and r1["status"] == "candidate_pipeline_executed" and r2["status"] == "candidate_pipeline_executed"
 

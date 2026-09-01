@@ -43,13 +43,14 @@ header="$(awk -F '\t' 'NR == 3 { print $0 }' "$ACCEPTANCE")"
 printf 'schema_version\t1\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\tnot-certified\n' >> "$REPORT"
 rows=0
 while IFS=$'\t' read -r id area fixture owner artifact status; do
+  status="${status%%$'\r'}"
   [[ -n "$id" ]] || continue
   [[ "$id" != id ]] || continue
   [[ "$id" == B4-* ]] || fail "invalid acceptance id: $id"
   [[ -n "$area" && -n "$fixture" && -n "$owner" && -n "$artifact" ]] || fail "$id has an empty required field"
   [[ -f "$fixture" ]] || fail "$id fixture is missing: $fixture"
   [[ -f "$owner" ]] || fail "$id owner source is missing: $owner"
-  [[ "$status" == provisional || "$status" == pass ]] || fail "$id has invalid status: $status"
+  [[ "$status" == "provisional" || "$status" == "pass" ]] || fail "$id has invalid status: $status"
   printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$area" "$fixture" "$owner" "$artifact" "$status" >> "$REPORT"
   rows=$((rows + 1))
 done < <(tail -n +4 "$ACCEPTANCE")

@@ -804,8 +804,10 @@ export fn generic_function_type(return_type, parameter_types):
     let params = ""
     if len(parameter_types) > 0:
         params = parameter_types[0]
-        for param in parameter_types[1:]:
-            params = params + "," + param
+        let index = 1
+        while index < len(parameter_types):
+            params = params + "," + parameter_types[index]
+            index = index + 1
     return "fn(" + params + ")->" + return_type
 
 export fn validate_generic_instantiation(generic_type, type_arguments):
@@ -1000,17 +1002,17 @@ export fn generic_type_arguments(type_name):
         let character = substring(type_name, index, index + 1)
         if character == "<":
             depth = depth + 1
-            current = current + character
+            current = current + characte
         else:
             if character == ">":
                 depth = depth - 1
-                current = current + character
+                current = current + characte
             else:
                 if character == "," and depth == 0:
                     result = append(result, trim(current))
                     current = ""
                 else:
-                    current = current + character
+                    current = current + characte
         index = index + 1
     if trim(current) != "":
         result = append(result, trim(current))
@@ -1934,17 +1936,17 @@ export fn b2c_generic_type_arguments(type_name):
         let character = substring(type_name, index, index + 1)
         if character == "<":
             depth = depth + 1
-            current = current + character
+            current = current + characte
         else:
             if character == ">":
                 depth = depth - 1
-                current = current + character
+                current = current + characte
             else:
                 if character == "," and depth == 0:
                     result = append(result, trim(current))
                     current = ""
                 else:
-                    current = current + character
+                    current = current + characte
         index = index + 1
     if trim(current) != "":
         result = append(result, trim(current))
@@ -3062,9 +3064,9 @@ export fn b2c_nested_member_lookup(class_name, member_names, index, classes):
         return {"class_found": true, "found": true, "type": class_name}
     let member = b2c_class_member_lookup(class_name, member_names[index], classes, [])
     if not member["found"]:
-        return member
+        return membe
     if index + 1 >= len(member_names):
-        return member
+        return membe
     return b2c_nested_member_lookup(member["type"], member_names, index + 1, classes)
 
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):

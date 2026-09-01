@@ -27,6 +27,7 @@ trap 'rm -f "$runner" "$out" "$expected"' EXIT
 # Stage 2: bytecode artifact -> execution result
 # Verify both stages are deterministic
 cat > "$runner" <<'EOF'
+import "bootstrap/b3/vm.zp"
 import "bootstrap/b4/native_independent.zp"
 
 let source = "let x = 10\nlet y = 20\nsay x + y\n"
@@ -75,6 +76,7 @@ cmp "$out" "$expected" || fail "second-stage rebuild not reproducible across run
 
 # Typed IR second-stage: source -> typed IR -> bytecode -> execution
 cat > "$runner" <<'EOF'
+import "bootstrap/b3/vm.zp"
 import "bootstrap/b4/native_independent.zp"
 
 let source = "fn double(n: number) -> number:\n    return n * 2\n\nsay double(5)\n"

@@ -16,7 +16,7 @@ run_gate() {
   end=$(date +%s)
   duration=$((end - start))
   printf '%s\t%s\t%s\t%s\t%s\n' "$gate" "$category" "$status" "$duration" "$log" >> "$tmp"
-  [[ "$status" == passed ]]
+  [[ "$status" == "passed" ]]
 }
 
 set +e

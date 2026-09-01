@@ -1,0 +1,8 @@
+# B2 candidate type checker written in Zap.
+# This is a provisional corpus-limited implementation. Native Rust remains the
+# reference type checker and owns the complete language semantics.
+
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    return 1

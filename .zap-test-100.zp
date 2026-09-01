@@ -1,0 +1,100 @@
+# B2 candidate type checker written in Zap.
+# This is a provisional corpus-limited implementation. Native Rust remains the
+# reference type checker and owns the complete language semantics.
+
+import "bootstrap/b1/parser.zp"
+
+export fn ast_lookup_type(environment, name):
+    let result = "any"
+    for binding in environment:
+        if binding["name"] == name:
+            result = binding["type"]
+    return result
+
+export fn symbol_environment_bind(environment, name, type):
+    return append(environment, {"name": name, "type": type})
+
+export fn symbol_environment_has(environment, name):
+    for binding in environment:
+        if binding["name"] == name:
+            return true
+    return false
+
+export fn branch_local_declaration_merge(base, then_environment, else_environment, names):
+    let merged = base
+    for name in names:
+        if symbol_environment_has(then_environment, name) and symbol_environment_has(else_environment, name):
+            let then_type = ast_lookup_type(then_environment, name)
+            let else_type = ast_lookup_type(else_environment, name)
+            if then_type == else_type:
+                merged = symbol_environment_bind(merged, name, then_type)
+            else:
+                merged = symbol_environment_bind(merged, name, "any")
+    return merged
+
+export fn symbol_environment_from_parameters(parameters):
+    let environment = []
+    for parameter in parameters:
+        environment = symbol_environment_bind(environment, parameter["name"], parameter["type"])
+    return environment
+
+export fn symbol_environment_extend(environment, locals):
+    let result = environment
+    for binding in locals:
+        result = symbol_environment_bind(result, binding["name"], binding["type"])
+    return result
+
+export fn branch_environment_merge(base, then_environment, else_environment):
+    let merged = []
+    for binding in base:
+        let then_type = ast_lookup_type(then_environment, binding["name"])
+        let else_type = ast_lookup_type(else_environment, binding["name"])
+        if then_type == else_type:
+            merged = symbol_environment_bind(merged, binding["name"], then_type)
+        else:
+            merged = symbol_environment_bind(merged, binding["name"], "any")
+    return merged
+
+export fn symbol_environment_snapshot(environment):
+    return environment
+
+export fn symbol_environment_restore(snapshot):
+    return snapshot
+
+export fn scope_enter(parent, bindings):
+    return symbol_environment_extend(parent, bindings)
+
+export fn scope_exit(parent, child):
+    return symbol_environment_restore(parent)
+
+export fn branch_environment_merge_paths(base, then_environment, else_environment, then_returns, else_returns):
+    if then_returns and not else_returns:
+        return else_environment
+    if else_returns and not then_returns:
+        return then_environment
+    if then_returns and else_returns:
+        return base
+    return branch_environment_merge(base, then_environment, else_environment)
+
+export fn function_body_environment(parameters, locals):
+    return symbol_environment_extend(symbol_environment_from_parameters(parameters), locals)
+
+export fn flow_guard_type(type_name, positive):
+    let parts = type_wrapper_parts(type_name)
+    if positive and parts["wrapper"] == "option":
+        return parts["inner"]
+    if positive and parts["wrapper"] == "result":
+        return parts["inner"]
+    if not positive and parts["wrapper"] == "option":
+        return "none"
+    if not positive and parts["wrapper"] == "result":
+        return "error"
+    return type_name
+
+export fn condition_derived_environment(environment, name, guard, positive):
+    let current = ast_lookup_type(environment, name)
+    if guard == "is_some" or guard == "is_option_none" or guard == "is_ok" or guard == "is_err":
+        return symbol_environment_bind(environment, name, flow_guard_type(current, positive))
+    return environment
+
+export fn condition_path_states(environment, name, guard):

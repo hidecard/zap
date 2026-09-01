@@ -171,6 +171,45 @@ jobs:
           path: target/b4-rust-free-contract.tsv
           if-no-files-found: warn
 
+      - name: Verify B4 byte-determinism gate
+        env:
+          B4_BYTE_DETERMINISM_REPORT: target/b4-byte-determinism.tsv
+        run: scripts/bootstrap/verify_b4_byte_determinism.sh
+
+      - name: Upload B4 byte-determinism evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-byte-determinism-${{ github.sha }}
+          path: target/b4-byte-determinism.tsv
+          if-no-files-found: warn
+
+      - name: Verify B4 second-stage rebuild gate
+        env:
+          B4_SECOND_STAGE_REPORT: target/b4-second-stage-rebuild.tsv
+        run: scripts/bootstrap/verify_b4_second_stage_rebuild.sh
+
+      - name: Upload B4 second-stage rebuild evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-second-stage-rebuild-${{ github.sha }}
+          path: target/b4-second-stage-rebuild.tsv
+          if-no-files-found: warn
+
+      - name: Verify B4 clean-environment gate
+        env:
+          B4_CLEAN_ENVIRONMENT_REPORT: target/b4-clean-environment.tsv
+        run: scripts/bootstrap/verify_b4_clean_environment.sh
+
+      - name: Upload B4 clean-environment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-clean-environment-${{ github.sha }}
+          path: target/b4-clean-environment.tsv
+          if-no-files-found: warn
+
       - name: Verify B3 AST schema compatibility matrix
         run: scripts/test_b3_ast_schema_compatibility.sh
 

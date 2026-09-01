@@ -1,0 +1,6 @@
+import "bootstrap/b4/seed_pipeline.zp"
+
+let record = seed_platform_record_evidence("clean", "test_artifact_bytes", "sha256:abc123", "executed", "sha256:def456", "sha256:ghi789", "clean", "bootstrap-artifact")
+let valid = seed_platform_evidence_record_valid(record)
+
+say valid
