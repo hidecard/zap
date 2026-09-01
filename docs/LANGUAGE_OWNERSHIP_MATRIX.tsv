@@ -1,0 +1,240 @@
+rule_id	domain	rule_summary	owner	fixture_test	status	compatibility	notes
+LANG-001	grammar	Indentation-delimited blocks	native/src/ast.rs#parse_program	bootstrap/fixtures/parser/invalid_indentation.zp	implemented	normative	
+LANG-002	grammar	Statement declarations (let, say, return)	native/src/ast.rs	bootstrap/fixtures/parser/assignment_statement.zp	implemented	normative	
+LANG-003	grammar	Expression statements and operator precedence	native/src/ast.rs#parse_expression	bootstrap/fixtures/parser/multiplicative_additive.zp	implemented	normative	
+LANG-004	grammar	Function declaration syntax	native/src/parser.rs	bootstrap/fixtures/parser/simple_function.zp	implemented	normative	
+LANG-005	grammar	Class declaration syntax	native/src/ast.rs	bootstrap/fixtures/parser/simple_class.zp	implemented	normative	
+LANG-006	grammar	Control-flow syntax (if/else, while, for)	native/src/ast.rs	bootstrap/fixtures/parser/control_flow.zp	implemented	normative	
+LANG-007	grammar	Module/import declarations	native/src/ast.rs	native/tests/core.rs#validates_explicit_module_manifest_entries	implemented	normative	
+LANG-008	grammar	Legacy use import syntax	native/src/ast.rs	conformance/p0-01/common/	implemented	compatibility	Legacy path retained
+LANG-009	grammar	Blank line and comment handling	native/src/lexer.rs	bootstrap/fixtures/parser/mixed_top_level.zp	implemented	normative	
+LANG-010	grammar	Unused token rejection	native/src/ast.rs	bootstrap/fixtures/parser/malformed_recovery.zp	implemented	normative	
+LANG-011	grammar	Indentation jump rejection	native/src/ast.rs	bootstrap/fixtures/parser/invalid_indentation_jump.zp	implemented	normative	
+LANG-012	grammar	Deep nesting expressions	native/src/ast.rs	bootstrap/fixtures/parser/arbitrary_deep_nesting.zp	implemented	normative	
+LANG-013	grammar	Grouped expressions	native/src/ast.rs	bootstrap/fixtures/parser/grouped_expression.zp	implemented	normative	
+LANG-014	grammar	Logical/comparison matrix	native/src/ast.rs	bootstrap/fixtures/parser/logical_comparison_matrix.zp	implemented	normative	
+LANG-015	grammar	Mixed recursive sequences	native/src/ast.rs	bootstrap/fixtures/parser/mixed_recursive_sequence.zp	implemented	normative	
+LANG-016	grammar	Unicode identifiers	native/src/lexer.rs	bootstrap/fixtures/parser/unicode_identifier.zp	implemented	normative	
+LANG-017	grammar	Number literals	native/src/lexer.rs	bootstrap/fixtures/parser/multi_digit_number.zp	implemented	normative	
+LANG-018	grammar	Deep mixed blocks	native/src/ast.rs	bootstrap/fixtures/parser/deep_mixed_blocks.zp	implemented	normative	
+LANG-019	grammar	Multi-argument calls	native/src/ast.rs	bootstrap/fixtures/parser/three_argument_call.zp	implemented	normative	
+LANG-020	grammar	Nested class/method	native/src/ast.rs	bootstrap/fixtures/parser/nested_class_method.zp	implemented	normative	
+LANG-021	grammar	While/else variants	native/src/ast.rs	bootstrap/fixtures/parser/while_else_syntax.zp	implemented	normative	
+LANG-022	grammar	Nested assignment	native/src/ast.rs	bootstrap/fixtures/parser/nested_assignment_block.zp	implemented	normative	
+LANG-023	grammar	Full expression surface	native/src/ast.rs	bootstrap/fixtures/parser/full_expression.zp	implemented	normative	
+GEN-001	generics	list annotation parsing	native/src/parser.rs	bootstrap/fixtures/typecheck/nested_collection.zp	implemented	normative	
+GEN-002	generics	map annotation parsing	native/src/parser.rs	bootstrap/fixtures/typecheck/map_collection.zp	implemented	normative	Key type text/any only
+GEN-003	generics	option annotation parsing	native/src/parser.rs	bootstrap/fixtures/typecheck/option_annotation.zp	implemented	normative	
+GEN-004	generics	result annotation parsing	native/src/parser.rs	bootstrap/fixtures/typecheck/result_error_handling.zp	implemented	normative	
+GEN-005	generics	Nested generic matching	native/src/evaluator.rs	bootstrap/fixtures/typecheck/nested_collection.zp	implemented	normative	
+GEN-006	generics	Generic incompatible rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/collection_incompatible.zp	implemented	normative	
+GEN-007	generics	Malformed generic rejection	native/src/parser.rs	bootstrap/fixtures/typecheck/generic_empty_params.zp	implemented	normative	
+GEN-008	generics	Generic arity mismatch	native/src/parser.rs	bootstrap/fixtures/typecheck/generic_arity_mismatch.zp	implemented	normative	
+GEN-009	generics	Generic cross-module	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_cross_module.zp	implemented	normative	
+GEN-010	generics	Generic function declaration	native/src/parser.rs	bootstrap/fixtures/typecheck/generic_function_simple.zp	implemented	normative	Bounded slice
+GEN-011	generics	Generic class declaration	native/src/parser.rs	bootstrap/fixtures/typecheck/generic_class.zp	implemented	normative	Bounded slice
+GEN-012	generics	Generic wrapper runtime	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_runtime_wrappers.zp	implemented	normative	
+GEN-013	generics	Generic identity metadata	native/src/bootstrap.rs	bootstrap/fixtures/typecheck/generic_identity.zp	implemented	normative	
+GEN-014	generics	Generic scope boundaries	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_scope_positive.zp	implemented	normative	
+GEN-015	generics	Imported generic body	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_cross_module_body.zp	implemented	normative	
+GEN-016	generics	Nested generic substitution	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_nested_option_list.zp	implemented	normative	
+GEN-017	generics	Generic constraint syntax		bootstrap/fixtures/typecheck/generic_constraint_where.zp	deferred		No parser support
+GEN-018	generics	User-defined generic full		bootstrap/fixtures/typecheck/generic_class_deferred.zp	deferred		Separate design phase
+GEN-019	generics	Explicit generic call		bootstrap/fixtures/typecheck/generic_explicit_call_deferred.zp	deferred		Separate design phase
+GEN-020	generics	Generic alias declaration		bootstrap/fixtures/typecheck/generic_alias_deferred.zp	deferred		Separate design phase
+GEN-021	generics	Generic compound bounds		bootstrap/fixtures/typecheck/generic_compound_bounds.zp	deferred		
+GEN-022	generics	Generic variance rules			not-implemented		Future design
+ALIAS-001	alias	Alias assignment	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_generic.zp	implemented	normative	
+ALIAS-002	alias	Alias of alias	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_of_alias.zp	implemented	normative	
+ALIAS-003	alias	Nested list alias	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_nested_list.zp	implemented	normative	
+ALIAS-004	alias	Nested map alias	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_nested_map.zp	implemented	normative	
+ALIAS-005	alias	Nested option alias	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_nested_option.zp	implemented	normative	
+ALIAS-006	alias	Recursive alias detection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_recursive.zp	implemented	normative	
+ALIAS-007	alias	Undeclared param alias	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_undeclared_param.zp	implemented	normative	
+ALIAS-008	alias	Alias mutation invalidation	native/src/evaluator.rs	bootstrap/fixtures/typecheck/alias_mutation_invalidation.zp	implemented	normative	
+ALIAS-009	alias	Alias import cross-module	native/src/evaluator.rs	bootstrap/fixtures/typecheck/generic_alias_import.zp	implemented	normative	
+FLOW-001	dataflow	Branch-local narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/branch_narrowing.zp	implemented	normative	
+FLOW-002	dataflow	Branch narrowing rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp	implemented	normative	
+FLOW-003	dataflow	Loop-body narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_narrowing.zp	implemented	normative	
+FLOW-004	dataflow	Loop narrowing rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp	implemented	normative	
+FLOW-005	dataflow	Loop wrapper restoration	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_narrowing.zp	implemented	normative	
+FLOW-006	dataflow	Else-body narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/else_narrowing.zp	implemented	normative	
+FLOW-007	dataflow	Else narrowing rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp	implemented	normative	
+FLOW-008	dataflow	Compound guard narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/compound_guard.zp	implemented	normative	Bounded slice
+FLOW-009	dataflow	Compound guard rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/compound_guard_incompatible.zp	implemented	normative	
+FLOW-010	dataflow	Nested control-flow narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/nested_control_flow_narrowing.zp	implemented	normative	
+FLOW-011	dataflow	Reassignment invalidation	native/src/evaluator.rs	bootstrap/fixtures/typecheck/reassignment_invalidation.zp	implemented	normative	
+FLOW-012	dataflow	Reassignment rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/reassignment_invalidation_incompatible.zp	implemented	normative	
+FLOW-013	dataflow	Mutation invalidation	native/src/evaluator.rs	bootstrap/fixtures/typecheck/mutation_invalidation.zp	implemented	normative	
+FLOW-014	dataflow	Loop mutation invalidation	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_mutation.zp	implemented	normative	
+FLOW-015	dataflow	Short-circuit and	native/src/evaluator.rs	bootstrap/fixtures/typecheck/short_circuit_and.zp	implemented	normative	
+FLOW-016	dataflow	Short-circuit or	native/src/evaluator.rs	bootstrap/fixtures/typecheck/short_circuit_or.zp	implemented	normative	
+FLOW-017	dataflow	Flow engine merge	native/src/evaluator.rs	bootstrap/fixtures/typecheck/return_break_merge.zp	implemented	normative	
+FLOW-018	dataflow	Loop fixpoint break	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_fixpoint_break.zp	implemented	normative	
+FLOW-019	dataflow	Loop fixpoint continue	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_fixpoint_continue.zp	implemented	normative	
+FLOW-020	dataflow	Arbitrary index narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/arbitrary_index_expression.zp	implemented	normative	
+FLOW-021	dataflow	Arbitrary index rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/arbitrary_index_type_mismatch.zp	implemented	normative	
+FLOW-022	dataflow	Arbitrary map key narrowing	native/src/evaluator.rs	bootstrap/fixtures/typecheck/arbitrary_map_key.zp	implemented	normative	
+FLOW-023	dataflow	Arbitrary map key rejection	native/src/evaluator.rs	bootstrap/fixtures/typecheck/arbitrary_map_key_type_mismatch.zp	implemented	normative	
+FLOW-024	dataflow	Loop narrowing reassignment	native/src/evaluator.rs	bootstrap/fixtures/typecheck/loop_narrowing_reassignment.zp	implemented	normative	
+OVR-001	overloads	Function overloading			not-implemented		Not in design
+OVR-002	overloads	Operator overloading			not-implemented		Not in design
+OVR-003	overloads	Method overloading			not-implemented		Not in design
+TRAIT-001	traits	Single inheritance	native/src/ast.rs	bootstrap/fixtures/parser/simple_class.zp	implemented	normative	
+TRAIT-002	traits	Inherited constructor	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+TRAIT-003	traits	Method override	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+TRAIT-004	traits	super.method call			not-implemented		
+TRAIT-005	traits	super.init call			not-implemented		
+TRAIT-006	traits	Traits/interfaces			deferred		M4-RFC-01 design-only	
+TRAIT-007	traits	Multiple inheritance			not-implemented		Explicitly excluded
+TRAIT-008	traits	MRO			deferred		Tied to traits design
+TRAIT-009	traits	Circular inheritance detection	native/src/evaluator.rs		implemented	normative	
+TRAIT-010	traits	Abstract class/method			not-implemented		
+TRAIT-011	traits	Visibility modifiers			not-implemented		Module export only
+CLOS-001	closures	Lexical capture	native/src/evaluator.rs	bootstrap/fixtures/vm/closure.zp	implemented	normative	
+CLOS-002	closures	Parent-linked EnvFrame	native/src/evaluator.rs	native/tests/core.rs#parent_linked_closures	implemented	normative	
+CLOS-003	closures	Shared binding-cell	native/src/evaluator.rs	native/tests/core.rs#live_closures_share	implemented	normative	
+CLOS-004	closures	Returned closure lifetime	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+CLOS-005	closures	Shadowing vs mutation	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+CLOS-006	closures	Recursion through closures	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+CLOS-007	closures	Closure cycle behavior	native/src/value.rs	native/tests/core.rs#cyclic_object_graph	implemented	normative	Explicit clear required
+CLOS-008	closures	Callable serialization	native/src/value.rs	native/tests/core.rs	implemented	normative	
+DIAG-001	diagnostics	ZAP code registry	native/src/diagnostics.rs	docs/DIAGNOSTIC_MODEL_EN.md	implemented	normative	
+DIAG-002	diagnostics	kind field	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/	implemented	normative	
+DIAG-003	diagnostics	Source span	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/missing_closing_bracket.json	implemented	normative	
+DIAG-004	diagnostics	notes and help	native/src/diagnostics.rs	native/tests/core.rs	implemented	normative	
+DIAG-005	diagnostics	CLI/LSP parity	native/src/lsp.rs	native/tests/core.rs#lsp_diagnostics_match	implemented	normative	
+DIAG-006	diagnostics	JSON schema	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/invalid_character.json	implemented	normative	
+DIAG-007	diagnostics	Secret redaction	native/src/diagnostics.rs	native/tests/core.rs	implemented	normative	
+DIAG-008	diagnostics	ZAP-BORROW-001	native/src/value.rs	native/tests/core.rs#conflicting_object_borrows	implemented	normative	
+DIAG-009	diagnostics	ZAP-MEMORY-001	native/src/value.rs	native/tests/core.rs	implemented	normative	
+DIAG-010	diagnostics	Invalid character	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/invalid_character.json	implemented	normative	
+DIAG-011	diagnostics	Unterminated string	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/unterminated_string.json	implemented	normative	
+DIAG-012	diagnostics	Missing closing bracket	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/missing_closing_bracket.json	implemented	normative	
+DIAG-013	diagnostics	Unexpected closing bracket	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/unexpected_closing_bracket.json	implemented	normative	
+DIAG-014	diagnostics	Missing assignment	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/missing_assignment.json	implemented	normative	
+DIAG-015	diagnostics	Missing function paren	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/missing_function_paren.json	implemented	normative	
+DIAG-016	diagnostics	Integer overflow	native/src/diagnostics.rs	bootstrap/fixtures/diagnostics/integer_overflow.json	implemented	normative	
+DIAG-017	diagnostics	Deterministic snapshots	native/src/diagnostics.rs	native/tests/core.rs	implemented	normative	
+DIAG-018	diagnostics	Span coverage	native/src/lexer.rs	bootstrap/fixtures/parser/span_coverage.zp	implemented	normative	
+STD-001	stdlib	text domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-002	stdlib	math domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-003	stdlib	collections domain	native/src/stdlib_collection.rs	native/tests/core.rs	implemented	normative	
+STD-004	stdlib	filesystem domain	native/src/stdlib_file.rs	native/tests/core.rs	implemented	normative	
+STD-005	stdlib	web domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-006	stdlib	json domain	native/src/stdlib_json.rs	native/tests/core.rs	implemented	normative	
+STD-007	stdlib	system domain	native/src/stdlib_system.rs	native/tests/core.rs	implemented	normative	
+STD-008	stdlib	time domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-009	stdlib	logging domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-010	stdlib	runtime domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-011	stdlib	async domain	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+STD-012	stdlib	network domain	native/src/stdlib.rs	native/tests/core.rs	implemented	normative	
+STD-013	stdlib	process domain	native/src/stdlib_system.rs	native/tests/core.rs	implemented	normative	
+STD-014	stdlib	Stability labels	native/src/stdlib_catalog.rs	docs/STDLIB_POLICY_EN.md	implemented	normative	
+STD-015	stdlib	Determinism taxonomy	native/src/stdlib_catalog.rs	docs/STDLIB_POLICY_EN.md	implemented	normative	
+STD-016	stdlib	Catalog regression	native/src/stdlib_catalog.rs	native/tests/core.rs#public_builtin_catalog	implemented	normative	
+STD-017	stdlib	Fixture catalog	native/src/stdlib_catalog.rs	bootstrap/fixtures/stdlib/catalog.json	implemented	normative	
+STD-018	stdlib	JSON security corpus	native/src/stdlib_json.rs	native/tests/core.rs#json_security_corpus	implemented	normative	
+STD-019	stdlib	Filesystem atomic write	native/src/stdlib_file.rs	native/tests/core.rs#filesystem_metadata	implemented	normative	
+PKG-001	package	Local module resolution	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-002	package	Import/export visibility	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-003	package	Canonical-path cache	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-004	package	Circular import detection	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-005	package	Absolute path rejection	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-006	package	Traversal rejection	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-007	package	Symbol isolation	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-008	package	Manifest validation	native/src/project.rs	native/tests/core.rs#validates_explicit_module_manifest_entries	implemented	normative	
+PKG-009	package	Relative path resolution	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-010	package	Package name resolution	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-011	package	Module resolution order	native/src/project.rs	native/tests/core.rs	implemented	normative	
+PKG-012	package	Dependency cycle detection	native/src/project.rs	native/tests/core.rs	implemented	normative	
+LOCK-001	lockfile	zap.lock v2 schema	native/src/project.rs	native/tests/core.rs	implemented	normative	
+LOCK-002	lockfile	SHA-256 verification	native/src/project.rs	native/tests/core.rs	implemented	normative	
+LOCK-003	lockfile	Malformed rejection	native/src/project.rs	native/tests/core.rs#malformed_lockfile_corpus	implemented	normative	
+LOCK-004	lockfile	Generation	native/src/project.rs	native/tests/core.rs#write_lockfile	implemented	normative	
+LOCK-005	lockfile	Reproducible install	native/src/project.rs	scripts/verify_clean_machine_locked.sh	implemented	normative	
+LOCK-006	lockfile	Tampered rejection	native/src/project.rs	scripts/verify_clean_machine_locked.sh	implemented	normative	
+LOCK-007	lockfile	Round-trip determinism	native/src/project.rs	native/tests/core.rs	implemented	normative	
+CLI-001	cli	zap run	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-002	cli	zap init	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-003	cli	zap build	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-004	cli	zap test	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-005	cli	zap check	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-006	cli	zap fmt	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-007	cli	zap lint	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-008	cli	zap --version	native/src/cli.rs	scripts/validate_release_version.sh	implemented	normative	
+CLI-009	cli	Exit codes	native/src/cli.rs	native/tests/core.rs	implemented	normative	
+CLI-010	cli	Project JSON	native/src/main.rs	native/tests/core.rs#print_project_json	implemented	normative	
+LSP-001	lsp	Document sync	native/src/lsp.rs	native/tests/core.rs	implemented	normative	
+LSP-002	lsp	Position encoding	native/src/lsp.rs	native/src/lsp.rs#negotiate_position_encoding	implemented	normative	
+LSP-003	lsp	Rename	native/src/lsp.rs	native/src/lsp.rs#rename_response	implemented	normative	
+LSP-004	lsp	Hover generic-aware	native/src/lsp.rs	native/src/lsp.rs#hover_includes_generic	implemented	normative	
+LSP-005	lsp	Document symbols	native/src/lsp.rs	native/src/lsp.rs#document_symbols_include_generic	implemented	normative	
+LSP-006	lsp	Signature help	native/src/lsp.rs	native/src/lsp.rs#signature_help_includes_generic	implemented	normative	
+LSP-007	lsp	Completion	native/src/lsp.rs	native/tests/core.rs	implemented	normative	
+LSP-008	lsp	Cross-file limitation	native/src/lsp.rs	native/tests/core.rs	implemented	normative	
+LSP-009	lsp	didClose cleanup	native/src/lsp.rs	native/tests/core.rs	implemented	normative	
+LSP-010	lsp	UTF-8/16/32	native/src/lsp.rs	native/tests/core.rs	implemented	normative	
+VM-001	vm	Stack VM arithmetic	native/src/bytecode.rs	bootstrap/fixtures/vm/vm_demo.json	partial	normative	Arithmetic only
+VM-002	vm	Variable load/store			not-implemented		
+VM-003	vm	Function call			not-implemented		
+VM-004	vm	Class instantiation			not-implemented		
+VM-005	vm	Map/index operations			not-implemented		
+VM-006	vm	Loop execution			not-implemented		
+VM-007	vm	Try-catch execution			not-implemented		
+VM-008	vm	Demo fixtures	native/src/bytecode.rs	bootstrap/fixtures/vm/call_arity.zp	implemented	normative	
+VM-009	vm	Class instance fixture	native/src/bytecode.rs	bootstrap/fixtures/vm/class_instance.zp	implemented	normative	
+VM-010	vm	Closure fixture	native/src/bytecode.rs	bootstrap/fixtures/vm/closure.zp	implemented	normative	
+VM-011	vm	Error semantics fixture	native/src/bytecode.rs	bootstrap/fixtures/vm/error_semantics.zp	implemented	normative	
+VM-012	vm	Member mutation fixture	native/src/bytecode.rs	bootstrap/fixtures/vm/member_mutation.zp	implemented	normative	
+VM-013	vm	Variable store fixture	native/src/bytecode.rs	bootstrap/fixtures/vm/variable_store.zp	implemented	normative	
+VM-014	vm	Cross-version AST reader	native/src/bootstrap.rs	scripts/test_cross_version_ast_reader.sh	implemented	normative	
+VM-015	vm	Bytecode platform	native/src/bootstrap.rs	scripts/bootstrap/verify_vm_platform.sh	implemented	normative	
+MEM-001	memory	Rc<RefCell> model	native/src/value.rs	docs/MEMORY_MODEL_EN.md	implemented	normative	
+MEM-002	memory	Checked borrow	native/src/value.rs	native/tests/core.rs#conflicting_object_borrows	implemented	normative	
+MEM-003	memory	clear_object_fields	native/src/value.rs	native/tests/core.rs#cyclic_object_graph	implemented	normative	
+MEM-004	memory	memory_stats	native/src/value.rs	native/tests/core.rs	implemented	normative	
+MEM-005	memory	Alloc/dealloc counters	native/src/value.rs	native/tests/core.rs	implemented	normative	
+MEM-006	memory	Cycle-safe equality	native/src/value.rs	native/tests/core.rs#value_equality_is_cycle_safe	implemented	normative	
+MEM-007	memory	Logical budget	native/src/runtime_state.rs	native/tests/core.rs	implemented	normative	
+MEM-008	memory	ObjectStore isolation	native/src/runtime_state.rs	native/tests/core.rs	implemented	normative	
+MEM-009	memory	Validation counters	native/src/runtime_state.rs	native/tests/core.rs	implemented	normative	
+MEM-010	memory	Text limit 8MiB	native/src/value.rs	native/tests/core.rs	implemented	normative	
+MEM-011	memory	Collection limit	native/src/value.rs	native/tests/core.rs	implemented	normative	
+MEM-012	memory	Node limit	native/src/value.rs	native/tests/core.rs	implemented	normative	
+MEM-013	memory	Weak references			not-implemented		Unsupported
+MEM-014	memory	Tracing GC			not-implemented		Not implemented
+MEM-015	memory	Output rollback	native/src/runtime_state.rs	native/tests/core.rs	implemented	normative	
+ASYNC-001	async	Deterministic executor	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-002	async	ScheduledFuture	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-003	async	Task states	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-004	async	One-time budget release	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-005	async	Cooperative cancellation	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-006	async	Poll-budget timeout	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-007	async	async_capabilities	native/src/evaluator.rs	native/tests/core.rs	implemented	normative	
+ASYNC-008	async	UnknownTask diagnostic	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-009	async	Production I/O boundary	native/src/async_runtime.rs	docs/ASYNC_BOUNDARIES_EN.md	implemented	normative	
+ASYNC-010	async	Scheduler reset	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-011	async	Cross-platform matrix	native/src/async_runtime.rs	scripts/test_p005c_async_matrix.sh	implemented	normative	
+ASYNC-012	async	Threaded rejection	native/src/async_runtime.rs	native/tests/core.rs	implemented	normative	
+ASYNC-013	async	Full reactor			not-implemented		Out of scope
+REG-001	registry	Index parsing	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-002	registry	Signed index verification	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-003	registry	Mutation rejection	native/src/registry.rs	native/tests/core.rs#security_property_signed_index	implemented	normative	
+REG-004	registry	Trusted registry	native/src/registry.rs	docs/REGISTRY_AUTH_EN.md	implemented	normative	
+REG-005	registry	Credential scoping	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-006	registry	Auth diagnostics	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-007	registry	Chunked response	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-008	registry	Truncated rejection	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-009	registry	Oversized rejection	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-010	registry	slow-peer timeout	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-011	registry	Yanked handling	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-012	registry	Cache policy	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REG-013	registry	Checksum mismatch	native/src/registry.rs	native/tests/core.rs	implemented	normative	
+REL-001	release	Cargo-authoritative version	native/Cargo.toml	scripts/validate_release_version.sh	implemented	normative	
+REL-002	release	Version consistency	scripts/validate_release_version.sh	scripts/test_validate_release_version.sh	implemented	normative	
+REL-003	release	Cross-platform workflow	.github/workflows/release.yml	GitHub Actions	implemented	normative	
+REL-004	release	SHA-256 checksums	.github/workflows/release.yml	GitHub Actions	implemented	normative	
+REL-005	release	Preflight gate	scripts/release_preflight.sh	CI artifact	implemented	normative	
+REL-006	release	Signed assets	.github/workflows/release.yml	GitHub Actions	implemented	normative	
+REL-007	release	Bilingual release notes	docs/RELEASE_<VERSION>_EN.md	scripts/validate_release_version.sh	implemented	normative	
