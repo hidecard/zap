@@ -47,13 +47,21 @@
 The six missing expected-output JSON fixtures must be produced by `cargo run --manifest-path native/Cargo.toml -- bootstrap ast|diagnostics <path>` (see `native/src/cli.rs:1283-1307` and `native/src/bootstrap.rs:54,167`). As of 2026-09-01, the sandboxed environment cannot run the reference: `~/.rustup/toolchains` is empty, the sandbox network is unreachable (cannot sync the pinned 1.88.0 toolchain), and no prebuilt `target/release/zap` binary exists. Synthesizing the JSON by hand is forbidden by `contracts/BOOTSTRAP_CONTRACT_EN.md:38-39` (differential-gate rule) and `BASELINE_B0.md:64` (freeze rules). Resolution requires either an offline-available Rust toolchain or a prebuilt `zap` binary in `target/release/`.
 
 ### Type Checker Corpus Gaps
-- [ ] Generic nested option/list substitution
-- [ ] Generic declaration scope external
-- [ ] Generic declaration scope parameter
-- [ ] Imported generic body boundary
-- [ ] Compound bounds
-- [ ] Explicit generic call deferred
-- [ ] Generic class alias deferred
+- [ ] `generic_nested_option_list.zp` - missing expected typed-IR fixture (`generic_nested_option_list.typed-ir.json`)
+- [ ] `generic_scope_external.zp` (no source exists; reference is via `generic_scope_external_incompatible.zp`) - missing expected typed-IR fixture for the `incompatible` companion
+- [ ] `generic_scope_parameter.zp` (no source exists; reference is via `generic_scope_parameter_incompatible.zp`) - missing expected typed-IR fixture for the `incompatible` companion
+- [ ] `generic_cross_module_body.zp` + `generic_cross_module_body_library.zp` - missing expected typed-IR fixtures for the imported body boundary
+- [ ] `generic_compound_bounds.zp` + `generic_compound_bounds_incompatible.zp` - missing expected typed-IR fixture(s)
+- [ ] `generic_explicit_call_deferred.zp` - missing expected typed-IR fixture
+- [ ] `generic_alias_deferred.zp` - missing expected typed-IR fixture
+
+#### Lexer Corpus Gaps
+- [ ] `delimiters.zp` - missing expected AST fixture (`delimiters.ast.json`) and typed-IR fixture (`delimiters.typed-ir.json`)
+- [ ] `operators.zp` - missing expected AST fixture (`operators.ast.json`) and typed-IR fixture (`operators.typed-ir.json`)
+- [ ] `unicode.zp` - missing expected AST fixture (`unicode.ast.json`) and typed-IR fixture (`unicode.typed-ir.json`)
+
+#### Typed-IR Missing Node Types (Capability, Not Corpus)
+The B2 typed-IR candidate does not yet emit these node kinds (see `bootstrap/BOOTSTRAP_ADVANCEMENT_EVIDENCE.md:97-109`): `for` loop, `while` loop, `try_catch`, `function` definition, `class` definition, `trait` / `interface`, `list` literal, `map` literal, `option` constructor (`some`, `none`), `result` constructor (`ok`, `error`), `await`, `raise`. Until each kind is both implemented and covered by a typed-IR fixture, B2 typed-IR acceptance is partial.
 
 ### Known Bounded-Slice Limitations (Not Gaps, Design Boundaries)
 1. String-based `parse_expression` handles single operators per expression

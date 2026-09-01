@@ -14,6 +14,14 @@ The companion JSON is a **derived output**. Regenerating it requires the Rust
 reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 `scripts/bootstrap/capture_parser_fixtures.sh`.
 
+> **Note:** This README covers only the parser corpus (`bootstrap/fixtures/parser/`).
+> Companion gap entries for the **lexer** corpus (`bootstrap/fixtures/lexer/`)
+> and the **typecheck typed-IR** corpus (`bootstrap/fixtures/typecheck/*.typed-ir.json`)
+> are tracked in `bootstrap/BOOTSTRAP_ADVANCEMENT_EVIDENCE.md` under
+> "Lexer Corpus Gaps" and "Type Checker Corpus Gaps" and in `contracts/OWNERS.tsv`
+> under BOOT-058…BOOT-070. The capture script handles them via
+> `--family=lexer|typedir|diagnostics|tokens|parser|all`.
+
 ## Status legend
 
 | Status | Meaning |
