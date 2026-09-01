@@ -18,7 +18,7 @@ pub(crate) fn collection_contains(collection: &Value, item: &Value) -> Result<Va
                 return Err("index out of range".into());
             }
             Ok(Value::Bool(true))
-        },
+        }
         _ => Err("contains expects text/substring or list/index".into()),
     }
 }
@@ -30,12 +30,10 @@ pub(crate) fn collection_get(collection: &Value, key: &Value) -> Result<Value, S
                 return Err("list index out of range".into());
             }
             Ok(list[*index as usize].clone())
-        },
-        (Value::Map(map), Value::Text(key)) => {
-            match map.get(key) {
-                Some(value) => Ok(value.clone()),
-                None => Err(format!("map key '{}' not found", key)),
-            }
+        }
+        (Value::Map(map), Value::Text(key)) => match map.get(key) {
+            Some(value) => Ok(value.clone()),
+            None => Err(format!("map key '{}' not found", key)),
         },
         _ => Err("get expects list/number or map/text".into()),
     }

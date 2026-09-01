@@ -1,5 +1,5 @@
-use std::env;
 use crate::value::Value;
+use std::env;
 
 /// System operations standard library module
 pub(crate) fn system_env_var(name: &str) -> Result<Value, String> {

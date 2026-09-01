@@ -9,7 +9,7 @@ use crate::database::validate_database_manifest;
 use crate::registry::{
     cache_package, cache_package_source_with_credentials, load_registry_credentials,
     package_cache_path, read_index, read_index_source_with_credentials, resolve_dependency_graph,
-    validate_package_name, verify_cached_package, version_satisfies_requirement, RegistryPackage,
+    verify_cached_package, version_satisfies_requirement, RegistryPackage,
 };
 use crate::value::{Param, StaticSignature};
 
@@ -22,19 +22,30 @@ use super::{
 pub(crate) fn validate_path_security(path: &Path, project_root: &Path) -> Result<(), String> {
     // Reject absolute paths
     if path.is_absolute() {
-        return Err(format!("security: absolute path not allowed: {}", path.display()));
+        return Err(format!(
+            "security: absolute path not allowed: {}",
+            path.display()
+        ));
     }
-    
+
     // Normalize the path and check for traversal components
     let normalized = path.canonicalize().map_err(|e| {
-        format!("security: cannot canonicalize path {}: {}", path.display(), e)
+        format!(
+            "security: cannot canonicalize path {}: {}",
+            path.display(),
+            e
+        )
     })?;
-    
+
     // Check if the normalized path is within project root
     let canonical_root = project_root.canonicalize().map_err(|e| {
-        format!("security: cannot canonicalize project root {}: {}", project_root.display(), e)
+        format!(
+            "security: cannot canonicalize project root {}: {}",
+            project_root.display(),
+            e
+        )
     })?;
-    
+
     if !normalized.starts_with(&canonical_root) {
         return Err(format!(
             "security: path {} escapes project root {}",
@@ -42,34 +53,38 @@ pub(crate) fn validate_path_security(path: &Path, project_root: &Path) -> Result
             canonical_root.display()
         ));
     }
-    
+
     // Check for symlink components that could escape project boundary
     check_symlink_security(&normalized, &canonical_root)?;
-    
+
     Ok(())
 }
 
 /// Check that symlinks don't escape the project boundary
 fn check_symlink_security(path: &Path, project_root: &Path) -> Result<(), String> {
     let mut current = path;
-    
+
     while let Some(parent) = current.parent() {
         if parent == project_root {
             break;
         }
-        
+
         if let Ok(metadata) = fs::symlink_metadata(current) {
             if metadata.is_symlink() {
                 let target = fs::read_link(current).map_err(|e| {
                     format!("security: cannot read symlink {}: {}", current.display(), e)
                 })?;
-                
+
                 // Check if symlink target is absolute and outside project
                 if Path::new(&target).is_absolute() {
                     let canonical_target = Path::new(&target).canonicalize().map_err(|e| {
-                        format!("security: cannot canonicalize symlink target {}: {}", target, e)
+                        format!(
+                            "security: cannot canonicalize symlink target {}: {}",
+                            target.display(),
+                            e
+                        )
                     })?;
-                    
+
                     if !canonical_target.starts_with(project_root) {
                         return Err(format!(
                             "security: symlink {} points outside project root to {}",
@@ -80,17 +95,20 @@ fn check_symlink_security(path: &Path, project_root: &Path) -> Result<(), String
                 }
             }
         }
-        
+
         current = parent;
     }
-    
+
     Ok(())
 }
 
 /// Validate module path security to prevent escaping module boundaries
-pub(crate) fn validate_module_path_security(module_path: &Path, project_root: &Path) -> Result<(), String> {
+pub(crate) fn validate_module_path_security(
+    module_path: &Path,
+    project_root: &Path,
+) -> Result<(), String> {
     validate_path_security(module_path, project_root)?;
-    
+
     // Additional module-specific checks
     if module_path.components().any(|c| c.as_os_str() == "..") {
         return Err(format!(
@@ -98,7 +116,7 @@ pub(crate) fn validate_module_path_security(module_path: &Path, project_root: &P
             module_path.display()
         ));
     }
-    
+
     Ok(())
 }
 
@@ -112,12 +130,11 @@ pub(crate) fn sanitize_path(path: &str) -> Result<String, String> {
     if detect_path_traversal(path) {
         return Err(format!("security: path traversal detected in: {}", path));
     }
-    
+
     // Remove any suspicious patterns
-    let sanitized = path.replace("\\", "/")
-        .replace("//", "/")
-        .trim_matches('/');
-    
+    let normalized = path.replace("\\", "/").replace("//", "/");
+    let sanitized = normalized.trim_matches('/');
+
     Ok(sanitized.to_string())
 }
 
@@ -381,7 +398,16 @@ fn import_target_path(path: &str) -> Result<PathBuf, String> {
         if component.is_empty() || component == ".." || component == "." {
             return Err(format!("invalid explicit import path `{path}`"));
         }
-        relative.push(component)
+        relative.push(component);
+    }
+    if relative.extension().is_none() {
+        relative.set_extension("zp");
+    }
+    if relative
+        .components()
+        .any(|component| component == std::path::Component::ParentDir)
+    {
+        return Err(format!("invalid explicit import path `{path}`"));
     }
     Ok(relative)
 }
@@ -394,16 +420,18 @@ pub(crate) fn resolve_relative_path(
     if normalized.is_empty() {
         return Ok(base_path.to_path_buf());
     }
-    
+
     let base_parent = base_path.parent().unwrap_or_else(|| Path::new("."));
     let mut result = base_parent.to_path_buf();
-    
+
     for component in normalized.split("..") {
         if !result.pop() {
-            return Err(format!("relative path goes beyond project root: {relative_spec}"));
+            return Err(format!(
+                "relative path goes beyond project root: {relative_spec}"
+            ));
         }
     }
-    
+
     let remaining = normalized.split("..").last().unwrap_or("");
     if !remaining.is_empty() {
         for component in remaining.split('.') {
@@ -413,7 +441,7 @@ pub(crate) fn resolve_relative_path(
             result.push(component);
         }
     }
-    
+
     Ok(result)
 }
 
@@ -421,17 +449,20 @@ pub(crate) fn validate_package_name(name: &str) -> Result<(), String> {
     if name.is_empty() {
         return Err("package name cannot be empty".to_string());
     }
-    
-    if !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+
+    if !name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+    {
         return Err(format!(
             "package name can only contain alphanumeric characters, underscores, and hyphens: {name}"
         ));
     }
-    
+
     if name.chars().next().map(|c| c.is_digit(10)).unwrap_or(false) {
         return Err("package name cannot start with a digit".to_string());
     }
-    
+
     Ok(())
 }
 
@@ -441,37 +472,25 @@ pub(crate) fn standard_module_resolution(
     root_dir: &Path,
 ) -> Result<PathBuf, String> {
     validate_package_name(module_name)?;
-    
+
     // Try standard directories
     let standard_dirs = ["modules", "lib", "src"];
-    
+
     for dir in &standard_dirs {
         let candidate = root_dir.join(dir).join(format!("{module_name}.zp"));
         if candidate.is_file() {
             return Ok(candidate);
         }
     }
-    
+
     // Try relative to current file
     let current_dir = current_path.parent().unwrap_or_else(|| Path::new("."));
     let relative_candidate = current_dir.join(format!("{module_name}.zp"));
     if relative_candidate.is_file() {
         return Ok(relative_candidate);
     }
-    
+
     Err(format!("module not found: {module_name}"))
-};
-    }
-    if relative.extension().is_none() {
-        relative.set_extension("zp");
-    }
-    if relative
-        .components()
-        .any(|component| component == std::path::Component::ParentDir)
-    {
-        return Err(format!("invalid explicit import path `{path}`"));
-    }
-    Ok(relative)
 }
 
 fn validate_module_manifest(dir: &Path, manifest: &str) -> Result<(), String> {
