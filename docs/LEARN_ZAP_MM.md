@@ -22,7 +22,7 @@ Rust toolchain သည် Zap executable ကို build လုပ်ရန်သ
 သင့် operating system နှင့် architecture ကိုက်ညီသော archive ကို [GitHub Releases](https://github.com/hidecard/zap/releases) မှ download လုပ်ပါ။ Extract လုပ်ပြီး executable ကို `PATH` ထဲရှိ directory သို့ ထည့်ကာ Unix စနစ်များတွင် executable permission ပေးပါ။
 
 ```bash
-tar -xzf zap-2.11.16-linux-x86_64.tar.gz
+tar -xzf zap-2.11.17-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help

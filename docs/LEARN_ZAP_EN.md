@@ -22,7 +22,7 @@ This guide distinguishes three kinds of information. **Normative** behavior is d
 Download the archive for your operating system and architecture from the [GitHub Releases page](https://github.com/hidecard/zap/releases). Extract it, place the executable in a directory on `PATH`, and make it executable on Unix-like systems.
 
 ```bash
-tar -xzf zap-2.11.16-linux-x86_64.tar.gz
+tar -xzf zap-2.11.17-linux-x86_64.tar.gz
 sudo install -m 0755 zap/bin/zap /usr/local/bin/zap
 zap --version
 zap --help
