@@ -1,10 +1,10 @@
 # Zap Type-Checking နှင့် Conformance Acceptance Matrix
 
 **အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline  
-**နောက်ဆုံးစစ်ဆေးထားသော version:** published v2.11.14
+**နောက်ဆုံးစစ်ဆေးထားသော version:** published v2.11.17
 **အကျယ်အဝန်း:** Static checking၊ control-flow narrowing၊ diagnostics နှင့် conformance fixtures
 
-ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ လက်ရှိ metadata သည် published v2.11.14 ဖြစ်ပြီး failed v2.11.12 tag သည် historical evidence အဖြစ် ဆက်ရှိကာ ဤ release သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
+ဤစာတမ်းသည် နောက်ထပ် type-system workstream အတွက် acceptance boundary ကို သတ်မှတ်ထားသည်။ လက်ရှိအကောင်အထည်ဖော်ပြီးသားအရာများ၊ ဒီဇိုင်းဆုံးဖြတ်ချက်လိုအပ်သည့်အရာများနှင့် implementation ကျန်နေသည့်အရာများကို ခွဲခြားထားသည်။ လက်ရှိ metadata သည် published v2.11.17 ဖြစ်ပြီး failed v2.11.12 tag သည် historical evidence အဖြစ် ဆက်ရှိကာ ဤ release သည် ပြီးစီးပြီးသား async runtime၊ registry နှင့် release-engineering အလုပ်များကို ပြန်လည်ဖွင့်မည်မဟုတ်ပါ။
 
 ## လက်ရှိ baseline
 

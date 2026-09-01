@@ -2,9 +2,9 @@
 # These values are intentionally independent: a language change does not imply
 # an artifact-schema change, and a bootstrap-stage change does not imply either.
 
-language_version = "2.10.1"
-compiler_version = "2.10.1"
-stdlib_version = "2.10.1"
+language_version = "2.11.17"
+compiler_version = "2.11.17"
+stdlib_version = "2.11.17"
 
 [token_schema]
 version = 1

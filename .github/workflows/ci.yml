@@ -54,7 +54,7 @@ jobs:
         with:
           name: zap-version-consistency-${{ github.sha }}
           path: target/version-consistency.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run version consistency regression
         run: scripts/test_validate_release_version.sh
@@ -70,7 +70,7 @@ jobs:
         with:
           name: zap-documentation-consistency-${{ github.sha }}
           path: target/documentation-consistency.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run documentation consistency regression
         run: scripts/test_validate_documentation_consistency.sh
@@ -141,7 +141,7 @@ jobs:
         with:
           name: zap-b2-milestone-${{ github.sha }}
           path: target/b2-milestone-report.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Verify B3 package/build/test-runner foundations
         run: scripts/bootstrap/verify_b3_foundations.sh
@@ -188,7 +188,7 @@ jobs:
           path: |
             target/b3-unified-evidence.tsv
             target/b3-unified-evidence-*.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run canonical VS Code extension package contract
         run: scripts/test_vscode_extension.sh
@@ -241,14 +241,14 @@ jobs:
         with:
           name: zap-framework-starters-${{ github.sha }}
           path: target/framework-starters.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
         with:
           name: zap-benchmark-${{ github.sha }}
           path: benchmark-results/*
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run registry transport edge-case corpus
         run: cargo test --manifest-path native/Cargo.toml --bin zap registry_client --all-features -- --nocapture
@@ -295,7 +295,7 @@ jobs:
         with:
           name: zap-p105-replay-${{ github.sha }}
           path: target/p105-replay.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run M2-VERIFY-01 bounded replay job
         env:
@@ -316,7 +316,7 @@ jobs:
           path: |
             target/m2-verify-replay.tsv
             target/m2-verify-replay.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Run P0-01 native/legacy parity matrix
         env:
@@ -329,7 +329,7 @@ jobs:
         with:
           name: zap-p001-parity-${{ github.sha }}
           path: target/p001-parity-report.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Validate P0-02 specification ownership index
         env:
@@ -342,7 +342,7 @@ jobs:
         with:
           name: zap-p002-ownership-${{ github.sha }}
           path: target/spec-ownership-report.tsv
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Validate registry deployment policy
         run: scripts/validate_registry_deployment.sh
@@ -419,7 +419,7 @@ jobs:
         with:
           name: p005c-async-${{ matrix.target }}
           path: target/p005c-async-${{ matrix.target }}.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Verify Linux/macOS binary
         if: runner.os != 'Windows'

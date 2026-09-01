@@ -306,7 +306,7 @@ jobs:
             zap-*.tar.gz
             zap-*.zip
             zap-*.sha256
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
   release:

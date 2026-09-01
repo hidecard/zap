@@ -1,10 +1,10 @@
 # Zap Type-Checking and Conformance Acceptance Matrix
 
-**Status:** Baseline for the PDF-driven follow-up roadmap  
-**Verified baseline:** published v2.11.14
+**Status:** Baseline for the PDF-driven follow-up roadmap
+**Verified baseline:** published v2.11.17
 **Scope:** Static checking, control-flow narrowing, diagnostics, and conformance fixtures
 
-This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its active metadata is published v2.11.14; the failed v2.11.12 tag remains historical evidence, and this release does not reopen the completed async runtime, registry, or release-engineering work.
+This document defines the acceptance boundary for the next type-system workstream. It deliberately separates behavior that is already implemented from work that still requires a design decision or implementation. Its active metadata is published v2.11.17; the failed v2.11.12 tag remains historical evidence, and this release does not reopen the completed async runtime, registry, or release-engineering work.
 
 ## Current baseline
 
