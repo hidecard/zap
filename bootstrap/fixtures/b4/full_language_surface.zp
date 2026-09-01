@@ -1,0 +1,40 @@
+# B4 acceptance fixture: the complete language surface must be compiled by the
+# Zap-owned pipeline before this fixture can be promoted from provisional.
+module b4.full_language_surface
+
+import "bootstrap/fixtures/typecheck/generic_cross_module.zp" as generic_module
+
+alias Number = number
+
+class Counter:
+    let value: number = 0
+
+    fn __init__(self, start: number):
+        self.value = start
+
+    fn increment(self, amount: number) -> number:
+        self.value = self.value + amount
+        return self.value
+
+fn identity[T](value: T) -> T:
+    return value
+
+async fn compute(items: list[number]) -> result[number, text]:
+    let total: number = 0
+    for item in items:
+        if item < 0:
+            return err("negative item")
+        total = total + item
+    return ok(total)
+
+fn main() -> option[number]:
+    let counter = Counter(1)
+    let value = counter.increment(2)
+    let values: list[number] = [value, 4, 5]
+    let result = await compute(values)
+    match result:
+        case ok(total):
+            return some(identity(total))
+        case err(message):
+            raise message
+    return none

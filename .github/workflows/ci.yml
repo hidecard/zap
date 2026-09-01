@@ -159,6 +159,17 @@ jobs:
 
       - name: Verify Rust-free bootstrap seed pipeline
         run: scripts/bootstrap/verify_non_rust_seed_pipeline.sh
+      - name: Verify B4 Rust-free full-language contract boundary
+        env:
+          B4_CONTRACT_REPORT: target/b4-rust-free-contract.tsv
+        run: scripts/bootstrap/verify_b4_rust_free_contract.sh
+      - name: Upload B4 Rust-free contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-rust-free-contract-${{ github.sha }}
+          path: target/b4-rust-free-contract.tsv
+          if-no-files-found: warn
 
       - name: Verify B3 AST schema compatibility matrix
         run: scripts/test_b3_ast_schema_compatibility.sh

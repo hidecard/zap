@@ -1,0 +1,23 @@
+schema_version = 1
+contract_id = "B4-RUST-FREE-FULL-LANGUAGE"
+status = "not-certified"
+
+# Certification is deliberately separate from contract integrity. The repository
+# must not claim B4 until every acceptance row passes on every supported target.
+full_language_surface = true
+rust_or_cargo_in_compiler_path = false
+user_facing_cli_owned_by_zap = true
+build_path_owned_by_zap = true
+test_path_owned_by_zap = true
+
+[forbidden_fallbacks]
+compiler_path = ["cargo", "rustc", "rustup", "native/src", "host/zap-host"]
+
+[required_evidence]
+source_to_ast = "bootstrap/fixtures/b4/full_language_surface.zp"
+source_to_typed_ir = "bootstrap/fixtures/b4/full_language_surface.zp"
+source_to_vm = "bootstrap/fixtures/b4/full_language_surface.zp"
+cli_entrypoint = "bootstrap/b4/native_independent.zp"
+package_build = "bootstrap/b3/package.zp"
+test_runner = "bootstrap/b3/test_runner.zp"
+rebuild_manifest = "bootstrap/contracts/B4_ACCEPTANCE.tsv"
