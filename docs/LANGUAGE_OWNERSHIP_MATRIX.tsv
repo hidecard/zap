@@ -238,3 +238,21 @@ REL-004	release	SHA-256 checksums	.github/workflows/release.yml	GitHub Actions	i
 REL-005	release	Preflight gate	scripts/release_preflight.sh	CI artifact	implemented	normative	
 REL-006	release	Signed assets	.github/workflows/release.yml	GitHub Actions	implemented	normative	
 REL-007	release	Bilingual release notes	docs/RELEASE_<VERSION>_EN.md	scripts/validate_release_version.sh	implemented	normative	
+REBUILD-001	rebuild	Byte-for-byte token determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-002	rebuild	Byte-for-byte AST determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-003	rebuild	Byte-for-byte typed IR determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-004	rebuild	Byte-for-byte bytecode determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-005	rebuild	Byte-for-byte pipeline determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-006	rebuild	Multi-line source determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-007	rebuild	Control-flow source determinism	scripts/bootstrap/verify_b4_byte_determinism.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-008	rebuild	Stage 1 source-to-bytecode determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-009	rebuild	Stage 2 bytecode-to-execution determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-010	rebuild	Full pipeline replay determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-011	rebuild	Cross-stage execution determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-012	rebuild	Typed IR second-stage determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-013	rebuild	Self-rebuild typed IR determinism	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-014	rebuild	No Rust toolchain dependency	scripts/bootstrap/verify_b4_clean_environment.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-015	rebuild	Normal env matches clean env	scripts/bootstrap/verify_b4_clean_environment.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-016	rebuild	No state leakage between runs	scripts/bootstrap/verify_b4_clean_environment.sh	bootstrap/b4/native_independent.zp	implemented	normative	
+REBUILD-017	rebuild	Platform evidence validation	scripts/bootstrap/verify_b4_clean_environment.sh	bootstrap/b4/seed_pipeline.zp	implemented	normative	
+REBUILD-018	rebuild	Diverse source surface execution	scripts/bootstrap/verify_b4_clean_environment.sh	bootstrap/b4/native_independent.zp	implemented	normative	

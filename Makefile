@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-non-rust-test test package clean
+.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-non-rust-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -37,10 +37,21 @@ bootstrap-vm-test:
 bootstrap-non-rust-test:
 	./scripts/bootstrap/verify_non_rust_seed_pipeline.sh
 
+bootstrap-byte-determinism-test:
+	./scripts/bootstrap/verify_b4_byte_determinism.sh
+
+bootstrap-second-stage-test:
+	./scripts/bootstrap/verify_b4_second_stage_rebuild.sh
+
+bootstrap-clean-env-test:
+	./scripts/bootstrap/verify_b4_clean_environment.sh
+
+bootstrap-self-rebuild-test: bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test
+
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
 
-test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b3-test bootstrap-vm-test bootstrap-non-rust-test
+test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b3-test bootstrap-vm-test bootstrap-non-rust-test bootstrap-self-rebuild-test
 
 package: native
 	./package_release.sh x86_64-unknown-linux-gnu

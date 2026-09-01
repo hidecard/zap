@@ -16,3 +16,6 @@ B4-FULL-012	test-runner	bootstrap/b4/runner.zp	bootstrap/b4/runner.zp	test_resul
 B4-FULL-013	cli-entrypoint	bootstrap/b4/native_independent.zp	bootstrap/b4/native_independent.zp	cli_result	provisional
 B4-FULL-014	self-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/native_independent.zp	self_rebuild_bytes	provisional
 B4-FULL-015	cross-platform-determinism	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/native_independent.zp	platform_rebuild	provisional
+B4-FULL-016	byte-determinism	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_byte_determinism.sh	artifact_bytes	provisional
+B4-FULL-017	second-stage-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	stage2_artifact	provisional
+B4-FULL-018	clean-environment	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_clean_environment.sh	clean_run	provisional

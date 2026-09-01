@@ -54,7 +54,7 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
   rows=$((rows + 1))
 done < <(tail -n +4 "$ACCEPTANCE")
 
-(( rows >= 15 )) || fail "full-language acceptance manifest has only $rows rows"
+(( rows >= 18 )) || fail "full-language acceptance manifest has only $rows rows"
 
 # These paths are allowed to exist as reference or development artifacts, but
 # they must not be named by the Zap-owned compiler source as a fallback.
@@ -68,5 +68,13 @@ rm -f /tmp/zap-b4-forbidden-fallbacks
 if [[ "${B4_RUST_FREE_CERTIFIED:-0}" == 1 ]]; then
   fail "B4 certification requested, but contract status is not-certified"
 fi
+
+# Validate that self-rebuild acceptance scripts exist
+for script in \
+  "scripts/bootstrap/verify_b4_byte_determinism.sh" \
+  "scripts/bootstrap/verify_b4_second_stage_rebuild.sh" \
+  "scripts/bootstrap/verify_b4_clean_environment.sh"; do
+  [[ -f "$script" ]] || fail "missing self-rebuild acceptance script: $script"
+done
 
 printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; full-language certification remains explicitly not-certified\n' "$rows"

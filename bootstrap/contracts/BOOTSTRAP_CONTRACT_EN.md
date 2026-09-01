@@ -45,3 +45,40 @@ Language version, compiler version, standard-library version, and each artifact 
 ## Current status
 
 Zap v2.11.17 is **B0**. The current native Rust lexer, parser, evaluator, standard library, registry, and host boundaries are the reference owners. The bootstrap directories establish the contract and corpus needed for B1 work; they do not replace the native implementation.
+
+## Self-rebuild acceptance gates
+
+Three verification gates strengthen the path to B4 self-rebuild acceptance. Each gate produces a deterministic TSV report and fails closed on any non-determinism.
+
+### Byte-for-byte deterministic artifacts
+
+`scripts/bootstrap/verify_b4_byte_determinism.sh` produces real compiler artifacts (tokens, AST, typed IR, bytecode, execution output) from identical source bytes across multiple runs. It verifies that:
+
+1. Token streams are byte-identical across runs
+2. AST snapshots are byte-identical across runs
+3. Typed IR artifacts are byte-identical across runs
+4. Bytecode rebuilds are byte-identical across runs
+5. Full pipeline executions are byte-identical across runs
+6. Multi-line sources produce deterministic output
+7. Control-flow sources produce deterministic output
+
+### Second-stage rebuild verification
+
+`scripts/bootstrap/verify_b4_second_stage_rebuild.sh` verifies that compiler artifacts can be used as input to produce second-stage artifacts deterministically. It checks:
+
+1. Stage 1 (source to bytecode) is deterministic
+2. Stage 2 (bytecode to execution) is deterministic
+3. Full pipeline replay is deterministic
+4. Cross-stage execution is deterministic
+5. Typed IR second-stage compilation is deterministic
+6. Self-rebuild typed IR is deterministic
+
+### Clean environment run verification
+
+`scripts/bootstrap/verify_b4_clean_environment.sh` verifies that the bootstrap pipeline runs correctly without residual host state. It checks:
+
+1. Pipeline executes correctly with Rust toolchain variables unset
+2. Normal environment produces identical output to clean environment
+3. Sequential runs show no state leakage
+4. Platform evidence records validate correctly
+5. Diverse source surfaces all execute correctly in clean environment
