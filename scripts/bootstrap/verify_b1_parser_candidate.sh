@@ -3,6 +3,15 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 
+# Optional: regenerate missing parser-corpus golden fixtures before the
+# existence-check. Disabled by default; enable with
+#   ZAP_REGENERATE_PARSER_FIXTURES=1 bash scripts/bootstrap/verify_b1_parser_candidate.sh
+# The capture script requires a working Rust toolchain or a prebuilt binary;
+# see bootstrap/fixtures/parser/README.md.
+if [[ "${ZAP_REGENERATE_PARSER_FIXTURES:-0}" == "1" ]]; then
+    bash "$ROOT_DIR/scripts/bootstrap/capture_parser_fixtures.sh" --check
+fi
+
 valid_fixture="bootstrap/fixtures/parser/arithmetic.zp"
 valid_expected="bootstrap/fixtures/parser/arithmetic.ast.json"
 compound_fixture="bootstrap/fixtures/parser/compound.zp"

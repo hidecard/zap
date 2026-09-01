@@ -35,13 +35,16 @@
 ## Corpus Parity Gaps
 
 ### Parser Corpus Gaps
-- [ ] `arbitrary_complex_call.zp` - missing AST fixture
-- [ ] `arbitrary_deep_nesting.zp` - missing AST fixture
-- [ ] `arbitrary_nested_expressions.zp` - missing AST fixture
-- [ ] `malformed_recovery.zp` - missing diagnostic fixture
-- [ ] `multi_diagnostic.zp` - missing diagnostic fixture
-- [ ] `numeric_literals.zp` - missing diagnostic fixture (exists but no JSON expected output)
-- [ ] `span_coverage.zp` - missing AST fixture
+- [ ] `arbitrary_complex_call.zp` - missing expected AST fixture (`arbitrary_complex_call.ast.json`)
+- [ ] `arbitrary_deep_nesting.zp` - missing expected AST fixture (`arbitrary_deep_nesting.ast.json`)
+- [ ] `arbitrary_nested_expressions.zp` - missing expected AST fixture (`arbitrary_nested_expressions.ast.json`)
+- [ ] `malformed_recovery.zp` - missing expected diagnostic fixture (`malformed_recovery.diagnostics.json`)
+- [ ] `multi_diagnostic.zp` - missing expected diagnostic fixture (`multi_diagnostic.diagnostics.json`)
+- [ ] `numeric_literals.zp` - has `numeric_literals.diagnostics.json` but no expected AST fixture (`numeric_literals.ast.json`)
+- [ ] `span_coverage.zp` - missing expected AST fixture (`span_coverage.ast.json`)
+
+#### Blocker: golden fixtures require Rust reference runner
+The six missing expected-output JSON fixtures must be produced by `cargo run --manifest-path native/Cargo.toml -- bootstrap ast|diagnostics <path>` (see `native/src/cli.rs:1283-1307` and `native/src/bootstrap.rs:54,167`). As of 2026-09-01, the sandboxed environment cannot run the reference: `~/.rustup/toolchains` is empty, the sandbox network is unreachable (cannot sync the pinned 1.88.0 toolchain), and no prebuilt `target/release/zap` binary exists. Synthesizing the JSON by hand is forbidden by `contracts/BOOTSTRAP_CONTRACT_EN.md:38-39` (differential-gate rule) and `BASELINE_B0.md:64` (freeze rules). Resolution requires either an offline-available Rust toolchain or a prebuilt `zap` binary in `target/release/`.
 
 ### Type Checker Corpus Gaps
 - [ ] Generic nested option/list substitution
@@ -63,6 +66,7 @@
 8. No alias expansion
 9. No arbitrary predicate inference
 10. No general else-flow analysis
+11. Multiple option variables not handled (single option variable only)
 
 ### B1 Parser Fixes Applied (2026-08-31)
 1. **Multiple same-precedence operators:** `parse_expression` now correctly handles chains like `a or b or c` and `1 + 2 + 3` by recursing on the remaining text after the first operator occurrence instead of only parsing `parts[1]`.
