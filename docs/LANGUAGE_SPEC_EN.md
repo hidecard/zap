@@ -60,6 +60,26 @@ The current release line is v2.11.17. A semantics change requires a specificatio
 
 The parser owns syntax and AST construction. The evaluator owns runtime expression and statement behavior. The diagnostics module owns the stable error contract. The registry module owns package transport, authentication, checksums, signatures, and cache policy. CI owns enforcement of the repository's declared gates. No subsystem may silently redefine another subsystem's contract.
 
+## Feature coverage at v2.11.17
+
+The current release line implements the following language features; this list is a closed-form summary that links each feature to the section that defines it.
+
+| Feature | Defined in | Notes |
+|---|---|---|
+| Indentation-based blocks, `#` comments, `say` | §1 | Canonical pipeline: `source → lexer → AST parser → evaluator` |
+| Numeric, text, boolean, list, map, none, object, function values | §3 | First-class callable values; `any` is the explicit escape hatch |
+| `list<T>`, `map<K,V>`, `option<T>`, `result<T>` annotations | §3, §4 | Bounded generics; full generic declaration/inference is deferred |
+| Functions, named/positional arguments, default values | §4 | `function` annotation accepts callable values |
+| Lexical closures with captured environment | §4 | Bounded canonical AST closure slice shipped in v2.11.17; deferred to A3 generic expansion |
+| `if`/`else`, `while`, `for ... in <list>`, `break`, `continue` | §5 | Literal-list `for` only; general iterators are deferred |
+| `module`/`import` declarations and resolver | §5 | Deterministic source order; rejects absolute/traversal paths and cycles |
+| `raise`/`try`/`catch` structured control flow | §5 | Bounded; bare `raise` is a parser error |
+| Single-threaded `Rc<RefCell>` ownership | §6 | Explicit cycle breaking is required; no automatic collector |
+| Async functions, `await`, `task_cancel`, `task_join`, `task_join_timeout` | §6 | Deterministic executor-backed scheduling; not a production I/O reactor |
+| Result construction `ok(...)`/`err(...)`, `?` propagation | §4, §5 | `is_ok`/`is_err`/`unwrap_or` for safe access |
+| Option construction `some(...)`/`option_none()`, `is_some` | §4, §5 | Branch-local narrowing remains a deferred design gate |
+| Generic identity/same declarations, multiple-parameter substitution | §3, §4 | Bounded A3 slice; broader declaration coverage is deferred |
+
 ## Specification ownership index
 
 The machine-readable rule-to-section-to-fixture map is [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv), with the field and migration contract documented in [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) and [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md). CI validates that every indexed English section, Burmese section, and fixture owner exists; the validator also enforces unique rule IDs and required domain coverage.

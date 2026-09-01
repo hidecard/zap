@@ -60,6 +60,26 @@ User-facing diagnostic တိုင်းတွင် severity၊ stable code၊
 
 Parser သည် syntax နှင့် AST construction ကို ပိုင်ဆိုင်သည်။ Evaluator သည် runtime expression နှင့် statement behavior ကို ပိုင်ဆိုင်သည်။ Diagnostics module သည် stable error contract ကို ပိုင်ဆိုင်သည်။ Registry module သည် package transport၊ authentication၊ checksum၊ signature နှင့် cache policy ကို ပိုင်ဆိုင်သည်။ CI သည် repository တွင် သတ်မှတ်ထားသည့် gate များကို enforce လုပ်သည်။ Subsystem တစ်ခုသည် အခြား subsystem ၏ contract ကို တိတ်တဆိတ် ပြန်လည်သတ်မှတ်ခွင့် မရှိပါ။
 
+## v2.11.17 တွင် feature coverage
+
+လက်ရှိ release line သည် အောက်ပါ language feature များကို implement လုပ်ထားသည်။ ဤစာရင်းသည် feature တစ်ခုချင်းစီကို ၎င်း၏ definition section သို့ link ချိတ်ထားသော closed-form summary ဖြစ်သည်။
+
+| Feature | Definition section | မှတ်ချက် |
+|---|---|---|
+| Indentation-based block, `#` comment, `say` | §1 | Canonical pipeline: `source → lexer → AST parser → evaluator` |
+| Numeric, text, boolean, list, map, none, object, function value | §3 | First-class callable value; `any` သည် explicit escape hatch ဖြစ်သည် |
+| `list<T>`၊ `map<K,V>`၊ `option<T>`၊ `result<T>` annotation | §3, §4 | Bounded generic; full generic declaration/inference ကို deferred ထားသည် |
+| Function, named/positional argument, default value | §4 | `function` annotation သည် callable value ကို လက်ခံသည် |
+| Lexical closure နှင့် captured environment | §4 | v2.11.17 တွင် bounded canonical AST closure slice ထည့်သွင်းထားသည်။ A3 generic expansion အထိ deferred |
+| `if`/`else`၊ `while`၊ `for ... in <list>`၊ `break`၊ `continue` | §5 | Literal-list `for` သာ ဖြစ်ပြီး general iterator ကို deferred ထားသည် |
+| `module`/`import` declaration နှင့် resolver | §5 | Deterministic source order၊ absolute/traversal path နှင့် cycle ကို reject လုပ်သည် |
+| `raise`/`try`/`catch` structured control flow | §5 | Bounded; bare `raise` သည် parser error ဖြစ်သည် |
+| Single-threaded `Rc<RefCell>` ownership | §6 | Explicit cycle breaking လိုအပ်ပြီး automatic collector မရှိပါ |
+| Async function, `await`, `task_cancel`, `task_join`, `task_join_timeout` | §6 | Deterministic executor-backed scheduling; production I/O reactor မဟုတ်ပါ |
+| Result construction `ok(...)`/`err(...)`၊ `?` propagation | §4, §5 | Safe access အတွက် `is_ok`/`is_err`/`unwrap_or` |
+| Option construction `some(...)`/`option_none()`၊ `is_some` | §4, §5 | Branch-local narrowing ကို deferred design gate အဖြစ် ဆက်ထားသည် |
+| Generic `identity<T>`/`same<T>` declaration, multiple-parameter substitution | §3, §4 | Bounded A3 slice; broader declaration coverage ကို deferred ထားသည် |
+
 ## Specification ownership index
 
 Machine-readable rule-to-section-to-fixture map သည် [`SPEC_OWNERSHIP_INDEX.tsv`](SPEC_OWNERSHIP_INDEX.tsv) ဖြစ်ပြီး field နှင့် migration contract ကို [`SPEC_OWNERSHIP_EN.md`](SPEC_OWNERSHIP_EN.md) နှင့် [`SPEC_OWNERSHIP_MM.md`](SPEC_OWNERSHIP_MM.md) တွင် မှတ်တမ်းတင်ထားသည်။ CI သည် index ထဲရှိ English section၊ Burmese section နှင့် fixture owner တစ်ခုချင်းစီ ရှိကြောင်း စစ်ဆေးပြီး unique rule ID နှင့် required domain coverage ကိုလည်း enforce လုပ်သည်။

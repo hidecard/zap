@@ -6,6 +6,8 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ### Documentation
 - Aligned 30+ doc files (English and Burmese pairs) to current release line v2.11.17: verified-baseline, normative status, and navigation-index headers.
+- Aligned learning and syntax guides to v2.11.17: install tarball name, "Supported version" / "Last verified" metadata, and current-status correction in `NEXT_TODO_PLAN_EN/MM`.
+- Added a "Feature coverage at v2.11.17" closed-form summary table in `LANGUAGE_SPEC_EN/MM` linking each canonical language feature to its definition section, including the v2.11.17 closure slice, `ok`/`some`/`?` forms, generic `identity`/`same` slice, and async scheduling primitives.
 - Fixed BOOT-071 fixture_path in `bootstrap/contracts/OWNERS.tsv` to use a stable anchor link instead of a line-range.
 
 ## [2.11.17] - 2026-08-27
