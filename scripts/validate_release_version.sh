@@ -102,6 +102,22 @@ record 'native/Cargo.toml' "$EXPECTED_VERSION" "$cargo_version" "$([[ "$cargo_ve
 lock_version="$(read_lock_version)"
 record 'native/Cargo.lock zap-native' "$EXPECTED_VERSION" "${lock_version:-<missing>}" "$([[ "$lock_version" == "$EXPECTED_VERSION" ]] && printf PASS || printf FAIL)"
 
+if [[ -n "${ZAP_CLI_BINARY:-}" ]]; then
+  if [[ -f "$ZAP_CLI_BINARY" && -x "$ZAP_CLI_BINARY" ]]; then
+    record 'zap binary path' 'executable file' "$ZAP_CLI_BINARY" PASS
+    file_description="$(file -b "$ZAP_CLI_BINARY")"
+    if [[ -n "${ZAP_EXPECTED_ARCH:-}" ]]; then
+      if grep -Fqi -- "$ZAP_EXPECTED_ARCH" <<<"$file_description"; then
+        record 'zap binary architecture' "$ZAP_EXPECTED_ARCH" "$file_description" PASS
+      else
+        record 'zap binary architecture' "$ZAP_EXPECTED_ARCH" "$file_description" FAIL
+      fi
+    fi
+  else
+    record 'zap binary path' 'executable file' '<missing or not executable>' FAIL
+  fi
+fi
+
 cli_version="$(read_cli_version)"
 record 'zap --version' "$EXPECTED_VERSION" "${cli_version:-<missing>}" "$([[ "$cli_version" == "$EXPECTED_VERSION" ]] && printf PASS || printf FAIL)"
 

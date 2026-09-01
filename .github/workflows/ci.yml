@@ -43,9 +43,17 @@ jobs:
             native
             host/zap-host
 
+      - name: Initialize CI evidence fallback paths
+        run: scripts/ensure_ci_evidence_reports.sh
+
+      - name: Build binary for version validation
+        run: cargo build --release --locked --manifest-path native/Cargo.toml
+
       - name: Validate release version consistency
         env:
           ZAP_VERSION_REPORT: target/version-consistency.tsv
+          ZAP_CLI_BINARY: native/target/release/zap
+          ZAP_EXPECTED_ARCH: x86-64
         run: scripts/validate_release_version.sh
 
       - name: Upload version consistency evidence
