@@ -1,13 +1,13 @@
 **Current release line:** v2.11.17
 # Standard-Library Stability Policy
 
-**Verified baseline:** Zap v2.11.16
+**Verified baseline:** Zap v2.11.17
 
 ## Status and scope
 
 This policy defines the compatibility contract for every public standard-library domain and its directly exposed builtins. The machine-readable source is the native [`stdlib_catalog.rs`](../native/src/stdlib_catalog.rs) catalog, while this document explains how users and maintainers interpret the metadata. Runtime dispatch remains centralized in the evaluator; the catalog does not create a second implementation path.
 
-The policy applies to the current release line, **v2.11.16**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
+The policy applies to the current release line, **v2.11.17**, and is intended to be reviewed whenever a public builtin is added, changed, deprecated, or removed.
 
 ## Stability model
 
