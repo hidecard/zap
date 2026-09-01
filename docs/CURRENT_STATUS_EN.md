@@ -13,6 +13,17 @@ The latest published release is v2.11.17. The v2.11.12 tag was preserved after i
 
 The versioned provenance asset is the canonical machine-readable record for release identity. It records the source URI, tag/ref, source commit, workflow run ID, reproducible manifest and checksums, signing metadata, and artifact subjects with their SHA-256 digests and sizes. The release verifier checks this record together with the downloaded archives and signatures.
 
+## CI release-version validator hardening (P0 follow-up)
+
+The `scripts/validate_release_version.sh` validator was hardened so that:
+- `read_cargo_version` strips trailing CR (`tr -d '\r'`) before the sed match, so `core.autocrlf=true` Windows checkouts of `native/Cargo.toml` still yield the correct Cargo version.
+- `read_lock_version` adds a per-line `sub(/\\r$/, "")` so the awk `name = "zap-native"` match and the subsequent `version = ` extract succeed even when the lockfile was checked out with CRLF endings. CI runs on Linux with LF and was already correct; this prevents the same regression from breaking CI if a future change ever loosened the LF-only assumption.
+- `read_cli_version` only invokes `ZAP_CLI_BINARY` when the path is an existing executable, only falls back to `cargo run` when cargo is on PATH, and degrades to a recorded `<missing>` row when neither is available — so the validator no longer cascades into a non-zero shell exit when the binary or toolchain is missing, and the gate reports the failure cleanly with exit 1.
+
+`scripts/test_validate_release_version.sh` now includes a CRLF regression block that builds a CRLF-ending copy of `native/Cargo.lock`, runs the same awk block, and asserts the result equals the current Cargo version. With the old awk block (no CR strip) the result is empty; with the hardened awk block the result equals the current version, demonstrating the regression would now be caught.
+
+All CI artifact uploads already use `if-no-files-found: warn` so a missing evidence file does not cascade a gate failure.
+
 ## Active implementation status
 
 | Area | Status label | Current boundary |

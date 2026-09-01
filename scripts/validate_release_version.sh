@@ -57,11 +57,21 @@ require_text() {
 }
 
 read_cargo_version() {
-  sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' native/Cargo.toml | head -n 1
+  # Normalize CR first so autocrlf=true Windows checkouts still match.
+  tr -d '\r' < native/Cargo.toml \
+    | sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p' \
+    | head -n 1
 }
 
 read_lock_version() {
+  # Strip any trailing CR so this remains robust when the lockfile was
+  # checked out on a system with core.autocrlf=true (LF in the index, CRLF
+  # in the working tree). CI runs on Linux with LF, but local Windows
+  # checkouts would otherwise silently miss the package match.
   awk '
+    {
+      sub(/\r$/, "")
+    }
     $0 == "name = \"zap-native\"" { found = 1; next }
     found && $0 ~ /^version = / {
       sub(/^version = "/, "", $0)
@@ -74,13 +84,21 @@ read_lock_version() {
 }
 
 read_cli_version() {
-  local output
+  local output=""
   if [[ -n "${ZAP_CLI_BINARY:-}" ]]; then
-    output="$($ZAP_CLI_BINARY --version)"
-  else
-    output="$(cargo run --quiet --manifest-path native/Cargo.toml -- --version 2>/dev/null)"
+    if [[ -f "$ZAP_CLI_BINARY" && -x "$ZAP_CLI_BINARY" ]]; then
+      if output="$("$ZAP_CLI_BINARY" --version 2>/dev/null)"; then
+        :
+      else
+        output=""
+      fi
+    fi
+  elif command -v cargo >/dev/null 2>&1; then
+    # Only attempt the cargo fallback when cargo is available; otherwise the
+    # missing-binary case must surface as <missing> rather than a crash.
+    output="$(cargo run --quiet --manifest-path native/Cargo.toml -- --version 2>/dev/null || true)"
   fi
-  printf '%s\n' "$output" | sed -n 's/^zap \([^[:space:]]*\) .*/\1/p' | head -n 1
+  printf '%s\n' "$output" | tr -d '\r' | sed -n 's/^zap \([^[:space:]]*\) .*/\1/p' | head -n 1
 }
 
 cargo_version="$(read_cargo_version)"

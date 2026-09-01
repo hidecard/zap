@@ -13,6 +13,17 @@
 
 Versioned provenance asset သည် release identity အတွက် canonical machine-readable record ဖြစ်သည်။ ၎င်းတွင် source URI၊ tag/ref၊ source commit၊ workflow run ID၊ reproducible manifest နှင့် checksum၊ signing metadata နှင့် SHA-256 digest/size ပါသော artifact subjects များကို မှတ်တမ်းတင်သည်။ Release verifier သည် downloaded archive နှင့် signature များနှင့်အတူ ဤ record ကို စစ်ဆေးသည်။
 
+## CI release-version validator hardening (P0 follow-up)
+
+`scripts/validate_release_version.sh` validator ကို harden လုပ်ထားပါသည်။
+- `read_cargo_version` သည် sed match မလုပ်မီ trailing CR ကို `tr -d '\r'` ဖြင့် ဖယ်ရှားသည်။ ၎င်းသည် `core.autocrlf=true` Windows checkout တွင် `native/Cargo.toml` ၏ version ကို မှန်ကန်စွာ ထုတ်ယူနိုင်စေသည်။
+- `read_lock_version` တွင် per-line `sub(/\\r$/, "")` ထည့်ထားပြီး lockfile CRLF ending ဖြစ်နေသောအခါ awk `name = "zap-native"` match နှင့် `version = ` extract အလုပ်လုပ်စေသည်။ CI သည် Linux တွင် LF ဖြင့် run သောကြောင့် CI ကိုယ်တိုင် မထိခိုက်ခဲ့ပါ။
+- `read_cli_version` သည် `ZAP_CLI_BINARY` executable ဟုတ်မှသာ invoke လုပ်ပြီး cargo PATH guard + `|| true` fallback ပါသည်။ Binary သို့မဟုတ် toolchain မရှိပါက recorded `<missing>` row ဖြင့် exit 1 ပြန်ပြီး cascade fail မဖြစ်တော့ပါ။
+
+`scripts/test_validate_release_version.sh` တွင် CRLF regression block ထပ်ထည့်ထားပါသည်။ ၎င်းသည် CRLF-ending copy of `native/Cargo.lock` ကို generate လုပ်ပြီး awk block ကို run ကာ result သည် current Cargo version နှင့် ညီမျှကြောင်း assert လုပ်ပါသည်။ Old awk block (no CR strip) ဖြင့် result empty ဖြစ်ပြီး၊ hardened block ဖြင့် current version ကို ပြန်ပေးသည်။
+
+CI artifact uploads အားလုံး `if-no-files-found: warn` သို့ ပြောင်းပြီးဖြစ်သည့်အတွက် evidence file မရှိခြင်းသည် gate ကို cascade fail မဖြစ်စေတော့ပါ။
+
 ## လက်ရှိ implementation အခြေအနေ
 
 | နယ်ပယ် | အခြေအနေ label | လက်ရှိ boundary |

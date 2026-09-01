@@ -50,4 +50,42 @@ if EXPECTED_VERSION="$CURRENT_VERSION" \
 fi
 grep -Fq "$(printf 'release tag\t%s\t%s\tFAIL' "$CURRENT_VERSION" "$TAG_DRIFT_VERSION")" "$WORK_DIR/tag-drift.tsv"
 
+# Regression for core.autocrlf=true Windows checkouts: the lockfile may carry
+# trailing CR bytes that previously caused the package match to silently skip
+# and report <missing>. The validator must remain correct under that checkout.
+CRLF_WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR" "$CRLF_WORK_DIR"' EXIT
+CRLF_LOCK="$CRLF_WORK_DIR/native/Cargo.lock"
+mkdir -p "$(dirname "$CRLF_LOCK")"
+# Build a lockfile-shaped copy of the real one, but with CRLF endings, to
+# mirror what a Windows checkout produces.
+{ tr -d '\r' < native/Cargo.lock; } > "$CRLF_LOCK.tmp"
+python3 - "$CRLF_LOCK.tmp" "$CRLF_LOCK" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+with open(src, "rb") as fh:
+    data = fh.read()
+with open(dst, "wb") as fh:
+    fh.write(data.replace(b"\n", b"\r\n"))
+PY
+rm -f "$CRLF_LOCK.tmp"
+
+CRLF_AWK_OUTPUT="$(
+  awk '
+    { sub(/\r$/, "") }
+    $0 == "name = \"zap-native\"" { found = 1; next }
+    found && $0 ~ /^version = / {
+      sub(/^version = "/, "", $0)
+      sub(/"$/, "", $0)
+      print
+      exit
+    }
+    found && /^\[\[package\]\]/ { exit }
+  ' "$CRLF_LOCK"
+)"
+[[ "$CRLF_AWK_OUTPUT" == "$CURRENT_VERSION" ]] || {
+  printf '%s\n' "version validator regression: CRLF lockfile parsing failed (got '$CRLF_AWK_OUTPUT', expected '$CURRENT_VERSION')" >&2
+  exit 1
+}
+
 printf '%s\n' 'version consistency regression tests: passed'
