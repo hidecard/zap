@@ -1,7 +1,7 @@
 **Current release line:** v2.11.17
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.11.16
+**Verified baseline:** Zap v2.11.17
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path
@@ -23,12 +23,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [Language Guide](LEARN_ZAP_EN.md) — v2.11.16 | [Syntax reference](SYNTAX_GUIDE_EN.md) |
-| Language user | [Syntax reference](SYNTAX_GUIDE_EN.md) — v2.11.16 | [Language specification](LANGUAGE_SPEC_EN.md) |
-| Package author | [Package guide](PACKAGE_EN.md) — v2.11.16 | [Stdlib reference](STDLIB_INDEX_EN.md), [registry contract](REGISTRY_AUTH_EN.md) |
-| Framework contributor | [Framework guide](FRAMEWORK_EN.md) — v2.11.16 | [Zap-first Web guide](ZAP_WEB_NATIVE_EN.md), [Web Framework guide](WEB_FRAMEWORK_EN.md), [frontend integration guide](FRONTEND_INTEGRATION_EN.md), [production deployment](PRODUCTION_DEPLOYMENT_EN.md), [database operations](DATABASE_PRODUCTION_EN.md), [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_EN.md), [load/chaos testing](LOAD_CHAOS_TESTING_EN.md), [zap-host adapter](ZAP_HOST_EN.md), [zap-host quickstart](ZAP_HOST_QUICKSTART_EN.md), [Framework starters](../frameworks), [ecosystem roadmap](ECOSYSTEM.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_EN.md) — v2.11.16 | [Runtime state](RUNTIME_STATE_EN.md), [memory budget](MEMORY_BUDGET_OBJECT_STORE_EN.md) |
-| Deployment/security operator | [Deployment/security boundaries](DEPLOYMENT_EN.md) — v2.11.16 | [Production operations](PRODUCTION_OPERATIONS_EN.md), [Security policy](../SECURITY.md), [release signing](RELEASE_SIGNING_EN.md), [RustSec audit evidence](RUSTSEC_AUDIT_EN.md) |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
 
 ## Normative contract map
 

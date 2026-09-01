@@ -1,7 +1,7 @@
 **လက်ရှိ release line:** v2.11.17
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.11.16
+**Verified baseline:** Zap v2.11.17
 **ရည်ရွယ်ချက်:** ဤစာမျက်နှာသည် learner၊ language user၊ package author၊ runtime maintainer နှင့် release operator များအတွက် Burmese entry point ဖြစ်ပါသည်။ Normative behavior သည် canonical specification သို့မဟုတ် explicit linked contract တွင်သာ သတ်မှတ်ပါသည်။ ရှင်းလင်းဖော်ပြသည့် guide များသည် ထို contract များကို တိတ်တဆိတ် override မလုပ်ရပါ။
 
 ## လေ့လာမည့်လမ်းကြောင်း ရွေးချယ်ခြင်း
@@ -23,12 +23,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
-| Learner | [Zap Language Guide](LEARN_ZAP_MM.md) — v2.11.16 | [Syntax guide](SYNTAX_GUIDE.md) |
-| Language user | [Syntax guide](SYNTAX_GUIDE.md) — v2.11.16 | [Language specification](LANGUAGE_SPEC_MM.md) |
-| Package author | [Package guide](PACKAGE.md) — v2.11.16 | [Stdlib reference](STDLIB_INDEX_MM.md)၊ [registry contract](REGISTRY_AUTH_MM.md) |
-| Framework contributor | [Framework guide](FRAMEWORK_MM.md) — v2.11.16 | [Zap-first Web guide](ZAP_WEB_NATIVE_MM.md)၊ [Web Framework guide](WEB_FRAMEWORK_MM.md)၊ [frontend integration guide](FRONTEND_INTEGRATION_MM.md)၊ [production deployment](PRODUCTION_DEPLOYMENT_MM.md)၊ [database operations](DATABASE_PRODUCTION_MM.md)၊ [OAuth2/JWT authentication](AUTH_OAUTH2_JWT_MM.md)၊ [load/chaos testing](LOAD_CHAOS_TESTING_MM.md)၊ [zap-host adapter](ZAP_HOST_MM.md)၊ [zap-host quickstart](ZAP_HOST_QUICKSTART_MM.md)၊ [Framework starters](../frameworks)၊ [ecosystem roadmap](ECOSYSTEM.md) |
-| Runtime maintainer | [Memory model](MEMORY_MODEL_MM.md) — v2.11.16 | [Runtime state](RUNTIME_STATE_MM.md)၊ [memory budget](MEMORY_BUDGET_OBJECT_STORE_MM.md) |
-| Deployment/security operator | [Deployment/security boundaries](DEPLOYMENT_MM.md) — v2.11.16 | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Security policy](../SECURITY.md)၊ [release signing](RELEASE_SIGNING_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
+ — v2.11.17 |
 
 ## Normative contract map
 

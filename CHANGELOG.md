@@ -4,6 +4,10 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+### Documentation
+- Aligned 30+ doc files (English and Burmese pairs) to current release line v2.11.17: verified-baseline, normative status, and navigation-index headers.
+- Fixed BOOT-071 fixture_path in `bootstrap/contracts/OWNERS.tsv` to use a stable anchor link instead of a line-range.
+
 ## [2.11.17] - 2026-08-27
 
 ### Release summary

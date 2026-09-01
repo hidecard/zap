@@ -1,7 +1,7 @@
 **Current release line:** v2.11.17
 # Zap Usage Guide
 
-**Verified baseline:** Zap v2.11.16 development line
+**Verified baseline:** Zap v2.11.17 development line
 
 **Purpose:** This guide is a compact command and operations reference. For the complete installation-to-advanced learning path, use the [English Language Guide](LEARN_ZAP_EN.md). Normative behavior belongs to the [language specification](LANGUAGE_SPEC_EN.md).
 
