@@ -1002,17 +1002,17 @@ export fn generic_type_arguments(type_name):
         let character = substring(type_name, index, index + 1)
         if character == "<":
             depth = depth + 1
-            current = current + characte
+            current = current + character
         else:
             if character == ">":
                 depth = depth - 1
-                current = current + characte
+                current = current + character
             else:
                 if character == "," and depth == 0:
                     result = append(result, trim(current))
                     current = ""
                 else:
-                    current = current + characte
+                    current = current + character
         index = index + 1
     if trim(current) != "":
         result = append(result, trim(current))
@@ -1936,17 +1936,17 @@ export fn b2c_generic_type_arguments(type_name):
         let character = substring(type_name, index, index + 1)
         if character == "<":
             depth = depth + 1
-            current = current + characte
+            current = current + character
         else:
             if character == ">":
                 depth = depth - 1
-                current = current + characte
+                current = current + character
             else:
                 if character == "," and depth == 0:
                     result = append(result, trim(current))
                     current = ""
                 else:
-                    current = current + characte
+                    current = current + character
         index = index + 1
     if trim(current) != "":
         result = append(result, trim(current))
