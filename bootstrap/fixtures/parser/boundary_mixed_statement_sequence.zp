@@ -1,0 +1,10 @@
+let x: number = 1
+fn helper():
+    return x
+if x > 0:
+    let y: number = helper()
+while x < 10:
+    x = x + 1
+for i in [1, 2, 3]:
+    say i
+say x

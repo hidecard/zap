@@ -1,0 +1,12 @@
+class Outer:
+    fn method_a():
+        return 1
+    class Inner:
+        fn method_b():
+            return 2
+    fn method_c():
+        return 3
+
+module InnerModule:
+    fn module_fn():
+        return 4

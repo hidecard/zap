@@ -1,0 +1,6 @@
+fn test():
+    return 1
+
+fn trailing_token():
+    return 2
+extra_token_at_top_level
