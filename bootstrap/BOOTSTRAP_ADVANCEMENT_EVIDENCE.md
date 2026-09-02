@@ -35,22 +35,33 @@
 ## Corpus Parity Gaps
 
 ### Parser Corpus Gaps
-- [ ] `arbitrary_complex_call.zp` - missing AST fixture
-- [ ] `arbitrary_deep_nesting.zp` - missing AST fixture
-- [ ] `arbitrary_nested_expressions.zp` - missing AST fixture
-- [ ] `malformed_recovery.zp` - missing diagnostic fixture
-- [ ] `multi_diagnostic.zp` - missing diagnostic fixture
-- [ ] `numeric_literals.zp` - missing diagnostic fixture (exists but no JSON expected output)
-- [ ] `span_coverage.zp` - missing AST fixture
+- [ ] `arbitrary_complex_call.zp` - missing expected AST fixture (`arbitrary_complex_call.ast.json`)
+- [ ] `arbitrary_deep_nesting.zp` - missing expected AST fixture (`arbitrary_deep_nesting.ast.json`)
+- [ ] `arbitrary_nested_expressions.zp` - missing expected AST fixture (`arbitrary_nested_expressions.ast.json`)
+- [ ] `malformed_recovery.zp` - missing expected diagnostic fixture (`malformed_recovery.diagnostics.json`)
+- [ ] `multi_diagnostic.zp` - missing expected diagnostic fixture (`multi_diagnostic.diagnostics.json`)
+- [ ] `numeric_literals.zp` - has `numeric_literals.diagnostics.json` but no expected AST fixture (`numeric_literals.ast.json`)
+- [ ] `span_coverage.zp` - missing expected AST fixture (`span_coverage.ast.json`)
+
+#### Blocker: golden fixtures require Rust reference runner
+The six missing expected-output JSON fixtures must be produced by `cargo run --manifest-path native/Cargo.toml -- bootstrap ast|diagnostics <path>` (see `native/src/cli.rs:1283-1307` and `native/src/bootstrap.rs:54,167`). As of 2026-09-01, the sandboxed environment cannot run the reference: `~/.rustup/toolchains` is empty, the sandbox network is unreachable (cannot sync the pinned 1.88.0 toolchain), and no prebuilt `target/release/zap` binary exists. Synthesizing the JSON by hand is forbidden by `contracts/BOOTSTRAP_CONTRACT_EN.md:38-39` (differential-gate rule) and `BASELINE_B0.md:64` (freeze rules). Resolution requires either an offline-available Rust toolchain or a prebuilt `zap` binary in `target/release/`.
 
 ### Type Checker Corpus Gaps
-- [ ] Generic nested option/list substitution
-- [ ] Generic declaration scope external
-- [ ] Generic declaration scope parameter
-- [ ] Imported generic body boundary
-- [ ] Compound bounds
-- [ ] Explicit generic call deferred
-- [ ] Generic class alias deferred
+- [ ] `generic_nested_option_list.zp` - missing expected typed-IR fixture (`generic_nested_option_list.typed-ir.json`)
+- [ ] `generic_scope_external.zp` (no source exists; reference is via `generic_scope_external_incompatible.zp`) - missing expected typed-IR fixture for the `incompatible` companion
+- [ ] `generic_scope_parameter.zp` (no source exists; reference is via `generic_scope_parameter_incompatible.zp`) - missing expected typed-IR fixture for the `incompatible` companion
+- [ ] `generic_cross_module_body.zp` + `generic_cross_module_body_library.zp` - missing expected typed-IR fixtures for the imported body boundary
+- [ ] `generic_compound_bounds.zp` + `generic_compound_bounds_incompatible.zp` - missing expected typed-IR fixture(s)
+- [ ] `generic_explicit_call_deferred.zp` - missing expected typed-IR fixture
+- [ ] `generic_alias_deferred.zp` - missing expected typed-IR fixture
+
+#### Lexer Corpus Gaps
+- [ ] `delimiters.zp` - missing expected AST fixture (`delimiters.ast.json`) and typed-IR fixture (`delimiters.typed-ir.json`)
+- [ ] `operators.zp` - missing expected AST fixture (`operators.ast.json`) and typed-IR fixture (`operators.typed-ir.json`)
+- [ ] `unicode.zp` - missing expected AST fixture (`unicode.ast.json`) and typed-IR fixture (`unicode.typed-ir.json`)
+
+#### Typed-IR Missing Node Types (Capability, Not Corpus)
+The B2 typed-IR candidate does not yet emit these node kinds (see `bootstrap/BOOTSTRAP_ADVANCEMENT_EVIDENCE.md:97-109`): `for` loop, `while` loop, `try_catch`, `function` definition, `class` definition, `trait` / `interface`, `list` literal, `map` literal, `option` constructor (`some`, `none`), `result` constructor (`ok`, `error`), `await`, `raise`. Until each kind is both implemented and covered by a typed-IR fixture, B2 typed-IR acceptance is partial.
 
 ### Known Bounded-Slice Limitations (Not Gaps, Design Boundaries)
 1. String-based `parse_expression` handles single operators per expression
@@ -63,6 +74,7 @@
 8. No alias expansion
 9. No arbitrary predicate inference
 10. No general else-flow analysis
+11. Multiple option variables not handled (single option variable only)
 
 ### B1 Parser Fixes Applied (2026-08-31)
 1. **Multiple same-precedence operators:** `parse_expression` now correctly handles chains like `a or b or c` and `1 + 2 + 3` by recursing on the remaining text after the first operator occurrence instead of only parsing `parts[1]`.

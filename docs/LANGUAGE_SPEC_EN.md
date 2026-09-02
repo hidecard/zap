@@ -4,7 +4,7 @@
 **Purpose:** Canonical normative owner for Zap syntax, typing, runtime behavior, diagnostics, compatibility, and version decisions.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Package author guide](PACKAGE_EN.md) · [Runtime state](RUNTIME_STATE_EN.md) · [Deployment boundaries](DEPLOYMENT_EN.md)
 
-**Specification status:** Normative foundation for Zap v2.11.16
+**Specification status:** Normative foundation for Zap v2.11.17
 
 This document is the canonical index for language semantics. When an older guide conflicts with this document, the implementation and tests must be brought into alignment with this specification; a compatibility exception must be recorded explicitly rather than inferred from legacy behavior.
 
@@ -54,11 +54,31 @@ The current async executor is deterministic and poll-budgeted. Language `async f
 
 Every user-facing diagnostic must preserve severity, stable code, message, source location where available, notes, and help. CLI and LSP consumers share the same semantic diagnostic fields. Compatibility behavior must be labeled as one of: **normative**, **compatibility**, **deprecated**, or **rejected**. A behavior cannot become normative solely because an old fixture happens to accept it.
 
-The current release line is v2.11.16. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
+The current release line is v2.11.17. A semantics change requires a specification update, bilingual documentation parity, conformance tests, changelog entry, and an explicit version decision. Release artifacts must continue to pass the pinned Rust toolchain, formatting, strict Clippy, native tests, provenance, and signature gates. Future changes must use the bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) and [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records.
 
 ## 8. Conformance ownership
 
 The parser owns syntax and AST construction. The evaluator owns runtime expression and statement behavior. The diagnostics module owns the stable error contract. The registry module owns package transport, authentication, checksums, signatures, and cache policy. CI owns enforcement of the repository's declared gates. No subsystem may silently redefine another subsystem's contract.
+
+## Feature coverage at v2.11.17
+
+The current release line implements the following language features; this list is a closed-form summary that links each feature to the section that defines it.
+
+| Feature | Defined in | Notes |
+|---|---|---|
+| Indentation-based blocks, `#` comments, `say` | §1 | Canonical pipeline: `source → lexer → AST parser → evaluator` |
+| Numeric, text, boolean, list, map, none, object, function values | §3 | First-class callable values; `any` is the explicit escape hatch |
+| `list<T>`, `map<K,V>`, `option<T>`, `result<T>` annotations | §3, §4 | Bounded generics; full generic declaration/inference is deferred |
+| Functions, named/positional arguments, default values | §4 | `function` annotation accepts callable values |
+| Lexical closures with captured environment | §4 | Bounded canonical AST closure slice shipped in v2.11.17; deferred to A3 generic expansion |
+| `if`/`else`, `while`, `for ... in <list>`, `break`, `continue` | §5 | Literal-list `for` only; general iterators are deferred |
+| `module`/`import` declarations and resolver | §5 | Deterministic source order; rejects absolute/traversal paths and cycles |
+| `raise`/`try`/`catch` structured control flow | §5 | Bounded; bare `raise` is a parser error |
+| Single-threaded `Rc<RefCell>` ownership | §6 | Explicit cycle breaking is required; no automatic collector |
+| Async functions, `await`, `task_cancel`, `task_join`, `task_join_timeout` | §6 | Deterministic executor-backed scheduling; not a production I/O reactor |
+| Result construction `ok(...)`/`err(...)`, `?` propagation | §4, §5 | `is_ok`/`is_err`/`unwrap_or` for safe access |
+| Option construction `some(...)`/`option_none()`, `is_some` | §4, §5 | Branch-local narrowing remains a deferred design gate |
+| Generic identity/same declarations, multiple-parameter substitution | §3, §4 | Bounded A3 slice; broader declaration coverage is deferred |
 
 ## Specification ownership index
 

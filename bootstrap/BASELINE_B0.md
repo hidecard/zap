@@ -11,6 +11,10 @@
 
 This document freezes the current Rust implementation as the reference behavior owner for the first Zap-only bootstrap batch. The baseline is **not self-hosted**. It records the behavior that future Zap-owned lexer, parser, diagnostics, type-checker, standard-library, IR, package, VM, and platform-seed implementations must reproduce or explicitly supersede through a compatibility decision.
 
+## Scope of frozen artifacts
+
+The v2.9.2 freeze covers the Rust reference source and the native test results (258 native tests + 19 host tests, see "Test evidence"). It does **not** freeze any artifact JSON files under `bootstrap/fixtures/parser/*.ast.json` or `bootstrap/fixtures/parser/*.diagnostics.json`: those JSON files are **derived outputs** produced by running the reference via `cargo run -- bootstrap ast|diagnostics <path>` (see `native/src/cli.rs:1283-1307`). Derived JSON files can be regenerated at any time from the frozen source. A missing or stale derived JSON is therefore not a baseline deviation; it is captured under `BOOT-051…BOOT-057` in `contracts/OWNERS.tsv` with status `provisional-pending-capture`.
+
 ## Reference pipeline
 
 The B0 pipeline is:

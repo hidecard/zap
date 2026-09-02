@@ -1,7 +1,7 @@
 **လက်ရှိ release line:** v2.11.17
 # Zap Web Framework Foundation
 
-**အတည်ပြုထားသော baseline:** Zap v2.11.16
+**အတည်ပြုထားသော baseline:** Zap v2.11.17
 **Branch:** `Framework`
 
 **အခြေအနေ:** Web Foundation v0.2 — run လို့ရသော contract package နှင့် initial `zap-host` adapter prototype ပါဝင်ပြီး production integration များကို သီးခြားထားသည်
