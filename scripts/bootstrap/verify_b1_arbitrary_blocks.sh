@@ -38,7 +38,12 @@ report("arbitrary_deep_indentation.zp")
 report("arbitrary_nested_blocks_complex.zp")
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$output"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$output"
 
 # while ... else is explicitly unsupported -> diagnostic with the dedicated message.
 grep -q "while_else_syntax.zp => DIAGNOSTIC" "$output" || { printf 'FAIL: while_else_syntax did not produce a diagnostic\n' >&2; exit 1; }

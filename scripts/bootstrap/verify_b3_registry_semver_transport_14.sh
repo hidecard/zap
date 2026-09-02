@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b3-registry.XXXXXX.zp")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
@@ -53,7 +53,12 @@ say cache_ok["status"]
 say cache_bad["error"]
 say cache_missing["error"]
 ZP
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "0 true 1.4.2 1.2.9 1.2.9 ZAP-PKG-VERSION-INVALID-001 true true registry_url_rejected true registry_url_rejected registry_method_rejected registry_request_limits_invalid accepted registry_http_status registry_content_type_rejected registry_response_too_large_or_empty verified cache_checksum_mismatch cache_checksum_missing" ]]; then
   echo "unexpected registry/semver output: ${lines[*]}" >&2

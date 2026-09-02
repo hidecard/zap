@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-a12-a13-evidence.XXXXXX.zp")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
@@ -24,7 +24,12 @@ say ok["native_independent"]
 say blocked["status"]
 say blocked["supported"]
 ZP
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true false candidate_self_rebuild_evidence true false candidate_self_rebuild_blocked false" ]]; then
   echo "unexpected A12/A13 evidence output: ${lines[*]}" >&2

@@ -22,7 +22,12 @@ say len(try_node["catch_body"]["statements"])
 ZAP
 export PATH="$HOME/.cargo/bin:$PATH"
 export RUSTUP_TOOLCHAIN=1.88.0
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 grep -q '^if$' "$out"
 grep -q '^1$' "$out"
 grep -q '^try_catch$' "$out"

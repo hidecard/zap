@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b2-type-alias.XXXXXX.zp")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
@@ -26,7 +26,12 @@ say invalid["diagnostics"][0]["message"]
 say nested_block["ok"]
 say len(nested_block["diagnostics"])
 ZP
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "number option<list<number>> list<option<list<text>>> true 0 true 0 false unknown type annotation 'Box<number, text>' true 0" ]]; then
   echo "unexpected type-alias output: ${lines[*]}" >&2

@@ -52,11 +52,21 @@ EOF
 
 # Run with Rust vars unset
 env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME \
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+  ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed with Rust vars unset"
 
 # Test 2: Run with Rust vars set (normal env) - should produce identical output
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected" || fail "normal environment run produced different output"
 
 # Test 3: Multiple sequential runs - verify no state leakage
@@ -83,7 +93,12 @@ true
 true
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected" || fail "sequential runs showed state leakage"
 
 # Test 4: Platform evidence record validation
@@ -100,7 +115,12 @@ cat > "$expected" <<'EOF'
 true
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected" || fail "platform evidence record validation failed"
 
 # Test 5: Clean environment with different source surfaces
@@ -124,7 +144,12 @@ cat > "$expected" <<'EOF'
 true
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed for diverse source surfaces"
 
 # Report

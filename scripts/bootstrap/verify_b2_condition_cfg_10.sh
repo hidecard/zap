@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-condition-cfg.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -39,6 +39,11 @@ if
 3
 4
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected"
 printf 'B2 condition-derived narrowing/CFG gate passed: 10 guard, path, node, and edge cases\n'

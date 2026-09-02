@@ -17,7 +17,12 @@ say json(check_ast_complete(valid["ast"], "canonical-valid.zp"))
 say json(check_ast_complete(invalid["ast"], "canonical-invalid.zp"))
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 sed -n '1p' "$out" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
 sed -n '2p' "$out" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].message | contains("expects number, got text"))' >/dev/null
 printf 'B2 canonical adapter passed: parser AST -> check_ast_complete -> diagnostics envelope\n'

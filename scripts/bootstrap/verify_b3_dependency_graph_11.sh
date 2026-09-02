@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b3-dependency-graph.XXXXXX.zp")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
@@ -22,7 +22,12 @@ say package_offline_contract(duplicate_manifest, lock["dependencies"])["lock_mat
 say package_offline_contract(manifest_value, duplicate_lock["dependencies"])["lock_matches"]
 say package_offline_contract(manifest_value, mismatch_lock["dependencies"])["lock_matches"]
 ZP
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true true true false false false" ]]; then
   echo "unexpected dependency graph output: ${lines[*]}" >&2

@@ -148,8 +148,18 @@ say check(reassignment_invalidation_incompatible, "bootstrap/fixtures/typecheck/
 say check(compound_guard, "bootstrap/fixtures/typecheck/compound_guard.zp")
 say check(compound_guard_incompatible, "bootstrap/fixtures/typecheck/compound_guard_incompatible.zp")
 EOF_RUNNER
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$first"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$second"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$first"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$second"
 cmp "$first" "$second"
 [[ "$(wc -l < "$first")" -eq 68 ]] || { printf 'unexpected B2 candidate output line count\n' >&2; exit 1; }
 sed -n '1p' "$first" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null

@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 tmp_dir=$(mktemp -d "$ROOT_DIR/.zap-diff.XXXXXX")
 trap 'rm -rf "$tmp_dir"' EXIT
 parser_fixtures=(

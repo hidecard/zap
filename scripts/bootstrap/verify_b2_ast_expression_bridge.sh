@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-ast-type-runner.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -34,6 +34,11 @@ number
 list<number>
 list<any>
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected"
 printf 'B2 AST expression bridge gate passed: literal, unary, binary, list, and empty-list inference\n'

@@ -24,8 +24,18 @@ say emit(generic_source, "bootstrap/fixtures/typecheck/generic_identity.zp")
 say emit(two_source, "bootstrap/fixtures/typecheck/two_declarations.zp")
 say emit(bool_source, "bootstrap/fixtures/typecheck/bool_literal.zp")
 EOF_RUNNER
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$first"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$second"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$first"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$second"
 cmp "$first" "$second"
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/generic_identity.zp > "$generic_reference"

@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-artifact-rebuild.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -32,6 +32,11 @@ mismatch
 false
 false
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected"
 printf 'B4 compiler-artifact rebuild gate passed: 8 two-pass byte-equality and mismatch cases\n'

@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true || true
 runner=$(mktemp "$ROOT_DIR/.zap-generic-bounds-runner.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -33,7 +33,17 @@ map<number,text>
 constraint_error
 true
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner" > "$out"
+else
+  ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
+fi
 cmp "$out" "$expected"
 #!/bin/bash
 # Verify B2 generic bounds

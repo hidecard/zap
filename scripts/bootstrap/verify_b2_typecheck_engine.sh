@@ -26,6 +26,11 @@ EOF
   cat "$fixture"
 } > "$runner"
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected"
 printf 'B2 complete engine fixture passed: recursive typing, generic substitution, guard narrowing, branch join, and operator diagnostics\n'

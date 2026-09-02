@@ -34,10 +34,9 @@ def run_one(name: str, lexer_only: bool, rel_dir: str = 'bootstrap/fixtures/diag
         env = os.environ.copy()
         env['PATH'] = str(Path.home() / '.cargo' / 'bin') + ':' + env.get('PATH', '')
         env['RUSTUP_TOOLCHAIN'] = '1.88.0'
-        proc = subprocess.run(
-            ['cargo', 'run', '--quiet', '--release', '--locked', '--manifest-path', 'native/Cargo.toml', '--', str(runner)],
-            cwd=ROOT, env=env, text=True, capture_output=True,
-        )
+        zap_bin = ROOT / 'native' / 'target' / 'release' / 'zap'
+        cmd = [str(zap_bin), str(runner)] if zap_bin.exists() else ['cargo', 'run', '--quiet', '--release', '--locked', '--manifest-path', 'native/Cargo.toml', '--', str(runner)]
+        proc = subprocess.run(cmd, cwd=ROOT, env=env, text=True, capture_output=True)
         if proc.returncode:
             return False, f'runtime failure: {(proc.stdout + proc.stderr).strip()[-400:]}'
         lines = [line for line in proc.stdout.splitlines() if line.strip()]

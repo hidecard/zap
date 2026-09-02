@@ -240,6 +240,11 @@ EOF
   cat "$missing_assignment_expected"
   cat "$missing_function_paren_expected"
 } > "$expected"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$output"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$output"
 cmp "$output" "$expected"
 printf 'B1 Zap parser candidate differential passed: arithmetic AST, compound AST, and token-driven delimiter diagnostics\n'

@@ -16,7 +16,12 @@ say missing
 say conflict
 say unknown
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 grep -q '"ok":true' "$out"
 grep -q 'ZAP-TRAIT-001' "$out"
 grep -q 'missing required method' "$out"

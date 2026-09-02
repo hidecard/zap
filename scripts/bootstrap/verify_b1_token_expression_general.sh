@@ -19,7 +19,12 @@ say parse_token_expression(grouped["tokens"])
 say parse_token_expression(list["tokens"])
 say parse_token_expression(suffix["tokens"])
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 grep -q '"op":"multiply"' "$out"
 grep -q '"op":"or"' "$out"
 grep -q '"op":"and"' "$out"

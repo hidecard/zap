@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 
 positive=(
   bootstrap/fixtures/typecheck/expression_number_add.zp:1:1
@@ -45,7 +45,12 @@ let comparison = typed_ir_compare_reference_program(reference, first)
 say json(comparison)
 say json(first) == json(second)
 ZP
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+  ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
   mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
   [[ "${#lines[@]}" -eq 2 ]] || { echo "unexpected output for $fixture: ${lines[*]}" >&2; return 1; }
   printf '%s\n' "${lines[0]}" | jq -e --argjson expected_nodes "$expected_nodes" --argjson expected_semantic "$expected_semantic" \

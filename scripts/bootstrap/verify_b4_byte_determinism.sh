@@ -61,7 +61,12 @@ say rebuild_equal
 say pipeline_equal
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out_a"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out_a"
 
 cat > "$expected_a" <<'EOF'
 true
@@ -74,7 +79,12 @@ EOF
 cmp "$out_a" "$expected_a" || fail "first run did not produce deterministic artifacts"
 
 # Second run: same source, fresh process
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out_b"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out_b"
 
 cmp "$out_a" "$out_b" || fail "second run produced different output"
 
@@ -94,7 +104,12 @@ say third["byte_equal"]
 say first["status"] == "reproducible"
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out_a"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out_a"
 
 cat > "$expected_b" <<'EOF'
 true
@@ -118,7 +133,12 @@ say first["byte_equal"]
 say first["status"] == "reproducible"
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out_a"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out_a"
 
 cat > "$expected_c" <<'EOF'
 true

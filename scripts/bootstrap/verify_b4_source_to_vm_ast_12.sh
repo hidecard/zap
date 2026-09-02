@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-source-vm-ast.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -44,6 +44,11 @@ compiled_ast_slice
 compile_error
 unsupported_ast_statement:break
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cat "$out"; printf '%s\n' '--- expected ---'; cat "$expected"
 printf 'B4 AST gate passed: parser-AST functions, return, class methods, dotted calls, and unsupported-node diagnostics\n'

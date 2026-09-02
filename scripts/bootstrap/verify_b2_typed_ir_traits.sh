@@ -10,7 +10,12 @@ import "bootstrap/b2/typed_ir.zp"
 let source = "trait Printable:\n    fn format(self) -> text\ninterface Identifiable:\n    fn id(self) -> text\nclass Report with Printable implements Identifiable:\n    fn format(self) -> text:\n        return \"report\"\n    fn id(self) -> text:\n        return \"id\"\nfn show<T: Printable>(value: T) -> text:\n    return \"ok\""
 say emit(source, "traits-ir.zp")
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 grep -q '"schema_version":2' "$out"
 grep -q '"kind":"trait_declaration"' "$out"
 grep -q '"trait_kind":"interface"' "$out"

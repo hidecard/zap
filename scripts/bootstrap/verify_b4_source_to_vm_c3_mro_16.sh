@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
-source "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-source-vm-c3-mro.XXXXXX.zp")
 out=$(mktemp)
 expected=$(mktemp)
@@ -53,6 +53,11 @@ compiled_ast_slice
 none
 2
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$out"
 cmp "$out" "$expected"
 printf 'B4 C3 MRO gate passed: deterministic diamond precedence, MRO-based super continuation, inherited cooperative constructors, canonical AST multiple parents, and stable hierarchy diagnostics\n'

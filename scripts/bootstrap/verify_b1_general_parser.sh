@@ -24,7 +24,12 @@ say parse_general(function_source, "general-function.zp")
 say parse_general(class_source, "general-class.zp")
 say parse_general(module_source, "general-module.zp")
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" >"$out"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi >"$out"
 grep -q '"kind":"zap.ast"' "$out"
 grep -q '"name":"first"' "$out"
 grep -q '"kind":"zap.diagnostics"' "$out"

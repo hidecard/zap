@@ -31,7 +31,12 @@ say result_core(check_legacy(type_error, "type_error.zp")) == result_core(check(
 say result_core(check_legacy(generic, "generic.zp")) == result_core(check(generic, "generic.zp"))
 say result_core(check_legacy(malformed_generic, "malformed_generic.zp")) == result_core(check(malformed_generic, "malformed_generic.zp"))
 EOF
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$output"
+ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner"
+else
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+fi > "$output"
 expected=$'true\ntrue\ntrue\ntrue'
 printf '%s\n' "$expected" | cmp -s - "$output"
 printf 'B2 canonical check compatibility passed: stable valid, type-error, generic, and malformed-generic semantics\n'

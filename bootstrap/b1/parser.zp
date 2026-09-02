@@ -724,36 +724,78 @@ export fn parse_parameter_list(parameter_text):
         params = append(params, {"annotation": annotation, "default": none, "name": name_text})
     return params
 
-export fn generic_parameters_from_name(raw_name):
-    if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
-        return []
-    let open_parts = split(raw_name, "<")
-    let inner = trim(substring(open_parts[1], 0, len(open_parts[1]) - 1))
-    let result = []
-    for parameter in split(inner, ","):
-        let candidate = trim(parameter)
-        if contains(candidate, " extends "):
-            let parts = split(candidate, " extends ")
-            if len(parts) == 2:
-                result = append(result, trim(parts[0]) + ":" + trim(parts[1]))
-            else:
-                result = append(result, candidate)
-        else:
-            result = append(result, candidate)
-    return result
-
-export fn parse_generic_constraints(header):
-    let result = []
-    if not contains(header, " where "):
-        return result
-    let where_area = trim(split(header, " where ")[1])
-    for item in split(where_area, " and "):
-        let parts = split(trim(item), ":")
-        if len(parts) >= 2:
-            result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
-    return result
-
-export fn parse_generic_function(lines):
+export fn generic_parameter_name(candidate):
+    let candidate = trim(candidate)
+    if contains(candidate, " extends "):
+        let parts = split(candidate, " extends ")
+        return trim(parts[0])
+    if contains(candidate, ":"):
+        let parts = split(candidate, ":")
+        return trim(parts[0])
+    return candidate
+
+export fn generic_parameter_bound(candidate):
+    let candidate = trim(candidate)
+    if contains(candidate, " extends "):
+        let parts = split(candidate, " extends ")
+        if len(parts) == 2:
+            return trim(parts[1])
+        return ""
+    if contains(candidate, ":"):
+        let parts = split(candidate, ":")
+        if len(parts) == 2:
+            return trim(parts[1])
+        return ""
+    return ""
+
+export fn generic_parameter_bounds(parameters):
+    let result = []
+    for parameter in parameters:
+        let name = generic_parameter_name(parameter)
+        let bound = generic_parameter_bound(parameter)
+        if bound != "":
+            result = append(result, {"bound": bound, "parameter": name})
+    return result
+
+export fn generic_parameter_bounds_from_name(raw_name):
+    if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
+        return []
+    let open_parts = split(raw_name, "<")
+    let inner = trim(substring(open_parts[1], 0, len(open_parts[1]) - 1))
+    let raw_parameters = []
+    for parameter in split(inner, ","):
+        raw_parameters = append(raw_parameters, parameter)
+    return generic_parameter_bounds(raw_parameters)
+
+export fn generic_constraint_seen(constraints, parameter_name):
+    for constraint in constraints:
+        if constraint["parameter"] == parameter_name:
+            return true
+    return false
+
+export fn generic_parameters_from_name(raw_name):
+    if not contains(raw_name, "<") or not ends_with(raw_name, ">"):
+        return []
+    let open_parts = split(raw_name, "<")
+    let inner = trim(substring(open_parts[1], 0, len(open_parts[1]) - 1))
+    let result = []
+    for parameter in split(inner, ","):
+        let candidate = trim(parameter)
+        result = append(result, generic_parameter_name(candidate))
+    return result
+
+export fn parse_generic_constraints(header):
+    let result = []
+    if not contains(header, " where "):
+        return result
+    let where_area = trim(split(header, " where ")[1])
+    for item in split(where_area, " and "):
+        let parts = split(trim(item), ":")
+        if len(parts) >= 2:
+            result = append(result, {"bound": trim(parts[1]), "parameter": trim(parts[0])})
+    return result
+
+export fn parse_generic_function(lines):
     let header = trim(lines[0])
     let open_index = 0
     while open_index < len(header):
@@ -772,14 +814,21 @@ export fn parse_generic_function(lines):
         let name_parts = split(raw_name, "<")
         name_text = trim(name_parts[0])
     let parameter_text = substring(header, open_index + 1, close_index)
-    let return_type = none
-    if contains(header, "->"):
-        let return_parts = split(substring(header, close_index + 1, len(header) - 1), "->")
-        if len(return_parts) == 2:
-            let return_area = trim(return_parts[1])
-            return_type = return_area
-    let constraints = parse_generic_constraints(header)
-    let nested = parse_block_from(lines, 1, 4)
+    let return_type = none
+    if contains(header, "->"):
+        let return_parts = split(substring(header, close_index + 1, len(header) - 1), "->")
+        if len(return_parts) == 2:
+            let return_area = trim(return_parts[1])
+            return_type = return_area
+            if contains(return_type, " where "):
+                return_type = trim(split(return_type, " where ")[0])
+    let inline_bounds = generic_parameter_bounds_from_name(raw_name)
+    let where_constraints = parse_generic_constraints(header)
+    let constraints = where_constraints
+    for inline_constraint in inline_bounds:
+        if not generic_constraint_seen(constraints, inline_constraint["parameter"]):
+            constraints = append(constraints, inline_constraint)
+    let nested = parse_block_from(lines, 1, 4)
     let function = {"body": {"statements": nested["statements"]}, "constraints": constraints, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "type_params": type_params, "visibility": "public"}
     let statements = []
     statements = append(statements, function)
@@ -1905,13 +1954,37 @@ export fn parse_general_program(lines):
         return []
     return parse_general_sequence(lines)
 
-export fn generic_header_seen(values, candidate):
-    for value in values:
-        if value == candidate:
-            return true
-    return false
-
-export fn generic_header_diagnostic_at(lines, index, source_name):
+export fn generic_header_seen(values, candidate):
+    for value in values:
+        if value == candidate:
+            return true
+    return false
+
+export fn generic_bound_part_valid(part, parameter_name):
+    if part == parameter_name:
+        return true
+    if part == "number" or part == "text" or part == "bool" or part == "none" or part == "any":
+        return true
+    if starts_with(part, "list<") or starts_with(part, "map<") or starts_with(part, "option<") or starts_with(part, "result<"):
+        return true
+    if part == "T" or part == "U" or part == "K" or part == "V":
+        return true
+    return false
+
+export fn generic_bound_valid(bound, parameter_name):
+    if bound == "" or bound == "any":
+        return true
+    if contains(bound, ":"):
+        return false
+    if contains(bound, " + "):
+        let all_valid = true
+        for part in split(bound, " + "):
+            if not generic_bound_part_valid(trim(part), parameter_name):
+                all_valid = false
+        return all_valid
+    return generic_bound_part_valid(bound, parameter_name)
+
+export fn generic_header_diagnostic_at(lines, index, source_name):
     if index >= len(lines):
         return none
     let value = trim(lines[index])
@@ -1933,29 +2006,25 @@ export fn generic_header_diagnostic_at(lines, index, source_name):
     let seen = []
     for parameter in split(generic_text, ","):
         let candidate = trim(parameter)
-        let parameter_name = candidate
-        let bound = ""
-        # B2 currently accepts only unconstrained generic parameters. Reject
-        # constraint syntax at the parser boundary instead of letting it reach
-        # type inference with an unresolved T.
-        if contains(candidate, ":") or contains(candidate, " extends "):
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-        if contains(candidate, ":"):
-            let bound_parts = split(candidate, ":")
-            if len(bound_parts) != 2:
-                return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic bound '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-            parameter_name = trim(bound_parts[0])
-            bound = trim(bound_parts[1])
-        if contains(candidate, " extends "):
-            let parts = split(candidate, " extends ")
-            if len(parts) == 2:
-                parameter_name = trim(parts[0])
-                bound = trim(parts[1])
-            else:
-                return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-        if bound != "" and (contains(bound, ":") or contains(bound, " ") or bound == "any"):
-            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
-        if generic_header_seen(seen, parameter_name):
+        let parameter_name = candidate
+        let bound = ""
+        if contains(candidate, ":"):
+            let bound_parts = split(candidate, ":")
+            if len(bound_parts) != 2:
+                return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic bound '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+            parameter_name = trim(bound_parts[0])
+            bound = trim(bound_parts[1])
+        else:
+            if contains(candidate, " extends "):
+                let parts = split(candidate, " extends ")
+                if len(parts) == 2:
+                    parameter_name = trim(parts[0])
+                    bound = trim(parts[1])
+                else:
+                    return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if bound != "" and not generic_bound_valid(bound, parameter_name):
+            return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding Zap syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic bound '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
+        if generic_header_seen(seen, parameter_name):
             return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "duplicate generic type parameter: " + parameter_name, "notes": [], "severity": "error", "source_name": source_name}
         if parameter_name != "T" and parameter_name != "U" and parameter_name != "K" and parameter_name != "V":
             return {"code": "ZAP-SYNTAX-001", "column": 1, "help": "Review the surrounding syntax.", "kind": "SyntaxError", "line": index + 1, "message": "invalid generic type parameter '" + candidate + "'", "notes": [], "severity": "error", "source_name": source_name}
