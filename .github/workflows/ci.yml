@@ -263,12 +263,35 @@ jobs:
       - name: Run B2 typed-IR benchmark contract
         run: scripts/test_b2_typed_ir_benchmark.sh
 
+      - name: Run B2 typed-IR aggregate contract
+        run: scripts/test_aggregate_b2_typed_ir.sh
+
       - name: Run B2 typed-IR performance and memory baseline
         env:
           ZAP_TYPED_IR_BENCH_REPEATS: 5
           ZAP_TYPED_IR_BENCH_WARMUPS: 1
           ZAP_TYPED_IR_BENCH_OUTPUT: benchmark-results/b2-typed-ir.csv
+          ZAP_TYPED_IR_BENCH_PROVENANCE: benchmark-results/b2-typed-ir.csv.provenance.tsv
+          ZAP_TYPED_IR_BENCH_BASELINE: benchmark-results/b2-typed-ir.baseline.tsv
         run: scripts/benchmark_b2_typed_ir.sh
+
+      - name: Aggregate B2 typed-IR benchmark summary
+        env:
+          ZAP_TYPED_IR_AGG_INPUT: benchmark-results/b2-typed-ir.csv
+          ZAP_TYPED_IR_AGG_OUTPUT: benchmark-results/b2-typed-ir.summary.csv
+        run: scripts/aggregate_b2_typed_ir.sh
+
+      - name: Upload B2 typed-IR cross-platform baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b2-typed-ir-baseline-${{ github.sha }}
+          path: |
+            benchmark-results/b2-typed-ir.csv
+            benchmark-results/b2-typed-ir.csv.provenance.tsv
+            benchmark-results/b2-typed-ir.summary.csv
+            benchmark-results/b2-typed-ir.baseline.tsv
+          if-no-files-found: warn
 
       - name: Run dependency-free benchmark regression gate
         env:

@@ -51,6 +51,20 @@ scripts/test_p105_layers.sh
 
 ဤ runner သည် deterministic regression gate ဖြစ်ပြီး timing benchmark မဟုတ်သကဲ့သို့ ရေရှည် fuzz campaign များကို အစားထိုးရန်လည်း မဟုတ်ပါ။
 
+## B2 typed-IR cross-platform baseline
+
+`scripts/benchmark_b2_typed_ir.sh` သည် harness ကို B2 typed-IR candidate နှင့် B2 owned verifier gate များအထိ တိုးချဲ့ပြီး run တစ်ခုချင်းစီ၏ wall-clock elapsed seconds နှင့် peak resident-set-size (KB) ကို ဖမ်းယူကာ `suite,iteration,elapsed_seconds,peak_rss_kb` raw CSV ကို ရေးသားပါသည်။ P1-09 တွင် ထပ်ဆင့်ထည့်သွင်းထားသည်မှာ -
+
+- **Portable timing backend** - GNU `/usr/bin/time` ကို Linux တွင် အသုံးပြုပြီး macOS တွင် `gtime` ကို ရနိုင်ပါက အသုံးပြုပါသည်။ GNU/BSD time မရှိသော environment အတွက် bash `SECONDS` နှင့် `/proc/$$/status` VmHWM sampler ကို documented fallback အဖြစ် ထားရှိပြီး ရွေးချယ်လိုက်သော backend ကို provenance sidecar တွင် မှတ်တမ်းတင်ထားပါသည်။
+- **Provenance sidecar** - default `<output>.provenance.tsv` တွင် native M2-BENCH-01 sidecar ၏ field အစုအဝေးကိုယ်တိုင်ကို ပံ့ပိုးပါသည် - `schema_version`၊ `status`၊ `timestamp_utc`၊ `git_commit`၊ `target_triple`၊ `os`၊ `kernel`၊ `arch`၊ `rust_version`၊ `cargo_version`၊ `binary_sha256`၊ `script_sha256`၊ `repeats`၊ `warmups`၊ `suites`၊ `time_backend`၊ `raw_csv`။
+- **Cross-platform baseline table** - default `benchmark-results/b2-typed-ir.baseline.tsv` တွင် `(target_triple, suite)` pair တစ်ခုချင်းစီအတွက် run ၏ min/mean/max elapsed seconds၊ peak RSS min/max၊ commit၊ binary SHA-256 နှင့် UTC timestamp ကို row တစ်ခုဖြင့် စုဆောင်းပါသည်။ ၎င်းသည် runner ကို platform တစ်ခုချင်းစီတွင် လုပ်ဆောင်ခဲ့ကြောင်း per-target evidence ဖြစ်ပြီး portability/speed claim မဟုတ်ပါ။
+- **Aggregator** - `scripts/aggregate_b2_typed_ir.sh` သည် raw CSV ကို စားသုံးပြီး deterministic per-suite summary CSV ကို min/mean/p95/max seconds၊ population standard deviation၊ population variance၊ coefficient of variation နှင့် peak RSS min/mean/max ဖြင့် ထုတ်ပေးပါသည်။
+- **Windows compatibility** - binary lookup သည် `native/target/release/zap.exe` ကိုလည်း လက်ခံသောကြောင့် Windows runner ပေါ်တွင် script ကိုယ်တိုင်ကို သီးခြား copy မလိုဘဲ run နိုင်ပါသည်။
+
+`scripts/test_b2_typed_ir_benchmark.sh` သည် raw CSV contract၊ provenance sidecar schema၊ cross-platform baseline table header နှင့် row count နှင့် `time_backend` value ကို validate လုပ်ပါသည်။ `scripts/test_aggregate_b2_typed_ir.sh` သည် aggregator ၏ deterministic per-suite mean ကို validate လုပ်ပါသည်။ CI သည် regression test နှစ်ခုလုံးကို run ပြီး benchmark ကို 5 repeat + 1 warm-up ဖြင့် လုပ်ဆောင်ကာ summary ကို aggregate လုပ်ပြီး raw CSV၊ provenance၊ summary နှင့် baseline ကို `zap-b2-typed-ir-baseline-<sha>` artifact အဖြစ် upload လုပ်ပါသည်။
+
+Baseline သည် machine-dependent ဖြစ်ပါသည်။ တူညီသော runner နှင့် တူညီသော toolchain ပေါ်တွင် repeated measurement အတွက်သာ ရည်ရွယ်ပါသည်။ Cross-target comparison ကို runner ကို platform တစ်ခုချင်းစီတွင် လုပ်ဆောင်ခဲ့ကြောင်း evidence အဖြစ် မှတ်တမ်းတင်ထားပြီး performance portability ကို claim မလုပ်ပါ။
+
 ## References
 
 [1]: ../scripts/test_p105_layers.sh "P1-05 deterministic test-layer runner"

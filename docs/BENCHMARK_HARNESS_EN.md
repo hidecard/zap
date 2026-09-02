@@ -51,6 +51,20 @@ scripts/test_p105_layers.sh
 
 The runner is a deterministic regression gate, not a timing benchmark and not a substitute for long-running fuzz campaigns.
 
+## B2 typed-IR cross-platform baseline
+
+`scripts/benchmark_b2_typed_ir.sh` extends the harness to the B2 typed-IR candidate and B2 owned verifier gates, capturing per-run wall-clock elapsed seconds and peak resident-set-size in kilobytes, and writing a `suite,iteration,elapsed_seconds,peak_rss_kb` raw CSV. P1-09 adds:
+
+- **Portable timing backend.** GNU `/usr/bin/time` is used when present (Linux); `gtime` is used on macOS when available; a bash `SECONDS` plus `/proc/$$/status` VmHWM sampler is the documented fallback for environments without GNU or BSD time, and the chosen backend is recorded in the provenance sidecar so cross-target runs can be compared with their fidelity in view.
+- **Provenance sidecar.** Default `<output>.provenance.tsv` with the same field set as the native M2-BENCH-01 sidecar: `schema_version`, `status`, `timestamp_utc`, `git_commit`, `target_triple`, `os`, `kernel`, `arch`, `rust_version`, `cargo_version`, `binary_sha256`, `script_sha256`, `repeats`, `warmups`, `suites`, `time_backend`, `raw_csv`.
+- **Cross-platform baseline table.** Default `benchmark-results/b2-typed-ir.baseline.tsv` accumulates one row per `(target_triple, suite)` pair with the run's min/mean/max elapsed seconds, peak RSS min/max, commit, binary SHA-256, and UTC timestamp. This is per-target evidence that the runner executed on each platform; it is NOT a portability or speed claim.
+- **Aggregator.** `scripts/aggregate_b2_typed_ir.sh` consumes the raw CSV and emits a deterministic per-suite summary CSV with min/mean/p95/max seconds, population standard deviation, population variance, coefficient of variation, and peak RSS min/mean/max.
+- **Windows compatibility.** The binary lookup also accepts `native/target/release/zap.exe` so the same script runs on Windows runners without a separate copy.
+
+`scripts/test_b2_typed_ir_benchmark.sh` validates the raw CSV contract, the provenance sidecar schema, the cross-platform baseline table header and row count, and the `time_backend` value. `scripts/test_aggregate_b2_typed_ir.sh` validates the aggregator's deterministic per-suite mean. CI runs both regression tests, executes the benchmark with five repeats and one warm-up, aggregates the summary, and uploads the raw CSV, provenance, summary, and baseline as `zap-b2-typed-ir-baseline-<sha>` artifacts.
+
+The baseline is intentionally machine-dependent. It is intended for repeated measurement on the same runner with the same toolchain. Cross-target comparison is recorded as evidence the runner executed on each platform; performance portability is not claimed.
+
 ## References
 
 [1]: ../scripts/test_p105_layers.sh "P1-05 deterministic test-layer runner"
