@@ -3452,11 +3452,98 @@ export fn b2c_check_alias_validity(alias, source_name):
         errors = append(errors, b2c_error(source_name, alias, "ZAP-TYPE-010", "type alias '" + alias["name"] + "' references undeclared parameter in body"))
     return errors
 
+export fn b2c_list_contains_string(items, name):
+    for item in items:
+        if item == name:
+            return true
+    return false
+
+export fn b2c_alias_referenced_names(target, alias_names, type_params, result):
+    let current = ""
+    let index = 0
+    let done = false
+    while not done:
+        if index >= len(target):
+            done = true
+        else:
+            let character = substring(target, index, index + 1)
+            let is_lower = contains("abcdefghijklmnopqrstuvwxyz", character)
+            let is_upper = contains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", character)
+            let is_digit = contains("0123456789", character)
+            let is_underscore = character == "_"
+            if is_lower or is_upper or is_digit or is_underscore:
+                current = current + character
+            else:
+                if len(current) > 0 and b2c_list_contains_string(alias_names, current) and not b2c_list_contains_string(type_params, current) and not b2c_list_contains_string(result, current):
+                    result = append(result, current)
+                current = ""
+            index = index + 1
+    if len(current) > 0 and b2c_list_contains_string(alias_names, current) and not b2c_list_contains_string(type_params, current) and not b2c_list_contains_string(result, current):
+        result = append(result, current)
+    return result
+
+export fn b2c_alias_names(aliases, result):
+    for alias in aliases:
+        if not b2c_list_contains_string(result, alias["name"]):
+            result = append(result, alias["name"])
+    return result
+
+export fn b2c_alias_cycle_visit(aliases, current, alias_names, visited, on_stack, source_name, errors):
+    if b2c_list_contains_string(on_stack, current):
+        let cycle = []
+        let started = false
+        for name in on_stack:
+            if started:
+                cycle = append(cycle, name)
+            else:
+                if name == current:
+                    started = true
+                    cycle = append(cycle, name)
+        cycle = append(cycle, current)
+        let message = cycle[0]
+        let msg_index = 1
+        let done = false
+        while not done:
+            if msg_index >= len(cycle):
+                done = true
+            else:
+                message = message + " -> " + cycle[msg_index]
+                msg_index = msg_index + 1
+        let first = none
+        for alias in aliases:
+            if alias["name"] == current:
+                first = alias
+        if first != none:
+            errors = append(errors, b2c_error(source_name, first, "ZAP-TYPE-011", "type alias '" + current + "' has a recursive expansion: " + message))
+        return errors
+    if b2c_list_contains_string(visited, current):
+        return errors
+    let current_alias = none
+    for alias in aliases:
+        if alias["name"] == current:
+            current_alias = alias
+    if current_alias == none:
+        return errors
+    let visited_with_current = append(visited, current)
+    let on_stack_with_current = append(on_stack, current)
+    let referenced = b2c_alias_referenced_names(current_alias["target"], alias_names, current_alias["type_params"], [])
+    for next_name in referenced:
+        errors = b2c_alias_cycle_visit(aliases, next_name, alias_names, visited_with_current, on_stack_with_current, source_name, errors)
+    return errors
+
+export fn b2c_detect_alias_cycles(aliases, source_name):
+    let errors = []
+    let alias_names = b2c_alias_names(aliases, [])
+    for alias in aliases:
+        errors = b2c_alias_cycle_visit(aliases, alias["name"], alias_names, [], [], source_name, errors)
+    return errors
+
 export fn b2c_check_program(ast, source_name):
     let aliases = b2c_collect_type_aliases(ast["statements"], [])
     let errors = []
     for alias in aliases:
         errors = b2c_append_errors(errors, b2c_check_alias_validity(alias, source_name))
+    errors = b2c_append_errors(errors, b2c_detect_alias_cycles(aliases, source_name))
     let normalized_ast = {"statements": b2c_expand_alias_statements(ast["statements"], aliases, [])}
     let registry = b2c_collect_trait_registry(normalized_ast["statements"], [])
     let trait_errors = b2c_collect_trait_class_errors(normalized_ast["statements"], registry, source_name, [])

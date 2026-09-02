@@ -14,6 +14,7 @@ echo "=== B2 Generic Constraints ==="
 # Alias checking
 echo "=== B2 Alias Checking ==="
 ./scripts/bootstrap/verify_b2_alias_expansion_21.sh
+./scripts/bootstrap/verify_b2_recursive_alias.sh
 
 # Dataflow
 echo "=== B2 Dataflow ==="
