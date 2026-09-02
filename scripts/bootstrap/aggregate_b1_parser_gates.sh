@@ -6,8 +6,17 @@
 set -uo pipefail
 
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ZAP_BIN="$(pwd)/native/target/release/zap.exe"
 SCRIPTS_DIR=scripts/bootstrap
+
+# Detect platform and set appropriate binary name
+case "$(uname -s)" in
+  Linux*)     ZAP_BIN="$(pwd)/native/target/release/zap.exe" ;;  # Git Bash on Windows reports Linux but uses .exe
+  Darwin*)    ZAP_BIN="$(pwd)/native/target/release/zap" ;;
+  CYGWIN*)    ZAP_BIN="$(pwd)/native/target/release/zap.exe" ;;
+  MINGW*)     ZAP_BIN="$(pwd)/native/target/release/zap.exe" ;;
+  MSYS*)      ZAP_BIN="$(pwd)/native/target/release/zap.exe" ;;
+  *)          ZAP_BIN="$(pwd)/native/target/release/zap.exe" ;;
+esac
 
 if [ ! -x "$ZAP_BIN" ]; then
   printf 'missing zap binary: %s\n' "$ZAP_BIN" >&2
@@ -66,4 +75,6 @@ printf 'SKIP: %d\n' "$SKIP"
 if [ $FAIL -gt 0 ]; then
     printf 'Failed gates:\n'
     for g in "${FAILED_GATES[@]}"; do printf '  - %s\n' "$g"; done
+    exit 1
 fi
+exit 0

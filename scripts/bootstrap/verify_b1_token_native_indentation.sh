@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+
+# Detect platform and set appropriate binary name
+case "$(uname -s)" in
+  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;  # Git Bash on Windows reports Linux but uses .exe
+  Darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+  CYGWIN*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MINGW*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MSYS*)      ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  *)          ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+esac
+
+if [ ! -x "$ZAP_BIN" ]; then
+  printf 'missing zap binary: %s\n' "$ZAP_BIN" >&2
+  exit 2
+fi
 
 for fixture in \
   bootstrap/fixtures/parser/arbitrary_deep_indentation.zp \
@@ -14,6 +29,7 @@ for fixture in \
 done
 
 runner=$(mktemp "$ROOT_DIR/.zap-token-native-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-token-native-output.XXXXXX")
 trap 'rm -f "$runner" "$output"' EXIT
 cat > "$runner" <<'EOF'
@@ -41,7 +57,7 @@ report("while_without_else.zp")
 report("while_else_syntax.zp")
 EOF
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$output"
+"$ZAP_BIN" "$runner_rel" > "$output"
 
 # Valid arbitrary programs must parse to an AST through the token-native path.
 for valid in arbitrary_deep_indentation arbitrary_nested_blocks_complex mixed_top_level_statements while_without_else; do

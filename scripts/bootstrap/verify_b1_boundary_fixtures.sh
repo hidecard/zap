@@ -3,7 +3,16 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe"
+# Detect platform and set appropriate binary name
+case "$(uname -s)" in
+  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;  # Git Bash on Windows reports Linux but uses .exe
+  Darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+  CYGWIN*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MINGW*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MSYS*)      ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  *)          ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+esac
+
 if [ ! -x "$ZAP_BIN" ]; then
   printf 'missing zap binary: %s\n' "$ZAP_BIN" >&2
   exit 2

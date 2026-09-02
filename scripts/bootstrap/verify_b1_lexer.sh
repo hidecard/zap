@@ -4,6 +4,21 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 
+# Detect platform and set appropriate binary name
+case "$(uname -s)" in
+  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;  # Git Bash on Windows reports Linux but uses .exe
+  Darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+  CYGWIN*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MINGW*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  MSYS*)      ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+  *)          ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
+esac
+
+if [ ! -x "$ZAP_BIN" ]; then
+  printf 'missing zap binary: %s\n' "$ZAP_BIN" >&2
+  exit 2
+fi
+
 if (($# == 0)); then
   set -- \
     bootstrap/fixtures/lexer/basic.zp \
@@ -57,13 +72,14 @@ for fixture in "$@"; do
   }
 
   runner=$(mktemp "$ROOT_DIR/.zap-b1-runner.XXXXXX.zp")
+  runner_rel=$(basename "$runner")
   output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-output.XXXXXX")
   cat > "$runner" <<EOF
 import "bootstrap/b1/lexer.zp"
 let source = read_text("$fixture")
 say lex(source, "$fixture")
 EOF
-  if ! cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$output"; then
+  if ! "$ZAP_BIN" "$runner_rel" > "$output"; then
     rm -f "$runner" "$output"
     exit 1
   fi
