@@ -1,0 +1,91 @@
+name: Zap v2.11.18 Preparation Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "scripts/release_preflight.sh"
+      - "scripts/test_b2_typed_ir_benchmark.sh"
+      - "scripts/test_aggregate_b2_typed_ir.sh"
+      - "scripts/benchmark_b2_typed_ir.sh"
+      - "scripts/aggregate_b2_typed_ir.sh"
+      - "bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml"
+      - "bootstrap/contracts/B4_ACCEPTANCE.tsv"
+      - ".github/workflows/prepare-v2.11.18.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-prepare-v2.11.18-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: v2.11.18 preparation preflight
+    runs-on: ubuntu-latest
+    env:
+      EXPECTED_VERSION: 2.11.18
+      RELEASE_TAG: v2.11.18
+      ZAP_CORPUS_SEED: 20260821
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            native
+            host/zap-host
+
+      - name: Initialize CI evidence fallback paths
+        run: scripts/ensure_ci_evidence_reports.sh
+
+      - name: Build native binary for version validation
+        run: cargo build --release --locked --manifest-path native/Cargo.toml
+
+      - name: Validate release version consistency
+        env:
+          ZAP_VERSION_REPORT: target/version-consistency.tsv
+          ZAP_CLI_BINARY: native/target/release/zap
+          ZAP_EXPECTED_ARCH: x86-64
+        run: scripts/validate_release_version.sh
+
+      - name: Upload version consistency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-v2.11.18-version-consistency-${{ github.sha }}
+          path: target/version-consistency.tsv
+          if-no-files-found: warn
+
+      - name: Run v2.11.18 release preparation preflight
+        env:
+          # Local dry-run: no signing or deployment validation in CI
+          # preflight; release.yml re-runs the full preflight with
+          # RUN_CARGO_AUDIT=1 and SKIP_DEPLOYMENT_VALIDATION=0 on tag.
+          RUN_CARGO_CHECKS: "0"
+          RUN_CARGO_AUDIT: "0"
+          SKIP_DEPLOYMENT_VALIDATION: "1"
+          # v2.11.18 release notes are not yet authored. The preflight
+          # requires the bilingual release notes to exist; the docs
+          # v2.11.18 prep commit will add them before the tag is pushed.
+          ZAP_SKIP_RELEASE_NOTES: "1"
+        run: bash scripts/release_preflight.sh
+        continue-on-error: true
+
+      - name: Upload v2.11.18 preflight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-v2.11.18-preflight-${{ github.sha }}
+          path: |
+            target/release-contract-reports
+            target/release-preflight.log
+          if-no-files-found: warn

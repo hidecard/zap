@@ -12,6 +12,15 @@
 - Verified: `/tmp` Linux-style LF clean checkout တွင် full PASS report (29/29 checks) ထွက်ပါသည်။
 - Regression test: `scripts/test_validate_release_version.sh` တွင် core.autocrlf=true scenario simulate လုပ်သော CRLF lockfile regression check ထည့်ပြီး old awk block (no CR strip) vs new awk block (with CR strip) contrast ကို verify လုပ်ပါသည်။
 - CI artifact uploads (`target/version-consistency.tsv`, `target/b2-milestone-report.tsv` စသည်) အားလုံး `if-no-files-found: warn` ဖြစ်ပြီး cascade-fail-safe ဟုတ်ကြောင်း အတည်ပြုပါသည်။
+- ရလဒ်: commit `e27a4d5` pushed to origin/master, ပြီးနောက် remote `c89988b` re-introduced CI regression; merge `baa91d5` resolved with local CI fix preserved.
+
+### P1 — Typed-IR benchmark cross-platform baseline
+- `scripts/benchmark_b2_typed_ir.sh` တွင် portable timing backend (GNU `/usr/bin/time` / `gtime` / bash SECONDS+`/proc/$$/status` fallback), M2-BENCH-01-compatible provenance sidecar (`schema_version`, `status`, `timestamp_utc`, `git_commit`, `target_triple`, `os`, `kernel`, `arch`, `rust_version`, `cargo_version`, `binary_sha256`, `script_sha256`, `repeats`, `warmups`, `suites`, `time_backend`, `raw_csv`), cross-platform baseline TSV (`(target_triple, suite, min/mean/max, peak_rss_min/max, commit, sha256, timestamp_utc)`), Windows binary lookup (`.exe`), ZAP_TYPED_IR_BENCH_TIME_CMD override, mktemp permission fix တို့ ထည့်သွင်းပါသည်။
+- `scripts/aggregate_b2_typed_ir.sh` (new) deterministic per-suite summary CSV: min/mean/p95/max seconds, population standard deviation/variance/cv, peak RSS min/mean/max။
+- `scripts/test_b2_typed_ir_benchmark.sh` (extended) and `scripts/test_aggregate_b2_typed_ir.sh` (new) regression tests များ locally PASS ဖြစ်ပါသည်။
+- `.github/workflows/ci.yml` တွင် `scripts/test_aggregate_b2_typed_ir.sh` step, `ZAP_TYPED_IR_BENCH_PROVENANCE`/`ZAP_TYPED_IR_BENCH_BASELINE` env, summary aggregate step, and `zap-b2-typed-ir-baseline-<sha>` artifact upload ထည့်သွင်းပါသည်။
+- `docs/BENCHMARK_HARNESS_EN.md` and `docs/BENCHMARK_HARNESS_MM.md` တွင် portable backend, provenance, baseline, aggregator, Windows compatibility, and machine-dependent scope note များ ထည့်သွင်းပါသည်။
+- ရလဒ်: commit `0e93501` pushed to origin/master, baseline is per-target execution evidence (not portability/speed claim).
 
 ### P0 — Remaining work (still NOT DONE in this session)
 

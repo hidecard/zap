@@ -351,8 +351,12 @@ check_documentation_pairs() {
   require_text docs/TYPECHECK_CONFORMANCE_MATRIX_MM.md "$EXPECTED_VERSION"
   require_text docs/CURRENT_STATUS_EN.md 'Bootstrap stage'
   require_text docs/CURRENT_STATUS_MM.md 'Bootstrap stage'
-  require_text "docs/RELEASE_${EXPECTED_VERSION}_EN.md" "$EXPECTED_VERSION"
-  require_text "docs/RELEASE_${EXPECTED_VERSION}_MM.md" "$EXPECTED_VERSION"
+  if [[ "${ZAP_SKIP_RELEASE_NOTES:-0}" == "1" ]]; then
+    warn "ZAP_SKIP_RELEASE_NOTES=1; bilingual release notes were not required"
+  else
+    require_text "docs/RELEASE_${EXPECTED_VERSION}_EN.md" "$EXPECTED_VERSION"
+    require_text "docs/RELEASE_${EXPECTED_VERSION}_MM.md" "$EXPECTED_VERSION"
+  fi
 }
 
 check_source_safety() {
@@ -372,6 +376,46 @@ check_source_safety() {
     fail "deploy/ contains a private key, certificate, or populated registry.env"
   else
     pass "deploy/ contains no private key, certificate, or populated registry.env"
+  fi
+}
+
+check_b4_contract_witness() {
+  local contract="bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml"
+  local acceptance="bootstrap/contracts/B4_ACCEPTANCE.tsv"
+  if [[ -f "$contract" ]]; then
+    pass "B4 rust-free full-language contract is present: $contract"
+  else
+    warn "B4 rust-free full-language contract is missing: $contract (skipped)"
+    return
+  fi
+  if [[ -f "$acceptance" ]]; then
+    pass "B4 acceptance TSV is present: $acceptance"
+  else
+    fail "B4 acceptance TSV is missing: $acceptance"
+  fi
+  local status
+  status=$(sed -n 's/^status[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$contract" | head -n 1)
+  case "$status" in
+    not-certified|provisional|certified)
+      pass "B4 contract status is recognised: $status"
+      ;;
+    *)
+      fail "B4 contract status is not a recognised label: '$status'"
+      ;;
+  esac
+  local provisional_count
+  provisional_count=$(awk -F'\t' 'NR > 3 && $7 == "provisional" { count++ } END { print count+0 }' "$acceptance")
+  local not_certified_count
+  not_certified_count=$(awk -F'\t' 'NR > 3 && $7 == "not-certified" { count++ } END { print count+0 }' "$acceptance")
+  printf '  B4 acceptance rows: provisional=%s not-certified=%s\n' "$provisional_count" "$not_certified_count"
+  if [[ "$status" == "certified" ]]; then
+    if (( provisional_count == 0 && not_certified_count == 0 )); then
+      pass "B4 contract is certified and all acceptance rows are pass-status"
+    else
+      fail "B4 contract is certified but $provisional_count provisional / $not_certified_count not-certified rows remain"
+    fi
+  else
+    warn "B4 contract is not certified (status=$status); release preflight records but does not require certification"
   fi
 }
 
@@ -491,6 +535,12 @@ run_contract_validation() {
   bash scripts/test_benchmark_provenance.sh
   pass "benchmark provenance contract passed"
 
+  bash scripts/test_b2_typed_ir_benchmark.sh
+  pass "B2 typed-IR cross-platform baseline contract passed"
+
+  bash scripts/test_aggregate_b2_typed_ir.sh
+  pass "B2 typed-IR aggregate contract passed"
+
   bash scripts/test_stdlib_policy.sh
   pass "standard-library stability policy contract passed"
 
@@ -548,14 +598,32 @@ run_contract_validation() {
   pass "benchmark regression validation passed"
 
   local typed_ir_benchmark="$report_dir/b2-typed-ir.csv"
+  local typed_ir_summary="$report_dir/b2-typed-ir.summary.csv"
+  local typed_ir_provenance="$report_dir/b2-typed-ir.provenance.tsv"
+  local typed_ir_baseline="$report_dir/b2-typed-ir.baseline.tsv"
   ZAP_TYPED_IR_BENCH_REPEATS="${ZAP_TYPED_IR_BENCH_REPEATS:-3}" \
     ZAP_TYPED_IR_BENCH_WARMUPS="${ZAP_TYPED_IR_BENCH_WARMUPS:-1}" \
     ZAP_TYPED_IR_BENCH_OUTPUT="$typed_ir_benchmark" \
+    ZAP_TYPED_IR_BENCH_PROVENANCE="$typed_ir_provenance" \
+    ZAP_TYPED_IR_BENCH_BASELINE="$typed_ir_baseline" \
     bash scripts/benchmark_b2_typed_ir.sh
   test "$(head -n 1 "$typed_ir_benchmark")" = 'suite,iteration,elapsed_seconds,peak_rss_kb'
   test "$(awk 'END { print NR - 1 }' "$typed_ir_benchmark")" -eq 6
   awk -F, 'NR > 1 && NF == 4 && $1 ~ /^(candidate|owned)$/ && $2 ~ /^[1-9][0-9]*$/ && $3 ~ /^[0-9]+([.][0-9]+)?$/ && $4 ~ /^[0-9]+$/ { valid++ } END { exit valid == 6 ? 0 : 1 }' "$typed_ir_benchmark"
   pass "B2 typed-IR performance and peak-RSS baseline validation passed"
+
+  # Aggregate the typed-IR benchmark and verify the summary schema, then
+  # check the per-(target, suite) baseline table is present so cross-
+  # platform build evidence accumulates per release.
+  ZAP_TYPED_IR_AGG_INPUT="$typed_ir_benchmark" \
+    ZAP_TYPED_IR_AGG_OUTPUT="$typed_ir_summary" \
+    bash scripts/aggregate_b2_typed_ir.sh
+  test "$(head -n 1 "$typed_ir_summary")" = 'suite,iterations,min_seconds,mean_seconds,p95_seconds,max_seconds,stddev_seconds,variance_seconds,cv_percent,peak_rss_kb_min,peak_rss_kb_mean,peak_rss_kb_max'
+  test "$(awk 'END { print NR - 1 }' "$typed_ir_summary")" -eq 2
+  awk -F, 'NR > 1 && NF == 12 && $1 ~ /^(candidate|owned)$/ && $2 == 3 { valid++ } END { exit valid == 2 ? 0 : 1 }' "$typed_ir_summary"
+  test "$(head -n 1 "$typed_ir_baseline")" = 'target_triple	suite	min_seconds	mean_seconds	max_seconds	peak_rss_kb_min	peak_rss_kb_max	git_commit	binary_sha256	timestamp_utc'
+  test "$(awk 'END { print NR - 1 }' "$typed_ir_baseline")" -ge 2
+  pass "B2 typed-IR cross-platform baseline and aggregator evidence recorded"
 }
 
 run_cargo_audit_gate() {
@@ -604,6 +672,8 @@ printf '%s\n' '--- bilingual documentation'
 check_documentation_pairs
 printf '%s\n' '--- target matrix'
 check_targets
+printf '%s\n' '--- B4 rust-free contract witness'
+check_b4_contract_witness
 printf '%s\n' '--- P0/P1 contract validation'
 run_contract_validation
 printf '%s\n' '--- dependency security audit'
