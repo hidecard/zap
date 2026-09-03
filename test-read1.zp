@@ -1,0 +1,3 @@
+import "bootstrap/b2/typecheck.zp"
+let var1 = read_text("bootstrap/fixtures/typecheck/alias_generic.zp")
+say check(var1, "bootstrap/fixtures/typecheck/alias_generic.zp")

@@ -1,13 +1,13 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # Zap Syntax Reference — English
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 
 **Purpose:** Normative, searchable syntax reference for Zap language users, linked to the canonical specification and executable contracts.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Stdlib reference](STDLIB_INDEX_EN.md) · [Diagnostics](DIAGNOSTIC_MODEL_EN.md)
 
-> **Supported version:** Zap v2.11.17\
-> **Last verified:** 2026-09-01 against the native runtime, CLI, formatter, LSP, v2.1-D async/tooling implementation, and the bounded canonical AST closure slice shipped in v2.11.17.
+> **Supported version:** Zap v2.11.18\
+> **Last verified:** 2026-09-01 against the native runtime, CLI, formatter, LSP, v2.1-D async/tooling implementation, and the bounded canonical AST closure slice shipped in v2.11.18.
 
 This reference summarizes the syntax supported by the current Zap runtime. Zap source files use the `.zp` extension and blocks are defined by indentation.
 

@@ -1,0 +1,3 @@
+import "bootstrap/b2/typecheck.zp"
+let x = read_text("bootstrap/fixtures/typecheck/annotated.zp")
+say check(x, "bootstrap/fixtures/typecheck/annotated.zp")

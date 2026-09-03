@@ -1,9 +1,9 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap Async Boundary များ
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 
-**အခြေအနေ:** Zap v2.11.17 အတွက် normative runtime-boundary လမ်းညွှန်
+**အခြေအနေ:** Zap v2.11.18 အတွက် normative runtime-boundary လမ်းညွှန်
 
 ## ရည်ရွယ်ချက်
 
@@ -49,7 +49,7 @@ Matrix သည် runner တိုင်းတွင် `scripts/test_platform_ar
 
 ## Stability rules
 
-သည် v2.11.17 အတွက် stable baseline ဖြစ်ပါသည်။
+သည် v2.11.18 အတွက် stable baseline ဖြစ်ပါသည်။
 
 အနာဂတ် production implementation တွင် အနည်းဆုံး အောက်ပါအချက်များ ပါဝင်ရမည်။
 

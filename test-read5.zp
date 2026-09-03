@@ -1,0 +1,7 @@
+import "bootstrap/b2/typecheck.zp"
+let var1 = read_text("bootstrap/fixtures/typecheck/alias_generic.zp")
+let var2 = read_text("bootstrap/fixtures/typecheck/alias_mutation_invalidation.zp")
+let var3 = read_text("bootstrap/fixtures/typecheck/alias_nested_list.zp")
+let var4 = read_text("bootstrap/fixtures/typecheck/alias_nested_map.zp")
+let var5 = read_text("bootstrap/fixtures/typecheck/alias_nested_option.zp")
+say check(var5, "bootstrap/fixtures/typecheck/alias_nested_option.zp")

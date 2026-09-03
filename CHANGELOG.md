@@ -2,7 +2,7 @@
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
-## [Unreleased]
+## [2.11.18] - 2026-09-03
 
 ### Documentation
 - Aligned 30+ doc files (English and Burmese pairs) to current release line v2.11.17: verified-baseline, normative status, and navigation-index headers.

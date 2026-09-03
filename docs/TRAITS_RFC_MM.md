@@ -1,10 +1,10 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap Traits နှင့် Composition RFC
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 
 **RFC အခြေအနေ:** T1 contract freeze ပြီးစီးထားသော bounded language contract ဖြစ်သည်။ T2 canonical parser/AST၊ T3 checker registry၊ T4 bounded typed-IR obligations/generic bounds၊ T5 bounded lowerer/VM dispatch နှင့် T6 package metadata/LSP catalog implementation များ ရှိပြီး production release enablement ကို သီးခြား gate အဖြစ် ဆက်လက်ထားသည်။
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 **ဆုံးဖြတ်မည့် version:** Post-v2.11 additive feature proposal အဖြစ်သာ review လုပ်မည်။ Release-supported feature ဟု မကြေညာမီ parser၊ checker၊ typed-IR၊ lowerer၊ runtime၊ diagnostics၊ tooling နှင့် compatibility gates အားလုံး pass ရမည်။
 **ဖတ်ရှုသင့်သူများ:** Language designer၊ runtime maintainer၊ package author နှင့် အနာဂတ် compatibility change reviewer များ။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax guide](SYNTAX_GUIDE.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Package guide](PACKAGE.md) · [English RFC](TRAITS_RFC_EN.md)

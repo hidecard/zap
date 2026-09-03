@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # Zap Web Framework Foundation
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Branch:** `Framework`
 **Status:** Web Foundation v0.2 — runnable contract package plus initial `zap-host` adapter prototype; production integrations remain separate
 

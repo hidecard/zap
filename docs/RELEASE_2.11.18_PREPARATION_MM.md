@@ -4,7 +4,7 @@
 
 ## အခြေအနေ
 
-v2.11.17 သည် နောက်ဆုံး publish လုပ်ထားသော release ဖြစ်ပါသည်။ v2.11.18 preparation သည် ဆက်လက်လုပ်ဆောင်နေဆဲ ဖြစ်ပြီး v2.11.18 tag မရှိသေးပါ၊ public GitHub Release လည်း publish မရှိသေးပါ။
+v2.11.18 သည် နောက်ဆုံး publish လုပ်ထားသော release ဖြစ်ပါသည်။ v2.11.18 preparation သည် ဆက်လက်လုပ်ဆောင်နေဆဲ ဖြစ်ပြီး v2.11.18 tag မရှိသေးပါ၊ public GitHub Release လည်း publish မရှိသေးပါ။
 
 ## လိုအပ်သော release surface များ (v2.11.18)
 

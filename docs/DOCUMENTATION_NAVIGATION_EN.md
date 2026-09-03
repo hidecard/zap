@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Purpose:** This page is the English entry point for learners, language users, package authors, runtime maintainers, and release operators. Normative behavior belongs to the canonical specification or an explicitly linked contract; explanatory guides must not silently override those contracts.
 
 ## Choose a path
@@ -15,7 +15,7 @@
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_EN.md) | [Memory model](MEMORY_MODEL_EN.md), [diagnostics](DIAGNOSTIC_MODEL_EN.md), [async boundaries](ASYNC_BOUNDARIES_EN.md), [bootstrap/self-hosting contract](BOOTSTRAP_CONTRACT_EN.md), [section-A acceptance contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_EN.md) |
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_EN.md) | [LSP implementation](../native/src/lsp.rs), [canonical VS Code extension](../vscode-extension), [editor assets](../editors/vscode), [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh), [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_EN.md) | [Production operations](PRODUCTION_OPERATIONS_EN.md), [Registry deployment policy](../deploy/registry-deployment-policy.toml), [security policy](../SECURITY.md), [RustSec audit evidence](RUSTSEC_AUDIT_EN.md) |
-| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Current status](CURRENT_STATUS_EN.md), [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [RustSec audit evidence](RUSTSEC_AUDIT_EN.md), [post-v2.2.0 remediation/provenance](POST_V2.2.0_REMEDIATION_EN.md), [post-v2.4.0 remediation/provenance](POST_V2.4.0_REMEDIATION_EN.md), [v2.11.17 release notes](RELEASE_2.11.17_EN.md), [v2.11.18 preparation](RELEASE_2.11.18_PREPARATION_EN.md), [branch hygiene and merge record](BRANCH_HYGIENE_EN.md), [release preflight](../scripts/release_preflight.sh), [v2.11.18 preparation workflow](../.github/workflows/prepare-v2.11.18.yml) |
+| Release operator | [Release version policy](RELEASE_VERSION_POLICY_EN.md) | [Current status](CURRENT_STATUS_EN.md), [Release signing](RELEASE_SIGNING_EN.md), [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_EN.md), [benchmark contract](BENCHMARK_HARNESS_EN.md), [RustSec audit evidence](RUSTSEC_AUDIT_EN.md), [post-v2.2.0 remediation/provenance](POST_V2.2.0_REMEDIATION_EN.md), [post-v2.4.0 remediation/provenance](POST_V2.4.0_REMEDIATION_EN.md), [v2.11.18 release notes](RELEASE_2.11.17_EN.md), [v2.11.18 preparation](RELEASE_2.11.18_PREPARATION_EN.md), [branch hygiene and merge record](BRANCH_HYGIENE_EN.md), [release preflight](../scripts/release_preflight.sh), [v2.11.18 preparation workflow](../.github/workflows/prepare-v2.11.18.yml) |
 | Bootstrap engineer | [Rust-independence roadmap](RUST_INDEPENDENCE_ROADMAP_EN.md) | [Self-hosting acceptance contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_EN.md), [B0 baseline](../bootstrap/BASELINE_B0.md), Rust-free seed-pipeline gate |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_EN.md) | [Language specification](LANGUAGE_SPEC_EN.md), [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) |
 
@@ -23,12 +23,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
 
 ## Normative contract map
 

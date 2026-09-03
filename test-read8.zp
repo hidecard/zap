@@ -1,0 +1,10 @@
+import "bootstrap/b2/typecheck.zp"
+let var1 = read_text("bootstrap/fixtures/typecheck/alias_generic.zp")
+let var2 = read_text("bootstrap/fixtures/typecheck/alias_mutation_invalidation.zp")
+let var3 = read_text("bootstrap/fixtures/typecheck/alias_nested_list.zp")
+let var4 = read_text("bootstrap/fixtures/typecheck/alias_nested_map.zp")
+let var5 = read_text("bootstrap/fixtures/typecheck/alias_nested_option.zp")
+let var6 = read_text("bootstrap/fixtures/typecheck/alias_of_alias.zp")
+let var7 = read_text("bootstrap/fixtures/typecheck/alias_recursive.zp")
+let var8 = read_text("bootstrap/fixtures/typecheck/alias_recursive_cycle.zp")
+say check(var8, "bootstrap/fixtures/typecheck/alias_recursive_cycle.zp")

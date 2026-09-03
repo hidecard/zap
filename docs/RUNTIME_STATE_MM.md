@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Runtime State နှင့် Execution Context
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Memory model](MEMORY_MODEL_MM.md) · [Memory budget/ObjectStore](MEMORY_BUDGET_OBJECT_STORE_MM.md) · [Async/LSP guide](ASYNC_LSP_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 

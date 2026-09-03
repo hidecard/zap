@@ -1,0 +1,15 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/invalid_indentation_jump.zp")
+    let toks = from_json(lex(src, "invalid_indentation_jump.zp"))
+    let table = token_indentation_table(toks["tokens"], 0, [])
+    let lines = split(trim(src), "\n")
+    let block_lines = [lines[0], lines[1]]
+    say "block_lines count: " + str(len(block_lines))
+    let parsed = parse_block_program_tokens(block_lines, table)
+    say "parsed count: " + str(len(parsed))
+    return none
+
+test()

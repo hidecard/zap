@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # P0 AST Foundation အခြေအနေ
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 
 **Zap v2.4.0 နှင့် စစ်ဆေးအတည်ပြုထားပါသည်။**
 

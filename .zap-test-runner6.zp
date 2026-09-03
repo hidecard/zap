@@ -1,0 +1,10 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/invalid_indentation_jump.zp")
+    let result = parse_general(src, "invalid_indentation_jump.zp")
+    say result
+    return none
+
+test()

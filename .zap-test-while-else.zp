@@ -1,0 +1,10 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/while_else_syntax.zp")
+    let result = parse_general(src, "while_else_syntax.zp")
+    say result
+    return none
+
+test()

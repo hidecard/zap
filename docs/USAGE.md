@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap အသုံးပြုနည်း လမ်းညွှန်
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17 development line
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18 development line
 
 **ရည်ရွယ်ချက်:** ဤဖိုင်သည် command နှင့် operations အတွက် အတိုချုံး reference ဖြစ်သည်။ Installation မှ advanced အထိ အပြည့်အစုံလေ့လာရန် [မြန်မာ Language Guide](LEARN_ZAP_MM.md) ကို အသုံးပြုပါ။ Normative behavior သည် [language specification](LANGUAGE_SPEC_MM.md) တွင် သတ်မှတ်ထားပါသည်။
 

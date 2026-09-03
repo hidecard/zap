@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # zap-host Axum/Tower Adapter
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Branch:** `Framework`
 **Status:** adapter foundation v0.1, implemented under `host/zap-host` on the `Framework` branch.
 

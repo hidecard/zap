@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # zap-host Quickstart and Integration Guide
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Branch:** `Framework`
 **Adapter:** `host/zap-host`
 

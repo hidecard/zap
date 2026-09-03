@@ -1,0 +1,22 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/invalid_indentation_jump.zp")
+    let lines = split(trim(src), "\n")
+    let nested = parse_block_from(lines, 1, 4)
+    let function = {"body": {"statements": nested["statements"]}, "constraints": [], "exported": false, "is_async": false, "kind": "function", "name": "test", "params": [], "return_type": none, "span": span(1, 1, 10), "type_params": [], "visibility": "public"}
+    let statements = []
+    statements = append(statements, rebase_statement_spans(function, 0))
+    let cursor = nested["next"]
+    let line = lines[cursor]
+    let value = trim(line)
+    if value != "":
+        let stmt = parse_statement(line, cursor + 1, 1)
+        statements = append(statements, rebase_statement_spans(stmt, cursor))
+    let new_cursor = cursor + 1
+    say "new_cursor: " + str(new_cursor)
+    say "statements count: " + str(len(statements))
+    return statements
+
+test()

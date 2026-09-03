@@ -1,10 +1,10 @@
-# Zap v2.11.17
+# Zap v2.11.18
 
 **Release အခြေအနေ:** Complete validation နှင့် public artifact/signature verification ပြီးနောက် publish လုပ်ထားသည်။ Zap သည် Bootstrap stage B0 အဖြစ်သာ ဆက်ရှိပြီး ဤ release ထဲရှိ B4 အလုပ်သည် bounded/provisional ဖြစ်သည်။
 
 ## အကျဉ်းချုပ်
 
-Zap v2.11.17 သည် canonical parser-AST → B3 lowerer → B4 VM လမ်းကြောင်းကို bounded closure execution ဖြင့် တိုးချဲ့ထားပါသည်။ Nested AST function များသည် outer value များကို capture လုပ်နိုင်ပြီး closure value အဖြစ် return လုပ်ကာ independent captured environment များဖြင့် ပြန်လည် invoke လုပ်နိုင်ပါသည်။ ယခင် canonical AST control-flow၊ exception၊ class၊ inheritance နှင့် C3 `super()` slice များကိုလည်း ဆက်လက်ထိန်းသိမ်းထားပါသည်။
+Zap v2.11.18 သည် canonical parser-AST → B3 lowerer → B4 VM လမ်းကြောင်းကို bounded closure execution ဖြင့် တိုးချဲ့ထားပါသည်။ Nested AST function များသည် outer value များကို capture လုပ်နိုင်ပြီး closure value အဖြစ် return လုပ်ကာ independent captured environment များဖြင့် ပြန်လည် invoke လုပ်နိုင်ပါသည်။ ယခင် canonical AST control-flow၊ exception၊ class၊ inheritance နှင့် C3 `super()` slice များကိုလည်း ဆက်လက်ထိန်းသိမ်းထားပါသည်။
 
 ## ပြောင်းလဲမှုများ
 

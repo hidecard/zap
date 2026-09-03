@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # zap-host Axum/Tower Adapter
 
-**အတည်ပြုထားသော baseline:** Zap v2.11.17
+**အတည်ပြုထားသော baseline:** Zap v2.11.18
 **Branch:** `Framework`
 **အခြေအနေ:** `Framework` branch ၏ `host/zap-host` အောက်တွင် အကောင်အထည်ဖော်ထားသော adapter foundation v0.1 ဖြစ်သည်။
 

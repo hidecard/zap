@@ -2,7 +2,7 @@
 
 > **ရည်ရွယ်သူ:** Zap ကို ပထမဆုံး install လုပ်ခြင်းမှစ၍ structured၊ typed၊ modular၊ asynchronous၊ tested နှင့် Web-enabled program များ ရေးသားနိုင်သည့် Advanced အဆင့်အထိ လေ့လာလိုသူများအတွက် ဖြစ်ပါသည်။
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 **Source extension:** `.zp`
 **Runtime:** standalone native `zap` executable
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [Language specification](LANGUAGE_SPEC_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Standard-library index](STDLIB_INDEX_MM.md) · [English guide](LEARN_ZAP_EN.md)

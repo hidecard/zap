@@ -1,0 +1,2 @@
+import "bootstrap/b2/typecheck.zp"
+let x = 1

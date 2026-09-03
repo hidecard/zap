@@ -1,0 +1,10 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let line = "            invalid_indent"
+    let result = parse_statement(line, 3, 1)
+    say result
+    return none
+
+test()

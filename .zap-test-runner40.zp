@@ -1,0 +1,19 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let lines = ["fn test():", "    return 1", "            invalid_indent"]
+    let nested = parse_block_from(lines, 1, 4)
+    let statements = []
+    let cursor = nested["next"]
+    while cursor < len(lines):
+        let line = lines[cursor]
+        let value = trim(line)
+        if value != "":
+            let stmt = parse_statement(line, cursor + 1, 1)
+            statements = append(statements, stmt)
+        cursor = cursor + 1
+    say "statements count: " + str(len(statements))
+    return statements
+
+test()

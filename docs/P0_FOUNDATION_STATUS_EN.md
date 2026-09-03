@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # P0 AST Foundation Status
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 
 **Verified against Zap v2.4.0.**
 

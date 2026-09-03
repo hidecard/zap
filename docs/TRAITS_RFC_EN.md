@@ -1,10 +1,10 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # Zap Traits and Composition RFC
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 
 **RFC status:** T1 contract-frozen bounded language contract. T2 canonical parser/AST, T3 checker registry, T4 bounded typed-IR obligations/generic bounds, T5 bounded lowerer/VM dispatch, and T6 package metadata/LSP catalog integrations are present; production release enablement remains separately gated.
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Decision target:** Treat this as a post-v2.11 additive feature proposal. It is not release-supported until parser, checker, typed-IR, lowerer, runtime, diagnostics, tooling, and compatibility gates pass.
 **Audience:** Language designers, runtime maintainers, package authors, and reviewers of future compatibility changes.
 **Navigation:** [Documentation hub](DOCUMENTATION_NAVIGATION_EN.md) · [Learning guide](LEARN_ZAP_EN.md) · [Syntax reference](SYNTAX_GUIDE_EN.md) · [Language specification](LANGUAGE_SPEC_EN.md) · [Package guide](PACKAGE_EN.md) · [Burmese RFC](TRAITS_RFC_MM.md)

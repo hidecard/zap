@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # MemoryBudget and ObjectStore Contract
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 
 **Design status:** M2-MEM-02 logical accounting and rollback slice
 

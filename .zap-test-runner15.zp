@@ -1,0 +1,13 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/invalid_indentation_jump.zp")
+    let lines = split(trim(src), "\n")
+    say "calling parse_block_from with " + str(len(lines)) + " lines"
+    let nested = parse_block_from(lines, 1, 4)
+    say "nested statements: " + str(len(nested["statements"]))
+    say "nested next: " + str(nested["next"])
+    return none
+
+test()

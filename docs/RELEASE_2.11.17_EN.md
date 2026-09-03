@@ -1,10 +1,10 @@
-# Zap v2.11.17
+# Zap v2.11.18
 
 **Release status:** Published after complete validation and public artifact/signature verification. Zap remains at bootstrap stage B0; the B4 work in this release is bounded and provisional.
 
 ## Summary
 
-Zap v2.11.17 extends the canonical parser-AST → B3 lowerer → B4 VM path with bounded closure execution. Nested AST functions can capture outer values, return closure values, and execute with independent captured environments. The release also retains the earlier canonical AST control-flow, exception, class, inheritance, and C3 `super()` slices.
+Zap v2.11.18 extends the canonical parser-AST → B3 lowerer → B4 VM path with bounded closure execution. Nested AST functions can capture outer values, return closure values, and execute with independent captured environments. The release also retains the earlier canonical AST control-flow, exception, class, inheritance, and C3 `super()` slices.
 
 ## Changes
 

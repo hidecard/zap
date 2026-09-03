@@ -1,10 +1,10 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap Language Specification
 
 **ရည်ရွယ်ချက်:** Zap ၏ syntax၊ typing၊ runtime behavior၊ diagnostics၊ compatibility နှင့် version decision များအတွက် canonical normative owner ဖြစ်သည်။
 **လမ်းညွှန်:** [Documentation hub](DOCUMENTATION_NAVIGATION_MM.md) · [လေ့လာရေး guide](LEARN_ZAP_MM.md) · [Syntax reference](SYNTAX_GUIDE.md) · [Stdlib reference](STDLIB_INDEX_MM.md) · [Package author guide](PACKAGE.md) · [Runtime state](RUNTIME_STATE_MM.md) · [Deployment boundaries](DEPLOYMENT_MM.md)
 
-**Specification အခြေအနေ:** Zap v2.11.17 အတွက် normative foundation
+**Specification အခြေအနေ:** Zap v2.11.18 အတွက် normative foundation
 
 ဤစာတမ်းသည် language semantics များအတွက် canonical index ဖြစ်သည်။ အဟောင်း guide တစ်ခုခုသည် ဤစာတမ်းနှင့် မကိုက်ညီပါက specification နှင့် ကိုက်ညီအောင် implementation/test များကို ပြင်ရမည်။ Legacy behavior ကို အလိုအလျောက် normative အဖြစ် မယူဆဘဲ compatibility exception အဖြစ် အတိအကျ မှတ်တမ်းတင်ရမည်။
 
@@ -54,13 +54,13 @@ Object field များသည် documented single-threaded `Rc<RefCell>` owne
 
 User-facing diagnostic တိုင်းတွင် severity၊ stable code၊ message၊ ရရှိနိုင်ပါက source location၊ notes နှင့် help တို့ကို ထိန်းသိမ်းရမည်။ CLI နှင့် LSP consumer များသည် semantic diagnostic field တစ်စုံတစ်ရာတည်းကို မျှဝေရမည်။ Compatibility behavior ကို **normative**၊ **compatibility**၊ **deprecated** သို့မဟုတ် **rejected** အဖြစ် အမည်တပ်ရမည်။ Fixture အဟောင်းတစ်ခုက လက်ခံသောကြောင့်သာ behavior တစ်ခုကို normative မသတ်မှတ်ရ။
 
-လက်ရှိ release line သည် v2.11.17 ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
+လက်ရှိ release line သည် v2.11.18 ဖြစ်သည်။ Semantics ပြောင်းလဲမှုတစ်ခုအတွက် specification update၊ bilingual documentation parity၊ conformance test၊ changelog entry နှင့် explicit version decision လိုအပ်သည်။ Release artifact များသည် pinned Rust toolchain၊ formatting၊ strict Clippy၊ native tests၊ provenance နှင့် signature gate များကို ဆက်လက်အောင်မြင်ရမည်။ အနာဂတ် change များအတွက် bilingual [`COMPATIBILITY_CHANGE_TEMPLATE_EN.md`](COMPATIBILITY_CHANGE_TEMPLATE_EN.md) နှင့် [`COMPATIBILITY_CHANGE_TEMPLATE_MM.md`](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) records များကို အသုံးပြုရမည်။
 
 ## ၈။ Conformance ownership
 
 Parser သည် syntax နှင့် AST construction ကို ပိုင်ဆိုင်သည်။ Evaluator သည် runtime expression နှင့် statement behavior ကို ပိုင်ဆိုင်သည်။ Diagnostics module သည် stable error contract ကို ပိုင်ဆိုင်သည်။ Registry module သည် package transport၊ authentication၊ checksum၊ signature နှင့် cache policy ကို ပိုင်ဆိုင်သည်။ CI သည် repository တွင် သတ်မှတ်ထားသည့် gate များကို enforce လုပ်သည်။ Subsystem တစ်ခုသည် အခြား subsystem ၏ contract ကို တိတ်တဆိတ် ပြန်လည်သတ်မှတ်ခွင့် မရှိပါ။
 
-## v2.11.17 တွင် feature coverage
+## v2.11.18 တွင် feature coverage
 
 လက်ရှိ release line သည် အောက်ပါ language feature များကို implement လုပ်ထားသည်။ ဤစာရင်းသည် feature တစ်ခုချင်းစီကို ၎င်း၏ definition section သို့ link ချိတ်ထားသော closed-form summary ဖြစ်သည်။
 
@@ -70,7 +70,7 @@ Parser သည် syntax နှင့် AST construction ကို ပိုင�
 | Numeric, text, boolean, list, map, none, object, function value | §3 | First-class callable value; `any` သည် explicit escape hatch ဖြစ်သည် |
 | `list<T>`၊ `map<K,V>`၊ `option<T>`၊ `result<T>` annotation | §3, §4 | Bounded generic; full generic declaration/inference ကို deferred ထားသည် |
 | Function, named/positional argument, default value | §4 | `function` annotation သည် callable value ကို လက်ခံသည် |
-| Lexical closure နှင့် captured environment | §4 | v2.11.17 တွင် bounded canonical AST closure slice ထည့်သွင်းထားသည်။ A3 generic expansion အထိ deferred |
+| Lexical closure နှင့် captured environment | §4 | v2.11.18 တွင် bounded canonical AST closure slice ထည့်သွင်းထားသည်။ A3 generic expansion အထိ deferred |
 | `if`/`else`၊ `while`၊ `for ... in <list>`၊ `break`၊ `continue` | §5 | Literal-list `for` သာ ဖြစ်ပြီး general iterator ကို deferred ထားသည် |
 | `module`/`import` declaration နှင့် resolver | §5 | Deterministic source order၊ absolute/traversal path နှင့် cycle ကို reject လုပ်သည် |
 | `raise`/`try`/`catch` structured control flow | §5 | Bounded; bare `raise` သည် parser error ဖြစ်သည် |

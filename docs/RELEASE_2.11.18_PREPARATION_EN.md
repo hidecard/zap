@@ -7,7 +7,7 @@ line. It complements the canonical release-version policy in
 
 ## Status
 
-The v2.11.17 line is the latest published release. The v2.11.18
+The v2.11.18 line is the latest published release. The v2.11.18
 preparation is in progress; no v2.11.18 tag exists yet and no public
 GitHub Release has been published.
 

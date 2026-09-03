@@ -1,0 +1,12 @@
+import "bootstrap/b1/lexer.zp"
+import "bootstrap/b1/parser.zp"
+
+export fn test():
+    let src = read_text("bootstrap/fixtures/parser/invalid_indentation_jump.zp")
+    let lines = split(trim(src), "\n")
+    say "lines count: " + str(len(lines))
+    let parsed = parse_generic_function(lines)
+    say "parsed count: " + str(len(parsed))
+    return none
+
+test()

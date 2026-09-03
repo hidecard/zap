@@ -1,0 +1,8 @@
+export fn test():
+    let cursor = 0
+    while cursor < 3:
+        cursor = cursor + 1
+    say "done: " + str(cursor)
+    return none
+
+test()

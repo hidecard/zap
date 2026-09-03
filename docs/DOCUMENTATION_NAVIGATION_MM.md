@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap Documentation Navigation
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **ရည်ရွယ်ချက်:** ဤစာမျက်နှာသည် learner၊ language user၊ package author၊ runtime maintainer နှင့် release operator များအတွက် Burmese entry point ဖြစ်ပါသည်။ Normative behavior သည် canonical specification သို့မဟုတ် explicit linked contract တွင်သာ သတ်မှတ်ပါသည်။ ရှင်းလင်းဖော်ပြသည့် guide များသည် ထို contract များကို တိတ်တဆိတ် override မလုပ်ရပါ။
 
 ## လေ့လာမည့်လမ်းကြောင်း ရွေးချယ်ခြင်း
@@ -15,7 +15,7 @@
 | Runtime maintainer | [Language specification](LANGUAGE_SPEC_MM.md) | [Memory model](MEMORY_MODEL_MM.md)၊ [diagnostics](DIAGNOSTIC_MODEL_MM.md)၊ [async boundaries](ASYNC_BOUNDARIES_MM.md)၊ [bootstrap/self-hosting contract](BOOTSTRAP_CONTRACT_MM.md)၊ [section-A acceptance contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_MM.md) |
 | Tooling contributor | [Async/LSP guide](ASYNC_LSP_MM.md) | [LSP implementation](../native/src/lsp.rs)၊ [canonical VS Code extension](../vscode-extension)၊ [editor assets](../editors/vscode)၊ [semantic-parity validator](../scripts/test_lsp_semantic_parity.sh)၊ [protocol synchronization contract](../scripts/test_lsp_protocol_sync.sh) |
 | Deployment operator | [Deployment guide](DEPLOYMENT_MM.md) | [Production operations](PRODUCTION_OPERATIONS_MM.md)၊ [Registry deployment policy](../deploy/registry-deployment-policy.toml)၊ [security policy](../SECURITY.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md) |
-| Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [လက်ရှိအခြေအနေ](CURRENT_STATUS_MM.md)၊ [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md)၊ [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md)၊ [v2.4.0 နောက်ပိုင်း remediation/provenance](POST_V2.4.0_REMEDIATION_MM.md)၊ [v2.11.17 release notes](RELEASE_2.11.17_MM.md)၊ [v2.11.18 preparation](RELEASE_2.11.18_PREPARATION_MM.md)၊ [branch hygiene နှင့် merge မှတ်တမ်း](BRANCH_HYGIENE_MM.md)၊ [release preflight](../scripts/release_preflight.sh)၊ [v2.11.18 preparation workflow](../.github/workflows/prepare-v2.11.18.yml) |
+| Release operator | [Release version policy](RELEASE_VERSION_POLICY_MM.md) | [လက်ရှိအခြေအနေ](CURRENT_STATUS_MM.md)၊ [Release signing](RELEASE_SIGNING_MM.md)၊ [rollback runbook](RELEASE_ROLLBACK_RUNBOOK_MM.md)၊ [benchmark contract](BENCHMARK_HARNESS_MM.md)၊ [RustSec audit evidence](RUSTSEC_AUDIT_MM.md)၊ [v2.2.0 နောက်ပိုင်း remediation/provenance](POST_V2.2.0_REMEDIATION_MM.md)၊ [v2.4.0 နောက်ပိုင်း remediation/provenance](POST_V2.4.0_REMEDIATION_MM.md)၊ [v2.11.18 release notes](RELEASE_2.11.17_MM.md)၊ [v2.11.18 preparation](RELEASE_2.11.18_PREPARATION_MM.md)၊ [branch hygiene နှင့် merge မှတ်တမ်း](BRANCH_HYGIENE_MM.md)၊ [release preflight](../scripts/release_preflight.sh)၊ [v2.11.18 preparation workflow](../.github/workflows/prepare-v2.11.18.yml) |
 | Bootstrap engineer | [Rust မှ လွတ်လပ်ရေး roadmap](RUST_INDEPENDENCE_ROADMAP_MM.md) | [Self-hosting acceptance contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_MM.md)၊ [B0 baseline](../bootstrap/BASELINE_B0.md)၊ Rust-free seed-pipeline gate |
 | Language designer | [Traits/composition RFC](TRAITS_RFC_MM.md) | [Language specification](LANGUAGE_SPEC_MM.md)၊ [compatibility template](COMPATIBILITY_CHANGE_TEMPLATE_MM.md) |
 
@@ -23,12 +23,12 @@
 
 | Audience section | Verified entry point | Canonical companion |
 |---|---|---|
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
- — v2.11.17 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
+ — v2.11.18 |
 
 ## Normative contract map
 

@@ -1,4 +1,4 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # A3 User-Defined Generic Declarations — Design and Acceptance Record
 
 **Status:** Design gate; A3 is not complete and Zap remains B0. Rust remains the reference compiler, type checker, runtime, and diagnostic owner.

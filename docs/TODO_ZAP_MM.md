@@ -95,7 +95,7 @@ Zap v0.9.1 release line တွင် class-based OOP၊ inheritance၊ collectio
 - [x] Native Rust reference နှင့် Zap candidate verifier များတွင် deterministic direct option-constructor acceptance/rejection evidence ထည့်ရန်။
 - [x] Provisional ownership ledger တွင် `BOOT-032` နှင့် `bootstrap/fixtures/typecheck/option_annotation_incompatible.zp` ထည့်ရန်။
 - [x] v2.11.16 exact preflight၊ cross-platform release workflow နှင့် public artifact/signature verification များ အားလုံး အောင်မြင်ပြီး v2.11.16 ကို published အဖြစ် မှတ်တမ်းတင်ရန်။
-- [x] v2.11.17 preparation အတွက် A2 exact-expression matrix ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ ရွေးချယ်ရန်။
+- [x] v2.11.18 preparation အတွက် A2 exact-expression matrix ကို compound guard၊ mutation၊ alias သို့မဟုတ် arbitrary control-flow generalization မပြုဘဲ Rust reference behavior နှင့် paired fixture evidence အပေါ် အခြေခံ၍ ရွေးချယ်ရန်။
 - [x] Exact `1 + 2` ကို `number`၊ `"a" + "b"` ကို `text`၊ `1 < 2` နှင့် `true and false` ကို `bool`၊ `ok(1)` ကို `result<number>` အဖြစ် Rust reference နှင့် candidate တို့တွင် deterministic စစ်ဆေးရန်။
 - [x] Rust reference က reject လုပ်သည့် numeric/text၊ text/numeric၊ boolean-logic/text နှင့် result-constructor/text mismatch pair များကို stable line-1/column-1 diagnostics ဖြင့် စစ်ဆေးရန်။ Comparison expression အတွက် broader annotation များတွင် reference compatibility ရှိသောကြောင့် မရှိသော negative case မဖန်တီးရန်။
 - [x] Native နှင့် candidate B2 verifier များကို A2 matrix အပါအဝင် deterministic output case 35 ခုအထိ တိုးချဲ့ရန်။

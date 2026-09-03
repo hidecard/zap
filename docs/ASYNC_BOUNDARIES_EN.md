@@ -1,9 +1,9 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # Zap Async Boundaries
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 
-**Status:** Normative runtime-boundary guidance for Zap v2.11.17
+**Status:** Normative runtime-boundary guidance for Zap v2.11.18
 
 ## Purpose
 
@@ -49,7 +49,7 @@ The matrix also runs `scripts/test_platform_archive.sh` on every runner. That re
 
 ## Stability rules
 
-are the stable baseline for v2.11.17
+are the stable baseline for v2.11.18
 
 A future production implementation must add, at minimum:
 

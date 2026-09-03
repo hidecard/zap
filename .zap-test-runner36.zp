@@ -1,0 +1,9 @@
+export fn test():
+    let lines = ["a", "b", "c"]
+    let cursor = 0
+    while cursor < len(lines):
+        let x = lines[cursor]
+    say "done"
+    return none
+
+test()

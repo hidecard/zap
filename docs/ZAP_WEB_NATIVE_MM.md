@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # Zap-first Web Framework လမ်းညွှန်
 
-**အတည်ပြုထားသော baseline:** Zap v2.11.17၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
+**အတည်ပြုထားသော baseline:** Zap v2.11.18၊ merged `master`။ မူလ Framework အလုပ်များကို Web contract foundation အဖြစ် ဆက်လက်ထိန်းသိမ်းထားသည်။
 
 ## ရည်ရွယ်ချက်
 

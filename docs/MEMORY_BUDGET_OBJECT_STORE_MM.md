@@ -1,7 +1,7 @@
-**လက်ရှိ release line:** v2.11.17
+**လက်ရှိ release line:** v2.11.18
 # MemoryBudget နှင့် ObjectStore Contract
 
-**စစ်ဆေးထားသော baseline:** Zap v2.11.17
+**စစ်ဆေးထားသော baseline:** Zap v2.11.18
 
 **Design status:** M2-MEM-02 logical accounting နှင့် rollback slice
 

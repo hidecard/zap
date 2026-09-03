@@ -1,7 +1,7 @@
-**Current release line:** v2.11.17
+**Current release line:** v2.11.18
 # P0 Full Language Ownership Matrix
 
-**Verified baseline:** Zap v2.11.17
+**Verified baseline:** Zap v2.11.18
 **Purpose:** Canonical owner/fixture/status registry for every Zap language domain — grammar, generics, aliases, dataflow, overloads, traits/MRO, closures, diagnostics, stdlib, package resolver, lockfile, CLI/LSP, and VM behavior.
 **Machine-readable index:** [`LANGUAGE_OWNERSHIP_MATRIX.tsv`](LANGUAGE_OWNERSHIP_MATRIX.tsv)
 
