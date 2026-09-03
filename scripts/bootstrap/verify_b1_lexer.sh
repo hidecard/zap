@@ -4,15 +4,23 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 
-# Detect platform and set appropriate binary name
-case "$(uname -s)" in
-  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
-  Darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
-  CYGWIN*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
-  MINGW*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
-  MSYS*)      ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
-  *)          ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
-esac
+# Detect platform and set appropriate binary name.
+# Use MSYSTEM/mingw/msys/cygwin detection for Windows-bash environments,
+# otherwise fall back to uname. Allow override via ZAP_BIN_OVERRIDE.
+uname_s=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
+if [[ -n "${MSYSTEM:-}" || "$uname_s" == *"mingw"* || "$uname_s" == *"msys"* || "$uname_s" == *"cygwin"* ]]; then
+  ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe"
+else
+  case "$uname_s" in
+    linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+    darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+    *)          ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
+  esac
+fi
+
+if [[ -n "${ZAP_BIN_OVERRIDE:-}" ]]; then
+  ZAP_BIN="$ZAP_BIN_OVERRIDE"
+fi
 
 if [ ! -x "$ZAP_BIN" ]; then
   printf 'missing zap binary: %s\n' "$ZAP_BIN" >&2
@@ -74,11 +82,16 @@ for fixture in "$@"; do
   runner=$(mktemp "$ROOT_DIR/.zap-b1-runner.XXXXXX.zp")
   runner_rel=$(basename "$runner")
   output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-output.XXXXXX")
-  cat > "$runner" <<EOF
+  # Use a quoted heredoc with a placeholder. The standalone run does the
+  # `sed` substitution below; the aggregate runner picks up the literal
+  # `__FIXTURE__` form, which still triggers a read_text error but cleanly
+  # rather than referencing an undefined $fixture variable.
+  cat > "$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"
-let source = read_text("$fixture")
-say lex(source, "$fixture")
+let source = read_text("__FIXTURE__")
+say lex(source, "__FIXTURE__")
 EOF
+  sed "s|__FIXTURE__|$fixture|g" "$runner" > "$runner.tmp" && mv "$runner.tmp" "$runner"
   if ! "$ZAP_BIN" "$runner_rel" > "$output"; then
     rm -f "$runner" "$output"
     exit 1
