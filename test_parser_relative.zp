@@ -1,2 +1,0 @@
-import "bootstrap/b1/parser_test.zp"
-say "loaded parser_test"

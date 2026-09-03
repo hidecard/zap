@@ -1,4 +1,0 @@
-import "bootstrap/b2/typecheck.zp"
-let var1 = read_text("bootstrap/fixtures/typecheck/alias_generic.zp")
-let var2 = read_text("bootstrap/fixtures/typecheck/alias_mutation_invalidation.zp")
-say check(var2, "bootstrap/fixtures/typecheck/alias_mutation_invalidation.zp")

@@ -1,2 +1,0 @@
-import "bootstrap/b1/parser.zp"
-say "loaded parser only"

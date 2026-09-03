@@ -1,8 +1,0 @@
-export fn test():
-    let i = 0
-    while i < 3:
-        i = i + 1
-    say "done: " + str(i)
-    return none
-
-test()

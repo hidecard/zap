@@ -15,3 +15,8 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Verification scripts may create temporary Zap runners in the repository root.
+/*.zp
+rustup_*.snap
+rustup_*.assert
