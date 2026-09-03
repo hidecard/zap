@@ -34,11 +34,6 @@ mod lsp;
 mod runtime_state;
 mod stdlib;
 mod stdlib_catalog;
-mod stdlib_collection;
-mod stdlib_file;
-mod stdlib_json;
-mod stdlib_path;
-mod stdlib_system;
 
 use evaluator::{
     bounded_range_values, call_function_with_context, call_method_with_context,
