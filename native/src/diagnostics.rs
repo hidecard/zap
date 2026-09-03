@@ -88,6 +88,7 @@ pub(crate) enum ZapError {
     },
 }
 
+#[allow(dead_code)]
 impl ZapError {
     pub(crate) fn from_string(message: String) -> Self {
         Self::Runtime {

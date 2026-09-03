@@ -3421,6 +3421,7 @@ pub(crate) fn constructor_delegates_to_parent(function: &Function) -> bool {
             .is_some_and(ast_contains_super_init)
 }
 
+#[allow(dead_code)]
 pub(crate) fn validate_constructor_call(
     class_name: &str,
     funcs: &HashMap<String, Rc<Function>>,
@@ -3432,6 +3433,7 @@ pub(crate) fn validate_constructor_call(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub(crate) fn check_required_constructor(
     class_name: &str,
     funcs: &HashMap<String, Rc<Function>>,
@@ -3440,6 +3442,7 @@ pub(crate) fn check_required_constructor(
     funcs.contains_key(&constructor_key)
 }
 
+#[allow(dead_code)]
 pub(crate) fn validate_constructor_args(
     class_name: &str,
     args: &[Value],
@@ -3461,6 +3464,7 @@ pub(crate) fn validate_constructor_args(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub(crate) fn detect_circular_inheritance(
     class_name: &str,
     funcs: &HashMap<String, Rc<Function>>,
@@ -3480,6 +3484,7 @@ pub(crate) fn detect_circular_inheritance(
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn detect_duplicate_methods(
     class_name: &str,
     funcs: &HashMap<String, Rc<Function>>,
@@ -3499,6 +3504,7 @@ pub(crate) fn detect_duplicate_methods(
     duplicates
 }
 
+#[allow(dead_code)]
 pub(crate) fn validate_inheritance_structure(
     class_name: &str,
     funcs: &HashMap<String, Rc<Function>>,

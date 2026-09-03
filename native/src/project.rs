@@ -19,6 +19,7 @@ use super::{
 };
 
 /// Security validation for path operations to prevent directory traversal attacks
+#[allow(dead_code)]
 pub(crate) fn validate_path_security(path: &Path, project_root: &Path) -> Result<(), String> {
     // Reject absolute paths
     if path.is_absolute() {
@@ -61,6 +62,7 @@ pub(crate) fn validate_path_security(path: &Path, project_root: &Path) -> Result
 }
 
 /// Check that symlinks don't escape the project boundary
+#[allow(dead_code)]
 fn check_symlink_security(path: &Path, project_root: &Path) -> Result<(), String> {
     let mut current = path;
 
@@ -103,6 +105,7 @@ fn check_symlink_security(path: &Path, project_root: &Path) -> Result<(), String
 }
 
 /// Validate module path security to prevent escaping module boundaries
+#[allow(dead_code)]
 pub(crate) fn validate_module_path_security(
     module_path: &Path,
     project_root: &Path,
@@ -121,14 +124,16 @@ pub(crate) fn validate_module_path_security(
 }
 
 /// Check for directory traversal attempts in path strings
+#[allow(dead_code)]
 pub(crate) fn detect_path_traversal(path: &str) -> bool {
     path.contains("..") || path.starts_with('/') || path.starts_with('\\')
 }
 
 /// Sanitize a path string to prevent traversal attacks
+#[allow(dead_code)]
 pub(crate) fn sanitize_path(path: &str) -> Result<String, String> {
     if detect_path_traversal(path) {
-        return Err(format!("security: path traversal detected in: {}", path));
+        return Err(format!("security: path traversal detected in: {path}"));
     }
 
     // Remove any suspicious patterns
@@ -412,6 +417,7 @@ fn import_target_path(path: &str) -> Result<PathBuf, String> {
     Ok(relative)
 }
 
+#[allow(dead_code)]
 pub(crate) fn resolve_relative_path(
     base_path: &Path,
     relative_spec: &str,
@@ -424,7 +430,7 @@ pub(crate) fn resolve_relative_path(
     let base_parent = base_path.parent().unwrap_or_else(|| Path::new("."));
     let mut result = base_parent.to_path_buf();
 
-    for component in normalized.split("..") {
+    for _component in normalized.split("..") {
         if !result.pop() {
             return Err(format!(
                 "relative path goes beyond project root: {relative_spec}"
@@ -459,13 +465,19 @@ pub(crate) fn validate_package_name(name: &str) -> Result<(), String> {
         ));
     }
 
-    if name.chars().next().map(|c| c.is_digit(10)).unwrap_or(false) {
+    if name
+        .chars()
+        .next()
+        .map(|c| c.is_ascii_digit())
+        .unwrap_or(false)
+    {
         return Err("package name cannot start with a digit".to_string());
     }
 
     Ok(())
 }
 
+#[allow(dead_code)]
 pub(crate) fn standard_module_resolution(
     module_name: &str,
     current_path: &Path,
