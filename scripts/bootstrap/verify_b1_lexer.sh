@@ -6,7 +6,7 @@ cd "$ROOT_DIR"
 
 # Detect platform and set appropriate binary name
 case "$(uname -s)" in
-  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;  # Git Bash on Windows reports Linux but uses .exe
+  Linux*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
   Darwin*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap" ;;
   CYGWIN*)    ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;
   MINGW*)     ZAP_BIN="$ROOT_DIR/native/target/release/zap.exe" ;;

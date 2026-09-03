@@ -72,7 +72,7 @@ ZAP_CORPUS_SEED="$SEED" ZAP_CORPUS_ROUNDS="$ROUNDS" cargo test \
   --bin zap \
   --all-features \
   corpus::tests::replayable_failure_corpus_is_seeded_panic_free_and_deterministic \
-  -- --exact --nocapture > "$LOG" 2>&1 || {
+  -- --exact --nocapture 2>&1 | tee "$LOG" || {
     cat "$LOG" >&2
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tfailed\n' \
       "$SEED" "$ROUNDS" "$MAX_ROUNDS" "$fixture_count" "$fixture_bytes" \

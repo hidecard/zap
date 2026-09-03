@@ -832,15 +832,13 @@ export fn parse_generic_function(lines):
     let function = {"body": {"statements": nested["statements"]}, "constraints": constraints, "exported": false, "is_async": false, "kind": "function", "name": name_text, "params": parse_parameter_list(parameter_text), "return_type": return_type, "span": span(1, 1, len(header)), "type_params": type_params, "visibility": "public"}
     let statements = []
     statements = append(statements, function)
-    let cursor = nested["next"]
-    while cursor < len(lines):
+    for cursor in range(nested["next"], len(lines)):
         let line = lines[cursor]
         let value = trim(line)
         if value != "":
             if indentation_width(line) == 0 and (starts_with(value, "fn ") or starts_with(value, "async fn ") or starts_with(value, "class ") or starts_with(value, "trait ") or starts_with(value, "interface ") or starts_with(value, "module ")):
                 return statements
             statements = append(statements, parse_statement(line, cursor + 1, 1))
-        cursor = cursor + 1
     return statements
 
 export fn parse_generic_class_single(lines):
@@ -2061,6 +2059,9 @@ export fn parse_general(source, source_name):
     let token_indent = token_indentation_diagnostic(lexed["tokens"], source_name)
     if token_indent != none:
         return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    let while_else = while_else_diagnostic(source, source_name)
+    if while_else != none:
+        return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     # The source-line parser is the canonical block assembler. Token metadata
     # remains available to expression helpers, but it must not control the
     # top-level cursor for valid compound programs.

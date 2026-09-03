@@ -11,7 +11,13 @@ fixtures=(
 run_native() {
   local mode=$1
   local fixture=$2
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap "$mode" "$fixture"
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" bootstrap "$mode" "$fixture"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" bootstrap "$mode" "$fixture"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap "$mode" "$fixture"
+  fi
 }
 
 for entry in "${fixtures[@]}"; do

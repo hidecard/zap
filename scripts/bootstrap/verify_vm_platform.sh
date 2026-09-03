@@ -15,7 +15,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap vm-demo > "$actual"
+if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+  ZAP_BIN="$ROOT_DIR/bin/zap"
+elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+  ZAP_BIN="$ROOT_DIR/native/target/release/zap"
+else
+  ZAP_BIN="cargo run --quiet --release --locked --manifest-path native/Cargo.toml --"
+fi
+
+"$ZAP_BIN" bootstrap vm-demo > "$actual"
 python3 - "$ROOT_DIR" "$actual" <<'PY'
 import json
 import pathlib

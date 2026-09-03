@@ -4,7 +4,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 runner=$(mktemp "$ROOT_DIR/.zap-b1-general-parser.XXXXXX.zp")
 out=$(mktemp "${TMPDIR:-/tmp}/zap-b1-general-parser-out.XXXXXX")
-trap 'rm -f "$runner" "$out"' EXIT
+trap 'rm -f "$out"' EXIT
 cat >"$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"
 import "bootstrap/b1/parser.zp"

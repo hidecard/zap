@@ -50,14 +50,18 @@ true
 true
 EOF
 
+run_zap() {
+  if [ -x "${ZAP_BIN:-native/target/release/zap}" ]; then
+    env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME \
+      "${ZAP_BIN:-native/target/release/zap}" "$1"
+  else
+    env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME \
+      cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$1"
+  fi
+}
+
 # Run with Rust vars unset
-env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME \
-  ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
-else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
-fi > "$out"
+run_zap "$runner" > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed with Rust vars unset"
 
 # Test 2: Run with Rust vars set (normal env) - should produce identical output

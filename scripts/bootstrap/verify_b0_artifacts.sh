@@ -18,7 +18,13 @@ fi
 
 run_zap() {
   if [[ "$PROFILE" == release ]]; then
-    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+    if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+      "$ROOT_DIR/bin/zap" "$@"
+    elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+      "$ROOT_DIR/native/target/release/zap" "$@"
+    else
+      cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+    fi
   else
     cargo run --quiet --locked --manifest-path native/Cargo.toml -- "$@"
   fi

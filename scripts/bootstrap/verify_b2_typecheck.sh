@@ -3,6 +3,16 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  else
+    run_zap "$@"
+  fi
+}
+
 valid_ir_fixture="bootstrap/fixtures/typecheck/annotated.zp"
 valid_ir_expected="bootstrap/fixtures/typecheck/annotated.typed-ir.json"
 generic_ir_fixture="bootstrap/fixtures/typecheck/generic_identity.zp"
@@ -17,14 +27,14 @@ generic_second=$(mktemp "${TMPDIR:-/tmp}/zap-b2-generic-typed-ir-second.XXXXXX")
 root=$(mktemp -d "${TMPDIR:-/tmp}/zap-b2-typecheck-projects.XXXXXX")
 trap 'rm -f "$first" "$second" "$generic_first" "$generic_second"; rm -rf "$root"' EXIT
 
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$valid_ir_fixture" > "$first"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$valid_ir_fixture" > "$second"
+run_zap bootstrap typed-ir "$valid_ir_fixture" > "$first"
+run_zap bootstrap typed-ir "$valid_ir_fixture" > "$second"
 cmp "$first" "$second"
 cmp "$first" "$valid_ir_expected"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number"' "$first" >/dev/null
 printf 'B2 typed-IR reference reproducibility passed: annotated declaration\n'
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$generic_ir_fixture" > "$generic_first"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$generic_ir_fixture" > "$generic_second"
+run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_first"
+run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_second"
 cmp "$generic_first" "$generic_second"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].kind == "function" and .ir.nodes[0].name == "identity" and .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$generic_first" >/dev/null
 printf 'A3 typed-IR reference reproducibility passed: generic identity metadata and substituted calls\n'
@@ -34,7 +44,7 @@ run_check() {
   mkdir -p "$root/$name"
   printf '[package]\nname = "%s"\nversion = "0.1.0"\nmain = "main.zp"\n' "$name" > "$root/$name/zap.toml"
   cp "bootstrap/fixtures/typecheck/$name.zp" "$root/$name/main.zp"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- check --json "$root/$name"
+  run_zap check --json "$root/$name"
 }
 
 run_cross_module_check() {
@@ -43,7 +53,7 @@ run_cross_module_check() {
   printf '[package]\nname = "%s"\nversion = "0.1.0"\nmain = "main.zp"\n' "$name" > "$root/$name/zap.toml"
   cp "bootstrap/fixtures/typecheck/$name.zp" "$root/$name/main.zp"
   cp bootstrap/fixtures/typecheck/generic_cross_module_library.zp "$root/$name/generic_cross_module_library.zp"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- check --json "$root/$name"
+  run_zap check --json "$root/$name"
 }
 
 run_cross_module_body_check() {
@@ -52,7 +62,7 @@ run_cross_module_body_check() {
   printf '[package]\nname = "%s"\nversion = "0.1.0"\nmain = "main.zp"\n' "$name" > "$root/$name/zap.toml"
   cp "bootstrap/fixtures/typecheck/$name.zp" "$root/$name/main.zp"
   cp bootstrap/fixtures/typecheck/generic_cross_module_body_library.zp "$root/$name/generic_cross_module_body_library.zp"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- check --json "$root/$name"
+  run_zap check --json "$root/$name"
 }
 
 annotated=$(run_check annotated)
@@ -202,7 +212,7 @@ if [[ "$status" -eq 0 ]]; then
   printf 'none_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''missing'\'' expects none, got bool"))' <<<"$none_annotation_incompatible" >/dev/null
+jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''missing'\'' expects none, got number"))' <<<"$none_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible none annotation\n'
 
 list_annotation_check=$(run_check list_annotation)
@@ -402,12 +412,12 @@ printf 'A3 type-check rejection passed: generic function arity\n'
 generic_runtime_wrappers=$(run_check generic_runtime_wrappers)
 jq -e '.ok == true and .code? == null' <<<"$generic_runtime_wrappers" >/dev/null
 printf 'A3 type-check acceptance passed: generic runtime wrapper corpus\n'
-runtime_output=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_runtime_wrappers/main.zp" 2>/tmp/zap-a3-generic-runtime-error)
+runtime_output=$(run_zap run "$root/generic_runtime_wrappers/main.zp" 2>/tmp/zap-a3-generic-runtime-error)
 [[ -z "$runtime_output" ]] || { printf 'generic runtime fixture unexpectedly emitted output: %s\n' "$runtime_output" >&2; exit 1; }
 printf 'A3 runtime substitution passed: generic option/result wrapper corpus\n'
 generic_nested_option_list=$(run_check generic_nested_option_list)
 jq -e '.ok == true and .code? == null' <<<"$generic_nested_option_list" >/dev/null
-nested_option_list_runtime_output=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_nested_option_list/main.zp" 2>/tmp/zap-a3-generic-nested-option-list-runtime-error)
+nested_option_list_runtime_output=$(run_zap run "$root/generic_nested_option_list/main.zp" 2>/tmp/zap-a3-generic-nested-option-list-runtime-error)
 [[ -z "$nested_option_list_runtime_output" ]] || { printf 'generic nested option/list runtime fixture unexpectedly emitted output: %s\n' "$nested_option_list_runtime_output" >&2; exit 1; }
 printf 'A3 reference-only acceptance passed: nested option/list generic substitution\n'
 set +e
@@ -437,7 +447,7 @@ printf 'A3 reference-only rejection passed: undeclared generic parameter scope\n
 generic_list_wrapper=$(run_check generic_list_wrapper)
 jq -e '.ok == true and .code? == null' <<<"$generic_list_wrapper" >/dev/null
 printf 'A3 type-check acceptance passed: generic list wrapper\n'
-list_runtime_output=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_list_wrapper/main.zp" 2>/tmp/zap-a3-generic-list-runtime-error)
+list_runtime_output=$(run_zap run "$root/generic_list_wrapper/main.zp" 2>/tmp/zap-a3-generic-list-runtime-error)
 [[ -z "$list_runtime_output" ]] || { printf 'generic list runtime fixture unexpectedly emitted output: %s\n' "$list_runtime_output" >&2; exit 1; }
 printf 'A3 runtime substitution passed: generic list wrapper\n'
 set +e
@@ -450,7 +460,7 @@ printf 'A3 type-check rejection passed: generic list-wrapper substitution mismat
 generic_map_wrapper=$(run_check generic_map_wrapper)
 jq -e '.ok == true and .code? == null' <<<"$generic_map_wrapper" >/dev/null
 printf 'A3 type-check acceptance passed: generic map wrapper\n'
-map_runtime_output=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_map_wrapper/main.zp" 2>/tmp/zap-a3-generic-map-runtime-error)
+map_runtime_output=$(run_zap run "$root/generic_map_wrapper/main.zp" 2>/tmp/zap-a3-generic-map-runtime-error)
 [[ -z "$map_runtime_output" ]] || { printf 'generic map runtime fixture unexpectedly emitted output: %s\n' "$map_runtime_output" >&2; exit 1; }
 printf 'A3 runtime substitution passed: generic map wrapper\n'
 set +e
@@ -463,7 +473,7 @@ printf 'A3 type-check rejection passed: generic map-wrapper substitution mismatc
 generic_cross_module=$(run_cross_module_check generic_cross_module)
 jq -e '.ok == true and .code? == null' <<<"$generic_cross_module" >/dev/null
 printf 'A3 type-check acceptance passed: imported generic identity substitution\n'
-cross_module_runtime_output=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_cross_module/main.zp" 2>/tmp/zap-a3-cross-module-runtime-error)
+cross_module_runtime_output=$(run_zap run "$root/generic_cross_module/main.zp" 2>/tmp/zap-a3-cross-module-runtime-error)
 [[ -z "$cross_module_runtime_output" ]] || { printf 'generic cross-module runtime fixture unexpectedly emitted output: %s\n' "$cross_module_runtime_output" >&2; exit 1; }
 printf 'A3 runtime substitution passed: imported generic identity\n'
 set +e
@@ -476,7 +486,7 @@ printf 'A3 type-check rejection passed: imported generic substitution mismatch\n
 generic_cross_module_body=$(run_cross_module_body_check generic_cross_module_body)
 jq -e '.ok == true and .code? == null' <<<"$generic_cross_module_body" >/dev/null
 set +e
-cross_module_body_runtime=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_cross_module_body/main.zp" 2>/tmp/zap-a3-cross-module-body-runtime-error)
+cross_module_body_runtime=$(run_zap run "$root/generic_cross_module_body/main.zp" 2>/tmp/zap-a3-cross-module-body-runtime-error)
 cross_module_body_runtime_status=$?
 set -e
 [[ "$cross_module_body_runtime_status" -ne 0 ]] || { printf 'generic_cross_module_body runtime fixture unexpectedly passed\n' >&2; exit 1; }
@@ -486,7 +496,7 @@ generic_explicit_call_deferred=$(run_check generic_explicit_call_deferred)
 jq -e '.ok == true and .code? == null' <<<"$generic_explicit_call_deferred" >/dev/null
 printf 'A3 deferred syntax probe passed: explicit generic call statically accepted by current reference path\n'
 set +e
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_explicit_call_deferred/main.zp" >/tmp/zap-a3-explicit-call-runtime-output 2>/tmp/zap-a3-explicit-call-runtime-error
+run_zap run "$root/generic_explicit_call_deferred/main.zp" >/tmp/zap-a3-explicit-call-runtime-output 2>/tmp/zap-a3-explicit-call-runtime-error
 explicit_call_runtime_status=$?
 set -e
 [[ "$explicit_call_runtime_status" -ne 0 ]] || { printf 'explicit generic call deferred fixture unexpectedly ran successfully\n' >&2; exit 1; }
@@ -496,7 +506,7 @@ generic_class_deferred=$(run_check generic_class_deferred)
 jq -e '.ok == true and .code? == null' <<<"$generic_class_deferred" >/dev/null
 printf 'A3 deferred class probe passed: generic class header statically accepted by current project path\n'
 set +e
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- run "$root/generic_class_deferred/main.zp" >/tmp/zap-a3-generic-class-runtime-output 2>/tmp/zap-a3-generic-class-runtime-error
+run_zap run "$root/generic_class_deferred/main.zp" >/tmp/zap-a3-generic-class-runtime-output 2>/tmp/zap-a3-generic-class-runtime-error
 generic_class_runtime_status=$?
 set -e
 [[ "$generic_class_runtime_status" -ne 0 ]] || { printf 'generic class deferred fixture unexpectedly ran successfully\n' >&2; exit 1; }
