@@ -4,6 +4,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b3-transitive.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
@@ -49,11 +50,11 @@ say missing["errors"][0]["code"]
 say repeat_one == repeat_two
 say lock_satisfies_manifest(generated_lock["manifest"], generated_lock["dependencies"])
 ZP
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true resolved 3 a c true 3 d e shared false ZAP-PKG-CYCLE-001 false ZAP-PKG-VERSION-001 false ZAP-PKG-CHECKSUM-001 false ZAP-PKG-MISSING-001 true true" ]]; then

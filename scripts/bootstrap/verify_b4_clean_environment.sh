@@ -21,6 +21,7 @@ fail() {
 }
 
 runner=$(mktemp "$ROOT_DIR/.zap-clean-env.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
@@ -65,11 +66,11 @@ run_zap "$runner" > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed with Rust vars unset"
 
 # Test 2: Run with Rust vars set (normal env) - should produce identical output
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected" || fail "normal environment run produced different output"
 
@@ -97,11 +98,11 @@ true
 true
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected" || fail "sequential runs showed state leakage"
 
@@ -119,11 +120,11 @@ cat > "$expected" <<'EOF'
 true
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected" || fail "platform evidence record validation failed"
 
@@ -148,11 +149,11 @@ cat > "$expected" <<'EOF'
 true
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed for diverse source surfaces"
 

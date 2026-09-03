@@ -4,6 +4,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b3-registry.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
@@ -53,11 +54,11 @@ say cache_ok["status"]
 say cache_bad["error"]
 say cache_missing["error"]
 ZP
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "0 true 1.4.2 1.2.9 1.2.9 ZAP-PKG-VERSION-INVALID-001 true true registry_url_rejected true registry_url_rejected registry_method_rejected registry_request_limits_invalid accepted registry_http_status registry_content_type_rejected registry_response_too_large_or_empty verified cache_checksum_mismatch cache_checksum_missing" ]]; then

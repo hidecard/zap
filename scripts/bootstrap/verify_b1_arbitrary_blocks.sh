@@ -14,6 +14,7 @@ for fixture in \
 done
 
 runner=$(mktemp "$ROOT_DIR/.zap-arbitrary-blocks-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-arbitrary-blocks-output.XXXXXX")
 trap 'rm -f "$runner" "$output"' EXIT
 cat > "$runner" <<'EOF'
@@ -38,11 +39,11 @@ report("arbitrary_deep_indentation.zp")
 report("arbitrary_nested_blocks_complex.zp")
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$output"
 
 # while ... else is explicitly unsupported -> diagnostic with the dedicated message.

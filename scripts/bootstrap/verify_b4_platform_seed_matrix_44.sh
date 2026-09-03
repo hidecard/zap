@@ -4,6 +4,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b4-platform-seed.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
@@ -24,11 +25,11 @@ say seed_platform_matrix_valid(wrong_status, targets)
 say seed_platform_matrix_valid(missing_target, targets)
 say seed_platform_matrix_valid(valid, ["linux-x86_64", "macos-arm64", "linux-x86_64"])
 ZP
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true true false contract_only 3 false false false false" ]]; then

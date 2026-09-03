@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 runner=$(mktemp "$ROOT_DIR/.zap-b1-general-parser.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp "${TMPDIR:-/tmp}/zap-b1-general-parser-out.XXXXXX")
 trap 'rm -f "$out"' EXIT
 cat >"$runner" <<'EOF'
@@ -24,11 +25,11 @@ say parse_general(function_source, "general-function.zp")
 say parse_general(class_source, "general-class.zp")
 say parse_general(module_source, "general-module.zp")
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 grep -q '"kind":"zap.ast"' "$out"
 grep -q '"name":"first"' "$out"

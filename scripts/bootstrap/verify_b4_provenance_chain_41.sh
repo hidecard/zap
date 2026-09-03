@@ -4,6 +4,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b4-provenance.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
@@ -32,11 +33,11 @@ say rebuild_provenance_chain_valid(plan, bad_stage)
 say rebuild_provenance_chain_valid(plan, bad_empty)
 say json(records) == json([rebuild_provenance_record(plan, lexer, "source-digest", "tokens-digest"), rebuild_provenance_record(plan, parser, "tokens-digest", "ast-digest"), rebuild_provenance_record(plan, typed, "ast-digest", "typed-ir-digest")])
 ZP
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true contract_only false 3 source tokens source-digest false false false true" ]]; then

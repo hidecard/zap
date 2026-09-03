@@ -25,6 +25,7 @@ run_case() {
   local expected_semantic=${4:-1}
   local runner out reference reference_literal source_literal name
   runner=$(mktemp "$ROOT_DIR/.zap-a9-arbitrary-parity.XXXXXX.zp")
+  runner_rel=$(basename "$runner")
   out=$(mktemp)
   trap 'rm -f "$runner" "$out"' RETURN
   name=$(basename "$fixture")
@@ -45,11 +46,11 @@ let comparison = typed_ir_compare_reference_program(reference, first)
 say json(comparison)
 say json(first) == json(second)
 ZP
-  ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+  ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
   mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
   [[ "${#lines[@]}" -eq 2 ]] || { echo "unexpected output for $fixture: ${lines[*]}" >&2; return 1; }

@@ -19,6 +19,7 @@ fail() {
 }
 
 runner=$(mktemp "$ROOT_DIR/.zap-byte-det.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out_a=$(mktemp)
 out_b=$(mktemp)
 expected_a=$(mktemp)
@@ -61,11 +62,11 @@ say rebuild_equal
 say pipeline_equal
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out_a"
 
 cat > "$expected_a" <<'EOF'
@@ -79,11 +80,11 @@ EOF
 cmp "$out_a" "$expected_a" || fail "first run did not produce deterministic artifacts"
 
 # Second run: same source, fresh process
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out_b"
 
 cmp "$out_a" "$out_b" || fail "second run produced different output"
@@ -104,11 +105,11 @@ say third["byte_equal"]
 say first["status"] == "reproducible"
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out_a"
 
 cat > "$expected_b" <<'EOF'
@@ -133,11 +134,11 @@ say first["byte_equal"]
 say first["status"] == "reproducible"
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out_a"
 
 cat > "$expected_c" <<'EOF'

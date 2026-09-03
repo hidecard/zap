@@ -6,6 +6,7 @@ for path in bootstrap/b2/typed_ir.zp bootstrap/fixtures/typecheck/annotated.zp b
   [[ -f "$path" ]] || { printf 'missing B2 typed-IR candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 runner=$(mktemp "$ROOT_DIR/.zap-b2-typed-ir-candidate-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 first=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-candidate-first.XXXXXX")
 second=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-candidate-second.XXXXXX")
 reference=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-reference.XXXXXX")
@@ -24,17 +25,17 @@ say emit(generic_source, "bootstrap/fixtures/typecheck/generic_identity.zp")
 say emit(two_source, "bootstrap/fixtures/typecheck/two_declarations.zp")
 say emit(bool_source, "bootstrap/fixtures/typecheck/bool_literal.zp")
 EOF_RUNNER
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$first"
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$second"
 cmp "$first" "$second"
 cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"

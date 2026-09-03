@@ -4,6 +4,7 @@ ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-source-vm-loops-try.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
@@ -71,11 +72,11 @@ raised
 reproducible
 true
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected"
 printf 'B4 loop/exception source-to-VM gate passed: while, literal-list for, nested loops, try/catch, diagnostics, and rebuild\n'

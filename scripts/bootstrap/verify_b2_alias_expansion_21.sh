@@ -61,11 +61,11 @@ if not b2c_check_program(p4["ast"], "f4.zp")["ok"]:
     say "C4_REJECTED"
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  out=$("$ZAP_BIN" "$runner")
+  out=$("$ZAP_BIN" "$runner_rel")
 else
-  out=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner")
+  out=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel")
 fi
 
 echo "$out" | grep -q "C1_OK" || { echo "✗ Nested alias expansion rejected"; exit 1; }

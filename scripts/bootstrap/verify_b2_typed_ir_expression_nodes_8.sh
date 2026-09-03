@@ -4,6 +4,7 @@ ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-ir-expr.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
@@ -32,11 +33,11 @@ await
 propagate
 name
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected"
 printf 'B2 typed-IR expression-node gate passed: 8 index/member/await/propagate cases\n'

@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 runner=$(mktemp "$ROOT_DIR/.zap-b1-class-methods.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp "${TMPDIR:-/tmp}/zap-b1-class-methods-out.XXXXXX")
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZAP'
@@ -26,11 +27,11 @@ say mixed_members[1]["body"]["statements"][0]["kind"]
 ZAP
 export PATH="$HOME/.cargo/bin:$PATH"
 export RUSTUP_TOOLCHAIN=1.88.0
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 grep -q '^1$' "$out"
 grep -q '^2$' "$out"

@@ -28,6 +28,7 @@ for fixture in \
 done
 
 runner=$(mktemp "$ROOT_DIR/.zap-token-native-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-token-native-output.XXXXXX")
 trap 'rm -f "$output"' EXIT
 
@@ -56,7 +57,7 @@ report("while_without_else.zp")
 report("while_else_syntax.zp")
 EOF
 
-run_zap "$runner" > "$output"
+run_zap "$runner_rel" > "$output"
 
 # Valid arbitrary programs must parse to an AST through the token-native path.
 for valid in arbitrary_deep_indentation arbitrary_nested_blocks_complex mixed_top_level_statements while_without_else; do

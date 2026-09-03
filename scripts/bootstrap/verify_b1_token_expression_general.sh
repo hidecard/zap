@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 runner=$(mktemp "$ROOT_DIR/.zap-b1-token-expression.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp "${TMPDIR:-/tmp}/zap-b1-token-expression-out.XXXXXX")
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'EOF'
@@ -19,11 +20,11 @@ say parse_token_expression(grouped["tokens"])
 say parse_token_expression(list["tokens"])
 say parse_token_expression(suffix["tokens"])
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi >"$out"
 grep -q '"op":"multiply"' "$out"
 grep -q '"op":"or"' "$out"

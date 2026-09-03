@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 runner=$(mktemp "$ROOT_DIR/.zap-b2-check-canonical-compatibility-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-b2-check-canonical-compatibility-output.XXXXXX")
 trap 'rm -f "$runner" "$output"' EXIT
 cat > "$runner" <<'EOF'
@@ -31,11 +32,11 @@ say result_core(check_legacy(type_error, "type_error.zp")) == result_core(check(
 say result_core(check_legacy(generic, "generic.zp")) == result_core(check(generic, "generic.zp"))
 say result_core(check_legacy(malformed_generic, "malformed_generic.zp")) == result_core(check(malformed_generic, "malformed_generic.zp"))
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$output"
 expected=$'true\ntrue\ntrue\ntrue'
 printf '%s\n' "$expected" | cmp -s - "$output"

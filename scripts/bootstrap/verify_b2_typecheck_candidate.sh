@@ -6,6 +6,7 @@ for path in bootstrap/b2/typecheck.zp bootstrap/fixtures/typecheck/annotated.zp 
   [[ -f "$path" ]] || { printf 'missing B2 candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 runner=$(mktemp "$ROOT_DIR/.zap-b2-typecheck-candidate-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 first=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typecheck-candidate-first.XXXXXX")
 second=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typecheck-candidate-second.XXXXXX")
 trap 'rm -f "$runner" "$first" "$second"' EXIT
@@ -148,17 +149,17 @@ say check(reassignment_invalidation_incompatible, "bootstrap/fixtures/typecheck/
 say check(compound_guard, "bootstrap/fixtures/typecheck/compound_guard.zp")
 say check(compound_guard_incompatible, "bootstrap/fixtures/typecheck/compound_guard_incompatible.zp")
 EOF_RUNNER
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$first"
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$second"
 cmp "$first" "$second"
 [[ "$(wc -l < "$first")" -eq 68 ]] || { printf 'unexpected B2 candidate output line count\n' >&2; exit 1; }

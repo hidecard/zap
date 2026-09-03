@@ -4,6 +4,7 @@ ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
 
 runner=$(mktemp "$ROOT_DIR/.zap-b2-canonical-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 
@@ -17,11 +18,11 @@ say json(check_ast_complete(valid["ast"], "canonical-valid.zp"))
 say json(check_ast_complete(invalid["ast"], "canonical-invalid.zp"))
 EOF
 
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 sed -n '1p' "$out" | jq -e '(.kind == "zap.typecheck") and (.ok == true) and (.schema_version == 1) and ((.diagnostics | length) == 0)' >/dev/null
 sed -n '2p' "$out" | jq -e '(.kind == "zap.typecheck") and (.ok == false) and (.schema_version == 1) and (.diagnostics[0].code == "ZAP-TYPE-001") and (.diagnostics[0].kind == "TypeError") and (.diagnostics[0].message | contains("expects number, got text"))' >/dev/null

@@ -87,6 +87,7 @@ for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_ex
 done
 
 runner=$(mktemp "$ROOT_DIR/.zap-b1-parser-candidate-runner.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-output.XXXXXX")
 expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected.XXXXXX")
 trap 'rm -f "$runner" "$output" "$expected"' EXIT
@@ -240,11 +241,11 @@ EOF
   cat "$missing_assignment_expected"
   cat "$missing_function_paren_expected"
 } > "$expected"
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$output"
 cmp "$output" "$expected"
 printf 'B1 Zap parser candidate differential passed: arithmetic AST, compound AST, and token-driven delimiter diagnostics\n'

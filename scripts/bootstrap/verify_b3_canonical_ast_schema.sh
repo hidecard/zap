@@ -9,6 +9,7 @@ grep -qx 'version = 1' "$contract"
 grep -qx 'schema_version = 1' <(sed -n '/^\[envelope\]/,/^\[/p' "$contract" | grep '^schema_version')
 grep -qx 'schema_version = 1' <(sed -n '/^\[diagnostics\]/,/^\[/p' "$contract" | grep '^schema_version')
 runner=$(mktemp "$ROOT_DIR/.zap-b3-canonical-schema.XXXXXX.zp")
+runner_rel=$(basename "$runner")
 out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
@@ -45,11 +46,11 @@ none
 zap.ast
 1
 EOF
-ZAP_BIN="${ZAP_BIN:-native/target/release/zap}"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner"
+  "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner"
+  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected"
 printf 'B3 canonical AST schema gate passed: versioned envelope, member/map nodes, and lowering fields\n'
