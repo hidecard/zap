@@ -31,35 +31,54 @@ note()  { printf 'NOTE: %s\n' "$1"; }
 LEAKS=0
 
 # --- 1. Run a representative subset of the bootstrap verifier suite. ---
-# These three scripts were the only bootstrap verifiers that previously
-# lacked a complete EXIT trap for $ROOT_DIR scratch files. Running them
-# here exercises the trap fix end-to-end.
-declare -a SUBSET=(
+# The PRIMARY subset covers the three scripts that previously lacked a
+# complete EXIT trap for $ROOT_DIR scratch files and were hardened in
+# this change.
+#
+# The SECONDARY subset exercises scripts that already had a complete
+# trap but were refactored to use the run_zap() helper, so the gate
+# proves the in-flight refactor remains cleanup-safe end-to-end.
+declare -a PRIMARY_SUBSET=(
   scripts/bootstrap/verify_b1_lexer.sh
   scripts/bootstrap/verify_b1_general_parser.sh
   scripts/bootstrap/verify_b1_token_native_indentation.sh
 )
+declare -a SECONDARY_SUBSET=(
+  scripts/bootstrap/verify_b1_branch_chain.sh
+  scripts/bootstrap/verify_b1_parser_candidate.sh
+  scripts/bootstrap/verify_b3_foundations.sh
+  scripts/bootstrap/verify_b4_byte_determinism.sh
+  scripts/bootstrap/verify_reference_differential_matrix_24.sh
+)
+
+run_subset() {
+  local label="$1"
+  shift
+  local script
+  for script in "$@"; do
+    if [[ ! -x "$script" ]]; then
+      fail "subset script not executable: $script"
+      continue
+    fi
+    printf 'running [%s] %s\n' "$label" "$script"
+    if bash "$script" >/dev/null; then
+      pass "$script"
+    else
+      rc=$?
+      # Verifier failure is reported separately; cleanup behavior is still
+      # validated below by the leak-pattern check.
+      note "$script exited with $rc (trap path still validated below)"
+    fi
+  done
+}
 
 printf 'Zap bootstrap repo-root cleanliness gate\n'
 printf 'Repository: %s\n' "$ROOT_DIR"
 printf '%-18s %s\n' 'CHECK' 'RESULT'
 printf '%-18s %s\n' '-----' '------'
 
-for script in "${SUBSET[@]}"; do
-  if [[ ! -x "$script" ]]; then
-    fail "subset script not executable: $script"
-    continue
-  fi
-  printf 'running %s\n' "$script"
-  if bash "$script" >/dev/null; then
-    pass "$script (success path)"
-  else
-    rc=$?
-    # Failure path is also a trap-exercising path; report what happened but
-    # do not treat a verifier failure as a leak (that's a separate concern).
-    note "$script exited with $rc (trap path still validated below)"
-  fi
-done
+run_subset primary "${PRIMARY_SUBSET[@]}"
+run_subset secondary "${SECONDARY_SUBSET[@]}"
 
 # --- 2. Force a failure path to exercise EXIT trap on abnormal exit. ---
 # Trigger the lexer script with a bad fixture so it exits non-zero while

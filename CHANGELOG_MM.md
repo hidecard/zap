@@ -13,6 +13,8 @@
 - `bootstrap-clean-repo-test` Makefile target အသစ်ထည့်ပြီး `make test` ထဲသို့ ချိတ်ဆက်ထားသည်။
 - `scripts/bootstrap/verify_b1_lexer.sh`၊ `verify_b1_general_parser.sh` နှင့် `verify_b1_token_native_indentation.sh` တို့ကို success/abnormal exit path နှစ်မျိုးလုံးတွင် `$ROOT_DIR` `mktemp` scratch file ကို cleanup လုပ်ရန် harden လုပ်ထားသည်။
 - `scripts/test_validate_release_version.sh` တွင် binary-lag regression block ထည့်ထားသည်။ `ZAP_CLI_BINARY` က `native/Cargo.toml` ထက် အဟောင်းဆန်သော version ကို report လုပ်ပါက test ကို fail လုပ်ပြီး (binary က match ဖြစ်ပါက pass ဆက်ရှိသည်)။ Committed `bin/zap` သည် Cargo source version ထက် lag ဖြစ်နေသော failure mode ကို ပိတ်သည်။
+- `scripts/bootstrap/assert_clean_repo_root.sh` တွင် secondary subset ထပ်ထည့်ထားပြီး `run_zap()` helper သုံး refactor လုပ်ထားသော B1/B3/B4 verifier များကို end-to-end စစ်ဆေးသဖြင့် commit မလုပ်မီ in-flight portability refactor ကို cleanup-safe အဖြစ် ဆက်ထိန်းထားသည်။
+- `scripts/bootstrap/run_zap_refactor_smoke.sh` smoke gate အသစ်ထည့်ထားပြီး ၃ phase (bash -n parse check၊ end-to-end smoke run per-script 60s timeout၊ before/after repo-root diff — script-induced leaks နှင့် pre-existing LSP-created artifacts ကို ခွဲခြားရန်) ဖြင့် `run_zap()` refactor ၁၅၀ script ကို run သည်။ `make test` ထဲသို `bootstrap-refactor-smoke-test` အဖြစ် ချိတ်ထားသည်။ `zap lsp` သည် workspace root တွင် `.zap-*.zp` files များကို အလုပ်လုပ်နေကြောင်း တွေ့ရှိခဲ့ပြီး၊ ထိုအချက်က before/after snapshot design ကို ဖြစ်ပေါ်စေခဲ့သည်။
 
 ## [2.11.18] - 2026-09-03
 

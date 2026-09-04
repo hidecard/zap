@@ -13,6 +13,8 @@
 - Added the `bootstrap-clean-repo-test` Makefile target and wired it into `make test`.
 - Hardened `scripts/bootstrap/verify_b1_lexer.sh`, `verify_b1_general_parser.sh`, and `verify_b1_token_native_indentation.sh` so every `$ROOT_DIR` `mktemp` scratch file is cleaned on both success and abnormal exit paths.
 - Extended `scripts/test_validate_release_version.sh` with a binary-lag regression block that fails the test if `ZAP_CLI_BINARY` reports an older version than `native/Cargo.toml` (and that still passes when the binary matches). Closes the failure mode where a committed `bin/zap` lags behind the Cargo source version.
+- Extended `scripts/bootstrap/assert_clean_repo_root.sh` with a secondary subset that exercises B1/B3/B4 verifiers refactored to use the `run_zap()` helper, keeping the in-flight portability refactor cleanup-safe end-to-end before commit.
+- Added `scripts/bootstrap/run_zap_refactor_smoke.sh` that runs the full 150-script `run_zap()` refactor through three phases (bash -n parse check, end-to-end smoke run with 60s timeout per script, before/after repo-root diff to separate script-induced leaks from pre-existing LSP-created artifacts). Wired into `make test` as `bootstrap-refactor-smoke-test`. Discovered that `zap lsp` was actively creating `.zap-*.zp` files in the workspace root, explaining previously-anomalous reports and motivating the before/after snapshot design.
 
 ## [2.11.18] - 2026-09-03
 
