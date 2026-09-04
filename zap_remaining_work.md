@@ -61,6 +61,7 @@ Session အတွင်း staged (uncommitted) changes:
 - `bootstrap/b1/lexer.zp`: CR handling fix
 - `bootstrap/b1/parser.zp`: numeric literal parsing fix
 - `bootstrap/b2/typecheck.zp`: imported alias module-resolution infrastructure
+- `bootstrap/b3/lower.zp`: for/try-catch lowering added
 - `bootstrap/fixtures/typecheck/alias_imported*.zp`: imported alias fixtures
 - `scripts/bootstrap/verify_b2_imported_aliases.sh`: imported alias verifier
 - `scripts/bootstrap/verify_b2_alias_expansion_21.sh`: runner_rel definition fix
@@ -77,7 +78,7 @@ B2 P0 generic constraints၊ alias environment၊ နှင့် dataflow အ�
 
 P0 B2 generic constraints၊ alias environment၊ နှင့် dataflow အားလုံး verified pass ဖြစ်ပါပြီ။ လက်ရှိ အခြေခံ အလုပ်များမှာ:
 
-1. **P1 — B3 canonical AST bridge:** for/try-catch, map/index runtime alignment, function/class/module full coverage ကို တိုးချဲ့ရန်။
+1. **P1 — B3 canonical AST bridge:** ✅ for/try-catch lowering added to `bootstrap/b3/lower.zp`. map/index runtime alignment, function/class/module full coverage ကို တိုးချဲ့ရန်။
 
 2. **P1 — B3 typed-IR producer:** production emitter (parser AST direct consume) ကို တိုးချဲ့ရန်။
 
