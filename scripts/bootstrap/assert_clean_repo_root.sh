@@ -2,19 +2,25 @@
 # Zap P0 CI assertion: bootstrap verifier temporary-file hygiene.
 #
 # Runs a representative subset of the bootstrap verifier suite, then
-# inspects the repo root for any leftover scratch artifacts that were not
-# declared as transient by .gitignore. Fails nonzero (exit 1) on any
-# offending path so a leaked mktemp or absent EXIT trap is caught in the
-# same CI run that produced it.
+# inspects the repo root for any scratch artifacts INTRODUCED by the run
+# (NEW files appearing after the gate started). Fails nonzero (exit 1)
+# on any offending path so a leaked mktemp or absent EXIT trap is caught
+# in the same CI run that produced it.
 #
-# Patterns declared transient by .gitignore (/* zp, rustup_*.snap,
-# rustup_*.assert) are NOT treated as leaks because the bootstrap
-# pipeline may legitimately leave them behind between ad-hoc runs and
-# they remain untracked.
+# The before/after snapshot pattern means this gate stays correct in
+# developer environments where `zap lsp` (or another background
+# process) is creating its own .zap-*.zp files in the workspace root;
+# those files existed before the gate ran, so the gate ignores them.
+# In CI (no LSP, no LSP) every pre-existing file is recorded as
+# snapshot baseline and only script-induced ones are flagged.
 #
-# Anything else matching the leaked-pattern list below is a leak.
+# Patterns declared transient by .gitignore (/*.zp, rustup_*.snap,
+# rustup_*.assert) are NOT treated as leaks. The gate only inspects
+# the LEADING-DOT (.zap-*) family because .gitignore only allows plain
+# "./*.zp" (no leading dot), so any ".zap-*" file is an unexpected
+# scratch file from the viewpoint of the bootstrap pipeline.
 
-set -euo pipefail
+set -uo pipefail
 IFS=$'\n\t'
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -25,19 +31,28 @@ if [[ -f "$HOME/.cargo/env" ]]; then
 fi
 
 pass()  { printf 'PASS: %s\n' "$1"; }
-fail()  { printf 'FAIL: %s\n' "$1" >&2; LEAKS=1; }
+fail()  { printf 'FAIL: %s\n' "$1" >&2; LEAKS=$((LEAKS + 1)); }
 note()  { printf 'NOTE: %s\n' "$1"; }
 
 LEAKS=0
 
-# --- 1. Run a representative subset of the bootstrap verifier suite. ---
-# The PRIMARY subset covers the three scripts that previously lacked a
-# complete EXIT trap for $ROOT_DIR scratch files and were hardened in
-# this change.
+# --- 1. Snapshot the repo root BEFORE running the subset. ---
+# This distinguishes NEW leaks (script-induced, this run) from
+# pre-existing scratch files (e.g. from `zap lsp`, an interactive
+# shell, or a developer ad-hoc run). The before/after diff is what
+# keeps this gate correct in non-CI environments.
+SNAPSHOT_BEFORE="$(mktemp)"
+trap 'rm -f "$SNAPSHOT_BEFORE" "$SNAPSHOT_AFTER"' EXIT
+find "$ROOT_DIR" -maxdepth 1 -name '.zap-*' -printf '%f\n' 2>/dev/null | sort > "$SNAPSHOT_BEFORE"
+before_count=$(wc -l < "$SNAPSHOT_BEFORE")
+
+# --- 2. Run a representative subset of the bootstrap verifier suite. ---
+# PRIMARY covers the three scripts that previously lacked a complete
+# EXIT trap for $ROOT_DIR scratch files and were hardened.
 #
-# The SECONDARY subset exercises scripts that already had a complete
-# trap but were refactored to use the run_zap() helper, so the gate
-# proves the in-flight refactor remains cleanup-safe end-to-end.
+# SECONDARY exercises scripts that already had a complete trap but
+# were refactored to use the run_zap() helper, so the gate proves
+# the in-flight refactor remains cleanup-safe end-to-end.
 declare -a PRIMARY_SUBSET=(
   scripts/bootstrap/verify_b1_lexer.sh
   scripts/bootstrap/verify_b1_general_parser.sh
@@ -65,8 +80,6 @@ run_subset() {
       pass "$script"
     else
       rc=$?
-      # Verifier failure is reported separately; cleanup behavior is still
-      # validated below by the leak-pattern check.
       note "$script exited with $rc (trap path still validated below)"
     fi
   done
@@ -76,74 +89,34 @@ printf 'Zap bootstrap repo-root cleanliness gate\n'
 printf 'Repository: %s\n' "$ROOT_DIR"
 printf '%-18s %s\n' 'CHECK' 'RESULT'
 printf '%-18s %s\n' '-----' '------'
+note "baseline: $before_count pre-existing .zap-* scratch files in repo root"
 
 run_subset primary "${PRIMARY_SUBSET[@]}"
 run_subset secondary "${SECONDARY_SUBSET[@]}"
 
-# --- 2. Force a failure path to exercise EXIT trap on abnormal exit. ---
-# Trigger the lexer script with a bad fixture so it exits non-zero while
-# having already created a $ROOT_DIR scratch file; the trap must still
-# clean it up.
+# --- 3. Force a failure path to exercise EXIT trap on abnormal exit. ---
 printf 'running forced-failure path: verify_b1_lexer.sh BAD_NONEXISTENT.zp\n'
 bash scripts/bootstrap/verify_b1_lexer.sh BAD_NONEXISTENT.zp >/dev/null 2>&1 || true
 
-# --- 3. Inspect repo root for leftover scratch artifacts. ---
-# Patterns considered transient (allowed by .gitignore and not flagged):
-#   ./*.zp
-#   ./rustup_*.snap
-#   ./rustup_*.assert
-# Patterns that indicate a leaked temp file (must be empty):
-LEAK_PATTERNS=(
-  '.zap-b1-runner.????????.zp'
-  '.zap-b1-general-parser.????????.zp'
-  '.zap-b1-token-expression.????????.zp'
-  '.zap-b1-traits-parser.????????.zp'
-  '.zap-b1-branches.????????.zp'
-  '.zap-b1-class-methods.????????.zp'
-  '.zap-arbitrary-blocks-runner.????????.zp'
-  '.zap-boundary-runner.????????.zp'
-  '.zap-branch-chain-runner.????????.zp'
-  '.zap-control-flow-runner.????????.zp'
-  '.zap-decls.????????.zp'
-  '.zap-recursive-block-runner.????????.zp'
-  '.zap-parser-stmt.????????.zp'
-  '.zap-token-cursor-runner.????????.zp'
-  '.zap-token-native-runner.????????.zp'
-  '.zap-diff.????????'
-  '.zap-byte-det.????????.zp'
-  '.zap-clean-env.????????.zp'
-  '.zap-rebuild-bytes.????????.zp'
-  '.zap-runner.????????.zp'
-  '.zap-source-vm.????????.zp'
-  '.zap-b4-*.????????.zp'
-  '.zap-b3-*.????????.zp'
-  '.zap-b2-*.????????.zp'
-  '.zap-a*.????????.zp'
-  '.zap-p2-*.????????.zp'
-)
+# --- 4. Inspect repo root for NEW scratch artifacts introduced by the run. ---
+SNAPSHOT_AFTER="$(mktemp)"
+trap 'rm -f "$SNAPSHOT_BEFORE" "$SNAPSHOT_AFTER"' EXIT
+find "$ROOT_DIR" -maxdepth 1 -name '.zap-*' -printf '%f\n' 2>/dev/null | sort > "$SNAPSHOT_AFTER"
 
-for pat in "${LEAK_PATTERNS[@]}"; do
-  matches=$(find "$ROOT_DIR" -maxdepth 1 -name "$pat" -print 2>/dev/null | head -20)
-  if [[ -n "$matches" ]]; then
-    while IFS= read -r m; do
-      [[ -z "$m" ]] && continue
-      fail "leaked repo-root scratch artifact: $m"
-    done <<< "$matches"
-  fi
-done
-
-# Generic catch-all: any hidden file in repo root whose name starts with
-# ".zap-" that wasn't matched above. .gitignore only allows plain "./*.zp"
-# (no leading dot), so anything like ".zap-*" is an unexpected scratch file.
-unexpected=$(find "$ROOT_DIR" -maxdepth 1 -name '.zap-*' -print 2>/dev/null)
-if [[ -n "$unexpected" ]]; then
+# New files = in after, not in before. Use comm -13 to suppress column 1 (only-in-before)
+# and column 2 (only-in-both when? actually comm outputs 3 columns by default: 1=only-file1,
+# 2=only-file2, 3=both). -13 suppresses cols 1 and 3, leaving col 2 = only-in-file2 = NEW.
+new_leaks="$(comm -13 "$SNAPSHOT_BEFORE" "$SNAPSHOT_AFTER")"
+if [[ -n "$new_leaks" ]]; then
   while IFS= read -r m; do
     [[ -z "$m" ]] && continue
-    fail "unexpected hidden repo-root scratch: $m"
-  done <<< "$unexpected"
+    fail "NEW repo-root scratch artifact introduced by this gate: $m"
+  done <<< "$new_leaks"
+else
+  pass "no NEW repo-root .zap-* artifacts introduced by the run"
 fi
 
-# --- 4. Report final result. ---
+# --- 5. Report final result. ---
 if (( LEAKS == 0 )); then
   pass "no leaked repo-root scratch artifacts detected"
   printf 'bootstrap repo-root cleanliness gate passed\n'
