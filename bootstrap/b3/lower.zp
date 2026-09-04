@@ -313,6 +313,54 @@ export fn lower_node(node):
         instructions = patch_jump(instructions, end_target - 1, node["loop_start"])
         instructions = patch_breaks(instructions, node["loop_start"] + end_target)
         return {"error": none, "instructions": instructions}
+    if kind == "for":
+        let iterable = lower_expression(node["iterable"])
+        if iterable["error"] != none:
+            return iterable
+        let body = lower_loop_body(node["body"], node["loop_start"])
+        if body["error"] != none:
+            return body
+        let instructions = iterable["instructions"]
+        let loop_start = len(instructions)
+        instructions = append(instructions, {"op": "dup"})
+        let length_jump_index = len(instructions)
+        instructions = append(instructions, {"op": "jump_if_false", "target": 0})
+        let index_jump_index = len(instructions)
+        instructions = append(instructions, {"op": "jump", "target": 0})
+        let item_target = len(instructions)
+        instructions = append(instructions, {"op": "index", "field": node["binding"]})
+        instructions = append(instructions, {"op": "store", "name": node["binding"]})
+        for instruction in body["instructions"]:
+            instructions = append(instructions, instruction)
+        let continue_target = len(instructions)
+        instructions = append(instructions, {"op": "const", "value": 1})
+        instructions = append(instructions, {"op": "add"})
+        instructions = patch_jump(instructions, index_jump_index, item_target)
+        instructions = patch_jump(instructions, length_jump_index, continue_target)
+        instructions = patch_breaks(instructions, continue_target)
+        return {"error": none, "instructions": instructions}
+    if kind == "try_catch":
+        let try_begin_index = len(instructions)
+        let with_begin = append(instructions, {"op": "try_begin", "target": 0})
+        let try_body = lower_block(node["body"])
+        if try_body["error"] != none:
+            return try_body
+        let with_end = append(try_body["instructions"], {"op": "try_end"})
+        let exit_jump_index = len(with_end)
+        let with_exit_jump = append(with_end, {"op": "jump", "target": 0})
+        let catch_binding = none
+        if contains(json(node), "\"catch_binding\""):
+            catch_binding = node["catch_binding"]
+        let catch_locals = []
+        if catch_binding != none:
+            catch_locals = [{"name": catch_binding, "value": none}]
+        let catch_body = lower_block_with_prefix(node["catch_body"], catch_locals)
+        if catch_body["error"] != none:
+            return catch_body
+        let catch_target = exit_jump_index + 1
+        let patched_begin = patch_jump(with_exit_jump, try_begin_index, catch_target)
+        let patched_exit = patch_jump(patched_begin, exit_jump_index, catch_target + len(catch_body["instructions"]))
+        return {"error": none, "instructions": patched_exit}
     if kind == "break":
         let instructions = []
         return {"error": none, "instructions": append(instructions, {"op": "break_jump"})}
