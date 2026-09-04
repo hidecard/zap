@@ -3411,22 +3411,60 @@ export fn b2c_collect_trait_class_errors(statements, registry, source_name, erro
             result = b2c_collect_trait_class_errors(statement["catch_body"]["statements"], registry, source_name, result)
     return result
 
-export fn b2c_collect_type_aliases(statements, result):
+export fn b2c_resolve_module_path(import_path, source_name):
+    let clean_path = import_path
+    if starts_with(clean_path, "\"") and ends_with(clean_path, "\""):
+        clean_path = substring(clean_path, 1, len(clean_path) - 1)
+    let base_dir = ""
+    if contains(source_name, "/"):
+        let last_slash = len(source_name)
+        let found = false
+        let idx = len(source_name) - 1
+        while not found and idx >= 0:
+            let ch = substring(source_name, idx, idx + 1)
+            if ch == "/":
+                found = true
+                base_dir = substring(source_name, 0, idx + 1)
+            else:
+                idx = idx - 1
+    let candidates = []
+    if base_dir != "":
+        candidates = append(candidates, base_dir + clean_path + ".zp")
+    candidates = append(candidates, clean_path + ".zp")
+    for candidate in candidates:
+        let src = read_text(candidate)
+        if src != none and len(src) > 0:
+            return src
+    return none
+
+export fn b2c_parse_module_source(source, source_name):
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] == "zap.diagnostics":
+        return none
+    return parsed["ast"]
+
+export fn b2c_collect_type_aliases(statements, result, source_name):
     let aliases = result
     for statement in statements:
         if statement["kind"] == "type_alias":
             aliases = append(aliases, statement)
+        if statement["kind"] == "import":
+            let module_source = b2c_resolve_module_path(statement["path"], source_name)
+            if module_source != none:
+                let module_ast = b2c_parse_module_source(module_source, statement["path"])
+                if module_ast != none:
+                    aliases = b2c_collect_type_aliases(module_ast["statements"], aliases, statement["path"])
         if statement["kind"] == "if":
-            aliases = b2c_collect_type_aliases(statement["then_branch"]["statements"], aliases)
+            aliases = b2c_collect_type_aliases(statement["then_branch"]["statements"], aliases, source_name)
             if statement["else_branch"] != none:
-                aliases = b2c_collect_type_aliases(statement["else_branch"]["statements"], aliases)
+                aliases = b2c_collect_type_aliases(statement["else_branch"]["statements"], aliases, source_name)
         if statement["kind"] == "while" or statement["kind"] == "for":
-            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases, source_name)
         if statement["kind"] == "try_catch":
-            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
-            aliases = b2c_collect_type_aliases(statement["catch_body"]["statements"], aliases)
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases, source_name)
+            aliases = b2c_collect_type_aliases(statement["catch_body"]["statements"], aliases, source_name)
         if statement["kind"] == "class":
-            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases)
+            aliases = b2c_collect_type_aliases(statement["body"]["statements"], aliases, source_name)
     return aliases
 
 export fn b2c_alias_base_name(type_name):
@@ -3619,7 +3657,7 @@ export fn b2c_detect_alias_cycles(aliases, source_name):
     return errors
 
 export fn b2c_check_program(ast, source_name):
-    let aliases = b2c_collect_type_aliases(ast["statements"], [])
+    let aliases = b2c_collect_type_aliases(ast["statements"], [], source_name)
     let errors = []
     for alias in aliases:
         errors = b2c_append_errors(errors, b2c_check_alias_validity(alias, source_name))
