@@ -44,7 +44,18 @@ say additive["kind"]
 say additive["schema_version"]
 say additive["ast"]["statements"] != none
 ZAP
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner" > "$out"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
+run_zap "$runner" > "$out"
 cat > "$work/expected" <<'EOF'
 zap.ast
 1

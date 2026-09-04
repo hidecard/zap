@@ -17,14 +17,14 @@ if (($# > 0)); then
 fi
 
 run_zap() {
-  if [[ "$PROFILE" == release ]]; then
-    if [[ -x "$ROOT_DIR/bin/zap" ]]; then
-      "$ROOT_DIR/bin/zap" "$@"
-    elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-      "$ROOT_DIR/native/target/release/zap" "$@"
-    else
-      cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
-    fi
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ "$PROFILE" == release ]]; then
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   else
     cargo run --quiet --locked --manifest-path native/Cargo.toml -- "$@"
   fi
@@ -34,7 +34,7 @@ tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/zap-b0-artifacts.XXXXXX")
 cleanup() {
   rm -rf "$tmp_dir"
 }
-trap cleanup EXIT
+#trap cleanup EXIT
 
 run_zap bootstrap status > "$tmp_dir/status.json"
 run_zap bootstrap tokens bootstrap/fixtures/lexer/basic.zp > "$tmp_dir/basic.tokens.json"
