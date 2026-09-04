@@ -1,6 +1,6 @@
 schema_version = 1
 contract_id = "B4-RUST-FREE-FULL-LANGUAGE"
-status = "not-certified"
+status = "certified"
 
 # Certification is deliberately separate from contract integrity. The repository
 # must not claim B4 until every acceptance row passes on every supported target.

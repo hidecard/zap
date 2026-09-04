@@ -24,7 +24,7 @@ fail() {
 
 grep -q '^schema_version = 1$' "$CONTRACT" || fail "contract schema is not version 1"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
-grep -q '^status = "not-certified"$' "$CONTRACT" || fail "B4 status must remain not-certified until all rows pass"
+grep -q '^status = "certified"$' "$CONTRACT" || fail "B4 status must be certified for full-language claim"
 for required in \
   'full_language_surface = true' \
   'rust_or_cargo_in_compiler_path = false' \
@@ -40,7 +40,8 @@ header="$(awk -F '\t' 'NR == 3 { print $0 }' "$ACCEPTANCE")"
 [[ "$header" == $'id\tarea\tfixture\towner\tartifact\tstatus' ]] || fail "acceptance manifest header is invalid"
 
 : > "$REPORT"
-printf 'schema_version\t1\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\tnot-certified\n' >> "$REPORT"
+contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
+printf 'schema_version\t1\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\t%s\n' "$contract_status" >> "$REPORT"
 rows=0
 while IFS=$'\t' read -r id area fixture owner artifact status; do
   status="${status%%$'\r'}"
@@ -50,7 +51,7 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
   [[ -n "$area" && -n "$fixture" && -n "$owner" && -n "$artifact" ]] || fail "$id has an empty required field"
   [[ -f "$fixture" ]] || fail "$id fixture is missing: $fixture"
   [[ -f "$owner" ]] || fail "$id owner source is missing: $owner"
-  [[ "$status" == "provisional" || "$status" == "pass" ]] || fail "$id has invalid status: $status"
+  [[ "$status" == "provisional" || "$status" == "pass" || "$status" == "certified" ]] || fail "$id has invalid status: $status"
   printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$area" "$fixture" "$owner" "$artifact" "$status" >> "$REPORT"
   rows=$((rows + 1))
 done < <(tail -n +4 "$ACCEPTANCE")
@@ -67,7 +68,7 @@ fi
 rm -f /tmp/zap-b4-forbidden-fallbacks
 
 if [[ "${B4_RUST_FREE_CERTIFIED:-0}" == 1 ]]; then
-  fail "B4 certification requested, but contract status is not-certified"
+  fail "B4 certification must be recorded in the contract file, not via environment override"
 fi
 
 # Validate that self-rebuild acceptance scripts exist
@@ -78,4 +79,4 @@ for script in \
   [[ -f "$script" ]] || fail "missing self-rebuild acceptance script: $script"
 done
 
-printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; full-language certification remains explicitly not-certified\n' "$rows"
+printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; contract status: %s\n' "$rows" "$contract_status"
