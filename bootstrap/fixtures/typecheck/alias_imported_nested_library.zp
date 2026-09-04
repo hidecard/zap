@@ -1,0 +1,2 @@
+type Inner = list<number>
+type Outer = Inner

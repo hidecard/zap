@@ -1,0 +1,3 @@
+import "alias_imported_library"
+
+let boxed: Boxed<number> = some(42)
