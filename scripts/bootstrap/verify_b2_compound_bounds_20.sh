@@ -4,6 +4,17 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 
 echo "Testing compound generic bounds..."
@@ -52,7 +63,7 @@ ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   out=$("$ZAP_BIN" "$runner_rel")
 else
-  out=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel")
+  out=$(run_zap "$runner_rel")
 fi
 
 echo "$out" | grep -q "VALID_OK" || { echo "✗ Valid compound bounds rejected"; exit 1; }

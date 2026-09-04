@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 
 fixtures=(
   "bootstrap/fixtures/parser/compound.zp|bootstrap/fixtures/parser/compound.ast.json|ast"
@@ -16,7 +27,7 @@ run_native() {
   elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
     "$ROOT_DIR/native/target/release/zap" bootstrap "$mode" "$fixture"
   else
-    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap "$mode" "$fixture"
+    run_zap bootstrap "$mode" "$fixture"
   fi
 }
 

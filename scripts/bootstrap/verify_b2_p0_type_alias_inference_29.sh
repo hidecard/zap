@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b2-type-alias.XXXXXX.zp")
 runner_rel=$(basename "$runner")
@@ -31,7 +42,7 @@ ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "number option<list<number>> list<option<list<text>>> true 0 true 0 false unknown type annotation 'Box<number, text>' true 0" ]]; then

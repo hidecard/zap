@@ -6,6 +6,14 @@
 
 # Zap Changelog
 
+## [Unreleased]
+
+### P0 release hygiene
+- Added `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion that runs a representative subset of bootstrap verifiers (success path and forced-failure path) and fails nonzero if any `$ROOT_DIR` scratch artifact remains after EXIT. This closes the TODO.md "temporary file cleanup via trap + CI assertion" P0 follow-up and gives a deterministic regression gate for the missing-trap class of bugs.
+- Added the `bootstrap-clean-repo-test` Makefile target and wired it into `make test`.
+- Hardened `scripts/bootstrap/verify_b1_lexer.sh`, `verify_b1_general_parser.sh`, and `verify_b1_token_native_indentation.sh` so every `$ROOT_DIR` `mktemp` scratch file is cleaned on both success and abnormal exit paths.
+- Extended `scripts/test_validate_release_version.sh` with a binary-lag regression block that fails the test if `ZAP_CLI_BINARY` reports an older version than `native/Cargo.toml` (and that still passes when the binary matches). Closes the failure mode where a committed `bin/zap` lags behind the Cargo source version.
+
 ## [2.11.18] - 2026-09-03
 
 ## [2.11.17] — 2026-08-27

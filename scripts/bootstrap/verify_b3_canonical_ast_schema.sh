@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 contract="bootstrap/contracts/AST_SCHEMA.toml"
 grep -qx 'schema = "zap.ast"' "$contract"
@@ -50,7 +61,7 @@ ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi > "$out"
 cmp "$out" "$expected"
 printf 'B3 canonical AST schema gate passed: versioned envelope, member/map nodes, and lowering fields\n'

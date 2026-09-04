@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 for path in bootstrap/b2/typed_ir.zp bootstrap/fixtures/typecheck/annotated.zp bootstrap/fixtures/typecheck/annotated.typed-ir.json bootstrap/fixtures/typecheck/two_declarations.zp bootstrap/fixtures/typecheck/two_declarations.typed-ir.json bootstrap/fixtures/typecheck/generic_identity.zp bootstrap/fixtures/typecheck/bool_literal.zp bootstrap/fixtures/typecheck/bool_literal.typed-ir.json; do
   [[ -f "$path" ]] || { printf 'missing B2 typed-IR candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
@@ -29,19 +40,19 @@ ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi > "$first"
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi > "$second"
 cmp "$first" "$second"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/generic_identity.zp > "$generic_reference"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/two_declarations.zp > "$two_reference"
-cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir bootstrap/fixtures/typecheck/bool_literal.zp > "$bool_reference"
+run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"
+run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/generic_identity.zp > "$generic_reference"
+run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/two_declarations.zp > "$two_reference"
+run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/bool_literal.zp > "$bool_reference"
 jq -e 'select(.source_name == "bootstrap/fixtures/typecheck/annotated.zp") | .candidate_only == true and .kind == "zap.typed_ir" and .schema_version == 1 and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number" and .ir.nodes[0].name == "value" and .ir.nodes[0].value.value == 1' "$first" >/dev/null
 jq --slurpfile reference "$reference" -e '.[0].ir.nodes[0].annotation == $reference[0].ir.nodes[0].annotation and .[0].ir.nodes[0].inferred_type == $reference[0].ir.nodes[0].inferred_type and .[0].ir.nodes[0].name == $reference[0].ir.nodes[0].name and .[0].ir.nodes[0].value == $reference[0].ir.nodes[0].value' <(jq -s '.' "$first") >/dev/null
 jq -e 'select(.source_name == "bootstrap/fixtures/typecheck/generic_identity.zp") | .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$first" >/dev/null

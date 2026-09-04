@@ -4,6 +4,18 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 
+# Track every temp file created during the run so the EXIT trap can clean
+# them all up. Without this, leftover .zap-b1-runner.XXXXXX.zp files would
+# pollute the repository root if the script aborts mid-loop.
+zap_lexer_temp_files=()
+cleanup_lexer_temps() {
+  local f
+  for f in "${zap_lexer_temp_files[@]:-}"; do
+    [[ -n "$f" ]] && rm -f "$f"
+  done
+}
+trap cleanup_lexer_temps EXIT
+
 # Detect platform and set appropriate binary name.
 # Use MSYSTEM/mingw/msys/cygwin detection for Windows-bash environments,
 # otherwise fall back to uname. Allow override via ZAP_BIN_OVERRIDE.
@@ -82,6 +94,7 @@ for fixture in "$@"; do
   runner=$(mktemp "$ROOT_DIR/.zap-b1-runner.XXXXXX.zp")
   runner_rel=$(basename "$runner")
   output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-output.XXXXXX")
+  zap_lexer_temp_files+=("$runner" "$output")
   # Use a quoted heredoc with a placeholder. The standalone run does the
   # `sed` substitution below; the aggregate runner picks up the literal
   # `__FIXTURE__` form, which still triggers a read_text error but cleanly
@@ -93,14 +106,11 @@ say lex(source, "__FIXTURE__")
 EOF
   sed "s|__FIXTURE__|$fixture|g" "$runner" > "$runner.tmp" && mv "$runner.tmp" "$runner"
   if ! "$ZAP_BIN" "$runner_rel" > "$output"; then
-    rm -f "$runner" "$output"
     exit 1
   fi
   if ! cmp "$output" "$expected"; then
     printf 'B1 lexer differential mismatch: %s\n' "$fixture" >&2
-    rm -f "$runner" "$output"
     exit 1
   fi
-  rm -f "$runner" "$output"
   printf 'B1 lexer differential passed: %s (%s)\n' "$fixture" "$mode"
 done

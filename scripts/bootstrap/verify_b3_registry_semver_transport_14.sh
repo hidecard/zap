@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b3-registry.XXXXXX.zp")
 runner_rel=$(basename "$runner")
@@ -58,7 +69,7 @@ ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "0 true 1.4.2 1.2.9 1.2.9 ZAP-PKG-VERSION-INVALID-001 true true registry_url_rejected true registry_url_rejected registry_method_rejected registry_request_limits_invalid accepted registry_http_status registry_content_type_rejected registry_response_too_large_or_empty verified cache_checksum_mismatch cache_checksum_missing" ]]; then

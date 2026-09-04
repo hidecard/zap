@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 tmp_dir=$(mktemp -d "$ROOT_DIR/.zap-diff.XXXXXX")
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -32,24 +43,24 @@ typed_fixtures=(
 count=0
 for fixture in "${parser_fixtures[@]}"; do
   base=$(basename "$fixture")
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap ast "$fixture" > "$tmp_dir/$base.ast.1"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap ast "$fixture" > "$tmp_dir/$base.ast.2"
+  run_zap bootstrap ast "$fixture" > "$tmp_dir/$base.ast.1"
+  run_zap bootstrap ast "$fixture" > "$tmp_dir/$base.ast.2"
   cmp "$tmp_dir/$base.ast.1" "$tmp_dir/$base.ast.2"
   jq -e '.kind == "zap.ast" and (.schema_version | type == "number") and (.ast | type == "object")' "$tmp_dir/$base.ast.1" >/dev/null
   count=$((count + 1))
 done
 for fixture in "${diagnostic_fixtures[@]}"; do
   base=$(basename "$fixture")
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap diagnostics "$fixture" > "$tmp_dir/$base.diag.1"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap diagnostics "$fixture" > "$tmp_dir/$base.diag.2"
+  run_zap bootstrap diagnostics "$fixture" > "$tmp_dir/$base.diag.1"
+  run_zap bootstrap diagnostics "$fixture" > "$tmp_dir/$base.diag.2"
   cmp "$tmp_dir/$base.diag.1" "$tmp_dir/$base.diag.2"
   jq -e '.kind == "zap.diagnostics" and (.schema_version | type == "number") and (.diagnostics | type == "array")' "$tmp_dir/$base.diag.1" >/dev/null
   count=$((count + 1))
 done
 for fixture in "${typed_fixtures[@]}"; do
   base=$(basename "$fixture")
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$fixture" > "$tmp_dir/$base.ir.1"
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$fixture" > "$tmp_dir/$base.ir.2"
+  run_zap bootstrap typed-ir "$fixture" > "$tmp_dir/$base.ir.1"
+  run_zap bootstrap typed-ir "$fixture" > "$tmp_dir/$base.ir.2"
   cmp "$tmp_dir/$base.ir.1" "$tmp_dir/$base.ir.2"
   jq -e '.kind == "zap.typed_ir" and (.schema_version | type == "number") and (.ir | type == "object")' "$tmp_dir/$base.ir.1" >/dev/null
   count=$((count + 1))

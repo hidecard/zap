@@ -2,6 +2,18 @@
 
 Zap ၏ version အလိုက် ပြောင်းလဲမှုများနှင့် verified development changes များကို ဤဖိုင်တွင် မှတ်တမ်းတင်ထားသည်။ Stable release မဟုတ်သေးသော အလုပ်များကို သီးခြားဖော်ပြထားသည်။
 
+## [Unreleased]
+
+### P0 release hygiene
+- Added `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion that runs a representative subset of bootstrap verifiers (success path and forced-failure path) and fails nonzero if any `$ROOT_DIR` scratch artifact is left behind after EXIT, providing a deterministic regression gate for the missing-trap class of bugs.
+- Added the `bootstrap-clean-repo-test` Makefile target and wired it into `make test` so the new gate runs alongside the existing bootstrap verification gates.
+- Hardened `scripts/bootstrap/verify_b1_lexer.sh` with a tracked temp-file array and an EXIT trap so every per-fixture `mktemp "$ROOT_DIR/.zap-b1-runner.XXXXXX.zp"` is cleaned even when the script aborts mid-loop on a bad fixture.
+- Hardened `scripts/bootstrap/verify_b1_general_parser.sh` and `scripts/bootstrap/verify_b1_token_native_indentation.sh` to include `$runner` in the EXIT trap so the `$ROOT_DIR` scratch file is removed on both success and failure exit paths.
+- Extended `scripts/test_validate_release_version.sh` with a binary-lag regression block: when `ZAP_CLI_BINARY` points at a binary whose `--version` output reports an older release line than `native/Cargo.toml`, the validator must now report FAIL on the `zap --version` row (exit 1), and a matching-version binary must still report PASS. This closes the failure mode where a committed `bin/zap` lags behind the Cargo source version.
+
+### Documentation
+- TODO.md P0 follow-up "temporary file cleanup via trap + CI assertion" flipped from `[ ]` to `[x]`; the matching English/Myanmar current-status pages were updated to mention the new cleanliness gate.
+
 ## [2.11.18] - 2026-09-03
 
 ### Documentation

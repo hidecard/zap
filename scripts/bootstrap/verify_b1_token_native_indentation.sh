@@ -30,7 +30,7 @@ done
 runner=$(mktemp "$ROOT_DIR/.zap-token-native-runner.XXXXXX.zp")
 runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-token-native-output.XXXXXX")
-trap 'rm -f "$output"' EXIT
+trap 'rm -f "$runner" "$output"' EXIT
 
 cat > "$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"

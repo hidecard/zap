@@ -54,7 +54,7 @@ grep -Fq "$(printf 'release tag\t%s\t%s\tFAIL' "$CURRENT_VERSION" "$TAG_DRIFT_VE
 # trailing CR bytes that previously caused the package match to silently skip
 # and report <missing>. The validator must remain correct under that checkout.
 CRLF_WORK_DIR="$(mktemp -d)"
-trap 'rm -rf "$WORK_DIR" "$CRLF_WORK_DIR"' EXIT
+trap 'rm -rf "$WORK_DIR" "$CRLF_WORK_DIR" "$BIN_LAG_WORK_DIR"' EXIT
 CRLF_LOCK="$CRLF_WORK_DIR/native/Cargo.lock"
 mkdir -p "$(dirname "$CRLF_LOCK")"
 # Build a lockfile-shaped copy of the real one, but with CRLF endings, to
@@ -85,6 +85,51 @@ CRLF_AWK_OUTPUT="$(
 )"
 [[ "$CRLF_AWK_OUTPUT" == "$CURRENT_VERSION" ]] || {
   printf '%s\n' "version validator regression: CRLF lockfile parsing failed (got '$CRLF_AWK_OUTPUT', expected '$CURRENT_VERSION')" >&2
+  exit 1
+}
+
+# Regression for native-binary lag: when ZAP_CLI_BINARY points at a binary
+# whose `--version` output reports an older release line than native/Cargo.toml,
+# the validator must report FAIL on the `zap --version` row instead of
+# silently passing. Reproduces the exact mode where the committed bin/zap was
+# last rebuilt against an earlier release.
+BIN_LAG_WORK_DIR="$(mktemp -d)"
+LAG_BIN="$BIN_LAG_WORK_DIR/lagged-zap"
+cat > "$LAG_BIN" <<EOF
+#!/usr/bin/env bash
+printf 'zap ${DRIFT_VERSION} (native)\n'
+EOF
+chmod +x "$LAG_BIN"
+
+if ZAP_CLI_BINARY="$LAG_BIN" \
+   EXPECTED_VERSION="$CURRENT_VERSION" \
+   ZAP_VERSION_REPORT="$BIN_LAG_WORK_DIR/binary-drift.tsv" \
+   scripts/validate_release_version.sh "$CURRENT_VERSION" > "$BIN_LAG_WORK_DIR/binary-drift.log" 2>&1; then
+  printf '%s\n' "version validator regression: lagged binary was accepted (validator exit 0)" >&2
+  exit 1
+fi
+grep -Fq "$(printf 'zap --version\t%s\t%s\tFAIL' "$CURRENT_VERSION" "$DRIFT_VERSION")" "$BIN_LAG_WORK_DIR/binary-drift.tsv" || {
+  printf '%s\n' "version validator regression: expected FAIL row 'zap --version <expected> <observed> FAIL' missing in binary-drift.tsv" >&2
+  cat "$BIN_LAG_WORK_DIR/binary-drift.tsv" >&2
+  exit 1
+}
+
+# Companion regression: a fresh binary whose `--version` matches CURRENT_VERSION
+# must report PASS so the validator continues to work for normal releases.
+FRESH_BIN="$BIN_LAG_WORK_DIR/fresh-zap"
+cat > "$FRESH_BIN" <<EOF
+#!/usr/bin/env bash
+printf 'zap ${CURRENT_VERSION} (native)\n'
+EOF
+chmod +x "$FRESH_BIN"
+
+ZAP_CLI_BINARY="$FRESH_BIN" \
+  EXPECTED_VERSION="$CURRENT_VERSION" \
+  ZAP_VERSION_REPORT="$BIN_LAG_WORK_DIR/binary-fresh.tsv" \
+  scripts/validate_release_version.sh "$CURRENT_VERSION" > "$BIN_LAG_WORK_DIR/binary-fresh.log" 2>&1
+grep -Fq "$(printf 'zap --version\t%s\t%s\tPASS' "$CURRENT_VERSION" "$CURRENT_VERSION")" "$BIN_LAG_WORK_DIR/binary-fresh.tsv" || {
+  printf '%s\n' "version validator regression: matching binary was reported as not-PASS" >&2
+  cat "$BIN_LAG_WORK_DIR/binary-fresh.tsv" >&2
   exit 1
 }
 

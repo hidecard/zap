@@ -24,6 +24,10 @@ The `scripts/validate_release_version.sh` validator was hardened so that:
 
 All CI artifact uploads already use `if-no-files-found: warn` so a missing evidence file does not cascade a gate failure.
 
+A new `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion closes the TODO.md "temporary file cleanup via trap + CI assertion" P0 follow-up. It runs a representative subset of bootstrap verifiers (success and forced-failure paths) and fails nonzero if any `$ROOT_DIR` scratch artifact remains after EXIT, providing a deterministic regression gate for the missing-trap class of bugs. The gate is wired into `make test` as `bootstrap-clean-repo-test`. `scripts/bootstrap/verify_b1_lexer.sh`, `verify_b1_general_parser.sh`, and `verify_b1_token_native_indentation.sh` were hardened so every `$ROOT_DIR` `mktemp` scratch file is cleaned on both success and abnormal exit paths.
+
+A binary-lag regression block was added to `scripts/test_validate_release_version.sh`: when `ZAP_CLI_BINARY` points at a binary whose `--version` output reports an older release line than `native/Cargo.toml`, the validator must now report FAIL on the `zap --version` row (exit 1); when the binary matches, it must still report PASS. This closes the failure mode where a committed `bin/zap` lags behind the Cargo source version.
+
 ## Active implementation status
 
 | Area | Status label | Current boundary |

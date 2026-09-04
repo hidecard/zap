@@ -2,6 +2,17 @@
 set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 
 positive=(
@@ -30,9 +41,9 @@ run_case() {
   trap 'rm -f "$runner" "$out"' RETURN
   name=$(basename "$fixture")
   if [[ "$reference_mode" == "typed-ir" ]]; then
-    reference=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap typed-ir "$fixture")
+    reference=$(run_zap bootstrap typed-ir "$fixture")
   else
-    reference=$(cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- bootstrap diagnostics "$fixture")
+    reference=$(run_zap bootstrap diagnostics "$fixture")
   fi
   reference_literal=$(printf '%s' "$reference" | jq -c .)
   source_literal=$(jq -Rs . < "$fixture")
@@ -50,7 +61,7 @@ ZP
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
-  cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$runner_rel"
+  run_zap "$runner_rel"
 fi >"$out"
   mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
   [[ "${#lines[@]}" -eq 2 ]] || { echo "unexpected output for $fixture: ${lines[*]}" >&2; return 1; }

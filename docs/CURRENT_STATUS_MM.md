@@ -24,6 +24,10 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 
 CI artifact uploads အားလုံး `if-no-files-found: warn` သို့ ပြောင်းပြီးဖြစ်သည့်အတွက် evidence file မရှိခြင်းသည် gate ကို cascade fail မဖြစ်စေတော့ပါ။
 
+`scripts/bootstrap/assert_clean_repo_root.sh` CI assertion အသစ်သည် TODO.md ၏ "temporary file cleanup via trap + CI assertion" P0 follow-up ကို ပိတ်သည်။ ၎င်းသည် bootstrap verifier အစုအလေးတစ်ခုကို success path နှင့် forced-failure path နှစ်မျိုးလုံးဖြင့် run ပြီး EXIT ပြီနောက် `$ROOT_DIR` scratch artifact ကျန်ရှိနေပါက nonzero ဖြင့် fail လုပ်သည်။ Gate ကို `make test` ထဲသို `bootstrap-clean-repo-test` အဖြစ် ချိတ်ဆက်ထားသည်။ `scripts/bootstrap/verify_b1_lexer.sh`၊ `verify_b1_general_parser.sh` နှင့် `verify_b1_token_native_indentation.sh` တို့ကို success/abnormal exit path နှစ်မျိုးလုံးတွင် `$ROOT_DIR` `mktemp` scratch file ကို cleanup လုပ်ရန် harden လုပ်ထားသည်။
+
+`scripts/test_validate_release_version.sh` တွင် binary-lag regression block ထည့်ထားသည်။ `ZAP_CLI_BINARY` က `native/Cargo.toml` ထက် အဟောင်းဆန်သော version ကို report လုပ်ပါက validator သည် `zap --version` row တွင် FAIL ကို report လုပ်ပြီး exit 1 ဖြင့် ထွက်ရမည် (binary match ဖြစ်ပါက PASS ဆက်ရှိရမည်)။ Committed `bin/zap` သည် Cargo source version ထက် lag ဖြစ်နေသော failure mode ကို ပိတ်သည်။
+
 ## လက်ရှိ implementation အခြေအနေ
 
 | နယ်ပယ် | အခြေအနေ label | လက်ရှိ boundary |

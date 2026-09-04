@@ -34,6 +34,9 @@ bootstrap-b3-test:
 bootstrap-vm-test:
 	./scripts/bootstrap/verify_vm_platform.sh
 
+bootstrap-clean-repo-test:
+	./scripts/bootstrap/assert_clean_repo_root.sh
+
 bootstrap-non-rust-test:
 	./scripts/bootstrap/verify_non_rust_seed_pipeline.sh
 
@@ -51,7 +54,7 @@ bootstrap-self-rebuild-test: bootstrap-byte-determinism-test bootstrap-second-st
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
 
-test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b3-test bootstrap-vm-test bootstrap-non-rust-test bootstrap-self-rebuild-test
+test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b3-test bootstrap-vm-test bootstrap-clean-repo-test bootstrap-non-rust-test bootstrap-self-rebuild-test
 
 package: native
 	./package_release.sh x86_64-unknown-linux-gnu

@@ -142,7 +142,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [ ] `docs/CURRENT_STATUS_EN.md` နှင့် `docs/CURRENT_STATUS_MM.md` ကို ဤ TODO ၏ P0–P4 status ပြောင်းတိုင်း update လုပ်ရန်။
 - [ ] `CHANGELOG.md`၊ `CHANGELOG_EN.md` နှင့် `CHANGELOG_MM.md` တွင် implemented၊ provisional နှင့် deferred scope ကို ခွဲခြားရေးရန်။
 - [x] Root-level generated `.zp` runners နှင့် local toolchain artifacts များကို ဖယ်ရှားပြီး `/*.zp` နှင့် `rustup_*.snap/assert` ignore rules ထည့်ထားသည်။
-- [ ] Test scripts များ၏ temporary files အားလုံးကို `trap` ဖြင့် cleanup လုပ်ပြီး repository root မညစ်ပတ်ကြောင်း CI assertion ထည့်ရန်။
+- [x] Test scripts များ၏ temporary files အားလုံးကို `trap` ဖြင့် cleanup လုပ်ပြီး repository root မညစ်ပတ်ကြောင်း CI assertion ထည့်ရန်။
 
 ## အညွှန်းစာတမ်းများ
 

@@ -3,6 +3,17 @@ set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
 
 if (($# > 0)); then
   printf 'usage: %s\n' "$0" >&2
@@ -33,13 +44,13 @@ assert(type([1, 2]) == "list", "list type regression")
 say "B3 test runner fixture passed"
 EOF
 
-cargo run --quiet --locked --manifest-path native/Cargo.toml -- lock "$TMP_DIR/project" >/tmp/zap-b3-lock-first.out
+run_zap lock "$TMP_DIR/project" >/tmp/zap-b3-lock-first.out
 sha256sum "$TMP_DIR/project/zap.lock" > "$TMP_DIR/lock.sha256"
-cargo run --quiet --locked --manifest-path native/Cargo.toml -- lock "$TMP_DIR/project" >/tmp/zap-b3-lock-second.out
+run_zap lock "$TMP_DIR/project" >/tmp/zap-b3-lock-second.out
 sha256sum -c "$TMP_DIR/lock.sha256" >/dev/null
-cargo run --quiet --locked --manifest-path native/Cargo.toml -- check "$TMP_DIR/project" >/tmp/zap-b3-check.out
-cargo run --quiet --locked --manifest-path native/Cargo.toml -- build --locked "$TMP_DIR/project" >/tmp/zap-b3-build.out
-cargo run --quiet --locked --manifest-path native/Cargo.toml -- test "$TMP_DIR/project" >/tmp/zap-b3-test.out
+run_zap check "$TMP_DIR/project" >/tmp/zap-b3-check.out
+run_zap build --locked "$TMP_DIR/project" >/tmp/zap-b3-build.out
+run_zap test "$TMP_DIR/project" >/tmp/zap-b3-test.out
 
 python3 - "$ROOT_DIR" <<'PY'
 import json

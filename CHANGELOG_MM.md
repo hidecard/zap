@@ -6,6 +6,14 @@
 
 # Zap ပြောင်းလဲမှုမှတ်တမ်း
 
+## [Unreleased]
+
+### P0 release hygiene
+- `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion အသစ်ထည့်ပြီး bootstrap verifier အစုအလေးတစ်ခုကို success path နှင့် forced-failure path နှစ်မျိုးလုံးဖြင့် run ပြီး EXIT ပြီနောက် `$ROOT_DIR` scratch artifact ကျန်ရှိနေပါက nonzero ဖြင့် fail လုပ်သည်။ ၎င်းသည် TODO.md ၏ "temporary file cleanup via trap + CI assertion" P0 follow-up ကို ပိတ်ပြီး missing-trap bug class အတွက် deterministic regression gate တစ်ခု ပေးသည်။
+- `bootstrap-clean-repo-test` Makefile target အသစ်ထည့်ပြီး `make test` ထဲသို့ ချိတ်ဆက်ထားသည်။
+- `scripts/bootstrap/verify_b1_lexer.sh`၊ `verify_b1_general_parser.sh` နှင့် `verify_b1_token_native_indentation.sh` တို့ကို success/abnormal exit path နှစ်မျိုးလုံးတွင် `$ROOT_DIR` `mktemp` scratch file ကို cleanup လုပ်ရန် harden လုပ်ထားသည်။
+- `scripts/test_validate_release_version.sh` တွင် binary-lag regression block ထည့်ထားသည်။ `ZAP_CLI_BINARY` က `native/Cargo.toml` ထက် အဟောင်းဆန်သော version ကို report လုပ်ပါက test ကို fail လုပ်ပြီး (binary က match ဖြစ်ပါက pass ဆက်ရှိသည်)။ Committed `bin/zap` သည် Cargo source version ထက် lag ဖြစ်နေသော failure mode ကို ပိတ်သည်။
+
 ## [2.11.18] - 2026-09-03
 
 ## [2.11.17] — 2026-08-27
