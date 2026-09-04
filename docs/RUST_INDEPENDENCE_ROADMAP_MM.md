@@ -4,6 +4,30 @@
 
 ဤ roadmap ၏ ရည်ရွယ်ချက်မှာ Rust ကို repository ထဲမှ ချက်ချင်းဖျက်ရန် မဟုတ်ပါ။ ပထမအဆင့်များတွင် Rust implementation ကို reference oracle နှင့် bootstrap seed အဖြစ် အသုံးပြုနိုင်သည်။ သို့သော် B4 ပြည့်မြောက်သောအခါ user-facing compiler/build path တွင် Rust နှင့် Cargo မလိုတော့ရပါ။ လက်ရှိ B0 boundary နှင့် stage definitions ကို [B0 Baseline](../bootstrap/BASELINE_B0.md) နှင့် [Bootstrap Contract](../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md) တို့တွင် အခြေခံထားသည်။
 
+## လက်ရှိ master update — TODO status snapshot
+
+ဤ snapshot သည် လက်ရှိ GitHub `master` ၏ update များကို စစ်ဆေးပြီး ပြန်လည်သတ်မှတ်ထားခြင်းဖြစ်သည်။ နောက်ဆုံး update များတွင် B1 lexer/parser verification gate များ၊ B2 type-check/typed-IR verifier များ၊ native-binary portability, clean-repo-root check နှင့် bootstrap smoke checks များကို တိုးချဲ့ထားသည်။ သို့သော် bootstrap contract သည် Zap ကို **B0** ဟု ဆက်လက်သတ်မှတ်ထားပြီး Rust native implementation သည် lexer, parser, evaluator, standard library, registry နှင့် host boundary များ၏ reference owner ဖြစ်နေသေးသည်။ [1] [2]
+
+| Area | Latest evidence | TODO status |
+|---|---|---|
+| B1 lexer | Lexer contract, CR handling, token/indentation checks နှင့် batch verification scripts ရှိပြီး အချို့ candidate parity gates ပြီးစီးထားသည် | **Partial / provisional** — arbitrary full-language canonical ownership မရသေး |
+| B1 parser | Boundary fixtures, general parser gates, control-flow/block checks, parser portability fixes နှင့် aggregate gate ရှိသည် | **Partial / provisional** — Rust reference AST/diagnostic owner မပြောင်းသေး |
+| B2 type checker | Generic constraints, compound bounds, aliases, flow/dataflow, recursive alias diagnostics နှင့် verifier များ တိုးချဲ့ထားသည် | **Partial / provisional** — complete language-wide type ownership မရသေး |
+| B2 typed IR | Arbitrary typed-IR, expression, generic, trait နှင့် reference-compare verification scripts တိုးလာသည် | **Partial / provisional** — Zap compiler က full source ကို Rust မခေါ်ဘဲ typed IR ထုတ်နိုင်ကြောင်း B4-level proof မရှိသေး |
+| B3 build/package/VM | Build plan, dependency graph, package metadata နှင့် VM candidate files/fixtures ရှိသည် | **Not certified** — canonical executable ownership နှင့် full runtime replacement မပြီးသေး |
+| B4 self-rebuild | B4 acceptance manifest, byte determinism, second-stage rebuild, clean-environment gate scripts ရှိသည် | **Not certified** — acceptance rows များသည် provisional ဖြစ်ပြီး contract status သည် `not-certified` |
+| Rust independence | Non-Rust seed/smoke tooling နှင့် portability checks တိုးတက်လာသည် | **Not achieved** — normal compiler/runtime/build path တွင် Rust/Cargo dependency boundary မဖယ်ရှားသေး |
+| CI | Latest master CI run အောင်မြင်ထားသည် | CI green သည် B4 self-hosting အောင်မြင်သည်ဟု မဆိုလို |
+
+### ဤ update ပြီးနောက် အဓိကကျန် TODO
+
+- [ ] B1 lexer/parser candidate gate များကို **canonical Zap-owned front end** အဖြစ် promote လုပ်ပြီး Rust fallback မရှိကြောင်း prove လုပ်ပါ။
+- [ ] B2 type checker/typed IR verifier များကို full supported language surface အထိ ချဲ့ပြီး `.zp → typed IR` ကို Zap-only path ဖြင့် run ပါ။
+- [ ] B3 lowerer, bytecode, VM, package/build နှင့် runtime ကို sample fixture မဟုတ်ဘဲ compiler source အပြည့်အဝအတွက် run နိုင်စေပါ။
+- [ ] B4 acceptance rows အားလုံးကို supported targets သုံးမျိုးတွင် pass လုပ်ပြီး `not-certified` ကို `certified` သို့ evidence ဖြင့်သာ ပြောင်းပါ။
+- [ ] Clean environment တွင် Rust/Cargo မရှိဘဲ compiler source ကို self-rebuild လုပ်ပြီး deterministic artifact နှစ်ဆင့် comparison ထုတ်ပါ။
+- [ ] Rust implementation ကို reference-only boundary သို့ ရွှေ့ပြီး normal `zap build`, `zap test`, `zap run`, `zap compiler rebuild` path မှ Rust dependency ဖယ်ရှားပါ။
+
 ## 0။ အောင်မြင်မှုအဓိပ္ပာယ်နှင့် မပြောင်းလဲရမည့်စည်းမျဉ်း
 
 ### 0.1 Final target
@@ -289,6 +313,10 @@ CI တွင် Linux, Windows, macOS; debug/release; clean/no-Rust environment;
 - Windows/macOS target တွင် semantic parity နှင့် artifact verification မရှိခြင်း။
 
 ## References
+
+[1]: ../bootstrap/contracts/BOOTSTRAP_CONTRACT_MM.md "Zap Bootstrap Contract"
+[2]: ../bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml "B4 Rust-Free Full-Language Contract"
+[3]: ../bootstrap/contracts/B4_ACCEPTANCE.tsv "B4 Acceptance Matrix"
 
 - [Zap repository](https://github.com/hidecard/zap)
 - [B0 Baseline Freeze](../bootstrap/BASELINE_B0.md)
