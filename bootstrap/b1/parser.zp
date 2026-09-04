@@ -470,11 +470,12 @@ export fn parse_atom(raw, start_column):
         return {"kind": "literal", "literal_kind": "bool", "span": span(1, start_column, 5), "value": false}
     if value == "none":
         return {"kind": "literal", "literal_kind": "none", "span": span(1, start_column, 4), "value": none}
-    if contains(value, ".") and not is_numeric(value):
-        let parts = split(value, ".")
-        if len(parts) > 1 and trim(parts[0]) != "":
-            return parse_member_parts(parts, 1, name(trim(parts[0]), start_column), start_column, len(value))
-    return if is_numeric(value) then number(value, start_column) else name(value, start_column)
+    if contains(value, ".") and not is_numeric(value):
+        let parts = split(value, ".")
+        if len(parts) > 1 and trim(parts[0]) != "":
+            if not is_numeric(trim(parts[0])):
+                return parse_member_parts(parts, 1, name(trim(parts[0]), start_column), start_column, len(value))
+    return if is_numeric(value) then number(value, start_column) else name(value, start_column)
 
 export fn is_numeric(value):
     if is_empty(value):
@@ -1744,19 +1745,20 @@ export fn delimiter_diagnostics(tokens, source_name):
         return {"code": "ZAP-SYNTAX-001", "column": 4, "help": "check the surrounding syntax and delimiters", "line": 1, "message": "unexpected token after expression at 1:4", "severity": "error", "source_name": source_name}
     return none
 
-export fn token_has_numeric_dot_at(tokens, index):
-    if index >= len(tokens):
-        return false
-    let current = tokens[index]
-    if current["kind"] == "number":
-        if contains(str(current["value"]), "."):
-            return true
-    return token_has_numeric_dot_at(tokens, index + 1)
-
-export fn token_has_numeric_dot(tokens):
-    if len(tokens) == 0:
-        return false
-    return token_has_numeric_dot_at(tokens, 0)
+export fn token_has_numeric_dot_sequence_at(tokens, index):
+    if index + 2 >= len(tokens):
+        return false
+    let first = tokens[index]
+    let second = tokens[index + 1]
+    let third = tokens[index + 2]
+    if first["kind"] == "number" and second["kind"] == "dot" and third["kind"] == "number":
+        return true
+    return token_has_numeric_dot_sequence_at(tokens, index + 1)
+
+export fn token_has_numeric_dot_sequence(tokens):
+    if len(tokens) == 0:
+        return false
+    return token_has_numeric_dot_sequence_at(tokens, 0)
 
 export fn token_has_kind_at(tokens, index, kind):
     if index >= len(tokens):
@@ -1873,7 +1875,7 @@ export fn parse_or_diagnostics(source, tokens, source_name):
     let while_else = while_else_diagnostic(source, source_name)
     if while_else != none:
         return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-    if token_has_numeric_dot(tokens):
+    if token_has_numeric_dot_sequence(tokens):
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
     if starts_with(trim(source), "let "):
         if not token_has_kind_at(tokens, 0, "equal"):

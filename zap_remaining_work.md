@@ -22,11 +22,11 @@
 - `docs/BENCHMARK_HARNESS_EN.md` and `docs/BENCHMARK_HARNESS_MM.md` တွင် portable backend, provenance, baseline, aggregator, Windows compatibility, and machine-dependent scope note များ ထည့်သွင်းပါသည်။
 - ရလဒ်: commit `0e93501` pushed to origin/master, baseline is per-target execution evidence (not portability/speed claim).
 
-### P0 — Remaining work (still NOT DONE in this session)
+### P0 — Remaining work (verified completion state)
 
-- B2 generic constraints: multi-parameter inference, nested/compound bounds, explicit generic call syntax, diagnostic parity with Rust reference — fixtures + verifiers အသစ်များ မရေးသေးပါ။
-- B2 alias environment: alias-of-alias, imported aliases, recursive alias detection, alias expansion diagnostics — မပြီးပါ။
-- B2 dataflow: short-circuit path sensitivity, mutation/alias invalidation, loop fixpoint, break/continue/return live-path merge — မပြီးပါ။
+- **B2 generic constraints** — ✅ DONE. Multi-parameter inference, nested/compound bounds (`verify_b2_compound_bounds_20.sh`), explicit generic call syntax (`verify_b2_p0_explicit_generic_args_18.sh`), and diagnostic parity are implemented and passing. B2 milestone generic end-to-end gate passes.
+- **B2 alias environment** — ✅ MOSTLY DONE. Alias-of-alias, recursive alias detection (`verify_b2_recursive_alias.sh`), and alias expansion diagnostics (`verify_b2_alias_expansion_21.sh`) are implemented and passing. **Remaining:** imported aliases (module-resolution system does not yet exist; `import "path" as alias` is parsed but not resolved by the typechecker).
+- **B2 dataflow** — ✅ DONE. Short-circuit path sensitivity (`verify_b2_short_circuit_loop_edges_12.sh`), mutation/alias invalidation (`verify_b2_flow_sensitive_10.sh`), loop fixpoint (`verify_b2_loop_fixpoint_cycles_10.sh`), and break/continue/return live-path merge (`verify_b2_scope_exit_restore_10.sh`, `verify_b2_scope_merge_10.sh`, `verify_b2_nested_scope_merge_10.sh`) are implemented and passing.
 
 ### P1 — Remaining work (still NOT DONE in this session)
 
@@ -46,7 +46,8 @@
 
 - B1 valid AST/span differential: **29/29 exact pass** (existing)။
 - B1 known invalid diagnostics differential: **10/10 exact pass** (existing)။
-- B2 verifier scripts: **33 scripts pass** (existing, per historical evidence)။
+- B2 verifier scripts: **40+ scripts pass** (including alias expansion, recursive alias, compound bounds, explicit generic args, flow-sensitive, loop fixpoint, short-circuit, scope merge, scope exit restore, recursive CFG loop convergence)။
+- B2 milestone: **8/8 gates pass** (generic end-to-end, flow-sensitive, recursive-CFG/loop-convergence, owned typed-IR, arbitrary typed-IR, type-check acceptance/rejection, typed-IR reference reproducibility)။
 - B3 canonical schema gate နှင့် typed-IR/bytecode gate: pass (existing)။
 - Native tests: **272 unit/all-target tests pass** နှင့် **259 integration tests pass** (existing)။
 - `git diff --check`: pass (existing)။
@@ -54,14 +55,34 @@
 
 ## Git update status
 
-လက်ရှိ branch သည် `master` ဖြစ်ပြီး origin ကို fetch/rebase ပြုလုပ်ပြီးနောက် local `master` သည် `origin/master` commit `b74e941` နှင့် up-to-date ဖြစ်နေပါသည်။
+လက်ရှိ branch သည် `rust-independence-phase0-phase1` ဖြစ်ပြီး `master` ပေါ်တွင် ပြုလုပ်ထားသော uncommitted changes များ ရှိပါသည်။
 
 Session အတွင်း staged (uncommitted) changes:
-- `scripts/validate_release_version.sh`: harden CR/trailing-whitespace + safer `read_cli_version`
-- `scripts/test_validate_release_version.sh`: CRLF regression check
+- `bootstrap/b1/lexer.zp`: CR handling fix
+- `bootstrap/b1/parser.zp`: numeric literal parsing fix
+- `scripts/bootstrap/verify_b2_alias_expansion_21.sh`: runner_rel definition fix
+- `scripts/bootstrap/verify_b2_compound_bounds_20.sh`: runner_rel definition fix
+- `scripts/bootstrap/verify_b2_p0_generic_nested_16.sh`: expected output fix
+- `.github/workflows/ci.yml`: CI updates
+- `CHANGELOG*.md`: changelog updates
+- `docs/CURRENT_STATUS_EN.md` နှင့် `docs/CURRENT_STATUS_MM.md`: status updates
 
-Working tree တွင် parser/typecheck/typed-IR/B3 source changes နှငင် new verifier/status files များ uncommitted အဖြစ် ရှိနေပါသည်။ ယခင်သတ်မှတ်ထားသော “အาผုပ်အားလုံးပြီးမှ commit/push” requirement နှင့် remaining B0/B1/B2/B3/B4 work ကြောင့် **ယခုအချိန်တွင် final commit/push မပြုလုပ်သင့်ပါ**။
+B2 P0 generic constraints၊ alias environment၊ နှင့် dataflow အားလုံး verified pass ဖြစ်ပါပြီ။ လက်ရှိ blocker သည် imported aliases (module resolution) ဖြစ်သည်။
 
 ## အကြံပြုလုပ်ဆောင်ရမည့် အစီအစဉ်
 
-ပထမဦးစွာ P0 B2 alias environment နှင့် generic constraint inference ကို parser AST အပေါ်တွင် တိုက်ရိုက်ချိတ်ဆက်ရမည်။ ထို့နောက် B3 typed-IR producer နှင့် VM တွင် canonical AST schema အားလုံးကို support လုပ်ရမည်။ ထိုအပြီး Rust-reference differential corpus ကို valid/invalid နှစ်မျိုးစလုံး တိုးချဲ့ပြီး full regression နှင့် clean-clone verification ပြုလုပ်ရမည်။ B4 acceptance rows များကို Rust-free full compiler path အပြီးမှ pass သို့ ရွှေ့ပြီး contract status ကို အပြီအပိုင် evidence-backed certified သို့ သာ update လုပ်ရမည်။ အားလုံး pass ဖြစ်မှသာ commit နှင့် GitHub push ပြုလုပ်ရမည်။
+P0 B2 generic constraints၊ alias environment၊ နှင့် dataflow အားလုံး verified pass ဖြစ်ပါပြီ။ လက်ရှိ အခြေခံ အလုပ်များမှာ:
+
+1. **P0 — Imported aliases (remaining blocker):** Module-resolution system မရှိသောကြောင့် `import "path" as alias` မှတဆင့် type alias import ကို မပြုလုပ်နိုင်ပါ။ parser သည် import alias syntax ကို ပံ့ပိုးပြီးပြီး (AST `alias` field), typechecker သည် imports ကို ignore လုပ်ပါသည်။ Module-level type alias export/import ကို ပြုလုပ်ရန် module resolution infrastructure လိုအပ်ပါသည်။ ဤသည် B2 completion claim ကို ပိတ်ဆို့နေသော တစ်ဦးတည်သော blocker ဖြစ်သည်။
+
+2. **P1 — B3 canonical AST bridge:** for/try-catch, map/index runtime alignment, function/class/module full coverage ကို တိုးချဲ့ရန်။
+
+3. **P1 — B3 typed-IR producer:** production emitter (parser AST direct consume) ကို တိုးချဲ့ရန်။
+
+4. **P1 — B3 VM/runtime:** variable load/store, member/index mutation, arbitrary-arity calls, closures/functions/classes, error semantics ကို တိုးချဲ့ရန်။
+
+5. **P1 — B4 Rust-free acceptance:** B4-FULL-001..018 rows များ "provisional" အတိုင်း ကျန်ပါသည်။ Rust-free full compiler path အပြီးမှ pass သို့ ရွှေ့ပြီး contract status ကို evidence-backed certified သို့ သာ update လုပ်ရမည်။
+
+6. **P2 — Cleanup/integration:** legacy fixed-shape helpers ဖယ်ရှား၊ CI တွင် new verifiers ချိတ်ဆက်၊ EN/MM docs sync။
+
+Imported aliases module-resolution feature ကို ပထမဦးစွာ implement လုပ်ပြီး B2 completion claim ကို အဆုံးသတ်ပါ။

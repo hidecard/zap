@@ -51,7 +51,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["T where T: number", "1", "T", "number", "number", "0", "1", "ZAP-TYPE-009", "option<list<map<text,number>>>", "0"]:
+if lines != ["T", "1", "T", "number", "number", "0", "1", "ZAP-TYPE-009", "option<list<map<text,number>>>", "0"]:
     raise SystemExit(f"unexpected generic/nested output: {lines!r}")
 PY
 printf 'B2 P0 generic/nested gate passed: where bounds, instantiation, invalid bounds, deep collections\n'

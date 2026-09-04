@@ -16,6 +16,7 @@
 - Extended `scripts/bootstrap/assert_clean_repo_root.sh` with a secondary subset that exercises B1/B3/B4 verifiers refactored to use the `run_zap()` helper, keeping the in-flight portability refactor cleanup-safe end-to-end before commit.
 - Added `scripts/bootstrap/run_zap_refactor_smoke.sh` that runs the full 150-script `run_zap()` refactor through three phases (bash -n parse check, end-to-end smoke run with 60s timeout per script, before/after repo-root diff to separate script-induced leaks from pre-existing LSP-created artifacts). Wired into `make test` as `bootstrap-refactor-smoke-test`. Discovered that `zap lsp` was actively creating `.zap-*.zp` files in the workspace root, explaining previously-anomalous reports and motivating the before/after snapshot design.
 - Rewrote `scripts/bootstrap/assert_clean_repo_root.sh` to use the same before/after diff: snapshots `.zap-*` files at run start, executes the primary+secondary subsets and the forced-failure path, and only flags files appearing in the AFTER snapshot but not in the BEFORE snapshot. The gate now stays correct in environments where `zap lsp` creates its own scratch files. A mid-run planted-file negative test confirmed the gate still detects real leaks and exits nonzero.
+- Wired the two new P0 release-hygiene gates (`scripts/bootstrap/assert_clean_repo_root.sh` and `scripts/bootstrap/run_zap_refactor_smoke.sh`) into `.github/workflows/ci.yml` so they run on every push and PR alongside `scripts/test_validate_release_version.sh`.
 
 ## [2.11.18] - 2026-09-03
 

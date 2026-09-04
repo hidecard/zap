@@ -24,6 +24,7 @@ f2="$ROOT_DIR/.zap-alias-of-alias.zp"
 f3="$ROOT_DIR/.zap-alias-generic.zp"
 f4="$ROOT_DIR/.zap-alias-undeclared.zp"
 runner="$ROOT_DIR/.zap-alias-runner.zp"
+runner_rel=$(basename "$runner")
 trap 'rm -f "$f1" "$f2" "$f3" "$f4" "$runner"' EXIT
 
 cat > "$f1" << 'EOF'

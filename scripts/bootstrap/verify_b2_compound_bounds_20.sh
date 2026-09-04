@@ -22,6 +22,7 @@ echo "Testing compound generic bounds..."
 valid_source="$ROOT_DIR/.zap-compound-valid.zp"
 invalid_source="$ROOT_DIR/.zap-compound-invalid.zp"
 runner="$ROOT_DIR/.zap-compound-runner.zp"
+runner_rel=$(basename "$runner")
 trap 'rm -f "$valid_source" "$invalid_source" "$runner"' EXIT
 
 cat > "$valid_source" << 'EOF'

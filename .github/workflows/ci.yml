@@ -67,6 +67,24 @@ jobs:
       - name: Run version consistency regression
         run: scripts/test_validate_release_version.sh
 
+      - name: Verify bootstrap repo-root cleanliness
+        # P0 release-hygiene gate: runs a representative subset of bootstrap
+        # verifiers (success + forced-failure paths) and fails if any new
+        # $ROOT_DIR scratch artifact is left behind after EXIT. Uses a
+        # before/after snapshot diff so it is correct in environments
+        # where zap lsp is creating its own .zap-*.zp files.
+        run: scripts/bootstrap/assert_clean_repo_root.sh
+
+      - name: Verify run_zap() portability refactor smoke
+        # P0 release-hygiene gate: smoke-runs the full 150-script run_zap()
+        # portability refactor through bash -n parse check, end-to-end
+        # smoke run with 60s timeout per script, and a before/after
+        # repo-root diff. Provides concrete cleanup-safety evidence for
+        # the in-flight refactor commit.
+        env:
+          ZAP_REFACTOR_SMOKE_TIMEOUT: 60
+        run: scripts/bootstrap/run_zap_refactor_smoke.sh
+
       - name: Validate documentation consistency
         env:
           ZAP_DOCS_REPORT: target/documentation-consistency.tsv

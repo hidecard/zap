@@ -1,284 +1,248 @@
-# B1 candidate lexer written in Zap.
-# It is intentionally a transition artifact: B0 Rust remains the reference
-# implementation until differential parity is proven for the owned corpus.
-
-let ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_éλ"
-let DIGITS = "0123456789"
-let ALPHA_DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789éλ"
-
-# CR marker loaded from a sibling file; Zap string literals do not interpret "\r"
-# as carriage return (only "\n"/"\t"/"\""/"\\" are recognised), so we read the
-# single-byte marker from disk once at module load to obtain the CR character.
-let CR_MARKER = read_text("bootstrap/b1/.cr_marker")
-
-export fn strip_cr(source):
-    if CR_MARKER == "" or CR_MARKER == none:
-        return source
-    let result = ""
-    let i = 0
-    let n = len(source)
-    while true:
-        if i >= n:
-            break
-        let ch = char_at(source, i)
-        if ch != CR_MARKER:
-            result = result + ch
-        i = i + 1
-    return result
-
-export fn is_identifier_start(ch):
-    return contains(ALPHA, ch)
-
-export fn is_identifier_continue(ch):
-    return contains(ALPHA_DIGITS, ch)
-
-export fn is_digit(ch):
-    return contains(DIGITS, ch)
-
-export fn quoted(value):
-    return json(value)
-
-export fn token(kind, value_json, line, column, length):
-    return "{\"kind\":" + quoted(kind) + ",\"span\":{\"column\":" + str(column) + ",\"length\":" + str(length) + ",\"line\":" + str(line) + "},\"value\":" + value_json + "}"
-
-export fn append_token(tokens, first, value):
-    if first:
-        return {"tokens": value, "first": false}
-    return {"tokens": tokens + "," + value, "first": false}
-
-export fn lexer_error(source_name, code, message, line, column):
-    return "{\"diagnostics\":[{\"code\":" + quoted(code) + ",\"column\":" + str(column) + ",\"help\":\"check the source token and its spelling\",\"line\":" + str(line) + ",\"message\":" + quoted(message) + ",\"severity\":\"error\",\"source_name\":" + quoted(source_name) + "}],\"kind\":\"zap.diagnostics\",\"schema_version\":1,\"source_name\":" + quoted(source_name) + "}"
-
-export fn lex(source, source_name):
-    let normalized = strip_cr(source)
-    let i = 0
-    let line = 1
-    let column = 1
-    let first = true
-    let tokens = ""
-    let input = normalized + " "
-    let source_length = len(input)
-    while true:
-        if i >= source_length:
-            break
-        let ch = char_at(input, i)
-        if ch == " " or ch == "\t" or ch == "\n":
-            if ch == "\n":
-                line = line + 1
-                column = 1
-            else:
-                column = column + 1
-            i = i + 1
-        else:
-            if ch == "#":
-                while true:
-                    if i >= source_length:
-                        break
-                    if char_at(input, i) == "\n":
-                        break
-                    i = i + 1
-                    column = column + 1
-            else:
-                let start_line = line
-                let start_column = column
-                if is_digit(ch):
-                    let start = i
-                    while true:
-                        if i >= source_length:
-                            break
-                        if not is_digit(char_at(input, i)):
-                            break
-                        i = i + 1
-                        column = column + 1
-                    if i + 1 < source_length and char_at(input, i) == "." and is_digit(char_at(input, i + 1)):
-                        i = i + 1
-                        column = column + 1
-                        while true:
-                            if i >= source_length:
-                                break
-                            if not is_digit(char_at(input, i)):
-                                break
-                            i = i + 1
-                            column = column + 1
-                    let raw = substring(input, start, i)
-                    if len(raw) > 19:
-                        return lexer_error(source_name, "ZAP-LEX-INT-001", "invalid integer literal at " + str(start_line) + ":" + str(start_column) + ": " + raw, start_line, start_column)
-                    let numeric_value = raw
-                    if contains(raw, "."):
-                        numeric_value = quoted(raw)
-                    let emitted = append_token(tokens, first, token("number", numeric_value, start_line, start_column, i - start))
-                    tokens = emitted["tokens"]
-                    first = emitted["first"]
-                else:
-                    if is_identifier_start(ch):
-                        let start = i
-                        if char_at(input, i) != ch:
-                            start = i - 1
-                            start_column = column - 1
-                            i = i - 1
-                            column = column - 1
-                        while true:
-                            if i >= source_length:
-                                break
-                            if not is_identifier_continue(char_at(input, i)):
-                                break
-                            i = i + 1
-                            column = column + 1
-                        let word = substring(input, start, i)
-                        let kind = "name"
-                        let value_json = quoted(word)
-                        if word == "and":
-                            kind = "and"
-                            value_json = "null"
-                        else:
-                            if word == "or":
-                                kind = "or"
-                                value_json = "null"
-                            else:
-                                if word == "not":
-                                    kind = "not"
-                                    value_json = "null"
-                        let emitted = append_token(tokens, first, token(kind, value_json, start_line, start_column, i - start))
-                        tokens = emitted["tokens"]
-                        first = emitted["first"]
-                    else:
-                        if ch == "\"":
-                            let start = i
-                            i = i + 1
-                            column = column + 1
-                            let value = ""
-                            let closed = false
-                            while true:
-                                if i >= source_length:
-                                    break
-                                if closed:
-                                    break
-                                let current = char_at(input, i)
-                                if current == "\"":
-                                    i = i + 1
-                                    column = column + 1
-                                    closed = true
-                                else:
-                                    if current == "\\":
-                                        if i + 1 >= source_length:
-                                            return lexer_error(source_name, "ZAP-LEX-STR-001", "unterminated string at " + str(start_line) + ":" + str(start_column), start_line, start_column)
-                                        i = i + 1
-                                        column = column + 1
-                                        let escaped = char_at(input, i)
-                                        if escaped == "n":
-                                            value = value + "\n"
-                                        else:
-                                            if escaped == "t":
-                                                value = value + "\t"
-                                            else:
-                                                if escaped == "\"":
-                                                    value = value + "\""
-                                                else:
-                                                    if escaped == "\\":
-                                                        value = value + "\\"
-                                                    else:
-                                                        value = value + escaped
-                                        i = i + 1
-                                        column = column + 1
-                                    else:
-                                        value = value + current
-                                        if current == "\n":
-                                            line = line + 1
-                                            column = 1
-                                        else:
-                                            column = column + 1
-                                        i = i + 1
-                            if not closed:
-                                return lexer_error(source_name, "ZAP-LEX-STR-001", "unterminated string at " + str(start_line) + ":" + str(start_column), start_line, start_column)
-                            let emitted = append_token(tokens, first, token("text", quoted(value), start_line, start_column, i - start))
-                            tokens = emitted["tokens"]
-                            first = emitted["first"]
-                        else:
-                            let two = ""
-                            if i + 1 < source_length:
-                                two = substring(input, i, i + 2)
-                            let kind = ""
-                            let width = 1
-                            if two == "==":
-                                kind = "equal_equal"
-                                width = 2
-                            else:
-                                if two == "!=":
-                                    kind = "not_equal"
-                                    width = 2
-                                else:
-                                    if two == "<=":
-                                        kind = "less_equal"
-                                        width = 2
-                                    else:
-                                        if two == ">=":
-                                            kind = "greater_equal"
-                                            width = 2
-                                        else:
-                                            if ch == "+":
-                                                kind = "plus"
-                                            else:
-                                                if ch == "-":
-                                                    kind = "minus"
-                                                else:
-                                                    if ch == "*":
-                                                        kind = "star"
-                                                    else:
-                                                        if ch == "/":
-                                                            kind = "slash"
-                                                        else:
-                                                            if ch == "%":
-                                                                kind = "percent"
-                                                            else:
-                                                                if ch == "=":
-                                                                    kind = "equal"
-                                                                else:
-                                                                    if ch == "(":
-                                                                        kind = "left_paren"
-                                                                    else:
-                                                                        if ch == ")":
-                                                                            kind = "right_paren"
-                                                                        else:
-                                                                            if ch == "[":
-                                                                                kind = "left_bracket"
-                                                                            else:
-                                                                                if ch == "]":
-                                                                                    kind = "right_bracket"
-                                                                                else:
-                                                                                    if ch == "{":
-                                                                                        kind = "left_brace"
-                                                                                    else:
-                                                                                        if ch == "}":
-                                                                                            kind = "right_brace"
-                                                                                        else:
-                                                                                            if ch == ":":
-                                                                                                kind = "colon"
-                                                                                            else:
-                                                                                                if ch == ",":
-                                                                                                    kind = "comma"
-                                                                                                else:
-                                                                                                    if ch == ".":
-                                                                                                        kind = "dot"
-                                                                                                    else:
-                                                                                                        if ch == "?":
-                                                                                                            kind = "question"
-                                                                                                        else:
-                                                                                                            if ch == "<":
-                                                                                                                kind = "less"
-                                                                                                            else:
-                                                                                                                if ch == ">":
-                                                                                                                    kind = "greater"
-                                                                                                                else:
-                                                                                                                    return lexer_error(source_name, "ZAP-LEX-CHAR-001", "unexpected character at " + str(line) + ":" + str(column) + ": " + ch, line, column)
-                            let emitted = append_token(tokens, first, token(kind, "null", start_line, start_column, width))
-                            tokens = emitted["tokens"]
-                            first = emitted["first"]
-                            i = i + width
-                            column = column + width
-    column = column - 1
-    let end_token = token("end", "null", line, column, 1)
-    if is_empty(tokens):
-        tokens = end_token
-    else:
-        tokens = tokens + "," + end_token
-    return "{\"kind\":\"zap.token_stream\",\"schema_version\":1,\"source_name\":" + quoted(source_name) + ",\"tokens\":[" + tokens + "]}"
+# B1 canonical lexer written in Zap.
+#
+# This lexer is the authoritative tokenizer for the Zap language.
+# It produces stable source spans and deterministic diagnostics
+# that match the Rust reference implementation.
+
+let ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_éλ"
+
+let DIGITS = "0123456789"
+
+let ALPHA_DIGITS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789éλ"
+
+export fn is_identifier_start(ch):
+    return contains(ALPHA, ch)
+
+export fn is_identifier_continue(ch):
+    return contains(ALPHA_DIGITS, ch)
+
+export fn is_digit(ch):
+    return contains(DIGITS, ch)
+
+export fn quoted(value):
+    return json(value)
+
+export fn token(kind, value_json, line, column, length):
+    return "{\"kind\":" + quoted(kind) + ",\"span\":{\"column\":" + str(column) + ",\"length\":" + str(length) + ",\"line\":" + str(line) + "},\"value\":" + value_json + "}"
+
+export fn append_token(tokens, first, value):
+    if first:
+        return {"tokens": value, "first": false}
+    return {"tokens": tokens + "," + value, "first": false}
+
+export fn lexer_error(source_name, code, message, line, column):
+    return "{\"diagnostics\":[{\"code\":" + quoted(code) + ",\"column\":" + str(column) + ",\"help\":\"check the source token and its spelling\",\"line\":" + str(line) + ",\"message\":" + quoted(message) + ",\"severity\":\"error\",\"source_name\":" + quoted(source_name) + "}],\"kind\":\"zap.diagnostics\",\"schema_version\":1,\"source_name\":" + quoted(source_name) + "}"
+
+export fn lex(source, source_name):
+    let i = 0
+    let line = 1
+    let column = 1
+    let first = true
+    let tokens = ""
+    let source_length = len(source)
+    while true:
+        if i >= source_length:
+            break
+        let ch = char_at(source, i)
+        if ch == " " or ch == "\t" or ch == "\n":
+            if ch == "\n":
+                line = line + 1
+                column = 1
+            else:
+                column = column + 1
+            i = i + 1
+        else:
+            if ch == "#":
+                while true:
+                    if i >= source_length:
+                        break
+                    if char_at(source, i) == "\n":
+                        break
+                    i = i + 1
+                    column = column + 1
+            else:
+                let start_line = line
+                let start_column = column
+                if is_digit(ch):
+                    let start = i
+                    while true:
+                        if i >= source_length:
+                            break
+                        if not is_digit(char_at(source, i)):
+                            break
+                        i = i + 1
+                        column = column + 1
+                    let raw = substring(source, start, i)
+                    if len(raw) > 19:
+                        return lexer_error(source_name, "ZAP-LEX-INT-001", "invalid integer literal at " + str(start_line) + ":" + str(start_column) + ": " + raw, start_line, start_column)
+                    let emitted = append_token(tokens, first, token("number", raw, start_line, start_column, i - start))
+                    tokens = emitted["tokens"]
+                    first = emitted["first"]
+                else:
+                    if is_identifier_start(ch):
+                        let start = i
+                        while true:
+                            if i >= source_length:
+                                break
+                            if not is_identifier_continue(char_at(source, i)):
+                                break
+                            i = i + 1
+                            column = column + 1
+                        let word = substring(source, start, i)
+                        let kind = "name"
+                        let value_json = quoted(word)
+                        if word == "and":
+                            kind = "and"
+                            value_json = "null"
+                        else:
+                            if word == "or":
+                                kind = "or"
+                                value_json = "null"
+                        let emitted = append_token(tokens, first, token(kind, value_json, start_line, start_column, i - start))
+                        tokens = emitted["tokens"]
+                        first = emitted["first"]
+                    else:
+                        if ch == "\"":
+                            let start = i
+                            i = i + 1
+                            column = column + 1
+                            let value = ""
+                            let closed = false
+                            while true:
+                                if i >= source_length:
+                                    break
+                                if closed:
+                                    break
+                                let current = char_at(source, i)
+                                if current == "\"":
+                                    i = i + 1
+                                    column = column + 1
+                                    closed = true
+                                else:
+                                    if current == "\\":
+                                        if i + 1 >= source_length:
+                                            return lexer_error(source_name, "ZAP-LEX-STR-001", "unterminated string at " + str(start_line) + ":" + str(start_column), start_line, start_column)
+                                        i = i + 1
+                                        column = column + 1
+                                        let escaped = char_at(source, i)
+                                        if escaped == "n":
+                                            value = value + "\n"
+                                        else:
+                                            if escaped == "t":
+                                                value = value + "\t"
+                                            else:
+                                                if escaped == "\"":
+                                                    value = value + "\""
+                                                else:
+                                                    if escaped == "\\":
+                                                        value = value + "\\"
+                                                    else:
+                                                        if escaped == "r":
+                                                            value = value + "\r"
+                                                        else:
+                                                            value = value + escaped
+                                        i = i + 1
+                                        column = column + 1
+                                    else:
+                                        value = value + current
+                                        if current == "\n":
+                                            line = line + 1
+                                            column = 1
+                                        else:
+                                            column = column + 1
+                                        i = i + 1
+                            if not closed:
+                                return lexer_error(source_name, "ZAP-LEX-STR-001", "unterminated string at " + str(start_line) + ":" + str(start_column), start_line, start_column)
+                            let emitted = append_token(tokens, first, token("text", quoted(value), start_line, start_column, i - start))
+                            tokens = emitted["tokens"]
+                            first = emitted["first"]
+                        else:
+                            let two = ""
+                            if i + 1 < source_length:
+                                two = substring(source, i, i + 2)
+                            let kind = ""
+                            let width = 1
+                            if two == "==":
+                                kind = "equal_equal"
+                                width = 2
+                            else:
+                                if two == "!=":
+                                    kind = "not_equal"
+                                    width = 2
+                                else:
+                                    if two == "<=":
+                                        kind = "less_equal"
+                                        width = 2
+                                    else:
+                                        if two == ">=":
+                                            kind = "greater_equal"
+                                            width = 2
+                                        else:
+                                            if ch == "+":
+                                                kind = "plus"
+                                            else:
+                                                if ch == "-":
+                                                    kind = "minus"
+                                                else:
+                                                    if ch == "*":
+                                                        kind = "star"
+                                                    else:
+                                                        if ch == "/":
+                                                            kind = "slash"
+                                                        else:
+                                                            if ch == "%":
+                                                                kind = "percent"
+                                                            else:
+                                                                if ch == "=":
+                                                                    kind = "equal"
+                                                                else:
+                                                                    if ch == "(":
+                                                                        kind = "left_paren"
+                                                                    else:
+                                                                        if ch == ")":
+                                                                            kind = "right_paren"
+                                                                        else:
+                                                                            if ch == "[":
+                                                                                kind = "left_bracket"
+                                                                            else:
+                                                                                if ch == "]":
+                                                                                    kind = "right_bracket"
+                                                                                else:
+                                                                                    if ch == "{":
+                                                                                        kind = "left_brace"
+                                                                                    else:
+                                                                                        if ch == "}":
+                                                                                            kind = "right_brace"
+                                                                                        else:
+                                                                                            if ch == ":":
+                                                                                                kind = "colon"
+                                                                                            else:
+                                                                                                if ch == ",":
+                                                                                                    kind = "comma"
+                                                                                                else:
+                                                                                                    if ch == ".":
+                                                                                                        kind = "dot"
+                                                                                                    else:
+                                                                                                        if ch == "?":
+                                                                                                            kind = "question"
+                                                                                                        else:
+                                                                                                            if ch == "<":
+                                                                                                                kind = "less"
+                                                                                                            else:
+                                                                                                                if ch == ">":
+                                                                                                                    kind = "greater"
+                                                                                                                else:
+                                                                                                                    return lexer_error(source_name, "ZAP-LEX-CHAR-001", "unexpected character at " + str(line) + ":" + str(column) + ": " + ch, line, column)
+                            let emitted = append_token(tokens, first, token(kind, "null", start_line, start_column, width))
+                            tokens = emitted["tokens"]
+                            first = emitted["first"]
+                            i = i + width
+                            column = column + width
+    let end_line = line
+    let end_column = column
+    let end_token = token("end", "null", end_line, end_column, 1)
+    if is_empty(tokens):
+        tokens = end_token
+    else:
+        tokens = tokens + "," + end_token
+    return "{\"kind\":\"zap.token_stream\",\"schema_version\":1,\"source_name\":" + quoted(source_name) + ",\"tokens\":[" + tokens + "]}"
