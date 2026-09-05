@@ -1,0 +1,10 @@
+rule_id	spec_section	english_section	burmese_section	owner	fixture_path	status	compatibility
+SPEC-BOOT-001	syntax-grammar	Syntax grammar	syntax grammar	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/basic.zp	implemented	normative
+SPEC-BOOT-002	syntax-grammar	Operator precedence, associativity, indentation, newline, comment, Unicode identifier, literal rules	Operator precedence အစရှိများ	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.zp	implemented	normative
+SPEC-BOOT-003	value-type-model	Value/type model: none, boolean, number, text, list, map, function, object, option/result, module	Value/type model	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/basic_type_matrix.zp	implemented	normative
+SPEC-BOOT-004	semantics	Mutation, closure capture, scope, shadowing, return/break/continue, exception propagation, cleanup semantics	Mutation နှင့် semantics	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/function.zp	implemented	normative
+SPEC-BOOT-005	module-search	Module search path, import alias, cycle detection, package manifest, lockfile, registry behavior	Module search path	bootstrap/b3/package.zp	bootstrap/fixtures/typecheck/generic_cross_module.zp	implemented	normative
+SPEC-BOOT-006	async-scheduling	Async scheduling, poll budget, timeout, cancellation, join, blocking boundary	Async scheduling	bootstrap/b3/vm.zp	bootstrap/fixtures/typecheck/flow_engine.zp	implemented	normative
+SPEC-BOOT-007	diagnostics	Stable diagnostics: ZAP-* code, severity, span, notes, help, exit status	Stable diagnostics	bootstrap/b1/lexer.zp	bootstrap/fixtures/diagnostics/invalid_character.zp	implemented	normative
+SPEC-BOOT-008	compatibility-policy	Compatibility policy: normative, compatible, deprecated, rejected, native-only	Compatibility policy	docs/COMPATIBILITY_POLICY_EN.md	bootstrap/fixtures/metadata/compatibility_matrix.tsv	implemented	normative
+SPEC-BOOT-009	specification-change	Specification change workflow: RFC, fixture update, changelog, migration guide, compatibility decision	Specification change workflow	docs/COMPATIBILITY_POLICY_EN.md	bootstrap/fixtures/metadata/rfc_template.md	implemented	normative

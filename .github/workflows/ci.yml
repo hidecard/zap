@@ -149,6 +149,12 @@ jobs:
       - name: Verify B1 arbitrary-block candidate coverage
         run: scripts/bootstrap/verify_b1_arbitrary_blocks.sh
 
+      - name: Verify B1 Zap parser no-Rust proof
+        run: scripts/bootstrap/verify_b1_parser_zap_only.sh
+
+      - name: Verify B1 Zap lexer no-Rust proof
+        run: scripts/bootstrap/verify_b1_lexer_zap_only.sh
+
       - name: Verify B2 typed-IR and type-check conformance fixtures
         run: scripts/bootstrap/verify_b2_typecheck.sh
 

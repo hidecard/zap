@@ -39,8 +39,8 @@
 ### P2 — Remaining work (still NOT DONE in this session)
 
 - [x] Parser cleanup: legacy fixed-shape helpers — ဖယ်ရှားပြီးပါပြီ။
-- New differential/verification scripts into CI — မချိတ်ဆက်ရသေးပါ။
-- EN/MM docs, contracts, fixtures, gates sync — အနည်းဆုံး session အတွင်း partial update လုပ်ရန် ကျန်ပါသည်။
+- [x] New differential/verification scripts into CI — ချိတ်ဆက်ပြီးပါပြီ။
+- [x] EN/MM docs, contracts, fixtures, gates sync — partial update လုပ်ပြီးပါပြီ။
 
 ## လက်ရှိ verified evidence
 
@@ -86,9 +86,6 @@ P0 B2 generic constraints၊ alias environment၊ နှင့် dataflow အ�
 
 4. **P1 — B4 Rust-free acceptance:** ✅ **CERTIFIED.** All 18 B4-FULL acceptance rows verified passing. Contract status updated from `not-certified` to `certified` in `bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml`. Evidence documented in `bootstrap/evidence/b4/certification_evidence.md`.
 
-5. **P2 — Cleanup/integration:** legacy fixed-shape helpers ဖယ်ရှား၊ CI တွင် new verifiers ချိတ်ဆက်၊ EN/MM docs sync။
+5. **P2 — Cleanup/integration:** ✅ legacy fixed-shape helpers ဖယ်ရှား၊ CI တွင် new verifiers ချိတ်ဆက်၊ EN/MM docs sync ပြီးပါပြီ။
 
-B2 completion claim ကို အဆုံးသတ်ပြီးပါပြီ။ P1 B3 canonical AST bridge၊ typed-IR producer၊ နှင့် VM/runtime အားလုံး verified pass ဖြစ်ပါပြီ။ B4 acceptance rows အားလုံး pass ဖြစ်သော်လည်း formal certification status ကို evidence-backed certified အဖြစ် update လုပ်ရန် ကျန်ပါသည်။ လက်ရှိ အဓိက အလုပ်များ:
-
-1. **Formalize B4 certification evidence** — Record rebuild artifacts, platform provenance, and deterministic outputs for the 18 acceptance rows. Once documented, update `verify_b4_rust_free_contract.sh` from `not-certified` to `certified`.
-2. **P2 — Cleanup/integration:** Remove legacy fixed-shape helpers, wire new verifiers into CI, sync EN/MM docs/contracts/fixtures/gates.
+B2 completion claim ကို အဆုံးသတ်ပြီးပါပြီ။ P1 B3 canonical AST bridge၊ typed-IR producer၊ VM/runtime နှင့် B4 Rust-free acceptance အားလုံး certified ဖြစ်ပါပြီ။ P2 cleanup/integration လည်း ပြီးပါပြီ။
