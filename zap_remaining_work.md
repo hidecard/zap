@@ -38,7 +38,7 @@
 
 ### P2 — Remaining work (still NOT DONE in this session)
 
-- Parser cleanup: legacy fixed-shape helpers — မဖယ်ရှားရသေးပါ။
+- [x] Parser cleanup: legacy fixed-shape helpers — ဖယ်ရှားပြီးပါပြီ။
 - New differential/verification scripts into CI — မချိတ်ဆက်ရသေးပါ။
 - EN/MM docs, contracts, fixtures, gates sync — အနည်းဆုံး session အတွင်း partial update လုပ်ရန် ကျန်ပါသည်။
 
