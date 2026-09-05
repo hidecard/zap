@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-SYNTAX-001","column":null,"help":"check the surrounding syntax and delimiters","line":null,"message":"invalid indentation at line 3","severity":"error","source_name":"bootstrap/fixtures/parser\\invalid_indentation.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/parser/invalid_indentation.zp"}

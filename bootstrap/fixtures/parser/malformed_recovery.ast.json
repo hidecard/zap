@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-SYNTAX-001","column":2,"help":"check the surrounding syntax and delimiters","line":1,"message":"expected expression, got End at 1:2","severity":"error","source_name":"bootstrap/fixtures/parser\\malformed_recovery.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/parser/malformed_recovery.zp"}

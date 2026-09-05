@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-LEX-001","column":null,"help":"check the source token and its spelling","line":null,"message":"unexpected 'else:' at line 4","severity":"error","source_name":"bootstrap/fixtures/parser\\while_else_syntax.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/parser/while_else_syntax.zp"}

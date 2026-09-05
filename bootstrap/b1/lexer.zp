@@ -33,6 +33,9 @@ export fn append_token(tokens, first, value):
 export fn lexer_error(source_name, code, message, line, column):
     return "{\"diagnostics\":[{\"code\":" + quoted(code) + ",\"column\":" + str(column) + ",\"help\":\"check the source token and its spelling\",\"line\":" + str(line) + ",\"message\":" + quoted(message) + ",\"severity\":\"error\",\"source_name\":" + quoted(source_name) + "}],\"kind\":\"zap.diagnostics\",\"schema_version\":1,\"source_name\":" + quoted(source_name) + "}"
 
+export fn is_empty(value):
+    return len(value) == 0
+
 export fn lex(source, source_name):
     let i = 0
     let line = 1
