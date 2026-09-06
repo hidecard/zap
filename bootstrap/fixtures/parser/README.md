@@ -41,6 +41,7 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `arbitrary_nested_expressions.zp` | `arbitrary_nested_expressions.ast.json` | ✅ captured | BOOT-053 |
 | `arithmetic.zp` | `arithmetic.ast.json` | ✅ captured | BOOT-015 |
 | `assignment_statement.zp` | `assignment_statement.ast.json` | ✅ captured | |
+| `bool_literals.zp` | `bool_literals.ast.json` | ✅ captured | true/false literals |
 | `compound.zp` | `compound.ast.json` | ✅ captured | BOOT-013 |
 | `control_flow.zp` | `control_flow.ast.json` | ✅ captured | |
 | `deep_mixed_blocks.zp` | `deep_mixed_blocks.ast.json` | ✅ captured | |
@@ -58,6 +59,7 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `mixed_recursive_sequence.zp` | `mixed_recursive_sequence.ast.json` | ✅ captured | |
 | `mixed_top_level_statements.zp` | *(none — accepted by token-native path)* | ✅ captured (runtime) | Used by `verify_b1_token_native_indentation.sh` |
 | `mixed_top_level.zp` | `mixed_top_level.ast.json` | ✅ captured | |
+| `module_import.zp` | `module_import.ast.json` | ✅ captured | module/import declarations |
 | `multi_diagnostic.zp` | `multi_diagnostic.diagnostics.json` | ✅ captured | BOOT-055 |
 | `multi_digit_number.zp` | `multi_digit_number.ast.json` | ✅ captured | |
 | `multiplicative_additive.zp` | `multiplicative_additive.ast.json` | ✅ captured | |
@@ -68,13 +70,16 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `nested_class_method.zp` | `nested_class_method.ast.json` | ✅ captured | |
 | `nested_function_blocks.zp` | `nested_function_blocks.ast.json` | ✅ captured | |
 | `numeric_literals.zp` | `numeric_literals.ast.json` + `numeric_literals.diagnostics.json` | ✅ captured | BOOT-056 |
+| `option_constructors.zp` | `option_constructors.ast.json` | ✅ captured | some/option_none |
 | `parenthesized_nested.zp` | `parenthesized_nested.ast.json` | ✅ captured | |
 | `parenthesized_not.zp` | `parenthesized_not.ast.json` | ✅ captured | |
 | `postfix_indexing.zp` | `postfix_indexing.ast.json` | ✅ captured | `[expr]` indexing |
+| `result_constructors.zp` | `result_constructors.ast.json` | ✅ captured | ok/err constructors |
 | `simple_class.zp` | `simple_class.ast.json` | ✅ captured | |
 | `simple_function.zp` | `simple_function.ast.json` | ✅ captured | |
 | `simple_loop.zp` | `simple_loop.ast.json` | ✅ captured | |
 | `span_coverage.zp` | `span_coverage.ast.json` | ✅ captured | BOOT-057 |
+| `text_escape.zp` | `text_escape.ast.json` | ✅ captured | text literal escapes |
 | `three_argument_call.zp` | `three_argument_call.ast.json` | ✅ captured | |
 | `three_declarations.zp` | `three_declarations.ast.json` | ✅ captured | |
 | `try_catch_simple.zp` | `try_catch_simple.ast.json` | ✅ captured | try/catch/raise |
@@ -87,8 +92,8 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 
 ## Coverage summary
 
-- Total `.zp` sources: **49**
-- AST/diagnostics JSON captured: **49**
+- Total `.zp` sources: **54**
+- AST/diagnostics JSON captured: **54**
 - ⚠️ Pending capture: **0**
 - Negative fixtures (rejected by parser; companion JSON captures rejection): **6**
 - Runtime-only (accepted by token-native path; no companion JSON expected): **5**
