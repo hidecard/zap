@@ -1,0 +1,2 @@
+let obj = {"name": "test"}
+let value = obj["name"]

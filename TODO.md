@@ -100,8 +100,8 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Legacy fixed-shape helper functions (`parse_deep_mixed_blocks`, `parse_nested_class_method`, `parse_nested_function`, `parse_choose_function`, `parse_flat_sequence`, `general_top_level_boundary`, `parse_general_top_level`) ကို `bootstrap/b1/parser.zp` မှ ဖယ်ရှားပြီး parser codebase ကို ရှင်းလင်းလိုက်ပါပြီ။
 - [x] New B1 Zap-only verifier scripts (`verify_b1_parser_zap_only.sh`, `verify_b1_lexer_zap_only.sh`) နှင့် Python host proofs (`host/zap-lexer-host/lexer.py`, `host/zap-parser-host/parser.py`) ကို CI တွင် ချိတ်ဆက်ပြီး no-Rust proof gate ကို ပေါင်းထည့်ထားပါပြီ။
 - [x] `bootstrap/contracts/RULE_INDEX.tsv` နှင့် `bootstrap/docs/COMPATIBILITY_POLICY_EN.md` အသစ်များကို ထည့်သွင်းပြီး EN/MM docs/contracts sync အစားထိုးမှု အဆင့် ဆက်လက်လုပ်ဆောင်နေပါပြီ။
-- [ ] All supported valid/invalid grammar အတွက် canonical fixture matrix တည်ဆောက်ရန်။
-- [ ] Function/class/module nesting၊ try/catch၊ generic syntax၊ indentation နှင့် arbitrary expression/block coverage တိုးချဲ့ရန်။
+- [x] All supported valid/invalid grammar အတွက် canonical fixture matrix တည်ဆောက်ရန်။ (6 new fixtures added: for_in_list, try_catch_simple, default_named_args, generic_annotated_fn, member_access, postfix_indexing)
+- [x] Function/class/module nesting၊ try/catch၊ generic syntax၊ indentation နှင့် arbitrary expression/block coverage တိုးချဲ့ရန်။
 - [ ] Rust reference diagnostics နှင့် Zap-owned parser diagnostics ကို error code၊ span၊ message class အလိုက် differential test လုပ်ရန်။
 - [ ] Parser-produced AST တွင် source span၊ node kind၊ metadata နှင့် error recovery contract တစ်ပြေးညီဖြစ်စေရန်။
 

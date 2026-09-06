@@ -1,0 +1,4 @@
+try:
+    raise "oops"
+catch error:
+    say error

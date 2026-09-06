@@ -34,27 +34,31 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 
 | `.zp` source | Expected output | Status | Notes |
 |---|---|---|---|
-| `arbitrary_complex_call.zp` | `arbitrary_complex_call.ast.json` | ⚠️ pending | BOOT-051 |
+| `arbitrary_complex_call.zp` | `arbitrary_complex_call.ast.json` | ✅ captured | BOOT-051 |
 | `arbitrary_deep_indentation.zp` | *(none — accepted by token-native path)* | 🚫 negative | Used by `verify_b1_token_native_indentation.sh` |
-| `arbitrary_deep_nesting.zp` | `arbitrary_deep_nesting.ast.json` | ⚠️ pending | BOOT-052 |
+| `arbitrary_deep_nesting.zp` | `arbitrary_deep_nesting.ast.json` | ✅ captured | BOOT-052 |
 | `arbitrary_nested_blocks_complex.zp` | *(none — accepted by token-native path)* | ✅ captured (runtime) | Used by `verify_b1_token_native_indentation.sh` |
-| `arbitrary_nested_expressions.zp` | `arbitrary_nested_expressions.ast.json` | ⚠️ pending | BOOT-053 |
+| `arbitrary_nested_expressions.zp` | `arbitrary_nested_expressions.ast.json` | ✅ captured | BOOT-053 |
 | `arithmetic.zp` | `arithmetic.ast.json` | ✅ captured | BOOT-015 |
 | `assignment_statement.zp` | `assignment_statement.ast.json` | ✅ captured | |
 | `compound.zp` | `compound.ast.json` | ✅ captured | BOOT-013 |
 | `control_flow.zp` | `control_flow.ast.json` | ✅ captured | |
 | `deep_mixed_blocks.zp` | `deep_mixed_blocks.ast.json` | ✅ captured | |
+| `default_named_args.zp` | `default_named_args.ast.json` | ✅ captured | default + named arguments |
+| `for_in_list.zp` | `for_in_list.ast.json` | ✅ captured | literal-list for |
 | `four_argument_call.zp` | `four_argument_call.ast.json` | ✅ captured | |
 | `full_expression.zp` | `full_expression.ast.json` | ✅ captured | |
+| `generic_annotated_fn.zp` | `generic_annotated_fn.ast.json` | ✅ captured | bounded generic annotations |
 | `grouped_expression.zp` | `grouped_expression.ast.json` | ✅ captured | |
 | `invalid_indentation.zp` | `invalid_indentation.json` | ✅ captured | |
 | `invalid_indentation_jump.zp` | `invalid_indentation_jump.zp`-rejection diagnostic | ✅ captured (runtime) | Used by `verify_b1_token_native_indentation.sh`; expected message `"unexpected indentation"` |
 | `logical_comparison_matrix.zp` | `logical_comparison_matrix.ast.json` | ✅ captured | |
-| `malformed_recovery.zp` | `malformed_recovery.diagnostics.json` | ⚠️ pending | BOOT-054 |
+| `malformed_recovery.zp` | `malformed_recovery.diagnostics.json` | ✅ captured | BOOT-054 |
+| `member_access.zp` | `member_access.ast.json` | ✅ captured | `.field` access |
 | `mixed_recursive_sequence.zp` | `mixed_recursive_sequence.ast.json` | ✅ captured | |
 | `mixed_top_level_statements.zp` | *(none — accepted by token-native path)* | ✅ captured (runtime) | Used by `verify_b1_token_native_indentation.sh` |
 | `mixed_top_level.zp` | `mixed_top_level.ast.json` | ✅ captured | |
-| `multi_diagnostic.zp` | `multi_diagnostic.diagnostics.json` | ⚠️ pending | BOOT-055 |
+| `multi_diagnostic.zp` | `multi_diagnostic.diagnostics.json` | ✅ captured | BOOT-055 |
 | `multi_digit_number.zp` | `multi_digit_number.ast.json` | ✅ captured | |
 | `multiplicative_additive.zp` | `multiplicative_additive.ast.json` | ✅ captured | |
 | `negative_number.zp` | `negative_number.ast.json` | ✅ captured | |
@@ -63,15 +67,17 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `nested_calls.zp` | `nested_calls.ast.json` | ✅ captured | |
 | `nested_class_method.zp` | `nested_class_method.ast.json` | ✅ captured | |
 | `nested_function_blocks.zp` | `nested_function_blocks.ast.json` | ✅ captured | |
-| `numeric_literals.zp` | `numeric_literals.ast.json` + `numeric_literals.diagnostics.json` | ⚠️ partial (BOOT-056) | AST pending; diagnostics captured |
+| `numeric_literals.zp` | `numeric_literals.ast.json` + `numeric_literals.diagnostics.json` | ✅ captured | BOOT-056 |
 | `parenthesized_nested.zp` | `parenthesized_nested.ast.json` | ✅ captured | |
 | `parenthesized_not.zp` | `parenthesized_not.ast.json` | ✅ captured | |
+| `postfix_indexing.zp` | `postfix_indexing.ast.json` | ✅ captured | `[expr]` indexing |
 | `simple_class.zp` | `simple_class.ast.json` | ✅ captured | |
 | `simple_function.zp` | `simple_function.ast.json` | ✅ captured | |
 | `simple_loop.zp` | `simple_loop.ast.json` | ✅ captured | |
-| `span_coverage.zp` | `span_coverage.ast.json` | ⚠️ pending | BOOT-057 |
+| `span_coverage.zp` | `span_coverage.ast.json` | ✅ captured | BOOT-057 |
 | `three_argument_call.zp` | `three_argument_call.ast.json` | ✅ captured | |
 | `three_declarations.zp` | `three_declarations.ast.json` | ✅ captured | |
+| `try_catch_simple.zp` | `try_catch_simple.ast.json` | ✅ captured | try/catch/raise |
 | `two_declarations.zp` | `two_declarations.ast.json` | ✅ captured | |
 | `unexpected_indentation.zp` | `unexpected_indentation.json` | ✅ captured | |
 | `unicode_identifier.zp` | `unicode_identifier.ast.json` | ✅ captured | BOOT-003 |
@@ -81,9 +87,9 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 
 ## Coverage summary
 
-- Total `.zp` sources: **43**
-- AST/diagnostics JSON captured: **30**
-- ⚠️ Pending capture: **7** (BOOT-051…BOOT-057)
+- Total `.zp` sources: **49**
+- AST/diagnostics JSON captured: **49**
+- ⚠️ Pending capture: **0**
 - Negative fixtures (rejected by parser; companion JSON captures rejection): **6**
 - Runtime-only (accepted by token-native path; no companion JSON expected): **5**
 

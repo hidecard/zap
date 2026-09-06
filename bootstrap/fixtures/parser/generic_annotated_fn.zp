@@ -1,0 +1,2 @@
+fn add(a: list<number>, b: map<text, number>) -> option<number>:
+    return none
