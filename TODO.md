@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-03
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-05
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -97,6 +97,9 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ### P2.1 Parser/lexer ownership
 
+- [x] Legacy fixed-shape helper functions (`parse_deep_mixed_blocks`, `parse_nested_class_method`, `parse_nested_function`, `parse_choose_function`, `parse_flat_sequence`, `general_top_level_boundary`, `parse_general_top_level`) ကို `bootstrap/b1/parser.zp` မှ ဖယ်ရှားပြီး parser codebase ကို ရှင်းလင်းလိုက်ပါပြီ။
+- [x] New B1 Zap-only verifier scripts (`verify_b1_parser_zap_only.sh`, `verify_b1_lexer_zap_only.sh`) နှင့် Python host proofs (`host/zap-lexer-host/lexer.py`, `host/zap-parser-host/parser.py`) ကို CI တွင် ချိတ်ဆက်ပြီး no-Rust proof gate ကို ပေါင်းထည့်ထားပါပြီ။
+- [x] `bootstrap/contracts/RULE_INDEX.tsv` နှင့် `bootstrap/docs/COMPATIBILITY_POLICY_EN.md` အသစ်များကို ထည့်သွင်းပြီး EN/MM docs/contracts sync အစားထိုးမှု အဆင့် ဆက်လက်လုပ်ဆောင်နေပါပြီ။
 - [ ] All supported valid/invalid grammar အတွက် canonical fixture matrix တည်ဆောက်ရန်။
 - [ ] Function/class/module nesting၊ try/catch၊ generic syntax၊ indentation နှင့် arbitrary expression/block coverage တိုးချဲ့ရန်။
 - [ ] Rust reference diagnostics နှင့် Zap-owned parser diagnostics ကို error code၊ span၊ message class အလိုက် differential test လုပ်ရန်။
@@ -139,10 +142,12 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ## Documentation synchronization
 
-- [ ] `docs/CURRENT_STATUS_EN.md` နှင့် `docs/CURRENT_STATUS_MM.md` ကို ဤ TODO ၏ P0–P4 status ပြောင်းတိုင်း update လုပ်ရန်။
-- [ ] `CHANGELOG.md`၊ `CHANGELOG_EN.md` နှင့် `CHANGELOG_MM.md` တွင် implemented၊ provisional နှင့် deferred scope ကို ခွဲခြားရေးရန်။
+- [x] `docs/CURRENT_STATUS_EN.md` နှင့် `docs/CURRENT_STATUS_MM.md` ကို ဤ TODO ၏ P0–P4 status ပြောင်းတိုင်း update လုပ်ရန်။
+- [x] `CHANGELOG.md`၊ `CHANGELOG_EN.md` နှင့် `CHANGELOG_MM.md` တွင် implemented၊ provisional နှင့် deferred scope ကို ခွဲခြားရေးရန်။
 - [x] Root-level generated `.zp` runners နှင့် local toolchain artifacts များကို ဖယ်ရှားပြီး `/*.zp` နှင့် `rustup_*.snap/assert` ignore rules ထည့်ထားသည်။
 - [x] Test scripts များ၏ temporary files အားလုံးကို `trap` ဖြင့် cleanup လုပ်ပြီး repository root မညစ်ပတ်ကြောင်း CI assertion ထည့်ရန်။
+- [x] Legacy fixed-shape parser helpers ဖယ်ရှားပြီး B1 Zap-only verifier scripts နှင့် Python host proofs ကို CI တွင် ချိတ်ဆက်ပြီးပါပြီ။
+- [x] `bootstrap/contracts/RULE_INDEX.tsv` နှင့် `bootstrap/docs/COMPATIBILITY_POLICY_EN.md` ထည့်သွင်းပြီးပါပြီ။
 
 ## အညွှန်းစာတမ်းများ
 
