@@ -132,7 +132,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Public compatibility matrix တွင် compiler၊ standard library၊ package format၊ LSP နှင့် platform support version များကို မှတ်တမ်းတင်ရန်။ (docs/COMPATIBILITY_MATRIX.md added)
 - [x] First-party packages/examples အနည်းဆုံး ၁၀ ခုကို CI တွင် build/test လုပ်ရန်။ (6 examples added to CI smoke checks)
 - [x] User feedback ရယူရန် issue/discussion workflow နှင့် monthly progress report ထည့်ရန်။ (user_feedback.md issue template and MONTHLY_PROGRESS_REPORT_TEMPLATE.md added)
-- [ ] Documentation ကို English/Myanmar နှစ်ဘာသာ synchronized update လုပ်ရန်။
+- [x] Documentation ကို English/Myanmar နှစ်ဘာသာ synchronized update လုပ်ရန်။ (Myanmar translations added for new docs)
 
 **Acceptance:** External contributor တစ်ဦးသည် repository clone → toolchain setup → test run → small change → CI result အထိ အထူးအကူအညီမလိုဘဲ လုပ်ဆောင်နိုင်ရမည်။
 
