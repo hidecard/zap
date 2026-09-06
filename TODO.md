@@ -122,7 +122,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Seed output နှင့် native/reference output ကို artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (B4-FULL-014..018 pass)
 - [x] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း စစ်ဆေးရန်။ (B4-FULL-016..017 pass)
 - [x] Rust မပါဘဲ compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (B4-FULL-001..015 pass)
-- [ ] Independent verifier script ဖြင့် B4 evidence ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။
+- [x] Independent verifier script ဖြင့် B4 evidence ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။ (`scripts/bootstrap/verify_b4_evidence.sh` added)
 
 **Acceptance:** Clean seed တစ်ခုက Zap compiler ကို build လုပ်နိုင်ရမည်။ ထပ်မံ rebuild လုပ်သော artifact သည် byte-for-byte တူရမည်။ Native/reference implementation မပါဘဲ supported language subset ၏ compile/run tests များ အောင်မြင်ရမည်။
 
