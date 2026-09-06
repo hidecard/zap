@@ -34,7 +34,7 @@ tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/zap-b0-artifacts.XXXXXX")
 cleanup() {
   rm -rf "$tmp_dir"
 }
-#trap cleanup EXIT
+trap cleanup EXIT
 
 run_zap bootstrap status > "$tmp_dir/status.json"
 run_zap bootstrap tokens bootstrap/fixtures/lexer/basic.zp > "$tmp_dir/basic.tokens.json"
@@ -49,19 +49,75 @@ for file in "$tmp_dir"/*.json; do
 done
 
 cmp "$tmp_dir/status.json" <(run_zap bootstrap status)
-cmp "$tmp_dir/basic.tokens.json" bootstrap/fixtures/lexer/basic.tokens.json
-cmp "$tmp_dir/unicode.tokens.json" bootstrap/fixtures/lexer/unicode.tokens.json
-cmp "$tmp_dir/basic.ast.json" bootstrap/fixtures/lexer/basic.ast.json
-cmp "$tmp_dir/basic.typed-ir.json" bootstrap/fixtures/lexer/basic.typed-ir.json
-cmp "$tmp_dir/invalid.json" bootstrap/fixtures/diagnostics/invalid_character.json
-cmp "$tmp_dir/valid.json" bootstrap/fixtures/diagnostics/valid.json
 
-python3 - "$ROOT_DIR" <<'PY'
+python3 - "$ROOT_DIR" "$tmp_dir" <<'PY'
 import json
 import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
+tmp_dir = pathlib.Path(sys.argv[2])
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    if source_name.startswith(str(root) + "/"):
+        source_name = source_name[len(str(root) + "/"):]
+    elif source_name.startswith(str(root) + "\\"):
+        source_name = source_name[len(str(root) + "\\"):]
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+def load_normalized(path):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    normalize_paths(data)
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+
+# Compare normalized actual outputs with normalized golden files
+comparisons = [
+    ("status.json", "bootstrap/fixtures/metadata/b0_stage.json", False),
+    ("basic.tokens.json", "bootstrap/fixtures/lexer/basic.tokens.json", True),
+    ("unicode.tokens.json", "bootstrap/fixtures/lexer/unicode.tokens.json", True),
+    ("basic.ast.json", "bootstrap/fixtures/lexer/basic.ast.json", True),
+    ("basic.typed-ir.json", "bootstrap/fixtures/lexer/basic.typed-ir.json", True),
+    ("invalid.json", "bootstrap/fixtures/diagnostics/invalid_character.json", True),
+    ("valid.json", "bootstrap/fixtures/diagnostics/valid.json", True),
+]
+
+for actual_name, golden_rel, normalize in comparisons:
+    actual_path = tmp_dir / actual_name
+    golden_path = root / golden_rel
+    
+    if not golden_path.exists():
+        raise SystemExit(f"missing golden file: {golden_path}")
+    
+    if normalize:
+        actual_data = load_normalized(actual_path)
+        golden_data = load_normalized(golden_path)
+    else:
+        actual_data = actual_path.read_text(encoding="utf-8")
+        golden_data = golden_path.read_text(encoding="utf-8")
+    
+    if actual_data != golden_data:
+        import difflib
+        actual_lines = actual_data.splitlines(keepends=True)
+        golden_lines = golden_data.splitlines(keepends=True)
+        diff = list(difflib.unified_diff(golden_lines, actual_lines, fromfile=str(golden_path), tofile=str(actual_path), lineterm=""))
+        sys.stderr.write("\n".join(diff) + "\n")
+        raise SystemExit(f"mismatch: {actual_path} != {golden_path}")
+
+# Metadata checks
 required = {
     "bootstrap/fixtures/metadata/b0_stage.json": {"bootstrap_stage", "compiler_version", "language_version", "reference_owner", "self_hosted", "stdlib_version"},
     "bootstrap/fixtures/metadata/artifact_schema.json": {"artifact_schema_version", "schemas"},
