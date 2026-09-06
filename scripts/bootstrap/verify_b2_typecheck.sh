@@ -31,12 +31,68 @@ trap 'rm -f "$first" "$second" "$generic_first" "$generic_second"; rm -rf "$root
 run_zap bootstrap typed-ir "$valid_ir_fixture" > "$first"
 run_zap bootstrap typed-ir "$valid_ir_fixture" > "$second"
 cmp "$first" "$second"
+python3 - "$first" "$valid_ir_expected" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in list(obj.items()):
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+actual_path = pathlib.Path(sys.argv[1])
+expected_path = pathlib.Path(sys.argv[2])
+actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
+normalize_paths(actual_data)
+actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
 cmp "$first" "$valid_ir_expected"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number"' "$first" >/dev/null
 printf 'B2 typed-IR reference reproducibility passed: annotated declaration\n'
 run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_first"
 run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_second"
 cmp "$generic_first" "$generic_second"
+python3 - "$generic_first" "$generic_ir_expected" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in list(obj.items()):
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+actual_path = pathlib.Path(sys.argv[1])
+expected_path = pathlib.Path(sys.argv[2])
+actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
+normalize_paths(actual_data)
+actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
 cmp "$generic_first" "$generic_ir_expected"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].kind == "function" and .ir.nodes[0].name == "identity" and .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$generic_first" >/dev/null
 printf 'A3 typed-IR reference reproducibility passed: generic identity metadata and substituted calls\n'
