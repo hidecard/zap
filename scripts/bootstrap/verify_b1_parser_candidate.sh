@@ -93,6 +93,18 @@ missing_assignment_fixture="bootstrap/fixtures/diagnostics/missing_assignment.zp
 missing_assignment_expected="bootstrap/fixtures/diagnostics/missing_assignment.json"
 missing_function_paren_fixture="bootstrap/fixtures/diagnostics/missing_function_paren.zp"
 missing_function_paren_expected="bootstrap/fixtures/diagnostics/missing_function_paren.json"
+missing_function_name_fixture="bootstrap/fixtures/diagnostics/missing_function_name.zp"
+missing_function_name_expected="bootstrap/fixtures/diagnostics/missing_function_name.json"
+missing_if_condition_fixture="bootstrap/fixtures/diagnostics/missing_if_condition.zp"
+missing_if_condition_expected="bootstrap/fixtures/diagnostics/missing_if_condition.json"
+missing_while_condition_fixture="bootstrap/fixtures/diagnostics/missing_while_condition.zp"
+missing_while_condition_expected="bootstrap/fixtures/diagnostics/missing_while_condition.json"
+incomplete_assignment_fixture="bootstrap/fixtures/diagnostics/incomplete_assignment.zp"
+incomplete_assignment_expected="bootstrap/fixtures/diagnostics/incomplete_assignment.json"
+unterminated_expression_fixture="bootstrap/fixtures/diagnostics/unterminated_expression.zp"
+unterminated_expression_expected="bootstrap/fixtures/diagnostics/unterminated_expression.json"
+unterminated_parameter_list_fixture="bootstrap/fixtures/diagnostics/unterminated_parameter_list.zp"
+unterminated_parameter_list_expected="bootstrap/fixtures/diagnostics/unterminated_parameter_list.json"
 for_in_list_fixture="bootstrap/fixtures/parser/for_in_list.zp"
 for_in_list_expected="bootstrap/fixtures/parser/for_in_list.ast.json"
 try_catch_simple_fixture="bootstrap/fixtures/parser/try_catch_simple.zp"
@@ -105,7 +117,7 @@ member_access_fixture="bootstrap/fixtures/parser/member_access.zp"
 member_access_expected="bootstrap/fixtures/parser/member_access.ast.json"
 postfix_indexing_fixture="bootstrap/fixtures/parser/postfix_indexing.zp"
 postfix_indexing_expected="bootstrap/fixtures/parser/postfix_indexing.ast.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "bootstrap/fixtures/parser/unexpected_indentation.zp" "bootstrap/fixtures/parser/unexpected_indentation.json" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$while_simple_fixture" "$while_simple_expected" "$deep_mixed_fixture" "$deep_mixed_expected" "$four_argument_fixture" "$four_argument_expected" "$parenthesized_not_fixture" "$parenthesized_not_expected" "$nested_assignment_fixture" "$nested_assignment_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "$for_in_list_fixture" "$for_in_list_expected" "$try_catch_simple_fixture" "$try_catch_simple_expected" "$default_named_args_fixture" "$default_named_args_expected" "$generic_annotated_fn_fixture" "$generic_annotated_fn_expected" "$member_access_fixture" "$member_access_expected" "$postfix_indexing_fixture" "$postfix_indexing_expected" "bootstrap/b1/parser.zp"; do
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "bootstrap/fixtures/parser/unexpected_indentation.zp" "bootstrap/fixtures/parser/unexpected_indentation.json" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$while_simple_fixture" "$while_simple_expected" "$deep_mixed_fixture" "$deep_mixed_expected" "$four_argument_fixture" "$four_argument_expected" "$parenthesized_not_fixture" "$parenthesized_not_expected" "$nested_assignment_fixture" "$nested_assignment_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "$missing_function_name_fixture" "$missing_function_name_expected" "$missing_if_condition_fixture" "$missing_if_condition_expected" "$missing_while_condition_fixture" "$missing_while_condition_expected" "$incomplete_assignment_fixture" "$incomplete_assignment_expected" "$unterminated_expression_fixture" "$unterminated_expression_expected" "$unterminated_parameter_list_fixture" "$unterminated_parameter_list_expected" "$for_in_list_fixture" "$for_in_list_expected" "$try_catch_simple_fixture" "$try_catch_simple_expected" "$default_named_args_fixture" "$default_named_args_expected" "$generic_annotated_fn_fixture" "$generic_annotated_fn_expected" "$member_access_fixture" "$member_access_expected" "$postfix_indexing_fixture" "$postfix_indexing_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -153,6 +165,12 @@ let invalid = read_text("bootstrap/fixtures/diagnostics/missing_closing_bracket.
 let unexpected = read_text("bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 let missing_assignment = read_text("bootstrap/fixtures/diagnostics/missing_assignment.zp")
 let missing_function_paren = read_text("bootstrap/fixtures/diagnostics/missing_function_paren.zp")
+let missing_function_name = read_text("bootstrap/fixtures/diagnostics/missing_function_name.zp")
+let missing_if_condition = read_text("bootstrap/fixtures/diagnostics/missing_if_condition.zp")
+let missing_while_condition = read_text("bootstrap/fixtures/diagnostics/missing_while_condition.zp")
+let incomplete_assignment = read_text("bootstrap/fixtures/diagnostics/incomplete_assignment.zp")
+let unterminated_expression = read_text("bootstrap/fixtures/diagnostics/unterminated_expression.zp")
+let unterminated_parameter_list = read_text("bootstrap/fixtures/diagnostics/unterminated_parameter_list.zp")
 let for_in_list = read_text("bootstrap/fixtures/parser/for_in_list.zp")
 let try_catch_simple = read_text("bootstrap/fixtures/parser/try_catch_simple.zp")
 let default_named_args = read_text("bootstrap/fixtures/parser/default_named_args.zp")
@@ -195,6 +213,12 @@ let invalid_tokens = from_json(lex(invalid, "bootstrap/fixtures/diagnostics/miss
 let unexpected_tokens = from_json(lex(unexpected, "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp"))
 let missing_assignment_tokens = from_json(lex(missing_assignment, "bootstrap/fixtures/diagnostics/missing_assignment.zp"))
 let missing_function_paren_tokens = from_json(lex(missing_function_paren, "bootstrap/fixtures/diagnostics/missing_function_paren.zp"))
+let missing_function_name_tokens = from_json(lex(missing_function_name, "bootstrap/fixtures/diagnostics/missing_function_name.zp"))
+let missing_if_condition_tokens = from_json(lex(missing_if_condition, "bootstrap/fixtures/diagnostics/missing_if_condition.zp"))
+let missing_while_condition_tokens = from_json(lex(missing_while_condition, "bootstrap/fixtures/diagnostics/missing_while_condition.zp"))
+let incomplete_assignment_tokens = from_json(lex(incomplete_assignment, "bootstrap/fixtures/diagnostics/incomplete_assignment.zp"))
+let unterminated_expression_tokens = from_json(lex(unterminated_expression, "bootstrap/fixtures/diagnostics/unterminated_expression.zp"))
+let unterminated_parameter_list_tokens = from_json(lex(unterminated_parameter_list, "bootstrap/fixtures/diagnostics/unterminated_parameter_list.zp"))
 let for_in_list_tokens = from_json(lex(for_in_list, "bootstrap/fixtures/parser/for_in_list.zp"))
 let try_catch_simple_tokens = from_json(lex(try_catch_simple, "bootstrap/fixtures/parser/try_catch_simple.zp"))
 let default_named_args_tokens = from_json(lex(default_named_args, "bootstrap/fixtures/parser/default_named_args.zp"))
@@ -237,6 +261,12 @@ say parse_or_diagnostics(invalid, invalid_tokens["tokens"], "bootstrap/fixtures/
 say parse_or_diagnostics(unexpected, unexpected_tokens["tokens"], "bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp")
 say parse_or_diagnostics(missing_assignment, missing_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_assignment.zp")
 say parse_or_diagnostics(missing_function_paren, missing_function_paren_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_function_paren.zp")
+say parse_or_diagnostics(missing_function_name, missing_function_name_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_function_name.zp")
+say parse_or_diagnostics(missing_if_condition, missing_if_condition_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_if_condition.zp")
+say parse_or_diagnostics(missing_while_condition, missing_while_condition_tokens["tokens"], "bootstrap/fixtures/diagnostics/missing_while_condition.zp")
+say parse_or_diagnostics(incomplete_assignment, incomplete_assignment_tokens["tokens"], "bootstrap/fixtures/diagnostics/incomplete_assignment.zp")
+say parse_or_diagnostics(unterminated_expression, unterminated_expression_tokens["tokens"], "bootstrap/fixtures/diagnostics/unterminated_expression.zp")
+say parse_or_diagnostics(unterminated_parameter_list, unterminated_parameter_list_tokens["tokens"], "bootstrap/fixtures/diagnostics/unterminated_parameter_list.zp")
 say parse_or_diagnostics(for_in_list, for_in_list_tokens["tokens"], "bootstrap/fixtures/parser/for_in_list.zp")
 say parse_or_diagnostics(try_catch_simple, try_catch_simple_tokens["tokens"], "bootstrap/fixtures/parser/try_catch_simple.zp")
 say parse_or_diagnostics(default_named_args, default_named_args_tokens["tokens"], "bootstrap/fixtures/parser/default_named_args.zp")
@@ -281,6 +311,12 @@ EOF
   cat "$unexpected_expected"
   cat "$missing_assignment_expected"
   cat "$missing_function_paren_expected"
+  cat "$missing_function_name_expected"
+  cat "$missing_if_condition_expected"
+  cat "$missing_while_condition_expected"
+  cat "$incomplete_assignment_expected"
+  cat "$unterminated_expression_expected"
+  cat "$unterminated_parameter_list_expected"
   cat "$for_in_list_expected"
   cat "$try_catch_simple_expected"
   cat "$default_named_args_expected"
