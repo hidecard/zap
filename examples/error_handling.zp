@@ -1,0 +1,11 @@
+# Error handling example
+fn divide(a: number, b: number) -> text:
+    if b == 0:
+        return "error: division by zero"
+    return str(a / b)
+
+let result = divide(10, 2)
+say "Result: " + result
+
+let bad = divide(10, 0)
+say "Error: " + bad

@@ -1,0 +1,7 @@
+# Modules example
+module greetings
+
+fn hello(name: text) -> text:
+    return "Hello, " + name
+
+say "Module 'greetings' declared with fn hello"

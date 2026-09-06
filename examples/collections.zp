@@ -1,0 +1,9 @@
+# Collections example
+let numbers = [1, 2, 3, 4, 5]
+let doubled = []
+for n in numbers:
+    doubled = append(doubled, n * 2)
+say doubled
+
+let scores = {"alice": 90, "bob": 85}
+say scores["alice"]

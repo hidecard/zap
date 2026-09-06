@@ -1,0 +1,10 @@
+# Testing example
+fn add(a: number, b: number) -> number:
+    return a + b
+
+fn test_add():
+    assert(add(2, 3) == 5, "2 + 3 should equal 5")
+    assert(add(-1, 1) == 0, "-1 + 1 should equal 0")
+    say "All tests passed!"
+
+test_add()
