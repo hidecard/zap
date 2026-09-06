@@ -49,6 +49,42 @@ else
   run_zap "$runner_rel"
 fi > "$second"
 cmp "$first" "$second"
+normalized_first=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-candidate-normalized.XXXXXX")
+python3 - "$first" "$normalized_first" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    if source_name.startswith("/"):
+        parts = source_name.split("/")
+        if "bootstrap" in parts:
+            idx = parts.index("bootstrap")
+            source_name = "/".join(parts[idx:])
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+first_path = pathlib.Path(sys.argv[1])
+normalized_first_path = pathlib.Path(sys.argv[2])
+
+first_data = json.loads(first_path.read_text(encoding="utf-8"))
+normalize_paths(first_data)
+normalized_first_path.write_text(json.dumps(first_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
+mv "$normalized_first" "$first"
 run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"
 run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/generic_identity.zp > "$generic_reference"
 run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/two_declarations.zp > "$two_reference"

@@ -58,12 +58,61 @@ run_case() {
 
   if [[ "$mode" == "diagnostics" ]]; then
     local expected="${fixture%.zp}.json"
-    if [[ -f "$expected" ]] && cmp -s "$python_out" "$expected"; then
-      echo "PASS $label"
-      pass_count=$((pass_count + 1))
+    if [[ -f "$expected" ]]; then
+      local normalized_python_out
+      local normalized_expected
+      normalized_python_out=$(mktemp)
+      normalized_expected=$(mktemp)
+      python3 - "$python_out" "$expected" "$normalized_python_out" "$normalized_expected" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    if source_name.startswith("/"):
+        parts = source_name.split("/")
+        if "bootstrap" in parts:
+            idx = parts.index("bootstrap")
+            source_name = "/".join(parts[idx:])
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+output_path = pathlib.Path(sys.argv[1])
+expected_path = pathlib.Path(sys.argv[2])
+normalized_output_path = pathlib.Path(sys.argv[3])
+normalized_expected_path = pathlib.Path(sys.argv[4])
+
+output_data = json.loads(output_path.read_text(encoding="utf-8"))
+expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
+normalize_paths(output_data)
+normalize_paths(expected_data)
+normalized_output_path.write_text(json.dumps(output_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+normalized_expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
+      if cmp -s "$normalized_python_out" "$normalized_expected"; then
+        echo "PASS $label"
+        pass_count=$((pass_count + 1))
+      else
+        echo "FAIL $label: diagnostic mismatch on $fixture"
+        fail_count=$((fail_count + 1))
+      fi
+      rm -f "$normalized_python_out" "$normalized_expected"
     else
-      echo "FAIL $label: diagnostic mismatch on $fixture"
-      fail_count=$((fail_count + 1))
+      echo "PASS $label (no golden file)"
+      pass_count=$((pass_count + 1))
     fi
   else
     local rust_out

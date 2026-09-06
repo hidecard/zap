@@ -34,11 +34,37 @@ run_parser() {
   fi
 
   if python3 -c "
-import json, sys
+import json
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace('\\\\', '/')
+    if source_name.startswith('/'):
+        parts = source_name.split('/')
+        if 'bootstrap' in parts:
+            idx = parts.index('bootstrap')
+            source_name = '/'.join(parts[idx:])
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == 'source_name':
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
 with open(sys.argv[1], encoding='utf-8') as f:
     expected = json.load(f)
 with open(sys.argv[2], encoding='utf-8') as f:
     actual = json.load(f)
+normalize_paths(expected)
+normalize_paths(actual)
 sys.exit(0 if expected == actual else 1)
 " "$expected" "$ROOT_DIR/.zap-parser-actual.txt" 2>/dev/null; then
     echo "PASS $fixture"

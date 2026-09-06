@@ -360,11 +360,52 @@ EOF
   cat "$option_constructors_expected"
   cat "$await_expression_expected"
 } > "$expected"
-ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
   "$ZAP_BIN" "$runner_rel"
 else
   run_zap "$runner_rel"
 fi > "$output"
-cmp "$output" "$expected"
+normalized_output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-normalized.XXXXXX")
+normalized_expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected-normalized.XXXXXX")
+python3 - "$output" "$expected" "$normalized_output" "$normalized_expected" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    if source_name.startswith("/"):
+        parts = source_name.split("/")
+        if "bootstrap" in parts:
+            idx = parts.index("bootstrap")
+            source_name = "/".join(parts[idx:])
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+output_path = pathlib.Path(sys.argv[1])
+expected_path = pathlib.Path(sys.argv[2])
+normalized_output_path = pathlib.Path(sys.argv[3])
+normalized_expected_path = pathlib.Path(sys.argv[4])
+
+output_data = json.loads(output_path.read_text(encoding="utf-8"))
+expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
+normalize_paths(output_data)
+normalize_paths(expected_data)
+normalized_output_path.write_text(json.dumps(output_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+normalized_expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
+cmp "$normalized_output" "$normalized_expected"
+rm -f "$normalized_output" "$normalized_expected"
 printf 'B1 Zap parser candidate differential passed: arithmetic AST, compound AST, and token-driven delimiter diagnostics\n'

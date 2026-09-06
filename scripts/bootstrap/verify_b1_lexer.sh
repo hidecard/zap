@@ -109,8 +109,53 @@ EOF
     exit 1
   fi
   if ! cmp "$output" "$expected"; then
-    printf 'B1 lexer differential mismatch: %s\n' "$fixture" >&2
-    exit 1
-  fi
-  printf 'B1 lexer differential passed: %s (%s)\n' "$fixture" "$mode"
+    normalized_output=$(mktemp)
+    normalized_expected=$(mktemp)
+    python3 - "$output" "$expected" "$normalized_output" "$normalized_expected" <<'PY'
+import json
+import pathlib
+import sys
+
+def normalize_source_name(source_name):
+    if not isinstance(source_name, str):
+        return source_name
+    source_name = source_name.replace("\\", "/")
+    if source_name.startswith("/"):
+        parts = source_name.split("/")
+        if "bootstrap" in parts:
+            idx = parts.index("bootstrap")
+            source_name = "/".join(parts[idx:])
+    return source_name
+
+def normalize_paths(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "source_name":
+                obj[key] = normalize_source_name(value)
+            else:
+                normalize_paths(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize_paths(item)
+
+output_path = pathlib.Path(sys.argv[1])
+expected_path = pathlib.Path(sys.argv[2])
+normalized_output_path = pathlib.Path(sys.argv[3])
+normalized_expected_path = pathlib.Path(sys.argv[4])
+
+output_data = json.loads(output_path.read_text(encoding="utf-8"))
+expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
+normalize_paths(output_data)
+normalize_paths(expected_data)
+normalized_output_path.write_text(json.dumps(output_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+normalized_expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+PY
+    if cmp -s "$normalized_output" "$normalized_expected"; then
+      printf 'B1 lexer differential passed: %s (%s)\n' "$fixture" "$mode"
+    else
+      printf 'B1 lexer differential mismatch: %s\n' "$fixture" >&2
+      exit 1
+    fi
+    rm -f "$normalized_output" "$normalized_expected"
+  else
 done
