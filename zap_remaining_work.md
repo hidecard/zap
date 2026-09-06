@@ -34,7 +34,7 @@
 - B3 typed-IR producer: source-string routing အချို့ canonicalized ဖြစ်ပြီး — production emitter (parser AST direct consume) မပြီးပါ။
 - B3 VM/runtime: variable load/store, member/index mutation, calls of arbitrary arity, closures/functions/classes, error semantics — မပြီးပါ။
 - B4 Rust-free acceptance: B4-FULL-001..018 rows များ "provisional" အတိုင်း ကျန်ပါသည်။ Contract status "not-certified" အတိုင်း ထားရပါမည်။
-- Broader differential corpus (valid + invalid): မတိုးချဲ့ရသေးပါ။
+- Broader differential corpus (valid + invalid): 12 new fixtures added (6 parser AST fixtures + 6 diagnostics fixtures) and wired into CI verifier.
 
 ### P2 — Remaining work (still NOT DONE in this session)
 
