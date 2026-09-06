@@ -9,6 +9,10 @@ run_zap() {
     "$ROOT_DIR/native/target/release/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
     "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/release/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi

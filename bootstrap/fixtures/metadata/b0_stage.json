@@ -1,8 +1,16 @@
 {
   "bootstrap_stage": "B0",
-  "compiler_version": "2.11.17",
-  "language_version": "2.11.17",
+  "compiler_version": "2.11.18",
+  "language_version": "2.11.18",
   "reference_owner": "native Rust implementation",
+  "schemas": {
+    "ast": 1,
+    "diagnostic": 1,
+    "lockfile": 1,
+    "manifest": 1,
+    "token": 1,
+    "typed_ir": 1
+  },
   "self_hosted": false,
-  "stdlib_version": "2.11.17"
+  "stdlib_version": "2.11.18"
 }

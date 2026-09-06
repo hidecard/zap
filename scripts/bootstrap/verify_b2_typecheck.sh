@@ -8,6 +8,12 @@ run_zap() {
     "$ROOT_DIR/bin/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
     "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/release/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi
@@ -58,6 +64,7 @@ expected_path = pathlib.Path(sys.argv[2])
 actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
 normalize_paths(actual_data)
 actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+actual_path.write_text(actual_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 PY
 cmp "$first" "$valid_ir_expected"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number"' "$first" >/dev/null
@@ -92,6 +99,7 @@ expected_path = pathlib.Path(sys.argv[2])
 actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
 normalize_paths(actual_data)
 actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+actual_path.write_text(actual_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 PY
 cmp "$generic_first" "$generic_ir_expected"
 jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].kind == "function" and .ir.nodes[0].name == "identity" and .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$generic_first" >/dev/null

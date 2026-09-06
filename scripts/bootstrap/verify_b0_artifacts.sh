@@ -23,6 +23,10 @@ run_zap() {
     "$ROOT_DIR/native/target/release/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
     "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/release/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
   elif [[ "$PROFILE" == release ]]; then
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   else
@@ -86,7 +90,7 @@ def load_normalized(path):
 
 # Compare normalized actual outputs with normalized golden files
 comparisons = [
-    ("status.json", "bootstrap/fixtures/metadata/b0_stage.json", False),
+    ("status.json", "bootstrap/fixtures/metadata/b0_stage.json", True),
     ("basic.tokens.json", "bootstrap/fixtures/lexer/basic.tokens.json", True),
     ("unicode.tokens.json", "bootstrap/fixtures/lexer/unicode.tokens.json", True),
     ("basic.ast.json", "bootstrap/fixtures/lexer/basic.ast.json", True),
