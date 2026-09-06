@@ -35,3 +35,8 @@ If you discover a security vulnerability in Zap, please report it responsibly:
 | 2.x     | Yes                |
 | 1.x     | No                 |
 | < 1.0   | No                 |
+
+## Supported Release Lines
+
+- Latest `v2.11.x`
+- See [releases/tag/v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18) for details.
