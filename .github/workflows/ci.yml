@@ -542,7 +542,9 @@ jobs:
           zap="native/target/${{ matrix.target }}/release/zap"
           "$zap" --version
           "$zap" --help >/dev/null
-          "$zap" examples/default_parameters.zp
+          for example in examples/*.zp; do
+            "$zap" "$example"
+          done
           "$zap" scripts/p3_smoke.zp
 
       - name: Run Windows CLI smoke checks
@@ -552,7 +554,7 @@ jobs:
           $zap = "native/target/${{ matrix.target }}/release/zap.exe"
           & $zap --version
           & $zap --help | Out-Null
-          & $zap examples/default_parameters.zp
+          Get-ChildItem examples/*.zp | ForEach-Object { & $zap $_.FullName }
           @'
           let parsed = url_parse("https://example.com:8443/api?q=zap")
           assert(parsed["scheme"] == "https", "URL scheme mismatch")
