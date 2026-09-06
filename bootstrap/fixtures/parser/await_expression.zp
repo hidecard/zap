@@ -1,0 +1,3 @@
+async fn main():
+    let future = 1
+    let value = await future

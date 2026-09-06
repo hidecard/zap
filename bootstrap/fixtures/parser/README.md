@@ -41,6 +41,7 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `arbitrary_nested_expressions.zp` | `arbitrary_nested_expressions.ast.json` | ✅ captured | BOOT-053 |
 | `arithmetic.zp` | `arithmetic.ast.json` | ✅ captured | BOOT-015 |
 | `assignment_statement.zp` | `assignment_statement.ast.json` | ✅ captured | |
+| `await_expression.zp` | `await_expression.ast.json` | ✅ captured | await expression |
 | `bool_literals.zp` | `bool_literals.ast.json` | ✅ captured | true/false literals |
 | `compound.zp` | `compound.ast.json` | ✅ captured | BOOT-013 |
 | `control_flow.zp` | `control_flow.ast.json` | ✅ captured | |
@@ -92,8 +93,8 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 
 ## Coverage summary
 
-- Total `.zp` sources: **54**
-- AST/diagnostics JSON captured: **54**
+- Total `.zp` sources: **55**
+- AST/diagnostics JSON captured: **55**
 - ⚠️ Pending capture: **0**
 - Negative fixtures (rejected by parser; companion JSON captures rejection): **6**
 - Runtime-only (accepted by token-native path; no companion JSON expected): **5**
