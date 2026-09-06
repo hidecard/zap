@@ -7,13 +7,24 @@ import sys
 
 PARSER_DIR = "bootstrap/fixtures/parser"
 PYTHON_HOST = "host/zap-parser-host/parser.py"
+SKIP_FIXTURES = {
+    "while_else_syntax.zp",
+}
 
 def run_parser(mode, fixture_path):
+    with open(fixture_path, "rb") as f:
+        raw = f.read()
+    if raw.startswith(b"\xff\xfe"):
+        raw = raw[2:]
+    if raw.startswith(b"\xef\xbb\xbf"):
+        raw = raw[3:]
+    text = raw.decode("utf-8", errors="replace")
     result = subprocess.run(
         ["python3", PYTHON_HOST, mode, fixture_path],
         capture_output=True,
+        text=True,
     )
-    raw = result.stdout
+    raw = result.stdout.encode("utf-8", errors="replace")
     if raw.startswith(b"\xff\xfe"):
         raw = raw[2:]
     if raw.startswith(b"\xef\xbb\xbf"):
@@ -39,6 +50,10 @@ def main():
         has_diag = os.path.exists(diag_path)
         has_json = os.path.exists(json_path)
         
+        if filename in SKIP_FIXTURES:
+            skipped.append(f"{filename}: skipped (Python host does not match Rust reference)")
+            continue
+        
         if has_ast and (has_diag or has_json):
             skipped.append(f"{filename}: already has golden files")
             continue
@@ -56,14 +71,6 @@ def main():
                     json.dump(output, f, ensure_ascii=False, separators=(",", ":"))
                     f.write("\n")
                 generated.append(ast_path)
-            if not has_diag and not has_json:
-                diag_output = {"diagnostics": [], "kind": "zap.diagnostics", "schema_version": 1, "source_name": output.get("source_name", fixture_path)}
-                diag_path_to_write = diag_path if not has_json else json_path
-                if not has_json:
-                    with open(diag_path, "w", encoding="utf-8") as f:
-                        json.dump(diag_output, f, ensure_ascii=False, separators=(",", ":"))
-                        f.write("\n")
-                        generated.append(diag_path)
         elif "diagnostics" in output:
             if not has_diag and not has_json:
                 target = diag_path if not has_json else json_path
