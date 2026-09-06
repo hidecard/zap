@@ -117,7 +117,17 @@ member_access_fixture="bootstrap/fixtures/parser/member_access.zp"
 member_access_expected="bootstrap/fixtures/parser/member_access.ast.json"
 postfix_indexing_fixture="bootstrap/fixtures/parser/postfix_indexing.zp"
 postfix_indexing_expected="bootstrap/fixtures/parser/postfix_indexing.ast.json"
-for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "bootstrap/fixtures/parser/unexpected_indentation.zp" "bootstrap/fixtures/parser/unexpected_indentation.json" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$while_simple_fixture" "$while_simple_expected" "$deep_mixed_fixture" "$deep_mixed_expected" "$four_argument_fixture" "$four_argument_expected" "$parenthesized_not_fixture" "$parenthesized_not_expected" "$nested_assignment_fixture" "$nested_assignment_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "$missing_function_name_fixture" "$missing_function_name_expected" "$missing_if_condition_fixture" "$missing_if_condition_expected" "$missing_while_condition_fixture" "$missing_while_condition_expected" "$incomplete_assignment_fixture" "$incomplete_assignment_expected" "$unterminated_expression_fixture" "$unterminated_expression_expected" "$unterminated_parameter_list_fixture" "$unterminated_parameter_list_expected" "$for_in_list_fixture" "$for_in_list_expected" "$try_catch_simple_fixture" "$try_catch_simple_expected" "$default_named_args_fixture" "$default_named_args_expected" "$generic_annotated_fn_fixture" "$generic_annotated_fn_expected" "$member_access_fixture" "$member_access_expected" "$postfix_indexing_fixture" "$postfix_indexing_expected" "bootstrap/b1/parser.zp"; do
+bool_literals_fixture="bootstrap/fixtures/parser/bool_literals.zp"
+bool_literals_expected="bootstrap/fixtures/parser/bool_literals.ast.json"
+text_escape_fixture="bootstrap/fixtures/parser/text_escape.zp"
+text_escape_expected="bootstrap/fixtures/parser/text_escape.ast.json"
+module_import_fixture="bootstrap/fixtures/parser/module_import.zp"
+module_import_expected="bootstrap/fixtures/parser/module_import.ast.json"
+result_constructors_fixture="bootstrap/fixtures/parser/result_constructors.zp"
+result_constructors_expected="bootstrap/fixtures/parser/result_constructors.ast.json"
+option_constructors_fixture="bootstrap/fixtures/parser/option_constructors.zp"
+option_constructors_expected="bootstrap/fixtures/parser/option_constructors.ast.json"
+for path in "$valid_fixture" "$valid_expected" "$compound_fixture" "$compound_expected" "$two_fixture" "$two_expected" "$unicode_fixture" "$unicode_expected" "$number_fixture" "$number_expected" "$negative_fixture" "$negative_expected" "$decimal_fixture" "$decimal_expected" "$multiplicative_fixture" "$multiplicative_expected" "$grouped_fixture" "$grouped_expected" "$assignment_fixture" "$assignment_expected" "$logic_fixture" "$logic_expected" "$function_fixture" "$function_expected" "$loop_fixture" "$loop_expected" "$class_fixture" "$class_expected" "$full_expression_fixture" "$full_expression_expected" "$three_declarations_fixture" "$three_declarations_expected" "$nested_calls_fixture" "$nested_calls_expected" "$parenthesized_nested_fixture" "$parenthesized_nested_expected" "$nested_blocks_fixture" "$nested_blocks_expected" "$three_argument_call_fixture" "$three_argument_call_expected" "$control_flow_fixture" "$control_flow_expected" "$invalid_indentation_fixture" "$invalid_indentation_expected" "bootstrap/fixtures/parser/unexpected_indentation.zp" "bootstrap/fixtures/parser/unexpected_indentation.json" "$mixed_top_level_fixture" "$mixed_top_level_expected" "$nested_function_fixture" "$nested_function_expected" "$nested_class_method_fixture" "$nested_class_method_expected" "$mixed_recursive_fixture" "$mixed_recursive_expected" "$while_simple_fixture" "$while_simple_expected" "$deep_mixed_fixture" "$deep_mixed_expected" "$four_argument_fixture" "$four_argument_expected" "$parenthesized_not_fixture" "$parenthesized_not_expected" "$nested_assignment_fixture" "$nested_assignment_expected" "$invalid_fixture" "$invalid_expected" "$unexpected_fixture" "$unexpected_expected" "$missing_assignment_fixture" "$missing_assignment_expected" "$missing_function_paren_fixture" "$missing_function_paren_expected" "$missing_function_name_fixture" "$missing_function_name_expected" "$missing_if_condition_fixture" "$missing_if_condition_expected" "$missing_while_condition_fixture" "$missing_while_condition_expected" "$incomplete_assignment_fixture" "$incomplete_assignment_expected" "$unterminated_expression_fixture" "$unterminated_expression_expected" "$unterminated_parameter_list_fixture" "$unterminated_parameter_list_expected" "$for_in_list_fixture" "$for_in_list_expected" "$try_catch_simple_fixture" "$try_catch_simple_expected" "$default_named_args_fixture" "$default_named_args_expected" "$generic_annotated_fn_fixture" "$generic_annotated_fn_expected" "$member_access_fixture" "$member_access_expected" "$postfix_indexing_fixture" "$postfix_indexing_expected" "$bool_literals_fixture" "$bool_literals_expected" "$text_escape_fixture" "$text_escape_expected" "$module_import_fixture" "$module_import_expected" "$result_constructors_fixture" "$result_constructors_expected" "$option_constructors_fixture" "$option_constructors_expected" "bootstrap/b1/parser.zp"; do
   [[ -f "$path" ]] || { printf 'missing parser candidate fixture: %s\n' "$path" >&2; exit 2; }
 done
 
@@ -177,6 +187,11 @@ let default_named_args = read_text("bootstrap/fixtures/parser/default_named_args
 let generic_annotated_fn = read_text("bootstrap/fixtures/parser/generic_annotated_fn.zp")
 let member_access = read_text("bootstrap/fixtures/parser/member_access.zp")
 let postfix_indexing = read_text("bootstrap/fixtures/parser/postfix_indexing.zp")
+let bool_literals = read_text("bootstrap/fixtures/parser/bool_literals.zp")
+let text_escape = read_text("bootstrap/fixtures/parser/text_escape.zp")
+let module_import = read_text("bootstrap/fixtures/parser/module_import.zp")
+let result_constructors = read_text("bootstrap/fixtures/parser/result_constructors.zp")
+let option_constructors = read_text("bootstrap/fixtures/parser/option_constructors.zp")
 let valid_tokens = from_json(lex(valid, "bootstrap/fixtures/parser/arithmetic.zp"))
 let compound_tokens = from_json(lex(compound, "bootstrap/fixtures/parser/compound.zp"))
 let two_tokens = from_json(lex(two, "bootstrap/fixtures/parser/two_declarations.zp"))
@@ -225,6 +240,11 @@ let default_named_args_tokens = from_json(lex(default_named_args, "bootstrap/fix
 let generic_annotated_fn_tokens = from_json(lex(generic_annotated_fn, "bootstrap/fixtures/parser/generic_annotated_fn.zp"))
 let member_access_tokens = from_json(lex(member_access, "bootstrap/fixtures/parser/member_access.zp"))
 let postfix_indexing_tokens = from_json(lex(postfix_indexing, "bootstrap/fixtures/parser/postfix_indexing.zp"))
+let bool_literals_tokens = from_json(lex(bool_literals, "bootstrap/fixtures/parser/bool_literals.zp"))
+let text_escape_tokens = from_json(lex(text_escape, "bootstrap/fixtures/parser/text_escape.zp"))
+let module_import_tokens = from_json(lex(module_import, "bootstrap/fixtures/parser/module_import.zp"))
+let result_constructors_tokens = from_json(lex(result_constructors, "bootstrap/fixtures/parser/result_constructors.zp"))
+let option_constructors_tokens = from_json(lex(option_constructors, "bootstrap/fixtures/parser/option_constructors.zp"))
 say parse_or_diagnostics(valid, valid_tokens["tokens"], "bootstrap/fixtures/parser/arithmetic.zp")
 say parse_or_diagnostics(compound, compound_tokens["tokens"], "bootstrap/fixtures/parser/compound.zp")
 say parse_or_diagnostics(two, two_tokens["tokens"], "bootstrap/fixtures/parser/two_declarations.zp")
@@ -273,6 +293,11 @@ say parse_or_diagnostics(default_named_args, default_named_args_tokens["tokens"]
 say parse_or_diagnostics(generic_annotated_fn, generic_annotated_fn_tokens["tokens"], "bootstrap/fixtures/parser/generic_annotated_fn.zp")
 say parse_or_diagnostics(member_access, member_access_tokens["tokens"], "bootstrap/fixtures/parser/member_access.zp")
 say parse_or_diagnostics(postfix_indexing, postfix_indexing_tokens["tokens"], "bootstrap/fixtures/parser/postfix_indexing.zp")
+say parse_or_diagnostics(bool_literals, bool_literals_tokens["tokens"], "bootstrap/fixtures/parser/bool_literals.zp")
+say parse_or_diagnostics(text_escape, text_escape_tokens["tokens"], "bootstrap/fixtures/parser/text_escape.zp")
+say parse_or_diagnostics(module_import, module_import_tokens["tokens"], "bootstrap/fixtures/parser/module_import.zp")
+say parse_or_diagnostics(result_constructors, result_constructors_tokens["tokens"], "bootstrap/fixtures/parser/result_constructors.zp")
+say parse_or_diagnostics(option_constructors, option_constructors_tokens["tokens"], "bootstrap/fixtures/parser/option_constructors.zp")
 EOF
 {
   cat "$valid_expected"
@@ -323,6 +348,11 @@ EOF
   cat "$generic_annotated_fn_expected"
   cat "$member_access_expected"
   cat "$postfix_indexing_expected"
+  cat "$bool_literals_expected"
+  cat "$text_escape_expected"
+  cat "$module_import_expected"
+  cat "$result_constructors_expected"
+  cat "$option_constructors_expected"
 } > "$expected"
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then

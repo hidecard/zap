@@ -1,0 +1,2 @@
+let result = ok(42)
+let error = err("failed")

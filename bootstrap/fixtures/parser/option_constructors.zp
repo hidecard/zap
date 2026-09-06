@@ -1,0 +1,2 @@
+let opt = some(1)
+let none_val = option_none()
