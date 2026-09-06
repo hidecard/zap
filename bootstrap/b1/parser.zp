@@ -1348,15 +1348,29 @@ export fn parse_parameter_list(parameter_text):
 
         let annotation = none
 
+        let default = none
+
         if contains(part, ":"):
 
             let pieces = split(part, ":")
 
             name_text = trim(pieces[0])
 
-            annotation = trim(substring(part, len(pieces[0]) + 1, len(part)))
+            let annotation_text = trim(substring(part, len(pieces[0]) + 1, len(part)))
 
-        params = append(params, {"annotation": annotation, "default": none, "name": name_text})
+            if contains(annotation_text, "="):
+
+                let default_pieces = split(annotation_text, "=")
+
+                annotation = trim(substring(annotation_text, 0, index_of(annotation_text, "=")))
+
+                default = trim(substring(annotation_text, index_of(annotation_text, "=") + 1, len(annotation_text)))
+
+            else:
+
+                annotation = annotation_text
+
+        params = append(params, {"annotation": annotation, "default": default, "name": name_text})
 
     return params
 
