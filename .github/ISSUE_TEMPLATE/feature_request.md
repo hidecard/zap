@@ -17,7 +17,7 @@ A clear and concise description of what you want to happen.
 A clear and concise description of any alternative solutions or features you've considered.
 
 **Language change?**
-If this is a language syntax/semantic change, please use the [RFC process](RFC_TEMPLATE.md) instead.
+If this is a language syntax/semantic change, please use the [RFC process](../../RFC_TEMPLATE.md) instead.
 
 **Standard library addition?**
 If this is a standard library function/module, describe:

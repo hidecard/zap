@@ -42,6 +42,6 @@
 - Bug reports
 
 ## Links
-- [Milestone](link)
-- [Release notes](link)
-- [CI dashboard](link)
+- [Milestones](https://github.com/hidecard/zap/milestones)
+- [Release notes](https://github.com/hidecard/zap/releases)
+- [CI dashboard](https://github.com/hidecard/zap/actions)
