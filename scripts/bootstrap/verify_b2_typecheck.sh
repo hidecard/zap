@@ -11,11 +11,36 @@ run_zap() {
   elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
     "$ROOT_DIR/native/target/debug/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
-    "$ROOT_DIR/native/target/release/zap.exe" "$@"
+    local args=()
+    for arg in "$@"; do
+      if [[ "$arg" == /* ]]; then
+        args+=("$(windows_path "$arg")")
+      else
+        args+=("$arg")
+      fi
+    done
+    "$ROOT_DIR/native/target/release/zap.exe" "${args[@]}"
   elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
-    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
+    local args=()
+    for arg in "$@"; do
+      if [[ "$arg" == /* ]]; then
+        args+=("$(windows_path "$arg")")
+      else
+        args+=("$arg")
+      fi
+    done
+    "$ROOT_DIR/native/target/debug/zap.exe" "${args[@]}"
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
+
+# Convert MSYS2/Git Bash paths to Windows paths for zap.exe
+windows_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    echo "$1" | sed 's|^/mnt/\([a-z]\)/|\1:/|'
   fi
 }
 
@@ -27,11 +52,12 @@ for path in "$valid_ir_fixture" "$valid_ir_expected" "$generic_ir_fixture" "$gen
   [[ -f "$path" ]] || { printf 'missing B2 fixture: %s\n' "$path" >&2; exit 2; }
 done
 
-first=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-first.XXXXXX")
-second=$(mktemp "${TMPDIR:-/tmp}/zap-b2-typed-ir-second.XXXXXX")
-generic_first=$(mktemp "${TMPDIR:-/tmp}/zap-b2-generic-typed-ir-first.XXXXXX")
-generic_second=$(mktemp "${TMPDIR:-/tmp}/zap-b2-generic-typed-ir-second.XXXXXX")
-root=$(mktemp -d "${TMPDIR:-/tmp}/zap-b2-typecheck-projects.XXXXXX")
+mkdir -p "$ROOT_DIR/.tmp"
+first=$(mktemp "$ROOT_DIR/.tmp/zap-b2-typed-ir-first.XXXXXX")
+second=$(mktemp "$ROOT_DIR/.tmp/zap-b2-typed-ir-second.XXXXXX")
+generic_first=$(mktemp "$ROOT_DIR/.tmp/zap-b2-generic-typed-ir-first.XXXXXX")
+generic_second=$(mktemp "$ROOT_DIR/.tmp/zap-b2-generic-typed-ir-second.XXXXXX")
+root=$(mktemp -d "$ROOT_DIR/.tmp/zap-b2-typecheck-projects.XXXXXX")
 trap 'rm -f "$first" "$second" "$generic_first" "$generic_second"; rm -rf "$root"' EXIT
 
 run_zap bootstrap typed-ir "$valid_ir_fixture" > "$first"
@@ -65,9 +91,14 @@ actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
 normalize_paths(actual_data)
 actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 actual_path.write_text(actual_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
+normalize_paths(expected_data)
+expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+expected_path.write_text(expected_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 PY
 cmp "$first" "$valid_ir_expected"
-jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number"' "$first" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].annotation == "number" and .ir.nodes[0].inferred_type == "number"' "$first" >/dev/null
 printf 'B2 typed-IR reference reproducibility passed: annotated declaration\n'
 run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_first"
 run_zap bootstrap typed-ir "$generic_ir_fixture" > "$generic_second"
@@ -100,9 +131,14 @@ actual_data = json.loads(actual_path.read_text(encoding="utf-8"))
 normalize_paths(actual_data)
 actual_path.write_text(json.dumps(actual_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 actual_path.write_text(actual_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
+normalize_paths(expected_data)
+expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+expected_path.write_text(expected_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 PY
 cmp "$generic_first" "$generic_ir_expected"
-jq -e '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].kind == "function" and .ir.nodes[0].name == "identity" and .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$generic_first" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.kind == "zap.typed_ir" and .schema_version == 1 and .reference_only == true and .ir.nodes[0].kind == "function" and .ir.nodes[0].name == "identity" and .ir.nodes[0].type_params == ["T"] and .ir.nodes[1].inferred_type == "number" and .ir.nodes[2].inferred_type == "text"' "$generic_first" >/dev/null
 printf 'A3 typed-IR reference reproducibility passed: generic identity metadata and substituted calls\n'
 
 run_check() {
@@ -132,11 +168,11 @@ run_cross_module_body_check() {
 }
 
 annotated=$(run_check annotated)
-jq -e '.ok == true' <<<"$annotated" >/dev/null
+printf '%s\n' "$annotated" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: annotated\n'
 
 conditional=$(run_check conditional)
-jq -e '.ok == true' <<<"$conditional" >/dev/null
+printf '%s\n' "$conditional" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: conditional expression\n'
 
 set +e
@@ -147,11 +183,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("expects number, got text"))' <<<"$incompatible" >/dev/null
+printf '%s\n' "$incompatible" | python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("expects number, got text"))' >/dev/null
 printf 'B2 type-check rejection passed: incompatible annotation\n'
 
 function_check=$(run_check function)
-jq -e '.ok == true' <<<"$function_check" >/dev/null
+printf '%s\n' "$function_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: annotated function and call\n'
 
 set +e
@@ -162,7 +198,7 @@ if [[ "$status" -eq 0 ]]; then
   printf 'function_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 22 and (.message | test("argument .* for .* expects number, got text"))' <<<"$function_incompatible" >/dev/null
+printf '%s\n' "$function_incompatible" | python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 22 and (.message | test("argument .* for .* expects number, got text"))' >/dev/null
 printf 'B2 type-check rejection passed: incompatible function call\n'
 
 set +e
@@ -173,11 +209,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'collection_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''first'\'' expects text, got number"))' <<<"$collection_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''first'\'' expects text, got number"))' <<<"$collection_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible collection element\n'
 
 nested_collection_check=$(run_check nested_collection)
-jq -e '.ok == true' <<<"$nested_collection_check" >/dev/null
+printf '%s\n' "$nested_collection_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: nested collection element\n'
 
 set +e
@@ -188,11 +224,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'nested_collection_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''first'\'' expects text, got number"))' <<<"$nested_collection_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''first'\'' expects text, got number"))' <<<"$nested_collection_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible nested collection element\n'
 
 map_collection_check=$(run_check map_collection)
-jq -e '.ok == true' <<<"$map_collection_check" >/dev/null
+printf '%s\n' "$map_collection_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: bounded map element\n'
 
 set +e
@@ -203,11 +239,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'map_collection_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''result'\'' expects text, got number"))' <<<"$map_collection_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("variable '\''result'\'' expects text, got number"))' <<<"$map_collection_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible bounded map element\n'
 
 branch_narrowing_check=$(run_check branch_narrowing)
-jq -e '.ok == true' <<<"$branch_narrowing_check" >/dev/null
+printf '%s\n' "$branch_narrowing_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: bounded branch-local option narrowing\n'
 
 set +e
@@ -218,11 +254,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'branch_narrowing_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''inside'\'' expects text, got number"))' <<<"$branch_narrowing_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''inside'\'' expects text, got number"))' <<<"$branch_narrowing_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible bounded branch-local narrowing\n'
 
 loop_narrowing_check=$(run_check loop_narrowing)
-jq -e '.ok == true' <<<"$loop_narrowing_check" >/dev/null
+printf '%s\n' "$loop_narrowing_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: bounded loop-body narrowing\n'
 
 set +e
@@ -233,11 +269,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'loop_narrowing_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''after_loop'\'' expects number, got option<number>"))' <<<"$loop_narrowing_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''after_loop'\'' expects number, got option<number>"))' <<<"$loop_narrowing_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: loop-boundary wrapper restoration\n'
 
 else_narrowing_check=$(run_check else_narrowing)
-jq -e '.ok == true' <<<"$else_narrowing_check" >/dev/null
+printf '%s\n' "$else_narrowing_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: bounded is_option_none else-branch narrowing\n'
 
 set +e
@@ -248,11 +284,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'else_narrowing_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''payload'\'' expects text, got number"))' <<<"$else_narrowing_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''payload'\'' expects text, got number"))' <<<"$else_narrowing_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible bounded is_option_none else-branch narrowing\n'
 
 bool_annotation_check=$(run_check bool_annotation)
-jq -e '.ok == true' <<<"$bool_annotation_check" >/dev/null
+printf '%s\n' "$bool_annotation_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: bool literal annotation\n'
 
 set +e
@@ -263,11 +299,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'bool_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''enabled'\'' expects bool, got number"))' <<<"$bool_annotation_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''enabled'\'' expects bool, got number"))' <<<"$bool_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible bool annotation\n'
 
 none_annotation_check=$(run_check none_annotation)
-jq -e '.ok == true' <<<"$none_annotation_check" >/dev/null
+printf '%s\n' "$none_annotation_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: none literal annotation\n'
 
 set +e
@@ -278,11 +314,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'none_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''missing'\'' expects none, got number"))' <<<"$none_annotation_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''missing'\'' expects none, got number"))' <<<"$none_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible none annotation\n'
 
 list_annotation_check=$(run_check list_annotation)
-jq -e '.ok == true' <<<"$list_annotation_check" >/dev/null
+printf '%s\n' "$list_annotation_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: direct list literal annotation\n'
 
 set +e
@@ -293,11 +329,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'list_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got list<number>"))' <<<"$list_annotation_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got list<number>"))' <<<"$list_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible direct list annotation\n'
 
 map_annotation_check=$(run_check map_annotation)
-jq -e '.ok == true' <<<"$map_annotation_check" >/dev/null
+printf '%s\n' "$map_annotation_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: direct map literal annotation\n'
 
 set +e
@@ -308,11 +344,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'map_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got map<text,number>"))' <<<"$map_annotation_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got map<text,number>"))' <<<"$map_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible direct map annotation\n'
 
 option_annotation_check=$(run_check option_annotation)
-jq -e '.ok == true' <<<"$option_annotation_check" >/dev/null
+printf '%s\n' "$option_annotation_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: direct option constructor annotation\n'
 
 set +e
@@ -323,11 +359,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'option_annotation_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$option_annotation_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$option_annotation_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible direct option annotation\n'
 
 expression_number_add_check=$(run_check expression_number_add)
-jq -e '.ok == true' <<<"$expression_number_add_check" >/dev/null
+printf '%s\n' "$expression_number_add_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact numeric addition expression\n'
 
 set +e
@@ -338,11 +374,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'expression_number_add_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got number"))' <<<"$expression_number_add_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got number"))' <<<"$expression_number_add_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact numeric addition expression\n'
 
 expression_text_add_check=$(run_check expression_text_add)
-jq -e '.ok == true' <<<"$expression_text_add_check" >/dev/null
+printf '%s\n' "$expression_text_add_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact text addition expression\n'
 
 set +e
@@ -353,15 +389,15 @@ if [[ "$status" -eq 0 ]]; then
   printf 'expression_text_add_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects number, got text"))' <<<"$expression_text_add_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects number, got text"))' <<<"$expression_text_add_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact text addition expression\n'
 
 expression_comparison_bool_check=$(run_check expression_comparison_bool)
-jq -e '.ok == true' <<<"$expression_comparison_bool_check" >/dev/null
+printf '%s\n' "$expression_comparison_bool_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact comparison bool expression\n'
 
 expression_boolean_logic_check=$(run_check expression_boolean_logic)
-jq -e '.ok == true' <<<"$expression_boolean_logic_check" >/dev/null
+printf '%s\n' "$expression_boolean_logic_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact boolean logic expression\n'
 
 set +e
@@ -372,11 +408,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'expression_boolean_logic_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got bool"))' <<<"$expression_boolean_logic_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got bool"))' <<<"$expression_boolean_logic_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact boolean logic expression\n'
 
 expression_result_constructor_check=$(run_check expression_result_constructor)
-jq -e '.ok == true' <<<"$expression_result_constructor_check" >/dev/null
+printf '%s\n' "$expression_result_constructor_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact result constructor expression\n'
 
 set +e
@@ -387,11 +423,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'expression_result_constructor_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got result<number>"))' <<<"$expression_result_constructor_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got result<number>"))' <<<"$expression_result_constructor_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact result constructor expression\n'
 
 collection_expression_list_check=$(run_check collection_expression_list)
-jq -e '.ok == true' <<<"$collection_expression_list_check" >/dev/null
+printf '%s\n' "$collection_expression_list_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact list arithmetic expression\n'
 
 set +e
@@ -402,11 +438,11 @@ if [[ "$status" -eq 0 ]]; then
   printf 'collection_expression_list_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects list<text>, got list<number>"))' <<<"$collection_expression_list_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects list<text>, got list<number>"))' <<<"$collection_expression_list_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact list arithmetic expression\n'
 
 collection_expression_map_check=$(run_check collection_expression_map)
-jq -e '.ok == true' <<<"$collection_expression_map_check" >/dev/null
+printf '%s\n' "$collection_expression_map_check" | python3 scripts/bootstrap/jq_check.py '.ok == true' >/dev/null
 printf 'B2 type-check acceptance passed: exact map arithmetic expression\n'
 
 set +e
@@ -417,10 +453,10 @@ if [[ "$status" -eq 0 ]]; then
   printf 'collection_expression_map_incompatible fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects map<text,text>, got map<text,number>"))' <<<"$collection_expression_map_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects map<text,text>, got map<text,number>"))' <<<"$collection_expression_map_incompatible" >/dev/null
 printf 'B2 type-check rejection passed: incompatible exact map arithmetic expression\n'
 generic_identity_check=$(run_check generic_identity)
-jq -e '.ok == true and .code? == null' <<<"$generic_identity_check" >/dev/null
+printf '%s\n' "$generic_identity_check" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: generic identity substitution\n'
 set +e
 generic_conflict=$(run_check generic_conflict 2>/tmp/zap-a3-generic-conflict-typecheck-error)
@@ -430,7 +466,7 @@ if [[ "$status" -eq 0 ]]; then
   printf 'generic_conflict fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 19 and (.message | contains("generic argument substitution for '\''same'\'' is inconsistent"))' <<<"$generic_conflict" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 19 and (.message | contains("generic argument substitution for '\''same'\'' is inconsistent"))' <<<"$generic_conflict" >/dev/null
 printf 'A3 type-check rejection passed: conflicting generic substitution\n'
 set +e
 generic_return_mismatch=$(run_check generic_return_mismatch 2>/tmp/zap-a3-generic-return-typecheck-error)
@@ -440,10 +476,10 @@ if [[ "$status" -eq 0 ]]; then
   printf 'generic_return_mismatch fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("return from '\''broken'\'' expects T, got text"))' <<<"$generic_return_mismatch" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 2 and .column == 1 and (.message | contains("return from '\''broken'\'' expects T, got text"))' <<<"$generic_return_mismatch" >/dev/null
 printf 'A3 type-check rejection passed: generic return mismatch\n'
 generic_multiple_params_check=$(run_check generic_multiple_params)
-jq -e '.ok == true and .code? == null' <<<"$generic_multiple_params_check" >/dev/null
+printf '%s\n' "$generic_multiple_params_check" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: multiple generic substitutions\n'
 set +e
 generic_option_wrapper=$(run_check generic_option_wrapper 2>/tmp/zap-a3-generic-option-typecheck-error)
@@ -453,7 +489,7 @@ if [[ "$status" -eq 0 ]]; then
   printf 'generic_option_wrapper fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$generic_option_wrapper" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<number>"))' <<<"$generic_option_wrapper" >/dev/null
 printf 'A3 type-check rejection passed: generic option-wrapper substitution mismatch\n'
 set +e
 generic_result_wrapper=$(run_check generic_result_wrapper 2>/tmp/zap-a3-generic-result-typecheck-error)
@@ -463,7 +499,7 @@ if [[ "$result_wrapper_status" -eq 0 ]]; then
   printf 'generic_result_wrapper fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects number, got result<text>"))' <<<"$generic_result_wrapper" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 5 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects number, got result<text>"))' <<<"$generic_result_wrapper" >/dev/null
 printf 'A3 type-check rejection passed: generic result-wrapper substitution mismatch\n'
 set +e
 generic_arity_mismatch=$(run_check generic_arity_mismatch 2>/tmp/zap-a3-generic-arity-typecheck-error)
@@ -473,16 +509,16 @@ if [[ "$arity_status" -eq 0 ]]; then
   printf 'generic_arity_mismatch fixture unexpectedly passed\n' >&2
   exit 1
 fi
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 21 and (.message | contains("function '\''first'\'' expects 2 to 2 arguments, got 1"))' <<<"$generic_arity_mismatch" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 21 and (.message | contains("function '\''first'\'' expects 2 to 2 arguments, got 1"))' <<<"$generic_arity_mismatch" >/dev/null
 printf 'A3 type-check rejection passed: generic function arity\n'
 generic_runtime_wrappers=$(run_check generic_runtime_wrappers)
-jq -e '.ok == true and .code? == null' <<<"$generic_runtime_wrappers" >/dev/null
+printf '%s\n' "$generic_runtime_wrappers" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: generic runtime wrapper corpus\n'
 runtime_output=$(run_zap run "$root/generic_runtime_wrappers/main.zp" 2>/tmp/zap-a3-generic-runtime-error)
 [[ -z "$runtime_output" ]] || { printf 'generic runtime fixture unexpectedly emitted output: %s\n' "$runtime_output" >&2; exit 1; }
 printf 'A3 runtime substitution passed: generic option/result wrapper corpus\n'
 generic_nested_option_list=$(run_check generic_nested_option_list)
-jq -e '.ok == true and .code? == null' <<<"$generic_nested_option_list" >/dev/null
+printf '%s\n' "$generic_nested_option_list" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 nested_option_list_runtime_output=$(run_zap run "$root/generic_nested_option_list/main.zp" 2>/tmp/zap-a3-generic-nested-option-list-runtime-error)
 [[ -z "$nested_option_list_runtime_output" ]] || { printf 'generic nested option/list runtime fixture unexpectedly emitted output: %s\n' "$nested_option_list_runtime_output" >&2; exit 1; }
 printf 'A3 reference-only acceptance passed: nested option/list generic substitution\n'
@@ -491,27 +527,27 @@ generic_nested_option_list_incompatible=$(run_check generic_nested_option_list_i
 nested_option_list_incompatible_status=$?
 set -e
 [[ "$nested_option_list_incompatible_status" -ne 0 ]] || { printf 'generic_nested_option_list_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<list<number>>"))' <<<"$generic_nested_option_list_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got option<list<number>>"))' <<<"$generic_nested_option_list_incompatible" >/dev/null
 printf 'A3 reference-only rejection passed: nested option/list generic substitution\n'
 generic_scope_positive=$(run_check generic_scope_positive)
-jq -e '.ok == true and .code? == null' <<<"$generic_scope_positive" >/dev/null
+printf '%s\n' "$generic_scope_positive" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 reference-only acceptance passed: generic declaration scope\n'
 set +e
 generic_scope_external_incompatible=$(run_check generic_scope_external_incompatible 2>/tmp/zap-a3-generic-scope-external-error)
 generic_scope_external_status=$?
 set -e
 [[ "$generic_scope_external_status" -ne 0 ]] || { printf 'generic_scope_external_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("unknown type annotation '\''T'\''"))' <<<"$generic_scope_external_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("unknown type annotation '\''T'\''"))' <<<"$generic_scope_external_incompatible" >/dev/null
 printf 'A3 reference-only rejection passed: external generic parameter scope\n'
 set +e
 generic_scope_parameter_incompatible=$(run_check generic_scope_parameter_incompatible 2>/tmp/zap-a3-generic-scope-parameter-error)
 generic_scope_parameter_status=$?
 set -e
 [[ "$generic_scope_parameter_status" -ne 0 ]] || { printf 'generic_scope_parameter_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("unknown type annotation '\''T'\''"))' <<<"$generic_scope_parameter_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 1 and .column == 1 and (.message | contains("unknown type annotation '\''T'\''"))' <<<"$generic_scope_parameter_incompatible" >/dev/null
 printf 'A3 reference-only rejection passed: undeclared generic parameter scope\n'
 generic_list_wrapper=$(run_check generic_list_wrapper)
-jq -e '.ok == true and .code? == null' <<<"$generic_list_wrapper" >/dev/null
+printf '%s\n' "$generic_list_wrapper" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: generic list wrapper\n'
 list_runtime_output=$(run_zap run "$root/generic_list_wrapper/main.zp" 2>/tmp/zap-a3-generic-list-runtime-error)
 [[ -z "$list_runtime_output" ]] || { printf 'generic list runtime fixture unexpectedly emitted output: %s\n' "$list_runtime_output" >&2; exit 1; }
@@ -521,10 +557,10 @@ generic_list_wrapper_incompatible=$(run_check generic_list_wrapper_incompatible 
 list_incompatible_status=$?
 set -e
 [[ "$list_incompatible_status" -ne 0 ]] || { printf 'generic_list_wrapper_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got list<number>"))' <<<"$generic_list_wrapper_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got list<number>"))' <<<"$generic_list_wrapper_incompatible" >/dev/null
 printf 'A3 type-check rejection passed: generic list-wrapper substitution mismatch\n'
 generic_map_wrapper=$(run_check generic_map_wrapper)
-jq -e '.ok == true and .code? == null' <<<"$generic_map_wrapper" >/dev/null
+printf '%s\n' "$generic_map_wrapper" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: generic map wrapper\n'
 map_runtime_output=$(run_zap run "$root/generic_map_wrapper/main.zp" 2>/tmp/zap-a3-generic-map-runtime-error)
 [[ -z "$map_runtime_output" ]] || { printf 'generic map runtime fixture unexpectedly emitted output: %s\n' "$map_runtime_output" >&2; exit 1; }
@@ -534,10 +570,10 @@ generic_map_wrapper_incompatible=$(run_check generic_map_wrapper_incompatible 2>
 map_incompatible_status=$?
 set -e
 [[ "$map_incompatible_status" -ne 0 ]] || { printf 'generic_map_wrapper_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got map<text,number>"))' <<<"$generic_map_wrapper_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 4 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got map<text,number>"))' <<<"$generic_map_wrapper_incompatible" >/dev/null
 printf 'A3 type-check rejection passed: generic map-wrapper substitution mismatch\n'
 generic_cross_module=$(run_cross_module_check generic_cross_module)
-jq -e '.ok == true and .code? == null' <<<"$generic_cross_module" >/dev/null
+printf '%s\n' "$generic_cross_module" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 type-check acceptance passed: imported generic identity substitution\n'
 cross_module_runtime_output=$(run_zap run "$root/generic_cross_module/main.zp" 2>/tmp/zap-a3-cross-module-runtime-error)
 [[ -z "$cross_module_runtime_output" ]] || { printf 'generic cross-module runtime fixture unexpectedly emitted output: %s\n' "$cross_module_runtime_output" >&2; exit 1; }
@@ -547,10 +583,10 @@ generic_cross_module_incompatible=$(run_cross_module_check generic_cross_module_
 cross_module_incompatible_status=$?
 set -e
 [[ "$cross_module_incompatible_status" -ne 0 ]] || { printf 'generic_cross_module_incompatible fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got number"))' <<<"$generic_cross_module_incompatible" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 1 and (.message | contains("variable '\''wrong'\'' expects text, got number"))' <<<"$generic_cross_module_incompatible" >/dev/null
 printf 'A3 type-check rejection passed: imported generic substitution mismatch\n'
 generic_cross_module_body=$(run_cross_module_body_check generic_cross_module_body)
-jq -e '.ok == true and .code? == null' <<<"$generic_cross_module_body" >/dev/null
+printf '%s\n' "$generic_cross_module_body" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 set +e
 cross_module_body_runtime=$(run_zap run "$root/generic_cross_module_body/main.zp" 2>/tmp/zap-a3-cross-module-body-runtime-error)
 cross_module_body_runtime_status=$?
@@ -559,7 +595,7 @@ set -e
 grep -F "type mismatch for return: expected number, got text" /tmp/zap-a3-cross-module-body-runtime-error >/dev/null || { printf 'imported generic body runtime diagnostic changed unexpectedly\n' >&2; cat /tmp/zap-a3-cross-module-body-runtime-error >&2; exit 1; }
 printf 'A3 reference-only imported-body boundary passed: static signature acceptance and runtime body mismatch\n'
 generic_explicit_call_deferred=$(run_check generic_explicit_call_deferred)
-jq -e '.ok == true and .code? == null' <<<"$generic_explicit_call_deferred" >/dev/null
+printf '%s\n' "$generic_explicit_call_deferred" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 deferred syntax probe passed: explicit generic call statically accepted by current reference path\n'
 set +e
 run_zap run "$root/generic_explicit_call_deferred/main.zp" >/tmp/zap-a3-explicit-call-runtime-output 2>/tmp/zap-a3-explicit-call-runtime-error
@@ -569,7 +605,7 @@ set -e
 grep -F "undefined variable: number" /tmp/zap-a3-explicit-call-runtime-error >/dev/null || { printf 'explicit generic call runtime diagnostic changed unexpectedly\n' >&2; cat /tmp/zap-a3-explicit-call-runtime-error >&2; exit 1; }
 printf 'A3 deferred syntax probe passed: explicit generic call runtime rejection preserved\n'
 generic_class_deferred=$(run_check generic_class_deferred)
-jq -e '.ok == true and .code? == null' <<<"$generic_class_deferred" >/dev/null
+printf '%s\n' "$generic_class_deferred" | python3 scripts/bootstrap/jq_check.py '.ok == true and .code? == null' >/dev/null
 printf 'A3 deferred class probe passed: generic class header statically accepted by current project path\n'
 set +e
 run_zap run "$root/generic_class_deferred/main.zp" >/tmp/zap-a3-generic-class-runtime-output 2>/tmp/zap-a3-generic-class-runtime-error
@@ -583,7 +619,7 @@ generic_alias_deferred=$(run_check generic_alias_deferred 2>/tmp/zap-a3-generic-
 generic_alias_status=$?
 set -e
 [[ "$generic_alias_status" -ne 0 ]] || { printf 'generic alias deferred fixture unexpectedly passed\n' >&2; exit 1; }
-jq -e '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 1 and (.message | contains("unknown type annotation '\''NumberBox<number>'\''"))' <<<"$generic_alias_deferred" >/dev/null
+python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-TYPE-001" and .kind == "TypeError" and .severity == "error" and .line == 3 and .column == 1 and (.message | contains("unknown type annotation '\''NumberBox<number>'\''"))' <<<"$generic_alias_deferred" >/dev/null
 printf 'A3 deferred alias probe passed: generic alias annotation rejection preserved\n'
 for malformed in empty_params duplicate_params invalid_param; do
   set +e
@@ -591,9 +627,9 @@ for malformed in empty_params duplicate_params invalid_param; do
   malformed_status=$?
   set -e
   [[ "$malformed_status" -ne 0 ]] || { printf 'generic_%s fixture unexpectedly passed\n' "$malformed" >&2; exit 1; }
-  jq -e '.ok == false and .code == "ZAP-SYNTAX-001" and .kind == "SyntaxError" and .severity == "error" and .line == 1 and .column == 1' <<<"$malformed_output" >/dev/null
+  printf '%s\n' "$malformed_output" | python3 scripts/bootstrap/jq_check.py '.ok == false and .code == "ZAP-SYNTAX-001" and .kind == "SyntaxError" and .severity == "error" and .line == 1 and .column == 1' >/dev/null
   printf 'A3 parser rejection passed: generic_%s\n' "$malformed"
 done
-jq -e '(.message == "generic type-parameter list cannot be empty")' <<<"$(run_check generic_empty_params 2>/dev/null || true)" >/dev/null
-jq -e '(.message == "duplicate generic type parameter: T")' <<<"$(run_check generic_duplicate_params 2>/dev/null || true)" >/dev/null
-jq -e '(.message == "invalid generic type parameter '\''t'\''")' <<<"$(run_check generic_invalid_param 2>/dev/null || true)" >/dev/null
+printf '%s\n' "$(run_check generic_empty_params 2>/dev/null || true)" | python3 scripts/bootstrap/jq_check.py '(.message == "generic type-parameter list cannot be empty")' >/dev/null
+printf '%s\n' "$(run_check generic_duplicate_params 2>/dev/null || true)" | python3 scripts/bootstrap/jq_check.py '(.message == "duplicate generic type parameter: T")' >/dev/null
+python3 scripts/bootstrap/jq_check.py '(.message == "invalid generic type parameter '\''t'\''")' <<<"$(run_check generic_invalid_param 2>/dev/null || true)" >/dev/null
