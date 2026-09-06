@@ -23,12 +23,25 @@ parser_fixtures=(
   bootstrap/fixtures/parser/nested_calls.zp
   bootstrap/fixtures/parser/simple_loop.zp
   bootstrap/fixtures/parser/simple_function.zp
+  bootstrap/fixtures/parser/control_flow.zp
+  bootstrap/fixtures/parser/assignment_statement.zp
+  bootstrap/fixtures/parser/bool_literals.zp
+  bootstrap/fixtures/parser/text_escape.zp
+  bootstrap/fixtures/parser/module_import.zp
+  bootstrap/fixtures/parser/try_catch_simple.zp
+  bootstrap/fixtures/parser/await_expression.zp
+  bootstrap/fixtures/parser/option_constructors.zp
+  bootstrap/fixtures/parser/result_constructors.zp
 )
 diagnostic_fixtures=(
   bootstrap/fixtures/diagnostics/missing_closing_bracket.zp
   bootstrap/fixtures/diagnostics/invalid_character.zp
   bootstrap/fixtures/diagnostics/unterminated_string.zp
   bootstrap/fixtures/diagnostics/integer_overflow.zp
+  bootstrap/fixtures/parser/invalid_indentation.zp
+  bootstrap/fixtures/parser/invalid_indentation_jump.zp
+  bootstrap/fixtures/parser/malformed_recovery.zp
+  bootstrap/fixtures/parser/numeric_literals.zp
 )
 typed_fixtures=(
   bootstrap/fixtures/typecheck/expression_number_add.zp
@@ -39,6 +52,13 @@ typed_fixtures=(
   bootstrap/fixtures/typecheck/generic_identity.zp
   bootstrap/fixtures/typecheck/generic_nested_option_list.zp
   bootstrap/fixtures/typecheck/conditional.zp
+  bootstrap/fixtures/typecheck/bool_annotation.zp
+  bootstrap/fixtures/typecheck/none_annotation.zp
+  bootstrap/fixtures/typecheck/loop_narrowing.zp
+  bootstrap/fixtures/typecheck/branch_narrowing.zp
+  bootstrap/fixtures/typecheck/short_circuit_or.zp
+  bootstrap/fixtures/typecheck/function.zp
+  bootstrap/fixtures/typecheck/incompatible.zp
 )
 count=0
 for fixture in "${parser_fixtures[@]}"; do
