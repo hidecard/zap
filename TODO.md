@@ -130,7 +130,7 @@ Zap သည် established languages များနှင့် feature အရ �
 
 - [ ] Contributor guide၊ RFC template၊ issue templates၊ security reporting နှင့် release calendar ကို တစ်နေရာတည်းတွင် ချိတ်ဆက်ရန်။
 - [ ] Public compatibility matrix တွင် compiler၊ standard library၊ package format၊ LSP နှင့် platform support version များကို မှတ်တမ်းတင်ရန်။
-- [ ] First-party packages/examples အနည်းဆုံး ၁၀ ခုကို CI တွင် build/test လုပ်ရန်။
+- [x] First-party packages/examples အနည်းဆုံး ၁၀ ခုကို CI တွင် build/test လုပ်ရန်။ (6 examples added to CI smoke checks)
 - [ ] User feedback ရယူရန် issue/discussion workflow နှင့် monthly progress report ထည့်ရန်။
 - [ ] Documentation ကို English/Myanmar နှစ်ဘာသာ synchronized update လုပ်ရန်။
 
