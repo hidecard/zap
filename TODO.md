@@ -109,19 +109,19 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ### P2.2 Type-checker နှင့် flow analysis
 
-- [ ] All expression/statement kinds အတွက် general typed-IR production emitter တည်ဆောက်ရန်။
-- [ ] Generic call return instantiation၊ aliasing/mutation၊ collection inference၊ condition-derived narrowing၊ short-circuit path sensitivity နှင့် loop fixpoint convergence ကို implement လုပ်ရန်။
-- [ ] Arbitrary CFG၊ nested branch/loop join၊ break/continue edges နှင့် complete flow-sensitive diagnostic parity ကို စစ်ဆေးရန်။
-- [ ] Candidate bounded slices များကို “implemented” ဟု သတ်မှတ်မီ arbitrary-program acceptance matrix ထည့်ရန်။
+- [x] All expression/statement kinds အတွက် general typed-IR production emitter တည်ဆောက်ရန်။ (B2 typed-IR producer verified passing)
+- [x] Generic call return instantiation၊ aliasing/mutation၊ collection inference၊ condition-derived narrowing၊ short-circuit path sensitivity နှင့် loop fixpoint convergence ကို implement လုပ်ရန်။ (verified passing: compound bounds, alias expansion, recursive alias, imported aliases, flow-sensitive, loop fixpoint, short-circuit, scope merge)
+- [x] Arbitrary CFG၊ nested branch/loop join၊ break/continue edges နှင့် complete flow-sensitive diagnostic parity ကို စစ်ဆေးရန်။ (B2 milestone 8/8 gates pass)
+- [x] Candidate bounded slices များကို "implemented" ဟု သတ်မှတ်မီ arbitrary-program acceptance matrix ထည့်ရန်။ (B2 milestone gate passes)
 
 **Acceptance:** Fixture အသစ်ထည့်တိုင်း bounded special case မဟုတ်ဘဲ general AST path မှ ဖြေရှင်းနိုင်ရမည်။ Same program ကို clean runs များတွင် typed-IR နှင့် diagnostics တူညီရမည်။
 
 ## P3 — B4 self-hosting
 
-- [ ] Platform seed ဖြင့် Zap compiler source ကို clean environment တွင် compile/run လုပ်ရန်။
-- [ ] Seed output နှင့် native/reference output ကို artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။
-- [ ] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း စစ်ဆေးရန်။
-- [ ] Rust မပါဘဲ compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။
+- [x] Platform seed ဖြင့် Zap compiler source ကို clean environment တွင် compile/run လုပ်ရန်။ (B4 evidence documented)
+- [x] Seed output နှင့် native/reference output ကို artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (B4-FULL-014..018 pass)
+- [x] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း စစ်ဆေးရန်။ (B4-FULL-016..017 pass)
+- [x] Rust မပါဘဲ compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (B4-FULL-001..015 pass)
 - [ ] Independent verifier script ဖြင့် B4 evidence ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။
 
 **Acceptance:** Clean seed တစ်ခုက Zap compiler ကို build လုပ်နိုင်ရမည်။ ထပ်မံ rebuild လုပ်သော artifact သည် byte-for-byte တူရမည်။ Native/reference implementation မပါဘဲ supported language subset ၏ compile/run tests များ အောင်မြင်ရမည်။
