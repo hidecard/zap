@@ -103,7 +103,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] All supported valid/invalid grammar အတွက် canonical fixture matrix တည်ဆောက်ရန်။ (6 new fixtures added: for_in_list, try_catch_simple, default_named_args, generic_annotated_fn, member_access, postfix_indexing)
 - [x] Function/class/module nesting၊ try/catch၊ generic syntax၊ indentation နှင့် arbitrary expression/block coverage တိုးချဲ့ရန်။
 - [x] Rust reference diagnostics နှင့် Zap-owned parser diagnostics ကို error code၊ span၊ message class အလိုက် differential test လုပ်ရန်။ (new diagnostics fixtures added and wired into CI verifier)
-- [ ] Parser-produced AST တွင် source span၊ node kind၊ metadata နှင့် error recovery contract တစ်ပြေးညီဖြစ်စေရန်။
+- [x] Parser-produced AST တွင် source span၊ node kind၊ metadata နှင့် error recovery contract တစ်ပြေးညီဖြစ်စေရန်။ (all new parser/diagnostics fixtures verified against Rust reference; default-argument parsing bug fixed)
 
 **Acceptance:** Supported grammar matrix ၏ အားလုံးသည် Rust reference နှင့် Zap-owned path တွင် တူညီသော accept/reject result နှင့် equivalent diagnostic class ရရမည်။
 
