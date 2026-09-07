@@ -5,7 +5,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 GNUPGHOME="$WORK/gnupg"
 ARTIFACTS="$WORK/artifacts"
-mkdir -m 0700 "$GNUPGHOME" "$ARTIFACTS"
+mkdir -p "$GNUPGHOME" "$ARTIFACTS"
+chmod 0700 "$GNUPGHOME" "$ARTIFACTS" 2>/dev/null || true
 
 for name in \
   zap-2.1.0-linux-x86_64.tar.gz \

@@ -84,14 +84,14 @@ jq -e --arg version "$VERSION" \
   '.schema == "zap.release-manifest.v1" and .version == $version and (.artifacts | type == "array" and length > 0)' \
   "$MANIFEST" >/dev/null || fail "invalid or mismatched artifact manifest"
 
-mapfile -t ARCHIVES < <(jq -r '.artifacts[].name' "$MANIFEST" | LC_ALL=C sort)
+mapfile -t ARCHIVES < <(jq -r '.artifacts[].name' "$MANIFEST" | LC_ALL=C sort | tr -d '\r')
 [[ "${#ARCHIVES[@]}" -gt 0 ]] || fail "manifest contains no artifacts"
 
 for archive in "${ARCHIVES[@]}"; do
   [[ "$archive" != */* && "$archive" != .* ]] || fail "unsafe artifact name in manifest: $archive"
   archive_path="$ARTIFACT_DIR/$archive"
   [[ -f "$archive_path" ]] || fail "manifest artifact is missing: $archive"
-  grep -Fq "  $archive" "$CHECKSUMS" || fail "aggregate checksum is missing artifact: $archive"
+  grep -Fq "  $archive" "$CHECKSUMS" || grep -Fq " *$archive" "$CHECKSUMS" || fail "aggregate checksum is missing artifact: $archive"
   (cd "$ARTIFACT_DIR" && sha256sum -c "$archive.sha256" 2>/dev/null) || fail "per-artifact checksum failed: $archive"
 done
 
