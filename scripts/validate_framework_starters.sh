@@ -295,7 +295,7 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
     dir="frameworks/$name"
     output=$(mktemp)
 
-    cleanup() { rm -f "$output"; }
+    cleanup() { rm -f "$output" "$scaffold_dir"; }
     trap cleanup RETURN
     if run_zap check "$dir" >>"$output" 2>&1 && run_zap build "$dir" >>"$output" 2>&1 && run_zap run "$dir/main.zp" >>"$output" 2>&1; then
       if grep -Fq '"contract"' "$output"; then
@@ -312,7 +312,8 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       else
         record FAIL "runtime-test:$dir"
       fi
-      scaffold_dir=$(mktemp -d)
+      scaffold_dir="target/tmp_scaffold_$$"
+      mkdir -p "$scaffold_dir"
       scaffold_output=$(mktemp)
       if run_zap new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && [[ -f "$scaffold_dir/project/zap.lock" ]] \
@@ -361,13 +362,14 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && run_zap db migrate "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && run_zap db migrate --check --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && run_zap db plan --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && run_zap test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
-        && run_zap run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
-        record PASS "runtime-smoke:zap-new-web"
-      else
-        record FAIL "runtime-smoke:zap-new-web"
-      fi
-      rm -rf "$scaffold_dir" "$scaffold_output"
+         && run_zap test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
+         && run_zap run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
+         record PASS "runtime-smoke:zap-new-web"
+        else
+          record FAIL "runtime-smoke:zap-new-web"
+          cat "$scaffold_output" >&2 || true
+        fi
+       rm -rf "$scaffold_dir" "$scaffold_output"
     fi
     trap - RETURN
     cleanup

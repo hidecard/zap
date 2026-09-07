@@ -1,6 +1,6 @@
 # Zap Type-Checking နှင့် Conformance Acceptance Matrix
 
-**အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline  
+**အခြေအနေ:** PDF-driven follow-up roadmap အတွက် baseline
 **နောက်ဆုံးစစ်ဆေးထားသော version:** published v2.11.18
 **အကျယ်အဝန်း:** Static checking၊ control-flow narrowing၊ diagnostics နှင့် conformance fixtures
 
