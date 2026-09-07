@@ -34,6 +34,34 @@ if [[ -f "${HOME}/.cargo/env" ]]; then
 fi
 export PATH="${HOME}/.cargo/bin:${PATH}"
 
+find_zap_binary() {
+  if [[ -n "${ZAP_BIN_OVERRIDE:-}" && -f "$ZAP_BIN_OVERRIDE" && -x "$ZAP_BIN_OVERRIDE" ]]; then
+    printf '%s\n' "$ZAP_BIN_OVERRIDE"
+    return 0
+  fi
+  if [[ -f "$ROOT_DIR/bin/zap" && -x "$ROOT_DIR/bin/zap" ]]; then
+    printf '%s\n' "$ROOT_DIR/bin/zap"
+    return 0
+  fi
+  if [[ -f "$ROOT_DIR/native/target/release/zap" && -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    printf '%s\n' "$ROOT_DIR/native/target/release/zap"
+    return 0
+  fi
+  if [[ -f "$ROOT_DIR/native/target/release/zap.exe" && -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    printf '%s\n' "$ROOT_DIR/native/target/release/zap.exe"
+    return 0
+  fi
+  if [[ -f "$ROOT_DIR/native/target/debug/zap" && -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    printf '%s\n' "$ROOT_DIR/native/target/debug/zap"
+    return 0
+  fi
+  if [[ -f "$ROOT_DIR/native/target/debug/zap.exe" && -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    printf '%s\n' "$ROOT_DIR/native/target/debug/zap.exe"
+    return 0
+  fi
+  return 1
+}
+
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [[ -z "$ROOT_DIR" ]]; then
   echo "release preflight: must run inside the Zap Git repository" >&2
@@ -98,12 +126,18 @@ is_semver() {
 check_version() {
   local cargo_version
   if [[ -x scripts/validate_release_version.sh ]]; then
-    if EXPECTED_VERSION="$EXPECTED_VERSION" RELEASE_TAG="$RELEASE_TAG" \
-      ZAP_VERSION_REPORT="${RELEASE_VERSION_REPORT:-$ROOT_DIR/target/version-consistency.tsv}" \
-      scripts/validate_release_version.sh "$EXPECTED_VERSION"; then
-      pass "single-source release version validation passed"
+    local zap_binary=""
+    if zap_binary="$(find_zap_binary)"; then
+      if EXPECTED_VERSION="$EXPECTED_VERSION" RELEASE_TAG="$RELEASE_TAG" \
+        ZAP_VERSION_REPORT="${RELEASE_VERSION_REPORT:-$ROOT_DIR/target/version-consistency.tsv}" \
+        ZAP_CLI_BINARY="$zap_binary" \
+        scripts/validate_release_version.sh "$EXPECTED_VERSION"; then
+        pass "single-source release version validation passed"
+      else
+        fail "single-source release version validation failed"
+      fi
     else
-      fail "single-source release version validation failed"
+      fail "zap binary not found; cannot validate zap --version"
     fi
   else
     fail "missing executable scripts/validate_release_version.sh"
