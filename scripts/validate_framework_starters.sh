@@ -288,13 +288,16 @@ fi
 
 if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
   record PASS "runtime-binary:$ZAP_BIN"
+  run_zap() {
+    MSYS_NO_PATHCONV=1 "$ZAP_BIN" "$@"
+  }
     for name in "${starters[@]}"; do
     dir="frameworks/$name"
     output=$(mktemp)
 
     cleanup() { rm -f "$output"; }
     trap cleanup RETURN
-    if "$ZAP_BIN" check "$dir" >>"$output" 2>&1 && "$ZAP_BIN" build "$dir" >>"$output" 2>&1 && "$ZAP_BIN" run "$dir/main.zp" >>"$output" 2>&1; then
+    if run_zap check "$dir" >>"$output" 2>&1 && run_zap build "$dir" >>"$output" 2>&1 && run_zap run "$dir/main.zp" >>"$output" 2>&1; then
       if grep -Fq '"contract"' "$output"; then
         record PASS "runtime-smoke:$dir"
       else
@@ -304,14 +307,14 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
       record FAIL "runtime-smoke:$dir"
     fi
     if [[ "$name" == "web" ]]; then
-      if "$ZAP_BIN" test "$dir" >>"$output" 2>&1; then
+      if run_zap test "$dir" >>"$output" 2>&1; then
         record PASS "runtime-test:$dir"
       else
         record FAIL "runtime-test:$dir"
       fi
       scaffold_dir=$(mktemp -d)
       scaffold_output=$(mktemp)
-      if "$ZAP_BIN" new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+      if run_zap new "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && [[ -f "$scaffold_dir/project/zap.lock" ]] \
         && [[ -d "$scaffold_dir/project/models" ]] \
         && [[ -d "$scaffold_dir/project/functions" ]] \
@@ -343,23 +346,23 @@ if [[ -n "$ZAP_BIN" && -x "$ZAP_BIN" ]]; then
         && grep -Fq 'is_ok(valid_create)' "$scaffold_dir/project/tests/web_test.zp" \
         && grep -Fq 'is_err(invalid_create)' "$scaffold_dir/project/tests/web_test.zp" \
         && grep -Fq '/api/tasks' "$scaffold_dir/project/routes/routes.zp" \
-        && "$ZAP_BIN" check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" web routes "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap web check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap web routes "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && grep -Fq 'routes: 7' "$scaffold_output" \
-        && "$ZAP_BIN" explain route /users/42 "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap explain route /users/42 "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
         && grep -Fq 'path matches: 2' "$scaffold_output" \
-        && "$ZAP_BIN" explain route /assets/chunks/app.js "$scaffold_dir/project" --json >>"$scaffold_output" 2>&1 \
+        && run_zap explain route /assets/chunks/app.js "$scaffold_dir/project" --json >>"$scaffold_output" 2>&1 \
         && grep -Fq '"matches"' "$scaffold_output" \
-        && "$ZAP_BIN" db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db inspect --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db migrate --dry-run "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db migrate "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db migrate --check --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" db plan --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
-        && "$ZAP_BIN" run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
+        && run_zap db check "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db inspect --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db plan "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db migrate --dry-run "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db migrate "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db migrate --check --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap db plan --json "$scaffold_dir/project" >>"$scaffold_output" 2>&1 \
+        && run_zap test "$scaffold_dir/project/tests" >>"$scaffold_output" 2>&1 \
+        && run_zap run "$scaffold_dir/project/main.zp" >>"$scaffold_output" 2>&1; then
         record PASS "runtime-smoke:zap-new-web"
       else
         record FAIL "runtime-smoke:zap-new-web"
