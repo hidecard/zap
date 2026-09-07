@@ -1362,9 +1362,11 @@ export fn parse_parameter_list(parameter_text):
 
                 let default_pieces = split(annotation_text, "=")
 
-                annotation = trim(substring(annotation_text, 0, index_of(annotation_text, "=")))
+                let split_pos = len(default_pieces[0])
 
-                default = trim(substring(annotation_text, index_of(annotation_text, "=") + 1, len(annotation_text)))
+                annotation = trim(substring(annotation_text, 0, split_pos))
+
+                default = trim(substring(annotation_text, split_pos + 1, len(annotation_text)))
 
             else:
 

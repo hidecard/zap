@@ -158,4 +158,6 @@ PY
     fi
     rm -f "$normalized_output" "$normalized_expected"
   else
+    printf 'B1 lexer passed: %s (%s)\n' "$fixture" "$mode"
+  fi
 done

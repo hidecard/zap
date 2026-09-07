@@ -89,46 +89,56 @@ for gate in "$SCRIPTS_DIR"/verify_b1_*.sh; do
             }
         }
     ' "$gate")
-    if [ -z "$runner_content" ]; then
-        printf 'SKIP: %s (gate does not use the cat > "<file>" heredoc pattern this runner extracts)\n' "$name"
-        SKIP=$((SKIP+1))
-        continue
-    fi
-    runner_file=".${name}_runner.zp"
-    printf '%s\n' "$runner_content" > "$runner_file"
-    # Substitute path placeholders (__FIXTURE__ etc.) with a representative
-    # fixture so gates that loop over fixtures can still execute under the
-    # aggregate runner. We default to the lexer `basic.zp` since the only
-    # gate using this pattern is verify_b1_lexer.sh.
-    if grep -q '__FIXTURE__' "$runner_file"; then
-        sed -i 's|__FIXTURE__|bootstrap/fixtures/lexer/basic.zp|g' "$runner_file"
-    fi
-    output=$("$ZAP_BIN" "$runner_file" 2>&1)
-    RC=$?
-    rm -f "$runner_file"
-    if [ $RC -ne 0 ]; then
-        printf 'FAIL: %s (zap.exe exit %d)\n' "$name" "$RC"
-        printf '%s\n' "$output" | head -3 | sed 's/^/  /'
-        FAIL=$((FAIL+1))
-        FAILED_GATES+=("$name")
-        continue
-    fi
-    expected_failures=()
-    while IFS= read -r line; do
-        if [[ "$line" =~ grep\ -q\ \"([^\"]+)\"\ \"\\\$output\"  ]]; then
-            pattern="${BASH_REMATCH[1]}"
-            if ! echo "$output" | grep -qF "$pattern"; then
-                expected_failures+=("$pattern")
-            fi
+    if [ -n "$runner_content" ]; then
+        runner_file=".${name}_runner.zp"
+        printf '%s\n' "$runner_content" > "$runner_file"
+        # Substitute path placeholders (__FIXTURE__ etc.) with a representative
+        # fixture so gates that loop over fixtures can still execute under the
+        # aggregate runner. We default to the lexer `basic.zp` since the only
+        # gate using this pattern is verify_b1_lexer.sh.
+        if grep -q '__FIXTURE__' "$runner_file"; then
+            sed -i 's|__FIXTURE__|bootstrap/fixtures/lexer/basic.zp|g' "$runner_file"
         fi
-    done < <(grep 'grep -q' "$gate")
-    if [ ${#expected_failures[@]} -eq 0 ]; then
-        printf 'PASS: %s\n' "$name"
-        PASS=$((PASS+1))
+        output=$("$ZAP_BIN" "$runner_file" 2>&1)
+        RC=$?
+        rm -f "$runner_file"
+        if [ $RC -ne 0 ]; then
+            printf 'FAIL: %s (zap.exe exit %d)\n' "$name" "$RC"
+            printf '%s\n' "$output" | head -3 | sed 's/^/  /'
+            FAIL=$((FAIL+1))
+            FAILED_GATES+=("$name")
+            continue
+        fi
+        expected_failures=()
+        while IFS= read -r line; do
+            if [[ "$line" =~ grep\ -q\ \"([^\"]+)\"\ \"\\\$output\"  ]]; then
+                pattern="${BASH_REMATCH[1]}"
+                if ! echo "$output" | grep -qF "$pattern"; then
+                    expected_failures+=("$pattern")
+                fi
+            fi
+        done < <(grep 'grep -q' "$gate")
+        if [ ${#expected_failures[@]} -eq 0 ]; then
+            printf 'PASS: %s\n' "$name"
+            PASS=$((PASS+1))
+        else
+            printf 'FAIL: %s (missing patterns: %s)\n' "$name" "${expected_failures[*]}"
+            FAIL=$((FAIL+1))
+            FAILED_GATES+=("$name")
+        fi
     else
-        printf 'FAIL: %s (missing patterns: %s)\n' "$name" "${expected_failures[*]}"
-        FAIL=$((FAIL+1))
-        FAILED_GATES+=("$name")
+        # Gate does not use a heredoc runner; execute it directly.
+        output=$(ZAP_BIN="$ZAP_BIN" bash "$gate" 2>&1)
+        RC=$?
+        if [ $RC -eq 0 ]; then
+            printf 'PASS: %s\n' "$name"
+            PASS=$((PASS+1))
+        else
+            printf 'FAIL: %s (exit %d)\n' "$name" "$RC"
+            printf '%s\n' "$output" | head -5 | sed 's/^/  /'
+            FAIL=$((FAIL+1))
+            FAILED_GATES+=("$name")
+        fi
     fi
 done
 

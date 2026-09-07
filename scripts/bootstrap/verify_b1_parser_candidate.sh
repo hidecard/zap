@@ -7,8 +7,12 @@ run_zap() {
     "$ROOT_DIR/bin/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
     "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/release/zap.exe" "$@"
   elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
     "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi
@@ -137,7 +141,7 @@ runner=$(mktemp "$ROOT_DIR/.zap-b1-parser-candidate-runner.XXXXXX.zp")
 runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-output.XXXXXX")
 expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected.XXXXXX")
-trap 'rm -f "$runner" "$output" "$expected"' EXIT
+trap 'rm -f "$runner" "$output" "$expected" "$normalized_output" "$normalized_expected"' EXIT
 cat > "$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"
 import "bootstrap/b1/parser.zp"
@@ -360,13 +364,9 @@ EOF
   cat "$option_constructors_expected"
   cat "$await_expression_expected"
 } > "$expected"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi > "$output"
-normalized_output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-normalized.XXXXXX")
-normalized_expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected-normalized.XXXXXX")
+run_zap "$runner_rel" > "$output"
+normalized_output="D:/zap/.zap-b1-parser-candidate-normalized.txt"
+normalized_expected="D:/zap/.zap-b1-parser-candidate-expected.txt"
 python3 - "$output" "$expected" "$normalized_output" "$normalized_expected" <<'PY'
 import json
 import pathlib
@@ -399,13 +399,40 @@ expected_path = pathlib.Path(sys.argv[2])
 normalized_output_path = pathlib.Path(sys.argv[3])
 normalized_expected_path = pathlib.Path(sys.argv[4])
 
-output_data = json.loads(output_path.read_text(encoding="utf-8"))
-expected_data = json.loads(expected_path.read_text(encoding="utf-8"))
-normalize_paths(output_data)
-normalize_paths(expected_data)
-normalized_output_path.write_text(json.dumps(output_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-normalized_expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+def normalize_and_dump(path, out_path):
+    lines = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        data = json.loads(line)
+        normalize_paths(data)
+        lines.append(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+normalize_and_dump(output_path, normalized_output_path)
+normalize_and_dump(expected_path, normalized_expected_path)
 PY
-cmp "$normalized_output" "$normalized_expected"
+if cmp "$normalized_output" "$normalized_expected"; then
+    printf 'B1 Zap parser candidate differential passed: arithmetic AST, compound AST, and token-driven delimiter diagnostics\n'
+else
+    printf 'B1 Zap parser candidate differential failed\n' >&2
+    python3 -c "
+import sys
+a = open(sys.argv[1]).read()
+b = open(sys.argv[2]).read()
+al = a.splitlines()
+bl = b.splitlines()
+for i, (la, lb) in enumerate(zip(al, bl)):
+    if la != lb:
+        print(f'First diff at line {i}:')
+        for j, (ca, cb) in enumerate(zip(la, lb)):
+            if ca != cb:
+                print(f'  actual={repr(la[max(0,j-80):j+80])}')
+                print(f'  expected={repr(lb[max(0,j-80):j+80])}')
+                break
+        break
+" "$normalized_output" "$normalized_expected"
+    exit 1
+fi
 rm -f "$normalized_output" "$normalized_expected"
-printf 'B1 Zap parser candidate differential passed: arithmetic AST, compound AST, and token-driven delimiter diagnostics\n'

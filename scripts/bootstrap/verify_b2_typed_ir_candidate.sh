@@ -80,9 +80,15 @@ def normalize_paths(obj):
 first_path = pathlib.Path(sys.argv[1])
 normalized_first_path = pathlib.Path(sys.argv[2])
 
-first_data = json.loads(first_path.read_text(encoding="utf-8"))
-normalize_paths(first_data)
-normalized_first_path.write_text(json.dumps(first_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+normalized_lines = []
+for line in first_path.read_text(encoding="utf-8").splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    data = json.loads(line)
+    normalize_paths(data)
+    normalized_lines.append(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+normalized_first_path.write_text("\n".join(normalized_lines) + "\n", encoding="utf-8")
 PY
 mv "$normalized_first" "$first"
 run_zap bootstrap typed-ir bootstrap/fixtures/typecheck/annotated.zp > "$reference"
