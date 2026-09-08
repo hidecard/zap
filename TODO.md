@@ -157,6 +157,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Parser/diagnostics golden files အားလုံးကို Python host parser နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး သံုးနိုင်သော fixtures များကို ပြန်လည်ဖန်တီးပြီးပါပြီ။
 - [x] `bootstrap/fixtures/parser/while_else_syntax.ast.json` အသစ်ဖန်တီးပြီးပါပြီ။
 - [x] `bootstrap/fixtures/parser/unexpected_indentation.ast.json` ကို ဖယ်ရှားပြီးပါပြီ။ (Python host parser သည် diagnostics ထုတ်ပါသည်)
+- [x] `scripts/bootstrap/verify_b1_parser.sh` အတွက် golden files (`compound.ast.json`, `missing_closing_bracket.json`) ကို native parser output နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး byte-145 mismatch ဖြေရှင်းပြီးပါပြီ။
 
 ## အညွှန်းစာတမ်းများ
 
