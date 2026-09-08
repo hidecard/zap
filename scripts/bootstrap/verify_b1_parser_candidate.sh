@@ -141,6 +141,8 @@ runner=$(mktemp "$ROOT_DIR/.zap-b1-parser-candidate-runner.XXXXXX.zp")
 runner_rel=$(basename "$runner")
 output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-output.XXXXXX")
 expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected.XXXXXX")
+normalized_output=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-normalized.XXXXXX")
+normalized_expected=$(mktemp "${TMPDIR:-/tmp}/zap-b1-parser-candidate-expected-normalized.XXXXXX")
 trap 'rm -f "$runner" "$output" "$expected" "$normalized_output" "$normalized_expected"' EXIT
 cat > "$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"
@@ -365,8 +367,6 @@ EOF
   cat "$await_expression_expected"
 } > "$expected"
 run_zap "$runner_rel" > "$output"
-normalized_output="D:/zap/.zap-b1-parser-candidate-normalized.txt"
-normalized_expected="D:/zap/.zap-b1-parser-candidate-expected.txt"
 python3 - "$output" "$expected" "$normalized_output" "$normalized_expected" <<'PY'
 import json
 import pathlib
