@@ -82,6 +82,39 @@ export fn driver_resolve_modules(sources, source_names):
                 return {"diagnostics": [{"code": "ZAP-MODULE-003", "message": "module not found: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
     return {"diagnostics": [], "modules": ordered, "status": "modules_resolved"}
 
+export fn driver_source_index(source_names, source_name, index):
+    if index >= len(source_names):
+        return -1
+    if replace(source_names[index], "\\", "/") == source_name:
+        return index
+    return driver_source_index(source_names, source_name, index + 1)
+
+export fn driver_check_modules(sources, source_names):
+    let resolution = driver_resolve_modules(sources, source_names)
+    if resolution["status"] != "modules_resolved":
+        return {"artifacts": [], "command": "check", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
+    let artifacts = []
+    for module in resolution["modules"]:
+        let typed = driver_typecheck_source(sources[driver_source_index(source_names, module["source_name"], 0)], module["source_name"])
+        if typed["status"] != "ok":
+            return {"artifacts": [], "command": "check", "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
+        artifacts = append(artifacts, {"bytes": json(typed["typed_ir"]), "kind": "typed_ir", "source_name": module["source_name"]})
+    return {"artifacts": artifacts, "command": "check", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
+
+export fn driver_build_modules(sources, source_names):
+    let resolution = driver_resolve_modules(sources, source_names)
+    if resolution["status"] != "modules_resolved":
+        return {"artifacts": [], "command": "build", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
+    let artifacts = []
+    for module in resolution["modules"]:
+        let index = driver_source_index(source_names, module["source_name"], 0)
+        let built = driver_build_source(sources[index], module["source_name"])
+        if built["status"] != "ok":
+            return {"artifacts": [], "command": "build", "diagnostics": built["diagnostics"], "execution": built["execution"], "native_independent": false, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
+        for artifact in built["artifacts"]:
+            artifacts = append(artifacts, {"bytes": artifact["bytes"], "kind": artifact["kind"], "source_name": module["source_name"]})
+    return {"artifacts": artifacts, "command": "build", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
+
 export fn driver_typed_ir_semantics(first, second):
     let valid = first["kind"] == "zap.typed_ir"
     if first["candidate_only"] != true:
