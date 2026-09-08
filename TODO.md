@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-08
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-09
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -12,7 +12,8 @@
 - [x] Add the Zap-owned driver skeleton for `check`, `build`, `run`, `test`, and candidate rebuild replay (`bootstrap/b4/compiler_driver.zp`).
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
-- [ ] Connect complete typed-IR, lowering, bytecode, VM, package/build, and test-runner paths.
+- [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
+- [ ] Replace those candidate backend slices with complete typed-IR, lowering, bytecode, VM, package/build, and test-runner ownership.
 - [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback.
 - [ ] Add canonical artifact serialization, stable module/dependency ordering, and byte-deterministic manifests.
 - [ ] Run two-stage and three-stage rebuilds from a prebuilt Zap seed with Rust/Cargo unavailable.

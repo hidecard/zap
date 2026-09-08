@@ -21,7 +21,7 @@ assert data["pipeline"]["stages"] == ["source", "typed_ir", "bytecode", "executi
 assert data["determinism"]["seed_epoch"] == 0
 assert data["artifact"]["newline"] == "LF"
 PY
-for export in driver_parse_source driver_typecheck_source driver_check_source driver_build_source driver_run_source driver_test_source driver_rebuild; do
+for export in driver_parse_source driver_typecheck_source driver_compile_backend driver_check_source driver_build_source driver_run_source driver_test_source driver_build_package driver_rebuild; do
   grep -q "^export fn ${export}(" "$DRIVER" || fail "missing export: $export"
 done
 if grep -n -E 'timestamp|hostname|username|absolute_path|temp_path|pointer_address' "$DRIVER"; then
