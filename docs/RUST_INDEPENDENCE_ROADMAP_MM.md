@@ -21,13 +21,41 @@
 
 ### ဤ update ပြီးနောက် အဓိကကျန် TODO
 
-- [ ] B1 lexer/parser candidate gate များကို **canonical Zap-owned front end** အဖြစ် promote လုပ်ပြီး Rust fallback မရှိကြောင်း prove လုပ်ပါ။
-- [ ] B2 type checker/typed IR verifier များကို full supported language surface အထိ ချဲ့ပြီး `.zp → typed IR` ကို Zap-only path ဖြင့် run ပါ။
-- [ ] B3 lowerer, bytecode, VM, package/build နှင့် runtime ကို sample fixture မဟုတ်ဘဲ compiler source အပြည့်အဝအတွက် run နိုင်စေပါ။
-- [x] B4 acceptance rows 18 ခုနှင့် Rust-free contract gate ကို CI တွင် pass အဖြစ် validate လုပ်ပြီး contract status ကို `certified` သို့ ပြောင်းထားပါ။ [3]
-- [ ] B4 certified evidence ကို legacy B0 bootstrap contract, README/current-status, release notes နှင့် target-platform artifact evidence များနှင့် တစ်ပြေးညီ synchronization လုပ်ပါ။
-- [ ] Clean environment တွင် Rust/Cargo မရှိဘဲ compiler source ကို self-rebuild လုပ်ပြီး deterministic artifact နှစ်ဆင့် comparison ထုတ်ပါ။
-- [ ] Rust implementation ကို reference-only boundary သို့ ရွှေ့ပြီး normal `zap build`, `zap test`, `zap run`, `zap compiler rebuild` path မှ Rust dependency ဖယ်ရှားပါ။
+#### ပြီးမြောက်ထားသော evidence
+
+- [x] B1 parser no-Rust verification ၏ Python golden-artifact mismatch 10 ခုကို ပြန်ပြင်ပြီး local result `pass=74 fail=0` ရရှိသည်။
+- [x] B1 lexer verifier ၏ executable permission ပြဿနာ (`exit code 126`) ကို ပြင်ပြီး GitHub CI success ရရှိသည်။
+- [x] Rust-free seed pipeline နှင့် Rust-free VM host verification ကို CI တွင် pass လုပ်ထားသည်။
+- [x] B4 Rust-free full-language contract gate နှင့် acceptance matrix rows 18 ခုလုံး `pass` ဖြစ်ပြီး contract status သည် `certified` ဖြစ်သည်။ [3]
+
+#### P0 — Documentation နှင့် release claim ကို တစ်ပြေးညီလုပ်ခြင်း
+
+- [ ] Legacy `bootstrap/BASELINE_B0.md` နှင့် `BOOTSTRAP_CONTRACT_MM.md` တွင် B0 သတ်မှတ်ချက်သည် historical baseline လား current gate လား ရှင်းလင်းပါ။ Current status ကို B4 evidence နှင့် မတိုက်မိအောင် migration/status note ထည့်ပါ။
+- [ ] `README.md`, `README_MM.md`, documentation navigation, release notes နှင့် status pages အားလုံးတွင် B4 claim ကို တူညီသော wording ဖြင့် update လုပ်ပါ။ “B4 contract certified” နှင့် “public release fully self-hosted” ကို သီးခြားခွဲရေးပါ။
+- [ ] B4 acceptance artifacts, CI run URL/SHA, target-platform evidence, checksum/SBOM/provenance နှင့် rollback procedure များကို release evidence bundle အဖြစ် archive လုပ်ပါ။
+- [ ] `zap build`, `zap test`, `zap run`, `zap package`, `zap compiler rebuild` command တစ်ခုချင်းစီ၏ Rust/Cargo မပါသော user-facing proof ကို clean-machine transcript ဖြင့် ထည့်ပါ။
+
+#### P1 — Canonical Zap ownership ကို production path အထိ ချဲ့ခြင်း
+
+- [ ] B1 lexer/parser candidate gate များကို fixture-only proof မဟုတ်ဘဲ canonical Zap-owned front end အဖြစ် promote လုပ်ပြီး normal compiler path တွင် Rust fallback မခေါ်ကြောင်း prove လုပ်ပါ။
+- [ ] B2 type checker နှင့် typed IR ကို full supported language surface အတွက် `.zp → typed IR` Zap-only path ဖြင့် run စေပြီး type/IR golden corpus နှင့် failure diagnostics များကို ချိတ်ပါ။
+- [ ] B3 lowerer, bytecode, VM, package/build နှင့် runtime ကို sample fixture မဟုတ်ဘဲ compiler source အပြည့်အဝအတွက် run စေပြီး `zap build/test/run/package` integration test တစ်ခုတည်းအဖြစ် စုစည်းပါ။
+- [ ] Standard library, filesystem/network/process adapters, async scheduler နှင့် resource limits များအတွက် stable ABI/permission contract နှင့် cross-platform tests ထည့်ပါ။
+- [ ] Rust implementation ကို `reference/` သို့မဟုတ် `legacy/` boundary သို့ ရွှေ့ပြီး normal production path တွင် `native/src`, `cargo`, `rustc`, `rustup` မပါကြောင်း dependency scanner ဖြင့် စစ်ပါ။
+
+#### P1 — Cross-platform နှင့် reproducible release
+
+- [ ] Linux, Windows နှင့် macOS target တစ်ခုချင်းစီတွင် B4 byte-determinism, second-stage rebuild, clean-environment နှင့် source-to-VM evidence ကို သီးခြား artifact အဖြစ် ထုတ်ပါ။
+- [ ] Reproducible archive, checksum, signature, SBOM, provenance နှင့် rollback procedure ကို release pipeline တွင် enforce လုပ်ပါ။
+- [ ] Platform-specific limitation, filesystem/line-ending normalization နှင့် architecture differences များကို specification နှင့် compatibility guide ထဲတွင် မှတ်တမ်းတင်ပါ။
+
+#### P2 — Language completeness နှင့် developer ecosystem
+
+- [ ] Canonical language specification ၏ grammar, type/value model, module/package, async/cancellation, diagnostics နှင့် compatibility policy ကို machine-readable rule index နှင့် fixture တစ်ခုချင်းစီနှင့် ချိတ်ပါ။
+- [ ] Formatter, language server, debugger, package registry UX နှင့် API documentation ကို canonical AST/diagnostic schema အပေါ် တည်ဆောက်ပါ။
+- [ ] Fixed-seed fuzzing, malformed-input panic guard, performance benchmark နှင့် long-term compatibility corpus ကို CI တွင် ထည့်ပါ။
+
+> **Release gate:** အထက်ပါ P0 အားလုံးပြီးမြောက်ပြီး production commands များ၏ Rust/Cargo-free clean-machine transcript မရှိသေးလျှင် “fully self-hosted release” ဟု မကြေညာရ။ B4 contract `certified` သည် acceptance evidence ဖြစ်ပြီး public release claim အတွက် လိုအပ်သည့် documentation, platform artifact နှင့် operational proof အားလုံးကို အစားမထိုးပါ။
 
 ## 0။ အောင်မြင်မှုအဓိပ္ပာယ်နှင့် မပြောင်းလဲရမည့်စည်းမျဉ်း
 
