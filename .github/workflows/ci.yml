@@ -183,6 +183,8 @@ jobs:
 
       - name: Verify Rust-free bootstrap seed pipeline
         run: scripts/bootstrap/verify_non_rust_seed_pipeline.sh
+      - name: Verify Zap compiler-driver contract
+        run: bash scripts/bootstrap/verify_compiler_driver_contract.sh
       - name: Verify B4 Rust-free full-language contract boundary
         env:
           B4_CONTRACT_REPORT: target/b4-rust-free-contract.tsv

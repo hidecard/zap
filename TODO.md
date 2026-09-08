@@ -6,6 +6,18 @@
 **Current branch:** `master`
 **Bootstrap stage:** B0 (B4 candidate evidence exists; full-language certification remains open)
 
+### Self-hosting implementation sequence
+
+- [x] Define the candidate compiler-driver contract, command boundary, pipeline stages, artifact schema, and deterministic metadata policy (`bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml`).
+- [x] Add the Zap-owned driver skeleton for `check`, `build`, `run`, `test`, and candidate rebuild replay (`bootstrap/b4/compiler_driver.zp`).
+- [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
+- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
+- [ ] Connect complete typed-IR, lowering, bytecode, VM, package/build, and test-runner paths.
+- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback.
+- [ ] Add canonical artifact serialization, stable module/dependency ordering, and byte-deterministic manifests.
+- [ ] Run two-stage and three-stage rebuilds from a prebuilt Zap seed with Rust/Cargo unavailable.
+- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified.
+
 > ဤစာရင်းသည် current-status၊ milestone documents နှင့် Zap ကို Python၊ JavaScript/TypeScript၊ Go၊ Rust တို့နှင့် နှိုင်းယှဉ်ထားသော ecosystem review အပေါ် အခြေခံထားသည်။ လက်ရှိတွင် Rust သည် native/reference owner ဖြစ်နေဆဲဖြစ်ပြီး B1/B2 သည် provisional၊ B3 သည် reference-only၊ B4 self-hosting သည် deferred ဖြစ်သည်။
 
 ## အဓိကဆုံးဖြတ်ချက်

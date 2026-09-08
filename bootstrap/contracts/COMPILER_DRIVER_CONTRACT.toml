@@ -1,0 +1,34 @@
+schema_version = 1
+contract_id = "ZAP-COMPILER-DRIVER"
+status = "candidate"
+
+[commands]
+check = "parse-and-typecheck-without-emitting"
+build = "source-to-deterministic-bytecode"
+run = "build-then-zap-vm-execute"
+test = "discover-and-run-zap-tests"
+
+[pipeline]
+stages = ["source", "typed_ir", "bytecode", "execution"]
+owner = "bootstrap/b4/compiler_driver.zp"
+seed = "bootstrap/b4/native_independent.zp"
+
+[artifact]
+schema_version = 1
+encoding = "utf8-json"
+newline = "LF"
+key_order = "contract-order"
+path_policy = "repository-relative-posix"
+forbidden_fields = ["timestamp", "hostname", "username", "absolute_path", "temp_path", "pointer_address"]
+
+[determinism]
+source_normalization = "LF-UTF8-BOM-stripped"
+module_order = "bytewise-lexical"
+dependency_order = "canonical-topological"
+map_order = "sorted-keys"
+seed_epoch = 0
+
+[acceptance]
+source = "bootstrap/fixtures/driver/driver_smoke.zp"
+verifier = "scripts/bootstrap/verify_compiler_driver_contract.sh"
+required_exports = ["driver_check_source", "driver_build_source", "driver_run_source", "driver_test_source"]

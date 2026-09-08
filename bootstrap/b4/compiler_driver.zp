@@ -1,0 +1,68 @@
+# Candidate compiler driver boundary.
+#
+# This module fixes the user-facing command contract while the underlying
+# compiler stages are migrated from candidate slices to the complete language.
+import "bootstrap/b4/native_independent.zp"
+
+export fn driver_normalize_source(source):
+    let without_bom = replace(source, "\ufeff", "")
+    return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
+
+export fn driver_result(command, source_name, status, diagnostics, artifacts, execution):
+    return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": false, "schema_version": 1, "source_name": source_name, "status": status}
+
+export fn driver_parse_source(source, source_name):
+    let normalized = driver_normalize_source(source)
+    let parsed = from_json(parse_general(normalized, source_name))
+    if parsed["kind"] != "zap.ast":
+        return {"diagnostics": [parsed], "kind": "zap.parse_result", "status": "error", "source_name": source_name}
+    return {"ast": parsed, "diagnostics": [], "kind": "zap.parse_result", "status": "ok", "source_name": source_name}
+
+export fn driver_typecheck_source(source, source_name):
+    let normalized = driver_normalize_source(source)
+    let emitted = from_json(seed_emit_inferred_program_typed_ir(normalized, source_name))
+    if emitted["kind"] != "zap.typed_ir":
+        return {"diagnostics": [emitted], "kind": "zap.typecheck_result", "status": "error", "source_name": source_name}
+    return {"diagnostics": [], "kind": "zap.typecheck_result", "status": "ok", "source_name": source_name, "typed_ir": emitted}
+
+export fn driver_check_source(source, source_name):
+    let parsed = driver_parse_source(source, source_name)
+    if parsed["status"] != "ok":
+        return driver_result("check", source_name, "error", parsed["diagnostics"], [], {"error": "parse_error", "output": []})
+    let typed = driver_typecheck_source(source, source_name)
+    if typed["status"] != "ok":
+        return driver_result("check", source_name, "error", typed["diagnostics"], [], {"error": "typecheck_error", "output": []})
+    return driver_result("check", source_name, "ok", [], [{"bytes": json(typed["typed_ir"]), "kind": "typed_ir"}], {"error": none, "output": []})
+
+export fn driver_build_source(source, source_name):
+    let normalized = driver_normalize_source(source)
+    let pipeline = seed_execute_owned_pipeline(normalized, source_name)
+    if pipeline["status"] != "candidate_pipeline_executed":
+        return driver_result("build", source_name, "error", pipeline["diagnostics"], [], pipeline["execution"])
+    return driver_result("build", source_name, "ok", [], pipeline["artifacts"], {"error": none, "output": []})
+
+export fn driver_run_source(source, source_name):
+    let normalized = driver_normalize_source(source)
+    let pipeline = seed_execute_owned_pipeline(normalized, source_name)
+    if pipeline["status"] != "candidate_pipeline_executed":
+        return driver_result("run", source_name, "error", pipeline["diagnostics"], [], pipeline["execution"])
+    return driver_result("run", source_name, "ok", [], pipeline["artifacts"], pipeline["execution"])
+
+export fn driver_test_source(source, source_name):
+    let result = driver_run_source(source, source_name)
+    if result["status"] != "ok":
+        return result
+    return {"artifacts": result["artifacts"], "command": "test", "diagnostics": result["diagnostics"], "execution": result["execution"], "native_independent": false, "schema_version": 1, "source_name": source_name, "status": "ok", "tests": 1, "passed": 1}
+
+export fn driver_artifact_manifest(build_result):
+    return {"artifacts": build_result["artifacts"], "command": build_result["command"], "schema_version": 1, "source_name": build_result["source_name"], "status": build_result["status"]}
+
+export fn driver_rebuild(source, source_name):
+    let first = driver_build_source(source, source_name)
+    let second = driver_build_source(source, source_name)
+    let first_bytes = json(driver_artifact_manifest(first))
+    let second_bytes = json(driver_artifact_manifest(second))
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": "candidate_driver_rebuild"}
+
+export fn driver_contract_status():
+    return "candidate"
