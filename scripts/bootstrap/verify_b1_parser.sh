@@ -3,12 +3,24 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 run_zap() {
-  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
-    "$ROOT_DIR/bin/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-    "$ROOT_DIR/native/target/release/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
-    "$ROOT_DIR/native/target/debug/zap" "$@"
+  if [[ -x "$ROOT_DIR/bin/zap" || -x "$ROOT_DIR/bin/zap.exe" ]]; then
+    if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+      "$ROOT_DIR/bin/zap" "$@"
+    else
+      "$ROOT_DIR/bin/zap.exe" "$@"
+    fi
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" || -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    if [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+      "$ROOT_DIR/native/target/release/zap" "$@"
+    else
+      "$ROOT_DIR/native/target/release/zap.exe" "$@"
+    fi
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" || -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    if [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+      "$ROOT_DIR/native/target/debug/zap" "$@"
+    else
+      "$ROOT_DIR/native/target/debug/zap.exe" "$@"
+    fi
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi
@@ -22,10 +34,18 @@ fixtures=(
 run_native() {
   local mode=$1
   local fixture=$2
-  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
-    "$ROOT_DIR/bin/zap" bootstrap "$mode" "$fixture"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-    "$ROOT_DIR/native/target/release/zap" bootstrap "$mode" "$fixture"
+  if [[ -x "$ROOT_DIR/bin/zap" || -x "$ROOT_DIR/bin/zap.exe" ]]; then
+    if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+      "$ROOT_DIR/bin/zap" bootstrap "$mode" "$fixture"
+    else
+      "$ROOT_DIR/bin/zap.exe" bootstrap "$mode" "$fixture"
+    fi
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" || -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    if [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+      "$ROOT_DIR/native/target/release/zap" bootstrap "$mode" "$fixture"
+    else
+      "$ROOT_DIR/native/target/release/zap.exe" bootstrap "$mode" "$fixture"
+    fi
   else
     run_zap bootstrap "$mode" "$fixture"
   fi
@@ -87,10 +107,10 @@ normalized_first_path.write_text(json.dumps(first_data, ensure_ascii=False, sepa
 normalized_expected_path.write_text(json.dumps(expected_data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 PY
   cmp "$normalized_first" "$normalized_expected"
-  if [[ "$mode" == ast ]]; then
-    jq -e '.kind == "zap.ast" and .schema_version == 1 and (.ast.statements | length) > 0' "$first" >/dev/null
+  if [[ "$mode" == "ast" ]]; then
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8-sig')); sys.exit(0 if d.get('kind')=='zap.ast' and d.get('schema_version')==1 and len(d.get('ast',{}).get('statements',[]))>0 else 1)" "$first" >/dev/null
   else
-    jq -e '.kind == "zap.diagnostics" and .schema_version == 1 and .diagnostics[0].code == "ZAP-SYNTAX-001"' "$first" >/dev/null
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8-sig')); diags=d.get('diagnostics',[]); sys.exit(0 if d.get('kind')=='zap.diagnostics' and d.get('schema_version')==1 and diags and diags[0].get('code')=='ZAP-SYNTAX-001' else 1)" "$first" >/dev/null
   fi
   rm -f "$first" "$second" "$normalized_first" "$normalized_expected"
   trap - EXIT

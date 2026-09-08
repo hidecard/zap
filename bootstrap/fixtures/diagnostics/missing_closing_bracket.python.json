@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-SYNTAX-001","column":6,"help":"check the surrounding syntax and delimiters","line":1,"message":"expected ']' at 1:6","severity":"error","source_name":"bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/missing_closing_bracket.zp"}

@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-LEX-INT-001","column":1,"help":"check the source token and its spelling","line":1,"message":"invalid integer literal at 1:1: 999999999999999999999999","severity":"error","source_name":"bootstrap/fixtures/diagnostics/integer_overflow.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/integer_overflow.zp"}

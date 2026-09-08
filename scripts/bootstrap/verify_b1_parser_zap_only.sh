@@ -80,7 +80,7 @@ echo "--- AST fixtures ---"
 for fixture in bootstrap/fixtures/parser/*.zp; do
   [[ -f "$fixture" ]] || continue
   base=$(basename "$fixture" .zp)
-  expected="bootstrap/fixtures/parser/${base}.ast.json"
+  expected="bootstrap/fixtures/parser/${base}.python.ast.json"
   run_parser "ast" "$fixture" "$expected"
 done
 
@@ -89,7 +89,7 @@ echo "--- Diagnostic fixtures ---"
 for fixture in bootstrap/fixtures/diagnostics/*.zp; do
   [[ -f "$fixture" ]] || continue
   base=$(basename "$fixture" .zp)
-  expected="bootstrap/fixtures/diagnostics/${base}.json"
+  expected="bootstrap/fixtures/diagnostics/${base}.python.json"
   run_parser "diagnostics" "$fixture" "$expected"
 done
 

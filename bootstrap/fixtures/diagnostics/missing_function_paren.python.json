@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-SYNTAX-001","column":4,"help":"check the surrounding syntax and delimiters","line":1,"message":"unexpected token after expression at 1:4","severity":"error","source_name":"bootstrap/fixtures/diagnostics/missing_function_paren.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/missing_function_paren.zp"}

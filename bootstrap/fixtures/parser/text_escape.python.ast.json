@@ -1,0 +1,1 @@
+{"ast":{"statements":[{"annotation":null,"exported":false,"kind":"declaration","name":"text","span":{"column":1,"length":25,"line":1},"value":{"kind":"literal","literal_kind":"text","span":{"column":1,"length":14,"line":1},"value":"hello\\nworld"}}]},"kind":"zap.ast","schema_version":1,"source_name":"bootstrap/fixtures/parser/text_escape.zp"}

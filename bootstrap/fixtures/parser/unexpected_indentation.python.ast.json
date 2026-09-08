@@ -1,0 +1,1 @@
+{"diagnostics":[{"code":"ZAP-SYNTAX-001","column":null,"help":"indent one level at a time","line":2,"message":"unexpected indentation at line 2","severity":"error","source_name":"bootstrap/fixtures/parser/unexpected_indentation.zp"}],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/parser/unexpected_indentation.zp"}
