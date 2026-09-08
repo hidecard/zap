@@ -6,6 +6,12 @@
 **Current branch:** `master`
 **Bootstrap stage:** B0 (B4 candidate evidence exists; full-language certification remains open)
 
+### Self-hosting progress update (2026-09-09)
+
+- **Completed in the latest driver-ownership slice:** clean-environment, byte-determinism, second-stage rebuild, supported-subset rebuild, and typed-IR source rebuild gates now call `bootstrap/b4/compiler_driver.zp` directly instead of the removed composite `native_independent.zp` wrapper. The compiler-driver contract and verifier require the direct driver seed and the new subset/rebuild exports.
+- **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, the user-facing CLI is not yet routed through the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence.
+- **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
+
 ### Self-hosting implementation sequence
 
 - [x] Define the candidate compiler-driver contract, command boundary, pipeline stages, artifact schema, and deterministic metadata policy (`bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml`).
@@ -136,8 +142,8 @@ Zap သည် established languages များနှင့် feature အရ �
 
 - [ ] Platform seed ဖြင့် complete Zap compiler source ကို clean environment တွင် compile/run လုပ်ရန်။ (လက်ရှိတွင် bounded Rust-free seed slice သာ အောင်မြင်)
 - [ ] Seed output နှင့် native/reference output ကို supported platforms အားလုံးတွင် artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (cross-platform evidence မပြည့်စုံသေး)
-- [ ] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း native binary ပါသော clean environments တွင် စစ်ဆေးရန်။
-- [ ] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (B4-FULL-001..015 သည် manifest rows ဖြစ်ပြီး executable full-language proof မဟုတ်သေး)
+- [ ] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း native binary ပါသော clean environments တွင် စစ်ဆေးရန်။ (driver-based deterministic gates are wired; verified seed execution remains pending)
+- [ ] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (B4-FULL-001..015 သည် manifest rows ဖြစ်ပြီး executable full-language proof မဟုတ်သေး; direct driver subset and typed-IR gates are still candidate evidence)
 - [x] Independent verifier script ဖြင့် B4 evidence package ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။ (`scripts/bootstrap/verify_b4_evidence.sh` သည် certification မဟုတ်ကြောင်း fail-closed ပြင်ထား)
 
 **Acceptance:** Clean seed တစ်ခုက Zap compiler ကို build လုပ်နိုင်ရမည်။ ထပ်မံ rebuild လုပ်သော artifact သည် byte-for-byte တူရမည်။ Native/reference implementation မပါဘဲ supported language subset ၏ compile/run tests များ အောင်မြင်ရမည်။
