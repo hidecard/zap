@@ -10,15 +10,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 run_zap() {
-  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
-    "$ROOT_DIR/bin/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-    "$ROOT_DIR/native/target/release/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
-    "$ROOT_DIR/native/target/debug/zap" "$@"
-  else
-    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
-  fi
+  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-$ROOT_DIR/bin/zap}}"
+  [[ -x "$seed" ]] || fail "prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN (Cargo fallback is disabled)"
+  "$seed" "$@"
 }
 
 REPORT="${B4_SECOND_STAGE_REPORT:-target/b4-second-stage-rebuild.tsv}"
@@ -79,21 +73,15 @@ true
 true
 EOF
 
-ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi > "$out"
+ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
+[ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
+"$ZAP_BIN" "$runner_rel" > "$out"
 cmp "$out" "$expected" || fail "second-stage rebuild verification failed"
 
 # Second run: fresh process, same source
-ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi > "$out"
+ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
+[ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
+"$ZAP_BIN" "$runner_rel" > "$out"
 cmp "$out" "$expected" || fail "second-stage rebuild not reproducible across runs"
 
 # Typed IR second-stage: source -> typed IR -> bytecode -> execution
@@ -121,12 +109,9 @@ true
 true
 EOF
 
-ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi > "$out"
+ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
+[ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
+"$ZAP_BIN" "$runner_rel" > "$out"
 cmp "$out" "$expected" || fail "typed IR second-stage rebuild failed"
 
 # Report

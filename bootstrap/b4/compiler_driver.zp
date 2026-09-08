@@ -84,8 +84,21 @@ export fn driver_build_package(package_name, package_version, main, requirements
     let artifact_bytes = json(built["artifacts"])
     return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
 
+export fn driver_artifact_record(kind, bytes):
+    return {"bytes": bytes, "digest": kind + ":" + bytes, "kind": kind}
+
+export fn driver_canonical_artifacts(build_result):
+    let result = []
+    for artifact in build_result["artifacts"]:
+        if artifact["kind"] == "typed_ir":
+            result = append(result, driver_artifact_record("typed_ir", artifact["bytes"]))
+    for artifact in build_result["artifacts"]:
+        if artifact["kind"] == "bytecode":
+            result = append(result, driver_artifact_record("bytecode", artifact["bytes"]))
+    return result
+
 export fn driver_artifact_manifest(build_result):
-    return {"artifacts": build_result["artifacts"], "command": build_result["command"], "schema_version": 1, "source_name": build_result["source_name"], "status": build_result["status"]}
+    return {"artifacts": driver_canonical_artifacts(build_result), "command": build_result["command"], "schema_version": 1, "source_name": replace(build_result["source_name"], "\\", "/"), "status": build_result["status"]}
 
 export fn driver_rebuild(source, source_name):
     let first = driver_build_source(source, source_name)
