@@ -31,6 +31,27 @@ pub(crate) fn status_json() -> String {
     .to_string()
 }
 
+pub(crate) fn driver_status_json() -> String {
+    let seed = std::env::var_os("ZAP_BOOTSTRAP_BIN")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.is_file())
+        .map(|path| path.to_string_lossy().replace('\\', "/"));
+    json!({
+        "contract_id": "ZAP-COMPILER-DRIVER",
+        "contract_schema_version": 1,
+        "contract_status": "candidate",
+        "delegation_ready": false,
+        "driver_source": "bootstrap/b4/compiler_driver.zp",
+        "full_language_owner": "native Rust implementation",
+        "seed": seed,
+        "seed_required": true,
+        "self_hosted": false,
+        "status": "candidate_driver_boundary",
+        "supported_commands": ["check", "build", "run", "test"]
+    })
+    .to_string()
+}
+
 pub(crate) fn tokens_json(path: &Path) -> ZapResult<String> {
     let source = read_limited_text(path, "bootstrap source read")
         .map_err(crate::diagnostics::ZapError::from_message)?;

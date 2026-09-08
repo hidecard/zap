@@ -1328,7 +1328,7 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() == 3 && args[1] == "driver" && args[2] == "status" {
-        println!("{}", crate::bootstrap::status_json());
+        println!("{}", crate::bootstrap::driver_status_json());
         return;
     }
     if args.len() >= 2 && args[1] == "driver" {
