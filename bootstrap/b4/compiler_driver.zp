@@ -119,5 +119,19 @@ export fn driver_rebuild(source, source_name):
     let second_bytes = json(driver_artifact_manifest(second))
     return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": "candidate_driver_rebuild"}
 
+export fn driver_subset_run(sources, source_names, index, result):
+    if index >= len(sources):
+        return result
+    let next = append(result, driver_execute_owned_pipeline(sources[index], source_names[index]))
+    return driver_subset_run(sources, source_names, index + 1, next)
+
+export fn driver_subset_rebuild(sources, source_names):
+    let first = driver_subset_run(sources, source_names, 0, [])
+    let second = driver_subset_run(sources, source_names, 0, [])
+    let all_successful = true
+    for result in first:
+        if result["status"] != "candidate_pipeline_executed":
+            all_successful = false
+    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_driver_subset_rebuild"}
 export fn driver_contract_status():
     return "candidate"

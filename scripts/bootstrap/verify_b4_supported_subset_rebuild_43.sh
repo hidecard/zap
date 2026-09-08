@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 let sources = ["let value: number = 7\nsay value", "let value: number = 0\nif value == 0:\n    say 1\nelse:\n    say 2", "fn add(a, b):\n    return a + b\nsay add(2, 3)"]
 let names = ["literal.zp", "branch.zp", "function.zp"]
-let rebuild = seed_supported_subset_rebuild(sources, names)
+let rebuild = driver_subset_rebuild(sources, names)
 say rebuild["status"]
 say rebuild["native_independent"]
 say rebuild["count"]
@@ -39,7 +39,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "candidate_supported_subset_rebuild false 3 true true 7 1 5" ]]; then
+if [[ "${lines[*]}" != "candidate_driver_subset_rebuild false 3 true true 7 1 5" ]]; then
   echo "unexpected supported subset output: ${lines[*]}" >&2
   exit 1
 fi
