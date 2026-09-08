@@ -36,7 +36,7 @@ cat > "$runner" <<'EOF'
 import "bootstrap/b1/lexer.zp"
 import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typed_ir.zp"
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let source = "let x = 1 + 2\nsay x\n"
 
@@ -52,12 +52,12 @@ let first_typed = emit_inferred_program_typed_ir(source, "det_test")
 let second_typed = emit_inferred_program_typed_ir(source, "det_test")
 let typed_equal = json(first_typed) == json(second_typed)
 
-let first_rebuild = seed_self_rebuild(source, "det_test")
-let second_rebuild = seed_self_rebuild(source, "det_test")
+let first_rebuild = driver_rebuild(source, "det_test")
+let second_rebuild = driver_rebuild(source, "det_test")
 let rebuild_equal = first_rebuild["byte_equal"]
 
-let first_pipeline = seed_execute_owned_pipeline(source, "det_test")
-let second_pipeline = seed_execute_owned_pipeline(source, "det_test")
+let first_pipeline = driver_execute_owned_pipeline(source, "det_test")
+let second_pipeline = driver_execute_owned_pipeline(source, "det_test")
 let pipeline_equal = json(first_pipeline) == json(second_pipeline)
 
 say tokens_equal
@@ -96,18 +96,18 @@ cmp "$out_a" "$out_b" || fail "second run produced different output"
 
 # Multi-line source surface
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let source = "fn add(a: number, b: number) -> number:\n    return a + b\n\nlet result = add(3, 4)\nsay result\n"
 
-let first = seed_self_rebuild(source, "multi_line")
-let second = seed_self_rebuild(source, "multi_line")
-let third = seed_self_rebuild(source, "multi_line")
+let first = driver_rebuild(source, "multi_line")
+let second = driver_rebuild(source, "multi_line")
+let third = driver_rebuild(source, "multi_line")
 
 say first["byte_equal"]
 say second["byte_equal"]
 say third["byte_equal"]
-say first["status"] == "reproducible"
+say first["status"] == "candidate_driver_rebuild"
 EOF
 
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
@@ -128,15 +128,15 @@ cmp "$out_a" "$expected_b" || fail "multi-line source did not produce determinis
 
 # Control-flow surface
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let source = "let n = 5\nlet total = 0\nlet i = 0\nwhile i < n:\n    total = total + i\n    i = i + 1\nsay total\n"
 
-let first = seed_self_rebuild(source, "control_flow")
-let second = seed_self_rebuild(source, "control_flow")
+let first = driver_rebuild(source, "control_flow")
+let second = driver_rebuild(source, "control_flow")
 
 say first["byte_equal"]
-say first["status"] == "reproducible"
+say first["status"] == "candidate_driver_rebuild"
 EOF
 
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
