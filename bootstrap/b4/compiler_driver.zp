@@ -115,6 +115,26 @@ export fn driver_build_modules(sources, source_names):
             artifacts = append(artifacts, {"bytes": artifact["bytes"], "kind": artifact["kind"], "source_name": module["source_name"]})
     return {"artifacts": artifacts, "command": "build", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
 
+export fn driver_module_build_manifest(build_result):
+    let artifacts = []
+    for artifact in build_result["artifacts"]:
+        artifacts = append(artifacts, {"bytes": artifact["bytes"], "digest": artifact["kind"] + ":" + artifact["bytes"], "kind": artifact["kind"], "source_name": replace(artifact["source_name"], "\\", "/")})
+    return {"artifacts": artifacts, "command": build_result["command"], "module_order": build_result["module_order"], "schema_version": 1, "source_name": build_result["source_name"], "status": build_result["status"]}
+
+export fn driver_modules_rebuild(sources, source_names):
+    let first = driver_build_modules(sources, source_names)
+    if first["status"] != "ok":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_module_rebuild_error"}
+    let second = driver_build_modules(sources, source_names)
+    if second["status"] != "ok":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_module_rebuild_error"}
+    let first_bytes = json(driver_module_build_manifest(first))
+    let second_bytes = json(driver_module_build_manifest(second))
+    let status = "candidate_module_rebuild"
+    if first_bytes != second_bytes:
+        status = "candidate_module_rebuild_error"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "first_manifest": first_bytes, "native_independent": false, "second": second, "second_manifest": second_bytes, "status": status}
+
 export fn driver_typed_ir_semantics(first, second):
     let valid = first["kind"] == "zap.typed_ir"
     if first["candidate_only"] != true:
