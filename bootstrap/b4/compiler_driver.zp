@@ -50,6 +50,49 @@ export fn driver_module_match_count(modules, imported):
             count = count + 1
     return count
 
+export fn driver_module_index(modules, imported, index):
+    if index >= len(modules):
+        return -1
+    if driver_module_name_matches(modules[index]["source_name"], imported):
+        return index
+    return driver_module_index(modules, imported, index + 1)
+
+export fn driver_order_module(modules, index, visiting, visited, ordered):
+    let module = modules[index]
+    let key = module["module"]
+    if contains(visiting, key):
+        return {"diagnostics": [{"code": "ZAP-MODULE-005", "message": "module dependency cycle: " + key, "source_name": module["source_name"]}], "ordered": ordered, "status": "module_resolution_error", "visited": visited}
+    if contains(visited, key):
+        return {"diagnostics": [], "ordered": ordered, "status": "ok", "visited": visited}
+    let next_visiting = append(visiting, key)
+    let imports = sort(module["imports"])
+    for imported in imports:
+        let dependency_index = driver_module_index(modules, imported, 0)
+        let dependency = driver_order_module(modules, dependency_index, next_visiting, visited, ordered)
+        if dependency["status"] != "ok":
+            return dependency
+        ordered = dependency["ordered"]
+        visited = dependency["visited"]
+    ordered = append(ordered, module)
+    visited = append(visited, key)
+    return {"diagnostics": [], "ordered": ordered, "status": "ok", "visited": visited}
+
+export fn driver_order_modules(modules):
+    let keys = []
+    for module in modules:
+        keys = append(keys, module["module"])
+    let ordered_keys = sort(keys)
+    let ordered = []
+    let visited = []
+    for key in ordered_keys:
+        let index = driver_module_index(modules, key, 0)
+        let result = driver_order_module(modules, index, [], visited, ordered)
+        if result["status"] != "ok":
+            return result
+        ordered = result["ordered"]
+        visited = result["visited"]
+    return {"diagnostics": [], "ordered": ordered, "status": "ok", "visited": visited}
+
 export fn driver_collect_imports(statements, result):
     for statement in statements:
         if statement["kind"] == "import":
@@ -86,7 +129,10 @@ export fn driver_resolve_modules(sources, source_names):
                 return {"diagnostics": [{"code": "ZAP-MODULE-003", "message": "module not found: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
             if matches > 1:
                 return {"diagnostics": [{"code": "ZAP-MODULE-004", "message": "ambiguous module import: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
-    return {"diagnostics": [], "modules": ordered, "status": "modules_resolved"}
+    let dependency_order = driver_order_modules(ordered)
+    if dependency_order["status"] != "ok":
+        return {"diagnostics": dependency_order["diagnostics"], "modules": [], "status": "module_resolution_error"}
+    return {"diagnostics": [], "modules": dependency_order["ordered"], "status": "modules_resolved"}
 
 export fn driver_source_index(source_names, source_name, index):
     if index >= len(source_names):
