@@ -2,8 +2,11 @@
 #
 # This module fixes the user-facing command contract while the underlying
 # compiler stages are migrated from candidate slices to the complete language.
-import "bootstrap/b4/native_independent.zp"
 import "bootstrap/b4/runner.zp"
+import "bootstrap/b2/typed_ir.zp"
+import "bootstrap/b3/lower.zp"
+import "bootstrap/b3/vm.zp"
+import "bootstrap/b3/package.zp"
 
 export fn driver_normalize_source(source):
     let without_bom = replace(source, "\ufeff", "")
@@ -21,7 +24,7 @@ export fn driver_parse_source(source, source_name):
 
 export fn driver_typecheck_source(source, source_name):
     let normalized = driver_normalize_source(source)
-    let emitted = from_json(seed_emit_inferred_program_typed_ir(normalized, source_name))
+    let emitted = from_json(emit_inferred_program_typed_ir(normalized, source_name))
     if emitted["kind"] != "zap.typed_ir":
         return {"diagnostics": [emitted], "kind": "zap.typecheck_result", "status": "error", "source_name": source_name}
     return {"diagnostics": [], "kind": "zap.typecheck_result", "status": "ok", "source_name": source_name, "typed_ir": emitted}
@@ -30,14 +33,14 @@ export fn driver_compile_backend(source, source_name):
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":
         return {"diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error"}
-    let compiled = seed_compile_inferred_typed_ir(typed["typed_ir"], source_name)
-    if compiled["status"] != "compiled_inferred_typed_ir_slice":
-        return {"diagnostics": [], "execution": {"error": compiled["error"], "output": []}, "status": "error"}
-    let execution = vm_run(compiled["instructions"])
+    let lowered = lower_typed_ir(typed["typed_ir"])
+    if lowered["error"] != none:
+        return {"diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error"}
+    let execution = vm_run(lowered["instructions"])
     let status = "ok"
     if execution["error"] != none:
         status = "error"
-    return {"bytecode": compiled, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
+    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
 
 export fn driver_check_source(source, source_name):
     let parsed = driver_parse_source(source, source_name)
@@ -71,7 +74,15 @@ export fn driver_test_source(source, source_name):
     return {"artifacts": result["artifacts"], "command": "test", "diagnostics": result["diagnostics"], "execution": result["execution"], "native_independent": false, "runner_contract": acceptance, "schema_version": 1, "source_name": result["source_name"], "status": "ok", "tests": 1, "passed": 1}
 
 export fn driver_build_package(package_name, package_version, main, requirements, registry, source, source_name):
-    return seed_build_package_owned(package_name, package_version, main, requirements, registry, source, source_name)
+    let manifest_value = manifest(package_name, package_version, main, requirements)
+    let graph = resolve_dependency_graph(requirements, registry)
+    if not graph["ok"]:
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
+    let built = driver_build_source(source, source_name)
+    if built["status"] != "ok":
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
+    let artifact_bytes = json(built["artifacts"])
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
 
 export fn driver_artifact_manifest(build_result):
     return {"artifacts": build_result["artifacts"], "command": build_result["command"], "schema_version": 1, "source_name": build_result["source_name"], "status": build_result["status"]}

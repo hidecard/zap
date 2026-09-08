@@ -13,7 +13,8 @@
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
-- [ ] Replace those candidate backend slices with complete typed-IR, lowering, bytecode, VM, package/build, and test-runner ownership.
+- [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
+- [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence.
 - [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback.
 - [ ] Add canonical artifact serialization, stable module/dependency ordering, and byte-deterministic manifests.
 - [ ] Run two-stage and three-stage rebuilds from a prebuilt Zap seed with Rust/Cargo unavailable.
