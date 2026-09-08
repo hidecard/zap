@@ -93,6 +93,17 @@ export fn driver_order_modules(modules):
         visited = result["visited"]
     return {"diagnostics": [], "ordered": ordered, "status": "ok", "visited": visited}
 
+export fn driver_module_graph_manifest(modules):
+    let module_records = []
+    let edges = []
+    for module in modules:
+        let imports = sort(module["imports"])
+        module_records = append(module_records, {"imports": imports, "module": module["module"], "source_name": module["source_name"]})
+        for imported in imports:
+            let dependency_index = driver_module_index(modules, imported, 0)
+            edges = append(edges, {"from": module["module"], "to": modules[dependency_index]["module"]})
+    return {"edges": edges, "modules": module_records, "schema_version": 1, "status": "canonical_module_graph"}
+
 export fn driver_collect_imports(statements, result):
     for statement in statements:
         if statement["kind"] == "import":
@@ -133,6 +144,20 @@ export fn driver_resolve_modules(sources, source_names):
     if dependency_order["status"] != "ok":
         return {"diagnostics": dependency_order["diagnostics"], "modules": [], "status": "module_resolution_error"}
     return {"diagnostics": [], "modules": dependency_order["ordered"], "status": "modules_resolved"}
+
+export fn driver_modules_graph_replay(sources, source_names):
+    let first = driver_resolve_modules(sources, source_names)
+    if first["status"] != "modules_resolved":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_module_graph_error"}
+    let second = driver_resolve_modules(sources, source_names)
+    if second["status"] != "modules_resolved":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_module_graph_error"}
+    let first_manifest = json(driver_module_graph_manifest(first["modules"]))
+    let second_manifest = json(driver_module_graph_manifest(second["modules"]))
+    let status = "candidate_module_graph_replay"
+    if first_manifest != second_manifest:
+        status = "candidate_module_graph_error"
+    return {"byte_equal": first_manifest == second_manifest, "first": first, "first_manifest": first_manifest, "native_independent": false, "second": second, "second_manifest": second_manifest, "status": status}
 
 export fn driver_source_index(source_names, source_name, index):
     if index >= len(source_names):
