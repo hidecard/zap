@@ -18,6 +18,8 @@ assert data["schema_version"] == 1
 assert data["contract_id"] == "ZAP-COMPILER-DRIVER"
 assert data["status"] == "candidate"
 assert data["pipeline"]["stages"] == ["source", "typed_ir", "bytecode", "execution"]
+assert data["pipeline"]["owner"] == "bootstrap/b4/compiler_driver.zp"
+assert data["pipeline"]["seed"] == "bootstrap/b4/compiler_driver.zp"
 assert data["determinism"]["seed_epoch"] == 0
 assert data["artifact"]["newline"] == "LF"
 PY
@@ -26,6 +28,9 @@ for export in driver_parse_source driver_typecheck_source driver_compile_backend
 done
 grep -q '"typed_ir"' "$DRIVER" || fail "canonical artifact order must include typed_ir"
 grep -q '"bytecode"' "$DRIVER" || fail "canonical artifact order must include bytecode"
+if grep -q 'native_independent.zp' "$CONTRACT" "$DRIVER"; then
+  fail "driver contract must not depend on the removed composite seed"
+fi
 grep -q 'ZAP_BOOTSTRAP_BIN' scripts/bootstrap/verify_b4_byte_determinism.sh || fail "byte-determinism gate must require a prebuilt seed"
 grep -q 'ZAP_BOOTSTRAP_BIN' scripts/bootstrap/verify_b4_second_stage_rebuild.sh || fail "second-stage gate must require a prebuilt seed"
 grep -q 'ZAP_BOOTSTRAP_BIN' scripts/bootstrap/verify_b4_clean_environment.sh || fail "clean-environment gate must require a prebuilt seed"

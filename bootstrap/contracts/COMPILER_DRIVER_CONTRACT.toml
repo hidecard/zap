@@ -11,7 +11,7 @@ test = "discover-and-run-zap-tests"
 [pipeline]
 stages = ["source", "typed_ir", "bytecode", "execution"]
 owner = "bootstrap/b4/compiler_driver.zp"
-seed = "bootstrap/b4/native_independent.zp"
+seed = "bootstrap/b4/compiler_driver.zp"
 
 [artifact]
 schema_version = 1
