@@ -43,6 +43,13 @@ export fn driver_module_name_matches(source_name, module_name):
     let source_parts = split(normalized_source, "/")
     return len(source_parts) > 0 and source_parts[len(source_parts) - 1] == normalized_module
 
+export fn driver_module_match_count(modules, imported):
+    let count = 0
+    for candidate in modules:
+        if driver_module_name_matches(candidate["source_name"], imported):
+            count = count + 1
+    return count
+
 export fn driver_collect_imports(statements, result):
     for statement in statements:
         if statement["kind"] == "import":
@@ -74,12 +81,11 @@ export fn driver_resolve_modules(sources, source_names):
                 ordered = append(ordered, module)
     for module in ordered:
         for imported in module["imports"]:
-            let found = false
-            for candidate in ordered:
-                if driver_module_name_matches(candidate["source_name"], imported):
-                    found = true
-            if not found:
+            let matches = driver_module_match_count(ordered, imported)
+            if matches == 0:
                 return {"diagnostics": [{"code": "ZAP-MODULE-003", "message": "module not found: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
+            if matches > 1:
+                return {"diagnostics": [{"code": "ZAP-MODULE-004", "message": "ambiguous module import: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
     return {"diagnostics": [], "modules": ordered, "status": "modules_resolved"}
 
 export fn driver_source_index(source_names, source_name, index):
