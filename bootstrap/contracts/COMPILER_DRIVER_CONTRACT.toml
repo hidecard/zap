@@ -31,4 +31,4 @@ seed_epoch = 0
 [acceptance]
 source = "bootstrap/fixtures/driver/driver_smoke.zp"
 verifier = "scripts/bootstrap/verify_compiler_driver_contract.sh"
-required_exports = ["driver_parse_source", "driver_typecheck_source", "driver_compile_backend", "driver_check_source", "driver_build_source", "driver_run_source", "driver_test_source", "driver_build_package", "driver_artifact_record", "driver_canonical_artifacts", "driver_artifact_manifest", "driver_rebuild"]
+required_exports = ["driver_parse_source", "driver_typecheck_source", "driver_compile_backend", "driver_execute_owned_pipeline", "driver_check_source", "driver_build_source", "driver_run_source", "driver_test_source", "driver_build_package", "driver_artifact_record", "driver_canonical_artifacts", "driver_artifact_manifest", "driver_rebuild"]

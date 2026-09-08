@@ -42,6 +42,18 @@ export fn driver_compile_backend(source, source_name):
         status = "error"
     return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
 
+export fn driver_execute_owned_pipeline(source, source_name):
+    let backend = driver_compile_backend(source, source_name)
+    if backend["status"] != "ok":
+        return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
+    let typed_bytes = json(backend["typed_ir"])
+    let bytecode_bytes = json(backend["bytecode"]["instructions"])
+    let stages = [{"input_kind": "source", "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_kind": "typed_ir", "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_kind": "bytecode", "output_kind": "execution", "stage": "bytecode_to_vm"}]
+    let status = "candidate_pipeline_executed"
+    if backend["execution"]["error"] != none:
+        status = "candidate_pipeline_error"
+    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
+
 export fn driver_check_source(source, source_name):
     let parsed = driver_parse_source(source, source_name)
     if parsed["status"] != "ok":

@@ -28,11 +28,11 @@ trap 'rm -f "$runner" "$out" "$expected"' EXIT
 
 # Test 1: Run with Rust toolchain variables unset (simulating clean env)
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let source = "let a = 5\nlet b = 10\nsay a + b\n"
 
-let result = seed_execute_owned_pipeline(source, "clean_env")
+let result = driver_execute_owned_pipeline(source, "clean_env")
 let status_ok = result["status"] == "candidate_pipeline_executed"
 let chain_valid = result["stage_chain_valid"]
 let artifact_count = len(result["artifacts"])
@@ -69,15 +69,15 @@ cmp "$out" "$expected" || fail "normal environment run produced different output
 
 # Test 3: Multiple sequential runs - verify no state leakage
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let source1 = "let x = 1\nsay x\n"
 let source2 = "let y = 2\nsay y\n"
 let source3 = "let z = 3\nsay z\n"
 
-let r1 = seed_execute_owned_pipeline(source1, "seq_1")
-let r2 = seed_execute_owned_pipeline(source2, "seq_2")
-let r3 = seed_execute_owned_pipeline(source3, "seq_3")
+let r1 = driver_execute_owned_pipeline(source1, "seq_1")
+let r2 = driver_execute_owned_pipeline(source2, "seq_2")
+let r3 = driver_execute_owned_pipeline(source3, "seq_3")
 
 let all_ok = r1["status"] == "candidate_pipeline_executed" and r2["status"] == "candidate_pipeline_executed" and r3["status"] == "candidate_pipeline_executed"
 let all_chain = r1["stage_chain_valid"] and r2["stage_chain_valid"] and r3["stage_chain_valid"]
@@ -117,15 +117,15 @@ cmp "$out" "$expected" || fail "platform evidence record validation failed"
 
 # Test 5: Clean environment with different source surfaces
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 
 let s0 = "say 42\n"
 let s1 = "fn add(a: number, b: number) -> number:\n    return a + b\nsay add(1, 2)\n"
 let s2 = "let x = 1 + 2\nsay x\n"
 
-let r0 = seed_execute_owned_pipeline(s0, "simple")
-let r1 = seed_execute_owned_pipeline(s1, "function")
-let r2 = seed_execute_owned_pipeline(s2, "arithmetic")
+let r0 = driver_execute_owned_pipeline(s0, "simple")
+let r1 = driver_execute_owned_pipeline(s1, "function")
+let r2 = driver_execute_owned_pipeline(s2, "arithmetic")
 
 let all_ok = r0["status"] == "candidate_pipeline_executed" and r1["status"] == "candidate_pipeline_executed" and r2["status"] == "candidate_pipeline_executed"
 
