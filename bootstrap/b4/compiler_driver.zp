@@ -29,6 +29,59 @@ export fn driver_typecheck_source(source, source_name):
         return {"diagnostics": [emitted], "kind": "zap.typecheck_result", "status": "error", "source_name": source_name}
     return {"diagnostics": [], "kind": "zap.typecheck_result", "status": "ok", "source_name": source_name, "typed_ir": emitted}
 
+export fn driver_normalize_module_name(source_name):
+    let normalized = replace(replace(source_name, "\\", "/"), "//", "/")
+    if ends_with(normalized, ".zp"):
+        return substring(normalized, 0, len(normalized) - 3)
+    return normalized
+
+export fn driver_module_name_matches(source_name, module_name):
+    let normalized_source = driver_normalize_module_name(source_name)
+    let normalized_module = driver_normalize_module_name(module_name)
+    if normalized_source == normalized_module:
+        return true
+    let source_parts = split(normalized_source, "/")
+    return len(source_parts) > 0 and source_parts[len(source_parts) - 1] == normalized_module
+
+export fn driver_collect_imports(statements, result):
+    for statement in statements:
+        if statement["kind"] == "import":
+            result = append(result, statement["path"])
+    return result
+
+export fn driver_resolve_modules(sources, source_names):
+    if len(sources) != len(source_names):
+        return {"diagnostics": [{"code": "ZAP-MODULE-001", "message": "source and source-name counts differ"}], "modules": [], "status": "module_resolution_error"}
+    let modules = []
+    for index in range(0, len(sources)):
+        let parsed = driver_parse_source(sources[index], source_names[index])
+        if parsed["status"] != "ok":
+            return {"diagnostics": parsed["diagnostics"], "modules": [], "status": "module_resolution_error"}
+        let imports = driver_collect_imports(parsed["ast"]["ast"]["statements"], [])
+        let module_name = driver_normalize_module_name(source_names[index])
+        for existing in modules:
+            if existing["module"] == module_name:
+                return {"diagnostics": [{"code": "ZAP-MODULE-002", "message": "duplicate module: " + module_name, "source_name": source_names[index]}], "modules": [], "status": "module_resolution_error"}
+        modules = append(modules, {"imports": imports, "module": module_name, "source_name": replace(source_names[index], "\\", "/")})
+    let keys = []
+    for module in modules:
+        keys = append(keys, module["module"])
+    let ordered_keys = sort(keys)
+    let ordered = []
+    for key in ordered_keys:
+        for module in modules:
+            if module["module"] == key:
+                ordered = append(ordered, module)
+    for module in ordered:
+        for imported in module["imports"]:
+            let found = false
+            for candidate in ordered:
+                if driver_module_name_matches(candidate["source_name"], imported):
+                    found = true
+            if not found:
+                return {"diagnostics": [{"code": "ZAP-MODULE-003", "message": "module not found: " + imported, "source_name": module["source_name"]}], "modules": [], "status": "module_resolution_error"}
+    return {"diagnostics": [], "modules": ordered, "status": "modules_resolved"}
+
 export fn driver_typed_ir_semantics(first, second):
     let valid = first["kind"] == "zap.typed_ir"
     if first["candidate_only"] != true:
