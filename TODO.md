@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-05
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-08
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -149,6 +149,14 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Test scripts များ၏ temporary files အားလုံးကို `trap` ဖြင့် cleanup လုပ်ပြီး repository root မညစ်ပတ်ကြောင်း CI assertion ထည့်ရန်။
 - [x] Legacy fixed-shape parser helpers ဖယ်ရှားပြီး B1 Zap-only verifier scripts နှင့် Python host proofs ကို CI တွင် ချိတ်ဆက်ပြီးပါပြီ။
 - [x] `bootstrap/contracts/RULE_INDEX.tsv` နှင့် `bootstrap/docs/COMPATIBILITY_POLICY_EN.md` ထည့်သွင်းပြီးပါပြီ။
+
+## Recent changes (2026-09-08)
+
+- [x] `scripts/bootstrap/verify_b1_parser_zap_only.sh` ကို CI တွင် run နိုင်အောင် executable bit ကို git index မှာ သတ်မှတ်ပြီးပါပြီ။
+- [x] B1 Zap parser no-Rust proof (`verify_b1_parser_zap_only.sh`) ကို exit 0 ဖြင့် အောင်မြင်ပြီးပါပြီ။ (70 pass, 0 fail, 5 skip)
+- [x] Parser/diagnostics golden files အားလုံးကို Python host parser နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး သံုးနိုင်သော fixtures များကို ပြန်လည်ဖန်တီးပြီးပါပြီ။
+- [x] `bootstrap/fixtures/parser/while_else_syntax.ast.json` အသစ်ဖန်တီးပြီးပါပြီ။
+- [x] `bootstrap/fixtures/parser/unexpected_indentation.ast.json` ကို ဖယ်ရှားပြီးပါပြီ။ (Python host parser သည် diagnostics ထုတ်ပါသည်)
 
 ## အညွှန်းစာတမ်းများ
 
