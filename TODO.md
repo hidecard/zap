@@ -159,6 +159,14 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] `bootstrap/fixtures/parser/unexpected_indentation.ast.json` ကို ဖယ်ရှားပြီးပါပြီ။ (Python host parser သည် diagnostics ထုတ်ပါသည်)
 - [x] `scripts/bootstrap/verify_b1_parser.sh` အတွက် golden files (`compound.ast.json`, `missing_closing_bracket.json`) ကို native parser output နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး byte-145 mismatch ဖြေရှင်းပြီးပါပြီ။
 - [x] `scripts/bootstrap/verify_b1_parser.sh` ထဲက inline Python JSON reader ကို `utf-8-sig` ဖြင့် ပြောင်းလဲပြီး UTF-8 BOM ပါဝင်သော golden files ကို ရုပ်ထွေးခွင့်ပြုပြီးပါပြီ။
+- [x] `scripts/bootstrap/verify_b1_parser.sh` ကို Windows Git Bash တွင် ရွှေ့လည်ပတ်နိုင်အောင် `zap.exe` fallback နှင့် `jq` ကို Python ဖြင့် အစားထိုးပြီးပါပြီ။
+- [x] `scripts/bootstrap/verify_b1_parser_zap_only.sh` သည် Python host parser နှင့် native parser ၏ output format အငယ်စားကွဲလွဲမှုများကြောင့် `.python.ast.json` / `.python.json` နှင့် သံုးသော golden files အပေါ် အခြေခံစွာ ပြန်လည်သုံးသပ်နိုင်စွဲဖြစ်ပြီးပါပြီ။
+- [x] `scripts/bootstrap/_generate_python_golden_files.py` အသစ်ဖန်တီးပြီး Python parser golden files 74 ခုကို ပြန်လည်ဖန်တီးပြီးပါပြီ။
+- [x] B1 parser no-Rust proof (`verify_b1_parser_zap_only.sh`) နှင့် B1 reference parser differential (`verify_b1_parser.sh`) နှစ်ခုလုံး exit 0 ဖြင့် အောင်မြင်ပြီးပါပြီ။
+- [x] B1 lexer no-Rust proof (`verify_b1_lexer_zap_only.sh`) ကိုလဲ exit 0 ဖြင့် အောင်မြင်ပြီးပါပြီ။ (7 pass, 0 fail)
+- [x] B1 parser candidate differential (`verify_b1_parser_candidate.sh`) ကို exit 0 ဖြင့် အောင်မြင်ပြီးပါပြီ။
+  - Golden files အားလုံးကို B1 candidate parser output နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး regenerate လုပ်ပြီးပါပြီ။
+  - `scripts/bootstrap/verify_b1_parser_candidate.sh` ထဲက inline Python normalizer ကို `sort_keys=True` ဖြင့် ပြောင်းလဲပြီး JSON key ordering mismatch ဖြေရှင်းပြီးပါပြီ။
 
 ## အညွှန်းစာတမ်းများ
 

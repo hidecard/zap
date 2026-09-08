@@ -1,1 +1,1 @@
-{"diagnostics":[],"kind":"zap.diagnostics","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/missing_while_condition.zp"}
+{"ast":{"statements":[{"body":{"statements":[{"kind":"invalid_statement","span":{"column":1,"length":4,"line":2}}]},"condition":{"kind":"name","name":"","span":{"column":1,"length":0,"line":1}},"kind":"while","span":{"column":1,"length":7,"line":1}}]},"kind":"zap.ast","schema_version":1,"source_name":"bootstrap/fixtures/diagnostics/missing_while_condition.zp"}

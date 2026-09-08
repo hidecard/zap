@@ -407,7 +407,7 @@ def normalize_and_dump(path, out_path):
             continue
         data = json.loads(line)
         normalize_paths(data)
-        lines.append(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+        lines.append(json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True))
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 normalize_and_dump(output_path, normalized_output_path)
