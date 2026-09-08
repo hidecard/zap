@@ -29,6 +29,22 @@ export fn driver_typecheck_source(source, source_name):
         return {"diagnostics": [emitted], "kind": "zap.typecheck_result", "status": "error", "source_name": source_name}
     return {"diagnostics": [], "kind": "zap.typecheck_result", "status": "ok", "source_name": source_name, "typed_ir": emitted}
 
+export fn driver_typed_ir_semantics(first, second):
+    let valid = first["kind"] == "zap.typed_ir"
+    if first["candidate_only"] != true:
+        valid = false
+    if not contains(json(first), "\"source_name\""):
+        valid = false
+    if not contains(json(first), "\"ir\"") or not contains(json(first["ir"]), "\"nodes\""):
+        valid = false
+    let deterministic = json(first) == json(second)
+    if not deterministic:
+        valid = false
+    let status = "candidate_typed_ir_semantics"
+    if not valid:
+        status = "candidate_typed_ir_semantics_error"
+    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": true, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": "candidate", "reference_owner": "rust", "schema_version": first["schema_version"], "status": status, "valid": valid}
+
 export fn driver_compile_backend(source, source_name):
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":

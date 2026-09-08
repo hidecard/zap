@@ -22,8 +22,10 @@ cat >"$runner" <<'ZP'
 import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let artifact = driver_compile_backend("let value: number = 7\n", "typed-source.zp")
+let repeat = driver_compile_backend("let value: number = 7\n", "typed-source.zp")
 let state = vm_run(artifact["bytecode"]["instructions"])
 let rebuild = driver_rebuild("let value: number = 7\n", "typed-source.zp")
+let semantics = driver_typed_ir_semantics(artifact["typed_ir"], repeat["typed_ir"])
 say artifact["status"]
 say artifact["bytecode"]["native_independent"]
 say artifact["typed_ir"]["kind"]
@@ -32,6 +34,8 @@ say state["error"]
 say state["locals"][0]["value"]
 say rebuild["status"]
 say rebuild["byte_equal"]
+say semantics["status"]
+say semantics["valid"]
 ZP
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
@@ -42,7 +46,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["ok", "false", "zap.typed_ir", "true", "none", "7", "candidate_driver_rebuild", "true"]:
+if lines != ["ok", "false", "zap.typed_ir", "true", "none", "7", "candidate_driver_rebuild", "true", "candidate_typed_ir_semantics", "true"]:
     raise SystemExit(f"unexpected typed-IR source output: {lines!r}")
 PY
 printf 'B4 typed-IR source gate passed: Zap source to typed-IR to VM handoff and reproducible rebuild\n'
