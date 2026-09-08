@@ -9,7 +9,7 @@
 ### Self-hosting progress update (2026-09-09)
 
 - **Completed in the latest driver-ownership slice:** clean-environment, byte-determinism, second-stage rebuild, supported-subset rebuild, and typed-IR source rebuild gates now call `bootstrap/b4/compiler_driver.zp` directly instead of the removed composite `native_independent.zp` wrapper. The compiler-driver contract and verifier require the direct driver seed and the new subset/rebuild exports.
-- **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, the user-facing CLI is not yet routed through the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence.
+- **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
 
 ### Self-hosting implementation sequence
@@ -21,7 +21,7 @@
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
 - [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence.
-- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback.
+- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (`zap driver status` boundary added; executable command delegation remains blocked until a verified Zap seed and complete driver ownership are available)
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
 - [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.

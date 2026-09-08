@@ -57,6 +57,7 @@ Usage:
   zap init <dir>                        Create a generic Zap project
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
+  zap driver status                     Show the Zap compiler-driver ownership boundary
   zap bootstrap status                  Show bootstrap stage and schema versions
   zap bootstrap vm-demo                 Run the reference-only VM smoke program
   zap bootstrap tokens <file.zp>        Emit the canonical B0 token artifact
@@ -1326,6 +1327,14 @@ pub fn run_cli(args: &[String]) {
         println!("async runtime foundation ready");
         return;
     }
+    if args.len() == 3 && args[1] == "driver" && args[2] == "status" {
+        println!("{}", crate::bootstrap::status_json());
+        return;
+    }
+    if args.len() >= 2 && args[1] == "driver" {
+        eprintln!("Zap driver usage error: only `zap driver status` is available until a verified Zap seed is installed");
+        process::exit(EXIT_USAGE_ERROR);
+    }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
             Ok(info) => println!("built Zap project: {info}"),
@@ -1497,6 +1506,7 @@ mod tests {
             "zap init",
             "zap lsp",
             "zap async-check",
+            "zap driver status",
             "zap bootstrap status",
             "zap bootstrap vm-demo",
             "zap bootstrap tokens",
