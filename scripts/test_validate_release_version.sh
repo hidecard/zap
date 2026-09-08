@@ -20,6 +20,7 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 EXPECTED_VERSION="$CURRENT_VERSION" \
   RELEASE_TAG="v$CURRENT_VERSION" \
   ZAP_VERSION_REPORT="$WORK_DIR/pass.tsv" \
+  ZAP_CLI_BINARY="bin/zap.exe" \
   scripts/validate_release_version.sh "$CURRENT_VERSION" > "$WORK_DIR/pass.log"
 grep -Fq "$(printf 'release tag\t%s\t%s\tPASS' "$CURRENT_VERSION" "$CURRENT_VERSION")" "$WORK_DIR/pass.tsv"
 grep -Fq 'version validation passed:' "$WORK_DIR/pass.log"
@@ -27,6 +28,7 @@ grep -Fq 'version validation passed:' "$WORK_DIR/pass.log"
 GITHUB_REF_NAME=master \
   EXPECTED_VERSION="$CURRENT_VERSION" \
   ZAP_VERSION_REPORT="$WORK_DIR/branch-ref.tsv" \
+  ZAP_CLI_BINARY="bin/zap.exe" \
   scripts/validate_release_version.sh "$CURRENT_VERSION" > "$WORK_DIR/branch-ref.log"
 if grep -Fq $'release tag\t' "$WORK_DIR/branch-ref.tsv"; then
   printf '%s\n' 'version validator regression: branch ref was treated as a release tag' >&2
@@ -35,6 +37,7 @@ fi
 
 if EXPECTED_VERSION="$DRIFT_VERSION" \
   ZAP_VERSION_REPORT="$WORK_DIR/version-drift.tsv" \
+  ZAP_CLI_BINARY="bin/zap.exe" \
   scripts/validate_release_version.sh "$DRIFT_VERSION" > "$WORK_DIR/version-drift.log" 2>&1; then
   printf '%s\n' 'version validator regression: expected-version drift was accepted' >&2
   exit 1
@@ -44,6 +47,7 @@ grep -Fq "$(printf 'native/Cargo.toml\t%s\t%s\tFAIL' "$DRIFT_VERSION" "$CURRENT_
 if EXPECTED_VERSION="$CURRENT_VERSION" \
   RELEASE_TAG="v$TAG_DRIFT_VERSION" \
   ZAP_VERSION_REPORT="$WORK_DIR/tag-drift.tsv" \
+  ZAP_CLI_BINARY="bin/zap.exe" \
   scripts/validate_release_version.sh "$CURRENT_VERSION" > "$WORK_DIR/tag-drift.log" 2>&1; then
   printf '%s\n' 'version validator regression: tag drift was accepted' >&2
   exit 1

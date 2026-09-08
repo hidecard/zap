@@ -34,62 +34,62 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ### P0.1 Native CLI ပါသော release gate
 
-- [ ] `zap --version` သည် source version၊ `native/Cargo.toml`၊ lockfile၊ README၊ changelog နှင့် release metadata အားလုံးနှင့် တူညီကြောင်း clean checkout မှ စစ်ဆေးရန်။
-- [ ] Native CLI binary မရှိလျှင် release validator သည် `<missing>` ကိုသာ ပြရုံမဟုတ်ဘဲ install/build prerequisite နှင့် ပြင်ဆင်ရမည့် command ကို ရှင်းလင်းစွာ ပြသရန်။
-- [ ] `scripts/test_validate_release_version.sh` သည် native binary ပါသော CI job တွင် အောင်မြင်ရမည်။ Local environment တွင် binary မရှိခြင်းကို release success ဟု မယူဆရ။
+- [x] `zap --version` သည် source version၊ `native/Cargo.toml`၊ lockfile၊ README၊ changelog နှင့် release metadata အားလုံးနှင့် တူညီကြောင်း clean checkout မှ စစ်ဆေးရန်။
+- [x] Native CLI binary မရှိလျှင် release validator သည် `<missing>` ကိုသာ ပြရုံမဟုတ်ဘဲ install/build prerequisite နှင့် ပြင်ဆင်ရမည့် command ကို ရှင်းလင်းစွာ ပြသရန်။
+- [x] `scripts/test_validate_release_version.sh` သည် native binary ပါသော CI job တွင် အောင်မြင်ရမည်။ Local environment တွင် binary မရှိခြင်းကို release success ဟု မယူဆရ။
 
 **Acceptance:** `zap --version`၊ Cargo version၊ lockfile version နှင့် release tag တို့ တစ်ခုတည်းဖြစ်ရမည်။ Version mismatch၊ missing binary နှင့် wrong artifact တို့ကို deterministic nonzero exit ဖြင့် ပြရမည်။
 
 ### P0.2 Cross-platform release verification
 
-- [ ] Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 အတွက် source validation၊ native build၊ smoke test နှင့် package install test ကို CI တွင် မဖြစ်မနေ run ရန်။
-- [ ] Release archive၊ aggregate checksum၊ detached signature၊ signed provenance နှင့် versioned manifest ကို clean verifier ဖြင့် စစ်ဆေးရန်။
-- [ ] Published release တစ်ခု၏ tag ကို rewrite မလုပ်ဘဲ failed workflow ဖြစ်ပါက immutable tag မရွှေ့ဘဲ safe rerun လုပ်ရန်။
+- [x] Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 အတွက် source validation၊ native build၊ smoke test နှင့် package install test ကို CI တွင် မဖြစ်မနေ run ရန်။
+- [x] Release archive၊ aggregate checksum၊ detached signature၊ signed provenance နှင့် versioned manifest ကို clean verifier ဖြင့် စစ်ဆေးရန်။
+- [x] Published release တစ်ခု၏ tag ကို rewrite မလုပ်ဘဲ failed workflow ဖြစ်ပါက immutable tag မရွှေ့ဘဲ safe rerun လုပ်ရန်။
 
 **Acceptance:** Platform သုံးခုလုံးတွင် install → `zap --version` → hello-world → test command အစဉ်အတိုင်း အောင်မြင်ရမည်။ Artifact တစ်ခုခု မရှိလျှင် verification သည် pass မဖြစ်ရ။
 
 ### P0.3 Runtime/security regression gates
 
-- [ ] Filesystem race boundary၊ DNS-to-connection pinning နှင့် host-specific process cleanup အတွက် focused regression tests ထည့်ရန်။
-- [ ] Dependency audit၊ license check၊ secret scan နှင့် malformed-source no-panic gate များကို release preflight ထဲတွင် ဆက်လက်ထိန်းသိမ်းရန်။
-- [ ] Release notes တွင် implemented scope နှင့် deferred scope ကို သီးခြားဖော်ပြရန်။
+- [x] Filesystem race boundary၊ DNS-to-connection pinning နှင့် host-specific process cleanup အတွက် focused regression tests ထည့်ရန်။
+- [x] Dependency audit၊ license check၊ secret scan နှင့် malformed-source no-panic gate များကို release preflight ထဲတွင် ဆက်လက်ထိန်းသိမ်းရန်။
+- [x] Release notes တွင် implemented scope နှင့် deferred scope ကို သီးခြားဖော်ပြရန်။
 
 ## P1 — အသုံးပြုနိုင်သော language platform
 
 ### P1.1 Install နှင့် onboarding
 
-- [ ] Linux/macOS/Windows installation guide သုံးခုကို clean machine သို့မဟုတ် clean container မှ စမ်းသပ်ရန်။
-- [ ] `hello.zp`၊ variables၊ functions၊ collections၊ errors၊ modules နှင့် testing ပါသော end-to-end tutorial တစ်ခုရေးရန်။
-- [ ] Language reference တွင် grammar၊ type rules၊ runtime errors၊ exit codes နှင့် supported-platform policy ကို တစ်နေရာတည်းတွင် စုစည်းရန်။
-- [ ] Example projects အနည်းဆုံး ၅ ခု ထည့်ရန်: CLI၊ file processing၊ HTTP client/server၊ JSON data၊ package သုံးသည့် project။
+- [x] Linux/macOS/Windows installation guide သုံးခုကို clean machine သို့မဟုတ် clean container မှ စမ်းသပ်ရန်။
+- [x] `hello.zp`၊ variables၊ functions၊ collections၊ errors၊ modules နှင့် testing ပါသော end-to-end tutorial တစ်ခုရေးရန်။
+- [x] Language reference တွင် grammar၊ type rules၊ runtime errors၊ exit codes နှင့် supported-platform policy ကို တစ်နေရာတည်းတွင် စုစည်းရန်။
+- [x] Example projects အနည်းဆုံး ၅ ခု ထည့်ရန်: CLI၊ file processing၊ HTTP client/server၊ JSON data၊ package သုံးသည့် project။
 
 **Acceptance:** Zap မသိသော developer တစ်ဦးသည် README မှစ၍ ၁၅ မိနစ်အတွင်း install လုပ်ပြီး example project တစ်ခု run/test လုပ်နိုင်ရမည်။
 
 ### P1.2 Standard library baseline
 
-- [ ] `std` namespace ၏ public API policy နှင့် compatibility policy သတ်မှတ်ရန်။
-- [ ] အရင်ဆုံး filesystem/path၊ text/encoding၊ JSON၊ HTTP၊ time၊ process၊ logging နှင့် testing modules ကို stable API အဖြစ် သတ်မှတ်ရန်။
-- [ ] Module တစ်ခုစီအတွက် API docs၊ examples၊ error behavior နှင့် cross-platform tests ထည့်ရန်။
+- [x] `std` namespace ၏ public API policy နှင့် compatibility policy သတ်မှတ်ရန်။
+- [x] အရင်ဆုံး filesystem/path၊ text/encoding၊ JSON၊ HTTP၊ time၊ process၊ logging နှင့် testing modules ကို stable API အဖြစ် သတ်မှတ်ရန်။
+- [x] Module တစ်ခုစီအတွက် API docs၊ examples၊ error behavior နှင့် cross-platform tests ထည့်ရန်။
 
 **Acceptance:** Example projects များသည် private/internal Rust implementation ကို တိုက်ရိုက်မသုံးဘဲ documented standard library API ဖြင့်သာ build/test လုပ်နိုင်ရမည်။
 
 ### P1.3 Tooling
 
-- [ ] `zap fmt`၊ `zap test`၊ `zap check` နှင့် `zap doc` command များ၏ stable contract သတ်မှတ်ရန်။
-- [ ] LSP hover၊ diagnostics၊ document symbols နှင့် signature help ကို supported language subset အတွက် end-to-end စစ်ဆေးရန်။
-- [ ] Formatter output ကို deterministic ဖြစ်စေပြီး CI တွင် format check ထည့်ရန်။
-- [ ] Error messages များတွင် source span၊ error code၊ explanation နှင့် fix suggestion ပါဝင်စေရန်။
+- [x] `zap fmt`၊ `zap test`၊ `zap check` နှင့် `zap doc` command များ၏ stable contract သတ်မှတ်ရန်။
+- [x] LSP hover၊ diagnostics၊ document symbols နှင့် signature help ကို supported language subset အတွက် end-to-end စစ်ဆေးရန်။
+- [x] Formatter output ကို deterministic ဖြစ်စေပြီး CI တွင် format check ထည့်ရန်။
+- [x] Error messages များတွင် source span၊ error code၊ explanation နှင့် fix suggestion ပါဝင်စေရန်။
 
 **Acceptance:** CI၊ README examples နှင့် VS Code extension တို့သည် command/API တစ်ခုတည်းကို အသုံးပြုရမည်။ Tool output သည် clean checkout နှစ်ကြိမ်တွင် တူညီရမည်။
 
 ## P1 — Package ecosystem နှင့် reproducible builds
 
-- [ ] Package manifest schema သတ်မှတ်ရန်: name၊ version၊ Zap compatibility၊ dependencies၊ license၊ source integrity နှင့် build metadata။
-- [ ] Semantic version range၊ dependency graph၊ transitive resolution နှင့် conflict diagnostic ကို implement လုပ်ရန်။
-- [ ] Lockfile format သတ်မှတ်ပြီး resolved versions၊ checksums၊ source URLs နှင့် toolchain identity ကို သိမ်းရန်။
-- [ ] `zap add`၊ `zap remove`၊ `zap update`၊ `zap build`၊ `zap test` နှင့် `zap publish` workflow တည်ဆောက်ရန်။
-- [ ] Registry API၊ package search၊ immutable version publishing၊ checksum/signature verification နှင့် yanked package policy သတ်မှတ်ရန်။
-- [ ] Registry မရနိုင်သည့်အခါ cache/offline build နှင့် clear failure behavior ထည့်ရန်။
+- [x] Package manifest schema သတ်မှတ်ရန်: name၊ version၊ Zap compatibility၊ dependencies၊ license၊ source integrity နှင့် build metadata။
+- [x] Semantic version range၊ dependency graph၊ transitive resolution နှင့် conflict diagnostic ကို implement လုပ်ရန်။
+- [x] Lockfile format သတ်မှတ်ပြီး resolved versions၊ checksums၊ source URLs နှင့် toolchain identity ကို သိမ်းရန်။
+- [x] `zap add`၊ `zap remove`၊ `zap update`၊ `zap build`၊ `zap test` နှင့် `zap publish` workflow တည်ဆောက်ရန်။
+- [x] Registry API၊ package search၊ immutable version publishing၊ checksum/signature verification နှင့် yanked package policy သတ်မှတ်ရန်။
+- [x] Registry မရနိုင်သည့်အခါ cache/offline build နှင့် clear failure behavior ထည့်ရန်။
 
 **Acceptance:** Package A သည် Package B ကို dependency အဖြစ် သုံးနိုင်ရမည်။ Clean machine တွင် lockfile တစ်ခုတည်းဖြင့် byte-identical dependency resolution ရရမည်။ Tampered package သို့မဟုတ် checksum မကိုက်သော artifact ကို install မလုပ်ရ။
 

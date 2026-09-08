@@ -137,7 +137,17 @@ if [[ -n "${ZAP_CLI_BINARY:-}" ]]; then
 fi
 
 cli_version="$(read_cli_version)"
-record 'zap --version' "$EXPECTED_VERSION" "${cli_version:-<missing>}" "$([[ "$cli_version" == "$EXPECTED_VERSION" ]] && printf PASS || printf FAIL)"
+if [[ -z "$cli_version" ]]; then
+  record 'zap --version' "$EXPECTED_VERSION" '<missing>' FAIL
+  printf '%s\n' 'ERROR: Native CLI binary not found. To build the native CLI:' >&2
+  printf '%s\n' '  cargo build --release --manifest-path native/Cargo.toml' >&2
+  printf '%s\n' '  mkdir -p bin' >&2
+  printf '%s\n' '  cp native/target/release/zap bin/zap   # on Linux/macOS' >&2
+  printf '%s\n' '  cp native/target/release/zap.exe bin/zap.exe   # on Windows' >&2
+  printf '%s\n' 'Then run validation with: ZAP_CLI_BINARY=bin/zap scripts/validate_release_version.sh' >&2
+else
+  record 'zap --version' "$EXPECTED_VERSION" "$cli_version" "$([[ "$cli_version" == "$EXPECTED_VERSION" ]] && printf PASS || printf FAIL)"
+fi
 
 if [[ -n "$RELEASE_TAG" ]]; then
   if [[ "$RELEASE_TAG" == v* ]]; then

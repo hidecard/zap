@@ -19,6 +19,7 @@ Versioned provenance asset သည် release identity အတွက် canonical 
 - `read_cargo_version` သည် sed match မလုပ်မီ trailing CR ကို `tr -d '\r'` ဖြင့် ဖယ်ရှားသည်။ ၎င်းသည် `core.autocrlf=true` Windows checkout တွင် `native/Cargo.toml` ၏ version ကို မှန်ကန်စွာ ထုတ်ယူနိုင်စေသည်။
 - `read_lock_version` တွင် per-line `sub(/\\r$/, "")` ထည့်ထားပြီး lockfile CRLF ending ဖြစ်နေသောအခါ awk `name = "zap-native"` match နှင့် `version = ` extract အလုပ်လုပ်စေသည်။ CI သည် Linux တွင် LF ဖြင့် run သောကြောင့် CI ကိုယ်တိုင် မထိခိုက်ခဲ့ပါ။
 - `read_cli_version` သည် `ZAP_CLI_BINARY` executable ဟုတ်မှသာ invoke လုပ်ပြီး cargo PATH guard + `|| true` fallback ပါသည်။ Binary သို့မဟုတ် toolchain မရှိပါက recorded `<missing>` row ဖြင့် exit 1 ပြန်ပြီး cascade fail မဖြစ်တော့ပါ။
+- Native CLI binary မရှိပါက validator သည် helpful build instructions ပေးသည်: `cargo build --release --manifest-path native/Cargo.toml`, `mkdir -p bin`, နှင့် `cp native/target/release/zap bin/zap` (platform-specific commands)။
 
 `scripts/test_validate_release_version.sh` တွင် CRLF regression block ထပ်ထည့်ထားပါသည်။ ၎င်းသည် CRLF-ending copy of `native/Cargo.lock` ကို generate လုပ်ပြီး awk block ကို run ကာ result သည် current Cargo version နှင့် ညီမျှကြောင်း assert လုပ်ပါသည်။ Old awk block (no CR strip) ဖြင့် result empty ဖြစ်ပြီး၊ hardened block ဖြင့် current version ကို ပြန်ပေးသည်။
 
@@ -29,6 +30,21 @@ CI artifact uploads အားလုံး `if-no-files-found: warn` သို့
 `scripts/test_validate_release_version.sh` တွင် binary-lag regression block ထည့်ထားသည်။ `ZAP_CLI_BINARY` က `native/Cargo.toml` ထက် အဟောင်းဆန်သော version ကို report လုပ်ပါက validator သည် `zap --version` row တွင် FAIL ကို report လုပ်ပြီး exit 1 ဖြင့် ထွက်ရမည် (binary match ဖြစ်ပါက PASS ဆက်ရှိရမည်)။ Committed `bin/zap` သည် Cargo source version ထက် lag ဖြစ်နေသော failure mode ကို ပိတ်သည်။
 
 `scripts/bootstrap/run_zap_refactor_smoke.sh` gate သည် `run_zap()` portability refactor ၁၅၀ script ကို 3 phase (bash -n parse check၊ end-to-end smoke run per-script 60s timeout၊ before/after repo-root diff) ဖြင့် စစ်ဆေးပြီး `make test` ထဲသို `bootstrap-refactor-smoke-test` အဖြစ် ချိတ်ဆက်ထားသည်။ Before/after diff သည် script-induced leaks နှင့် pre-existing scratch files ကို ခွဲခြားသည်။ Open editor buffer များကို analyze လုပ်ခြင်း၏ side-effect အဖြစ် running `zap lsp` သည် workspace root တွင် `.zap-*.zp` files များကို ဖန်တီးနေကြောင်း တွေ့ရှိခဲ့ပြီး ထိုအချက်က before/after snapshot design ကို ဖြစ်ပေါ်စေခဲ့သည်။ Gate အသစ် နှစ်ခုလုံးကို `.github/workflows/ci.yml` ထဲသို ချိတ်ဆက်ထားသဖြင့် push နှင့် PR တိုင်းတွင် `scripts/test_validate_release_version.sh` နှင့်အတူ run လုပ်ပြီး in-flight `run_zap()` portability refactor အတွက် cleanup-safety evidence ကို local သာမက CI အဆင့်တွင်ပါ ပေးစွမ်းသည်။
+
+## P0 release gates ပြီးစီးခြင်း
+
+P0 release gates အားလုံး ပြီးစီးပြီးဖြစ်သည်:
+- **P0.1 Native CLI release gate**: Binary မရှိပါက helpful build instructions ပါသော enhanced version validation နှင့် CI workflow တွင် successful integration။
+- **P0.2 Cross-platform release verification**: Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 အတွက် complete cross-platform builds နှင့် comprehensive release verification scripts။
+- **P0.3 Runtime/security regression gates**: Filesystem race boundary၊ DNS-to-connection pinning နှင့် dependency license checking အတွက် focused regression tests အသစ်များထည့်ထားပြီး release preflight တွင် integrate လုပ်ထားသည်။
+
+## P1 language platform ပြီးစီးခြင်း
+
+P1 language platform tasks အားလုံး ပြီးစီးပြီးဖြစ်သည်:
+- **P1.1 Install နှင့် onboarding**: ပလက်ဖောင်း installation guides၊ end-to-end tutorial၊ comprehensive language reference နှင့် example projects ၁၀ ခု။
+- **P1.2 Standard library baseline**: Public API policy၊ compatibility policy နှင့် major modules အားလုံးအတွက် stable APIs ဖြင့် comprehensive documentation နှင့် tests။
+- **P1.3 Tooling**: CLI commands အားလုံးအတွက် stable contracts (`zap fmt`၊ `zap test`၊ `zap check`၊ `zap doc`)၊ hover၊ diagnostics၊ document symbols နှင့် signature help ပါသော complete LSP support၊ deterministic formatter နှင့် comprehensive error messages။
+- **P1 Package ecosystem**: Complete package manifest schema၊ semantic version range support၊ lockfile format၊ package management workflows အားလုံး၊ registry API implementation နှင့် offline build support။
 
 ## လက်ရှိ implementation အခြေအနေ
 

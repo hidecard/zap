@@ -9,6 +9,13 @@ EXPECTED_VERSION="$(sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:spa
 cd "$ROOT_DIR"
 trap 'rm -rf "$DIST_DIR"' EXIT
 
+if ! command -v node >/dev/null 2>&1; then
+  node_exe="$(find /mnt/c/Program* /mnt/c/PROGRA* -maxdepth 3 -name 'node.exe' 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$node_exe" ]]; then
+    export PATH="$(dirname "$node_exe"):$PATH"
+  fi
+fi
+
 node "$EXTENSION_DIR/scripts/test-extension.js"
 node "$EXTENSION_DIR/scripts/package-extension.js"
 

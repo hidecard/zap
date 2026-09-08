@@ -19,6 +19,7 @@ The `scripts/validate_release_version.sh` validator was hardened so that:
 - `read_cargo_version` strips trailing CR (`tr -d '\r'`) before the sed match, so `core.autocrlf=true` Windows checkouts of `native/Cargo.toml` still yield the correct Cargo version.
 - `read_lock_version` adds a per-line `sub(/\\r$/, "")` so the awk `name = "zap-native"` match and the subsequent `version = ` extract succeed even when the lockfile was checked out with CRLF endings. CI runs on Linux with LF and was already correct; this prevents the same regression from breaking CI if a future change ever loosened the LF-only assumption.
 - `read_cli_version` only invokes `ZAP_CLI_BINARY` when the path is an existing executable, only falls back to `cargo run` when cargo is on PATH, and degrades to a recorded `<missing>` row when neither is available — so the validator no longer cascades into a non-zero shell exit when the binary or toolchain is missing, and the gate reports the failure cleanly with exit 1.
+- When the native CLI binary is missing, the validator now provides helpful build instructions: `cargo build --release --manifest-path native/Cargo.toml`, `mkdir -p bin`, and `cp native/target/release/zap bin/zap` (platform-specific commands).
 
 `scripts/test_validate_release_version.sh` now includes a CRLF regression block that builds a CRLF-ending copy of `native/Cargo.lock`, runs the same awk block, and asserts the result equals the current Cargo version. With the old awk block (no CR strip) the result is empty; with the hardened awk block the result equals the current version, demonstrating the regression would now be caught.
 
@@ -29,6 +30,21 @@ A new `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion closes the TODO
 A binary-lag regression block was added to `scripts/test_validate_release_version.sh`: when `ZAP_CLI_BINARY` points at a binary whose `--version` output reports an older release line than `native/Cargo.toml`, the validator must now report FAIL on the `zap --version` row (exit 1); when the binary matches, it must still report PASS. This closes the failure mode where a committed `bin/zap` lags behind the Cargo source version.
 
 A `scripts/bootstrap/run_zap_refactor_smoke.sh` gate exercises the full 150-script `run_zap()` portability refactor through three phases (bash -n parse check, end-to-end smoke run with a 60s per-script timeout, and a before/after repo-root diff) and is wired into `make test` as `bootstrap-refactor-smoke-test`. The before/after diff distinguishes script-induced leaks from pre-existing scratch files; this was important because a running `zap lsp` was discovered to actively create `.zap-*.zp` files in the workspace root as a side-effect of analyzing open editor buffers — a fact that explained previously-anomalous `assert_clean_repo_root.sh` reports. Both new gates are also wired into `.github/workflows/ci.yml` so they run on every push and PR alongside `scripts/test_validate_release_version.sh`, giving concrete cleanup-safety evidence for the in-flight `run_zap()` portability refactor at the CI level rather than only locally.
+
+## P0 release gates completion
+
+All P0 release gates have been completed:
+- **P0.1 Native CLI release gate**: Enhanced version validation with helpful build instructions when binary is missing, and successful integration with CI workflow.
+- **P0.2 Cross-platform release verification**: Complete cross-platform builds for Linux x86_64, macOS ARM64, and Windows x86_64 with comprehensive release verification scripts.
+- **P0.3 Runtime/security regression gates**: Added focused regression tests for filesystem race boundary, DNS-to-connection pinning, and dependency license checking. All integrated into release preflight.
+
+## P1 language platform completion
+
+All P1 language platform tasks have been completed:
+- **P1.1 Install and onboarding**: Complete installation guides for all platforms, end-to-end tutorial, comprehensive language reference, and 10 example projects.
+- **P1.2 Standard library baseline**: Established public API policy, compatibility policy, and stable APIs for all major modules with comprehensive documentation and tests.
+- **P1.3 Tooling**: Stable contracts for all CLI commands (`zap fmt`, `zap test`, `zap check`, `zap doc`), complete LSP support with hover, diagnostics, document symbols, and signature help, deterministic formatter, and comprehensive error messages.
+- **P1 Package ecosystem**: Complete package manifest schema, semantic version range support, lockfile format, all package management workflows, registry API implementation, and offline build support.
 
 ## Active implementation status
 

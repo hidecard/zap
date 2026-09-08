@@ -309,6 +309,9 @@ check_release_files() {
     scripts/test_validate_documentation_consistency.sh
     scripts/test_doctor.sh
     scripts/test_malformed_source_safety.sh
+    scripts/test_filesystem_race_boundary.sh
+    scripts/test_dns_connection_pinning.sh
+    scripts/test_dependency_license_check.sh
     scripts/doctor.sh
     scripts/validate_markdown_links.py
     scripts/check_benchmark_regression.sh
@@ -522,6 +525,15 @@ run_contract_validation() {
 
   bash scripts/test_malformed_source_safety.sh
   pass "malformed-source no-panic safety regression passed"
+
+  bash scripts/test_filesystem_race_boundary.sh
+  pass "filesystem race boundary and process cleanup regression passed"
+
+  bash scripts/test_dns_connection_pinning.sh
+  pass "DNS-to-connection pinning security regression passed"
+
+  bash scripts/test_dependency_license_check.sh
+  pass "dependency license check regression passed"
 
   python3 scripts/validate_markdown_links.py
   pass "repository Markdown link validation passed"
