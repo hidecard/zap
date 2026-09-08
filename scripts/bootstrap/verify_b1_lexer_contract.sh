@@ -8,8 +8,8 @@ cd "$ROOT_DIR"
 bash scripts/bootstrap/verify_b1_lexer.sh
 
 # B1 lexer ownership must be Zap-owned while the overall bootstrap stays B0.
-awk -F '\t' '$1 == "BOOT-002" { if ($5 != "bootstrap/b1/lexer.zp" || $7 != "stable") exit 1; found=1 } END { exit(found ? 0 : 1) }' bootstrap/contracts/OWNERS.tsv
-awk -F '\t' '$1 == "BOOT-003" { if ($5 != "bootstrap/b1/lexer.zp" || $7 != "stable") exit 1; found=1 } END { exit(found ? 0 : 1) }' bootstrap/contracts/OWNERS.tsv
+awk -F '\t' '$1 == "BOOT-002" { sub(/\r$/, "", $5); sub(/\r$/, "", $7); if ($5 != "bootstrap/b1/lexer.zp" || $7 != "canonical") exit 1; found=1 } END { exit(found ? 0 : 1) }' bootstrap/contracts/OWNERS.tsv
+awk -F '\t' '$1 == "BOOT-003" { sub(/\r$/, "", $5); sub(/\r$/, "", $7); if ($5 != "bootstrap/b1/lexer.zp" || $7 != "canonical") exit 1; found=1 } END { exit(found ? 0 : 1) }' bootstrap/contracts/OWNERS.tsv
 
 grep -qx 'lexer_stage = "B1"' <(sed -n '/^\[bootstrap\]/,/^\[platform_seed\]/p' bootstrap/contracts/VERSIONS.toml | grep '^lexer_stage')
 grep -qx 'lexer_owner = "bootstrap/b1/lexer.zp"' <(sed -n '/^\[bootstrap\]/,/^\[platform_seed\]/p' bootstrap/contracts/VERSIONS.toml | grep '^lexer_owner')
