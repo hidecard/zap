@@ -24,7 +24,8 @@ fail() {
 
 grep -q '^schema_version = 1$' "$CONTRACT" || fail "contract schema is not version 1"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
-grep -q '^status = "certified"$' "$CONTRACT" || fail "B4 status must be certified for full-language claim"
+contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
+[[ "$contract_status" == "not-certified" || "$contract_status" == "certified" ]] || fail "invalid B4 contract status: $contract_status"
 for required in \
   'full_language_surface = true' \
   'rust_or_cargo_in_compiler_path = false' \
@@ -40,7 +41,6 @@ header="$(awk -F '\t' 'NR == 3 { print $0 }' "$ACCEPTANCE")"
 [[ "$header" == $'id\tarea\tfixture\towner\tartifact\tstatus' ]] || fail "acceptance manifest header is invalid"
 
 : > "$REPORT"
-contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
 printf 'schema_version\t1\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\t%s\n' "$contract_status" >> "$REPORT"
 rows=0
 while IFS=$'\t' read -r id area fixture owner artifact status; do
@@ -79,4 +79,8 @@ for script in \
   [[ -f "$script" ]] || fail "missing self-rebuild acceptance script: $script"
 done
 
+if [[ "$contract_status" == "certified" ]]; then
+  # Structural validation alone must never turn a candidate/subset into B4.
+  [[ -f "target/b4-evidence-report.tsv" ]] || fail "certified contract is missing target/b4-evidence-report.tsv; run verify_b4_evidence.sh"
+fi
 printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; contract status: %s\n' "$rows" "$contract_status"

@@ -33,7 +33,7 @@ The contract does not prohibit a separately invoked reference-oracle job. It pro
 
 The acceptance manifest is intentionally broader than the current seed slice. It includes representative fixtures for lexical and parser behavior, expressions and control flow, functions and closures, classes and methods, collections and maps, aliases and generics, result/option variants, modules and imports, async behavior, diagnostics, package/build metadata, VM execution, and test-runner output. A row is not complete merely because its fixture exists: the Zap-owned pipeline must produce the declared artifact and deterministic result.
 
-Certification requires all rows to pass on every supported platform and requires two independent rebuilds from identical source and seed inputs to produce byte-identical artifacts. Any row marked `provisional` or any path that uses a Rust/Cargo fallback leaves the repository at **not-certified**.
+Certification requires all rows to pass on every supported platform and requires two independent rebuilds from identical source and seed inputs to produce byte-identical artifacts. Any row marked `provisional`, any missing platform evidence, or any path that uses a Rust/Cargo fallback leaves the repository at **not-certified**. The contract file must remain `status = "not-certified"` until the independent byte-determinism, second-stage rebuild, and clean-environment gates have all passed on the supported targets.
 
 ## Acceptance commands
 

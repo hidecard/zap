@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # B4 evidence independent verification.
 #
-# Verifies the B4 Rust-free full-language certification evidence package
+# Verifies the B4 Rust-free full-language evidence package
 # from a clean checkout. This script does not require a Rust toolchain;
 # it validates evidence files, contract integrity, and acceptance rows.
 #
@@ -44,7 +44,8 @@ pass() {
 # 2. Verify contract integrity
 grep -q '^schema_version = 1$' "$CONTRACT" || fail "contract schema is not version 1"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
-grep -q '^status = "certified"$' "$CONTRACT" || fail "B4 status must be certified for full-language claim"
+contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
+[[ "$contract_status" == "not-certified" || "$contract_status" == "certified" ]] || fail "invalid contract status: $contract_status"
 for required in \
   'full_language_surface = true' \
   'rust_or_cargo_in_compiler_path = false' \
@@ -117,7 +118,7 @@ if [[ "$run_gates" == "true" ]]; then
     bash scripts/bootstrap/verify_b4_clean_environment.sh
     pass "B4 gates executed"
   else
-    echo "SKIP: native binary not found. Build with 'cargo build --release' first."
+    fail "--run-gates requires a prebuilt native binary; build it before requesting executable B4 evidence"
   fi
 fi
 
@@ -125,7 +126,7 @@ fi
 cat > "$REPORT" <<EOF
 schema_version\t1
 contract_id\tB4-RUST-FREE-FULL-LANGUAGE
-contract_status\tcertified
+contract_status\t$contract_status
 acceptance_rows\t$rows
 passing\t$passing
 failing\t$failing
@@ -134,4 +135,4 @@ verified_at\t$(date -u +%Y-%m-%dT%H:%M:%SZ)
 git_commit\t$(git rev-parse HEAD)
 EOF
 
-echo "B4 evidence verification passed. Report: $REPORT"
+echo "B4 evidence package verified (contract status: $contract_status). Report: $REPORT"
