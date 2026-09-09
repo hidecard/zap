@@ -15,3 +15,5 @@ native_cli	zap	bootstrap/b4/native_independent.zp	zap-owned	B4 Rust-free contrac
 test_runner	zap	bootstrap/b4/runner.zp	zap-owned	B4 test-runner contract
 rust_compiler	rust-reference	native/src	reference-only	Must not be called by normal Zap production path
 rust_host	rust-reference	host/zap-host	reference-only	Must not be called by normal Zap production path
+compiler_driver	zap	bootstrap/b4/compiler_driver.zp	zap-owned	Compiler-driver contract and deterministic artifact gate
+full_language_backend	zap	bootstrap/b4/compiler_driver.zp	zap-owned	Full-language backend ownership wiring gate
