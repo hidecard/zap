@@ -38,6 +38,7 @@ These results do not certify B4. They confirm the candidate driver contract and 
 - [x] Define the candidate compiler-driver contract, command boundary, pipeline stages, artifact schema, and deterministic metadata policy (`bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml`).
 - [x] Add the Zap-owned driver skeleton for `check`, `build`, `run`, `test`, and candidate rebuild replay (`bootstrap/b4/compiler_driver.zp`).
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
+- [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.

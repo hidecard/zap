@@ -628,7 +628,9 @@ fn classify_error(message: &str) -> (&'static str, Option<usize>, Option<usize>)
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_error, status_json, token_json, tokens_json, typed_ir_program};
+    use super::{
+        classify_error, driver_status_json, status_json, token_json, tokens_json, typed_ir_program,
+    };
     use crate::lexer::{tokenize_with_spans, Token};
     use std::path::Path;
 
@@ -637,6 +639,22 @@ mod tests {
         let status = status_json();
         assert!(status.contains("\"bootstrap_stage\":\"B0\""));
         assert!(status.contains("\"self_hosted\":false"));
+    }
+
+    #[test]
+    fn driver_status_is_explicit_candidate_and_fail_closed() {
+        let status: serde_json::Value =
+            serde_json::from_str(&driver_status_json()).expect("driver status JSON");
+        assert_eq!(status["contract_id"], "ZAP-COMPILER-DRIVER");
+        assert_eq!(status["contract_status"], "candidate");
+        assert_eq!(status["delegation_ready"], false);
+        assert_eq!(status["full_language_owner"], "native Rust implementation");
+        assert_eq!(status["seed_required"], true);
+        assert_eq!(status["self_hosted"], false);
+        assert_eq!(
+            status["supported_commands"],
+            serde_json::json!(["check", "build", "run", "test"])
+        );
     }
 
     #[test]
