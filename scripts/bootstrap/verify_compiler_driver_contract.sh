@@ -8,12 +8,14 @@ DRIVER="bootstrap/b4/compiler_driver.zp"
 FIXTURE="bootstrap/fixtures/driver/driver_smoke.zp"
 GRAPH_BASE="bootstrap/fixtures/driver/module_graph_base.zp"
 GRAPH_APP="bootstrap/fixtures/driver/module_graph_app.zp"
+MODULE_ERROR_GATE="scripts/bootstrap/verify_b4_driver_module_resolution_errors.sh"
 fail() { echo "compiler-driver contract failed: $*" >&2; exit 1; }
 [[ -f "$CONTRACT" ]] || fail "missing $CONTRACT"
 [[ -f "$DRIVER" ]] || fail "missing $DRIVER"
 [[ -f "$FIXTURE" ]] || fail "missing $FIXTURE"
 [[ -f "$GRAPH_BASE" ]] || fail "missing $GRAPH_BASE"
 [[ -f "$GRAPH_APP" ]] || fail "missing $GRAPH_APP"
+[[ -x "$MODULE_ERROR_GATE" ]] || fail "missing executable $MODULE_ERROR_GATE"
 python3 - "$CONTRACT" <<'PY'
 import sys, tomllib
 with open(sys.argv[1], "rb") as handle:

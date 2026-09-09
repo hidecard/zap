@@ -17,6 +17,7 @@
 - **Completed in the module identity hardening slice:** driver resolution now counts import matches and rejects ambiguous basename imports with a stable `ZAP-MODULE-004` diagnostic instead of silently selecting a module.
 - **Completed in the dependency-order slice:** driver resolution now emits dependency-first canonical-topological module order, tracks DFS state without duplicate output, sorts import traversal deterministically, and rejects dependency cycles with stable `ZAP-MODULE-005` diagnostics.
 - **Completed in the graph-evidence slice:** the driver now emits canonical module records and dependency edges, replays graph resolution twice, compares graph manifests byte-for-byte, and includes a minimal dependent-module fixture in the contract gate.
+- **Completed in the module-error evidence slice:** a dedicated verifier now covers missing, duplicate, ambiguous, and cyclic imports with stable `ZAP-MODULE-002` through `ZAP-MODULE-005` diagnostics, and the gate is wired into the Makefile aggregate test path.
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
 
@@ -39,6 +40,7 @@ These results do not certify B4. They confirm the candidate driver contract and 
 - [x] Add the Zap-owned driver skeleton for `check`, `build`, `run`, `test`, and candidate rebuild replay (`bootstrap/b4/compiler_driver.zp`).
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
+- [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
 - [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
