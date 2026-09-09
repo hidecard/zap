@@ -228,13 +228,24 @@ export fn driver_typed_ir_semantics(first, second):
         status = "candidate_typed_ir_semantics_error"
     return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": true, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": "candidate", "reference_owner": "rust", "schema_version": first["schema_version"], "status": status, "valid": valid}
 
+export fn driver_typed_ir_ast_statements(nodes, result):
+    for node in nodes:
+        if contains(json(node), "\"ast\""):
+            result = append(result, node["ast"])
+    return result
+
 export fn driver_compile_backend(source, source_name):
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":
-        return {"diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error"}
-    let lowered = lower_typed_ir(typed["typed_ir"])
+        return {"bytecode": {"artifact_kind": "bytecode", "error": "typecheck_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error", "typed_ir": none}
+    # Inferred typed-IR wraps parser AST under node["ast"]. Lower the recovered
+    # AST program — the same path as seed_compile_inferred_typed_ir — because
+    # lower_typed_ir does not accept typed_expression wrappers.
+    let statements = driver_typed_ir_ast_statements(typed["typed_ir"]["ir"]["nodes"], [])
+    let ast = {"ast": {"statements": statements}, "kind": "zap.ast"}
+    let lowered = lower_ast_program(ast)
     if lowered["error"] != none:
-        return {"diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error"}
+        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error", "typed_ir": typed["typed_ir"]}
     let execution = vm_run(lowered["instructions"])
     let status = "ok"
     if execution["error"] != none:

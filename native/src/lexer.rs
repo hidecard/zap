@@ -142,6 +142,7 @@ pub(crate) fn tokenize_with_spans(source: &str) -> Result<Vec<SpannedToken>, Str
                         't' => '\t',
                         '"' => '"',
                         '\\' => '\\',
+                        'r' => '\r',
                         other => other,
                     });
                     advance(escaped, &mut line, &mut column);
