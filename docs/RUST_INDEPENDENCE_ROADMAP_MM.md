@@ -37,7 +37,8 @@
 
 #### P1 — Canonical Zap ownership ကို production path အထိ ချဲ့ခြင်း
 
-- [ ] B1 lexer/parser candidate gate များကို fixture-only proof မဟုတ်ဘဲ canonical Zap-owned front end အဖြစ် promote လုပ်ပြီး normal compiler path တွင် Rust fallback မခေါ်ကြောင်း prove လုပ်ပါ။
+- [x] Compiler ownership manifest နှင့် CI gate ကို ထည့်ပြီး B1 lexer/parser, B2 type checker/typed IR, B3 lowerer/package/VM နှင့် B4 CLI/test-runner တို့၏ canonical Zap source paths ကို စစ်ဆေးနိုင်စေပါသည်။ `native/src` နှင့် `host/zap-host` ကို reference-only boundary အဖြစ် သတ်မှတ်ထားပါသည်။
+- [ ] B1 lexer/parser candidate gate များကို fixture-only proof မဟုတ်ဘဲ canonical Zap-owned front end အဖြစ် promote လုပ်ပြီး normal compiler path တွင် Rust fallback မခေါ်ကြောင်း prove လုပ်ပါ။ Ownership manifest သည် path/owner contract ဖြစ်ပြီး full production self-build proof ကို အစားမထိုးပါ။
 - [ ] B2 type checker နှင့် typed IR ကို full supported language surface အတွက် `.zp → typed IR` Zap-only path ဖြင့် run စေပြီး type/IR golden corpus နှင့် failure diagnostics များကို ချိတ်ပါ။
 - [ ] B3 lowerer, bytecode, VM, package/build နှင့် runtime ကို sample fixture မဟုတ်ဘဲ compiler source အပြည့်အဝအတွက် run စေပြီး `zap build/test/run/package` integration test တစ်ခုတည်းအဖြစ် စုစည်းပါ။
 - [ ] Standard library, filesystem/network/process adapters, async scheduler နှင့် resource limits များအတွက် stable ABI/permission contract နှင့် cross-platform tests ထည့်ပါ။

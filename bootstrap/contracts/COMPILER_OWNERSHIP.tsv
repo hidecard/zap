@@ -1,0 +1,17 @@
+schema_version	1
+contract_id	ZAP-COMPILER-OWNERSHIP
+# component	canonical_owner	source_path	status	evidence
+lexer	zap	bootstrap/b1/lexer.zp	zap-owned	B1 lexer no-Rust verification
+parser_ast	zap	bootstrap/b1/parser.zp	zap-owned	B1 parser no-Rust verification
+lexer_parser_host	python-test-oracle	host/zap-parser-host/parser.py	reference-only	Python golden verification only
+rust_lexer_parser	rust-reference	native/src/lexer.rs	reference-only	Differential oracle only
+rust_parser	rust-reference	native/src/parser.rs	reference-only	Differential oracle only
+type_checker	zap	bootstrap/b2/typecheck.zp	zap-owned	B2 typecheck verification
+typed_ir	zap	bootstrap/b2/typed_ir.zp	zap-owned	B2 typed-IR verification
+lowerer	zap	bootstrap/b3/lower.zp	zap-owned	B3 lowering verification
+package_build	zap	bootstrap/b3/package.zp	zap-owned	B3 package ownership verification
+vm_runtime	zap	bootstrap/b3/vm.zp	zap-owned	B3 VM ownership verification
+native_cli	zap	bootstrap/b4/native_independent.zp	zap-owned	B4 Rust-free contract
+test_runner	zap	bootstrap/b4/runner.zp	zap-owned	B4 test-runner contract
+rust_compiler	rust-reference	native/src	reference-only	Must not be called by normal Zap production path
+rust_host	rust-reference	host/zap-host	reference-only	Must not be called by normal Zap production path

@@ -187,6 +187,18 @@ jobs:
         run: bash scripts/bootstrap/verify_compiler_driver_contract.sh
       - name: Verify full-language backend ownership wiring
         run: bash scripts/bootstrap/verify_full_language_backend_ownership.sh
+      - name: Verify Zap compiler source ownership boundary
+        env:
+          COMPILER_OWNERSHIP_REPORT: target/compiler-ownership.tsv
+        run: scripts/bootstrap/verify_compiler_ownership.sh
+      - name: Upload compiler ownership evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-compiler-ownership-${{ github.sha }}
+          path: target/compiler-ownership.tsv
+          if-no-files-found: warn
+
       - name: Verify B4 Rust-free full-language contract boundary
         env:
           B4_CONTRACT_REPORT: target/b4-rust-free-contract.tsv
