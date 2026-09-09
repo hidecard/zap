@@ -20,6 +20,19 @@
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
 
+### Verification run after latest pull (2026-09-10)
+
+| Gate | Result | Interpretation |
+|---|---|---|
+| `verify_compiler_driver_contract.sh` | Passed | Candidate driver contract, exports, and deterministic policy are wired correctly. |
+| `verify_non_rust_seed_pipeline.sh` | Passed | The bounded Rust-free compiler/VM seed slice still runs without a Rust toolchain. |
+| `verify_b4_byte_determinism.sh` | Blocked | Correctly fails closed because this checkout has no verified prebuilt `ZAP_BOOTSTRAP_BIN`. |
+| `verify_b4_second_stage_rebuild.sh` | Blocked | Requires a verified prebuilt Zap seed; no Cargo fallback is permitted. |
+| `verify_b4_supported_subset_rebuild_43.sh` | Blocked | The clean no-Cargo environment lacks the required seed/toolchain evidence. |
+| `verify_b4_clean_environment.sh` | Blocked | Correctly fails closed until a verified prebuilt seed is supplied. |
+
+These results do not certify B4. They confirm the candidate driver contract and bounded Rust-free seed path, while preserving the fail-closed boundary for full self-hosting evidence.
+
 ### Self-hosting implementation sequence
 
 - [x] Define the candidate compiler-driver contract, command boundary, pipeline stages, artifact schema, and deterministic metadata policy (`bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml`).
