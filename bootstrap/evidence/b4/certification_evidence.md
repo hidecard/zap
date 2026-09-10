@@ -1,16 +1,16 @@
 # B4 Rust-Free Full-Language Certification Evidence
 
 ## Certification Date
-2026-09-04
+2026-09-10 (draft — not certified)
 
 ## Contract Status
-- **Before:** `not-certified`
-- **After:** `certified`
+- **Current:** `not-certified`
+- **Target:** `certified`
 
-## Acceptance Rows (18/18 PASS)
+## Acceptance Rows (18/18 manifest entries; 12 driver-owned pass, 6 seed-dependent pending)
 
 | ID | Area | Fixture | Owner | Artifact | Status |
-|----|------|---------|-------|----------|--------|
+|---|---|---|---|---|---|
 | B4-FULL-001 | lexer-parser | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b1/parser.zp` | canonical_ast | ✅ pass |
 | B4-FULL-002 | expressions-control-flow | `bootstrap/fixtures/typecheck/basic_type_matrix.zp` | `bootstrap/b2/typecheck.zp` | typed_ir | ✅ pass |
 | B4-FULL-003 | functions-closures | `bootstrap/fixtures/typecheck/function.zp` | `bootstrap/b2/typed_ir.zp` | typed_ir | ✅ pass |
@@ -23,48 +23,39 @@
 | B4-FULL-010 | diagnostics | `bootstrap/fixtures/typecheck/function_incompatible.zp` | `bootstrap/b2/typecheck.zp` | stable_diagnostic | ✅ pass |
 | B4-FULL-011 | package-build | `bootstrap/b3/package.zp` | `bootstrap/b3/package.zp` | build_artifact | ✅ pass |
 | B4-FULL-012 | test-runner | `bootstrap/b4/runner.zp` | `bootstrap/b4/runner.zp` | test_result | ✅ pass |
-| B4-FULL-013 | cli-entrypoint | `bootstrap/b4/native_independent.zp` | `bootstrap/b4/native_independent.zp` | cli_result | ✅ pass |
-| B4-FULL-014 | self-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/native_independent.zp` | self_rebuild_bytes | ✅ pass |
-| B4-FULL-015 | cross-platform-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/native_independent.zp` | platform_rebuild | ✅ pass |
-| B4-FULL-016 | byte-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_byte_determinism.sh` | artifact_bytes | ✅ pass |
-| B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | ✅ pass |
-| B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | ✅ pass |
+| B4-FULL-013 | cli-entrypoint | `bootstrap/b4/compiler_driver.zp` | `bootstrap/b4/compiler_driver.zp` | cli_result | ⏳ pending seed |
+| B4-FULL-014 | self-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/compiler_driver.zp` | self_rebuild_bytes | ⏳ pending seed |
+| B4-FULL-015 | cross-platform-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/compiler_driver.zp` | platform_rebuild | ⏳ pending seed |
+| B4-FULL-016 | byte-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_byte_determinism.sh` | artifact_bytes | ⏳ blocked (no seed) |
+| B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | ⏳ blocked (no seed) |
+| B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | ⏳ blocked (no seed) |
 
-## Verification Commands Run
+## Current Evidence State
 
-\`\`\`bash
-# B1/B2 gates
-bash scripts/bootstrap/aggregate_b1_parser_gates.sh
-bash scripts/bootstrap/verify_all_b2_features.sh
-bash scripts/bootstrap/verify_b2_milestone.sh
+### Driver-owned pipeline (no seed required)
+- `verify_compiler_driver_contract.sh`: ✅ pass — contract status `owned`, no `native_independent.zp` dependency in driver
+- `verify_full_language_backend_ownership.sh`: ✅ pass — driver owns all pipeline stages directly
+- `verify_b4_driver_module_resolution_errors.sh`: ✅ pass — module error coverage (ZAP-MODULE-002..005)
+- `verify_b4_driver_owned_pipeline.sh`: ✅ pass — 6 driver-executable verification cases
+- `verify_b4_typed_ir_source_rebuild_37.sh`: ✅ pass — driver-owned typed-IR source rebuild
+- `verify_b4_supported_subset_rebuild_43.sh`: ✅ pass — driver-owned subset rebuild determinism
 
-# B3 gates
-bash scripts/bootstrap/verify_b3_foundations.sh
-bash scripts/bootstrap/verify_b3_canonical_ast_schema.sh
-bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
-bash scripts/bootstrap/verify_b3_zap_ownership_20.sh
+### Seed-dependent gates (blocked pending verified `ZAP_BOOTSTRAP_BIN`)
+- `verify_b4_byte_determinism.sh`: ⏳ blocked — requires prebuilt seed
+- `verify_b4_second_stage_rebuild.sh`: ⏳ blocked — requires prebuilt seed
+- `verify_b4_clean_environment.sh`: ⏳ blocked — requires prebuilt seed
 
-# B4 gates (all pass)
-bash scripts/bootstrap/verify_b4_rust_free_contract.sh
-bash scripts/bootstrap/verify_b4_byte_determinism.sh
-bash scripts/bootstrap/verify_b4_second_stage_rebuild.sh
-bash scripts/bootstrap/verify_b4_clean_environment.sh
-bash scripts/bootstrap/verify_b4_source_to_vm_loops_try_12.sh
-# ... (all 39 B4 verifiers pass)
-\`\`\`
+## Seed Preflight Requirements
 
-## Evidence Artifacts
+A verified `ZAP_BOOTSTRAP_BIN` must satisfy:
+1. Executable Zap binary that responds to `--version`
+2. Reports `driver_contract_status() = "owned"`
+3. Executes `driver_execute_owned_pipeline` successfully
+4. Produces deterministic output across fresh processes
+5. Resolves modules via `driver_resolve_modules`
 
-- B4 milestone report: `target/b4-rust-free-contract.tsv`
-- Rebuild artifacts: `target/b4-rebuild-*`
-- Platform provenance: `target/b4-platform-*`
-- Byte-determinism records: `target/b4-byte-*`
+Use `bash scripts/bootstrap/verify_b4_seed_preflight.sh` to validate a candidate seed.
 
 ## Certification Decision
 
-All 18 acceptance rows verified passing on the reference platform.
-No Rust/Cargo fallback exists in `bootstrap/b1`, `bootstrap/b2`, `bootstrap/b3`, or `bootstrap/b4`.
-Self-rebuild produces deterministic artifacts across two-stage compilation.
-Clean-environment gate passes without Rust toolchain.
-
-**Certification approved.** Update contract status from `not-certified` to `certified`.
+**Not certified.** The driver contract is promoted to `owned` and the driver-owned pipeline is verified passing. However, B4 certification requires a verified prebuilt `ZAP_BOOTSTRAP_BIN` produced without Rust/Cargo, plus two-stage/three-stage rebuild evidence and Linux/macOS/Windows clean-environment runs. These remain blocked until the seed is produced and validated.
