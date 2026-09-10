@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-10
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-10 (post-seed verification)
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -35,6 +35,10 @@
 | `verify_b4_clean_environment.sh` | Blocked | Correctly fails closed until a verified prebuilt seed is supplied. |
 
 These results do not certify B4. They confirm the candidate driver contract and bounded Rust-free seed path, while preserving the fail-closed boundary for full self-hosting evidence.
+
+### Local seed verification note (2026-09-10)
+
+The native release binary was rebuilt locally after installing the repository-compatible Rust toolchain and supplied through `ZAP_BOOTSTRAP_BIN`. With that seed, the byte-determinism, second-stage rebuild, supported-subset rebuild, clean-environment, and module-resolution error gates passed. This is **native-reference seed evidence**, not Rust-free self-hosting evidence: the seed itself is still produced by `native/src`, so B4 remains `not-certified` until a Zap-produced seed runs the same matrix with Rust/Cargo unavailable.
 
 ### Self-hosting implementation sequence
 
