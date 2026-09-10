@@ -3,9 +3,9 @@
 **Status label:** active
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Next release line:** v2.11.18 preparation
-**Bootstrap stage:** B0
+**Bootstrap stage:** B4 candidate evidence passing
 
-> Zap is a Rust reference/native implementation. The Zap compiler-driver boundary (`bootstrap/b4/compiler_driver.zp`) is now promoted to `owned` status: it directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages and emits `native_independent: true`. The typed-IR schema no longer carries `candidate_only`. Rust remains the reference owner for the complete native runtime until full B4 self-hosting evidence (verified seed, cross-platform rebuilds, clean-environment runs) is produced.
+> Zap is a Rust reference/native implementation. The Zap compiler-driver boundary (`bootstrap/b4/compiler_driver.zp`) is now promoted to `owned` status: it directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages and emits `native_independent: true`. The typed-IR schema no longer carries `candidate_only`. Rust remains the reference owner for the complete native runtime until full B4 self-hosting evidence (verified seed, cross-platform rebuilds, clean-environment runs) is produced. B4 candidate evidence passes on Windows x86_64 with the current native binary as the verified seed; full B4 certification requires reproduction on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ## Release and provenance
 
