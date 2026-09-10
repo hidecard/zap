@@ -88,12 +88,7 @@ import "bootstrap/b4/compiler_driver.zp"
 let source = "fn add(a: number, b: number) -> number:\n    return a + b\n\nlet result = add(3, 4)\nsay result\n"
 
 let first = driver_rebuild(source, "multi_line")
-let second = driver_rebuild(source, "multi_line")
-let third = driver_rebuild(source, "multi_line")
-
 say first["byte_equal"]
-say second["byte_equal"]
-say third["byte_equal"]
 say first["status"] == "candidate_driver_rebuild"
 EOF
 
@@ -107,11 +102,16 @@ fi > "$out_a"
 cat > "$expected_b" <<'EOF'
 true
 true
-true
-true
 EOF
 
 cmp "$out_a" "$expected_b" || fail "multi-line source did not produce deterministic rebuild"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner_rel"
+else
+  run_zap "$runner_rel"
+fi > "$out_b"
+cmp "$out_a" "$out_b" || fail "multi-line rebuild changed across fresh processes"
 
 # Control-flow surface
 cat > "$runner" <<'EOF'
@@ -120,8 +120,6 @@ import "bootstrap/b4/compiler_driver.zp"
 let source = "let n = 5\nlet total = 0\nlet i = 0\nwhile i < n:\n    total = total + i\n    i = i + 1\nsay total\n"
 
 let first = driver_rebuild(source, "control_flow")
-let second = driver_rebuild(source, "control_flow")
-
 say first["byte_equal"]
 say first["status"] == "candidate_driver_rebuild"
 EOF
@@ -139,6 +137,13 @@ true
 EOF
 
 cmp "$out_a" "$expected_c" || fail "control-flow source did not produce deterministic rebuild"
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
+if [ -x "$ZAP_BIN" ]; then
+  "$ZAP_BIN" "$runner_rel"
+else
+  run_zap "$runner_rel"
+fi > "$out_b"
+cmp "$out_a" "$out_b" || fail "control-flow rebuild changed across fresh processes"
 
 # Report
 : > "$REPORT"
