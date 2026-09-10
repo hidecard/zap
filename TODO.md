@@ -1,26 +1,19 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-09
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-10
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
-**Current branch:** `master`
-**Bootstrap stage:** B0 (B4 candidate evidence exists; full-language certification remains open)
+**Current branch:** `implement-typed-ir-candidate-semantics`
+**Bootstrap stage:** B4 candidate evidence passing (full certification requires cross-platform reproduction)
 
 ### Self-hosting progress update (2026-09-10)
 
-- **Completed in the latest ownership-promotion slice:** `bootstrap/b2/typed_ir.zp` no longer emits `candidate_only` in any typed-IR record. The `driver_typed_ir_semantics()` check no longer requires `candidate_only == true`; the ownership boundary is now `"zap"` / `"zap"`. The compiler-driver contract status is promoted from `"candidate"` to `"owned"`, and all driver result records set `native_independent: true`. The contract verifier (`verify_compiler_driver_contract.sh`) and TOML contract (`COMPILER_DRIVER_CONTRACT.toml`) have been updated accordingly.
+- **Completed in the latest ownership-promotion slice:** `bootstrap/b2/typed_ir.zp` no longer emits `candidate_only` in any typed-IR record. The `driver_typed_ir_semantics()` check validates `zap.typed_ir` kind, source/IR/node shape, repeatability, executable handoff status, and the declared `ownership="zap"` / `reference_owner="zap"` boundary. The compiler-driver contract status is `owned`, and all driver result records set `native_independent: true`.
 - **Completed in the latest driver-ownership slice:** clean-environment, byte-determinism, second-stage rebuild, supported-subset rebuild, and typed-IR source rebuild gates call `bootstrap/b4/compiler_driver.zp` directly. The compiler-driver contract and verifier require the direct driver seed and the new subset/rebuild exports.
-- **Typed-IR candidate semantics slice:** `driver_typed_ir_semantics()` now validates `zap.typed_ir` kind, explicit `candidate_only=true`, source/IR/node shape, repeatability, executable handoff status, and the declared `ownership=candidate` / `reference_owner=rust` boundary. This is executable candidate evidence, not full-language ownership certification.
-- **Completed in the CLI boundary slice:** `zap driver status` now emits a dedicated driver contract payload, including candidate ownership, supported driver commands, source location, self-hosting state, and `ZAP_BOOTSTRAP_BIN` seed readiness without reusing the generic bootstrap status schema.
-- **Completed in the module-resolution slice:** `compiler_driver.zp` now owns deterministic source-unit normalization, import collection, duplicate-module rejection, lexical module ordering, and missing-module diagnostics for supplied source units; the driver contract gate requires these exports.
-- **Completed in the multi-source pipeline slice:** driver-owned module resolution now gates deterministic multi-source `check` and `build` entry points, type-checks/builds modules in canonical order, and returns module-order metadata plus source-attributed artifacts.
-- **Completed in the multi-source rebuild slice:** the driver now replays multi-source builds twice, compares canonical module-order/artifact manifests byte-for-byte, and fails closed on resolution, build, or determinism errors; this remains candidate evidence rather than B4 certification.
-- **Completed in the module identity hardening slice:** driver resolution now counts import matches and rejects ambiguous basename imports with a stable `ZAP-MODULE-004` diagnostic instead of silently selecting a module.
-- **Completed in the dependency-order slice:** driver resolution now emits dependency-first canonical-topological module order, tracks DFS state without duplicate output, sorts import traversal deterministically, and rejects dependency cycles with stable `ZAP-MODULE-005` diagnostics.
-- **Completed in the graph-evidence slice:** the driver now emits canonical module records and dependency edges, replays graph resolution twice, compares graph manifests byte-for-byte, and includes a minimal dependent-module fixture in the contract gate.
-- **Completed in the module-error evidence slice:** a dedicated verifier now covers missing, duplicate, ambiguous, and cyclic imports with stable `ZAP-MODULE-002` through `ZAP-MODULE-005` diagnostics, and the gate is wired into the Makefile aggregate test path.
-- **Still intentionally open:** the driver is now `owned` status but `zap driver status` reports `delegation_ready: false` because no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. Full user-facing command routing (`check`/`build`/`run`/`test`) through the Zap driver is blocked until a verified `ZAP_BOOTSTRAP_BIN` is supplied and executable delegation is activated. `native_independent.zp` is retained as the seed-compiler fixture for B4 scripts that test internal `seed_*` functions; the driver contract verifier enforces that `compiler_driver.zp` itself does not import it.
-- **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
+- **Completed in the CLI boundary slice:** `zap driver status` emits a dedicated driver contract payload with `contract_status="owned"`, `full_language_owner="zap compiler driver"`, supported driver commands, source location, self-hosting state, and `ZAP_BOOTSTRAP_BIN` seed readiness.
+- **Completed in the seed preflight slice:** `verify_b4_seed_preflight.sh` validates that a candidate `ZAP_BOOTSTRAP_BIN` meets B4 requirements: version response, `driver_contract_status() == "owned"`, pipeline execution, determinism, and module resolution. The current native binary passes all preflight checks.
+- **Still intentionally open:** full user-facing command routing (`check`/`build`/`run`/`test`) through the Zap driver is blocked until `delegation_ready` is activated with a verified `ZAP_BOOTSTRAP_BIN`. `native_independent.zp` is retained as the seed-compiler fixture for B4 scripts that test internal `seed_*` functions; the driver contract verifier enforces that `compiler_driver.zp` itself does not import it.
+- **Certification remains blocked by evidence, not hidden by metadata:** B4 candidate evidence passes on Windows x86_64 with the current native binary as verified seed. Full B4 certification requires reproduction of the same evidence on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ### Verification run after latest pull (2026-09-10)
 
@@ -37,7 +30,7 @@
 | `verify_b4_driver_source_to_vm.sh` | Passed | Driver-owned source-to-VM execution produces deterministic arithmetic and VM results. |
 | `verify_b4_seed_preflight.sh` | Passed | Seed preflight validator checks ZAP_BOOTSTRAP_BIN for version, driver contract status, pipeline execution, determinism, and module resolution. |
 
-These results confirm the driver contract is promoted to `owned`, typed-IR semantics no longer require `candidate_only`, the driver-owned pipeline is verified passing, and seed-dependent B4 gates pass with the current native binary as the verified seed. Full B4 certification requires the same evidence reproduced on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments.
+These results confirm the driver contract is promoted to `owned`, typed-IR semantics no longer require `candidate_only`, the driver-owned pipeline is verified passing, and seed-dependent B4 gates pass with the current native binary as the verified seed on Windows x86_64. Full B4 certification requires the same evidence reproduced on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ### Self-hosting implementation sequence
 
