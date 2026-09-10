@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+### P2 compiler ownership
+- Promoted `bootstrap/b4/compiler_driver.zp` from `candidate` to `owned` contract status; all driver result records now set `native_independent: true`.
+- Removed `candidate_only` from all typed-IR records in `bootstrap/b2/typed_ir.zp`; `driver_typed_ir_semantics` no longer gates on `candidate_only == true` and reports `ownership: "zap" / reference_owner: "zap"`.
+- Updated `scripts/bootstrap/verify_compiler_driver_contract.sh` and `bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml` to assert `owned` status.
+- Updated `native/src/bootstrap.rs` `driver_status_json()` to report `contract_status: "owned"` and `full_language_owner: "zap compiler driver"`.
+- Added `scripts/bootstrap/verify_b4_driver_owned_pipeline.sh` B4 gate covering driver-owned pipeline execution, check/build artifacts, typed-IR semantics, contract status, and module rebuild determinism.
+- Wired `verify_b4_driver_owned_pipeline.sh` into `make test` as `bootstrap-driver-owned-pipeline-test`.
+- Updated `docs/CURRENT_STATUS_EN.md`, `docs/CURRENT_STATUS_MM.md`, `docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_EN.md`, and `docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_MM.md` to reflect the ownership promotion.
+
 ### P0 release hygiene
 - Added `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion that runs a representative subset of bootstrap verifiers (success path and forced-failure path) and fails nonzero if any `$ROOT_DIR` scratch artifact remains after EXIT. This closes the TODO.md "temporary file cleanup via trap + CI assertion" P0 follow-up and gives a deterministic regression gate for the missing-trap class of bugs.
 - Added the `bootstrap-clean-repo-test` Makefile target and wired it into `make test`.
