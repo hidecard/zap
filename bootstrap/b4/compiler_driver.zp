@@ -3,6 +3,7 @@
 # This module fixes the user-facing command contract while the underlying
 # compiler stages are migrated from candidate slices to the complete language.
 import "bootstrap/b4/runner.zp"
+import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b3/vm.zp"
@@ -40,8 +41,7 @@ export fn driver_module_name_matches(source_name, module_name):
     let normalized_module = driver_normalize_module_name(module_name)
     if normalized_source == normalized_module:
         return true
-    let source_parts = split(normalized_source, "/")
-    return len(source_parts) > 0 and source_parts[len(source_parts) - 1] == normalized_module
+    return ends_with(normalized_source, "/" + normalized_module)
 
 export fn driver_module_match_count(modules, imported):
     let count = 0
@@ -107,7 +107,7 @@ export fn driver_module_graph_manifest(modules):
 export fn driver_collect_imports(statements, result):
     for statement in statements:
         if statement["kind"] == "import":
-            result = append(result, statement["path"])
+            result = append(result, replace(statement["path"], "\"", ""))
     return result
 
 export fn driver_resolve_modules(sources, source_names):
@@ -324,10 +324,18 @@ export fn driver_artifact_manifest(build_result):
 
 export fn driver_rebuild(source, source_name):
     let first = driver_build_source(source, source_name)
+    if first["status"] != "ok":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_driver_rebuild_error"}
     let second = driver_build_source(source, source_name)
+    if second["status"] != "ok":
+        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_driver_rebuild_error"}
     let first_bytes = json(driver_artifact_manifest(first))
     let second_bytes = json(driver_artifact_manifest(second))
-    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": "candidate_driver_rebuild"}
+    let byte_equal = first_bytes == second_bytes
+    let status = "candidate_driver_rebuild"
+    if not byte_equal:
+        status = "candidate_driver_rebuild_error"
+    return {"byte_equal": byte_equal, "first": first, "native_independent": false, "second": second, "status": status}
 
 export fn driver_subset_run(sources, source_names, index, result):
     if index >= len(sources):
@@ -342,6 +350,13 @@ export fn driver_subset_rebuild(sources, source_names):
     for result in first:
         if result["status"] != "candidate_pipeline_executed":
             all_successful = false
-    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_driver_subset_rebuild"}
+    for result in second:
+        if result["status"] != "candidate_pipeline_executed":
+            all_successful = false
+    let byte_equal = json(first) == json(second)
+    let status = "candidate_driver_subset_rebuild"
+    if not all_successful or not byte_equal:
+        status = "candidate_driver_subset_rebuild_error"
+    return {"all_successful": all_successful, "byte_equal": byte_equal, "count": len(first), "first": first, "native_independent": false, "second": second, "status": status}
 export fn driver_contract_status():
     return "candidate"

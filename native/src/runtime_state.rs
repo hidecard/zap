@@ -12,6 +12,7 @@ use crate::{Function, Value};
 pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<Function>>);
 
 pub(crate) const DEFAULT_MEMORY_BUDGET_BYTES: u64 = 64 * 1024 * 1024;
+pub(crate) const MAX_CONFIGURED_MEMORY_BUDGET_BYTES: u64 = 256 * 1024 * 1024;
 pub(crate) const DEFAULT_MEMORY_BUDGET_TASKS: u64 = 1_024;
 pub(crate) const DEFAULT_MEMORY_BUDGET_OUTPUT_BYTES: u64 = 8 * 1024 * 1024;
 pub(crate) const LOGICAL_OBJECT_BASE_BYTES: u64 = 64;
@@ -46,8 +47,14 @@ pub(crate) struct MemoryBudgetStats {
 #[allow(dead_code)]
 impl MemoryBudget {
     pub(crate) fn new() -> Self {
+        let max_bytes = std::env::var("ZAP_MEMORY_BUDGET_BYTES")
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| *value >= DEFAULT_MEMORY_BUDGET_BYTES)
+            .map(|value| value.min(MAX_CONFIGURED_MEMORY_BUDGET_BYTES))
+            .unwrap_or(DEFAULT_MEMORY_BUDGET_BYTES);
         Self {
-            max_bytes: DEFAULT_MEMORY_BUDGET_BYTES,
+            max_bytes,
             max_tasks: DEFAULT_MEMORY_BUDGET_TASKS,
             max_output_bytes: DEFAULT_MEMORY_BUDGET_OUTPUT_BYTES,
             used_bytes: 0,

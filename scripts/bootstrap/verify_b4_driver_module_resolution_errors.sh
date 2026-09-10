@@ -9,6 +9,11 @@ run_zap() {
     "$ROOT_DIR/native/target/release/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
     "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -n "${ZAP_BOOTSTRAP_BIN:-}" && -x "$ZAP_BOOTSTRAP_BIN" ]]; then
+    "$ZAP_BOOTSTRAP_BIN" "$@"
+  elif ! command -v cargo >/dev/null 2>&1; then
+    echo "BLOCKED: no Zap runtime found; provide ZAP_BOOTSTRAP_BIN or build native/target/release/zap" >&2
+    return 2
   else
     cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi

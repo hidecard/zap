@@ -34,6 +34,8 @@ for export in driver_parse_source driver_typecheck_source driver_normalize_modul
 done
 grep -q '"typed_ir"' "$DRIVER" || fail "canonical artifact order must include typed_ir"
 grep -q '"bytecode"' "$DRIVER" || fail "canonical artifact order must include bytecode"
+grep -q 'candidate_driver_rebuild_error' "$DRIVER" || fail "single-source rebuild must fail closed"
+grep -q 'candidate_driver_subset_rebuild_error' "$DRIVER" || fail "subset rebuild must fail closed"
 if grep -q 'native_independent.zp' "$CONTRACT" "$DRIVER"; then
   fail "driver contract must not depend on the removed composite seed"
 fi
