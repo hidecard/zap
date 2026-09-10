@@ -13,9 +13,11 @@ B4-FULL-009	async-runtime	bootstrap/fixtures/typecheck/flow_engine.zp	bootstrap/
 B4-FULL-010	diagnostics	bootstrap/fixtures/typecheck/function_incompatible.zp	bootstrap/b2/typecheck.zp	stable_diagnostic	pass
 B4-FULL-011	package-build	bootstrap/b3/package.zp	bootstrap/b3/package.zp	build_artifact	pass
 B4-FULL-012	test-runner	bootstrap/b4/runner.zp	bootstrap/b4/runner.zp	test_result	pass
-B4-FULL-013	cli-entrypoint	bootstrap/b4/native_independent.zp	bootstrap/b4/native_independent.zp	cli_result	pass
-B4-FULL-014	self-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/native_independent.zp	self_rebuild_bytes	pass
-B4-FULL-015	cross-platform-determinism	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/native_independent.zp	platform_rebuild	pass
+B4-FULL-013	cli-entrypoint	bootstrap/b4/compiler_driver.zp	bootstrap/b4/compiler_driver.zp	driver_status	pass
+B4-FULL-014	self-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/compiler_driver.zp	driver_rebuild	pass
+B4-FULL-015	cross-platform-determinism	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b4/compiler_driver.zp	driver_modules_rebuild	pass
 B4-FULL-016	byte-determinism	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_byte_determinism.sh	artifact_bytes	pass
 B4-FULL-017	second-stage-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	stage2_artifact	pass
 B4-FULL-018	clean-environment	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_clean_environment.sh	clean_run	pass
+B4-FULL-019	driver-source-to-vm	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_driver_source_to_vm.sh	driver_source_vm	pass
+B4-FULL-020	driver-owned-pipeline	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_driver_owned_pipeline.sh	driver_pipeline	pass

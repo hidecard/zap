@@ -7,7 +7,7 @@
 - **Current:** `not-certified`
 - **Target:** `certified`
 
-## Acceptance Rows (18/18 manifest entries; 12 driver-owned pass, 6 seed-dependent pending)
+## Acceptance Rows (20/20 manifest entries; 14 driver-owned pass, 6 seed-dependent pending)
 
 | ID | Area | Fixture | Owner | Artifact | Status |
 |---|---|---|---|---|---|
@@ -29,6 +29,8 @@
 | B4-FULL-016 | byte-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_byte_determinism.sh` | artifact_bytes | ⏳ blocked (no seed) |
 | B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | ⏳ blocked (no seed) |
 | B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | ⏳ blocked (no seed) |
+| B4-FULL-019 | driver-source-to-vm | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_driver_source_to_vm.sh` | driver_source_vm | ✅ pass |
+| B4-FULL-020 | driver-owned-pipeline | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_driver_owned_pipeline.sh` | driver_pipeline | ✅ pass |
 
 ## Current Evidence State
 
@@ -37,8 +39,10 @@
 - `verify_full_language_backend_ownership.sh`: ✅ pass — driver owns all pipeline stages directly
 - `verify_b4_driver_module_resolution_errors.sh`: ✅ pass — module error coverage (ZAP-MODULE-002..005)
 - `verify_b4_driver_owned_pipeline.sh`: ✅ pass — 6 driver-executable verification cases
+- `verify_b4_driver_source_to_vm.sh`: ✅ pass — driver-owned source-to-VM execution
 - `verify_b4_typed_ir_source_rebuild_37.sh`: ✅ pass — driver-owned typed-IR source rebuild
 - `verify_b4_supported_subset_rebuild_43.sh`: ✅ pass — driver-owned subset rebuild determinism
+- `verify_b4_seed_preflight.sh`: ✅ pass — seed preflight validator (when ZAP_BOOTSTRAP_BIN is set)
 
 ### Seed-dependent gates (blocked pending verified `ZAP_BOOTSTRAP_BIN`)
 - `verify_b4_byte_determinism.sh`: ⏳ blocked — requires prebuilt seed

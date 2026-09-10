@@ -87,7 +87,7 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
 done < "$ACCEPTANCE"
 
 echo "Acceptance rows: $rows (pass=$passing fail=$failing missing_evidence=$missing_evidence)"
-[[ "$passing" -eq 18 ]] || fail "expected 18 passing rows, got $passing"
+[[ "$passing" -eq 20 ]] || fail "expected 20 passing rows, got $passing"
 pass "acceptance rows verified"
 
 # 5. Verify evidence document references key artifacts
@@ -97,11 +97,13 @@ for ref in \
   "bootstrap/b2/typed_ir.zp" \
   "bootstrap/b3/lower.zp" \
   "bootstrap/b3/vm.zp" \
-  "bootstrap/b4/native_independent.zp" \
+  "bootstrap/b4/compiler_driver.zp" \
   "scripts/bootstrap/verify_b4_rust_free_contract.sh" \
   "scripts/bootstrap/verify_b4_byte_determinism.sh" \
   "scripts/bootstrap/verify_b4_second_stage_rebuild.sh" \
-  "scripts/bootstrap/verify_b4_clean_environment.sh"; do
+  "scripts/bootstrap/verify_b4_clean_environment.sh" \
+  "scripts/bootstrap/verify_b4_driver_owned_pipeline.sh" \
+  "scripts/bootstrap/verify_b4_driver_source_to_vm.sh"; do
   if ! grep -q "$ref" "$EVIDENCE"; then
     echo "WARN: evidence document does not reference $ref"
   fi

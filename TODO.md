@@ -35,6 +35,8 @@
 | `verify_full_language_backend_ownership.sh` | Passed | Driver owns all pipeline stages directly; no `native_independent.zp` dependency in `compiler_driver.zp`. |
 | `verify_b4_driver_module_resolution_errors.sh` | Passed | Module error coverage (ZAP-MODULE-002..005) verified via driver-owned resolution. |
 | `verify_b4_driver_owned_pipeline.sh` | Passed | Driver-owned pipeline execution, check/build artifacts, typed-IR semantics, contract status, and module rebuild determinism verified. |
+| `verify_b4_driver_source_to_vm.sh` | Passed | Driver-owned source-to-VM execution produces deterministic arithmetic and VM results. |
+| `verify_b4_seed_preflight.sh` | Passed | Seed preflight validator checks ZAP_BOOTSTRAP_BIN for version, driver contract status, pipeline execution, determinism, and module resolution. |
 
 These results do not certify B4. They confirm the driver contract is promoted to `owned`, typed-IR semantics no longer require `candidate_only`, and the bounded Rust-free seed path remains available while preserving the fail-closed boundary for full self-hosting evidence.
 
@@ -42,7 +44,7 @@ These results do not certify B4. They confirm the driver contract is promoted to
 
 - [x] Define the candidate compiler-driver contract, command boundary, pipeline stages, artifact schema, and deterministic metadata policy (`bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml`).
 - [x] Add the Zap-owned driver skeleton for `check`, `build`, `run`, `test`, and candidate rebuild replay (`bootstrap/b4/compiler_driver.zp`).
-- [x] Add a contract verifier and CI/Makefile gate for the driver boundary. (`verify_compiler_driver_contract.sh`; `verify_full_language_backend_ownership.sh`; `verify_b4_driver_owned_pipeline.sh` added)
+- [x] Add a contract verifier and CI/Makefile gate for the driver boundary. (`verify_compiler_driver_contract.sh`; `verify_full_language_backend_ownership.sh`; `verify_b4_driver_owned_pipeline.sh`; `verify_b4_driver_source_to_vm.sh` added)
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
 - [x] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (driver now owns all stages directly; native_independent.zp retained as seed-compiler fixture for B4 scripts that test internal seed_* functions; driver contract verifier enforces no native_independent.zp import in compiler_driver.zp)
