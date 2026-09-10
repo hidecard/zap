@@ -35,7 +35,7 @@ Supported platform အားလုံးတွင် row အားလုံး p
 
 ## လက်ရှိအခြေအနေ
 
-Zap တွင် Rust-free seed pipeline နှင့် `bootstrap/b4/compiler_driver.zp` (contract status `owned`) ပါသော Zap-owned compiler driver ရှိပြီး ၎င်းသည် lexer/parser/module-resolution/typecheck/lower/VM/package အဆင့်များကို တိုက်ရိုက်ဦးစီပေးပါပြီး typed-IR schema တွင် `candidate_only` မပါဝင်ပါ။ သို့သော် full-language self-hosting path ကို မအသိအမှတ်ပြုရသေးပါ။ နောက် promotion gate များမှာ verified `ZAP_BOOTSTRAP_BIN` seed ထုတ်လုပ်ခြင်း၊ Linux/macOS/Windows တို့တွင် two-stage/three-stage rebuild နှင့် clean-environment evidence ထုတ်လုပ်ခြင်းဖြစ်ပြီး `compiler_driver.zp` မှတဆင့် full acceptance matrix လုံးဝ အသစ်မျှတပ်မျှတစစ်ဆေးခြင်းဖြစ်သည်။
+Zap တွင် Rust-free seed pipeline နှင့် `bootstrap/b4/compiler_driver.zp` (contract status `owned`) ပါသော Zap-owned compiler driver ရှိပြီး ၎င်းသည် lexer/parser/module-resolution/typecheck/lower/VM/package အဆင့်များကို တိုက်ရိုက်ဦးစီပေးပါပြီး typed-IR schema တွင် `candidate_only` မပါဝင်ပါ။ သို့သော် full-language self-hosting path ကို မအသိအမှတ်ပြုရသေးပါ။ နောက် promotion gate များမှာ verified `ZAP_BOOTSTRAP_BIN` seed ထုတ်လုပ်ခြင်း၊ Linux/macOS/Windows တို့တွင် two-stage/three-stage rebuild နှင့် clean-environment evidence ထုတ်လုပ်ခြင်းဖြစ်ပြီး `compiler_driver.zp` မှတဆင့် full acceptance matrix လုံးဝ အသစ်မျှတပ်မျှတစစ်ဆေးခြင်းဖြစ်သည်။ အသစ်ထပ်ထည့်ထားသော `verify_b4_driver_owned_pipeline.sh` gate သည် prebuilt seed မလိုဘဲ driver-owned pipeline execution၊ check/build artifacts၊ typed-IR semantics၊ contract status နှင့် module rebuild determinism ကို verify လုပ်ပါသည်။
 
 ## ကိုးကားချက်များ
 

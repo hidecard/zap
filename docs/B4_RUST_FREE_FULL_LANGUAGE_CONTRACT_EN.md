@@ -43,7 +43,7 @@ The repository-level integrity gate is:
 scripts/bootstrap/verify_b4_rust_free_contract.sh
 ```
 
-The gate validates the contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until the full source-to-VM and self-rebuild acceptance implementation exists; this prevents a subset implementation from being advertised as B4.
+The gate validates the contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until the full source-to-VM and self-rebuild acceptance implementation exists; this prevents a subset implementation from being advertised as B4. A new `verify_b4_driver_owned_pipeline.sh` gate verifies driver-owned pipeline execution, check/build artifacts, typed-IR semantics, contract status, and module rebuild determinism without requiring a prebuilt seed.
 
 ## Current status
 
