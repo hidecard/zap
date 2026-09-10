@@ -34,7 +34,14 @@ fi
 pass "seed version: $version"
 
 # 2. Driver contract status check
-driver_status="$("$SEED" -c 'import "bootstrap/b4/compiler_driver.zp"; say driver_contract_status()' 2>/dev/null || echo "error")"
+status_runner=$(mktemp "$ROOT_DIR/.zap-b4-seed-preflight-status.XXXXXX.zp")
+trap 'rm -f "$runner" "$out1" "$out2" "$status_runner"' EXIT
+cat > "$status_runner" <<'ZP'
+import "bootstrap/b4/compiler_driver.zp"
+say driver_contract_status()
+ZP
+
+driver_status=$("$SEED" "$(basename "$status_runner")" 2>/dev/null || echo "error")
 if [[ "$driver_status" != "owned" ]]; then
   fail "seed does not report driver_contract_status=owned (got: $driver_status)"
 fi
@@ -45,7 +52,6 @@ runner=$(mktemp "$ROOT_DIR/.zap-b4-seed-preflight.XXXXXX.zp")
 runner_rel=$(basename "$runner")
 out1=$(mktemp)
 out2=$(mktemp)
-trap 'rm -f "$runner" "$out1" "$out2"' EXIT
 cat > "$runner" <<'ZP'
 import "bootstrap/b4/compiler_driver.zp"
 let result = driver_execute_owned_pipeline("let x = 1\nsay x\n", "preflight")
