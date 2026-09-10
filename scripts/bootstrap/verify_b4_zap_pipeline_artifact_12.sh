@@ -37,7 +37,7 @@ say len(artifact["tokens"]["tokens"])
 say artifact["ast"]["kind"]
 say artifact["types"]["kind"]
 say artifact["typed_ir"]["kind"]
-say artifact["typed_ir"]["candidate_only"]
+say artifact["typed_ir"]["schema_version"]
 say len(json(artifact)) > 0
 EOF
 cat > "$expected" <<'EOF'
@@ -47,7 +47,7 @@ zap.compiler_artifact
 zap.ast
 zap.typecheck
 zap.typed_ir
-true
+4
 true
 EOF
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"

@@ -138,7 +138,7 @@ export fn seed_platform_evidence_matrix_valid(records, expected_targets):
 export fn seed_self_rebuild_evidence(first_artifact, second_artifact, platform_records, expected_targets):
     let byte_equal = first_artifact == second_artifact
     let platform_evidence = seed_platform_evidence_matrix_valid(platform_records, expected_targets)
-    let status = "candidate_self_rebuild_evidence"
+    let status = "self_rebuild_evidence"
     if not byte_equal or not platform_evidence:
-        status = "candidate_self_rebuild_blocked"
+        status = "self_rebuild_blocked"
     return {"byte_equal": byte_equal, "native_independent": false, "platform_evidence": platform_evidence, "status": status, "supported": byte_equal and platform_evidence}

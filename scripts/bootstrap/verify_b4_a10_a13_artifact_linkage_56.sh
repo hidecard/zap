@@ -46,7 +46,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "candidate_owned_pipeline_contract true 2 3 candidate_package_build_executed candidate_package_artifact_contract true true typed_ir bytecode 7" ]]; then
+if [[ "${lines[*]}" != "owned_pipeline_contract true 2 3 package_build_executed package_artifact_contract true true typed_ir bytecode 7" ]]; then
   echo "unexpected A10-A13 artifact linkage output: ${lines[*]}" >&2
   exit 1
 fi

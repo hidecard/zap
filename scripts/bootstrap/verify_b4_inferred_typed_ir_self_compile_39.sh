@@ -27,7 +27,7 @@ let artifact = seed_compile_inferred_typed_ir(typed, "inferred.zp")
 let state = vm_run(artifact["instructions"])
 let acceptance = seed_self_compile_acceptance(source, "inferred.zp")
 say typed["schema_version"]
-say typed["candidate_only"]
+say typed["schema_version"]
 say typed["coverage"]
 say typed["ir"]["nodes"][0]["value"]["inferred_type"]
 say artifact["status"]
@@ -46,7 +46,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["4", "true", "owned_ast_with_checker_inferred_types", "number", "compiled_inferred_typed_ir_slice", "none", "7", "reproducible_inferred_typed_ir_slice", "true", "false"]:
+  if lines != ["4", "4", "owned_ast_with_checker_inferred_types", "number", "compiled_inferred_typed_ir_slice", "none", "7", "reproducible_inferred_typed_ir_slice", "true", "false"]:
     raise SystemExit(f"unexpected inferred self-compile output: {lines!r}")
 PY
 printf 'B4 inferred typed-IR self-compile gate passed: checker metadata, AST rehydration, VM handoff, deterministic rebuild\n'

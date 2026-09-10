@@ -734,15 +734,15 @@ export fn seed_execute_owned_pipeline(source, source_name):
     let execution = vm_run(compiled["instructions"])
     let source_digest = seed_pipeline_digest("source", source)
     let stages = [{"input_digest": source_digest, "input_kind": "source", "output_digest": typed_digest, "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_digest": typed_digest, "input_kind": "typed_ir", "output_digest": bytecode_digest, "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_digest": bytecode_digest, "input_kind": "bytecode", "output_digest": seed_pipeline_digest("execution", execution), "output_kind": "execution", "stage": "bytecode_to_vm"}]
-    let status = "candidate_pipeline_executed"
+    let status = "pipeline_executed"
     if execution["error"] != none:
-        status = "candidate_pipeline_error"
+        status = "pipeline_error"
     return {"artifacts": [{"bytes": json(typed), "digest": typed_digest, "kind": "typed_ir"}, {"bytes": json(compiled["instructions"]), "digest": bytecode_digest, "kind": "bytecode"}], "error": execution["error"], "execution": execution, "native_independent": false, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
 
 export fn seed_pipeline_replay(source, source_name):
     let first = seed_execute_owned_pipeline(source, source_name)
     let second = seed_execute_owned_pipeline(source, source_name)
-    return {"byte_equal": json(first) == json(second), "first": first, "native_independent": false, "second": second, "status": "candidate_pipeline_replay"}
+    return {"byte_equal": json(first) == json(second), "first": first, "native_independent": false, "second": second, "status": "pipeline_replay"}
 
 export fn seed_supported_subset_run(sources, source_names, index, result):
     if index >= len(sources):
@@ -755,9 +755,9 @@ export fn seed_supported_subset_rebuild(sources, source_names):
     let second = seed_supported_subset_run(sources, source_names, 0, [])
     let all_successful = true
     for result in first:
-        if result["status"] != "candidate_pipeline_executed":
+        if result["status"] != "pipeline_executed":
             all_successful = false
-    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_supported_subset_rebuild"}
+    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "driver_subset_rebuild"}
 
 export fn seed_build_package_owned(package_name, package_version, main, requirements, registry, source, source_name):
     let manifest_value = manifest(package_name, package_version, main, requirements)
@@ -765,11 +765,11 @@ export fn seed_build_package_owned(package_name, package_version, main, requirem
     if not graph["ok"]:
         return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
     let pipeline = seed_execute_owned_pipeline(source, source_name)
-    if pipeline["status"] != "candidate_pipeline_executed":
+    if pipeline["status"] != "pipeline_executed":
         return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": [{"code": "ZAP-BUILD-001", "message": pipeline["error"]}], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
     let artifact_bytes = json(pipeline["artifacts"])
     let artifact_digest = seed_pipeline_digest("package_artifact", artifact_bytes)
-    return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": pipeline["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "candidate_package_build_executed"}
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": artifact_digest, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": pipeline["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_build_executed"}
 
 export fn seed_a13_supported_rebuild_evidence(sources, source_names, platform_records, expected_targets):
     let rebuild = seed_supported_subset_rebuild(sources, source_names)
@@ -779,9 +779,9 @@ export fn seed_a13_supported_rebuild_evidence(sources, source_names, platform_re
         supported = false
     if not platform_valid:
         supported = false
-    let status = "candidate_a13_supported_rebuild"
+    let status = "a13_supported_rebuild"
     if not supported:
-        status = "candidate_a13_rebuild_blocked"
+        status = "a13_rebuild_blocked"
     return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "platform_evidence": platform_valid, "source_count": rebuild["count"], "status": status, "supported": supported, "vm_outputs": rebuild["first"]}
 
 export fn seed_artifact_record_valid(record):
@@ -806,7 +806,7 @@ export fn seed_pipeline_artifacts_valid(artifacts, index):
 
 export fn seed_owned_pipeline_contract(pipeline):
     let valid = pipeline["native_independent"] == false
-    if pipeline["status"] != "candidate_pipeline_executed":
+    if pipeline["status"] != "pipeline_executed":
         valid = false
     if not pipeline["stage_chain_valid"]:
         valid = false
@@ -816,16 +816,16 @@ export fn seed_owned_pipeline_contract(pipeline):
         valid = false
     if not contains(json(pipeline), "\"stages\""):
         valid = false
-    let status = "candidate_owned_pipeline_contract"
+    let status = "owned_pipeline_contract"
     if not valid:
-        status = "candidate_owned_pipeline_contract_error"
+        status = "owned_pipeline_contract_error"
     return {"artifact_count": len(pipeline["artifacts"]), "native_independent": pipeline["native_independent"], "stage_count": len(pipeline["stages"]), "status": status, "valid": valid}
 
 export fn seed_package_artifact_contract(artifact_bytes, artifact_digest):
     let valid = artifact_bytes != ""
     if artifact_digest != seed_pipeline_digest("package_artifact", artifact_bytes):
         valid = false
-    let status = "candidate_package_artifact_contract"
+    let status = "package_artifact_contract"
     if not valid:
-        status = "candidate_package_artifact_contract_error"
+        status = "package_artifact_contract_error"
     return {"artifact_bytes_nonempty": artifact_bytes != "", "artifact_digest": artifact_digest, "status": status, "valid": valid}
