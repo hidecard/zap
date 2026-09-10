@@ -18,6 +18,11 @@ Usage:
   zap run <file.zp>                     Run a source file explicitly
   zap fmt <file.zp>                     Format a source file
   zap lint <file.zp>                    Check formatting and style
+  zap driver status                        Show compiler driver ownership boundary
+  zap driver check <file.zp>               Check source via Zap driver (requires verified seed)
+  zap driver build <file.zp>               Build source via Zap driver (requires verified seed)
+  zap driver run <file.zp>                 Run source via Zap driver (requires verified seed)
+  zap driver test <file.zp>                Test source via Zap driver (requires verified seed)
   zap check [dir]                       Validate a Zap project
   zap check --json [dir]                Validate with JSON diagnostics
   zap test [dir]                        Run *_test.zp files
@@ -1331,8 +1336,24 @@ pub fn run_cli(args: &[String]) {
         println!("{}", crate::bootstrap::driver_status_json());
         return;
     }
+    if args.len() == 4 && args[1] == "driver" && args[2] == "check" {
+        handle_driver_command("check", Path::new(&args[3]));
+        return;
+    }
+    if args.len() == 4 && args[1] == "driver" && args[2] == "build" {
+        handle_driver_command("build", Path::new(&args[3]));
+        return;
+    }
+    if args.len() == 4 && args[1] == "driver" && args[2] == "run" {
+        handle_driver_command("run", Path::new(&args[3]));
+        return;
+    }
+    if args.len() == 4 && args[1] == "driver" && args[2] == "test" {
+        handle_driver_command("test", Path::new(&args[3]));
+        return;
+    }
     if args.len() >= 2 && args[1] == "driver" {
-        eprintln!("Zap driver usage error: only `zap driver status` is available until a verified Zap seed is installed");
+        eprintln!("Zap driver usage error: expected status, check, build, run, or test");
         process::exit(EXIT_USAGE_ERROR);
     }
     if args.len() == 2 && args[1] == "build" {
@@ -1452,6 +1473,57 @@ pub fn run_cli(args: &[String]) {
     }
 }
 
+fn handle_driver_command(command: &str, path: &Path) {
+    let seed = std::env::var_os("ZAP_BOOTSTRAP_BIN")
+        .map(std::path::PathBuf::from)
+        .filter(|p| p.is_file());
+    let Some(seed) = seed else {
+        eprintln!("Zap driver error: {command} requires a verified ZAP_BOOTSTRAP_BIN seed");
+        eprintln!("Set ZAP_BOOTSTRAP_BIN to a prebuilt Zap binary that reports driver_contract_status=owned");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    };
+    let source = read_limited_text(path, "driver source read").unwrap_or_else(|e| {
+        eprintln!("Zap driver error: {e}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    });
+    let runner = std::env::temp_dir().join(format!(
+        "zap-driver-{}-{}-{}.zp",
+        command,
+        path.display(),
+        std::process::id()
+    ));
+    let script = format!(
+r#"import "bootstrap/b4/compiler_driver.zp"
+let source = {source:?}
+let result = driver_{command}_source(source, {path:?})
+say json(result)
+"#,
+        source = source,
+        command = command,
+        path = path.display()
+    );
+    if let Err(e) = std::fs::write(&runner, &script) {
+        eprintln!("Zap driver error: failed to write runner: {e}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+    let status = std::process::Command::new(&seed)
+        .arg(&runner)
+        .current_dir(path.parent().unwrap_or(Path::new(".")))
+        .status();
+    let _ = std::fs::remove_file(&runner);
+    match status {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            eprintln!("Zap driver error: seed exited with {}", status);
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        Err(e) => {
+            eprintln!("Zap driver error: failed to execute seed: {e}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse_web_explain_args, CLI_HELP};
@@ -1507,6 +1579,10 @@ mod tests {
             "zap lsp",
             "zap async-check",
             "zap driver status",
+            "zap driver check",
+            "zap driver build",
+            "zap driver run",
+            "zap driver test",
             "zap bootstrap status",
             "zap bootstrap vm-demo",
             "zap bootstrap tokens",
