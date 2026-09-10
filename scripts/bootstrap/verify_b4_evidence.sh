@@ -134,7 +134,7 @@ passing\t$passing
 failing\t$failing
 missing_evidence\t$missing_evidence
 verified_at\t$(date -u +%Y-%m-%dT%H:%M:%SZ)
-git_commit\t$(git rev-parse HEAD)
+git_commit\t$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 EOF
 
 echo "B4 evidence package verified (contract status: $contract_status). Report: $REPORT"
