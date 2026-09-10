@@ -234,6 +234,32 @@ export fn driver_typed_ir_ast_statements(nodes, result):
             result = append(result, node["ast"])
     return result
 
+export fn driver_typed_ir_ownership(first, second):
+    let deterministic = json(first) == json(second)
+    let promotable = first["kind"] == "zap.typed_ir" and first["candidate_only"] == true
+    if first["schema_version"] < 4:
+        promotable = false
+    if not contains(json(first), "\"typed_metadata\"") or not first["typed_metadata"]:
+        promotable = false
+    if not contains(json(first), "\"coverage\"") or first["coverage"] != "owned_ast_with_checker_inferred_types":
+        promotable = false
+    if not contains(json(first), "\"diagnostics\"") or len(first["diagnostics"]) != 0:
+        promotable = false
+    if not contains(json(first), "\"ir\"") or not contains(json(first["ir"]), "\"nodes\""):
+        promotable = false
+    if promotable and not typed_ir_nodes_shape_valid(first["ir"]["nodes"], 0):
+        promotable = false
+    if not deterministic:
+        promotable = false
+    let ownership = "candidate"
+    let reference_owner = "rust"
+    let status = "candidate_typed_ir_ownership"
+    if promotable:
+        ownership = "zap_owned"
+        reference_owner = "zap"
+        status = "zap_owned_typed_ir"
+    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
+
 export fn driver_compile_backend(source, source_name):
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":
