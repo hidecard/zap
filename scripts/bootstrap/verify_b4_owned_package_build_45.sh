@@ -19,11 +19,11 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 let leaf = {"checksum": "leaf-checksum", "dependencies": [], "name": "leaf", "source": "registry", "version": "1.2.0"}
 let mid = {"checksum": "mid-checksum", "dependencies": [{"checksum": "leaf-checksum", "name": "leaf", "version": "^1.0.0"}], "name": "mid", "source": "registry", "version": "1.0.0"}
-let ok = seed_build_package_owned("app", "0.1.0", "main.zp", [{"checksum": "mid-checksum", "name": "mid", "version": "^1.0.0"}], [mid, leaf], "let value: number = 7\nsay value", "main.zp")
-let bad = seed_build_package_owned("app", "0.1.0", "main.zp", [{"checksum": "missing-checksum", "name": "missing", "version": "^1.0.0"}], [mid, leaf], "say 7", "main.zp")
+let ok = driver_build_package("app", "0.1.0", "main.zp", [{"checksum": "mid-checksum", "name": "mid", "version": "^1.0.0"}], [mid, leaf], "let value: number = 7\nsay value", "main.zp")
+let bad = driver_build_package("app", "0.1.0", "main.zp", [{"checksum": "missing-checksum", "name": "missing", "version": "^1.0.0"}], [mid, leaf], "say 7", "main.zp")
 say ok["status"]
 say len(ok["dependency_graph"])
 say len(ok["lockfile"]["dependencies"])
@@ -41,7 +41,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "package_build_executed 2 2 7 0 true package_dependency_error ZAP-PKG-MISSING-001 false" ]]; then
+  if [[ "${lines[*]}" != "driver_package_build_executed 2 2 7 0 true package_dependency_error ZAP-PKG-MISSING-001 true" ]]; then
   echo "unexpected owned package build output: ${lines[*]}" >&2
   exit 1
 fi
