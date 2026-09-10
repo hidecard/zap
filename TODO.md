@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-09
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-10
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -31,7 +31,7 @@
 | `verify_non_rust_seed_pipeline.sh` | Passed | The bounded Rust-free compiler/VM seed slice still runs without a Rust toolchain. |
 | `verify_b4_byte_determinism.sh` | Blocked | Correctly fails closed because this checkout has no verified prebuilt `ZAP_BOOTSTRAP_BIN`. |
 | `verify_b4_second_stage_rebuild.sh` | Blocked | Requires a verified prebuilt Zap seed; no Cargo fallback is permitted. |
-| `verify_b4_supported_subset_rebuild_43.sh` | Blocked | The clean no-Cargo environment lacks the required seed/toolchain evidence. |
+| `verify_b4_supported_subset_rebuild_43.sh` | Blocked | Correctly fails closed because the pulled gate now requires a verified prebuilt Zap seed and has no Cargo fallback. |
 | `verify_b4_clean_environment.sh` | Blocked | Correctly fails closed until a verified prebuilt seed is supplied. |
 
 These results do not certify B4. They confirm the candidate driver contract and bounded Rust-free seed path, while preserving the fail-closed boundary for full self-hosting evidence.

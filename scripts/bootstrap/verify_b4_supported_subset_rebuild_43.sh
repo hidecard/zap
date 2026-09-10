@@ -3,17 +3,10 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 run_zap() {
-  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
-    "$ROOT_DIR/bin/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-    "$ROOT_DIR/native/target/release/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
-    "$ROOT_DIR/native/target/debug/zap" "$@"
-  else
-    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
-  fi
+  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-$ROOT_DIR/bin/zap}}"
+  [[ -x "$seed" ]] || { echo "B4 supported-subset rebuild blocked: prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN" >&2; exit 2; }
+  "$seed" "$@"
 }
-[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 runner=$(mktemp "$ROOT_DIR/.zap-b4-subset-rebuild.XXXXXX.zp")
 runner_rel=$(basename "$runner")
 out=$(mktemp)
@@ -32,12 +25,9 @@ say rebuild["first"][0]["execution"]["output"][0]
 say rebuild["first"][1]["execution"]["output"][0]
 say rebuild["first"][2]["execution"]["output"][0]
 ZP
-ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi >"$out"
+ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
+[ -x "$ZAP_BIN" ] || { echo "B4 supported-subset rebuild blocked: prebuilt Zap seed required" >&2; exit 2; }
+"$ZAP_BIN" "$runner_rel" >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "candidate_driver_subset_rebuild false 3 true true 7 1 5" ]]; then
   echo "unexpected supported subset output: ${lines[*]}" >&2
