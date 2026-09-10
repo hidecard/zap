@@ -1332,7 +1332,12 @@ pub fn run_cli(args: &[String]) {
         return;
     }
     if args.len() >= 2 && args[1] == "driver" {
-        eprintln!("Zap driver usage error: only `zap driver status` is available until a verified Zap seed is installed");
+        let requested = if args.len() > 2 {
+            args[2..].join(" ")
+        } else {
+            "<missing-command>".to_string()
+        };
+        eprintln!("ZAP-DRIVER-002: command `{requested}` is blocked; only `zap driver status` is available until a verified Zap seed and complete Zap ownership are installed");
         process::exit(EXIT_USAGE_ERROR);
     }
     if args.len() == 2 && args[1] == "build" {
