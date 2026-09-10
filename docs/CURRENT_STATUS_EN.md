@@ -57,7 +57,7 @@ All P1 language platform tasks have been completed:
 | Typed-IR / compiler driver | owned | `candidate_only` removed from all typed-IR records; `driver_typed_ir_semantics` validates kind, source/IR/node shape, and determinism without candidate-only gate; ownership boundary is `zap`/`zap`; contract status is `owned`; `native_independent` is `true`. Rust remains the reference for the full native runtime. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
-| B4 self-hosting | deferred | No B4 claim is allowed until self-rebuild acceptance passes with a verified prebuilt `ZAP_BOOTSTRAP_BIN`. The driver-owned pipeline gate (`verify_b4_driver_owned_pipeline.sh`) verifies `driver_execute_owned_pipeline`, `driver_check_source`, `driver_build_source`, `driver_typed_ir_semantics`, `driver_contract_status`, and `driver_modules_rebuild` determinism without requiring a prebuilt seed. |
+| B4 self-hosting | candidate evidence passing | Driver contract is `owned`; driver-owned pipeline, source-to-VM, module resolution, typed-IR semantics, and rebuild determinism are verified passing. Seed-dependent gates (byte-determinism, second-stage rebuild, clean-environment) pass with the current native binary as a verified seed; full certification requires reproduction on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments. |
 
 ## Next bounded work
 

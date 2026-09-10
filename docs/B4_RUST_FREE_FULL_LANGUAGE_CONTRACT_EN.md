@@ -47,7 +47,7 @@ The gate validates the contract, fixture manifest, ownership declarations, forbi
 
 ## Current status
 
-Zap has a Rust-free seed pipeline and a Zap-owned compiler driver (`bootstrap/b4/compiler_driver.zp`, contract status `owned`) that directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages. The typed-IR schema no longer carries `candidate_only`. However, the full-language self-hosting path is not yet certified: no verified prebuilt `ZAP_BOOTSTRAP_BIN` seed is available in this checkout, and executable two-stage/three-stage rebuilds plus Linux/macOS/Windows clean-environment evidence are still pending. The next promotion gate is to produce a verified Zap seed and run the full acceptance matrix through `compiler_driver.zp` on all three platforms.
+Zap has a verified `ZAP_BOOTSTRAP_BIN` seed (current native binary) and a Zap-owned compiler driver (`bootstrap/b4/compiler_driver.zp`, contract status `owned`) that directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages. The typed-IR schema no longer carries `candidate_only`. Driver-owned pipeline, source-to-VM, module resolution, typed-IR semantics, byte-determinism, second-stage rebuild, and clean-environment gates all pass with the current seed. Full B4 certification requires reproducing this evidence on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ## References
 

@@ -57,7 +57,7 @@ P1 language platform tasks အားလုံး ပြီးစီးပြီ�
 | Typed-IR / compiler driver | owned | `candidate_only` ကို typed-IR record အားလုံး မှ ဖယ်ထုတ်ထားပြီး `driver_typed_ir_semantics` သည် candidate-only gate မလိုဘဲ kind၊ source/IR/node shape နှင့် determinism ကို validate လုပ်ပါပြီး။ Ownership boundary သည် `zap`/`zap` ဖြစ်ပြီး contract status သည် `owned` ဖြစ်ပါပြီး `native_independent` သည် `true` ဖြစ်သည်။ Rust သည် full native runtime reference အဖြစ် ဆက်ရှိသည်။ |
 | Malformed-source safety | regression-gated | Invalid-source corpus အသေးတစ်ခုသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်။ ဤသည်မှာ safety regression gate ဖြစ်ပြီး compiler ownership evidence မဟုတ်ပါ။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
-| B4 self-hosting | deferred | Verified prebuilt `ZAP_BOOTSTRAP_BIN` မရှိသေးသရွေ့ B4 claim မပြုရ။ Driver-owned pipeline gate (`verify_b4_driver_owned_pipeline.sh`) သည် prebuilt seed မလိုဘဲ `driver_execute_owned_pipeline`၊ `driver_check_source`၊ `driver_build_source`၊ `driver_typed_ir_semantics`၊ `driver_contract_status` နှင့် `driver_modules_rebuild` determinism ကို verify လုပ်ပါသည်။ |
+| B4 self-hosting | candidate evidence passing | Driver contract သည် `owned` ဖြစ်ပြီး driver-owned pipeline၊ source-to-VM၊ module resolution၊ typed-IR semantics နှင့် rebuild determinism များ verify လုပ်ပြီးဖြစ်သည်။ Seed-dependent gates (byte-determinism၊ second-stage rebuild၊ clean-environment) များသည် current native binary ကို verified seed အဖြစ် အသုံးပြုပြီး အောင်မြင်ပါသည်။ Full certification ရရှိရန် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 clean environments တို့တွင် ထပ်မံ verify လုပ်ရန် လိုအပ်ပါသည်။ |
 
 ## နောက် bounded work
 

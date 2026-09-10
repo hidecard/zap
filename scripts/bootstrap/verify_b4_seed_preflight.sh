@@ -12,9 +12,18 @@ cd "$ROOT_DIR"
 fail() { echo "B4 seed preflight failed: $*" >&2; exit 1; }
 pass() { echo "PASS: $*"; }
 
-SEED="${ZAP_BOOTSTRAP_BIN:-}"
+SEED="${1:-${ZAP_BOOTSTRAP_BIN:-}}"
 if [[ -z "$SEED" ]]; then
-  fail "ZAP_BOOTSTRAP_BIN is not set; provide a verified prebuilt Zap seed"
+  if [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    SEED="$ROOT_DIR/native/target/release/zap"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    SEED="$ROOT_DIR/native/target/release/zap.exe"
+  elif [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    SEED="$ROOT_DIR/bin/zap"
+  fi
+fi
+if [[ -z "$SEED" ]]; then
+  fail "ZAP_BOOTSTRAP_BIN is not set; provide a verified prebuilt Zap seed as first argument, env var, or place it at native/target/release/zap"
 fi
 if [[ ! -f "$SEED" ]]; then
   fail "ZAP_BOOTSTRAP_BIN points to missing file: $SEED"

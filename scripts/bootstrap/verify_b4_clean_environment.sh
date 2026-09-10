@@ -54,17 +54,17 @@ EOF
 run_zap() {
   local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-native/target/release/zap}}"
   [ -x "$seed" ] || fail "prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN (Cargo fallback is disabled)"
-  env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME "$seed" "$1"
+  (cd "$ROOT_DIR" && env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME "$seed" "$1")
 }
 
 # Run with Rust vars unset
-run_zap "$runner" > "$out"
+run_zap "$runner_rel" > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed with Rust vars unset"
 
 # Test 2: Run with Rust vars set (normal env) - should produce identical output
 ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
 [ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
-"$ZAP_BIN" "$runner_rel" > "$out"
+(cd "$ROOT_DIR" && "$ZAP_BIN" "$runner_rel") > "$out"
 cmp "$out" "$expected" || fail "normal environment run produced different output"
 
 # Test 3: Multiple sequential runs - verify no state leakage
@@ -93,7 +93,7 @@ EOF
 
 ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
 [ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
-"$ZAP_BIN" "$runner_rel" > "$out"
+(cd "$ROOT_DIR" && "$ZAP_BIN" "$runner_rel") > "$out"
 cmp "$out" "$expected" || fail "sequential runs showed state leakage"
 
 # Test 4: Platform evidence record validation
@@ -112,7 +112,7 @@ EOF
 
 ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
 [ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
-"$ZAP_BIN" "$runner_rel" > "$out"
+(cd "$ROOT_DIR" && "$ZAP_BIN" "$runner_rel") > "$out"
 cmp "$out" "$expected" || fail "platform evidence record validation failed"
 
 # Test 5: Clean environment with different source surfaces
@@ -138,7 +138,7 @@ EOF
 
 ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
 [ -x "$ZAP_BIN" ] || fail "prebuilt Zap seed required"
-"$ZAP_BIN" "$runner_rel" > "$out"
+(cd "$ROOT_DIR" && "$ZAP_BIN" "$runner_rel") > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed for diverse source surfaces"
 
 # Report
