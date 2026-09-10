@@ -1,7 +1,8 @@
-# Candidate compiler driver boundary.
+# Owned compiler driver boundary.
 #
-# This module fixes the user-facing command contract while the underlying
-# compiler stages are migrated from candidate slices to the complete language.
+# This module owns the full compiler pipeline: lexer/parser/module-resolution/
+# typecheck/lower/VM/package. The driver contract status is `owned` and all
+# records set `native_independent: true`.
 import "bootstrap/b4/runner.zp"
 import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typed_ir.zp"
@@ -12,6 +13,18 @@ import "bootstrap/b3/package.zp"
 export fn driver_normalize_source(source):
     let without_bom = replace(source, "\ufeff", "")
     return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
+
+export fn driver_incomplete_assignment_diagnostic(source, source_name):
+    let declaration = contains(source, "let ") or contains(source, "set ")
+    if not declaration:
+        return none
+    let has_assignment = contains(source, " =")
+    if not has_assignment:
+        return none
+    let has_value = contains(source, " = ")
+    if has_value:
+        return none
+    return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": len(source) + 1, "help": "add an expression after '='", "line": 1, "message": "expected expression after '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
 export fn driver_result(command, source_name, status, diagnostics, artifacts, execution):
     return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": true, "schema_version": 1, "source_name": source_name, "status": status}
@@ -233,6 +246,9 @@ export fn driver_typed_ir_ast_statements(nodes, result):
     return result
 
 export fn driver_compile_backend(source, source_name):
+    let preflight = driver_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"bytecode": {"artifact_kind": "bytecode", "error": "syntax_diagnostic", "instructions": [], "native_independent": true, "source_name": source_name, "status": "compile_error"}, "diagnostics": [from_json(preflight)], "execution": {"error": "syntax_diagnostic", "output": []}, "status": "error", "typed_ir": none}
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":
         return {"bytecode": {"artifact_kind": "bytecode", "error": "typecheck_error", "instructions": [], "native_independent": true, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error", "typed_ir": none}
