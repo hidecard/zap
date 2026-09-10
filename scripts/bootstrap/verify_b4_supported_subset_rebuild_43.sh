@@ -39,7 +39,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "candidate_driver_subset_rebuild false 3 true true 7 1 5" ]]; then
+if [[ "${lines[*]}" != "driver_subset_rebuild true 3 true true 7 1 5" ]]; then
   echo "unexpected supported subset output: ${lines[*]}" >&2
   exit 1
 fi

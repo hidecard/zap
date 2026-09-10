@@ -29,7 +29,7 @@ let semantics = driver_typed_ir_semantics(artifact["typed_ir"], repeat["typed_ir
 say artifact["status"]
 say artifact["bytecode"]["native_independent"]
 say artifact["typed_ir"]["kind"]
-say artifact["typed_ir"]["candidate_only"]
+say artifact["typed_ir"]["schema_version"]
 say state["error"]
 say state["locals"][0]["value"]
 say rebuild["status"]
@@ -46,7 +46,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["ok", "false", "zap.typed_ir", "true", "none", "7", "candidate_driver_rebuild", "true", "candidate_typed_ir_semantics", "true"]:
+if lines != ["ok", "true", "zap.typed_ir", "4", "none", "7", "driver_rebuild", "true", "typed_ir_semantics_verified", "true"]:
     raise SystemExit(f"unexpected typed-IR source output: {lines!r}")
 PY
 printf 'B4 typed-IR source gate passed: Zap source to typed-IR to VM handoff and reproducible rebuild\n'

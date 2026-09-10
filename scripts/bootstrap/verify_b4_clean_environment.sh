@@ -33,7 +33,7 @@ import "bootstrap/b4/compiler_driver.zp"
 let source = "let a = 5\nlet b = 10\nsay a + b\n"
 
 let result = driver_execute_owned_pipeline(source, "clean_env")
-let status_ok = result["status"] == "candidate_pipeline_executed"
+let status_ok = result["status"] == "pipeline_executed"
 let chain_valid = result["stage_chain_valid"]
 let artifact_count = len(result["artifacts"])
 let has_stages = contains(json(result), "\"stages\"")
@@ -79,7 +79,7 @@ let r1 = driver_execute_owned_pipeline(source1, "seq_1")
 let r2 = driver_execute_owned_pipeline(source2, "seq_2")
 let r3 = driver_execute_owned_pipeline(source3, "seq_3")
 
-let all_ok = r1["status"] == "candidate_pipeline_executed" and r2["status"] == "candidate_pipeline_executed" and r3["status"] == "candidate_pipeline_executed"
+let all_ok = r1["status"] == "pipeline_executed" and r2["status"] == "pipeline_executed" and r3["status"] == "pipeline_executed"
 let all_chain = r1["stage_chain_valid"] and r2["stage_chain_valid"] and r3["stage_chain_valid"]
 
 say all_ok
@@ -127,7 +127,7 @@ let r0 = driver_execute_owned_pipeline(s0, "simple")
 let r1 = driver_execute_owned_pipeline(s1, "function")
 let r2 = driver_execute_owned_pipeline(s2, "arithmetic")
 
-let all_ok = r0["status"] == "candidate_pipeline_executed" and r1["status"] == "candidate_pipeline_executed" and r2["status"] == "candidate_pipeline_executed"
+let all_ok = r0["status"] == "pipeline_executed" and r1["status"] == "pipeline_executed" and r2["status"] == "pipeline_executed"
 
 say all_ok
 EOF
