@@ -389,24 +389,24 @@ This matrix is the single source of truth for which implementation module owns e
 
 | ID | Rule | Owner | Fixture/Test | Status | Compatibility | Notes |
 |---|---|---|---|---|---|---|
-| REBUILD-001 | Byte-for-byte token determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-002 | Byte-for-byte AST determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-003 | Byte-for-byte typed IR determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-004 | Byte-for-byte bytecode determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-005 | Byte-for-byte pipeline determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-006 | Multi-line source determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-007 | Control-flow source determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-008 | Stage 1 (source→bytecode) determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-009 | Stage 2 (bytecode→execution) determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-010 | Full pipeline replay determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-011 | Cross-stage execution determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-012 | Typed IR second-stage determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-013 | Self-rebuild typed IR determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-014 | No Rust toolchain dependency | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-015 | Normal env matches clean env | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
-| REBUILD-016 | No state leakage between runs | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
+| REBUILD-001 | Byte-for-byte token determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b1/lexer.zp` | implemented | normative | |
+| REBUILD-002 | Byte-for-byte AST determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b1/parser.zp` | implemented | normative | |
+| REBUILD-003 | Byte-for-byte typed IR determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-004 | Byte-for-byte bytecode determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-005 | Byte-for-byte pipeline determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-006 | Multi-line source determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-007 | Control-flow source determinism | `scripts/bootstrap/verify_b4_byte_determinism.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-008 | Stage 1 (source→bytecode) determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-009 | Stage 2 (bytecode→execution) determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-010 | Full pipeline replay determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-011 | Cross-stage execution determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-012 | Typed IR second-stage determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-013 | Self-rebuild typed IR determinism | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-014 | No Rust toolchain dependency | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-015 | Normal env matches clean env | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
+| REBUILD-016 | No state leakage between runs | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
 | REBUILD-017 | Platform evidence validation | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/seed_pipeline.zp` | implemented | normative | |
-| REBUILD-018 | Diverse source surface execution | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/native_independent.zp` | implemented | normative | |
+| REBUILD-018 | Diverse source surface execution | `scripts/bootstrap/verify_b4_clean_environment.sh` | `bootstrap/b4/compiler_driver.zp` | implemented | normative | |
 
 ---
 
