@@ -1,6 +1,6 @@
 schema_version = 1
 contract_id = "ZAP-COMPILER-DRIVER"
-status = "candidate"
+status = "owned"
 
 [commands]
 check = "parse-and-typecheck-without-emitting"

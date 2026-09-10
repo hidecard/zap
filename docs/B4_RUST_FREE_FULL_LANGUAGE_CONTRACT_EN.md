@@ -47,7 +47,7 @@ The gate validates the contract, fixture manifest, ownership declarations, forbi
 
 ## Current status
 
-Zap has a Rust-free seed pipeline and several Zap-owned compiler candidates, but the full-language self-hosting path is not yet certified. The next promotion gate is to replace the current candidate seed entrypoint with a complete Zap compiler driver and make every acceptance row executable through that driver.
+Zap has a Rust-free seed pipeline and a Zap-owned compiler driver (`bootstrap/b4/compiler_driver.zp`, contract status `owned`) that directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages. The typed-IR schema no longer carries `candidate_only`. However, the full-language self-hosting path is not yet certified: no verified prebuilt `ZAP_BOOTSTRAP_BIN` seed is available in this checkout, and executable two-stage/three-stage rebuilds plus Linux/macOS/Windows clean-environment evidence are still pending. The next promotion gate is to produce a verified Zap seed and run the full acceptance matrix through `compiler_driver.zp` on all three platforms.
 
 ## References
 

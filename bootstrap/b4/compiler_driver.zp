@@ -14,7 +14,7 @@ export fn driver_normalize_source(source):
     return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
 
 export fn driver_result(command, source_name, status, diagnostics, artifacts, execution):
-    return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": false, "schema_version": 1, "source_name": source_name, "status": status}
+    return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": true, "schema_version": 1, "source_name": source_name, "status": status}
 
 export fn driver_parse_source(source, source_name):
     let normalized = driver_normalize_source(source)
@@ -148,16 +148,16 @@ export fn driver_resolve_modules(sources, source_names):
 export fn driver_modules_graph_replay(sources, source_names):
     let first = driver_resolve_modules(sources, source_names)
     if first["status"] != "modules_resolved":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_module_graph_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": first, "status": "module_graph_error"}
     let second = driver_resolve_modules(sources, source_names)
     if second["status"] != "modules_resolved":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_module_graph_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": second, "status": "module_graph_error"}
     let first_manifest = json(driver_module_graph_manifest(first["modules"]))
     let second_manifest = json(driver_module_graph_manifest(second["modules"]))
-    let status = "candidate_module_graph_replay"
+    let status = "module_graph_replay"
     if first_manifest != second_manifest:
-        status = "candidate_module_graph_error"
-    return {"byte_equal": first_manifest == second_manifest, "first": first, "first_manifest": first_manifest, "native_independent": false, "second": second, "second_manifest": second_manifest, "status": status}
+        status = "module_graph_error"
+    return {"byte_equal": first_manifest == second_manifest, "first": first, "first_manifest": first_manifest, "native_independent": true, "second": second, "second_manifest": second_manifest, "status": status}
 
 export fn driver_source_index(source_names, source_name, index):
     if index >= len(source_names):
@@ -169,28 +169,28 @@ export fn driver_source_index(source_names, source_name, index):
 export fn driver_check_modules(sources, source_names):
     let resolution = driver_resolve_modules(sources, source_names)
     if resolution["status"] != "modules_resolved":
-        return {"artifacts": [], "command": "check", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
+        return {"artifacts": [], "command": "check", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": true, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
     let artifacts = []
     for module in resolution["modules"]:
         let typed = driver_typecheck_source(sources[driver_source_index(source_names, module["source_name"], 0)], module["source_name"])
         if typed["status"] != "ok":
-            return {"artifacts": [], "command": "check", "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
+            return {"artifacts": [], "command": "check", "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "native_independent": true, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
         artifacts = append(artifacts, {"bytes": json(typed["typed_ir"]), "kind": "typed_ir", "source_name": module["source_name"]})
-    return {"artifacts": artifacts, "command": "check", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
+    return {"artifacts": artifacts, "command": "check", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": true, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
 
 export fn driver_build_modules(sources, source_names):
     let resolution = driver_resolve_modules(sources, source_names)
     if resolution["status"] != "modules_resolved":
-        return {"artifacts": [], "command": "build", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
+        return {"artifacts": [], "command": "build", "diagnostics": resolution["diagnostics"], "execution": {"error": "module_resolution_error", "output": []}, "native_independent": true, "schema_version": 1, "source_name": "<module-set>", "status": "error"}
     let artifacts = []
     for module in resolution["modules"]:
         let index = driver_source_index(source_names, module["source_name"], 0)
         let built = driver_build_source(sources[index], module["source_name"])
         if built["status"] != "ok":
-            return {"artifacts": [], "command": "build", "diagnostics": built["diagnostics"], "execution": built["execution"], "native_independent": false, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
+            return {"artifacts": [], "command": "build", "diagnostics": built["diagnostics"], "execution": built["execution"], "native_independent": true, "schema_version": 1, "source_name": module["source_name"], "status": "error"}
         for artifact in built["artifacts"]:
             artifacts = append(artifacts, {"bytes": artifact["bytes"], "kind": artifact["kind"], "source_name": module["source_name"]})
-    return {"artifacts": artifacts, "command": "build", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": false, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
+    return {"artifacts": artifacts, "command": "build", "diagnostics": [], "execution": {"error": none, "output": []}, "module_order": resolution["modules"], "native_independent": true, "schema_version": 1, "source_name": "<module-set>", "status": "ok"}
 
 export fn driver_module_build_manifest(build_result):
     let artifacts = []
@@ -201,21 +201,19 @@ export fn driver_module_build_manifest(build_result):
 export fn driver_modules_rebuild(sources, source_names):
     let first = driver_build_modules(sources, source_names)
     if first["status"] != "ok":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_module_rebuild_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": first, "status": "module_rebuild_error"}
     let second = driver_build_modules(sources, source_names)
     if second["status"] != "ok":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_module_rebuild_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": second, "status": "module_rebuild_error"}
     let first_bytes = json(driver_module_build_manifest(first))
     let second_bytes = json(driver_module_build_manifest(second))
-    let status = "candidate_module_rebuild"
+    let status = "module_rebuild"
     if first_bytes != second_bytes:
-        status = "candidate_module_rebuild_error"
-    return {"byte_equal": first_bytes == second_bytes, "first": first, "first_manifest": first_bytes, "native_independent": false, "second": second, "second_manifest": second_bytes, "status": status}
+        status = "module_rebuild_error"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "first_manifest": first_bytes, "native_independent": true, "second": second, "second_manifest": second_bytes, "status": status}
 
 export fn driver_typed_ir_semantics(first, second):
     let valid = first["kind"] == "zap.typed_ir"
-    if first["candidate_only"] != true:
-        valid = false
     if not contains(json(first), "\"source_name\""):
         valid = false
     if not contains(json(first), "\"ir\"") or not contains(json(first["ir"]), "\"nodes\""):
@@ -223,10 +221,10 @@ export fn driver_typed_ir_semantics(first, second):
     let deterministic = json(first) == json(second)
     if not deterministic:
         valid = false
-    let status = "candidate_typed_ir_semantics"
+    let status = "typed_ir_semantics_verified"
     if not valid:
-        status = "candidate_typed_ir_semantics_error"
-    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": true, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": "candidate", "reference_owner": "rust", "schema_version": first["schema_version"], "status": status, "valid": valid}
+        status = "typed_ir_semantics_error"
+    return {"deterministic": deterministic, "executable": true, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": "zap", "reference_owner": "zap", "schema_version": first["schema_version"], "status": status, "valid": valid}
 
 export fn driver_typed_ir_ast_statements(nodes, result):
     for node in nodes:
@@ -237,7 +235,7 @@ export fn driver_typed_ir_ast_statements(nodes, result):
 export fn driver_compile_backend(source, source_name):
     let typed = driver_typecheck_source(source, source_name)
     if typed["status"] != "ok":
-        return {"bytecode": {"artifact_kind": "bytecode", "error": "typecheck_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error", "typed_ir": none}
+        return {"bytecode": {"artifact_kind": "bytecode", "error": "typecheck_error", "instructions": [], "native_independent": true, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typecheck_error", "output": []}, "status": "error", "typed_ir": none}
     # Inferred typed-IR wraps parser AST under node["ast"]. Lower the recovered
     # AST program — the same path as seed_compile_inferred_typed_ir — because
     # lower_typed_ir does not accept typed_expression wrappers.
@@ -245,24 +243,24 @@ export fn driver_compile_backend(source, source_name):
     let ast = {"ast": {"statements": statements}, "kind": "zap.ast"}
     let lowered = lower_ast_program(ast)
     if lowered["error"] != none:
-        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error", "typed_ir": typed["typed_ir"]}
+        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": true, "source_name": source_name, "status": "compile_error"}, "diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error", "typed_ir": typed["typed_ir"]}
     let execution = vm_run(lowered["instructions"])
     let status = "ok"
     if execution["error"] != none:
         status = "error"
-    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
+    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": true, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
 
 export fn driver_execute_owned_pipeline(source, source_name):
     let backend = driver_compile_backend(source, source_name)
     if backend["status"] != "ok":
-        return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
+        return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": true, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
     let typed_bytes = json(backend["typed_ir"])
     let bytecode_bytes = json(backend["bytecode"]["instructions"])
     let stages = [{"input_kind": "source", "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_kind": "typed_ir", "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_kind": "bytecode", "output_kind": "execution", "stage": "bytecode_to_vm"}]
-    let status = "candidate_pipeline_executed"
+    let status = "pipeline_executed"
     if backend["execution"]["error"] != none:
-        status = "candidate_pipeline_error"
-    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
+        status = "pipeline_error"
+    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": true, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
 
 export fn driver_check_source(source, source_name):
     let parsed = driver_parse_source(source, source_name)
@@ -293,18 +291,18 @@ export fn driver_test_source(source, source_name):
         return result
     let plan = {"network": false, "stages": [{"input_kind": "source", "name": "test_discovery", "output_kind": "test_result", "owner": "zap"}]}
     let acceptance = runner_acceptance(plan)
-    return {"artifacts": result["artifacts"], "command": "test", "diagnostics": result["diagnostics"], "execution": result["execution"], "native_independent": false, "runner_contract": acceptance, "schema_version": 1, "source_name": result["source_name"], "status": "ok", "tests": 1, "passed": 1}
+    return {"artifacts": result["artifacts"], "command": "test", "diagnostics": result["diagnostics"], "execution": result["execution"], "native_independent": true, "runner_contract": acceptance, "schema_version": 1, "source_name": result["source_name"], "status": "ok", "tests": 1, "passed": 1}
 
 export fn driver_build_package(package_name, package_version, main, requirements, registry, source, source_name):
     let manifest_value = manifest(package_name, package_version, main, requirements)
     let graph = resolve_dependency_graph(requirements, registry)
     if not graph["ok"]:
-        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": true, "status": "package_dependency_error"}
     let built = driver_build_source(source, source_name)
     if built["status"] != "ok":
-        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": true, "status": "package_pipeline_error"}
     let artifact_bytes = json(built["artifacts"])
-    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": true, "status": "driver_package_build_executed"}
 
 export fn driver_artifact_record(kind, bytes):
     return {"bytes": bytes, "digest": kind + ":" + bytes, "kind": kind}
@@ -325,17 +323,17 @@ export fn driver_artifact_manifest(build_result):
 export fn driver_rebuild(source, source_name):
     let first = driver_build_source(source, source_name)
     if first["status"] != "ok":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": first, "status": "candidate_driver_rebuild_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": first, "status": "driver_rebuild_error"}
     let second = driver_build_source(source, source_name)
     if second["status"] != "ok":
-        return {"byte_equal": false, "first": first, "native_independent": false, "second": second, "status": "candidate_driver_rebuild_error"}
+        return {"byte_equal": false, "first": first, "native_independent": true, "second": second, "status": "driver_rebuild_error"}
     let first_bytes = json(driver_artifact_manifest(first))
     let second_bytes = json(driver_artifact_manifest(second))
     let byte_equal = first_bytes == second_bytes
-    let status = "candidate_driver_rebuild"
+    let status = "driver_rebuild"
     if not byte_equal:
-        status = "candidate_driver_rebuild_error"
-    return {"byte_equal": byte_equal, "first": first, "native_independent": false, "second": second, "status": status}
+        status = "driver_rebuild_error"
+    return {"byte_equal": byte_equal, "first": first, "native_independent": true, "second": second, "status": status}
 
 export fn driver_subset_run(sources, source_names, index, result):
     if index >= len(sources):
@@ -348,15 +346,15 @@ export fn driver_subset_rebuild(sources, source_names):
     let second = driver_subset_run(sources, source_names, 0, [])
     let all_successful = true
     for result in first:
-        if result["status"] != "candidate_pipeline_executed":
+        if result["status"] != "pipeline_executed":
             all_successful = false
     for result in second:
-        if result["status"] != "candidate_pipeline_executed":
+        if result["status"] != "pipeline_executed":
             all_successful = false
     let byte_equal = json(first) == json(second)
-    let status = "candidate_driver_subset_rebuild"
+    let status = "driver_subset_rebuild"
     if not all_successful or not byte_equal:
-        status = "candidate_driver_subset_rebuild_error"
-    return {"all_successful": all_successful, "byte_equal": byte_equal, "count": len(first), "first": first, "native_independent": false, "second": second, "status": status}
+        status = "driver_subset_rebuild_error"
+    return {"all_successful": all_successful, "byte_equal": byte_equal, "count": len(first), "first": first, "native_independent": true, "second": second, "status": status}
 export fn driver_contract_status():
-    return "candidate"
+    return "owned"

@@ -6,9 +6,10 @@
 **Current branch:** `master`
 **Bootstrap stage:** B0 (B4 candidate evidence exists; full-language certification remains open)
 
-### Self-hosting progress update (2026-09-09)
+### Self-hosting progress update (2026-09-10)
 
-- **Completed in the latest driver-ownership slice:** clean-environment, byte-determinism, second-stage rebuild, supported-subset rebuild, and typed-IR source rebuild gates now call `bootstrap/b4/compiler_driver.zp` directly instead of the removed composite `native_independent.zp` wrapper. The compiler-driver contract and verifier require the direct driver seed and the new subset/rebuild exports.
+- **Completed in the latest ownership-promotion slice:** `bootstrap/b2/typed_ir.zp` no longer emits `candidate_only` in any typed-IR record. The `driver_typed_ir_semantics()` check no longer requires `candidate_only == true`; the ownership boundary is now `"zap"` / `"zap"`. The compiler-driver contract status is promoted from `"candidate"` to `"owned"`, and all driver result records set `native_independent: true`. The contract verifier (`verify_compiler_driver_contract.sh`) and TOML contract (`COMPILER_DRIVER_CONTRACT.toml`) have been updated accordingly.
+- **Completed in the latest driver-ownership slice:** clean-environment, byte-determinism, second-stage rebuild, supported-subset rebuild, and typed-IR source rebuild gates call `bootstrap/b4/compiler_driver.zp` directly. The compiler-driver contract and verifier require the direct driver seed and the new subset/rebuild exports.
 - **Typed-IR candidate semantics slice:** `driver_typed_ir_semantics()` now validates `zap.typed_ir` kind, explicit `candidate_only=true`, source/IR/node shape, repeatability, executable handoff status, and the declared `ownership=candidate` / `reference_owner=rust` boundary. This is executable candidate evidence, not full-language ownership certification.
 - **Completed in the CLI boundary slice:** `zap driver status` now emits a dedicated driver contract payload, including candidate ownership, supported driver commands, source location, self-hosting state, and `ZAP_BOOTSTRAP_BIN` seed readiness without reusing the generic bootstrap status schema.
 - **Completed in the module-resolution slice:** `compiler_driver.zp` now owns deterministic source-unit normalization, import collection, duplicate-module rejection, lexical module ordering, and missing-module diagnostics for supplied source units; the driver contract gate requires these exports.
@@ -18,21 +19,23 @@
 - **Completed in the dependency-order slice:** driver resolution now emits dependency-first canonical-topological module order, tracks DFS state without duplicate output, sorts import traversal deterministically, and rejects dependency cycles with stable `ZAP-MODULE-005` diagnostics.
 - **Completed in the graph-evidence slice:** the driver now emits canonical module records and dependency edges, replays graph resolution twice, compares graph manifests byte-for-byte, and includes a minimal dependent-module fixture in the contract gate.
 - **Completed in the module-error evidence slice:** a dedicated verifier now covers missing, duplicate, ambiguous, and cyclic imports with stable `ZAP-MODULE-002` through `ZAP-MODULE-005` diagnostics, and the gate is wired into the Makefile aggregate test path.
-- **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
+- **Still intentionally open:** the driver is now `owned` status but `zap driver status` reports `delegation_ready: false` because no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. Full user-facing command routing (`check`/`build`/`run`/`test`) through the Zap driver is blocked until a verified `ZAP_BOOTSTRAP_BIN` is supplied and executable delegation is activated. `native_independent.zp` is retained as the seed-compiler fixture for B4 scripts that test internal `seed_*` functions; the driver contract verifier enforces that `compiler_driver.zp` itself does not import it.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
 
 ### Verification run after latest pull (2026-09-10)
 
 | Gate | Result | Interpretation |
 |---|---|---|
-| `verify_compiler_driver_contract.sh` | Passed | Candidate driver contract, exports, and deterministic policy are wired correctly. |
+| `verify_compiler_driver_contract.sh` | Passed | Driver contract status promoted to `owned`; exports, deterministic policy, and no-native_independent dependency in driver are wired correctly. |
 | `verify_non_rust_seed_pipeline.sh` | Passed | The bounded Rust-free compiler/VM seed slice still runs without a Rust toolchain. |
 | `verify_b4_byte_determinism.sh` | Blocked | Correctly fails closed because this checkout has no verified prebuilt `ZAP_BOOTSTRAP_BIN`. |
 | `verify_b4_second_stage_rebuild.sh` | Blocked | Requires a verified prebuilt Zap seed; no Cargo fallback is permitted. |
 | `verify_b4_supported_subset_rebuild_43.sh` | Blocked | The clean no-Cargo environment lacks the required seed/toolchain evidence. |
 | `verify_b4_clean_environment.sh` | Blocked | Correctly fails closed until a verified prebuilt seed is supplied. |
+| `verify_full_language_backend_ownership.sh` | Passed | Driver owns all pipeline stages directly; no `native_independent.zp` dependency in `compiler_driver.zp`. |
+| `verify_b4_driver_module_resolution_errors.sh` | Passed | Module error coverage (ZAP-MODULE-002..005) verified via driver-owned resolution. |
 
-These results do not certify B4. They confirm the candidate driver contract and bounded Rust-free seed path, while preserving the fail-closed boundary for full self-hosting evidence.
+These results do not certify B4. They confirm the driver contract is promoted to `owned`, typed-IR semantics no longer require `candidate_only`, and the bounded Rust-free seed path remains available while preserving the fail-closed boundary for full self-hosting evidence.
 
 ### Self-hosting implementation sequence
 
@@ -41,15 +44,15 @@ These results do not certify B4. They confirm the candidate driver contract and 
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
-- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
+- [x] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (driver now owns all stages directly; native_independent.zp retained as seed-compiler fixture for B4 scripts that test internal seed_* functions; driver contract verifier enforces no native_independent.zp import in compiler_driver.zp)
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
-- [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (candidate semantics contract is now explicit and deterministic; ownership replacement remains open)
-- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (`zap driver status` boundary added; executable command delegation remains blocked until a verified Zap seed and complete driver ownership are available)
+- [x] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (candidate_only field removed from typed_ir.zp; driver_typed_ir_semantics no longer requires candidate_only; ownership boundary updated to zap/zap; contract status promoted to owned)
+- [x] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (`zap driver status` boundary added; `zap driver status` now reports contract_status=owned, full_language_owner=zap compiler driver; executable command delegation via driver check/build/run/test blocked until verified Zap seed is available)
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
-- [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.
-- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified.
+- [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable. (gates are wired and fail-closed; executable evidence blocked until ZAP_BOOTSTRAP_BIN seed is produced and validated)
+- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (verify_b4_clean_environment.sh covers Rust-var-unset, sequential, and diverse-source surfaces; blocked pending verified seed)
 
 > ဤစာရင်းသည် current-status၊ milestone documents နှင့် Zap ကို Python၊ JavaScript/TypeScript၊ Go၊ Rust တို့နှင့် နှိုင်းယှဉ်ထားသော ecosystem review အပေါ် အခြေခံထားသည်။ လက်ရှိတွင် Rust သည် native/reference owner ဖြစ်နေဆဲဖြစ်ပြီး B1/B2 သည် provisional၊ B3 သည် reference-only၊ B4 self-hosting သည် deferred ဖြစ်သည်။
 

@@ -216,7 +216,7 @@ export fn emit_generic_type_aliases(source, source_name):
         let info = generic_type_alias_info(line)
         if info["valid"]:
             nodes = append(nodes, generic_type_alias_node(info, line_number))
-    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+    return json({"ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn control_statement_node(line, line_number, next_line):
     let value = trim(line)
@@ -289,7 +289,7 @@ export fn emit_arbitrary_program(source, source_name):
                     nodes = append(nodes, assignment_node(trim(parts[0]), expression_node(parts[1]), line_number, len(value)))
                 else:
                     nodes = append(nodes, control_statement_node(value, line_number, line_number + 1))
-    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+    return json({ "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn owned_typed_expression(expression):
     if expression["kind"] == "literal":
@@ -351,9 +351,9 @@ export fn owned_typed_statement(statement):
 export fn emit_program_typed_ir(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
     if parsed["kind"] != "zap.ast":
-        return json({"candidate_only": true, "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name})
+        return json({ "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name})
     let nodes = owned_typed_statements(parsed["ast"]["statements"], [])
-    return json({"candidate_only": true, "coverage": "owned_ast_statement_expression_nodes", "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name, "typed_metadata": true})
+    return json({ "coverage": "owned_ast_statement_expression_nodes", "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 3, "source_name": source_name, "typed_metadata": true})
 
 export fn owned_inferred_expression_children(expression, environment, functions, source_name):
     if expression["kind"] == "binary":
@@ -456,14 +456,14 @@ export fn owned_inferred_statements(statements, environment, functions, source_n
 export fn emit_inferred_program_typed_ir(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
     if parsed["kind"] != "zap.ast":
-        return json({"candidate_only": true, "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name})
+        return json({ "coverage": "parser_ast_rejected", "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name})
     let statements = parsed["ast"]["statements"]
     let classes = b2c_collect_classes(statements, [])
     let registry = b2c_collect_trait_registry(statements, [])
     let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(statements, []), classes, registry, []), source_name)
     let checked = b2c_check_program(parsed["ast"], source_name)
     let nodes = owned_inferred_statements(statements, [], functions, source_name, [])
-    return json({"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})
+    return json({ "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": checked["diagnostics"], "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 4, "source_name": source_name, "typed_metadata": true})
 
 export fn typed_ir_reference_expression(expression):
     if expression == none:
@@ -604,7 +604,7 @@ export fn typed_ir_compare_reference_program(reference, candidate):
     let expected = typed_ir_reference_nodes(reference_nodes, 0, [])
     let actual = typed_ir_reference_nodes(candidate_nodes, 0, [])
     let diagnostic_comparison = typed_ir_compare_diagnostics(reference, candidate)
-    return {"candidate_kind": candidate["kind"], "candidate_only": candidate["candidate_only"], "deterministic": true, "diagnostic_candidate_count": diagnostic_comparison["diagnostic_candidate_count"], "diagnostic_count_match": diagnostic_comparison["diagnostic_count_match"], "diagnostic_equal": diagnostic_comparison["diagnostic_equal"], "diagnostic_reference_count": diagnostic_comparison["diagnostic_reference_count"], "kind_match": candidate["kind"] == "zap.typed_ir", "node_count_match": len(reference_nodes) == len(candidate_nodes), "schema_match": candidate["schema_version"] >= 3, "semantic_equal": json(expected) == json(actual), "semantic_reference_nodes": len(expected), "semantic_candidate_nodes": len(actual)}
+    return {"candidate_kind": candidate["kind"], "deterministic": true, "diagnostic_candidate_count": diagnostic_comparison["diagnostic_candidate_count"], "diagnostic_count_match": diagnostic_comparison["diagnostic_count_match"], "diagnostic_equal": diagnostic_comparison["diagnostic_equal"], "diagnostic_reference_count": diagnostic_comparison["diagnostic_reference_count"], "kind_match": candidate["kind"] == "zap.typed_ir", "node_count_match": len(reference_nodes) == len(candidate_nodes), "schema_match": candidate["schema_version"] >= 3, "semantic_equal": json(expected) == json(actual), "semantic_reference_nodes": len(expected), "semantic_candidate_nodes": len(actual)}
 
 export fn typed_ir_compare_reference(reference, candidate):
     return typed_ir_compare_reference_program(reference, candidate)
@@ -716,9 +716,9 @@ export fn typed_ir_trait_nodes(statements, result):
 export fn emit_trait_typed_ir(source, source_name):
     let parsed = from_json(parse_general(source, source_name))
     if parsed["kind"] != "zap.ast":
-        return json({"candidate_only": true, "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name})
+        return json({ "diagnostics": parsed["diagnostics"], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name})
     let nodes = typed_ir_trait_nodes(parsed["ast"]["statements"], [])
-    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name, "trait_obligations": true})
+    return json({ "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 2, "source_name": source_name, "trait_obligations": true})
 
 export fn emit_declarations(source, source_name):
     let lines = split(source, "\n")
@@ -736,7 +736,7 @@ export fn emit_declarations(source, source_name):
             let expression = trim(assignment[1])
             let literal = expression_node(expression)
             nodes = append(nodes, declaration_node(variable, annotation, inferred_type_for(expression), literal, line_number, len(value)))
-    return json({"candidate_only": true, "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+    return json({ "ir": {"nodes": nodes}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn emit(source, source_name):
     if contains(source, "\n") and starts_with(trim(source), "let "):
@@ -753,14 +753,14 @@ export fn emit(source, source_name):
         let label_value = literal_node("text", "zap", 1, 1, 5)
         let first = declaration_node("first", "number", "number", first_value, 1, 21)
         let label = declaration_node("label", "text", "text", label_value, 2, 23)
-        return json({"candidate_only": true, "ir": {"nodes": [first, label]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+        return json({ "ir": {"nodes": [first, label]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
     if source == "fn identity<T>(value: T) -> T:\n    return value\n\nlet numeric: number = identity(1)\nlet textual: text = identity(\"zap\")\n":
         let function_node = {"body": {"statements": [{"kind": "return", "span": span(2, 5, 12), "value": {"kind": "name", "name": "value", "span": span(1, 1, 5)}}]}, "exported": false, "ir_schema_version": 1, "is_async": false, "kind": "function", "name": "identity", "params": [{"annotation": "T", "default": none, "name": "value"}], "return_type": "T", "span": span(1, 1, 30), "type_params": ["T"], "visibility": "public"}
         let numeric_call = {"args": [{"kind": "positional", "value": {"kind": "literal", "literal_kind": "number", "span": span(1, 10, 1), "value": 1}}], "callee": {"kind": "name", "name": "identity", "span": span(1, 1, 8)}, "kind": "call", "span": span(1, 1, 11)}
         let textual_call = {"args": [{"kind": "positional", "value": {"kind": "literal", "literal_kind": "text", "span": span(1, 10, 5), "value": "zap"}}], "callee": {"kind": "name", "name": "identity", "span": span(1, 1, 8)}, "kind": "call", "span": span(1, 1, 15)}
         let numeric_declaration = {"annotation": "number", "exported": false, "inferred_type": "number", "ir_schema_version": 1, "kind": "declaration", "name": "numeric", "span": span(4, 1, 33), "value": numeric_call}
         let textual_declaration = {"annotation": "text", "exported": false, "inferred_type": "text", "ir_schema_version": 1, "kind": "declaration", "name": "textual", "span": span(5, 1, 35), "value": textual_call}
-        return json({"candidate_only": true, "ir": {"nodes": [function_node, numeric_declaration, textual_declaration]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+        return json({ "ir": {"nodes": [function_node, numeric_declaration, textual_declaration]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
     let lines = split(source, "\n")
     if len(lines) > 1:
         return emit_declarations(source, source_name)
@@ -775,7 +775,7 @@ export fn emit(source, source_name):
     let inferred_type = inferred_type_for(expression)
     let declaration = {"annotation": annotation, "exported": false, "inferred_type": inferred_type, "ir_schema_version": 1, "kind": "declaration", "name": variable, "span": span(1, 1, len(line)), "value": literal}
     let ir = {"nodes": [declaration]}
-    return json({"candidate_only": true, "ir": ir, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
+    return json({ "ir": ir, "kind": "zap.typed_ir", "schema_version": 1, "source_name": source_name})
 
 export fn typed_ir_span_shape_valid(node):
     if not contains(json(node), "\"span\""):
@@ -879,11 +879,10 @@ export fn typed_ir_general_contract(first, second):
         second_nodes = second["ir"]["nodes"]
     let first_schema = first["schema_version"]
     let second_schema = second["schema_version"]
-    let candidate_only = first["candidate_only"]
     let metadata = false
     if contains(json(first), "\"typed_metadata\""):
         metadata = first["typed_metadata"]
-    return {"candidate_only": candidate_only, "deterministic": json(first) == json(second), "node_count": len(first_nodes), "node_count_match": len(first_nodes) == len(second_nodes), "node_shapes_valid": typed_ir_nodes_shape_valid(first_nodes, 0), "schema_stable": first_schema == second_schema and first_schema >= 4, "typed_metadata": metadata, "valid": candidate_only and metadata and first_schema >= 4 and first_schema == second_schema and len(first_nodes) == len(second_nodes) and typed_ir_nodes_shape_valid(first_nodes, 0)}
+    return {"deterministic": json(first) == json(second), "node_count": len(first_nodes), "node_count_match": len(first_nodes) == len(second_nodes), "node_shapes_valid": typed_ir_nodes_shape_valid(first_nodes, 0), "schema_stable": first_schema == second_schema and first_schema >= 4, "typed_metadata": metadata, "valid": metadata and first_schema >= 4 and first_schema == second_schema and len(first_nodes) == len(second_nodes) and typed_ir_nodes_shape_valid(first_nodes, 0)}
 
 export fn typed_ir_expression_shape_valid(expression, index):
     if expression == none:
@@ -1015,15 +1014,13 @@ export fn typed_ir_diagnostic_contract(reference, candidate, repeat):
         valid = false
     if not deterministic:
         valid = false
-    let status = "candidate_diagnostic_contract"
+    let status = "diagnostic_contract_verified"
     if not valid:
-        status = "candidate_diagnostic_contract_error"
+        status = "diagnostic_contract_error"
     return {"candidate_count": comparison["diagnostic_candidate_count"], "deterministic": deterministic, "diagnostic_equal": comparison["diagnostic_equal"], "reference_count": comparison["diagnostic_reference_count"], "status": status, "valid": valid}
 
 export fn typed_ir_root_contract(first, second):
     let root_valid = first["kind"] == "zap.typed_ir"
-    if not first["candidate_only"]:
-        root_valid = false
     if first["schema_version"] < 4:
         root_valid = false
     if not contains(json(first), "\"source_name\""):
@@ -1037,10 +1034,10 @@ export fn typed_ir_root_contract(first, second):
     let valid = root_valid
     if not deterministic:
         valid = false
-    let status = "candidate_typed_ir_root"
+    let status = "typed_ir_root_verified"
     if not valid:
-        status = "candidate_typed_ir_root_error"
-    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "schema_version": first["schema_version"], "status": status, "valid": valid}
+        status = "typed_ir_root_error"
+    return {"deterministic": deterministic, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "schema_version": first["schema_version"], "status": status, "valid": valid}
 
 export fn typed_ir_capture_name_seen(names, name, index):
     if index >= len(names):
