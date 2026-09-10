@@ -321,6 +321,17 @@ export fn driver_test_source(source, source_name):
     let acceptance = runner_acceptance(plan)
     return {"artifacts": result["artifacts"], "command": "test", "diagnostics": result["diagnostics"], "execution": result["execution"], "native_independent": false, "runner_contract": acceptance, "schema_version": 1, "source_name": result["source_name"], "status": "ok", "tests": 1, "passed": 1}
 
+export fn driver_command(command, source, source_name):
+    if command == "check":
+        return driver_check_source(source, source_name)
+    if command == "build":
+        return driver_build_source(source, source_name)
+    if command == "run":
+        return driver_run_source(source, source_name)
+    if command == "test":
+        return driver_test_source(source, source_name)
+    return driver_result(command, source_name, "error", [{"code": "ZAP-DRIVER-001", "message": "unsupported driver command: " + command, "severity": "error", "source_name": source_name}], [], {"error": "unsupported_command", "output": []})
+
 export fn driver_build_package(package_name, package_version, main, requirements, registry, source, source_name):
     let manifest_value = manifest(package_name, package_version, main, requirements)
     let graph = resolve_dependency_graph(requirements, registry)

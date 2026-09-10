@@ -29,13 +29,15 @@ assert data["pipeline"]["seed"] == "bootstrap/b4/compiler_driver.zp"
 assert data["determinism"]["seed_epoch"] == 0
 assert data["artifact"]["newline"] == "LF"
 PY
-for export in driver_parse_source driver_typecheck_source driver_normalize_module_name driver_module_name_matches driver_module_match_count driver_module_index driver_order_module driver_order_modules driver_module_graph_manifest driver_collect_imports driver_resolve_modules driver_modules_graph_replay driver_source_index driver_check_modules driver_build_modules driver_module_build_manifest driver_modules_rebuild driver_typed_ir_semantics driver_typed_ir_ownership driver_compile_backend driver_execute_owned_pipeline driver_check_source driver_build_source driver_run_source driver_test_source driver_build_package driver_artifact_record driver_canonical_artifacts driver_artifact_manifest driver_rebuild driver_subset_run driver_subset_rebuild; do
+for export in driver_parse_source driver_typecheck_source driver_normalize_module_name driver_module_name_matches driver_module_match_count driver_module_index driver_order_module driver_order_modules driver_module_graph_manifest driver_collect_imports driver_resolve_modules driver_modules_graph_replay driver_source_index driver_check_modules driver_build_modules driver_module_build_manifest driver_modules_rebuild driver_typed_ir_semantics driver_typed_ir_ownership driver_compile_backend driver_execute_owned_pipeline driver_check_source driver_build_source driver_run_source driver_test_source driver_command driver_build_package driver_artifact_record driver_canonical_artifacts driver_artifact_manifest driver_rebuild driver_subset_run driver_subset_rebuild; do
   grep -q "^export fn ${export}(" "$DRIVER" || fail "missing export: $export"
 done
 grep -q '"typed_ir"' "$DRIVER" || fail "canonical artifact order must include typed_ir"
 grep -q '"bytecode"' "$DRIVER" || fail "canonical artifact order must include bytecode"
 grep -q 'candidate_driver_rebuild_error' "$DRIVER" || fail "single-source rebuild must fail closed"
 grep -q 'candidate_driver_subset_rebuild_error' "$DRIVER" || fail "subset rebuild must fail closed"
+grep -q 'unsupported driver command' "$DRIVER" || fail "driver command dispatcher must reject unsupported commands"
+grep -q 'driver_command(command, source, source_name)' "$DRIVER" || fail "driver command dispatcher signature missing"
 if grep -q 'native_independent.zp' "$CONTRACT" "$DRIVER"; then
   fail "driver contract must not depend on the removed composite seed"
 fi
