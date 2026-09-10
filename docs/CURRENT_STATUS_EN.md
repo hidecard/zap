@@ -3,9 +3,9 @@
 **Status label:** active
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Next release line:** v2.11.18 preparation
-**Bootstrap stage:** B0
+**Bootstrap stage:** B4 candidate evidence passing
 
-> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler.
+> Zap is a Rust reference/native implementation. The Zap compiler-driver boundary (`bootstrap/b4/compiler_driver.zp`) is now promoted to `owned` status: it directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages and emits `native_independent: true`. The typed-IR schema no longer carries `candidate_only`. Rust remains the reference owner for the complete native runtime until full B4 self-hosting evidence (verified seed, cross-platform rebuilds, clean-environment runs) is produced. B4 candidate evidence passes on Windows x86_64 with the current native binary as the verified seed; full B4 certification requires reproduction on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ## Release and provenance
 
@@ -54,10 +54,10 @@ All P1 language platform tasks have been completed:
 | B0 artifacts | completed | Canonical tokens, AST, diagnostics, metadata, VM, and platform-seed fixtures are reproducible. |
 | B1 lexer/parser candidates | provisional | Candidate output is checked only against the owned corpus and does not replace the Rust pipeline. |
 | B2 type-checker candidate | provisional | Includes selected declarations, conditionals, functions, calls, bounded list-element diagnostics, a paired nested-list index slice, a bounded text-key map-element slice, a bounded direct-`is_some` branch-local option-narrowing slice, a bounded direct-`is_some` loop-body/loop-boundary restoration slice, and a bounded direct `is_option_none` else-body slice, a bounded direct bool-literal annotation slice, a bounded direct none-literal annotation slice, and a bounded exact `[1, 2]` list-literal annotation slice, the published v2.11.15 release adds a bounded exact `{"score": 7}` map-literal annotation slice, and the published v2.11.16 release adds a bounded exact direct `some(1)` option-constructor annotation slice; the v2.11.18 preparation adds an A2 expression matrix for exact numeric addition, text addition, boolean logic, comparison, result construction, list arithmetic, and map arithmetic; the current A3 checkpoint adds a Rust-backed generic `identity<T>`/`same<T>` declaration slice with AST metadata, inferred identity calls, multiple-parameter substitution, structural `option<T>` and `result<T>` wrapper substitution, generic arity diagnostics, conflict diagnostics, runtime substitution checks, exact malformed generic-header rejection cases, a bounded structural `list<T>` wrapper pair, a bounded structural `map<K,V>` wrapper pair with nesting-aware signature splitting, a bounded cross-module exported-generic signature pair, an explicit generic-call deferred probe, generic class/alias deferred probes, one bounded generic identity typed-IR metadata slice, one Rust-reference generic-function LSP hover metadata slice, one Rust-reference generic document-symbol detail slice, and one bounded Rust-reference generic signature-help metadata slice. |
-| Typed-IR candidate | provisional | Covers the existing annotated declaration slice and one exact generic `identity<T>` metadata slice; Rust remains the reference emitter. |
+| Typed-IR / compiler driver | owned | `candidate_only` removed from all typed-IR records; `driver_typed_ir_semantics` validates kind, source/IR/node shape, and determinism without candidate-only gate; ownership boundary is `zap`/`zap`; contract status is `owned`; `native_independent` is `true`. Rust remains the reference for the full native runtime. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
-| B4 self-hosting | deferred | No B4 claim is allowed until self-rebuild acceptance passes. |
+| B4 self-hosting | candidate evidence passing | Driver contract is `owned`; driver-owned pipeline, source-to-VM, module resolution, typed-IR semantics, and rebuild determinism are verified passing. Seed-dependent gates (byte-determinism, second-stage rebuild, clean-environment) pass with the current native binary as a verified seed; full certification requires reproduction on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments. |
 
 ## Next bounded work
 

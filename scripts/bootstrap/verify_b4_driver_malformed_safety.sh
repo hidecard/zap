@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# B4 driver-owned malformed-pipeline safety verification.
+#
+# Verifies that the Zap compiler driver handles malformed source safely
+# without crashing and produces deterministic syntax diagnostics.
+set -euo pipefail
+
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+cd "$ROOT_DIR"
+
+fail() { echo "B4 driver malformed-pipeline safety failed: $*" >&2; exit 1; }
+
+run_zap() {
+  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+    "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
+    "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
+    "$ROOT_DIR/native/target/debug/zap" "$@"
+  elif [[ -n "${ZAP_BOOTSTRAP_BIN:-}" && -x "$ZAP_BOOTSTRAP_BIN" ]]; then
+    "$ZAP_BOOTSTRAP_BIN" "$@"
+  elif ! command -v cargo >/dev/null 2>&1; then
+    echo "BLOCKED: no Zap runtime found; provide ZAP_BOOTSTRAP_BIN or build native/target/release/zap" >&2
+    return 2
+  else
+    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  fi
+}
+
+[ -f bootstrap/b4/compiler_driver.zp ]
+
+runner=$(mktemp "$ROOT_DIR/.zap-b4-malformed-safety.XXXXXX.zp")
+runner_rel=$(basename "$runner")
+out=$(mktemp)
+trap 'rm -f "$runner" "$out"' EXIT
+
+cat > "$runner" <<'ZP'
+import "bootstrap/b4/compiler_driver.zp"
+
+let first = driver_execute_owned_pipeline("let value: number =", "malformed.zp")
+let second = driver_execute_owned_pipeline("let value: number =", "malformed.zp")
+let valid = driver_execute_owned_pipeline("let value: number = 7\nsay value", "valid.zp")
+
+say first["status"]
+say first["error"]
+say first["stage_chain_valid"]
+say first["diagnostics"][0]["kind"]
+say first["diagnostics"][0]["diagnostics"][0]["code"]
+say json(first) == json(second)
+say valid["status"]
+say valid["execution"]["output"][0]
+ZP
+
+ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
+if [[ -x "$ZAP_BIN" ]]; then
+  "$ZAP_BIN" "$runner_rel" > "$out"
+else
+  run_zap "$runner_rel" > "$out"
+fi
+
+mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+if [[ "${lines[*]}" != "compile_error syntax_diagnostic false zap.diagnostics ZAP-SYNTAX-001 true pipeline_executed 7" ]]; then
+  echo "unexpected malformed pipeline output: ${lines[*]}" >&2
+  exit 1
+fi
+
+printf 'B4 driver malformed-pipeline safety gate passed: deterministic syntax diagnostic, no crash, invalid-stage boundary, and valid-source regression\n'

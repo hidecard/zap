@@ -20,12 +20,12 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let closure = seed_compile_source("fn make_adder(base):\n    fn add(value):\n        return base + value\n    return add\nlet add_two = make_adder(2)\nlet add_five = make_adder(5)\nsay add_two(3)\nsay add_five(3)", "closure.zp")
-let captured_text = seed_compile_source("fn make_message(prefix):\n    fn message(value):\n        return prefix + value\n    return message\nlet greet = make_message(\"hello \" )\nsay greet(\"zap\")", "captured_text.zp")
-let result = vm_run(closure["instructions"])
-let text_result = vm_run(captured_text["instructions"])
+let closure = driver_build_source("fn make_adder(base):\n    fn add(value):\n        return base + value\n    return add\nlet add_two = make_adder(2)\nlet add_five = make_adder(5)\nsay add_two(3)\nsay add_five(3)", "closure.zp")
+let captured_text = driver_build_source("fn make_message(prefix):\n    fn message(value):\n        return prefix + value\n    return message\nlet greet = make_message(\"hello \" )\nsay greet(\"zap\")", "captured_text.zp")
+let result = vm_run(closure["artifacts"][0]["bytes"])
+let text_result = vm_run(captured_text["artifacts"][0]["bytes"])
 say result["error"]
 say result["output"][0]
 say result["output"][1]

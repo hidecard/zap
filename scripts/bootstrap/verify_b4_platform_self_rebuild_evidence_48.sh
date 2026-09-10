@@ -43,7 +43,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "true false candidate_self_rebuild_evidence true false candidate_self_rebuild_blocked false" ]]; then
+if [[ "${lines[*]}" != "true false self_rebuild_evidence true false self_rebuild_blocked false" ]]; then
   echo "unexpected A12/A13 evidence output: ${lines[*]}" >&2
   exit 1
 fi

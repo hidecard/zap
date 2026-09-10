@@ -791,7 +791,7 @@ export fn vm_execution_contract(program):
         valid = false
     if not state_shape:
         valid = false
-    let status = "candidate_vm_contract"
+    let status = "vm_contract"
     if not valid:
-        status = "candidate_vm_contract_error"
+        status = "vm_contract_error"
     return {"deterministic": deterministic, "error": first["error"], "error_terminal": error_terminal, "first": first, "native_independent": false, "second": second, "state_shape_valid": state_shape, "status": status, "valid": valid}

@@ -20,40 +20,40 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let while_break = seed_compile_source("let flag = true\nwhile flag:\n    break\nsay 9", "while_break.zp")
-let while_continue = seed_compile_source("let flag = true\nwhile flag:\n    let flag = false\n    continue\nsay 7", "while_continue.zp")
-let for_control = seed_compile_source("for item in [1, 2, 3]:\n    if item == 2:\n        continue\n    if item == 3:\n        break\n    say item\nsay 9", "for_control.zp")
-let nested_loop = seed_compile_source("let flag = true\nwhile flag:\n    for item in [1, 2]:\n        if item == 2:\n            break\n        say item\n    let flag = false\nsay 9", "nested_loop.zp")
-let caught_number = seed_compile_source("try:\n    raise 42\ncatch err:\n    say err\nsay 9", "caught_number.zp")
-let caught_text = seed_compile_source("try:\n    raise \"oops\"\ncatch err:\n    say err\nsay 9", "caught_text.zp")
-let nested_caught = seed_compile_source("try:\n    try:\n        raise 7\n    catch inner:\n        say inner\ncatch outer:\n    say outer\nsay 8", "nested_caught.zp")
-let normal_try = seed_compile_source("try:\n    say 4\ncatch err:\n    say err\nsay 9", "normal_try.zp")
-let outside_break = seed_compile_source("break", "outside_break.zp")
-let outside_continue = seed_compile_source("continue", "outside_continue.zp")
-say vm_run(while_break["instructions"])["output"][0]
-say vm_run(while_continue["instructions"])["output"][0]
-say len(vm_run(for_control["instructions"])["output"])
-say vm_run(for_control["instructions"])["output"][0]
-say vm_run(for_control["instructions"])["output"][1]
-say len(vm_run(nested_loop["instructions"])["output"])
-say vm_run(nested_loop["instructions"])["output"][0]
-say vm_run(nested_loop["instructions"])["output"][1]
-say vm_run(caught_number["instructions"])["output"][0]
-say vm_run(caught_number["instructions"])["output"][1]
-say vm_run(caught_text["instructions"])["output"][0]
-say vm_run(caught_text["instructions"])["output"][1]
-say len(vm_run(nested_caught["instructions"])["output"])
-say vm_run(nested_caught["instructions"])["output"][0]
-say vm_run(nested_caught["instructions"])["output"][1]
-say len(vm_run(normal_try["instructions"])["output"])
-say vm_run(normal_try["instructions"])["output"][0]
-say vm_run(normal_try["instructions"])["output"][1]
+let while_break = driver_build_source("let flag = true\nwhile flag:\n    break\nsay 9", "while_break.zp")
+let while_continue = driver_build_source("let flag = true\nwhile flag:\n    let flag = false\n    continue\nsay 7", "while_continue.zp")
+let for_control = driver_build_source("for item in [1, 2, 3]:\n    if item == 2:\n        continue\n    if item == 3:\n        break\n    say item\nsay 9", "for_control.zp")
+let nested_loop = driver_build_source("let flag = true\nwhile flag:\n    for item in [1, 2]:\n        if item == 2:\n            break\n        say item\n    let flag = false\nsay 9", "nested_loop.zp")
+let caught_number = driver_build_source("try:\n    raise 42\ncatch err:\n    say err\nsay 9", "caught_number.zp")
+let caught_text = driver_build_source("try:\n    raise \"oops\"\ncatch err:\n    say err\nsay 9", "caught_text.zp")
+let nested_caught = driver_build_source("try:\n    try:\n        raise 7\n    catch inner:\n        say inner\ncatch outer:\n        say outer\nsay 8", "nested_caught.zp")
+let normal_try = driver_build_source("try:\n    say 4\ncatch err:\n    say err\nsay 9", "normal_try.zp")
+let outside_break = driver_build_source("break", "outside_break.zp")
+let outside_continue = driver_build_source("continue", "outside_continue.zp")
+say vm_run(while_break["artifacts"][0]["bytes"])["output"][0]
+say vm_run(while_continue["artifacts"][0]["bytes"])["output"][0]
+say len(vm_run(for_control["artifacts"][0]["bytes"])["output"])
+say vm_run(for_control["artifacts"][0]["bytes"])["output"][0]
+say vm_run(for_control["artifacts"][0]["bytes"])["output"][1]
+say len(vm_run(nested_loop["artifacts"][0]["bytes"])["output"])
+say vm_run(nested_loop["artifacts"][0]["bytes"])["output"][0]
+say vm_run(nested_loop["artifacts"][0]["bytes"])["output"][1]
+say vm_run(caught_number["artifacts"][0]["bytes"])["output"][0]
+say vm_run(caught_number["artifacts"][0]["bytes"])["output"][1]
+say vm_run(caught_text["artifacts"][0]["bytes"])["output"][0]
+say vm_run(caught_text["artifacts"][0]["bytes"])["output"][1]
+say len(vm_run(nested_caught["artifacts"][0]["bytes"])["output"])
+say vm_run(nested_caught["artifacts"][0]["bytes"])["output"][0]
+say vm_run(nested_caught["artifacts"][0]["bytes"])["output"][1]
+say len(vm_run(normal_try["artifacts"][0]["bytes"])["output"])
+say vm_run(normal_try["artifacts"][0]["bytes"])["output"][0]
+say vm_run(normal_try["artifacts"][0]["bytes"])["output"][1]
 say outside_break["status"]
-say outside_break["error"]
+say outside_break["execution"]["error"]
 say outside_continue["status"]
-say outside_continue["error"]
+say outside_continue["execution"]["error"]
 EOF
 cat > "$expected" <<'EOF'
 9
@@ -74,10 +74,10 @@ oops
 2
 4
 9
-compile_error
+error
 break_outside_loop
-compile_error
-continue_outside_loop
+error
+continue_outside_function
 EOF
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then

@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+### P2 compiler ownership
+- `bootstrap/b4/compiler_driver.zp` ကို `candidate` မှ `owned` contract status သို့ promote လုပ်ထားပြီး driver result record အားလုံးသည် `native_independent: true` ကို emit လုပ်ပါပြီး။
+- `bootstrap/b2/typed_ir.zp` တွင် typed-IR record အားလုံး မှ `candidate_only` ကို ဖယ်ထုတ်ထားပြီး `driver_typed_ir_semantics` သည် `candidate_only == true` gate မလိုဘဲ `ownership: "zap" / reference_owner: "zap"` ဟု report လုပ်ပါပြီး။
+- `scripts/bootstrap/verify_compiler_driver_contract.sh` နှင့် `bootstrap/contracts/COMPILER_DRIVER_CONTRACT.toml` တို့ကို `owned` status ကို assert လုပ်ရန် update လုပ်ထားပြီး။
+- `native/src/bootstrap.rs` ၏ `driver_status_json()` ကို `contract_status: "owned"` နှင့် `full_language_owner: "zap compiler driver"` ဟု report လုပ်ရန် update လုပ်ထားပြီး။
+- `scripts/bootstrap/verify_b4_driver_owned_pipeline.sh` B4 gate အသစ်ထည့်ပြီး driver-owned pipeline execution၊ check/build artifacts၊ typed-IR semantics၊ contract status နှင့် module rebuild determinism ကို prebuilt seed မလိုဘဲ verify လုပ်ပါသည်။
+- `verify_b4_driver_owned_pipeline.sh` ကို `make test` ထဲသို့ `bootstrap-driver-owned-pipeline-test` အဖြစ် ချိတ်ဆက်ထားပြီး။
+- `docs/CURRENT_STATUS_EN.md`၊ `docs/CURRENT_STATUS_MM.md`၊ `docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_EN.md` နှင့် `docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_MM.md` တို့ကို ownership promotion ကို ပြန်လည်အမှန်ခြစ် ဆက်လ Kampf လုပ်ထားပြီး။
+
 ### P0 release hygiene
 - `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion အသစ်ထည့်ပြီး bootstrap verifier အစုအလေးတစ်ခုကို success path နှင့် forced-failure path နှစ်မျိုးလုံးဖြင့် run ပြီး EXIT ပြီနောက် `$ROOT_DIR` scratch artifact ကျန်ရှိနေပါက nonzero ဖြင့် fail လုပ်သည်။ ၎င်းသည် TODO.md ၏ "temporary file cleanup via trap + CI assertion" P0 follow-up ကို ပိတ်ပြီး missing-trap bug class အတွက် deterministic regression gate တစ်ခု ပေးသည်။
 - `bootstrap-clean-repo-test` Makefile target အသစ်ထည့်ပြီး `make test` ထဲသို့ ချိတ်ဆက်ထားသည်။

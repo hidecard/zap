@@ -39,14 +39,14 @@ pub(crate) fn driver_status_json() -> String {
     json!({
         "contract_id": "ZAP-COMPILER-DRIVER",
         "contract_schema_version": 1,
-        "contract_status": "candidate",
+        "contract_status": "owned",
         "delegation_ready": false,
         "driver_source": "bootstrap/b4/compiler_driver.zp",
-        "full_language_owner": "native Rust implementation",
+        "full_language_owner": "zap compiler driver",
         "seed": seed,
         "seed_required": true,
         "self_hosted": false,
-        "status": "candidate_driver_boundary",
+        "status": "driver_owned",
         "supported_commands": ["check", "build", "run", "test"]
     })
     .to_string()
@@ -642,15 +642,16 @@ mod tests {
     }
 
     #[test]
-    fn driver_status_is_explicit_candidate_and_fail_closed() {
+    fn driver_status_is_owned_and_fail_closed() {
         let status: serde_json::Value =
             serde_json::from_str(&driver_status_json()).expect("driver status JSON");
         assert_eq!(status["contract_id"], "ZAP-COMPILER-DRIVER");
-        assert_eq!(status["contract_status"], "candidate");
+        assert_eq!(status["contract_status"], "owned");
         assert_eq!(status["delegation_ready"], false);
-        assert_eq!(status["full_language_owner"], "native Rust implementation");
+        assert_eq!(status["full_language_owner"], "zap compiler driver");
         assert_eq!(status["seed_required"], true);
         assert_eq!(status["self_hosted"], false);
+        assert_eq!(status["status"], "driver_owned");
         assert_eq!(
             status["supported_commands"],
             serde_json::json!(["check", "build", "run", "test"])

@@ -35,7 +35,7 @@ Supported platform အားလုံးတွင် row အားလုံး p
 
 ## လက်ရှိအခြေအနေ
 
-Zap တွင် Rust-free seed pipeline နှင့် Zap-owned compiler candidates အချို့ ရှိသော်လည်း full-language self-hosting path ကို မအသိအမှတ်ပြုရသေးပါ။ နောက်တစ်ဆင့်သည် complete Zap compiler driver ဖြင့် acceptance row အားလုံးကို executable ဖြစ်အောင်လုပ်ပြီး candidate seed entrypoint ကို အစားထိုးရန် ဖြစ်သည်။
+Zap တွင် verified `ZAP_BOOTSTRAP_BIN` seed (current native binary) နှင့် `bootstrap/b4/compiler_driver.zp` (contract status `owned`) ပါသော Zap-owned compiler driver ရှိပြီး ၎င်းသည် lexer/parser/module-resolution/typecheck/lower/VM/package အဆင့်များကို တိုက်ရိုက်ဦးစီပေးပါပြီး typed-IR schema တွင် `candidate_only` မပါဝင်ပါ။ Driver-owned pipeline၊ source-to-VM၊ module resolution၊ typed-IR semantics၊ byte-determinism၊ second-stage rebuild နှင့် clean-environment gates အားလုံး current seed ဖြင့် အောင်မြင်ပါသည်။ Full B4 certification ရရှိရန် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 clean environments တို့တွင် platform-native seeds ဖြင့် ထပ်မံ verify လုပ်ရန် လိုအပ်ပါသည်။
 
 ## ကိုးကားချက်များ
 

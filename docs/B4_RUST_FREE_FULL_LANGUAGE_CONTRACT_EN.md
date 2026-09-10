@@ -43,11 +43,11 @@ The repository-level integrity gate is:
 scripts/bootstrap/verify_b4_rust_free_contract.sh
 ```
 
-The gate validates the contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until the full source-to-VM and self-rebuild acceptance implementation exists; this prevents a subset implementation from being advertised as B4.
+The gate validates the contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until the full source-to-VM and self-rebuild acceptance implementation exists; this prevents a subset implementation from being advertised as B4. A new `verify_b4_driver_owned_pipeline.sh` gate verifies driver-owned pipeline execution, check/build artifacts, typed-IR semantics, contract status, and module rebuild determinism without requiring a prebuilt seed.
 
 ## Current status
 
-Zap has a Rust-free seed pipeline and several Zap-owned compiler candidates, but the full-language self-hosting path is not yet certified. The next promotion gate is to replace the current candidate seed entrypoint with a complete Zap compiler driver and make every acceptance row executable through that driver.
+Zap has a verified `ZAP_BOOTSTRAP_BIN` seed (current native binary) and a Zap-owned compiler driver (`bootstrap/b4/compiler_driver.zp`, contract status `owned`) that directly owns lexer/parser/module-resolution/typecheck/lower/VM/package stages. The typed-IR schema no longer carries `candidate_only`. Driver-owned pipeline, source-to-VM, module resolution, typed-IR semantics, byte-determinism, second-stage rebuild, and clean-environment gates all pass with the current seed. Full B4 certification requires reproducing this evidence on Linux x86_64, macOS ARM64, and Windows x86_64 clean environments with platform-native seeds.
 
 ## References
 
