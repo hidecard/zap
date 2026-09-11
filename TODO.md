@@ -22,6 +22,7 @@
 - **Completed in the user-command integration slice:** `verify_b4_user_commands_50.sh` now verifies fresh-process `check`, `build`, `run`, `test`, package-build, and compiler-rebuild contracts; the production dependency boundary gate confirms Zap-owned sources do not silently fall back to Rust/Cargo/native implementations.
 - **Completed in the frontend ownership slice:** `driver_frontend_ownership()` explicitly describes the Zap-owned lexer, parser, and module-resolution boundary; `verify_b4_frontend_ownership_slice.sh` executes the Zap path, checks parser output and ambiguous-module diagnostics, and records `complete_language=false` / `reference_owner=rust` so this milestone does not overclaim certification.
 - **Completed in the lexer corpus expansion slice:** `verify_b1_full_language_corpus.sh` now discovers 192 tracked, non-negative bootstrap fixture sources, runs the Zap lexer twice per source in fresh processes, validates token-stream schema/end markers, records a deterministic corpus-manifest digest, and is wired into Makefile and GitHub Actions CI. Negative lexer diagnostics remain covered by `verify_b1_lexer.sh`.
+- **Completed in the parser corpus expansion slice:** `verify_b1_full_language_parser.sh` now verifies all 62 tracked parser fixtures (56 AST cases and 6 diagnostics cases), deterministic replay, AST/diagnostic schemas, syntax-feature coverage, and reference-oracle separation. The nested grouped-subtraction path was moved to the token-driven parser to eliminate a `char_at` crash; `while ... else` remains explicitly reported as one unsupported syntax gap rather than being silently accepted.
 - **Typed-IR ownership promotion slice:** `driver_typed_ir_ownership()` now promotes only schema-4, checker-inferred, diagnostic-free, shape-valid, deterministic typed-IR records to `ownership=zap_owned` with `reference_owner=zap`; `driver_promote_typed_ir()` now makes backend lowering/VM execution fail closed unless that promotion succeeds. Older or incomplete records remain `ownership=candidate` and fail closed.
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
@@ -41,6 +42,9 @@
 | `verify_b4_driver_module_resolution_errors.sh` | Passed | Missing, duplicate, ambiguous, and cyclic module diagnostics remain stable. |
 | `verify_b1_full_language_corpus.sh` | Passed | 192 tracked fixture sources produced deterministic schema-valid token streams with end markers. |
 | `verify_b1_lexer.sh` | Passed | Positive token fixtures and negative diagnostics remain compatible with the reference expectations. |
+| `verify_b1_full_language_parser.sh` | Passed | 62 parser fixtures passed deterministic replay, schema checks, syntax coverage, and oracle-boundary checks; one unsupported `while ... else` fixture is reported. |
+| `verify_b1_parser_candidate.sh` | Passed | Zap parser candidate differential regression passed. |
+| `verify_b1_parser.sh` | Passed | Reference parser diagnostics regression passed. |
 
 These results establish command-contract and cross-platform build evidence;
 they do not yet prove Rust-free self-hosting or full-language ownership.
@@ -88,7 +92,7 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
-- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (lexer corpus now covers 192 tracked fixture sources; complete language ownership and Rust-free seed evidence remain open)
+- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (lexer corpus covers 192 tracked sources and parser corpus covers 62 fixtures; `while ... else`, complete language ownership, and Rust-free seed evidence remain open)
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
 - [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)

@@ -310,6 +310,14 @@ export fn parse_expression(raw, start_column):
 
         return name(value, start_column)
 
+    # The legacy string splitter cannot safely preserve nested grouped spans
+    # when a grouped multiplication is followed by subtraction. Delegate that
+    # shape to the token-driven Zap parser instead of allowing a char_at panic.
+    if starts_with(value, "(") and contains(value, ") - "):
+        let tokenized = from_json(lex(value, "<expression>"))
+        let token_result = token_expression(tokenized["tokens"], 0, 0)
+        return rebase_expression_span(token_result["node"], 0, start_column - 1)
+
     if starts_with(value, "if ") and contains(value, " then ") and contains(value, " else "):
 
         let then_parts = split(value, " then ")

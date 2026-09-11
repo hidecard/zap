@@ -146,6 +146,9 @@ jobs:
       - name: Verify B1 full-language lexer corpus
         run: scripts/bootstrap/verify_b1_full_language_corpus.sh
 
+      - name: Verify B1 full-language parser corpus
+        run: scripts/bootstrap/verify_b1_full_language_parser.sh
+
       - name: Verify B1 lexer ownership contract
         run: scripts/bootstrap/verify_b1_lexer_contract.sh
 
