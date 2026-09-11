@@ -20,6 +20,7 @@
 - **Completed in the module-error evidence slice:** a dedicated verifier now covers missing, duplicate, ambiguous, and cyclic imports with stable `ZAP-MODULE-002` through `ZAP-MODULE-005` diagnostics, and the gate is wired into the Makefile aggregate test path.
 - **Completed in the command-dispatch slice:** `driver_command()` now provides one deterministic Zap-owned entry point for `check`, `build`, `run`, and `test`, and returns stable `ZAP-DRIVER-001` diagnostics for unsupported commands; the native CLI now returns stable `ZAP-DRIVER-002` diagnostics for blocked delegation instead of a generic usage error.
 - **Completed in the user-command integration slice:** `verify_b4_user_commands_50.sh` now verifies fresh-process `check`, `build`, `run`, `test`, package-build, and compiler-rebuild contracts; the production dependency boundary gate confirms Zap-owned sources do not silently fall back to Rust/Cargo/native implementations.
+- **Completed in the frontend ownership slice:** `driver_frontend_ownership()` explicitly describes the Zap-owned lexer, parser, and module-resolution boundary; `verify_b4_frontend_ownership_slice.sh` executes the Zap path, checks parser output and ambiguous-module diagnostics, and records `complete_language=false` / `reference_owner=rust` so this milestone does not overclaim certification.
 - **Typed-IR ownership promotion slice:** `driver_typed_ir_ownership()` now promotes only schema-4, checker-inferred, diagnostic-free, shape-valid, deterministic typed-IR records to `ownership=zap_owned` with `reference_owner=zap`; `driver_promote_typed_ir()` now makes backend lowering/VM execution fail closed unless that promotion succeeds. Older or incomplete records remain `ownership=candidate` and fail closed.
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
@@ -35,6 +36,8 @@
 | `verify_b4_user_commands_50.sh` | Passed | Fresh-process user-command, package, and rebuild contracts passed. |
 | `verify_production_dependency_boundary_51.sh` | Passed | Production Zap source path contains no Rust/Cargo/native fallback. |
 | `verify_compiler_driver_contract.sh` | Passed | Driver exports and deterministic policy remain valid. |
+| `verify_b4_frontend_ownership_slice.sh` | Passed | Zap lexer/parser/module-resolution path and explicit non-certification boundary passed. |
+| `verify_b4_driver_module_resolution_errors.sh` | Passed | Missing, duplicate, ambiguous, and cyclic module diagnostics remain stable. |
 
 These results establish command-contract and cross-platform build evidence;
 they do not yet prove Rust-free self-hosting or full-language ownership.
@@ -82,7 +85,7 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
-- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (module resolution/error handling evidence is complete; full lexer/parser ownership remains open)
+- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (first Zap-owned frontend slice is now executable; complete language coverage and Rust-free seed evidence remain open)
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
 - [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)

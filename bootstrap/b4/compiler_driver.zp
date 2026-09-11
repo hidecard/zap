@@ -3,11 +3,15 @@
 # This module fixes the user-facing command contract while the underlying
 # compiler stages are migrated from candidate slices to the complete language.
 import "bootstrap/b4/runner.zp"
+import "bootstrap/b1/lexer.zp"
 import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b3/vm.zp"
 import "bootstrap/b3/package.zp"
+
+export fn driver_frontend_ownership():
+    return {"components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
 
 export fn driver_normalize_source(source):
     let without_bom = replace(source, "\ufeff", "")
