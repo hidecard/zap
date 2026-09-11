@@ -19,11 +19,46 @@
 - **Completed in the graph-evidence slice:** the driver now emits canonical module records and dependency edges, replays graph resolution twice, compares graph manifests byte-for-byte, and includes a minimal dependent-module fixture in the contract gate.
 - **Completed in the module-error evidence slice:** a dedicated verifier now covers missing, duplicate, ambiguous, and cyclic imports with stable `ZAP-MODULE-002` through `ZAP-MODULE-005` diagnostics, and the gate is wired into the Makefile aggregate test path.
 - **Completed in the command-dispatch slice:** `driver_command()` now provides one deterministic Zap-owned entry point for `check`, `build`, `run`, and `test`, and returns stable `ZAP-DRIVER-001` diagnostics for unsupported commands; the native CLI now returns stable `ZAP-DRIVER-002` diagnostics for blocked delegation instead of a generic usage error.
+- **Completed in the user-command integration slice:** `verify_b4_user_commands_50.sh` now verifies fresh-process `check`, `build`, `run`, `test`, package-build, and compiler-rebuild contracts; the production dependency boundary gate confirms Zap-owned sources do not silently fall back to Rust/Cargo/native implementations.
 - **Typed-IR ownership promotion slice:** `driver_typed_ir_ownership()` now promotes only schema-4, checker-inferred, diagnostic-free, shape-valid, deterministic typed-IR records to `ownership=zap_owned` with `reference_owner=zap`; `driver_promote_typed_ir()` now makes backend lowering/VM execution fail closed unless that promotion succeeds. Older or incomplete records remain `ownership=candidate` and fail closed.
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
 
+### Verification run after latest CI-passed pull (2026-09-11)
+
+| Evidence | Result | Interpretation |
+|---|---|---|
+| GitHub Actions `Rust quality checks` | Passed | Latest `master` commit `1f43597` passed the Rust quality job. |
+| GitHub Actions `Build Linux x86_64` | Passed | Linux release build completed. |
+| GitHub Actions `Build Windows x86_64` | Passed | Windows release build completed. |
+| GitHub Actions `Build macOS ARM64` | Passed | macOS ARM64 release build completed. |
+| `verify_b4_user_commands_50.sh` | Passed | Fresh-process user-command, package, and rebuild contracts passed. |
+| `verify_production_dependency_boundary_51.sh` | Passed | Production Zap source path contains no Rust/Cargo/native fallback. |
+| `verify_compiler_driver_contract.sh` | Passed | Driver exports and deterministic policy remain valid. |
+
+These results establish command-contract and cross-platform build evidence;
+they do not yet prove Rust-free self-hosting or full-language ownership.
+
 ### Verification run after latest pull (2026-09-10)
+
+### Verification run after bounded-memory fix and push (2026-09-10)
+
+| Gate | Result | Interpretation |
+|---|---|---|
+| `verify_b4_byte_determinism.sh` | Passed | Front-end artifact families run in fresh processes; typed-IR and backend replay are delegated to bounded dedicated gates. |
+| `verify_b4_second_stage_rebuild.sh` | Passed | Six deterministic second-stage verification cases passed with the current native seed. |
+| `verify_b4_clean_environment.sh` | Passed | Five clean-environment cases passed, including no-Rust-variable and state-isolation checks. |
+| `verify_b4_typed_ir_source_rebuild_37.sh` | Passed | Zap source → typed-IR → bytecode/VM handoff and reproducible rebuild passed. |
+| `verify_b4_source_to_vm_10.sh` | Passed | Ten bounded source-to-VM acceptance cases passed. |
+| `verify_b4_owned_pipeline_42.sh` | Passed | Owned pipeline linkage, digest replay, and failure boundary passed. |
+| `verify_compiler_driver_contract.sh` | Passed | Driver exports, deterministic policy, and fail-closed rebuild checks passed. |
+
+The byte-determinism gate now isolates front-end artifact families into fresh
+processes and uses the dedicated typed-IR/backend gates for larger candidate
+graphs. The normal application memory profile remains 64 MiB; the typed-IR
+verification may use the explicitly bounded `ZAP_MEMORY_BUDGET_BYTES` profile,
+capped by the native runtime. These results are Linux checkout evidence only;
+they do not certify full-language B4 ownership or cross-platform self-hosting.
 
 | Gate | Result | Interpretation |
 |---|---|---|
@@ -47,15 +82,15 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
-- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver.
+- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (module resolution/error handling evidence is complete; full lexer/parser ownership remains open)
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
 - [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)
-- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (`driver_command()` now owns the command dispatch contract; executable native CLI delegation remains blocked until a verified Zap seed and complete driver ownership are available)
+- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (command contract/integration gate passes; executable native CLI delegation remains blocked until a verified Zap seed and complete driver ownership are available)
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
 - [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.
-- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified.
+- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (latest CI proves cross-platform builds, not clean-environment self-hosting)
 
 > ဤစာရင်းသည် current-status၊ milestone documents နှင့် Zap ကို Python၊ JavaScript/TypeScript၊ Go၊ Rust တို့နှင့် နှိုင်းယှဉ်ထားသော ecosystem review အပေါ် အခြေခံထားသည်။ လက်ရှိတွင် Rust သည် native/reference owner ဖြစ်နေဆဲဖြစ်ပြီး B1/B2 သည် provisional၊ B3 သည် reference-only၊ B4 self-hosting သည် deferred ဖြစ်သည်။
 
