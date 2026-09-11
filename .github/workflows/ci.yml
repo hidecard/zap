@@ -199,6 +199,12 @@ jobs:
           path: target/compiler-ownership.tsv
           if-no-files-found: warn
 
+      - name: Verify B4 typed-IR to VM execution
+        run: bash scripts/bootstrap/verify_b4_typed_ir_to_vm_27.sh
+      - name: Verify B4 VM execution contract
+        run: bash scripts/bootstrap/verify_b4_vm_execution_contract_47.sh
+      - name: Verify B4 owned package build
+        run: bash scripts/bootstrap/verify_b4_owned_package_build_45.sh
       - name: Verify B4 owned source-to-VM pipeline
         run: bash scripts/bootstrap/verify_b4_owned_pipeline_42.sh
 
