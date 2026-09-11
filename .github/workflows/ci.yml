@@ -199,6 +199,18 @@ jobs:
           path: target/compiler-ownership.tsv
           if-no-files-found: warn
 
+      - name: Verify production dependency boundary
+        env:
+          PRODUCTION_DEPENDENCY_REPORT: target/production-dependency-boundary.tsv
+        run: bash scripts/bootstrap/verify_production_dependency_boundary_51.sh
+      - name: Upload production dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-production-dependency-${{ github.sha }}
+          path: target/production-dependency-boundary.tsv
+          if-no-files-found: warn
+
       - name: Verify B4 user-facing command integration
         env:
           B4_USER_COMMAND_REPORT: target/b4-user-commands.tsv

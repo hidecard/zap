@@ -46,7 +46,8 @@
 - [x] B4 owned source-to-VM integration gate ကို CI ထဲ ထည့်ပြီး Zap source → inferred typed-IR → bytecode → VM, digest linkage, deterministic replay နှင့် failure boundary ကို စစ်ဆေးနိုင်စေပါသည်။
 - [ ] B3 lowerer, bytecode, VM, package/build နှင့် runtime ကို sample fixture မဟုတ်ဘဲ compiler source အပြည့်အဝအတွက် run စေပြီး `zap build/test/run/package` user-facing integration test တစ်ခုတည်းအဖြစ် စုစည်းပါ။ Owned pipeline gate သည် bounded acceptance fixture ဖြစ်ပြီး full compiler command proof ကို အစားမထိုးပါ။
 - [ ] Standard library, filesystem/network/process adapters, async scheduler နှင့် resource limits များအတွက် stable ABI/permission contract နှင့် cross-platform tests ထည့်ပါ။
-- [ ] Rust implementation ကို `reference/` သို့မဟုတ် `legacy/` boundary သို့ ရွှေ့ပြီး normal production path တွင် `native/src`, `cargo`, `rustc`, `rustup` မပါကြောင်း dependency scanner ဖြင့် စစ်ပါ။
+- [x] `bootstrap/b1`–`bootstrap/b4` Zap production source path များတွင် `cargo`, `rustc`, `rustup`, `native/src` နှင့် `host/zap-host` fallback မပါကြောင်း production dependency-boundary scanner နှင့် CI evidence report ထည့်ထားပါသည်။
+- [ ] Rust implementation ကို `reference/` သို့မဟုတ် `legacy/` boundary သို့ အမှန်တကယ်ရွှေ့ပြီး release artifact ထဲတွင် Rust toolchain မပါကြောင်း dependency scanner ဖြင့် စစ်ပါ။ Source-path scanner သည် physical repository move နှင့် release artifact scan ကို အစားမထိုးပါ။
 
 #### P1 — Cross-platform နှင့် reproducible release
 
