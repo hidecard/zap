@@ -49,6 +49,12 @@ jobs:
       - name: Build binary for version validation
         run: cargo build --release --locked --manifest-path native/Cargo.toml
 
+      - name: Provision prebuilt Zap bootstrap seed
+        run: |
+          test -x "$GITHUB_WORKSPACE/native/target/release/zap"
+          echo "ZAP_BOOTSTRAP_BIN=$GITHUB_WORKSPACE/native/target/release/zap" >> "$GITHUB_ENV"
+          echo "ZAP_BIN=$GITHUB_WORKSPACE/native/target/release/zap" >> "$GITHUB_ENV"
+
       - name: Validate release version consistency
         env:
           ZAP_VERSION_REPORT: target/version-consistency.tsv

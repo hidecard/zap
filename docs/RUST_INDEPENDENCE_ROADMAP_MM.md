@@ -32,6 +32,7 @@
 
 - [ ] Legacy `bootstrap/BASELINE_B0.md` နှင့် `BOOTSTRAP_CONTRACT_MM.md` တွင် B0 သတ်မှတ်ချက်သည် historical baseline လား current gate လား ရှင်းလင်းပါ။ Current status ကို B4 evidence နှင့် မတိုက်မိအောင် migration/status note ထည့်ပါ။
 - [ ] `README.md`, `README_MM.md`, documentation navigation, release notes နှင့် status pages အားလုံးတွင် B4 claim ကို တူညီသော wording ဖြင့် update လုပ်ပါ။ “B4 contract certified” နှင့် “public release fully self-hosted” ကို သီးခြားခွဲရေးပါ။
+- [x] CI quality job သည် release Zap binary ကို build ပြီး `ZAP_BOOTSTRAP_BIN` နှင့် `ZAP_BIN` အဖြစ် B4 byte-determinism/second-stage/clean-environment gates များမတိုင်မီ provision လုပ်ထားပါသည်။
 - [ ] B4 acceptance artifacts, CI run URL/SHA, target-platform evidence, checksum/SBOM/provenance နှင့် rollback procedure များကို release evidence bundle အဖြစ် archive လုပ်ပါ။
 - [x] Candidate compiler-driver အတွက် `check`, `build`, `run`, `test`, `package` နှင့် `compiler rebuild` user-command integration gate ကို fresh-process CI verification ဖြင့် ထည့်ထားပါသည်။
 - [ ] `zap build`, `zap test`, `zap run`, `zap package`, `zap compiler rebuild` command တစ်ခုချင်းစီ၏ Rust/Cargo မပါသော **production CLI** proof ကို clean-machine transcript ဖြင့် ထည့်ပါ။ Candidate driver gate သည် production executable/clean-machine proof ကို အစားမထိုးပါ။
