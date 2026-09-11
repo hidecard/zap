@@ -199,6 +199,18 @@ jobs:
           path: target/compiler-ownership.tsv
           if-no-files-found: warn
 
+      - name: Verify B4 user-facing command integration
+        env:
+          B4_USER_COMMAND_REPORT: target/b4-user-commands.tsv
+        run: bash scripts/bootstrap/verify_b4_user_commands_50.sh
+      - name: Upload B4 user-command evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-user-commands-${{ github.sha }}
+          path: target/b4-user-commands.tsv
+          if-no-files-found: warn
+
       - name: Verify B4 typed-IR to VM execution
         run: bash scripts/bootstrap/verify_b4_typed_ir_to_vm_27.sh
       - name: Verify B4 VM execution contract
