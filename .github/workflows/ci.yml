@@ -197,6 +197,8 @@ jobs:
         run: scripts/bootstrap/verify_b3_foundations.sh
       - name: Verify B3 typed-IR to bytecode lowering contract
         run: bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
+      - name: Verify B3 bytecode disassembler contract
+        run: bash scripts/bootstrap/verify_b3_bytecode_disassembler_13.sh
 
       - name: Verify reference VM and platform seed
         run: scripts/bootstrap/verify_vm_platform.sh

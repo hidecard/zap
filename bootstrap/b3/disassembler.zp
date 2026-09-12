@@ -1,0 +1,16 @@
+# Canonical, deterministic bytecode inspection for the Zap-owned B3 format.
+# The structured result is the stable contract; a CLI renderer can consume it.
+export fn disassemble_instruction(instruction, index):
+    return {"index": index, "instruction": instruction, "text": json(instruction)}
+
+export fn disassemble_bytecode(bytecode):
+    if bytecode["kind"] != "zap.bytecode":
+        return {"diagnostics": [{"code": "ZAP-BYTECODE-001", "message": "invalid bytecode kind"}], "kind": "zap.disassembly", "lines": [], "schema_version": 1, "status": "error"}
+    if bytecode["schema_version"] != 1:
+        return {"diagnostics": [{"code": "ZAP-BYTECODE-002", "message": "unsupported bytecode schema"}], "kind": "zap.disassembly", "lines": [], "schema_version": 1, "status": "error"}
+    let lines = []
+    let index = 0
+    for instruction in bytecode["instructions"]:
+        lines = append(lines, disassemble_instruction(instruction, index))
+        index = index + 1
+    return {"diagnostics": [], "instruction_count": len(lines), "kind": "zap.disassembly", "lines": lines, "schema_version": 1, "status": "ok"}
