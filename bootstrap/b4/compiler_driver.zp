@@ -13,6 +13,9 @@ import "bootstrap/b3/package.zp"
 export fn driver_frontend_ownership():
     return {"acceptance": {"lexer_corpus": {"fixture_count": 192, "status": "verified_deterministic_token_streams"}, "module_resolution": {"diagnostic_count": 5, "status": "verified_deterministic_graph_and_errors"}, "parser_corpus": {"fixture_count": 62, "status": "verified_deterministic_ast_and_diagnostics"}}, "components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
 
+export fn driver_verified_frontend_acceptance():
+    return {"complete_language": false, "components": [{"acceptance": "192 lexer fixtures with deterministic token streams", "owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "verified"}, {"acceptance": "62 parser fixtures with deterministic AST/diagnostic replay", "owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "verified"}, {"acceptance": "5 module diagnostic families with deterministic graph replay", "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "verified"}], "reference_owner": "rust", "schema_version": 1, "status": "verified_frontend_components_candidate_language"}
+
 export fn driver_module_resolution_ownership():
     return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice", "schema_version": 1, "reference_owner": "rust"}
 

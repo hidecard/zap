@@ -16,6 +16,7 @@ trap 'rm -f "$runner" "$output"' EXIT
 cat > "$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
 let ownership = driver_frontend_ownership()
+let verified = driver_verified_frontend_acceptance()
 let source = "import \"shared\"\nsay 1\n"
 let parsed = driver_parse_source(source, "app.zp")
 let graph = driver_resolve_modules([source, "say 2\n", "say 3\n"], ["app.zp", "a/shared.zp", "b/shared.zp"])
@@ -27,6 +28,9 @@ say graph["diagnostics"][0]["code"]
 say ownership["acceptance"]["lexer_corpus"]["fixture_count"]
 say ownership["acceptance"]["parser_corpus"]["fixture_count"]
 say ownership["acceptance"]["module_resolution"]["diagnostic_count"]
+say verified["status"]
+say verified["complete_language"]
+say verified["components"][0]["status"]
 EOF
 
 "$SEED" "$(basename "$runner")" > "$output"
@@ -39,9 +43,12 @@ ZAP-MODULE-004
 192
 62
 5
+verified_frontend_components_candidate_language
+false
+verified
 EOF
 cmp "$output" "${output}.expected" || fail "frontend ownership/resolution output changed"
 rm -f "${output}.expected"
 
-printf 'schema_version\t1\ncontract_id\tB4-FRONTEND-OWNERSHIP-SLICE\nstatus\tpassed\nlexer_owner\tzap\nparser_owner\tzap\nmodule_resolution_owner\tzap\nlexer_fixture_count\t192\nparser_fixture_count\t62\nmodule_diagnostic_count\t5\ncomplete_language\tfalse\nreference_owner\trust\n' > "$REPORT"
+printf 'schema_version\t1\ncontract_id\tB4-FRONTEND-OWNERSHIP-SLICE\nstatus\tpassed\nverified_acceptance_status\tverified_frontend_components_candidate_language\nlexer_owner\tzap\nparser_owner\tzap\nmodule_resolution_owner\tzap\nlexer_fixture_count\t192\nparser_fixture_count\t62\nmodule_diagnostic_count\t5\ncomplete_language\tfalse\nreference_owner\trust\n' > "$REPORT"
 printf 'B4 frontend ownership slice passed: Zap lexer/parser/module-resolution path and explicit non-certification boundary verified\n'
