@@ -16,6 +16,9 @@ export fn driver_frontend_ownership():
 export fn driver_module_resolution_ownership():
     return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice", "schema_version": 1, "reference_owner": "rust"}
 
+export fn driver_typed_ir_backend_ownership():
+    return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
+
 export fn driver_normalize_source(source):
     let without_bom = replace(source, "\ufeff", "")
     return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
@@ -223,8 +226,6 @@ export fn driver_modules_rebuild(sources, source_names):
 
 export fn driver_typed_ir_semantics(first, second):
     let valid = first["kind"] == "zap.typed_ir"
-    if first["candidate_only"] != true:
-        valid = false
     if not contains(json(first), "\"source_name\""):
         valid = false
     if not contains(json(first), "\"ir\"") or not contains(json(first["ir"]), "\"nodes\""):
@@ -232,10 +233,13 @@ export fn driver_typed_ir_semantics(first, second):
     let deterministic = json(first) == json(second)
     if not deterministic:
         valid = false
+    let ownership = driver_typed_ir_ownership(first, second)
     let status = "candidate_typed_ir_semantics"
+    if ownership["ownership"] == "zap_owned":
+        status = "zap_owned_typed_ir_semantics"
     if not valid:
-        status = "candidate_typed_ir_semantics_error"
-    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": true, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": "candidate", "reference_owner": "rust", "schema_version": first["schema_version"], "status": status, "valid": valid}
+        status = "typed_ir_semantics_error"
+    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": ownership["executable"], "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "status": status, "valid": valid}
 
 export fn driver_typed_ir_ast_statements(nodes, result):
     for node in nodes:
@@ -281,7 +285,7 @@ export fn driver_promote_typed_ir(source, source_name):
 export fn driver_compile_backend(source, source_name):
     let typed = driver_promote_typed_ir(source, source_name)
     if typed["status"] != "typed_ir_promoted":
-        return {"bytecode": {"artifact_kind": "bytecode", "error": "typed_ir_promotion_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typed_ir_promotion_error", "output": []}, "status": "error", "typed_ir": typed["typed_ir"]}
+        return {"bytecode": {"artifact_kind": "bytecode", "error": "typed_ir_promotion_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typed_ir_promotion_error", "output": []}, "ownership": "blocked", "reference_owner": "rust", "status": "error", "typed_ir": typed["typed_ir"]}
     # Inferred typed-IR wraps parser AST under node["ast"]. Lower the recovered
     # AST program — the same path as seed_compile_inferred_typed_ir — because
     # lower_typed_ir does not accept typed_expression wrappers.
@@ -289,24 +293,24 @@ export fn driver_compile_backend(source, source_name):
     let ast = {"ast": {"statements": statements}, "kind": "zap.ast"}
     let lowered = lower_ast_program(ast)
     if lowered["error"] != none:
-        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "status": "error", "typed_ir": typed["typed_ir"]}
+        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": [], "execution": {"error": lowered["error"], "output": []}, "ownership": "zap_owned", "reference_owner": "zap", "status": "error", "typed_ir": typed["typed_ir"]}
     let execution = vm_run(lowered["instructions"])
     let status = "ok"
     if execution["error"] != none:
         status = "error"
-    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "status": status, "typed_ir": typed["typed_ir"]}
+    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_driver_backend"}, "diagnostics": [], "execution": execution, "ownership": "zap_owned", "reference_owner": "zap", "status": status, "typed_ir": typed["typed_ir"]}
 
 export fn driver_execute_owned_pipeline(source, source_name):
     let backend = driver_compile_backend(source, source_name)
     if backend["status"] != "ok":
-        return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
+        return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "ownership": backend["ownership"], "reference_owner": backend["reference_owner"], "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
     let typed_bytes = json(backend["typed_ir"])
     let bytecode_bytes = json(backend["bytecode"]["instructions"])
     let stages = [{"input_kind": "source", "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_kind": "typed_ir", "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_kind": "bytecode", "output_kind": "execution", "stage": "bytecode_to_vm"}]
     let status = "candidate_pipeline_executed"
     if backend["execution"]["error"] != none:
         status = "candidate_pipeline_error"
-    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
+    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "ownership": backend["ownership"], "reference_owner": backend["reference_owner"], "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
 
 export fn driver_check_source(source, source_name):
     let parsed = driver_parse_source(source, source_name)

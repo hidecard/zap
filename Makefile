@@ -64,6 +64,9 @@ bootstrap-frontend-ownership-test:
 bootstrap-backend-ownership-test:
 	bash scripts/bootstrap/verify_full_language_backend_ownership.sh
 
+bootstrap-typed-ir-backend-ownership-test:
+	bash scripts/bootstrap/verify_b4_typed_ir_backend_ownership.sh
+
 bootstrap-byte-determinism-test:
 	./scripts/bootstrap/verify_b4_byte_determinism.sh
 
