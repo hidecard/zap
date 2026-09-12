@@ -233,7 +233,8 @@ Compiler source, parser, type checker, IR, lowerer, VM/runtime boundary, package
 - [ ] `bootstrap/fixtures/vm` နှင့် core examples အားလုံးကို Zap VM ဖြင့် run ပါ။
 - [ ] Rust evaluator နှင့် observable result, stdout, stderr, exit code, raised value နှင့် diagnostic ကို compare ပါ။
 - [ ] Repeated run တွင် result နှင့် diagnostics တူကြောင်း စစ်ပါ။
-- [ ] Resource exhaustion, malformed bytecode, deep recursion, object cycle နှင့် shutdown tests ထည့်ပါ။
+- [x] B2 flow-edge safety နှင့် generic recursive runtime gate များကို CI ထဲ ထည့်ပြီး branch/loop edge merge, complex guard safety, generic recursion limit နှင့် container acceptance ကို စစ်ဆေးနိုင်စေပါသည်။
+- [ ] Resource exhaustion, malformed bytecode, deep recursion, object cycle နှင့် shutdown tests အပြည့်အစုံ ထည့်ပါ။
 
 **Gate B3-VM:** Core language programs များကို Zap compiler + Zap VM တစ်ခုတည်းဖြင့် run နိုင်ပြီး Rust evaluator fallback မရှိရ။
 

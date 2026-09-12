@@ -184,6 +184,10 @@ jobs:
 
       - name: Verify B2 milestone aggregate contract
         run: scripts/bootstrap/verify_b2_milestone.sh
+      - name: Verify B2 flow-edge safety
+        run: bash scripts/bootstrap/verify_b2_p0_flow_edge_safety_26.sh
+      - name: Verify B2 generic runtime and recursion limits
+        run: bash scripts/bootstrap/verify_b2_generic_runtime_recursive_10.sh
 
       - name: Upload B2 milestone evidence
         if: always()
