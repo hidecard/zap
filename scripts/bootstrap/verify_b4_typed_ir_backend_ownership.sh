@@ -45,6 +45,8 @@ let legacy = {"candidate_only": true, "diagnostics": [], "ir": {"nodes": []}, "k
 let incomplete = {"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": [], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 4, "typed_metadata": false}
 let legacy_ownership = driver_typed_ir_ownership(legacy, legacy)
 let incomplete_ownership = driver_typed_ir_ownership(incomplete, incomplete)
+let unknown_statement = {"kind": "future_statement"}
+let unknown_expression = {"kind": "future_expression"}
 say promoted["status"]
 say promoted["typed_ir"]["candidate_only"]
 say promoted["typed_ir"]["ownership"]
@@ -56,6 +58,8 @@ say legacy_ownership["ownership"]
 say legacy_ownership["valid"]
 say incomplete_ownership["ownership"]
 say incomplete_ownership["valid"]
+say driver_typed_ir_node_coverage_valid(unknown_statement)
+say driver_typed_ir_expression_coverage_valid(unknown_expression)
 EOF
 "$SEED" "$(basename "$runner")" > "$output"
 cat > "${output}.expected" <<'EOF'
@@ -69,6 +73,8 @@ true
 candidate
 false
 candidate
+false
+false
 false
 EOF
 cmp "$output" "${output}.expected" || fail "finalized typed-IR/backend propagation changed"
