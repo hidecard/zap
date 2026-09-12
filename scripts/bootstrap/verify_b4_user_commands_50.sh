@@ -6,7 +6,13 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 fail() { echo "B4 user-command integration failed: $*" >&2; exit 1; }
 run_zap() {
-  if [[ -x "$ROOT_DIR/bin/zap" ]]; then
+  if [[ -x "$ROOT_DIR/bin/zap.exe" ]]; then
+    "$ROOT_DIR/bin/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/release/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
+    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/bin/zap" ]]; then
     "$ROOT_DIR/bin/zap" "$@"
   elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
     "$ROOT_DIR/native/target/release/zap" "$@"

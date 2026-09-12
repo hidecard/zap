@@ -52,13 +52,13 @@ true
 EOF
 
 run_zap() {
-  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-native/target/release/zap}}"
+  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-native/target/release/zap.exe}}"
   [ -x "$seed" ] || fail "prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN (Cargo fallback is disabled)"
   env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME "$seed" "$1"
 }
 
 # Run with Rust vars unset
-run_zap "$runner" > "$out"
+run_zap "$runner_rel" > "$out"
 cmp "$out" "$expected" || fail "clean environment run failed with Rust vars unset"
 
 # Test 2: Run with Rust vars set (normal env) - should produce identical output

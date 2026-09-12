@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT_DIR"
 run_zap() {
-  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-$ROOT_DIR/bin/zap}}"
+  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-$ROOT_DIR/bin/zap.exe}}"
   [[ -x "$seed" ]] || { echo "B4 supported-subset rebuild blocked: prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN" >&2; exit 2; }
   "$seed" "$@"
 }
