@@ -35,8 +35,9 @@
 - **Typed-IR unknown-kind slice:** dynamic coverage checks now reject unknown statement kinds and unknown expression kinds before promotion, preventing newly introduced language constructs from being silently treated as Zap-owned.
 - **Typed-IR coverage slice:** promotion now recursively validates an explicit supported statement-kind set through nested function/class/control-flow/try bodies and exposes `coverage_valid`; unknown node kinds fail closed instead of being silently promoted.
 - **Typed-IR expression coverage slice:** promotion now recursively validates literal/name/binary/unary/conditional/list/map/call/member/index/await/propagate expression trees, including typed-expression wrappers; unknown expression kinds fail closed.
-- **Still intentionally open:** typed-IR promotion and the command/frontend/module contracts are now wired and verified, but the compiler remains candidate-only for full-language ownership; typed-IR records may still expose `candidate_only`, and this checkout has no locally executable verified prebuilt Zap seed for independent Rust-free compiler-path proof. The native CLI delegation boundary remains fail-closed until that seed and full ownership evidence are available.
-- **Certification remains blocked by evidence, not hidden by metadata:** the latest two-stage/three-stage and bounded clean-environment gates pass, but verified seed provenance, supported-target clean-environment execution (Linux/Windows/macOS), complete full-language compile/run acceptance, and replacement of remaining candidate semantics must pass before B4 can become certified.
+- **Still intentionally open:** typed-IR promotion and the command/frontend/module contracts are now wired and verified, but the compiler remains candidate-only for full-language ownership; typed-IR records may still expose `candidate_only`. The native CLI delegation boundary remains fail-closed until complete ownership evidence is available.
+- **Latest local seed evidence:** current `master` commit `69e16bd` was built as `target/seeds/zap-linux-x86_64-69e16bd` with SHA-256 `92189013affecf9ed1a388ce9016ebe5e10735386ebab56a65d89ea84f389966`; `verify_b4_three_stage_self_hosting.sh` passed in a clean environment with `PATH=/usr/bin:/bin`, no Cargo/Rust variables, and a fresh-process replay.
+- **Certification remains blocked by evidence, not hidden by metadata:** supported-target clean-environment execution (Linux/Windows/macOS), complete full-language compile/run acceptance, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
 
 ### Verification run after latest CI-passed pull (2026-09-11)
 
@@ -59,7 +60,7 @@
 | `verify_b4_module_resolution_ownership.sh` | Passed | Zap-owned canonical names, dependency graph, and deterministic replay passed. |
 | `verify_compiler_driver_contract.sh` | Passed | Frontend and module-resolution ownership exports remain contract-verified. |
 | `verify_b4_second_stage_rebuild.sh` | Passed | Six deterministic second-stage cases passed with Rust variables removed. |
-| `verify_b4_three_stage_self_hosting.sh` | Passed | Three-stage source-to-execution chain and fresh-process replay passed with Rust environment unavailable. |
+| `verify_b4_three_stage_self_hosting.sh` | Passed | Current-master Linux x86_64 seed (`69e16bd`, SHA-256 recorded above) passed source → typed-IR → bytecode → execution and fresh-process replay with Cargo/Rust unavailable. |
 | `verify_b4_clean_environment.sh` | Passed | Five clean-environment and no-state-leakage cases passed. |
 | `verify_b4_byte_determinism.sh` | Passed | Frontend, typed-IR, backend, and pipeline replay passed in bounded fresh processes. |
 
@@ -236,7 +237,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] B4 verifier scripts များကို Windows/WSL environment တွင် အားမြင်跑အောင် ပြုပြီး `verify_b4_evidence.sh --run-gates` သည် အားလုံး pass ဖြစ်ပါပြီ။ (byte-determinism, second-stage-rebuild, clean-environment gates verified passing)
 - [ ] Platform seed ဖြင့် complete Zap compiler source ကို clean environment တွင် compile/run လုပ်ရန်။ (လက်ရှိတွင် bounded Rust-free seed slice သာ အောင်မြင်; actual platform seed artifact လိုအပ်ပါသည်)
 - [ ] Seed output နှင့် native/reference output ကို supported platforms အားလုံးတွင် artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (cross-platform evidence မပြည့်စုံသေး; multi-platform CI infrastructure လိုအပ်ပါသည်)
-- [ ] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း native binary ပါသော clean environments တွင် စစ်ဆေးရန်။ (driver-based deterministic gates are wired and passing; verified seed execution in actual clean VMs remains pending)
+- [x] Linux x86_64 seed ဖြင့် self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း Cargo/Rust မပါသော clean environment တွင် စစ်ဆေးရန်။ (current master seed `69e16bd`, SHA-256 recorded above, three-stage and fresh-process replay passed; Windows/macOS clean evidence remains pending)
 - [ ] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (B4-FULL-001..015 သည် manifest rows ဖြစ်ပြီး executable full-language proof မဟုတ်သေး; direct driver subset and typed-IR gates are still candidate evidence)
 - [x] Independent verifier script ဖြင့် B4 evidence package ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။ (`scripts/bootstrap/verify_b4_evidence.sh` သည် certification မဟုတ်ကြောင်း fail-closed ပြင်ထား)
 
