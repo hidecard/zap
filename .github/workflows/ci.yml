@@ -660,3 +660,31 @@ jobs:
           '@ | Set-Content -Encoding utf8 p3_smoke.zp
           & $zap p3_smoke.zp
           if ($LASTEXITCODE -ne 0) { throw "P3.3 smoke test failed" }
+      - name: Package Unix current-master seed
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          seed_dir="target/platform-seed/${{ matrix.target }}"
+          mkdir -p "$seed_dir"
+          cp "native/target/${{ matrix.target }}/release/zap" "$seed_dir/zap"
+          sha256sum "$seed_dir/zap" > "$seed_dir/zap.sha256"
+          printf 'commit\t%s\nplatform\t%s\nartifact\tzap\nstatus\tci-built-native-seed\n' "$GITHUB_SHA" "${{ matrix.target }}" > "$seed_dir/SEED.tsv"
+      - name: Package Windows current-master seed
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $seedDir = "target/platform-seed/${{ matrix.target }}"
+          New-Item -ItemType Directory -Force $seedDir | Out-Null
+          $seed = "native/target/${{ matrix.target }}/release/zap.exe"
+          Copy-Item $seed "$seedDir/zap.exe"
+          $hash = (Get-FileHash "$seedDir/zap.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  zap.exe" | Set-Content "$seedDir/zap.exe.sha256" -Encoding ascii
+          "commit`t$env:GITHUB_SHA`nplatform`t${{ matrix.target }}`nartifact`tzap.exe`nstatus`tci-built-native-seed" | Set-Content "$seedDir/SEED.tsv" -Encoding utf8
+      - name: Upload current-master platform seed
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-platform-seed-${{ matrix.target }}-${{ github.sha }}
+          path: target/platform-seed/${{ matrix.target }}
+          if-no-files-found: error
