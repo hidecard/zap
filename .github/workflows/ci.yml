@@ -195,6 +195,8 @@ jobs:
 
       - name: Verify B3 package/build/test-runner foundations
         run: scripts/bootstrap/verify_b3_foundations.sh
+      - name: Verify B3 typed-IR to bytecode lowering contract
+        run: bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
 
       - name: Verify reference VM and platform seed
         run: scripts/bootstrap/verify_vm_platform.sh
