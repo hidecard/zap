@@ -259,6 +259,41 @@ export fn driver_typed_ir_nested_coverage_valid(value, index):
         return false
     return driver_typed_ir_nested_coverage_valid(value, index + 1)
 
+export fn driver_typed_ir_expression_coverage_valid(expression):
+    if expression == none or not contains(json(expression), "\"kind\""):
+        return false
+    let kind = expression["kind"]
+    if kind == "typed_expression":
+        return driver_typed_ir_expression_coverage_valid(expression["ast"])
+    let known = kind == "literal" or kind == "name" or kind == "binary" or kind == "unary" or kind == "conditional" or kind == "list" or kind == "map" or kind == "call" or kind == "member" or kind == "index" or kind == "await" or kind == "propagate"
+    if not known:
+        return false
+    if kind == "binary":
+        return driver_typed_ir_expression_coverage_valid(expression["left"]) and driver_typed_ir_expression_coverage_valid(expression["right"])
+    if kind == "unary" or kind == "await" or kind == "propagate":
+        return driver_typed_ir_expression_coverage_valid(expression["value"])
+    if kind == "conditional":
+        return driver_typed_ir_expression_coverage_valid(expression["condition"]) and driver_typed_ir_expression_coverage_valid(expression["then_branch"]) and driver_typed_ir_expression_coverage_valid(expression["else_branch"])
+    if kind == "list":
+        for element in expression["elements"]:
+            if not driver_typed_ir_expression_coverage_valid(element):
+                return false
+    if kind == "map":
+        for entry in expression["entries"]:
+            if not driver_typed_ir_expression_coverage_valid(entry["key"]) or not driver_typed_ir_expression_coverage_valid(entry["value"]):
+                return false
+    if kind == "call":
+        if not driver_typed_ir_expression_coverage_valid(expression["callee"]):
+            return false
+        for argument in expression["args"]:
+            if not driver_typed_ir_expression_coverage_valid(argument["value"]):
+                return false
+    if kind == "member":
+        return driver_typed_ir_expression_coverage_valid(expression["target"])
+    if kind == "index":
+        return driver_typed_ir_expression_coverage_valid(expression["target"]) and driver_typed_ir_expression_coverage_valid(expression["index"])
+    return true
+
 export fn driver_typed_ir_node_coverage_valid(node):
     if not contains(json(node), "\"kind\""):
         return false
@@ -268,6 +303,14 @@ export fn driver_typed_ir_node_coverage_valid(node):
         return false
     if kind == "function" or kind == "class" or kind == "trait" or kind == "interface":
         return driver_typed_ir_nested_coverage_valid(node["body"], 0)
+    if kind == "declaration" or kind == "assignment" or kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
+        if not driver_typed_ir_expression_coverage_valid(node["value"]):
+            return false
+    if kind == "if" or kind == "while":
+        if not driver_typed_ir_expression_coverage_valid(node["condition"]):
+            return false
+    if kind == "for" and not driver_typed_ir_expression_coverage_valid(node["iterable"]):
+        return false
     if kind == "if":
         if not driver_typed_ir_nested_coverage_valid(node["then_branch"], 0):
             return false

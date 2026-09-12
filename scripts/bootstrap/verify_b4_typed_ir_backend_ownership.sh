@@ -13,6 +13,7 @@ for required in \
   'import "bootstrap/b3/vm.zp"' \
   'export fn driver_typed_ir_backend_ownership(' \
   'export fn driver_typed_ir_ownership(' \
+  'export fn driver_typed_ir_expression_coverage_valid(' \
   'export fn driver_typed_ir_node_coverage_valid(' \
   'export fn driver_typed_ir_nodes_coverage_valid(' \
   'export fn driver_finalize_typed_ir(' \
