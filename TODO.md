@@ -283,6 +283,13 @@ Zap သည် established languages များနှင့် feature အရ �
   - Golden files အားလုံးကို B1 candidate parser output နှင့် အမှန်ခြစ် ဆက်လ Kampf လုပ်ပြီး regenerate လုပ်ပြီးပါပြီ။
   - `scripts/bootstrap/verify_b1_parser_candidate.sh` ထဲက inline Python normalizer ကို `sort_keys=True` ဖြင့် ပြောင်းလဲပြီး JSON key ordering mismatch ဖြေရှင်းပြီးပါပြီ။
 
+## Recent changes (2026-09-12)
+
+- [x] B4 compiler driver boundary `compiler_driver.zp` ကို `native_independent.zp` dependency မှ လွတ်မြောက်အောင် ပြုပြီး missing `driver_seed_*` functions အားလုံး ထည့်ပြီးပါပြီ။ (`ast_control.zp` import ပေးပြီး canonical AST control-flow lowering ကို အသုံးပြုနိုင်မှု ရရှိပါပြီ)
+- [x] 35+ B4 verifier scripts အားလုံး `bootstrap/b4/native_independent.zp` မှ `bootstrap/b4/compiler_driver.zp` သို့ migration ပြီးပါပြီ။ (`seed_compile_source`, `seed_compile_ast_source`, `seed_self_rebuild`, `driver_execute_owned_pipeline` စတွေကို driver-prefixed versions သို့ အလုံးအလိုက် ပြောင်းလဲပြီးပါပြီ)
+- [x] B4 verifier scripts များ၏ `run_zap()` function ကို Windows/WSL environment တွင် `.exe` binary များကို prioritize လုပ်အောင် ပြုပြီး `verify_b4_evidence.sh --run-gates` အားလုံး pass ဖြစ်ပါပြီ။ (byte-determinism, second-stage-rebuild, clean-environment gates verified passing)
+- [x] B4 evidence package verification (`verify_b4_evidence.sh`) ကို `--run-gates` option ဖြင့် ပြန်လည်စစ်ဆေးပြီး 18 acceptance rows အားလုံး validated ဖြစ်ပါပြီ။ (12 pass, 6 provisional; provisional rows သည် external platform seed evidence လိုအပ်ပါသည်)
+
 ## အညွှန်းစာတမ်းများ
 
 - [Current status — English](docs/CURRENT_STATUS_EN.md)
