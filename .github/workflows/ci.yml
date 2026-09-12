@@ -199,6 +199,10 @@ jobs:
         run: bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
       - name: Verify B3 bytecode disassembler contract
         run: bash scripts/bootstrap/verify_b3_bytecode_disassembler_13.sh
+      - name: Verify native inspect bytecode CLI
+        env:
+          ZAP_CLI_BINARY: native/target/release/zap
+        run: bash scripts/bootstrap/verify_cli_inspect_bytecode_14.sh
 
       - name: Verify reference VM and platform seed
         run: scripts/bootstrap/verify_vm_platform.sh

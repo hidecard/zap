@@ -198,7 +198,8 @@ Compiler source, parser, type checker, IR, lowerer, VM/runtime boundary, package
 - [x] Existing B3 lowering gate ကို CI ထဲ ထည့်ပြီး `zap.bytecode` schema version, arithmetic/control-flow lowering, VM handoff, deterministic observable output နှင့် deny-by-default unsupported call rejection ကို စစ်ဆေးနိုင်စေပါသည်။
 - [ ] Bytecode/instruction format ကို full language အတွက် versioned, endian-independent, deterministic specification အဖြစ် freeze လုပ်ပါ။ Existing bounded gate သည် အပြည့်အစုံ specification ကို အစားမထိုးပါ။
 - [x] Zap-owned structured bytecode disassembler contract (`bootstrap/b3/disassembler.zp`) နှင့် CI gate ကို ထည့်ပြီး schema, instruction order, deterministic rendering နှင့် invalid-input diagnostics ကို စစ်ဆေးနိုင်စေပါသည်။
-- [ ] User-facing inspection command (`zap inspect --bytecode`) နှင့် full-language disassembly output format ကို production CLI အဖြစ် ထည့်ပါ။
+- [x] Native production CLI တွင် `zap inspect --bytecode <file.json>` command ထည့်ပြီး valid artifact rendering နှင့် invalid kind/schema rejection smoke test ကို CI ထဲ ထည့်ထားပါသည်။
+- [ ] Full-language disassembly output format, source/debug metadata နှင့် clean-machine release CLI proof ကို ဆက်ပြီး ပြည့်စုံစေပါ။
 
 ### 5.2 Lowering verification
 

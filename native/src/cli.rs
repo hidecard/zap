@@ -16,6 +16,7 @@ pub const CLI_HELP: &str = r#"Zap native runtime
 Usage:
   zap <file.zp>                         Run a Zap source file
   zap run <file.zp>                     Run a source file explicitly
+  zap inspect --bytecode <file.json>    Inspect a Zap bytecode artifact
   zap fmt <file.zp>                     Format a source file
   zap lint <file.zp>                    Check formatting and style
   zap check [dir]                       Validate a Zap project
@@ -678,6 +679,41 @@ fn run_dev_command(dir: &Path) {
 }
 
 /// Dispatches Zap command-line arguments and owns CLI exit behavior.
+fn inspect_bytecode_file(path: &Path) -> Result<(), String> {
+    let source = read_limited_text(path, "bytecode artifact read")?;
+    let artifact: serde_json::Value = serde_json::from_str(&source)
+        .map_err(|error| format!("invalid bytecode JSON: {error}"))?;
+    let object = artifact
+        .as_object()
+        .ok_or_else(|| "bytecode artifact must be a JSON object".to_string())?;
+    if object.get("kind").and_then(serde_json::Value::as_str) != Some("zap.bytecode") {
+        return Err("bytecode artifact kind must be zap.bytecode".into());
+    }
+    let schema = object
+        .get("schema_version")
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| "bytecode artifact schema_version is missing or invalid".to_string())?;
+    if schema != crate::bytecode::BYTECODE_SCHEMA_VERSION as u64 {
+        return Err(format!(
+            "unsupported bytecode schema {schema}; expected {}",
+            crate::bytecode::BYTECODE_SCHEMA_VERSION
+        ));
+    }
+    let instructions = object
+        .get("instructions")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "bytecode artifact instructions must be an array".to_string())?;
+    println!("kind=zap.bytecode");
+    println!("schema_version={schema}");
+    println!("instruction_count={}", instructions.len());
+    for (index, instruction) in instructions.iter().enumerate() {
+        let rendered = serde_json::to_string(instruction)
+            .map_err(|error| format!("cannot render instruction {index}: {error}"))?;
+        println!("{index:04} {rendered}");
+    }
+    Ok(())
+}
+
 pub fn run_cli(args: &[String]) {
     if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
         println!("zap {} (native)", env!("CARGO_PKG_VERSION"));
@@ -1339,6 +1375,13 @@ pub fn run_cli(args: &[String]) {
         };
         eprintln!("ZAP-DRIVER-002: command `{requested}` is blocked; only `zap driver status` is available until a verified Zap seed and complete Zap ownership are installed");
         process::exit(EXIT_USAGE_ERROR);
+    }
+    if args.len() == 4 && args[1] == "inspect" && args[2] == "--bytecode" {
+        if let Err(error) = inspect_bytecode_file(Path::new(&args[3])) {
+            eprintln!("Zap inspect error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        return;
     }
     if args.len() == 2 && args[1] == "build" {
         match validate_project(Path::new(".")) {
