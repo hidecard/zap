@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test test package clean
+.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -70,10 +70,13 @@ bootstrap-byte-determinism-test:
 bootstrap-second-stage-test:
 	./scripts/bootstrap/verify_b4_second_stage_rebuild.sh
 
+bootstrap-three-stage-test:
+	bash scripts/bootstrap/verify_b4_three_stage_self_hosting.sh
+
 bootstrap-clean-env-test:
 	./scripts/bootstrap/verify_b4_clean_environment.sh
 
-bootstrap-self-rebuild-test: bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test
+bootstrap-self-rebuild-test: bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test
 
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py

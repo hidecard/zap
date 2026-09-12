@@ -24,6 +24,7 @@
 - **Completed in the lexer corpus expansion slice:** `verify_b1_full_language_corpus.sh` now discovers 192 tracked, non-negative bootstrap fixture sources, runs the Zap lexer twice per source in fresh processes, validates token-stream schema/end markers, records a deterministic corpus-manifest digest, and is wired into Makefile and GitHub Actions CI. Negative lexer diagnostics remain covered by `verify_b1_lexer.sh`.
 - **Completed in the parser corpus expansion slice:** `verify_b1_full_language_parser.sh` now verifies all 62 tracked parser fixtures (56 AST cases and 6 diagnostics cases), deterministic replay, AST/diagnostic schemas, syntax-feature coverage, and reference-oracle separation. The nested grouped-subtraction path was moved to the token-driven parser to eliminate a `char_at` crash; `while ... else` remains explicitly reported as one unsupported syntax gap rather than being silently accepted.
 - **Completed in the module-resolution ownership slice:** `driver_module_resolution_ownership()` defines the Zap-owned canonicalization and diagnostic contract; repeated separator normalization is now complete; `verify_b4_module_resolution_ownership.sh` verifies canonical names, dependency ordering, graph replay, and Zap ownership. The previous `while ... else` rejection was replaced with an owned `else_branch` AST path, bringing the parser corpus unsupported-syntax count to zero.
+- **Completed in the self-hosting evidence slice:** `verify_b4_second_stage_rebuild.sh`, `verify_b4_clean_environment.sh`, and the new `verify_b4_three_stage_self_hosting.sh` pass with Cargo/Rust variables removed. The three-stage report records a stable seed SHA-256, `source -> typed_ir -> bytecode -> execution`, valid stage chaining, and fresh-process replay; byte determinism also passes. This proves Rust-free runtime operation of the prebuilt seed, but not yet that the seed binary itself was produced by a Rust-free compiler.
 - **Typed-IR ownership promotion slice:** `driver_typed_ir_ownership()` now promotes only schema-4, checker-inferred, diagnostic-free, shape-valid, deterministic typed-IR records to `ownership=zap_owned` with `reference_owner=zap`; `driver_promote_typed_ir()` now makes backend lowering/VM execution fail closed unless that promotion succeeds. Older or incomplete records remain `ownership=candidate` and fail closed.
 - **Still intentionally open:** the driver remains candidate-only; typed-IR records still expose `candidate_only`, full user-facing command routing (`check`/`build`/`run`/`test`) is not yet delegated to the Zap driver, and no verified prebuilt Zap seed is available in this checkout for Rust-free runtime evidence. A fail-closed `zap driver status` CLI boundary is now exposed for ownership/status discovery.
 - **Certification remains blocked by evidence, not hidden by metadata:** two-stage/three-stage rebuilds, Linux/Windows/macOS clean-environment runs, complete lexer/parser/module-resolution ownership, and full-language compile/run acceptance must pass before B4 can become certified.
@@ -48,6 +49,10 @@
 | `verify_b1_parser.sh` | Passed | Reference parser diagnostics regression passed. |
 | `verify_b4_module_resolution_ownership.sh` | Passed | Zap-owned canonical names, dependency graph, and deterministic replay passed. |
 | `verify_compiler_driver_contract.sh` | Passed | Frontend and module-resolution ownership exports remain contract-verified. |
+| `verify_b4_second_stage_rebuild.sh` | Passed | Six deterministic second-stage cases passed with Rust variables removed. |
+| `verify_b4_three_stage_self_hosting.sh` | Passed | Three-stage source-to-execution chain and fresh-process replay passed with Rust environment unavailable. |
+| `verify_b4_clean_environment.sh` | Passed | Five clean-environment and no-state-leakage cases passed. |
+| `verify_b4_byte_determinism.sh` | Passed | Frontend, typed-IR, backend, and pipeline replay passed in bounded fresh processes. |
 
 These results establish command-contract and cross-platform build evidence;
 they do not yet prove Rust-free self-hosting or full-language ownership.
@@ -103,7 +108,7 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
 - [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.
-- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (latest CI proves cross-platform builds, not clean-environment self-hosting)
+- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (Linux Rust-free runtime evidence now passes; Windows/macOS clean-environment evidence and Rust-free seed provenance remain open)
 
 > ဤစာရင်းသည် current-status၊ milestone documents နှင့် Zap ကို Python၊ JavaScript/TypeScript၊ Go၊ Rust တို့နှင့် နှိုင်းယှဉ်ထားသော ecosystem review အပေါ် အခြေခံထားသည်။ လက်ရှိတွင် Rust သည် native/reference owner ဖြစ်နေဆဲဖြစ်ပြီး B1/B2 သည် provisional၊ B3 သည် reference-only၊ B4 self-hosting သည် deferred ဖြစ်သည်။
 

@@ -152,6 +152,9 @@ jobs:
       - name: Verify B4 module-resolution ownership
         run: scripts/bootstrap/verify_b4_module_resolution_ownership.sh
 
+      - name: Verify B4 three-stage Rust-free self-hosting
+        run: scripts/bootstrap/verify_b4_three_stage_self_hosting.sh
+
       - name: Verify B1 lexer ownership contract
         run: scripts/bootstrap/verify_b1_lexer_contract.sh
 
