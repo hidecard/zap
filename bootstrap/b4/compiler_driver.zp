@@ -13,6 +13,9 @@ import "bootstrap/b3/package.zp"
 export fn driver_frontend_ownership():
     return {"components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
 
+export fn driver_module_resolution_ownership():
+    return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice", "schema_version": 1, "reference_owner": "rust"}
+
 export fn driver_normalize_source(source):
     let without_bom = replace(source, "\ufeff", "")
     return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
@@ -35,7 +38,9 @@ export fn driver_typecheck_source(source, source_name):
     return {"diagnostics": [], "kind": "zap.typecheck_result", "status": "ok", "source_name": source_name, "typed_ir": emitted}
 
 export fn driver_normalize_module_name(source_name):
-    let normalized = replace(replace(source_name, "\\", "/"), "//", "/")
+    let normalized = replace(source_name, "\\", "/")
+    while contains(normalized, "//"):
+        normalized = replace(normalized, "//", "/")
     if ends_with(normalized, ".zp"):
         return substring(normalized, 0, len(normalized) - 3)
     return normalized

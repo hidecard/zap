@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test test package clean
+.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -55,6 +55,9 @@ bootstrap-driver-contract-test:
 bootstrap-driver-module-test:
 	bash scripts/bootstrap/verify_b4_driver_module_resolution_errors.sh
 
+bootstrap-module-ownership-test:
+	bash scripts/bootstrap/verify_b4_module_resolution_ownership.sh
+
 bootstrap-frontend-ownership-test:
 	bash scripts/bootstrap/verify_b4_frontend_ownership_slice.sh
 
@@ -75,7 +78,7 @@ bootstrap-self-rebuild-test: bootstrap-byte-determinism-test bootstrap-second-st
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
 
-test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-b3-test bootstrap-vm-test bootstrap-clean-repo-test bootstrap-refactor-smoke-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-self-rebuild-test
+test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-b3-test bootstrap-vm-test bootstrap-clean-repo-test bootstrap-refactor-smoke-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-self-rebuild-test
 
 package: native
 	./package_release.sh x86_64-unknown-linux-gnu

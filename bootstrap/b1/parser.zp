@@ -2615,9 +2615,21 @@ export fn parse_block_from(lines, start_index, indent):
 
                                 let condition_text = trim(substring(current, 6, len(current) - 1))
 
-                                statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                                let while_else_branch = none
+                                let while_next = nested["next"]
+                                if nested["next"] < len(lines):
+                                    let while_else_line = lines[nested["next"]]
+                                    if indentation_width(while_else_line) == indent and trim(while_else_line) == "else:":
+                                        let while_else_nested = parse_block_from(lines, nested["next"] + 1, indent + 4)
+                                        while_else_branch = {"statements": while_else_nested["statements"]}
+                                        while_next = while_else_nested["next"]
+                                let while_node = {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))}
+                                if while_else_branch != none:
+                                    while_node = {"body": body, "condition": parse_expression(condition_text, 1), "else_branch": while_else_branch, "kind": "while", "span": span(index + 1, indent + 1, len(current))}
+                                statements = append(statements, while_node)
+                                cursor = {"index": while_next, "lines": lines}
 
-                    if not starts_with(current, "if ") and current != "try:":
+                    if not starts_with(current, "if ") and current != "try:" and not starts_with(current, "while "):
 
                         cursor = {"index": nested["next"], "lines": lines}
 
@@ -3553,12 +3565,6 @@ export fn parse_or_diagnostics(source, tokens, source_name):
 
         return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
-    let while_else = while_else_diagnostic(source, source_name)
-
-    if while_else != none:
-
-        return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-
     if token_has_numeric_dot_sequence(tokens):
 
         return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "expected member name after '.', got Number(14)", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
@@ -3880,12 +3886,6 @@ export fn parse_general(source, source_name):
     if token_indent != none:
 
         return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
-
-    let while_else = while_else_diagnostic(source, source_name)
-
-    if while_else != none:
-
-        return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
     # The source-line parser is the canonical block assembler. Token metadata
 

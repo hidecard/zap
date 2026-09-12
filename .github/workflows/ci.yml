@@ -149,6 +149,9 @@ jobs:
       - name: Verify B1 full-language parser corpus
         run: scripts/bootstrap/verify_b1_full_language_parser.sh
 
+      - name: Verify B4 module-resolution ownership
+        run: scripts/bootstrap/verify_b4_module_resolution_ownership.sh
+
       - name: Verify B1 lexer ownership contract
         run: scripts/bootstrap/verify_b1_lexer_contract.sh
 
