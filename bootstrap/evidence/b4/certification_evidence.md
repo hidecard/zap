@@ -34,12 +34,13 @@
 
 | Gate | Result | Notes |
 |------|--------|-------|
-| `verify_b4_evidence.sh --run-gates` | ✅ passed | Contract integrity, acceptance manifest, evidence document references, and all delegated B4 gates passed |
-| `verify_b4_byte_determinism.sh` | ✅ passed | Frontend, typed-IR, backend, and pipeline replay verified in bounded fresh processes |
-| `verify_b4_second_stage_rebuild.sh` | ✅ passed | 6 deterministic second-stage cases passed |
-| `verify_b4_clean_environment.sh` | ✅ passed | 5 clean-environment cases passed, including no-state-leakage checks |
-| `verify_b4_typed_ir_source_rebuild_37.sh` | ✅ passed | Zap source → typed-IR → bytecode/VM handoff and reproducible rebuild passed |
-| `verify_b4_source_to_vm_10.sh` | ✅ passed | 10 bounded source-to-VM acceptance cases passed |
+| `scripts/bootstrap/verify_b4_rust_free_contract.sh` | ✅ passed | 18 acceptance rows validated; contract status: not-certified |
+| `scripts/bootstrap/verify_b4_evidence.sh --run-gates` | ✅ passed | Contract integrity, acceptance manifest, evidence document references, and all delegated B4 gates passed |
+| `scripts/bootstrap/verify_b4_byte_determinism.sh` | ✅ passed | Frontend, typed-IR, backend, and pipeline replay verified in bounded fresh processes |
+| `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | ✅ passed | 6 deterministic second-stage cases passed |
+| `scripts/bootstrap/verify_b4_clean_environment.sh` | ✅ passed | 5 clean-environment cases passed, including no-state-leakage checks |
+| `scripts/bootstrap/verify_b4_typed_ir_source_rebuild_37.sh` | ✅ passed | Zap source → typed-IR → bytecode/VM handoff and reproducible rebuild passed |
+| `scripts/bootstrap/verify_b4_source_to_vm_10.sh` | ✅ passed | 10 bounded source-to-VM acceptance cases passed |
 
 ## Provisional Row Evidence
 
