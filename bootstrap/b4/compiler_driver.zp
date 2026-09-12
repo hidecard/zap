@@ -247,6 +247,46 @@ export fn driver_typed_ir_ast_statements(nodes, result):
             result = append(result, node["ast"])
     return result
 
+export fn driver_typed_ir_nested_coverage_valid(value, index):
+    if value == none:
+        return true
+    let encoded = json(value)
+    if contains(encoded, "\"statements\""):
+        return driver_typed_ir_nodes_coverage_valid(value["statements"], 0)
+    if index >= len(value):
+        return true
+    if not driver_typed_ir_node_coverage_valid(value[index]):
+        return false
+    return driver_typed_ir_nested_coverage_valid(value, index + 1)
+
+export fn driver_typed_ir_node_coverage_valid(node):
+    if not contains(json(node), "\"kind\""):
+        return false
+    let kind = node["kind"]
+    let known = kind == "declaration" or kind == "assignment" or kind == "function" or kind == "if" or kind == "while" or kind == "for" or kind == "say" or kind == "return" or kind == "raise" or kind == "expression" or kind == "try_catch" or kind == "class" or kind == "trait" or kind == "interface" or kind == "type_alias" or kind == "break" or kind == "continue" or kind == "import" or kind == "module" or kind == "else" or kind == "try"
+    if not known:
+        return false
+    if kind == "function" or kind == "class" or kind == "trait" or kind == "interface":
+        return driver_typed_ir_nested_coverage_valid(node["body"], 0)
+    if kind == "if":
+        if not driver_typed_ir_nested_coverage_valid(node["then_branch"], 0):
+            return false
+        if contains(json(node), "\"else_branch\"") and not driver_typed_ir_nested_coverage_valid(node["else_branch"], 0):
+            return false
+    if kind == "while" or kind == "for" or kind == "try_catch":
+        if not driver_typed_ir_nested_coverage_valid(node["body"], 0):
+            return false
+        if kind == "try_catch" and not driver_typed_ir_nested_coverage_valid(node["catch_body"], 0):
+            return false
+    return true
+
+export fn driver_typed_ir_nodes_coverage_valid(nodes, index):
+    if index >= len(nodes):
+        return true
+    if not driver_typed_ir_node_coverage_valid(nodes[index]):
+        return false
+    return driver_typed_ir_nodes_coverage_valid(nodes, index + 1)
+
 export fn driver_typed_ir_ownership(first, second):
     let deterministic = json(first) == json(second)
     let promotable = first["kind"] == "zap.typed_ir" and first["candidate_only"] == true
@@ -262,6 +302,9 @@ export fn driver_typed_ir_ownership(first, second):
         promotable = false
     if promotable and not typed_ir_nodes_shape_valid(first["ir"]["nodes"], 0):
         promotable = false
+    let coverage_valid = driver_typed_ir_nodes_coverage_valid(first["ir"]["nodes"], 0)
+    if not coverage_valid:
+        promotable = false
     if not deterministic:
         promotable = false
     let ownership = "candidate"
@@ -271,7 +314,7 @@ export fn driver_typed_ir_ownership(first, second):
         ownership = "zap_owned"
         reference_owner = "zap"
         status = "zap_owned_typed_ir"
-    return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
+    return {"candidate_only": first["candidate_only"], "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
 
 export fn driver_finalize_typed_ir(first, ownership):
     return {"candidate_only": false, "coverage": first["coverage"], "diagnostics": first["diagnostics"], "ir": first["ir"], "kind": first["kind"], "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "source_name": first["source_name"], "typed_metadata": first["typed_metadata"]}
