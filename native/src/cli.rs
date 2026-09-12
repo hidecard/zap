@@ -703,11 +703,8 @@ fn run_driver_command(command: &str, source_path: &Path) {
     let runner = format!(
         "import \"bootstrap/b4/compiler_driver.zp\"\nlet result = driver_command({command_json}, {source_json}, {name_json})\nsay json(result)\nif result[\"status\"] != \"ok\":\n    raise \"driver command failed\"\n"
     );
-    let runner_path = std::env::temp_dir().join(format!(
-        "zap-driver-{}-{}.zp",
-        std::process::id(),
-        command
-    ));
+    let runner_path =
+        std::env::temp_dir().join(format!("zap-driver-{}-{}.zp", std::process::id(), command));
     if let Err(error) = fs::write(&runner_path, &runner) {
         eprintln!("ZAP-DRIVER-003: cannot create driver runner: {error}");
         process::exit(EXIT_PROGRAM_FAILURE);
@@ -723,8 +720,8 @@ fn run_driver_command(command: &str, source_path: &Path) {
 /// Dispatches Zap command-line arguments and owns CLI exit behavior.
 fn inspect_bytecode_file(path: &Path) -> Result<(), String> {
     let source = read_limited_text(path, "bytecode artifact read")?;
-    let artifact: serde_json::Value = serde_json::from_str(&source)
-        .map_err(|error| format!("invalid bytecode JSON: {error}"))?;
+    let artifact: serde_json::Value =
+        serde_json::from_str(&source).map_err(|error| format!("invalid bytecode JSON: {error}"))?;
     let object = artifact
         .as_object()
         .ok_or_else(|| "bytecode artifact must be a JSON object".to_string())?;
