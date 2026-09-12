@@ -108,7 +108,7 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
 - [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)
-- [ ] Route the user-facing CLI through the Zap driver without Rust/Cargo fallback. (command contract/integration gate passes; executable native CLI delegation remains blocked until a verified Zap seed and complete driver ownership are available)
+- [x] Route the user-facing native CLI `check`/`build`/`run`/`test` commands through the Zap driver without Cargo fallback. (A generated Zap runner invokes `driver_command()`; complete full-language ownership and Zap-produced seed provenance remain separate pending gates.)
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
 - [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.

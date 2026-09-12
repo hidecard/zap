@@ -59,6 +59,10 @@ Usage:
   zap lsp                               Run the LSP server over stdio
   zap async-check                       Validate the async runtime
   zap driver status                     Show the Zap compiler-driver ownership boundary
+  zap driver check <file.zp>             Run driver-owned source checking
+  zap driver build <file.zp>             Run driver-owned source build
+  zap driver run <file.zp>               Run driver-owned source execution
+  zap driver test <file.zp>              Run driver-owned source test pipeline
   zap bootstrap status                  Show bootstrap stage and schema versions
   zap bootstrap vm-demo                 Run the reference-only VM smoke program
   zap bootstrap tokens <file.zp>        Emit the canonical B0 token artifact
@@ -674,6 +678,44 @@ fn run_dev_command(dir: &Path) {
     });
     if let Err(error) = run_checked(&source, dir) {
         eprintln!("Zap dev error: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+}
+
+fn run_driver_command(command: &str, source_path: &Path) {
+    let source = read_limited_text(source_path, "driver source read").unwrap_or_else(|error| {
+        eprintln!("ZAP-DRIVER-003: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    });
+    let source_json = serde_json::to_string(&source).unwrap_or_else(|error| {
+        eprintln!("ZAP-DRIVER-003: cannot encode source: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    });
+    let name_json = serde_json::to_string(&source_path.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|error| {
+            eprintln!("ZAP-DRIVER-003: cannot encode source name: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        });
+    let command_json = serde_json::to_string(command).unwrap_or_else(|error| {
+        eprintln!("ZAP-DRIVER-003: cannot encode command: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    });
+    let runner = format!(
+        "import \"bootstrap/b4/compiler_driver.zp\"\nlet result = driver_command({command_json}, {source_json}, {name_json})\nsay json(result)\nif result[\"status\"] != \"ok\":\n    raise \"driver command failed\"\n"
+    );
+    let runner_path = std::env::temp_dir().join(format!(
+        "zap-driver-{}-{}.zp",
+        std::process::id(),
+        command
+    ));
+    if let Err(error) = fs::write(&runner_path, &runner) {
+        eprintln!("ZAP-DRIVER-003: cannot create driver runner: {error}");
+        process::exit(EXIT_PROGRAM_FAILURE);
+    }
+    let result = super::run(&runner, Path::new("."));
+    let _ = fs::remove_file(&runner_path);
+    if let Err(error) = result {
+        eprintln!("ZAP-DRIVER-004: {error}");
         process::exit(EXIT_PROGRAM_FAILURE);
     }
 }
@@ -1367,6 +1409,13 @@ pub fn run_cli(args: &[String]) {
         println!("{}", crate::bootstrap::driver_status_json());
         return;
     }
+    if args.len() == 4
+        && args[1] == "driver"
+        && matches!(args[2].as_str(), "check" | "build" | "run" | "test")
+    {
+        run_driver_command(&args[2], Path::new(&args[3]));
+        return;
+    }
     if args.len() >= 2 && args[1] == "driver" {
         let requested = if args.len() > 2 {
             args[2..].join(" ")
@@ -1555,6 +1604,10 @@ mod tests {
             "zap lsp",
             "zap async-check",
             "zap driver status",
+            "zap driver check",
+            "zap driver build",
+            "zap driver run",
+            "zap driver test",
             "zap bootstrap status",
             "zap bootstrap vm-demo",
             "zap bootstrap tokens",
