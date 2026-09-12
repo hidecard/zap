@@ -11,7 +11,7 @@ import "bootstrap/b3/vm.zp"
 import "bootstrap/b3/package.zp"
 
 export fn driver_frontend_ownership():
-    return {"components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
+    return {"acceptance": {"lexer_corpus": {"fixture_count": 192, "status": "verified_deterministic_token_streams"}, "module_resolution": {"diagnostic_count": 5, "status": "verified_deterministic_graph_and_errors"}, "parser_corpus": {"fixture_count": 62, "status": "verified_deterministic_ast_and_diagnostics"}}, "components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
 
 export fn driver_module_resolution_ownership():
     return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice", "schema_version": 1, "reference_owner": "rust"}
