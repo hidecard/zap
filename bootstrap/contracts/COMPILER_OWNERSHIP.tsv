@@ -11,7 +11,7 @@ typed_ir	zap	bootstrap/b2/typed_ir.zp	zap-owned	B2 typed-IR verification
 lowerer	zap	bootstrap/b3/lower.zp	zap-owned	B3 lowering verification
 package_build	zap	bootstrap/b3/package.zp	zap-owned	B3 package ownership verification
 vm_runtime	zap	bootstrap/b3/vm.zp	zap-owned	B3 VM ownership verification
-native_cli	zap	bootstrap/b4/native_independent.zp	zap-owned	B4 Rust-free contract
+native_cli	zap	bootstrap/b4/compiler_driver.zp	zap-owned	B4 Rust-free contract
 test_runner	zap	bootstrap/b4/runner.zp	zap-owned	B4 test-runner contract
 rust_compiler	rust-reference	native/src	reference-only	Must not be called by normal Zap production path
 rust_host	rust-reference	host/zap-host	reference-only	Must not be called by normal Zap production path

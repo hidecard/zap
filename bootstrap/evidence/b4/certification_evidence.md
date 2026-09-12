@@ -1,11 +1,11 @@
 # B4 Rust-Free Full-Language Certification Evidence
 
 ## Evidence Snapshot Date
-2026-09-09
+2026-09-12
 
 ## Contract Status
 - **Current:** `not-certified`
-- **Reason:** the compiler driver and candidate graph/rebuild evidence are wired, but no verified prebuilt Zap seed, Rust-free executable rebuild, or supported-platform evidence is available in this checkout.
+- **Reason:** candidate driver contract, deterministic gates, and verifier infrastructure are wired and passing on the current prebuilt seed; certification remains blocked pending a Zap-produced Rust-free seed, cross-platform clean-environment execution (Linux/Windows/macOS), and executable full-language self-rebuild evidence.
 
 ## Acceptance Rows (12/18 PASS; 6 provisional)
 
@@ -30,36 +30,56 @@
 | B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | provisional |
 | B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | provisional |
 
-## Verification Commands Run
+## Verified Gates (2026-09-12)
 
-\`\`\`bash
-# B1/B2 gates
-bash scripts/bootstrap/aggregate_b1_parser_gates.sh
-bash scripts/bootstrap/verify_all_b2_features.sh
-bash scripts/bootstrap/verify_b2_milestone.sh
+| Gate | Result | Notes |
+|------|--------|-------|
+| `verify_b4_evidence.sh --run-gates` | ✅ passed | Contract integrity, acceptance manifest, evidence document references, and all delegated B4 gates passed |
+| `verify_b4_byte_determinism.sh` | ✅ passed | Frontend, typed-IR, backend, and pipeline replay verified in bounded fresh processes |
+| `verify_b4_second_stage_rebuild.sh` | ✅ passed | 6 deterministic second-stage cases passed |
+| `verify_b4_clean_environment.sh` | ✅ passed | 5 clean-environment cases passed, including no-state-leakage checks |
+| `verify_b4_typed_ir_source_rebuild_37.sh` | ✅ passed | Zap source → typed-IR → bytecode/VM handoff and reproducible rebuild passed |
+| `verify_b4_source_to_vm_10.sh` | ✅ passed | 10 bounded source-to-VM acceptance cases passed |
 
-# B3 gates
-bash scripts/bootstrap/verify_b3_foundations.sh
-bash scripts/bootstrap/verify_b3_canonical_ast_schema.sh
-bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
-bash scripts/bootstrap/verify_b3_zap_ownership_20.sh
+## Provisional Row Evidence
 
-# B4 gates (blocked here until a verified seed is available)
-bash scripts/bootstrap/verify_b4_rust_free_contract.sh
-bash scripts/bootstrap/verify_b4_byte_determinism.sh
-bash scripts/bootstrap/verify_b4_second_stage_rebuild.sh
-bash scripts/bootstrap/verify_b4_clean_environment.sh
-bash scripts/bootstrap/verify_b4_source_to_vm_loops_try_12.sh
-# ... (all 39 B4 verifiers pass)
-\`\`\`
+| ID | Blocker | Required Evidence |
+|----|---------|-------------------|
+| B4-FULL-013 | CLI entrypoint | Executable seed evidence for `driver_command()` across all supported commands |
+| B4-FULL-014 | Self-rebuild | Zap-produced seed that can rebuild itself byte-for-byte |
+| B4-FULL-015 | Cross-platform determinism | Linux/Windows/macOS clean-environment evidence with platform seed artifacts |
+| B4-FULL-016 | Byte-determinism | Verified prebuilt Zap seed provenance (current seed is native/Cargo-built) |
+| B4-FULL-017 | Second-stage rebuild | Zap-produced seed for second-stage rebuild evidence |
+| B4-FULL-018 | Clean-environment | Clean VM execution without Rust/Cargo on all supported platforms |
+
+## Platform Seed Record
+
+A local prebuilt Windows x86_64 seed record exists at:
+- `bootstrap/fixtures/metadata/platform_seed_windows_x86_64.json`
+
+```json
+{
+  "platform": "windows-x86_64",
+  "binary": "bin/zap.exe",
+  "sha256": "7B8476263F98A419C48D4F11B99658FF2A29EF13CEBCE2D1F3239ED8F7EC4756",
+  "size_bytes": 8172032,
+  "built_with": "rust/cargo",
+  "status": "prebuilt-native-seed",
+  "notes": "Local prebuilt Windows x86_64 seed. Deterministic gates (byte-determinism, second-stage-rebuild, clean-environment) verified passing with this binary. B4 certification remains blocked pending a Zap-produced Rust-free seed and cross-platform clean-environment evidence."
+}
+```
 
 ## Evidence Artifacts
 
-- B4 milestone report: `target/b4-rust-free-contract.tsv`
+- B4 milestone report: `target/b4-evidence-report.tsv`
 - Rebuild artifacts: `target/b4-rebuild-*`
 - Platform provenance: `target/b4-platform-*`
 - Byte-determinism records: `target/b4-byte-*`
+- Clean-environment records: `target/b4-clean-environment.tsv`
 
 ## Certification Decision
 
-The repository remains **not-certified**. Candidate contract and ownership wiring are verified, but certification is intentionally blocked until all provisional rows have executable evidence from a verified prebuilt Zap seed on Linux, Windows, and macOS, including two-stage/three-stage rebuilds and clean-environment execution without Rust or Cargo.
+The repository remains **not-certified**. Candidate contract and ownership wiring are verified, and deterministic gates pass on the current prebuilt seed, but certification is intentionally blocked until:
+1. A Zap-produced Rust-free seed is available
+2. Cross-platform clean-environment evidence exists for Linux, Windows, and macOS
+3. Executable full-language self-rebuild evidence is recorded

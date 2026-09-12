@@ -3,8 +3,8 @@
 
 This is a faithful re-implementation of the Zap stack VM defined in
 `bootstrap/b3/vm.zp` (vm_run / vm_step). It executes the same bytecode
-instruction stream that the Zap-written compiler (`bootstrap/b4/native_independent.zp`
-via `seed_execute_owned_pipeline`) emits, so Zap programs can run without the
+instruction stream that the Zap-written compiler (`bootstrap/b4/compiler_driver.zp`
+via `driver_execute_owned_pipeline`) emits, so Zap programs can run without the
 native Rust reference interpreter.
 
 It is intentionally a *host* (a seed executor), not the compiler: the compiler

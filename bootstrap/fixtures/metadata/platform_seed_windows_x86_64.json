@@ -1,0 +1,9 @@
+{
+  "platform": "windows-x86_64",
+  "binary": "bin/zap.exe",
+  "sha256": "7B8476263F98A419C48D4F11B99658FF2A29EF13CEBCE2D1F3239ED8F7EC4756",
+  "size_bytes": 8172032,
+  "built_with": "rust/cargo",
+  "status": "prebuilt-native-seed",
+  "notes": "Local prebuilt Windows x86_64 seed. Deterministic gates (byte-determinism, second-stage-rebuild, clean-environment) verified passing with this binary. B4 certification remains blocked pending a Zap-produced Rust-free seed and cross-platform clean-environment evidence."
+}

@@ -1,5 +1,5 @@
 ﻿rule_id	domain	english_section	burmese_section	owner	fixture_path	status
-BOOT-001	stage	Bootstrap stages	Bootstrap á€¡á€†á€„á€·á€ºá€™á€»á€¬á€¸	bootstrap/b4/native_independent.zp	bootstrap/fixtures/metadata/b0_stage.json	stable
+BOOT-001	stage	Bootstrap stages	Bootstrap á€¡á€†á€„á€·á€ºá€™á€»á€¬á€¸	bootstrap/b4/compiler_driver.zp	bootstrap/fixtures/metadata/b0_stage.json	stable
 BOOT-002	lexer	Ownership rules	Ownership rules	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/basic.zp	canonical
 BOOT-003	spans	Artifact contract	Artifact contract	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.zp	canonical
 BOOT-004	diagnostics	Capability contract	Capability contract	bootstrap/b1/lexer.zp	bootstrap/fixtures/diagnostics/invalid_character.zp	canonical
@@ -8,7 +8,7 @@ BOOT-006	stdlib	Ownership rules	Ownership rules	bootstrap/b3/vm.zp	bootstrap/fix
 BOOT-007	platform	Capability contract	Capability contract	bootstrap/b3/seed.zp	bootstrap/fixtures/metadata/platform_seed.json	provisional
 BOOT-008	artifact	Artifact contract	Artifact contract	scripts/bootstrap	bootstrap/fixtures/metadata/artifact_schema.json	canonical
 BOOT-009	release	Version policy	Version policy	docs/LANGUAGE_SPEC_EN.md	bootstrap/contracts/VERSIONS.toml	stable
-BOOT-010	bootstrap	Current status	á€œá€€á€ºá€›á€¾á€­á€¡á€á€¼á€±á€¡á€”á€±	bootstrap/b4/native_independent.zp	bootstrap/BASELINE_B0.md	stable
+BOOT-010	bootstrap	Current status	á€œá€€á€ºá€›á€¾á€­á€¡á€á€¼á€±á€¡á€”á€±	bootstrap/b4/compiler_driver.zp	bootstrap/BASELINE_B0.md	stable
 BOOT-011	b1-lexer	B1 canonical status	B1 canonical status	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/operators.tokens.json	canonical
 BOOT-012	typed-ir	Canonical inspection commands	Canonical inspection commands	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/lexer/basic.typed-ir.json	provisional
 BOOT-013	parser	Artifact contract	Artifact contract	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/compound.zp	canonical
@@ -72,7 +72,7 @@ BOOT-070	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type 
 BOOT-071	typedir-missing-node-types	Typed-IR Missing Node Types	Typed-IR á€™á€œá€¯á€¶á€œá€±á€¬á€€á€ºá€žá€±á€¬ node á€¡á€™á€»á€­á€¯á€¸á€¡á€…á€¬á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/BOOTSTRAP_ADVANCEMENT_EVIDENCE.md#missing-ir-node-types	provisional-pending-capture
 B4-001	full-language	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml	bootstrap/contracts/B4_ACCEPTANCE.tsv	certified
 B4-002	cli-build-test-ownership	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	scripts/bootstrap/verify_b4_rust_free_contract.sh	bootstrap/fixtures/b4/full_language_surface.zp	certified
-B4-003	deterministic-rebuild	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	bootstrap/b4/native_independent.zp	bootstrap/fixtures/b4/full_language_surface.zp	provisional
+B4-003	deterministic-rebuild	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	bootstrap/b4/compiler_driver.zp	bootstrap/fixtures/b4/full_language_surface.zp	provisional
 BOOT-072	parser-control-flow	Control flow	Control flow	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/for_in_list.zp	canonical
 BOOT-073	parser-try-catch	Error handling	Error handling	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/try_catch_simple.zp	canonical
 BOOT-074	parser-default-args	Function declarations	Function declarations	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/default_named_args.zp	canonical
