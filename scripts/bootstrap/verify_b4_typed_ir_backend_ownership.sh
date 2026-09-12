@@ -13,6 +13,7 @@ for required in \
   'import "bootstrap/b3/vm.zp"' \
   'export fn driver_typed_ir_backend_ownership(' \
   'export fn driver_typed_ir_ownership(' \
+  'export fn driver_finalize_typed_ir(' \
   'export fn driver_promote_typed_ir(' \
   'export fn driver_compile_backend(' \
   '"ownership": "zap_owned"' \
@@ -20,6 +21,7 @@ for required in \
   'typed_ir_promotion_error'; do
   grep -Fq "$required" "$DRIVER" || fail "missing ownership boundary: $required"
 done
+grep -Fq '"candidate_only": false' "$DRIVER" || fail "promoted typed-IR must clear candidate_only"
 if grep -n -E '\b(cargo|rustc|rustup)\b|host/zap-host|native/src' "$DRIVER"; then
   fail "driver contains a forbidden compiler-path fallback"
 fi

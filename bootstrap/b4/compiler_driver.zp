@@ -273,6 +273,9 @@ export fn driver_typed_ir_ownership(first, second):
         status = "zap_owned_typed_ir"
     return {"candidate_only": first["candidate_only"], "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
 
+export fn driver_finalize_typed_ir(first, ownership):
+    return {"candidate_only": false, "coverage": first["coverage"], "diagnostics": first["diagnostics"], "ir": first["ir"], "kind": first["kind"], "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "source_name": first["source_name"], "typed_metadata": first["typed_metadata"]}
+
 export fn driver_promote_typed_ir(source, source_name):
     let normalized = driver_normalize_source(source)
     let first = from_json(emit_inferred_program_typed_ir(normalized, source_name))
@@ -280,7 +283,8 @@ export fn driver_promote_typed_ir(source, source_name):
     let ownership = driver_typed_ir_ownership(first, second)
     if ownership["ownership"] != "zap_owned":
         return {"diagnostics": [{"code": "ZAP-TYPED-IR-001", "message": "typed IR promotion failed closed", "ownership": ownership["ownership"], "source_name": source_name}], "ownership": ownership, "status": "typed_ir_promotion_blocked", "typed_ir": first}
-    return {"diagnostics": [], "ownership": ownership, "status": "typed_ir_promoted", "typed_ir": first}
+    let finalized = driver_finalize_typed_ir(first, ownership)
+    return {"diagnostics": [], "ownership": ownership, "status": "typed_ir_promoted", "typed_ir": finalized}
 
 export fn driver_compile_backend(source, source_name):
     let typed = driver_promote_typed_ir(source, source_name)
