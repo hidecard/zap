@@ -19,16 +19,16 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let loop_source = "fn make_last():\n    for item in [4, 5]:\n        fn current():\n            return item\n    return current\nlet last = make_last()\nsay last()"
-let loop_compiled = seed_compile_ast_source(loop_source, "ast-loop-closures.zp")
+let loop_compiled = driver_seed_compile_ast_source(loop_source, "ast-loop-closures.zp")
 let loop_state = vm_run(loop_compiled["instructions"])
 say loop_compiled["status"]
 say loop_state["error"]
 say loop_state["output"][0]
 let try_source = "fn make_reader(value):\n    fn read():\n        try:\n            if value:\n                raise \"raised\"\n            return value\n        catch err:\n            return err\n    return read\nlet raised = make_reader(true)\nlet normal = make_reader(false)\nsay raised()\nsay normal()"
-let try_compiled = seed_compile_ast_source(try_source, "ast-try-closures.zp")
+let try_compiled = driver_seed_compile_ast_source(try_source, "ast-try-closures.zp")
 let try_state = vm_run(try_compiled["instructions"])
 say try_compiled["status"]
 say try_state["error"]

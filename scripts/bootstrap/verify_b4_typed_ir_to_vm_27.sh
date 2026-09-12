@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let typed = {"candidate_only": true, "ir": {"nodes": [{"kind": "say", "payload": {"kind": "literal", "literal_kind": "number", "value": 7}}]}, "kind": "zap.typed_ir", "schema_version": 1, "source_name": "typed-ir.zp"}
-let artifact = seed_compile_typed_ir(typed, "typed-ir.zp")
+let artifact = driver_seed_compile_typed_ir(typed, "typed-ir.zp")
 let state = vm_run(artifact["instructions"])
 say artifact["status"]
 say artifact["native_independent"]

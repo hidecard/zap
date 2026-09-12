@@ -56,8 +56,10 @@ say executed["reference_owner"]
 say executed["stage_chain_valid"]
 say legacy_ownership["ownership"]
 say legacy_ownership["valid"]
+say legacy_ownership["candidate_only"]
 say incomplete_ownership["ownership"]
 say incomplete_ownership["valid"]
+say incomplete_ownership["candidate_only"]
 say driver_typed_ir_node_coverage_valid(unknown_statement)
 say driver_typed_ir_expression_coverage_valid(unknown_expression)
 EOF
@@ -72,8 +74,10 @@ zap
 true
 candidate
 false
+true
 candidate
 false
+true
 false
 false
 EOF

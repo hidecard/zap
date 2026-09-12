@@ -19,7 +19,7 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let provided = seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait-render\"\nclass Report with Printable:\n    fn name(self) -> text:\n        return \"report\"\nlet item = Report()\nsay item.render()", "provided.zp")
 let selected = seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    use JsonView.render as render\nlet item = Report()\nsay item.render()", "selected.zp")

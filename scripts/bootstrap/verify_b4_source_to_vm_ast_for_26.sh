@@ -19,14 +19,14 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let compiled = seed_compile_ast_source("let total = 0\nfor item in [1, 2, 3]:\n    let total = total + item\nsay total", "ast-for.zp")
+let compiled = driver_seed_compile_ast_source("let total = 0\nfor item in [1, 2, 3]:\n    let total = total + item\nsay total", "ast-for.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]
 say state["output"][0]
-let unsupported = seed_compile_ast_source("for item in source:\n    say item", "ast-for-unsupported.zp")
+let unsupported = driver_seed_compile_ast_source("for item in source:\n    say item", "ast-for-unsupported.zp")
 say unsupported["error"]
 ZP
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"

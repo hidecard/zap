@@ -25,10 +25,10 @@ out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
 import "bootstrap/b4/compiler_driver.zp"
-let missing = driver_resolve_modules(["import \"does_not_exist\"\nsay 1"], ["app.zp"])
+let missing = driver_resolve_modules([read_text("bootstrap/fixtures/driver/module_missing_app.zp")], ["app.zp"])
 let duplicate = driver_resolve_modules(["say 1", "say 2"], ["same.zp", "same.zp"])
-let ambiguous = driver_resolve_modules(["import \"shared\"\nsay 1", "say 2", "say 3"], ["app.zp", "a/shared.zp", "b/shared.zp"])
-let cycle = driver_resolve_modules(["import \"b\"\nsay 1", "import \"a\"\nsay 2"], ["a.zp", "b.zp"])
+let ambiguous = driver_resolve_modules([read_text("bootstrap/fixtures/driver/module_ambiguous_app.zp"), read_text("bootstrap/fixtures/driver/module_graph_base.zp"), read_text("bootstrap/fixtures/driver/module_graph_base.zp")], ["app.zp", "a/shared.zp", "b/shared.zp"])
+let cycle = driver_resolve_modules([read_text("bootstrap/fixtures/driver/module_cycle_a.zp"), read_text("bootstrap/fixtures/driver/module_cycle_b.zp")], ["module_cycle_a.zp", "module_cycle_b.zp"])
 say missing["status"]
 say missing["diagnostics"][0]["code"]
 say duplicate["status"]

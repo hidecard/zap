@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "fn make_adder(base):\n    fn add(value):\n        return base + value\n    return add\nlet add2 = make_adder(2)\nlet add5 = make_adder(5)\nsay add2(3)\nsay add5(3)"
-let compiled = seed_compile_ast_source(source, "ast-closures.zp")
+let compiled = driver_seed_compile_ast_source(source, "ast-closures.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]

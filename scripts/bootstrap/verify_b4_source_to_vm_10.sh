@@ -20,11 +20,11 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let first = seed_compile_source("say 20 + 22", "seed.zp")
-let second = seed_compile_source("say 20 + 22", "seed.zp")
-let changed = seed_compile_source("say 20 - 22", "seed.zp")
+let first = driver_seed_compile_source("say 20 + 22", "seed.zp")
+let second = driver_seed_compile_source("say 20 + 22", "seed.zp")
+let changed = driver_seed_compile_source("say 20 - 22", "seed.zp")
 let result = vm_run(first["instructions"])
 say first["artifact_kind"]
 say first["status"]
@@ -33,8 +33,8 @@ say len(first["instructions"])
 say result["halted"]
 say result["error"]
 say result["output"][0]
-say seed_compile_bytes(first) == seed_compile_bytes(second)
-say seed_compile_bytes(first) == seed_compile_bytes(changed)
+say driver_seed_compile_bytes(first) == driver_seed_compile_bytes(second)
+say driver_seed_compile_bytes(first) == driver_seed_compile_bytes(changed)
 say changed["status"]
 say len(changed["instructions"])
 say vm_run(changed["instructions"])["output"][0]

@@ -19,13 +19,13 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 let source = "let value: number = 7\nsay value"
-let result = seed_execute_owned_pipeline(source, "owned-pipeline.zp")
-let replay = seed_pipeline_replay(source, "owned-pipeline.zp")
-let function_result = seed_execute_owned_pipeline("fn add(a, b):\n    return a + b\nsay add(2, 3)", "function-pipeline.zp")
-let invalid = seed_execute_owned_pipeline("return 1", "invalid-pipeline.zp")
-let invalid_replay = seed_pipeline_replay("return 1", "invalid-pipeline.zp")
+let result = driver_execute_owned_pipeline(source, "owned-pipeline.zp")
+let replay = driver_seed_pipeline_replay(source, "owned-pipeline.zp")
+let function_result = driver_execute_owned_pipeline("fn add(a, b):\n    return a + b\nsay add(2, 3)", "function-pipeline.zp")
+let invalid = driver_execute_owned_pipeline("return 1", "invalid-pipeline.zp")
+let invalid_replay = driver_seed_pipeline_replay("return 1", "invalid-pipeline.zp")
 say result["status"]
 say result["native_independent"]
 say result["stage_chain_valid"]
@@ -54,7 +54,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "candidate_pipeline_executed false true 3 2 typed_ir bytecode true true none 7 candidate_pipeline_replay true candidate_pipeline_executed none 5 candidate_pipeline_error true false true" ]]; then
+if [[ "${lines[*]}" != "candidate_pipeline_executed false true 3 2 typed_ir bytecode true true none 7 candidate_pipeline_replay true candidate_pipeline_executed none 5 compile_error false false true" ]]; then
   echo "unexpected owned pipeline output: ${lines[*]}" >&2
   exit 1
 fi

@@ -46,7 +46,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["ok", "false", "zap.typed_ir", "true", "none", "7", "candidate_driver_rebuild", "true", "candidate_typed_ir_semantics", "true"]:
+if lines != ["ok", "false", "zap.typed_ir", "false", "none", "7", "candidate_driver_rebuild", "true", "zap_owned_typed_ir_semantics", "true"]:
     raise SystemExit(f"unexpected typed-IR source output: {lines!r}")
 PY
 printf 'B4 typed-IR source gate passed: Zap source to typed-IR to VM handoff and reproducible rebuild\n'

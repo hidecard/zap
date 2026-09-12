@@ -20,11 +20,11 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let chain = seed_compile_source("class Base:\n    fn value(self):\n        return 1\n    fn __init__(self, value):\n        set self.value = value\n        return self\nclass Middle extends Base:\n    fn value(self):\n        return super().value() + 1\nclass Child extends Middle:\n    fn value(self):\n        return super().value() + 1\n    fn __init__(self, value):\n        super().__init__(value)\n        return self\nlet child = Child(7)\nsay child.value()\nsay child.value", "chain.zp")
-let override = seed_compile_source("class Base:\n    fn value(self):\n        return 1\nclass Child extends Base:\n    fn value(self):\n        return super().value() + 4\nlet child = Child()\nsay child.value()", "override.zp")
-let no_parent = seed_compile_source("class Base:\n    fn value(self):\n        return super().value()\nlet base = Base()\nsay base.value()", "no_parent.zp")
+let chain = driver_seed_compile_source("class Base:\n    fn value(self):\n        return 1\n    fn __init__(self, value):\n        set self.value = value\n        return self\nclass Middle extends Base:\n    fn value(self):\n        return super().value() + 1\nclass Child extends Middle:\n    fn value(self):\n        return super().value() + 1\n    fn __init__(self, value):\n        super().__init__(value)\n        return self\nlet child = Child(7)\nsay child.value()\nsay child.value", "chain.zp")
+let override = driver_seed_compile_source("class Base:\n    fn value(self):\n        return 1\nclass Child extends Base:\n    fn value(self):\n        return super().value() + 4\nlet child = Child()\nsay child.value()", "override.zp")
+let no_parent = driver_seed_compile_source("class Base:\n    fn value(self):\n        return super().value()\nlet base = Base()\nsay base.value()", "no_parent.zp")
 let canonical = seed_compile_ast_source("class Base:\n    fn value(self):\n        return 1\n    fn __init__(self, value):\n        self.value = value\n        return self\nclass Middle extends Base:\n    fn value(self):\n        return super().value() + 1\nclass Child extends Middle:\n    fn value(self):\n        return super().value() + 1\n    fn __init__(self, value):\n        super().__init__(value)\n        return self\nlet child = Child(7)\nsay child.value()\nsay child.value", "canonical.zp")
 let chain_result = vm_run(chain["instructions"])
 let override_result = vm_run(override["instructions"])

@@ -20,13 +20,13 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let add = seed_compile_ast_source("fn add(a, b):\n    return a + b\nsay add(2, 3)", "ast_add.zp")
-let class_value = seed_compile_ast_source("class Counter:\n    fn get(self):\n        return self\nlet counter = Counter()\nsay counter.get()", "ast_class.zp")
-let return_none = seed_compile_ast_source("fn no_value():\n    return\nsay no_value()", "ast_none.zp")
-let fields = seed_compile_ast_source("class Counter:\n    fn set(self, value):\n        self.count = value\n        return self\nlet counter = Counter()\nlet updated = counter.set(7)\nsay updated.count", "ast_fields.zp")
-let malformed = seed_compile_ast_source("break", "ast_bad.zp")
+let add = driver_seed_compile_ast_source("fn add(a, b):\n    return a + b\nsay add(2, 3)", "ast_add.zp")
+let class_value = driver_seed_compile_ast_source("class Counter:\n    fn get(self):\n        return self\nlet counter = Counter()\nsay counter.get()", "ast_class.zp")
+let return_none = driver_seed_compile_ast_source("fn no_value():\n    return\nsay no_value()", "ast_none.zp")
+let fields = driver_seed_compile_ast_source("class Counter:\n    fn set(self, value):\n        self.count = value\n        return self\nlet counter = Counter()\nlet updated = counter.set(7)\nsay updated.count", "ast_fields.zp")
+let malformed = driver_seed_compile_ast_source("break", "ast_bad.zp")
 let add_result = vm_run(add["instructions"])
 let class_result = vm_run(class_value["instructions"])
 let none_result = vm_run(return_none["instructions"])

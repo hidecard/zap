@@ -20,13 +20,13 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let yes = seed_compile_source("if true:\n    say 7\nelse:\n    say 9", "yes.zp")
-let no = seed_compile_source("if false:\n    say 7\nelse:\n    say 9", "no.zp")
-let no_else = seed_compile_source("if false:\n    say 7\nsay 3", "no_else.zp")
-let nested = seed_compile_source("if false:\n    if true:\n        say 1\n    else:\n        say 2\nelse:\n    say 3", "nested.zp")
-let missing = seed_compile_source("if true:\nsay 1", "missing.zp")
+let yes = driver_seed_compile_source("if true:\n    say 7\nelse:\n    say 9", "yes.zp")
+let no = driver_seed_compile_source("if false:\n    say 7\nelse:\n    say 9", "no.zp")
+let no_else = driver_seed_compile_source("if false:\n    say 7\nsay 3", "no_else.zp")
+let nested = driver_seed_compile_source("if false:\n    if true:\n        say 1\n    else:\n        say 2\nelse:\n    say 3", "nested.zp")
+let missing = driver_seed_compile_source("if true:\nsay 1", "missing.zp")
 let rebuilt = seed_self_rebuild("if false:\n    say 1\nelse:\n    say 2", "rebuild.zp")
 say yes["status"]
 say vm_run(yes["instructions"])["output"][0]

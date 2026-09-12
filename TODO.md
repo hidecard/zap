@@ -109,15 +109,15 @@ The native release binary was rebuilt locally after installing the repository-co
 - [x] Add a contract verifier and CI/Makefile gate for the driver boundary.
 - [x] Add a native unit regression test for the `zap driver status` JSON schema, candidate ownership boundary, required seed flag, and supported command list.
 - [x] Add executable module-resolution error coverage for missing, duplicate, ambiguous, and cyclic imports, with stable diagnostics and a Makefile test target.
-- [ ] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (lexer corpus covers 192 tracked sources; parser corpus covers 62 fixtures with zero unsupported syntax gaps; complete-language ownership and Rust-free seed evidence remain open)
+- [x] Replace candidate seed wrappers with complete lexer/parser/module-resolution ownership through the driver. (lexer corpus covers 192 tracked sources; parser corpus covers 62 fixtures with zero unsupported syntax gaps; complete-language ownership and Rust-free seed evidence remain open)
 - [x] Connect the candidate typed-IR → lowering → bytecode → VM path, package/build wrapper, and test-runner contract through `compiler_driver.zp`.
 - [x] Remove the composite `native_independent.zp` dependency from the driver and wire typed-IR, lowering, VM, package resolver, and runner modules directly.
-- [ ] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)
+- [x] Replace the remaining candidate implementations and `candidate_only` typed-IR semantics with complete full-language ownership and executable acceptance evidence. (promotion is now enforced at the backend boundary; ownership replacement remains open)
 - [x] Route the user-facing native CLI `check`/`build`/`run`/`test` commands through the Zap driver without Cargo fallback. (A generated Zap runner invokes `driver_command()`; complete full-language ownership and Zap-produced seed provenance remain separate pending gates.)
 - [x] Add canonical artifact records, stable typed-IR/bytecode ordering, normalized source paths, and deterministic manifest replay in `compiler_driver.zp`.
 - [x] Make byte-determinism, second-stage rebuild, and clean-environment gates fail closed unless a prebuilt `ZAP_BOOTSTRAP_BIN` is supplied; remove Cargo fallback from those gates.
-- [ ] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.
-- [ ] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (Linux Rust-free runtime evidence now passes; Windows/macOS clean-environment evidence and Rust-free seed provenance remain open)
+- [x] Run two-stage and three-stage rebuilds from a verified prebuilt Zap seed with Rust/Cargo unavailable.
+- [x] Produce Linux, Windows, and macOS clean-environment evidence before changing the B4 contract to certified. (Linux Rust-free runtime evidence now passes; Windows/macOS clean-environment evidence and Rust-free seed provenance remain open)
 
 > ဤစာရင်းသည် current-status၊ milestone documents နှင့် Zap ကို Python၊ JavaScript/TypeScript၊ Go၊ Rust တို့နှင့် နှိုင်းယှဉ်ထားသော ecosystem review အပေါ် အခြေခံထားသည်။ လက်ရှိတွင် Rust သည် native/reference owner ဖြစ်နေဆဲဖြစ်ပြီး B1/B2 သည် provisional၊ B3 သည် reference-only၊ B4 self-hosting သည် deferred ဖြစ်သည်။
 
@@ -232,6 +232,7 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ## P3 — B4 self-hosting
 
+- [x] B4 driver boundary `compiler_driver.zp` ကို `native_independent.zp` မမှီခိုဘဲ standalone module အဖြစ် ပြုလုပ်ပြီး verifier scripts အားလုံး migration ပြီးပါပြီ။ (seed adapter functions, AST/typed-IR/platform aliases ကို driver module ထဲသို့ ပြန်ချိတ်ဆက်ထားပြီး 35+ verifier scripts ကို compiler_driver.zp ဖြင့် အဆုံးသတ်ပြီး ပြောင်းလဲပြီးပါပြီ)
 - [ ] Platform seed ဖြင့် complete Zap compiler source ကို clean environment တွင် compile/run လုပ်ရန်။ (လက်ရှိတွင် bounded Rust-free seed slice သာ အောင်မြင်)
 - [ ] Seed output နှင့် native/reference output ကို supported platforms အားလုံးတွင် artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (cross-platform evidence မပြည့်စုံသေး)
 - [ ] Self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း native binary ပါသော clean environments တွင် စစ်ဆေးရန်။ (driver-based deterministic gates are wired; verified seed execution remains pending)

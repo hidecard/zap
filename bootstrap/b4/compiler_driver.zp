@@ -9,15 +9,17 @@ import "bootstrap/b2/typed_ir.zp"
 import "bootstrap/b3/lower.zp"
 import "bootstrap/b3/vm.zp"
 import "bootstrap/b3/package.zp"
+import "bootstrap/b4/seed_pipeline.zp"
+import "bootstrap/b4/ast_control.zp"
 
 export fn driver_frontend_ownership():
-    return {"acceptance": {"lexer_corpus": {"fixture_count": 192, "status": "verified_deterministic_token_streams"}, "module_resolution": {"diagnostic_count": 5, "status": "verified_deterministic_graph_and_errors"}, "parser_corpus": {"fixture_count": 62, "status": "verified_deterministic_ast_and_diagnostics"}}, "components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned_slice"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
+    return {"acceptance": {"lexer_corpus": {"fixture_count": 192, "status": "verified_deterministic_token_streams"}, "module_resolution": {"diagnostic_count": 5, "status": "verified_deterministic_graph_and_errors"}, "parser_corpus": {"fixture_count": 62, "status": "verified_deterministic_ast_and_diagnostics"}}, "components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
 
 export fn driver_verified_frontend_acceptance():
-    return {"complete_language": false, "components": [{"acceptance": "192 lexer fixtures with deterministic token streams", "owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "verified"}, {"acceptance": "62 parser fixtures with deterministic AST/diagnostic replay", "owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "verified"}, {"acceptance": "5 module diagnostic families with deterministic graph replay", "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "verified"}], "reference_owner": "rust", "schema_version": 1, "status": "verified_frontend_components_candidate_language"}
+    return {"complete_language": false, "components": [{"acceptance": "192 lexer fixtures with deterministic token streams", "owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned"}, {"acceptance": "62 parser fixtures with deterministic AST/diagnostic replay", "owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned"}, {"acceptance": "5 module diagnostic families with deterministic graph replay", "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned"}], "reference_owner": "rust", "schema_version": 1, "status": "verified_frontend_components_candidate_language"}
 
 export fn driver_module_resolution_ownership():
-    return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned_slice", "schema_version": 1, "reference_owner": "rust"}
+    return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned", "schema_version": 1, "reference_owner": "rust"}
 
 export fn driver_typed_ir_backend_ownership():
     return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
@@ -335,7 +337,7 @@ export fn driver_typed_ir_nodes_coverage_valid(nodes, index):
 
 export fn driver_typed_ir_ownership(first, second):
     let deterministic = json(first) == json(second)
-    let promotable = first["kind"] == "zap.typed_ir" and first["candidate_only"] == true
+    let promotable = first["kind"] == "zap.typed_ir"
     if first["schema_version"] < 4:
         promotable = false
     if not contains(json(first), "\"typed_metadata\"") or not first["typed_metadata"]:
@@ -356,11 +358,15 @@ export fn driver_typed_ir_ownership(first, second):
     let ownership = "candidate"
     let reference_owner = "rust"
     let status = "candidate_typed_ir_ownership"
+    let candidate_only = false
+    if contains(json(first), "\"candidate_only\""):
+        candidate_only = first["candidate_only"]
     if promotable:
         ownership = "zap_owned"
         reference_owner = "zap"
         status = "zap_owned_typed_ir"
-    return {"candidate_only": first["candidate_only"], "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
+        candidate_only = false
+    return {"candidate_only": candidate_only, "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
 
 export fn driver_finalize_typed_ir(first, ownership):
     return {"candidate_only": false, "coverage": first["coverage"], "diagnostics": first["diagnostics"], "ir": first["ir"], "kind": first["kind"], "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "source_name": first["source_name"], "typed_metadata": first["typed_metadata"]}
@@ -399,11 +405,15 @@ export fn driver_execute_owned_pipeline(source, source_name):
         return {"artifacts": [], "diagnostics": backend["diagnostics"], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "ownership": backend["ownership"], "reference_owner": backend["reference_owner"], "source_name": source_name, "stage_chain_valid": false, "status": "compile_error"}
     let typed_bytes = json(backend["typed_ir"])
     let bytecode_bytes = json(backend["bytecode"]["instructions"])
-    let stages = [{"input_kind": "source", "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_kind": "typed_ir", "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_kind": "bytecode", "output_kind": "execution", "stage": "bytecode_to_vm"}]
+    let typed_digest = driver_seed_pipeline_digest("typed_ir", typed_bytes)
+    let bytecode_digest = driver_seed_pipeline_digest("bytecode", bytecode_bytes)
+    let source_digest = driver_seed_pipeline_digest("source", source)
+    let execution_digest = driver_seed_pipeline_digest("execution", backend["execution"])
+    let stages = [{"input_digest": source_digest, "input_kind": "source", "output_digest": typed_digest, "output_kind": "typed_ir", "stage": "source_to_typed_ir"}, {"input_digest": typed_digest, "input_kind": "typed_ir", "output_digest": bytecode_digest, "output_kind": "bytecode", "stage": "typed_ir_to_bytecode"}, {"input_digest": bytecode_digest, "input_kind": "bytecode", "output_digest": execution_digest, "output_kind": "execution", "stage": "bytecode_to_vm"}]
     let status = "candidate_pipeline_executed"
     if backend["execution"]["error"] != none:
         status = "candidate_pipeline_error"
-    return {"artifacts": [{"bytes": typed_bytes, "digest": "typed_ir:" + typed_bytes, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": "bytecode:" + bytecode_bytes, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "ownership": backend["ownership"], "reference_owner": backend["reference_owner"], "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
+    return {"artifacts": [{"bytes": typed_bytes, "digest": typed_digest, "kind": "typed_ir"}, {"bytes": bytecode_bytes, "digest": bytecode_digest, "kind": "bytecode"}], "error": backend["execution"]["error"], "execution": backend["execution"], "native_independent": false, "ownership": backend["ownership"], "reference_owner": backend["reference_owner"], "source_name": source_name, "stage_chain_valid": true, "stages": stages, "status": status}
 
 export fn driver_check_source(source, source_name):
     let parsed = driver_parse_source(source, source_name)
@@ -512,3 +522,212 @@ export fn driver_subset_rebuild(sources, source_names):
     return {"all_successful": all_successful, "byte_equal": byte_equal, "count": len(first), "first": first, "native_independent": false, "second": second, "status": status}
 export fn driver_contract_status():
     return "candidate"
+
+# Seed adapter functions for migration from native_independent.zp
+# These provide Zap-owned equivalents of the bounded seed slice functions
+
+export fn driver_seed_pipeline_digest(kind, payload):
+    return kind + ":" + json(payload)
+
+export fn driver_seed_compile_bytes(artifact):
+    return json(artifact)
+
+export fn driver_seed_compile_source(source, source_name):
+    # Use the full driver pipeline instead of the bounded seed slice
+    let backend = driver_compile_backend(source, source_name)
+    if backend["status"] != "ok":
+        return {"artifact_kind": "bytecode", "error": backend["execution"]["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "instructions": backend["bytecode"]["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
+
+export fn driver_seed_pipeline_replay(source, source_name):
+    let first = driver_execute_owned_pipeline(source, source_name)
+    let second = driver_execute_owned_pipeline(source, source_name)
+    return {"byte_equal": json(first) == json(second), "first": first, "native_independent": false, "second": second, "status": "candidate_pipeline_replay"}
+
+export fn driver_seed_self_rebuild(source, source_name):
+    let first = driver_seed_compile_source(source, source_name)
+    let second = driver_seed_compile_source(source, source_name)
+    let first_bytes = driver_seed_compile_bytes(first)
+    let second_bytes = driver_seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes:
+        status = "reproducible"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "second": second, "status": status}
+
+export fn driver_seed_self_rebuild_ast(source, source_name):
+    let first = driver_seed_compile_ast_source(source, source_name)
+    let second = driver_seed_compile_ast_source(source, source_name)
+    let first_bytes = driver_seed_compile_bytes(first)
+    let second_bytes = driver_seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes and first["status"] == "compiled_ast_slice":
+        status = "reproducible_ast_slice"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
+
+export fn driver_seed_compile_ast_source(source, source_name):
+    let preflight = driver_seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"artifact_kind": "bytecode", "diagnostics": [from_json(preflight)], "error": "syntax_diagnostic", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let parsed = from_json(parse_general(source, source_name))
+    if parsed["kind"] != "zap.ast":
+        return {"artifact_kind": "bytecode", "error": "parse_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let lowered = lower_ast_program(parsed)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_ast_slice"}
+
+export fn driver_seed_compile_typed_ir(ir, source_name):
+    if ir["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "invalid_typed_ir", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let lowered = lower_typed_ir(ir)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_typed_ir_slice"}
+
+export fn driver_seed_compile_typed_ir_source(source, source_name):
+    let emitted = from_json(emit(source, source_name))
+    if emitted["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "typed_ir_emit_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let artifact = driver_seed_compile_typed_ir(emitted, source_name)
+    return {"artifact_kind": artifact["artifact_kind"], "error": artifact["error"], "instructions": artifact["instructions"], "native_independent": false, "source_name": source_name, "status": artifact["status"], "typed_ir": emitted}
+
+export fn driver_seed_compile_inferred_typed_ir(typed, source_name):
+    if typed["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "invalid_typed_ir_kind", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let ast_nodes = driver_seed_typed_ir_ast_statements(typed["ir"]["nodes"], [])
+    let ast = {"ast": {"statements": ast_nodes}, "kind": "zap.ast"}
+    let lowered = lower_ast_program(ast)
+    if lowered["error"] != none:
+        return {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_inferred_typed_ir_slice", "typed_ir": typed}
+
+export fn driver_seed_typed_ir_ast_statements(nodes, result):
+    for node in nodes:
+        if contains(json(node), "\"ast\":"):
+            result = append(result, node["ast"])
+    return result
+
+export fn driver_seed_self_compile_acceptance(source, source_name):
+    let rebuild = driver_seed_self_rebuild_inferred_typed_ir(source, source_name)
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_inferred_typed_ir_slice"}
+
+export fn driver_seed_rebuild_acceptance_ast(source, source_name):
+    let rebuild = driver_seed_self_rebuild_ast(source, source_name)
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "status": rebuild["status"], "supported": rebuild["status"] == "reproducible_ast_slice"}
+
+export fn driver_seed_platform_record_evidence(target, artifact_bytes, artifact_digest, execution_status, source_digest, toolchain_digest, environment, execution_mode):
+    return seed_platform_record_evidence(target, artifact_bytes, artifact_digest, execution_status, source_digest, toolchain_digest, environment, execution_mode)
+
+export fn driver_seed_platform_evidence_matrix_valid(records, expected_targets):
+    return seed_platform_evidence_matrix_valid(records, expected_targets)
+
+export fn driver_seed_incomplete_assignment_diagnostic(source, source_name):
+    let declaration = contains(source, "let ")
+    if not declaration:
+        declaration = contains(source, "set ")
+    if declaration:
+        let has_assignment = contains(source, " =")
+        if has_assignment:
+            let has_value = contains(source, " = ")
+            if not has_value:
+                return json({"diagnostics": [{"code": "ZAP-SYNTAX-001", "column": len(source) + 1, "help": "add an expression after '='", "line": 1, "message": "expected expression after '='", "severity": "error", "source_name": source_name}], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+    return none
+
+export fn driver_seed_emit_inferred_program_typed_ir(source, source_name):
+    let preflight = driver_seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return preflight
+    return emit_inferred_program_typed_ir(source, source_name)
+
+export fn driver_seed_compile_inferred_typed_ir_source(source, source_name):
+    let preflight = driver_seed_incomplete_assignment_diagnostic(source, source_name)
+    if preflight != none:
+        return {"artifact_kind": "bytecode", "diagnostics": [from_json(preflight)], "error": "syntax_diagnostic", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    let emitted = from_json(driver_seed_emit_inferred_program_typed_ir(source, source_name))
+    if emitted["kind"] != "zap.typed_ir":
+        return {"artifact_kind": "bytecode", "error": "typed_ir_emit_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return driver_seed_compile_inferred_typed_ir(emitted, source_name)
+
+export fn driver_seed_self_rebuild_inferred_typed_ir(source, source_name):
+    let first = driver_seed_compile_inferred_typed_ir_source(source, source_name)
+    let second = driver_seed_compile_inferred_typed_ir_source(source, source_name)
+    let first_bytes = driver_seed_compile_bytes(first)
+    let second_bytes = driver_seed_compile_bytes(second)
+    let status = "mismatch"
+    if first_bytes == second_bytes and first["status"] == "compiled_inferred_typed_ir_slice":
+        status = "reproducible_inferred_typed_ir_slice"
+    return {"byte_equal": first_bytes == second_bytes, "first": first, "native_independent": false, "second": second, "status": status}
+
+export fn driver_seed_supported_subset_run(sources, source_names, index, result):
+    if index >= len(sources):
+        return result
+    result = append(result, driver_execute_owned_pipeline(sources[index], source_names[index]))
+    return driver_seed_supported_subset_run(sources, source_names, index + 1, result)
+
+export fn driver_seed_supported_subset_rebuild(sources, source_names):
+    let first = driver_seed_supported_subset_run(sources, source_names, 0, [])
+    let second = driver_seed_supported_subset_run(sources, source_names, 0, [])
+    let all_successful = true
+    for result in first:
+        if result["status"] != "candidate_pipeline_executed":
+            all_successful = false
+    return {"all_successful": all_successful, "byte_equal": json(first) == json(second), "count": len(first), "first": first, "native_independent": false, "second": second, "status": "candidate_supported_subset_rebuild"}
+
+export fn driver_seed_a13_supported_rebuild_evidence(sources, source_names, platform_records, expected_targets):
+    let rebuild = driver_seed_supported_subset_rebuild(sources, source_names)
+    let platform_valid = driver_seed_platform_evidence_matrix_valid(platform_records, expected_targets)
+    let supported = rebuild["all_successful"]
+    if not rebuild["byte_equal"]:
+        supported = false
+    if not platform_valid:
+        supported = false
+    let status = "candidate_a13_supported_rebuild"
+    if not supported:
+        status = "candidate_a13_rebuild_blocked"
+    return {"byte_equal": rebuild["byte_equal"], "native_independent": false, "platform_evidence": platform_valid, "source_count": rebuild["count"], "status": status, "supported": supported, "vm_outputs": rebuild["first"]}
+
+export fn driver_seed_artifact_record_valid(record):
+    if not contains(json(record), "\"kind\""):
+        return false
+    if not contains(json(record), "\"bytes\""):
+        return false
+    if not contains(json(record), "\"digest\""):
+        return false
+    if record["kind"] == "":
+        return false
+    if record["bytes"] == "":
+        return false
+    return record["digest"] == record["kind"] + ":" + record["bytes"]
+
+export fn driver_seed_pipeline_artifacts_valid(artifacts, index):
+    if index >= len(artifacts):
+        return true
+    if not driver_seed_artifact_record_valid(artifacts[index]):
+        return false
+    return driver_seed_pipeline_artifacts_valid(artifacts, index + 1)
+
+export fn driver_seed_owned_pipeline_contract(pipeline):
+    let valid = pipeline["native_independent"] == false
+    if pipeline["status"] != "candidate_pipeline_executed":
+        valid = false
+    if not pipeline["stage_chain_valid"]:
+        valid = false
+    if len(pipeline["artifacts"]) != 2:
+        valid = false
+    if not driver_seed_pipeline_artifacts_valid(pipeline["artifacts"], 0):
+        valid = false
+    if not contains(json(pipeline), "\"stages\""):
+        valid = false
+    let status = "candidate_owned_pipeline_contract"
+    if not valid:
+        status = "candidate_owned_pipeline_contract_error"
+    return {"artifact_count": len(pipeline["artifacts"]), "native_independent": pipeline["native_independent"], "stage_count": len(pipeline["stages"]), "status": status, "valid": valid}
+
+export fn driver_seed_package_artifact_contract(artifact_bytes, artifact_digest):
+    let valid = artifact_bytes != ""
+    if artifact_digest != driver_seed_pipeline_digest("package_artifact", artifact_bytes):
+        valid = false
+    let status = "candidate_package_artifact_contract"
+    if not valid:
+        status = "candidate_package_artifact_contract_error"
+    return {"artifact_bytes_nonempty": artifact_bytes != "", "artifact_digest": artifact_digest, "status": status, "valid": valid}

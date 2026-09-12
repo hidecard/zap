@@ -20,17 +20,17 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let variables = seed_compile_source("let base: number = 20\nlet extra: number = 22\nsay base + extra", "variables.zp")
-let identity = seed_compile_source("say identity(42)", "identity.zp")
-let absolute = seed_compile_source("say abs(-7)", "abs.zp")
-let text = seed_compile_source("say \"Zap\"", "text.zp")
-let boolean = seed_compile_source("say true and false", "boolean.zp")
-let negation = seed_compile_source("say not false", "negation.zp")
-let list_literal = seed_compile_source("say [1, 2]", "list.zp")
-let map_literal = seed_compile_source("say {\"ok\": true}", "map.zp")
-let bad = seed_compile_source("say missing", "bad.zp")
+let variables = driver_seed_compile_source("let base: number = 20\nlet extra: number = 22\nsay base + extra", "variables.zp")
+let identity = driver_seed_compile_source("say identity(42)", "identity.zp")
+let absolute = driver_seed_compile_source("say abs(-7)", "abs.zp")
+let text = driver_seed_compile_source("say \"Zap\"", "text.zp")
+let boolean = driver_seed_compile_source("say true and false", "boolean.zp")
+let negation = driver_seed_compile_source("say not false", "negation.zp")
+let list_literal = driver_seed_compile_source("say [1, 2]", "list.zp")
+let map_literal = driver_seed_compile_source("say {\"ok\": true}", "map.zp")
+let bad = driver_seed_compile_source("say missing", "bad.zp")
 let rebuilt = seed_self_rebuild("say 2 * 3", "rebuild.zp")
 let variable_state = vm_run(variables["instructions"])
 let identity_state = vm_run(identity["instructions"])

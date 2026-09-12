@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "fn make_chain(a):\n    fn middle(b):\n        fn inner(c):\n            return a + c\n        return inner\n    return middle\nfn choose(flag):\n    if flag:\n        fn yes():\n            return 7\n        return yes\n    fn no():\n        return 9\n    return no\nlet middle = make_chain(1)\nlet inner = middle(2)\nlet yes = choose(true)\nlet no = choose(false)\nsay inner(3)\nsay yes()\nsay no()"
-let compiled = seed_compile_ast_source(source, "ast-nested-frames.zp")
+let compiled = driver_seed_compile_ast_source(source, "ast-nested-frames.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]

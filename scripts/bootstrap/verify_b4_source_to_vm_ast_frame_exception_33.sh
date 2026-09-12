@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "fn make_failure():\n    fn fail():\n        raise \"from-callee\"\n    return fail\nfn recover():\n    let fail = make_failure()\n    try:\n        fail()\n    catch err:\n        return err\nsay recover()"
-let compiled = seed_compile_ast_source(source, "ast-frame-exception.zp")
+let compiled = driver_seed_compile_ast_source(source, "ast-frame-exception.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]

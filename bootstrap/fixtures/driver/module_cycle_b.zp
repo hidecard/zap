@@ -1,0 +1,2 @@
+import "module_cycle_a"
+say 2

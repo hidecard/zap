@@ -21,7 +21,7 @@ trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
 import "bootstrap/b1/parser.zp"
 import "bootstrap/b2/typecheck.zp"
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let typed = from_json(parse_general("class Profile:\n    let name: text = \"profile\"\nclass User:\n    let profile: Profile = none", "nested-types.zp"))
 let classes = b2c_collect_classes(typed["ast"]["statements"], [])
@@ -30,9 +30,9 @@ let context = b2c_enrich_function(context_function, classes)
 let environment = [b2c_binding("user", "User", "User", true)]
 let nested = parse_expression("user.profile.name", 1)
 let nested_result = b2c_infer_expr(nested, environment, [context], "nested-types.zp")
-let ast_artifact = seed_compile_ast_source("class User:\n    fn set(self):\n        self.profile.name = \"zap\"\n        return self\nlet user = User()\nlet updated = user.set()\nsay updated.profile.name", "dynamic-ast.zp")
+let ast_artifact = driver_seed_compile_ast_source("class User:\n    fn set(self):\n        self.profile.name = \"zap\"\n        return self\nlet user = User()\nlet updated = user.set()\nsay updated.profile.name", "dynamic-ast.zp")
 let ast_run = vm_run(ast_artifact["instructions"])
-let source_artifact = seed_compile_source("class User:\n    fn set(self):\n        set self.profile.name = \"seed\"\n        return self\nlet user = User()\nlet updated = user.set()\nsay updated.profile.name", "dynamic-source.zp")
+let source_artifact = driver_seed_compile_source("class User:\n    fn set(self):\n        set self.profile.name = \"seed\"\n        return self\nlet user = User()\nlet updated = user.set()\nsay updated.profile.name", "dynamic-source.zp")
 let source_run = vm_run(source_artifact["instructions"])
 say nested["kind"]
 say nested["target"]["kind"]

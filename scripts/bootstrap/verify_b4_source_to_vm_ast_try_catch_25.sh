@@ -19,14 +19,14 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let raised = seed_compile_ast_source("try:\n    raise \"boom\"\ncatch err:\n    say err", "ast-try-error.zp")
+let raised = driver_seed_compile_ast_source("try:\n    raise \"boom\"\ncatch err:\n    say err", "ast-try-error.zp")
 let raised_state = vm_run(raised["instructions"])
 say raised["status"]
 say raised_state["error"]
 say raised_state["output"][0]
-let normal = seed_compile_ast_source("try:\n    say 7\ncatch err:\n    say 8", "ast-try-normal.zp")
+let normal = driver_seed_compile_ast_source("try:\n    say 7\ncatch err:\n    say 8", "ast-try-normal.zp")
 let normal_state = vm_run(normal["instructions"])
 say normal_state["error"]
 say normal_state["output"][0]

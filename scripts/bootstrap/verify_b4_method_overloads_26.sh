@@ -19,9 +19,9 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let artifact = seed_compile_source("class Base:\n    fn render(self, value):\n        return 10\n    fn render(self, value, extra):\n        return 20\nclass Child extends Base:\n    fn label(self):\n        return 30\nlet child = Child()\nsay child.render(1)\nsay child.render(1, 2)\nsay child.label()", "method-overloads.zp")
+let artifact = driver_seed_compile_source("class Base:\n    fn render(self, value):\n        return 10\n    fn render(self, value, extra):\n        return 20\nclass Child extends Base:\n    fn label(self):\n        return 30\nlet child = Child()\nsay child.render(1)\nsay child.render(1, 2)\nsay child.label()", "method-overloads.zp")
 let result = vm_run(artifact["instructions"])
 say artifact["status"]
 say result["error"]

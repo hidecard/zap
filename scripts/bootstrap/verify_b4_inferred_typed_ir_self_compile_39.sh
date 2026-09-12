@@ -19,13 +19,13 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "let value: number = 7\nsay value"
-let typed = from_json(seed_emit_inferred_program_typed_ir(source, "inferred.zp"))
-let artifact = seed_compile_inferred_typed_ir(typed, "inferred.zp")
+let typed = from_json(driver_seed_emit_inferred_program_typed_ir(source, "inferred.zp"))
+let artifact = driver_seed_compile_inferred_typed_ir(typed, "inferred.zp")
 let state = vm_run(artifact["instructions"])
-let acceptance = seed_self_compile_acceptance(source, "inferred.zp")
+let acceptance = driver_seed_self_compile_acceptance(source, "inferred.zp")
 say typed["schema_version"]
 say typed["candidate_only"]
 say typed["coverage"]

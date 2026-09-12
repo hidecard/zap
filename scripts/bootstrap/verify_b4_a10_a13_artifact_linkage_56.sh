@@ -19,13 +19,13 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "let value: number = 7\nsay value"
-let pipeline = seed_execute_owned_pipeline(source, "main.zp")
-let pipeline_contract = seed_owned_pipeline_contract(pipeline)
-let package = seed_build_package_owned("zap_app", "1.0.0", "main.zp", [], [], source, "main.zp")
-let package_contract = seed_package_artifact_contract(package["artifact_bytes"], package["artifact_digest"])
+let pipeline = driver_execute_owned_pipeline(source, "main.zp")
+let pipeline_contract = driver_seed_owned_pipeline_contract(pipeline)
+let package = driver_build_package("zap_app", "1.0.0", "main.zp", [], [], source, "main.zp")
+let package_contract = driver_seed_package_artifact_contract(package["artifact_bytes"], package["artifact_digest"])
 let vm_contract = vm_execution_contract([{"op": "const", "value": 7}, {"op": "print"}, {"op": "halt"}])
 say pipeline_contract["status"]
 say pipeline_contract["valid"]

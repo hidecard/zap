@@ -19,13 +19,13 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b4/seed_pipeline.zp"
 let sources = ["let value: number = 7\nsay value", "let value: number = 0\nif value == 0:\n    say 1\nelse:\n    say 2", "fn add(a, b):\n    return a + b\nsay add(2, 3)"]
 let names = ["literal.zp", "branch.zp", "function.zp"]
 let targets = ["linux-x86_64", "macos-arm64", "windows-x86_64"]
-let records = [seed_platform_record_evidence("linux-x86_64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact"), seed_platform_record_evidence("macos-arm64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact"), seed_platform_record_evidence("windows-x86_64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact")]
-let evidence = seed_a13_supported_rebuild_evidence(sources, names, records, targets)
+let records = [driver_seed_platform_record_evidence("linux-x86_64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact"), driver_seed_platform_record_evidence("macos-arm64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact"), driver_seed_platform_record_evidence("windows-x86_64", "artifact", "digest", "executed", "source", "toolchain", "clean", "bootstrap-artifact")]
+let evidence = driver_seed_a13_supported_rebuild_evidence(sources, names, records, targets)
 say evidence["status"]
 say evidence["native_independent"]
 say evidence["source_count"]

@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "fn fact(n):\n    if n == 0:\n        return 1\n    let next = n - 1\n    return n * fact(next)\nfn make_fact():\n    fn inner(n):\n        if n == 0:\n            return 1\n        let next = n - 1\n        return n * inner(next)\n    return inner\nlet recursive = make_fact()\nsay fact(5)\nsay recursive(5)"
-let compiled = seed_compile_ast_source(source, "ast-recursive-frames.zp")
+let compiled = driver_seed_compile_ast_source(source, "ast-recursive-frames.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]

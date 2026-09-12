@@ -17,9 +17,9 @@ cat > "$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
 let ownership = driver_frontend_ownership()
 let verified = driver_verified_frontend_acceptance()
-let source = "import \"shared\"\nsay 1\n"
+let source = read_text("bootstrap/fixtures/driver/module_ambiguous_app.zp")
 let parsed = driver_parse_source(source, "app.zp")
-let graph = driver_resolve_modules([source, "say 2\n", "say 3\n"], ["app.zp", "a/shared.zp", "b/shared.zp"])
+let graph = driver_resolve_modules([source, read_text("bootstrap/fixtures/driver/module_graph_base.zp"), read_text("bootstrap/fixtures/driver/module_graph_base.zp")], ["app.zp", "a/shared.zp", "b/shared.zp"])
 say ownership["status"]
 say ownership["complete_language"]
 say ownership["components"][0]["owner"]
@@ -45,7 +45,7 @@ ZAP-MODULE-004
 5
 verified_frontend_components_candidate_language
 false
-verified
+zap_owned
 EOF
 cmp "$output" "${output}.expected" || fail "frontend ownership/resolution output changed"
 rm -f "${output}.expected"

@@ -19,10 +19,10 @@ runner_rel=$(basename "$runner")
 out=$(mktemp)
 trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
 let source = "fn choose(limit):\n    fn find():\n        for item in [1, 2, 3]:\n            if item == limit:\n                return item\n        return 0\n    return find\nfn make_reader():\n    fn read():\n        try:\n            raise \"payload\"\n        catch err:\n            return err\n    return read\nlet chosen = choose(2)\nlet reader = make_reader()\nsay chosen()\nsay reader()"
-let compiled = seed_compile_ast_source(source, "ast-closure-scope.zp")
+let compiled = driver_seed_compile_ast_source(source, "ast-closure-scope.zp")
 let state = vm_run(compiled["instructions"])
 say compiled["status"]
 say state["error"]

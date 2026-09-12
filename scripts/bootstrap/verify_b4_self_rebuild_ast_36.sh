@@ -21,14 +21,14 @@ trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
 import "bootstrap/b4/rebuild.zp"
 import "bootstrap/b4/runner.zp"
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 let lexer = rebuild_stage("lexer", "source", "tokens", "zap")
 let parser = rebuild_stage("parser", "tokens", "ast", "zap")
 let lower = rebuild_stage("lower", "ast", "bytecode", "zap")
 let plan = rebuild_plan("platform-seed-0", [lexer, parser, lower])
 let acceptance = runner_acceptance(plan)
 let execution = runner_execute_plan(plan, "source", "source-digest", ["tokens-digest", "ast-digest", "bytecode-digest"])
-let rebuild = seed_rebuild_acceptance_ast("fn add(a, b):\n    return a + b\nsay add(2, 3)", "self-rebuild.zp")
+let rebuild = driver_seed_rebuild_acceptance_ast("fn add(a, b):\n    return a + b\nsay add(2, 3)", "self-rebuild.zp")
 say acceptance["executable"]
 say acceptance["native_independent"]
 say execution["status"]

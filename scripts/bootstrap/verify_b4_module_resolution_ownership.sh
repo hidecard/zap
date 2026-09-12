@@ -14,9 +14,9 @@ cat > "$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
 let owner = driver_module_resolution_ownership()
 let normalized = driver_normalize_module_name("pkg\\\\sub///feature.zp")
-let sources = ["import \"shared\"\nsay 1\n", "say 2\n"]
-let graph = driver_resolve_modules(sources, ["app.zp", "shared.zp"])
-let replay = driver_modules_graph_replay(sources, ["app.zp", "shared.zp"])
+let sources = [read_text("bootstrap/fixtures/driver/module_graph_app.zp"), read_text("bootstrap/fixtures/driver/module_graph_base.zp")]
+let graph = driver_resolve_modules(sources, ["app.zp", "module_graph_base.zp"])
+let replay = driver_modules_graph_replay(sources, ["app.zp", "module_graph_base.zp"])
 say owner["owner"]
 say owner["status"]
 say normalized
@@ -27,7 +27,7 @@ say replay["byte_equal"]
 EOF
 "$SEED" "$(basename "$runner")" > "$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-expected=(zap zap_owned_slice pkg/sub/feature modules_resolved shared app true)
+expected=(zap zap_owned pkg/sub/feature modules_resolved module_graph_base app true)
 [[ "${lines[*]}" == "${expected[*]}" ]] || fail "unexpected ownership/graph output: ${lines[*]}"
 {
   printf 'schema_version\t1\ncontract_id\tB4-MODULE-RESOLUTION-OWNERSHIP\nstatus\tpassed\nowner\tzap\ncanonical_graph\ttrue\ndeterministic_replay\ttrue\n' 

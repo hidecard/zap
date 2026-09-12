@@ -20,17 +20,17 @@ out=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$runner" "$out" "$expected"' EXIT
 cat > "$runner" <<'EOF'
-import "bootstrap/b4/native_independent.zp"
+import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let while_program = seed_compile_source("let flag = true\nwhile flag:\n    let flag = false\nsay 3", "while.zp")
-let for_program = seed_compile_source("for item in [1, 2, 3]:\n    say item\nsay 9", "for.zp")
-let nested_program = seed_compile_source("let flag = true\nwhile flag:\n    for item in [1, 2]:\n        say item\n    let flag = false\nsay 9", "nested.zp")
-let try_raise = seed_compile_source("try:\n    raise 7\ncatch:\n    say 8\nsay 9", "try_raise.zp")
-let try_normal = seed_compile_source("try:\n    say 4\ncatch:\n    say 8\nsay 9", "try_normal.zp")
-let missing_while = seed_compile_source("while true:", "missing_while.zp")
-let bad_for = seed_compile_source("for item in values:\n    say item", "bad_for.zp")
-let missing_catch = seed_compile_source("try:\n    say 4", "missing_catch.zp")
-let raised = seed_compile_source("raise 7", "raised.zp")
+let while_program = driver_seed_compile_source("let flag = true\nwhile flag:\n    let flag = false\nsay 3", "while.zp")
+let for_program = driver_seed_compile_source("for item in [1, 2, 3]:\n    say item\nsay 9", "for.zp")
+let nested_program = driver_seed_compile_source("let flag = true\nwhile flag:\n    for item in [1, 2]:\n        say item\n    let flag = false\nsay 9", "nested.zp")
+let try_raise = driver_seed_compile_source("try:\n    raise 7\ncatch:\n    say 8\nsay 9", "try_raise.zp")
+let try_normal = driver_seed_compile_source("try:\n    say 4\ncatch:\n    say 8\nsay 9", "try_normal.zp")
+let missing_while = driver_seed_compile_source("while true:", "missing_while.zp")
+let bad_for = driver_seed_compile_source("for item in values:\n    say item", "bad_for.zp")
+let missing_catch = driver_seed_compile_source("try:\n    say 4", "missing_catch.zp")
+let raised = driver_seed_compile_source("raise 7", "raised.zp")
 let rebuilt = seed_self_rebuild("while false:\n    say 1\nsay 2", "rebuild.zp")
 say while_program["status"]
 say vm_run(while_program["instructions"])["output"][0]
