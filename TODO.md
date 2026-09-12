@@ -1,6 +1,6 @@
 # Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-10 (post-seed verification)
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-12
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`

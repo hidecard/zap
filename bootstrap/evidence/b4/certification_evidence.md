@@ -1,13 +1,13 @@
 # B4 Rust-Free Full-Language Certification Evidence
 
-## Certification Date
-2026-09-04
+## Evidence Snapshot Date
+2026-09-09
 
 ## Contract Status
-- **Before:** `not-certified`
-- **After:** `certified`
+- **Current:** `not-certified`
+- **Reason:** the compiler driver and candidate graph/rebuild evidence are wired, but no verified prebuilt Zap seed, Rust-free executable rebuild, or supported-platform evidence is available in this checkout.
 
-## Acceptance Rows (18/18 PASS)
+## Acceptance Rows (12/18 PASS; 6 provisional)
 
 | ID | Area | Fixture | Owner | Artifact | Status |
 |----|------|---------|-------|----------|--------|
@@ -23,12 +23,12 @@
 | B4-FULL-010 | diagnostics | `bootstrap/fixtures/typecheck/function_incompatible.zp` | `bootstrap/b2/typecheck.zp` | stable_diagnostic | ✅ pass |
 | B4-FULL-011 | package-build | `bootstrap/b3/package.zp` | `bootstrap/b3/package.zp` | build_artifact | ✅ pass |
 | B4-FULL-012 | test-runner | `bootstrap/b4/runner.zp` | `bootstrap/b4/runner.zp` | test_result | ✅ pass |
-| B4-FULL-013 | cli-entrypoint | `bootstrap/b4/native_independent.zp` | `bootstrap/b4/native_independent.zp` | cli_result | ✅ pass |
-| B4-FULL-014 | self-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/native_independent.zp` | self_rebuild_bytes | ✅ pass |
-| B4-FULL-015 | cross-platform-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/native_independent.zp` | platform_rebuild | ✅ pass |
-| B4-FULL-016 | byte-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_byte_determinism.sh` | artifact_bytes | ✅ pass |
-| B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | ✅ pass |
-| B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | ✅ pass |
+| B4-FULL-013 | cli-entrypoint | `bootstrap/b4/compiler_driver.zp` | `bootstrap/b4/compiler_driver.zp` | cli_result | provisional |
+| B4-FULL-014 | self-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/compiler_driver.zp` | self_rebuild_bytes | provisional |
+| B4-FULL-015 | cross-platform-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `bootstrap/b4/compiler_driver.zp` | platform_rebuild | provisional |
+| B4-FULL-016 | byte-determinism | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_byte_determinism.sh` | artifact_bytes | provisional |
+| B4-FULL-017 | second-stage-rebuild | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_second_stage_rebuild.sh` | stage2_artifact | provisional |
+| B4-FULL-018 | clean-environment | `bootstrap/fixtures/b4/full_language_surface.zp` | `scripts/bootstrap/verify_b4_clean_environment.sh` | clean_run | provisional |
 
 ## Verification Commands Run
 
@@ -44,7 +44,7 @@ bash scripts/bootstrap/verify_b3_canonical_ast_schema.sh
 bash scripts/bootstrap/verify_b3_typed_ir_bytecode_lowering_12.sh
 bash scripts/bootstrap/verify_b3_zap_ownership_20.sh
 
-# B4 gates (all pass)
+# B4 gates (blocked here until a verified seed is available)
 bash scripts/bootstrap/verify_b4_rust_free_contract.sh
 bash scripts/bootstrap/verify_b4_byte_determinism.sh
 bash scripts/bootstrap/verify_b4_second_stage_rebuild.sh
@@ -62,9 +62,4 @@ bash scripts/bootstrap/verify_b4_source_to_vm_loops_try_12.sh
 
 ## Certification Decision
 
-All 18 acceptance rows verified passing on the reference platform.
-No Rust/Cargo fallback exists in `bootstrap/b1`, `bootstrap/b2`, `bootstrap/b3`, or `bootstrap/b4`.
-Self-rebuild produces deterministic artifacts across two-stage compilation.
-Clean-environment gate passes without Rust toolchain.
-
-**Certification approved.** Update contract status from `not-certified` to `certified`.
+The repository remains **not-certified**. Candidate contract and ownership wiring are verified, but certification is intentionally blocked until all provisional rows have executable evidence from a verified prebuilt Zap seed on Linux, Windows, and macOS, including two-stage/three-stage rebuilds and clean-environment execution without Rust or Cargo.

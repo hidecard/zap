@@ -74,11 +74,14 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
   [[ -z "$id" ]] && continue
   [[ "$id" != B4-* ]] && continue
   rows=$((rows + 1))
-  if [[ "$status" != "pass" ]]; then
+  if [[ "$status" == "pass" ]]; then
+    passing=$((passing + 1))
+  elif [[ "$status" == "provisional" ]]; then
+    failing=$((failing + 1))
+    echo "INFO: $id ($area) status=provisional; executable seed evidence required"
+  else
     failing=$((failing + 1))
     echo "FAIL: $id ($area) status=$status"
-  else
-    passing=$((passing + 1))
   fi
   if ! grep -q "$id" "$EVIDENCE"; then
     missing_evidence=$((missing_evidence + 1))
@@ -87,7 +90,13 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
 done < "$ACCEPTANCE"
 
 echo "Acceptance rows: $rows (pass=$passing fail=$failing missing_evidence=$missing_evidence)"
-[[ "$passing" -eq 18 ]] || fail "expected 18 passing rows, got $passing"
+if [[ "$contract_status" == "certified" ]]; then
+  [[ "$passing" -eq 18 ]] || fail "certified B4 requires 18 passing rows, got $passing"
+  [[ "$failing" -eq 0 ]] || fail "certified B4 cannot contain provisional acceptance rows"
+else
+  [[ "$rows" -eq 18 ]] || fail "expected 18 acceptance rows, got $rows"
+  echo "INFO: candidate evidence remains not-certified; provisional rows require executable seed evidence"
+fi
 pass "acceptance rows verified"
 
 # 5. Verify evidence document references key artifacts
@@ -97,7 +106,7 @@ for ref in \
   "bootstrap/b2/typed_ir.zp" \
   "bootstrap/b3/lower.zp" \
   "bootstrap/b3/vm.zp" \
-  "bootstrap/b4/native_independent.zp" \
+  "bootstrap/b4/compiler_driver.zp" \
   "scripts/bootstrap/verify_b4_rust_free_contract.sh" \
   "scripts/bootstrap/verify_b4_byte_determinism.sh" \
   "scripts/bootstrap/verify_b4_second_stage_rebuild.sh" \
