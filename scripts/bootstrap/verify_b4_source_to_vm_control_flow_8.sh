@@ -33,7 +33,7 @@ let no = driver_seed_compile_source("if false:\n    say 7\nelse:\n    say 9", "n
 let no_else = driver_seed_compile_source("if false:\n    say 7\nsay 3", "no_else.zp")
 let nested = driver_seed_compile_source("if false:\n    if true:\n        say 1\n    else:\n        say 2\nelse:\n    say 3", "nested.zp")
 let missing = driver_seed_compile_source("if true:\nsay 1", "missing.zp")
-let rebuilt = seed_self_rebuild("if false:\n    say 1\nelse:\n    say 2", "rebuild.zp")
+let rebuilt = driver_seed_self_rebuild("if false:\n    say 1\nelse:\n    say 2", "rebuild.zp")
 say yes["status"]
 say vm_run(yes["instructions"])["output"][0]
 say no["status"]

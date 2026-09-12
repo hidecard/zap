@@ -37,7 +37,7 @@ let missing_while = driver_seed_compile_source("while true:", "missing_while.zp"
 let bad_for = driver_seed_compile_source("for item in values:\n    say item", "bad_for.zp")
 let missing_catch = driver_seed_compile_source("try:\n    say 4", "missing_catch.zp")
 let raised = driver_seed_compile_source("raise 7", "raised.zp")
-let rebuilt = seed_self_rebuild("while false:\n    say 1\nsay 2", "rebuild.zp")
+let rebuilt = driver_seed_self_rebuild("while false:\n    say 1\nsay 2", "rebuild.zp")
 say while_program["status"]
 say vm_run(while_program["instructions"])["output"][0]
 say for_program["status"]
