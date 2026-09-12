@@ -257,6 +257,16 @@ jobs:
         run: bash scripts/bootstrap/verify_b4_owned_package_build_45.sh
       - name: Verify B4 owned source-to-VM pipeline
         run: bash scripts/bootstrap/verify_b4_owned_pipeline_42.sh
+      - name: Verify B4 source-to-VM extended language coverage
+        run: bash scripts/bootstrap/verify_b4_source_to_vm_extended_12.sh
+      - name: Verify B4 source-to-VM control flow
+        run: bash scripts/bootstrap/verify_b4_source_to_vm_control_flow_8.sh
+      - name: Verify B4 source-to-VM functions and recursion
+        run: bash scripts/bootstrap/verify_b4_source_to_vm_functions_14.sh
+      - name: Verify B4 source-to-VM loops and exceptions
+        run: bash scripts/bootstrap/verify_b4_source_to_vm_loops_try_12.sh
+      - name: Verify B4 malformed pipeline safety
+        run: bash scripts/bootstrap/verify_b4_pipeline_malformed_safety_46.sh
 
       - name: Verify B4 Rust-free full-language contract boundary
         env:

@@ -229,6 +229,7 @@ Compiler source, parser, type checker, IR, lowerer, VM/runtime boundary, package
 
 ### 6.3 VM verification
 
+- [x] Existing B4 source-to-VM CI coverage သည် extended language, control flow, functions/recursion, loops/try-catch နှင့် malformed-pipeline safety fixtures များကို Zap-owned pipeline ဖြင့် run စေပါသည်။
 - [ ] `bootstrap/fixtures/vm` နှင့် core examples အားလုံးကို Zap VM ဖြင့် run ပါ။
 - [ ] Rust evaluator နှင့် observable result, stdout, stderr, exit code, raised value နှင့် diagnostic ကို compare ပါ။
 - [ ] Repeated run တွင် result နှင့် diagnostics တူကြောင်း စစ်ပါ။
