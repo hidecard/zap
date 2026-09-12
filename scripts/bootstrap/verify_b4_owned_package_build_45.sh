@@ -47,7 +47,7 @@ else
   run_zap "$runner_rel"
 fi >"$out"
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-if [[ "${lines[*]}" != "candidate_package_build_executed 2 2 7 0 true package_dependency_error ZAP-PKG-MISSING-001 false" ]]; then
+if [[ "${lines[*]}" != "driver_package_build_executed 2 2 7 0 true package_dependency_error ZAP-PKG-MISSING-001 false" ]]; then
   echo "unexpected owned package build output: ${lines[*]}" >&2
   exit 1
 fi

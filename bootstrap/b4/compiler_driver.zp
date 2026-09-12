@@ -461,12 +461,12 @@ export fn driver_build_package(package_name, package_version, main, requirements
     let manifest_value = manifest(package_name, package_version, main, requirements)
     let graph = resolve_dependency_graph(requirements, registry)
     if not graph["ok"]:
-        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
-    let built = driver_build_source(source, source_name)
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": graph["errors"], "execution": {"output": []}, "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_dependency_error"}
+    let built = driver_run_source(source, source_name)
     if built["status"] != "ok":
-        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
+        return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "execution": built["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
     let artifact_bytes = json(built["artifacts"])
-    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": built["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
 
 export fn driver_artifact_record(kind, bytes):
     return {"bytes": bytes, "digest": kind + ":" + bytes, "kind": kind}
@@ -697,7 +697,7 @@ export fn driver_seed_artifact_record_valid(record):
         return false
     if record["bytes"] == "":
         return false
-    return record["digest"] == record["kind"] + ":" + record["bytes"]
+    return record["digest"] == driver_seed_pipeline_digest(record["kind"], record["bytes"])
 
 export fn driver_seed_pipeline_artifacts_valid(artifacts, index):
     if index >= len(artifacts):
@@ -725,7 +725,7 @@ export fn driver_seed_owned_pipeline_contract(pipeline):
 
 export fn driver_seed_package_artifact_contract(artifact_bytes, artifact_digest):
     let valid = artifact_bytes != ""
-    if artifact_digest != driver_seed_pipeline_digest("package_artifact", artifact_bytes):
+    if artifact_digest != "package_artifact:" + artifact_bytes:
         valid = false
     let status = "candidate_package_artifact_contract"
     if not valid:
