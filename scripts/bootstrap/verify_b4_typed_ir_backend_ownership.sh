@@ -41,6 +41,10 @@ cat > "$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
 let promoted = driver_promote_typed_ir("let answer = 1\nsay answer\n", "ownership.zp")
 let executed = driver_execute_owned_pipeline("let answer = 1\nsay answer\n", "ownership.zp")
+let legacy = {"candidate_only": true, "diagnostics": [], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 3}
+let incomplete = {"candidate_only": true, "coverage": "owned_ast_with_checker_inferred_types", "diagnostics": [], "ir": {"nodes": []}, "kind": "zap.typed_ir", "schema_version": 4, "typed_metadata": false}
+let legacy_ownership = driver_typed_ir_ownership(legacy, legacy)
+let incomplete_ownership = driver_typed_ir_ownership(incomplete, incomplete)
 say promoted["status"]
 say promoted["typed_ir"]["candidate_only"]
 say promoted["typed_ir"]["ownership"]
@@ -48,6 +52,10 @@ say promoted["typed_ir"]["reference_owner"]
 say executed["ownership"]
 say executed["reference_owner"]
 say executed["stage_chain_valid"]
+say legacy_ownership["ownership"]
+say legacy_ownership["valid"]
+say incomplete_ownership["ownership"]
+say incomplete_ownership["valid"]
 EOF
 "$SEED" "$(basename "$runner")" > "$output"
 cat > "${output}.expected" <<'EOF'
@@ -58,6 +66,10 @@ zap
 zap_owned
 zap
 true
+candidate
+false
+candidate
+false
 EOF
 cmp "$output" "${output}.expected" || fail "finalized typed-IR/backend propagation changed"
 rm -f "${output}.expected"
