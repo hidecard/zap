@@ -62,7 +62,7 @@
 | Bytecode lowering | ✅ ပြီးပြီ | B3 |
 | VM execution | ✅ ပြီးပြီ | B3 |
 | Package build | ✅ ပြီးပြီ | B3 |
-| Self-hosting | ✅ Certified | B4 |
+| Self-hosting | 🔄 Not-certified | B4 |
 
 ## ချိုးဖောက်မှု ပြောင်းလဲမှု မူဝနဲ့
 

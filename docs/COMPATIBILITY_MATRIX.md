@@ -62,7 +62,7 @@ This document tracks version compatibility across Zap components and platforms.
 | Bytecode lowering | ✅ Complete | B3 |
 | VM execution | ✅ Complete | B3 |
 | Package build | ✅ Complete | B3 |
-| Self-hosting | ✅ Certified | B4 |
+| Self-hosting | 🔄 Not-certified | B4 |
 
 ## Breaking Changes Policy
 
