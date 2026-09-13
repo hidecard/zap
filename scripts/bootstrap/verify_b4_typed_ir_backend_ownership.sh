@@ -14,6 +14,7 @@ for required in \
   'export fn driver_typed_ir_backend_ownership(' \
   'export fn driver_typed_ir_ownership(' \
   'export fn driver_typed_ir_expression_coverage_valid(' \
+  'export fn driver_typed_ir_expression_metadata_valid(' \
   'export fn driver_typed_ir_node_coverage_valid(' \
   'export fn driver_typed_ir_nodes_coverage_valid(' \
   'export fn driver_finalize_typed_ir(' \
@@ -26,6 +27,7 @@ for required in \
 done
 grep -Fq '"candidate_only": false' "$DRIVER" || fail "promoted typed-IR must clear candidate_only"
 grep -Fq 'coverage_valid' "$DRIVER" || fail "typed-IR promotion must expose coverage_valid"
+grep -Fq 'metadata_valid' "$DRIVER" || fail "typed-IR promotion must expose metadata_valid"
 if grep -n -E '\b(cargo|rustc|rustup)\b|host/zap-host|native/src' "$DRIVER"; then
   fail "driver contains a forbidden compiler-path fallback"
 fi
