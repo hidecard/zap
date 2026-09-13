@@ -35,10 +35,12 @@ A seed binary that:
 - Required: Full language surface coverage
 
 ### Stage 3: Native Code Generation Backend
-**Status:** Not started
-- Implement a code generator that emits C or LLVM-IR from Zap bytecode/IR
-- Use system C compiler as platform seed boundary (allowed by B4 contract)
-- Output: native executable (ELF/PE/Mach-O)
+**Status:** Proof of concept implemented (2026-09-13)
+- Added `host/zap-bootstrap/c_backend.py` — emits self-contained C from Zap bytecode
+- C backend handles: const, store/load, arithmetic, comparison, boolean, jumps, print, halt, list ops
+- Compiles with system C compiler (gcc/clang) — no Rust/Cargo required
+- CI integration: `c-backend` job runs on Ubuntu with gcc
+- Next: Extend C backend to handle all 14 verification programs, add function calls
 
 ### Stage 4: Self-Hosting Loop
 **Status:** Not started

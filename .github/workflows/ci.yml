@@ -788,3 +788,17 @@ jobs:
             target/b4-clean-environment.tsv
             target/b4-byte-determinism.tsv
           if-no-files-found: warn
+
+  c-backend:
+    name: C Backend Proof of Concept
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install C compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc
+
+      - name: Run C backend verification
+        run: python3 host/zap-bootstrap/c_backend.py host/zap-bootstrap/hello.zp host/zap-bootstrap/hello_c

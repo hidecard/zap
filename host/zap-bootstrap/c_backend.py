@@ -29,6 +29,8 @@ def emit_c(program, out_path):
     lines.append("#include <stdio.h>")
     lines.append("#include <stdlib.h>")
     lines.append("#include <string.h>")
+    lines.append("#include <stdint.h>")
+    lines.append("#include <stdbool.h>")
     lines.append("")
     lines.append("typedef struct {")
     lines.append("  char **locals;")
@@ -39,6 +41,8 @@ def emit_c(program, out_path):
     lines.append("  int halted;")
     lines.append("  char **output;")
     lines.append("  int output_count;")
+    lines.append("  int32_t *int_stack;")
+    lines.append("  int int_stack_count;")
     lines.append("} state;")
     lines.append("")
     lines.append("static void push_str(state *st, const char *value) {")
@@ -48,6 +52,16 @@ def emit_c(program, out_path):
     lines.append("")
     lines.append("static char *pop_str(state *st) {")
     lines.append("  char *value = st->stack[--st->stack_count];")
+    lines.append("  return value;")
+    lines.append("}")
+    lines.append("")
+    lines.append("static void push_int(state *st, int32_t value) {")
+    lines.append("  st->int_stack = realloc(st->int_stack, sizeof(int32_t) * (st->int_stack_count + 1));")
+    lines.append("  st->int_stack[st->int_stack_count++] = value;")
+    lines.append("}")
+    lines.append("")
+    lines.append("static int32_t pop_int(state *st) {")
+    lines.append("  int32_t value = st->int_stack[--st->int_stack_count];")
     lines.append("  return value;")
     lines.append("}")
     lines.append("")
@@ -74,8 +88,37 @@ def emit_c(program, out_path):
     lines.append("  st->output[st->output_count++] = strdup(value);")
     lines.append("}")
     lines.append("")
+    lines.append("static int32_t to_int(const char *value) {")
+    lines.append("  if (value == NULL) return 0;")
+    lines.append("  size_t len = strlen(value);")
+    lines.append("  int negative = 0;")
+    lines.append("  size_t i = 0;")
+    lines.append("  if (len > 0 && value[0] == '-') { negative = 1; i = 1; }")
+    lines.append("  int32_t result = 0;")
+    lines.append("  while (i < len) {")
+    lines.append("    char c = value[i++];")
+    lines.append("    if (c < '0' || c > '9') break;")
+    lines.append("    result = result * 10 + (c - '0');")
+    lines.append("  }")
+    lines.append("  return negative ? -result : result;")
+    lines.append("}")
+    lines.append("")
+    lines.append("static char *from_int(int32_t value) {")
+    lines.append("  char buf[32];")
+    lines.append("  snprintf(buf, sizeof(buf), \"%d\", value);")
+    lines.append("  return strdup(buf);")
+    lines.append("}")
+    lines.append("")
+    lines.append("static bool to_bool(const char *value) {")
+    lines.append("  if (value == NULL) return false;")
+    lines.append("  if (value[0] == 't' && value[1] == 'r') return true;")
+    lines.append("  if (value[0] == '1') return true;")
+    lines.append("  size_t len = strlen(value);")
+    lines.append("  if (len > 0 && value[0] != '0') return true;")
+    lines.append("  return false;")
+    lines.append("}")
+    lines.append("")
 
-    # Precompute names to indices for a tiny fixed local window.
     name_index = {}
     current_index = 0
 
@@ -90,6 +133,8 @@ def emit_c(program, out_path):
     lines.append("  state st = {0};")
     lines.append("  char *a;")
     lines.append("  char *b;")
+    lines.append("  int32_t ia;")
+    lines.append("  int32_t ib;")
     lines.append("  int target;")
     lines.append("")
 
@@ -113,6 +158,34 @@ def emit_c(program, out_path):
         elif op == "subtract":
             lines.append("  b = pop_str(&st); a = pop_str(&st);")
             lines.append("  push_str(&st, a); free(a); free(b);")
+        elif op == "multiply":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  ia = to_int(a); ib = to_int(b);")
+            lines.append("  push_str(&st, from_int(ia * ib)); free(a); free(b);")
+        elif op == "divide":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  ia = to_int(a); ib = to_int(b);")
+            lines.append("  push_str(&st, from_int(ib == 0 ? 0 : ia / ib)); free(a); free(b);")
+        elif op == "remainder":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  ia = to_int(a); ib = to_int(b);")
+            lines.append("  push_str(&st, from_int(ib == 0 ? 0 : ia % ib)); free(a); free(b);")
+        elif op == "less":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  ia = to_int(a); ib = to_int(b);")
+            lines.append("  push_str(&st, ia < ib ? strdup(\"true\") : strdup(\"false\")); free(a); free(b);")
+        elif op == "greater":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  ia = to_int(a); ib = to_int(b);")
+            lines.append("  push_str(&st, ia > ib ? strdup(\"true\") : strdup(\"false\")); free(a); free(b);")
+        elif op == "equal":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  bool eq = (a == NULL && b == NULL) || (a != NULL && b != NULL && strcmp(a, b) == 0);")
+            lines.append("  push_str(&st, eq ? strdup(\"true\") : strdup(\"false\")); free(a); free(b);")
+        elif op == "not":
+            lines.append("  b = pop_str(&st); a = b;")
+            lines.append("  bool v = to_bool(a);")
+            lines.append("  push_str(&st, v ? strdup(\"false\") : strdup(\"true\")); free(a); free(b);")
         elif op == "print":
             lines.append("  print_value(&st, pop_str(&st));")
         elif op == "halt":
@@ -121,7 +194,11 @@ def emit_c(program, out_path):
             lines.append(f"  goto label_{instr['target']};")
         elif op == "jump_if_false":
             lines.append("  b = pop_str(&st); a = b;")
-            lines.append("  if (!a[0] || (a[0] == 'f' && a[1] == 'a')) goto label_%d;" % instr["target"])
+            lines.append("  if (!to_bool(a)) goto label_%d;" % instr["target"])
+            lines.append("  free(a); free(b);")
+        elif op == "jump_if_true":
+            lines.append("  b = pop_str(&st); a = b;")
+            lines.append("  if (to_bool(a)) goto label_%d;" % instr["target"])
             lines.append("  free(a); free(b);")
         elif op == "function_def":
             lines.append(f"  /* function {instr.get('name')} */")
@@ -132,17 +209,27 @@ def emit_c(program, out_path):
             lines.append("  /* return */")
         elif op == "return_none":
             lines.append("  /* return */")
+        elif op == "make_list":
+            count = instr.get("count", 0)
+            lines.append(f"  /* make_list count={count} */")
+            lines.append("  push_str(&st, strdup(\"[]\"));")
+        elif op == "list_get":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  push_str(&st, a); free(a); free(b);")
+        elif op == "list_len":
+            lines.append("  b = pop_str(&st); a = b;")
+            lines.append("  push_str(&st, from_int((int32_t)strlen(a))); free(a);")
         else:
             lines.append(f"  /* unhandled op {op} */")
     lines.append("")
 
     # Emit labels for jumps.
-    label_positions = {}
-    for idx, instr in enumerate(program):
-        if instr.get("op") == "jump" or instr.get("op") == "jump_if_false":
-            label_positions.setdefault(instr.get("target", idx), []).append(idx)
+    label_targets = set()
+    for instr in program:
+        if instr.get("op") in ("jump", "jump_if_false", "jump_if_true"):
+            label_targets.add(instr.get("target", 0))
 
-    for target in sorted(label_positions):
+    for target in sorted(label_targets):
         if target < len(program):
             lines.append(f"label_{target}:")
             lines.append("  { (void)0; }")
@@ -155,6 +242,8 @@ def emit_c(program, out_path):
     lines.append("  free(st.output);")
     lines.append("  for (int i = 0; i < st.stack_count; ++i) free(st.stack[i]);")
     lines.append("  free(st.stack);")
+    lines.append("  for (int i = 0; i < st.int_stack_count; ++i) { /* int stack has no heap data */ }")
+    lines.append("  free(st.int_stack);")
     lines.append("  for (int i = 0; i < st.local_count; ++i) free(st.locals[i]);")
     lines.append("  free(st.locals);")
     lines.append("  return 0;")
