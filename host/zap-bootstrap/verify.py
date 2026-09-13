@@ -43,6 +43,16 @@ _PROGRAMS = [
 
     # 10. for loop with accumulator
     ("let total = 0\nfor x in [1, 2, 3, 4]:\n    total = total + x\nsay total\n", [10]),
+
+    # 11. string concatenation
+    ('say "hello" + " world"\n', ["hello world"]),
+
+    # 12. string equality
+    ('say "a" == "a"\n', [True]),
+    ('say "a" == "b"\n', [False]),
+
+    # 13. string variable + concatenation
+    ('let s = "zap"\nsay s + "!"\n', ["zap!"]),
 ]
 
 
