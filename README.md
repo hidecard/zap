@@ -24,7 +24,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64, Windows x86_64, macOS ARM64 |
-| Bootstrap stage | **B0** — provisional corpus-limited Zap candidates |
+| Bootstrap stage | **B4 candidate** — verification infrastructure complete; Zap-produced Rust-free seed binary not yet available |
 | Reference implementation | Rust native CLI/runtime remains the owner of complete semantics |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -184,7 +184,9 @@ The current stable direction covers the `.zp` language core, native CLI, project
 
 ### Bootstrap and self-hosting status
 
-Zap remains at **B0**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The B2 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
+Zap is at bootstrap stage **B4 candidate**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The B2 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
+
+The repository has extensive B4 verification infrastructure: 18-row acceptance manifest, cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains **not-certified** because no mechanism exists to produce the native binary without Rust/Cargo. The remaining blockers are documented in `docs/SEED_PRODUCTION_PLAN.md`.
 
 Complete type inference, arbitrary-program parser and diagnostic parity, general typed-IR production, package/build ownership, VM execution ownership, and platform-seed acceptance remain future roadmap work. Do not interpret the current candidates as fully Zap-only or B4/self-hosted. The detailed boundary is maintained in the [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_EN.md), and broader product scope is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
 

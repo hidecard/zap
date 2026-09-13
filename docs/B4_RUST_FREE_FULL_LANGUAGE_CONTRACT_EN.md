@@ -47,7 +47,21 @@ The gate validates the contract, fixture manifest, ownership declarations, forbi
 
 ## Current status
 
-Zap has a Rust-free seed pipeline and several Zap-owned compiler candidates, but the full-language self-hosting path is not yet certified. The next promotion gate is to replace the current candidate seed entrypoint with a complete Zap compiler driver and make every acceptance row executable through that driver.
+Zap has a Rust-free seed pipeline, extensive B4 verification infrastructure, and a documented seed production plan, but B4 remains **not-certified**. The repository now has:
+
+- 18-row acceptance manifest (`bootstrap/contracts/B4_ACCEPTANCE.tsv`) with 12 passing rows and 6 provisional rows (B4-FULL-013..018)
+- Cross-platform CI job (`b4-platform-evidence`) that runs B4 gates on Linux, Windows, and macOS with downloaded platform seeds
+- Comprehensive acceptance matrix gate (`verify_b4_full_acceptance_matrix.sh`)
+- Cross-platform artifact manifest gate (`verify_b4_cross_platform_artifact_manifest.sh`)
+- Extended Python seed compiler with list support (8 verification programs, no Rust dependency)
+- Seed production plan (`docs/SEED_PRODUCTION_PLAN.md`) documenting the path to a Zap-produced Rust-free seed
+
+The remaining certification blockers are:
+1. No mechanism exists to produce the native binary without Rust/Cargo
+2. B4-FULL-013..018 require executable cross-platform evidence with a Zap-produced seed
+3. The Python seed compiler is a reference implementation, not a Zap-owned production compiler
+
+The next promotion gate is to implement a native code generation backend (Stage 3 in the seed production plan) and produce a Zap-produced Rust-free seed binary that can rebuild itself byte-for-byte.
 
 ## References
 

@@ -11,7 +11,7 @@
 | Standard Library | 2.11.18 | 9 ဒိုမိန်းအတွက် 68 entries |
 | Package Format | 2.11.18 | `zap.toml` manifest |
 | LSP | 2.11.18 | `zap lsp` |
-| Bootstrap Stage | B4 | Rust-free full-language certified |
+| Bootstrap Stage | B4 candidate | Rust-free full-language not-certified (verification infrastructure ပြီးပြီး; Zap-produced seed binary ကျန်သေး) |
 
 ## ပလတ်ဖောင်း ထောက်ခံမှု
 

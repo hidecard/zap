@@ -11,7 +11,7 @@ This document tracks version compatibility across Zap components and platforms.
 | Standard Library | 2.11.18 | 68 entries across 9 domains |
 | Package Format | 2.11.18 | `zap.toml` manifest |
 | LSP | 2.11.18 | `zap lsp` |
-| Bootstrap Stage | B4 | Rust-free full-language certified |
+| Bootstrap Stage | B4 candidate | Rust-free full-language not-certified (verification infrastructure complete; Zap-produced seed binary pending) |
 
 ## Platform Support
 

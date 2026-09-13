@@ -1,4 +1,4 @@
-# Zap Programming Language
+﻿# Zap Programming Language
 
 ![Zap Programming Language banner](assets/branding/zap-banner.png)
 
@@ -24,7 +24,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64၊ Windows x86_64၊ macOS ARM64 |
-| Bootstrap stage | **B0** — provisional corpus-limited Zap candidate များ |
+| Bootstrap stage | **B4 candidate** — verification infrastructure ပြီးပြီး; Zap-produced Rust-free seed binary လက်ရှိတွင် မရှိသေးပါ |
 | Reference implementation | Complete semantics အတွက် Rust native CLI/runtime က reference owner အဖြစ် ဆက်ရှိသည် |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -167,9 +167,9 @@ React၊ Vue၊ Svelte သို့မဟုတ် အခြား frontend proj
 
 ### Bootstrap နှင့် self-hosting အခြေအနေ
 
-Zap သည် **B0** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ B2 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
+Zap သည် **B4 candidate** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ B2 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
 
-Complete type inference၊ arbitrary-program parser/diagnostic parity၊ general typed-IR production၊ package/build ownership၊ VM execution ownership နှင့် platform-seed acceptance တို့သည် roadmap တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ လက်ရှိ candidate များကို fully Zap-only သို့မဟုတ် B4/self-hosted ဟု မယူဆရ။ အသေးစိတ် boundary ကို [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_MM.md) တွင် ထိန်းသိမ်းထားပြီး product scope ကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ဖော်ပြထားပါသည်။
+Complete type inference၊ arbitrary-program parser/diagnostic parity၊ general typed-IR production၊ package/build ownership၊ VM execution ownership နှင့် platform-seed acceptance တို့သည် roadmap တွင် ဆက်လက်လုပ်ဆောင်ရန် ကျန်ရှိပါသည်။ Repository တွင် extensive B4 verification infrastructure ရှိပါသည်။ 18-row acceptance manifest၊ cross-platform CI jobs (`b4-platform-evidence`)၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection များ ပြုလုပ်ပြီးဖြစ်ပါသည်။ B4 သည် **not-certified** အဖြစ် ဆက်ရှိပါသည်။ `cargo`၊ `rustc` သို့မဟုတ် `rustup` မသုံးဘဲ native binary ဖန်တီးရာမှာ mechanism မရှိသေးပါ။ ကျန်တဲ့ blockers များကို `docs/SEED_PRODUCTION_PLAN.md` တွင် မှတ်တမ်းတင်ထားပါသည်။ လက်ရှိ candidate များကို fully Zap-only သို့မဟုတ် B4/self-hosted ဟု မယူဆရ။ အသေးစိတ် boundary ကို [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_MM.md) တွင် ထိန်းသိမ်းထားပြီး product scope ကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ဖော်ပြထားပါသည်။
 
 Complete ORM၊ provider-neutral production migration platform၊ user-defined trait syntax၊ production async I/O reactor၊ cross-file semantic rename၊ template compiler နှင့် hidden app registry တို့ကို complete ဟု မဆိုထားသေးပါ။
 
@@ -192,3 +192,5 @@ Local validation မစတင်မီ `make doctor` ကို run လုပ်�
 ## License
 
 Zap ကို [MIT License](LICENSE) အောက်တွင် ဖြန့်ချိထားပါသည်။
+
+

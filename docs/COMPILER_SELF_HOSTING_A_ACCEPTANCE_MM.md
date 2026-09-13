@@ -1,6 +1,6 @@
 # အပိုင်း A — Compiler နှင့် Self-Hosting Acceptance Contract
 
-**အခြေအနေ:** Design နှင့် acceptance contract ဖြစ်ပြီး အပိုင်း A အတွင်း deferred ထားသော အရာများ ပြီးစီးပြီဟု မဆိုလိုပါ။ Zap သည် B0 ဖြစ်နေဆဲဖြစ်ပြီး Rust သည် reference/compiler/runtime owner ဖြစ်နေဆဲဖြစ်သည်။
+**အခြေအနေ:** Design နှင့် acceptance contract; deferred section-A item များအပြည့်အစုံ ပြီးပြီဟု မဆိုလိုပါ။ Zap သည် release အတွက် B0 အဖြစ်သာ ဆက်ရှိပြီး Rust သည် reference/compiler/runtime owner အဖြစ် ဆက်ရှိသည်။ B4 verification infrastructure ကို တည်ဆောက်ပြီးဖြစ်သော်လည်း B4 သည် Zap-produced Rust-free seed binary မရှိသေးသရွေ့ not-certified အဖြစ် ဆက်ရှိပါသည်။
 
 ## ရည်ရွယ်ချက်
 
@@ -45,3 +45,5 @@ Section-A program သည် independently verified bounded increment မျာ�
 ## နောက် implementation ဆုံးဖြတ်ချက်
 
 A2 design gate တွင် arithmetic၊ text addition၊ boolean logic၊ comparison၊ result construction၊ list arithmetic နှင့် map arithmetic ကို cover လုပ်သော Rust-reference-backed exact-expression matrix အသေးတစ်ခုကို ယခု implement နှင့် verify လုပ်ပြီးဖြစ်သည်။ နောက် bounded A3 checkpoint တွင် AST type-parameter metadata၊ inferred identity call၊ multiple-parameter substitution၊ structural `option<T>` နှင့် `result<T>` wrapper substitution၊ generic arity diagnostic၊ conflicting-substitution diagnostic၊ generic return check နှင့် runtime substitution check ပါဝင်သော Rust-backed `identity<T>` နှင့် `same<T>` declaration များကို ထည့်ထားသည်။ A1 complete inference၊ A2 broader cross-product coverage နှင့် A3 declaration contract အပြည့်အစုံများသည် ဆက်လက် open ဖြစ်သည်။ ရှိပြီးသား literal၊ constructor၊ exact-expression သို့မဟုတ် bounded generic slice များကို complete inference သို့မဟုတ် self-hosting ဟု မယူဆဘဲ evidence ကို အဆင့်လိုက် တိုးချဲ့ရမည်။
+
+လက်ရှိ B4 gate သည် seed production ဖြစ်ပါသည်။ Native code generation backend ကို implement လုပ်ပြီး Zap-produced Rust-free seed binary ဖန်တီးရန် ဖြစ်ပါသည်။ Repository တွင် verification infrastructure (18-row acceptance manifest၊ cross-platform CI jobs၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection) အားလုံး ပြုလုပ်ပြီးဖြစ်ပါသည်။ ကျန်တဲ့ အလုပ်က production mechanism ဖြစ်ပါသည်။ Zap→C သို့မဟုတ် Zap→LLVM-IR backend တစ်ခုကို တည်ဆောက်ပြီး `cargo`၊ `rustc` သို့မဟုတ် `rustup` ကို invoke မလုပ်ဘဲ native executable ထုတ်ပေးနိုင်ရန် ဖြစ်ပါသည်။ `docs/SEED_PRODUCTION_PLAN.md` တွင် အဆင့်လိုက် production plan ကို ကြည့်ပါ။

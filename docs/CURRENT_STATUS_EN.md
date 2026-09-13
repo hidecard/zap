@@ -3,9 +3,9 @@
 **Status label:** active
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Next release line:** v2.11.18 preparation
-**Bootstrap stage:** B0
+**Bootstrap stage:** B4 candidate
 
-> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler.
+> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler. The repository has extensive B4 verification infrastructure: 18-row acceptance manifest, cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains not-certified pending a Zap-produced Rust-free seed binary.
 
 ## Release and provenance
 

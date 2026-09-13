@@ -2,12 +2,9 @@
 
 ## Status
 
-Zap is currently at bootstrap stage **B0**.  The Rust native compiler and
-runtime remain the authoritative implementation for complete language
-semantics, diagnostics, package/build behaviour, and supported release
-artifacts.  No release or documentation may describe Zap as fully self-hosted
-until acceptance gates A1 through A13 in
-[the self-hosting contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_EN.md) pass.
+Zap is currently at bootstrap stage **B4 candidate**. The Rust native compiler and runtime remain the authoritative implementation for complete language semantics, diagnostics, package/build behaviour, and supported release artifacts. No release or documentation may describe Zap as fully self-hosted until acceptance gates A1 through A13 in [the self-hosting contract](COMPILER_SELF_HOSTING_A_ACCEPTANCE_EN.md) pass and a Zap-produced Rust-free seed binary exists.
+
+The repository has extensive B4 verification infrastructure: 18-row acceptance manifest, cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains **not-certified** because no mechanism exists to produce the native binary without Rust/Cargo. The remaining blockers are documented in `docs/SEED_PRODUCTION_PLAN.md`.
 
 There is now a separately verified, Rust-free seed path:
 
@@ -19,11 +16,7 @@ Zap source (supported seed subset)
   -> output
 ```
 
-`scripts/bootstrap/verify_non_rust_seed_pipeline.sh` runs this path with the
-usual Rust toolchain variables removed.  It covers arithmetic, branches,
-loops, calls, recursion, closures, classes/methods, and caught raises in small
-fixtures.  It is evidence for a non-Rust execution path only; the seed hosts
-are Python implementations and are not the final Zap-owned compiler/runtime.
+`scripts/bootstrap/verify_non_rust_seed_pipeline.sh` runs this path with the usual Rust toolchain variables removed. It covers arithmetic, branches, loops, calls, recursion, closures, classes/methods, and caught raises in small fixtures. It is evidence for a non-Rust execution path only; the seed hosts are Python implementations and are not the final Zap-owned compiler/runtime.
 
 ## Ownership plan
 

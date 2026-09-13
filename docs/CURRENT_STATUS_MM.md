@@ -3,9 +3,9 @@
 **အခြေအနေ label:** active
 **နောက်ဆုံး publish လုပ်ထားသော release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **နောက် release line:** v2.11.18 preparation
-**Bootstrap stage:** B0
+**Bootstrap stage:** B4 candidate
 
-> Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
+> Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။ Repository တွင် extensive B4 verification infrastructure ရှိပြီး 18-row acceptance manifest၊ cross-platform CI jobs၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection များ ပြုလုပ်ပြီးဖြစ်ပါသည်။ B4 သည် not-certified အဖြစ် ဆက်ရှိပါသည်။
 
 ## Release နှင့် provenance
 

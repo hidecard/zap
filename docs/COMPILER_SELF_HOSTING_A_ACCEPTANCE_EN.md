@@ -1,6 +1,6 @@
 # Section A — Compiler and Self-Hosting Acceptance Contract
 
-**Status:** Design and acceptance contract; it does not claim that any deferred section-A item is complete. Zap remains B0 and Rust remains the reference/compiler/runtime owner.
+**Status:** Design and acceptance contract; it does not claim that any deferred section-A item is complete. Zap remains B0 for release purposes and Rust remains the reference/compiler/runtime owner. B4 verification infrastructure is in place but B4 remains not-certified pending a Zap-produced Rust-free seed binary.
 
 ## Purpose
 
@@ -45,3 +45,5 @@ The section-A program may produce intermediate releases only for independently v
 ## Next implementation decision
 
 The A2 design gate now has a small Rust-reference-backed exact-expression matrix covering arithmetic, text addition, boolean logic, comparison, result construction, list arithmetic, and map arithmetic. The next bounded A3 checkpoint adds Rust-backed `identity<T>` and `same<T>` declarations with AST type-parameter metadata, inferred identity calls, multiple-parameter substitution, structural `option<T>` and `result<T>` wrapper substitution, generic arity diagnostics, conflicting-substitution diagnostics, generic return checking, and runtime substitution checks. A1 complete inference, A2 broader cross-product coverage, and the complete A3 declaration contract remain open. Evidence must continue to expand incrementally rather than treating any literal, constructor, exact-expression, or bounded generic slice as complete inference or self-hosting.
+
+The active B4 gate is seed production: implement a native code generation backend and produce a Zap-produced Rust-free seed binary. The repository already has the verification infrastructure (18-row acceptance manifest, cross-platform CI jobs, full acceptance matrix gate, artifact manifest gate, and evidence collection). The remaining work is the production mechanism: a Zap→C or Zap→LLVM-IR backend that can emit a native executable without invoking `cargo`, `rustc`, or `rustup`. See `docs/SEED_PRODUCTION_PLAN.md` for the staged production plan.

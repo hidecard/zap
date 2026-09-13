@@ -15,8 +15,8 @@
 | B2 type checker | Generic constraints, compound bounds, aliases, flow/dataflow, recursive alias diagnostics နှင့် verifier များ တိုးချဲ့ထားသည် | **Partial / provisional** — complete language-wide type ownership မရသေး |
 | B2 typed IR | Arbitrary typed-IR, expression, generic, trait နှင့် reference-compare verification scripts တိုးလာသည် | **Partial / provisional** — Zap compiler က full source ကို Rust မခေါ်ဘဲ typed IR ထုတ်နိုင်ကြောင်း B4-level proof မရှိသေး |
 | B3 build/package/VM | Build plan, dependency graph, package metadata နှင့် VM candidate files/fixtures ရှိသည် | **Not certified** — canonical executable ownership နှင့် full runtime replacement မပြီးသေး |
-| B4 self-rebuild | B4 acceptance manifest ၏ rows 18 ခုလုံး `pass`; byte determinism, second-stage rebuild နှင့် clean-environment gates များ CI တွင် run ပြီး | **Evidence pass / release wording pending** — B4 contract သည် `certified` ဖြစ်သော်လည်း legacy B0 contract နှင့် public status pages များကို မညှိရသေး |
-| Rust independence | Rust-free seed pipeline သည် compiler/VM host ကို Rust VM မပါဘဲ run ပြီး B4 Rust-free contract gate က acceptance rows 18 ခုကို validate လုပ်သည် | **B4 evidence pass** — release/documentation ownership boundary ကို legacy B0 wording နှင့် ညှိရန် ကျန်သေး |
+| B4 self-rebuild | B4 acceptance manifest တွင် 12 pass နှင့် 6 provisional rows; byte-determinism၊ second-stage rebuild နှင့် clean-environment gates CI တွင် run ပြီး | **not-certified** — Zap-produced Rust-free seed binary မရှိသေးပါ |
+| Rust independence | Rust-free seed pipeline သည် compiler/VM host ကို Rust VM မပါဘဲ run ပြီး B4 Rust-free contract gate က acceptance rows 18 ခုကို validate လုပ်သည် | **B4 infrastructure pass** — release/documentation ownership boundary ကို legacy B0 wording နှင့် ညှိရန် ကျန်သေး |
 | CI | Latest master CI run အောင်မြင်ထားသည် | CI green သည် B4 self-hosting အောင်မြင်သည်ဟု မဆိုလို |
 
 ### ဤ update ပြီးနောက် အဓိကကျန် TODO
@@ -26,7 +26,7 @@
 - [x] B1 parser no-Rust verification ၏ Python golden-artifact mismatch 10 ခုကို ပြန်ပြင်ပြီး local result `pass=74 fail=0` ရရှိသည်။
 - [x] B1 lexer verifier ၏ executable permission ပြဿနာ (`exit code 126`) ကို ပြင်ပြီး GitHub CI success ရရှိသည်။
 - [x] Rust-free seed pipeline နှင့် Rust-free VM host verification ကို CI တွင် pass လုပ်ထားသည်။
-- [x] B4 Rust-free full-language contract gate နှင့် acceptance matrix rows 18 ခုလုံး `pass` ဖြစ်ပြီး contract status သည် `certified` ဖြစ်သည်။ [3]
+- [ ] B4 Rust-free full-language contract gate နှင့် acceptance matrix rows 18 ခုလုံး `pass` ဖြစ်ပြီး contract status သည် `certified` ဖြစ်သည်။ [3]
 
 #### P0 — Documentation နှင့် release claim ကို တစ်ပြေးညီလုပ်ခြင်း
 
