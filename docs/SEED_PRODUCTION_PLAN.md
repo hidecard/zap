@@ -19,11 +19,12 @@ A seed binary that:
 ## Production Stages
 
 ### Stage 1: Expand Rust-Free Seed Compiler (In Progress)
-**Status:** Extended with list support (2026-09-13)
-- Python seed compiler handles: let/say/fn/if/while/arithmetic/function calls
+**Status:** Extended with list and for-loop support (2026-09-13)
+- Python seed compiler handles: let/say/fn/if/while/for/arithmetic/function calls
 - **NEW:** list literals `[1, 2, 3]`, list indexing `xs[0]`, `len(xs)`
-- Verification: `verify_non_rust_bootstrap_compiler.sh` (8 programs pass)
-- Next: strings, basic data structures, for loops
+- **NEW:** `for x in xs:` loops with index-based lowering
+- Verification: `verify_non_rust_bootstrap_compiler.sh` (10 programs pass)
+- Next: strings, basic data structures
 
 ### Stage 2: Zap-Written Compiler Completion
 **Status:** Partial
@@ -84,12 +85,13 @@ A Zap→C→native path satisfies the explicit forbidden-fallback list.
 
 ## Progress Log
 
-### 2026-09-13: Extended Python seed compiler with list support
+### 2026-09-13: Extended Python seed compiler with list and for-loop support
 - Added list literals `[1, 2, 3]` to tokenizer and parser
 - Added list indexing `xs[0]` to expression compiler
 - Added `len(xs)` builtin
+- Added `for x in xs:` loop support with index-based lowering
 - Implemented `make_list`, `list_get`, `list_len` opcodes in Python VM host
-- Verification: 8 programs pass (previously 5)
+- Verification: 10 programs pass (previously 5)
 - Files modified:
   - `host/zap-bootstrap/compile.py`
   - `host/zap-vm-host/run.py`

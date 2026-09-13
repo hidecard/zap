@@ -37,6 +37,12 @@ _PROGRAMS = [
 
     # 8. list literal + loop
     ("let values = [1, 2, 3]\nlet i = 0\nwhile i < len(values):\n    say values[i]\n    i = i + 1\n", [1, 2, 3]),
+
+    # 9. for loop over list
+    ("let values = [1, 2, 3]\nfor x in values:\n    say x\n", [1, 2, 3]),
+
+    # 10. for loop with accumulator
+    ("let total = 0\nfor x in [1, 2, 3, 4]:\n    total = total + x\nsay total\n", [10]),
 ]
 
 

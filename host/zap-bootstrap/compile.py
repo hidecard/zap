@@ -241,6 +241,14 @@ def _parse_stmt(lines, idx, indent):
         body, end = _parse_block(lines, idx + 1, body_indent)
         return {"kind": "while", "cond": cond, "body": body}, end
 
+    if text.startswith("for "):
+        rest = text[4:].rstrip(":").strip()
+        var = rest[:rest.index(" in ")].strip()
+        iterable = _parse_expr(rest[rest.index(" in ") + 4:].strip())
+        body_indent = lines[idx + 1][0]
+        body, end = _parse_block(lines, idx + 1, body_indent)
+        return {"kind": "for", "var": var, "iterable": iterable, "body": body}, end
+
     if text.startswith("let "):
         rhs = text[4:]
         name = rhs[:rhs.index("=")].strip()
@@ -340,6 +348,24 @@ def _lower(program, stmt):
             instrs += _lower(program, s)
         instrs.append({"op": "jump", "target": len(program)})  # back to header
         instrs[len(cond)]["target"] = len(program) + len(instrs)  # exit after loop
+    elif kind == "for":
+        loop_var = stmt["var"]
+        iterable = stmt["iterable"]
+        body = stmt["body"]
+        idx_name = "__for_idx_" + loop_var
+        len_name = "__for_len_" + loop_var
+        iter_name = "__for_iter_" + loop_var
+        instrs = _compile_expr(iterable) + [{"op": "store", "name": iter_name}]
+        instrs += [{"op": "const", "value": 0}, {"op": "store", "name": idx_name}]
+        instrs += [{"op": "load", "name": iter_name}, {"op": "list_len"}, {"op": "store", "name": len_name}]
+        cond_start = len(instrs)
+        instrs += [{"op": "load", "name": idx_name}, {"op": "load", "name": len_name}, {"op": "less"}, {"op": "jump_if_false", "target": 0}]
+        instrs += [{"op": "load", "name": iter_name}, {"op": "load", "name": idx_name}, {"op": "list_get"}, {"op": "store", "name": loop_var}]
+        for s in body:
+            instrs += _lower(program, s)
+        instrs += [{"op": "load", "name": idx_name}, {"op": "const", "value": 1}, {"op": "add"}, {"op": "store", "name": idx_name}]
+        instrs.append({"op": "jump", "target": len(program) + cond_start})
+        instrs[cond_start + 3]["target"] = len(program) + len(instrs)
     else:
         instrs = []
     return instrs
