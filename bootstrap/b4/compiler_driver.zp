@@ -299,6 +299,19 @@ export fn driver_typed_ir_expression_coverage_valid(expression):
         return driver_typed_ir_expression_coverage_valid(expression["target"]) and driver_typed_ir_expression_coverage_valid(expression["index"])
     return true
 
+export fn driver_typed_ir_expression_metadata_valid(expression):
+    if expression == none or not contains(json(expression), "\"kind\""):
+        return false
+    if expression["kind"] == "typed_expression":
+        if not contains(json(expression), "\"inferred_type\"") or not contains(json(expression), "\"expression_kind\"") or not contains(json(expression), "\"span\""):
+            return false
+        if not driver_typed_ir_expression_metadata_valid(expression["ast"]):
+            return false
+        for child in expression["children"]:
+            if not driver_typed_ir_expression_metadata_valid(child):
+                return false
+    return true
+
 export fn driver_typed_ir_node_coverage_valid(node):
     if not contains(json(node), "\"kind\""):
         return false
@@ -353,6 +366,12 @@ export fn driver_typed_ir_ownership(first, second):
     let coverage_valid = driver_typed_ir_nodes_coverage_valid(first["ir"]["nodes"], 0)
     if not coverage_valid:
         promotable = false
+    let metadata_valid = true
+    for node in first["ir"]["nodes"]:
+        if contains(json(node), "\"value\"") and not driver_typed_ir_expression_metadata_valid(node["value"]):
+            metadata_valid = false
+    if not metadata_valid:
+        promotable = false
     if not deterministic:
         promotable = false
     let ownership = "candidate"
@@ -366,7 +385,7 @@ export fn driver_typed_ir_ownership(first, second):
         reference_owner = "zap"
         status = "zap_owned_typed_ir"
         candidate_only = false
-    return {"candidate_only": candidate_only, "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
+    return {"candidate_only": candidate_only, "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "metadata_valid": metadata_valid, "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
 
 export fn driver_finalize_typed_ir(first, ownership):
     return {"candidate_only": false, "coverage": first["coverage"], "diagnostics": first["diagnostics"], "ir": first["ir"], "kind": first["kind"], "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "source_name": first["source_name"], "typed_metadata": first["typed_metadata"]}

@@ -51,8 +51,8 @@ let unknown_statement = {"kind": "future_statement"}
 let unknown_expression = {"kind": "future_expression"}
 say promoted["status"]
 say promoted["typed_ir"]["candidate_only"]
-say promoted["typed_ir"]["ownership"]
-say promoted["typed_ir"]["reference_owner"]
+say promoted["ownership"]["ownership"]
+say promoted["ownership"]["reference_owner"]
 say executed["ownership"]
 say executed["reference_owner"]
 say executed["stage_chain_valid"]
