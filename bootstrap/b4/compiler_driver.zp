@@ -25,8 +25,12 @@ export fn driver_typed_ir_backend_ownership():
     return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
 
 export fn driver_normalize_source(source):
-    let without_bom = replace(source, "\ufeff", "")
-    return replace(replace(without_bom, "\r\n", "\n"), "\r", "\n")
+    let normalized = source
+    if contains(normalized, "\r\n"):
+        normalized = replace(normalized, "\r\n", "\n")
+    if contains(normalized, "\r"):
+        normalized = replace(normalized, "\r", "\n")
+    return normalized
 
 export fn driver_result(command, source_name, status, diagnostics, artifacts, execution):
     return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": false, "schema_version": 1, "source_name": source_name, "status": status}
@@ -368,7 +372,8 @@ export fn driver_typed_ir_ownership(first, second):
         promotable = false
     let metadata_valid = true
     for node in first["ir"]["nodes"]:
-        if contains(json(node), "\"value\"") and not driver_typed_ir_expression_metadata_valid(node["value"]):
+        let has_value = node["kind"] == "declaration" or node["kind"] == "assignment" or node["kind"] == "say" or node["kind"] == "return" or node["kind"] == "raise" or node["kind"] == "expression"
+        if has_value and not driver_typed_ir_expression_metadata_valid(node["value"]):
             metadata_valid = false
     if not metadata_valid:
         promotable = false

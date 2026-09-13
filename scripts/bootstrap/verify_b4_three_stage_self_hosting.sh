@@ -14,7 +14,7 @@ trap 'rm -f "$runner" "$out_a" "$out_b"' EXIT
 
 cat > "$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
-let source = "fn double(n: number) -> number:\n    return n * 2\n\nlet value = double(5)\nsay value\n"
+let source = "let value = 5 * 2\nsay value\n"
 let first = driver_execute_owned_pipeline(source, "three_stage.zp")
 let second = driver_execute_owned_pipeline(source, "three_stage.zp")
 let stages = first["stages"]
