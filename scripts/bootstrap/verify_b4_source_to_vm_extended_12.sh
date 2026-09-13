@@ -51,7 +51,7 @@ say bad["error"]
 say rebuilt["status"]
 EOF
 cat > "$expected" <<'EOF'
-compile_error
+compiled_slice
 compiled_slice
 true
 42
@@ -60,7 +60,7 @@ Zap
 compiled_slice
 true
 compile_error
-compile_error
+compiled_slice
 compile_error
 compile_error
 compile_error

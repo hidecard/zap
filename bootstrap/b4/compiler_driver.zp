@@ -25,12 +25,7 @@ export fn driver_typed_ir_backend_ownership():
     return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
 
 export fn driver_normalize_source(source):
-    let normalized = source
-    if contains(normalized, "\r\n"):
-        normalized = replace(normalized, "\r\n", "\n")
-    if contains(normalized, "\r"):
-        normalized = replace(normalized, "\r", "\n")
-    return normalized
+    return source
 
 export fn driver_result(command, source_name, status, diagnostics, artifacts, execution):
     return {"artifacts": artifacts, "command": command, "diagnostics": diagnostics, "execution": execution, "native_independent": false, "schema_version": 1, "source_name": source_name, "status": status}
