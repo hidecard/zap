@@ -28,6 +28,15 @@ _PROGRAMS = [
 
     # 5. string output
     ('say "hi"\n', ["hi"]),
+
+    # 6. list literal + indexing
+    ("let xs = [10, 20, 30]\nsay xs[0]\nsay xs[2]\n", [10, 30]),
+
+    # 7. len() builtin
+    ("let xs = [1, 2, 3]\nsay len(xs)\n", [3]),
+
+    # 8. list literal + loop
+    ("let values = [1, 2, 3]\nlet i = 0\nwhile i < len(values):\n    say values[i]\n    i = i + 1\n", [1, 2, 3]),
 ]
 
 

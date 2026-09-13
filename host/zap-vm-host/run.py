@@ -304,6 +304,42 @@ def _step(state, instr, program):
             return _fail(adv, popped["error"])
         return popped["state"]
 
+    if op == "make_list":
+        count = instr.get("count", 0)
+        values = []
+        st = adv
+        for _ in range(count):
+            popped = _pop(st)
+            if popped["error"] is not None:
+                return _fail(adv, popped["error"])
+            values = [popped["value"]] + values
+            st = popped["state"]
+        return _push(st, values)
+
+    if op == "list_get":
+        index_popped = _pop(adv)
+        if index_popped["error"] is not None:
+            return _fail(adv, index_popped["error"])
+        list_popped = _pop(index_popped["state"])
+        if list_popped["error"] is not None:
+            return _fail(adv, list_popped["error"])
+        lst = list_popped["value"]
+        idx = index_popped["value"]
+        if not isinstance(lst, list):
+            return _fail(adv, "list_get_non_list")
+        if idx < 0 or idx >= len(lst):
+            return _fail(adv, "list_index_out_of_bounds")
+        return _push(list_popped["state"], lst[idx])
+
+    if op == "list_len":
+        popped = _pop(adv)
+        if popped["error"] is not None:
+            return _fail(adv, popped["error"])
+        lst = popped["value"]
+        if not isinstance(lst, list):
+            return _fail(adv, "list_len_non_list")
+        return _push(popped["state"], len(lst))
+
     if op == "not":
         popped = _pop(adv)
         if popped["error"] is not None:

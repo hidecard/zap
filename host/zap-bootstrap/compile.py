@@ -48,6 +48,12 @@ def _tokenize_expr(text):
                 j += 1
             tokens.append(("STRING", s))
             i = j + 1
+        elif c == '[':
+            tokens.append(("LBRACKET", c))
+            i += 1
+        elif c == ']':
+            tokens.append(("RBRACKET", c))
+            i += 1
         elif c.isdigit():
             j = i
             while j < n and text[j].isdigit():
@@ -127,6 +133,11 @@ class _ExprParser:
             return {"kind": "str", "value": tok[1]}
         if tok[0] == "ID":
             name = self.take()[1]
+            if name == "len" and self.peek()[0] == "OP" and self.peek()[1] == "(":
+                self.take()
+                arg = self._comparison()
+                self.take()  # ')'
+                return {"kind": "len", "arg": arg}
             if self.peek()[0] == "OP" and self.peek()[1] == "(":
                 self.take()
                 args = []
@@ -143,7 +154,23 @@ class _ExprParser:
                 return {"kind": "bool", "value": True}
             if name == "false":
                 return {"kind": "bool", "value": False}
-            return {"kind": "var", "name": name}
+            node = {"kind": "var", "name": name}
+            if self.peek()[0] in ("OP", "LBRACKET") and self.peek()[1] == "[":
+                self.take()
+                index = self._comparison()
+                self.take()  # ']'
+                return {"kind": "index", "name": name, "index": index}
+            return node
+        if tok[0] == "LBRACKET":
+            self.take()
+            elements = []
+            if self.peek()[0] != "RBRACKET":
+                elements.append(self._comparison())
+                while self.peek()[0] == "OP" and self.peek()[1] == ",":
+                    self.take()
+                    elements.append(self._comparison())
+            self.take()  # ']'
+            return {"kind": "list", "elements": elements}
         if tok[0] == "OP" and tok[1] == "(":
             self.take()
             node = self._comparison()
@@ -260,6 +287,21 @@ def _compile_expr(node):
         instrs = _compile_expr(node["left"])
         instrs += _compile_expr(node["right"])
         instrs.append({"op": _BINOP[node["op"]]})
+        return instrs
+    if node["kind"] == "list":
+        instrs = []
+        for element in node["elements"]:
+            instrs += _compile_expr(element)
+        instrs.append({"op": "make_list", "count": len(node["elements"])})
+        return instrs
+    if node["kind"] == "index":
+        instrs = [{"op": "load", "name": node["name"]}]
+        instrs += _compile_expr(node["index"])
+        instrs.append({"op": "list_get"})
+        return instrs
+    if node["kind"] == "len":
+        instrs = _compile_expr(node["arg"])
+        instrs.append({"op": "list_len"})
         return instrs
     return []
 
