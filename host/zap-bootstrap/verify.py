@@ -53,6 +53,21 @@ _PROGRAMS = [
 
     # 13. string variable + concatenation
     ('let s = "zap"\nsay s + "!"\n', ["zap!"]),
+
+    # 14. nested function calls
+    ("fn double(n):\n    return n * 2\nfn quad(n):\n    return double(double(n))\nsay quad(3)\n", [12]),
+
+    # 15. while loop with nested block
+    ("let i = 0\nwhile i < 3:\n    let x = i\n    say x\n    i = i + 1\n", [0, 1, 2]),
+
+    # 16. for loop with list of strings
+    ('let words = ["a", "b", "c"]\nfor w in words:\n    say w\n', ["a", "b", "c"]),
+
+    # 17. mixed types in list
+    ("let xs = [1, 2, 3]\nsay xs[1]\n", [2]),
+
+    # 18. nested while with break-like accumulation
+    ("let i = 0\nlet total = 0\nwhile i < 4:\n    let j = 0\n    while j < 2:\n        total = total + 1\n        j = j + 1\n    i = i + 1\nsay total\n", [8]),
 ]
 
 

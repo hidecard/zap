@@ -314,8 +314,10 @@ def _compile_expr(node):
     return []
 
 
-def _lower(program, stmt):
+def _lower(program, stmt, base=None):
     """Append `stmt`'s instructions to `program`; returns the appended list."""
+    if base is None:
+        base = len(program)
     kind = stmt["kind"]
     if kind in ("let", "assign"):
         instrs = _compile_expr(stmt["expr"]) + [{"op": "store", "name": stmt["name"]}]
@@ -331,23 +333,23 @@ def _lower(program, stmt):
         jf_local = len(instrs)
         instrs.append({"op": "jump_if_false", "target": 0})
         for s in stmt["then"]:
-            instrs += _lower(program, s)
+            instrs += _lower(program, s, base + len(instrs))
         if stmt["else"]:
             jmp_local = len(instrs)
             instrs.append({"op": "jump", "target": 0})
             for s in stmt["else"]:
-                instrs += _lower(program, s)
-            instrs[jf_local]["target"] = len(program) + jmp_local + 1
-            instrs[jmp_local]["target"] = len(program) + len(instrs)
+                instrs += _lower(program, s, base + len(instrs))
+            instrs[jf_local]["target"] = base + jmp_local + 1
+            instrs[jmp_local]["target"] = base + len(instrs)
         else:
-            instrs[jf_local]["target"] = len(program) + len(instrs)
+            instrs[jf_local]["target"] = base + len(instrs)
     elif kind == "while":
         cond = _compile_expr(stmt["cond"])
         instrs = cond + [{"op": "jump_if_false", "target": 0}]
         for s in stmt["body"]:
-            instrs += _lower(program, s)
-        instrs.append({"op": "jump", "target": len(program)})  # back to header
-        instrs[len(cond)]["target"] = len(program) + len(instrs)  # exit after loop
+            instrs += _lower(program, s, base + len(instrs))
+        instrs.append({"op": "jump", "target": base})  # back to header
+        instrs[len(cond)]["target"] = base + len(instrs)  # exit after loop
     elif kind == "for":
         loop_var = stmt["var"]
         iterable = stmt["iterable"]
@@ -362,10 +364,10 @@ def _lower(program, stmt):
         instrs += [{"op": "load", "name": idx_name}, {"op": "load", "name": len_name}, {"op": "less"}, {"op": "jump_if_false", "target": 0}]
         instrs += [{"op": "load", "name": iter_name}, {"op": "load", "name": idx_name}, {"op": "list_get"}, {"op": "store", "name": loop_var}]
         for s in body:
-            instrs += _lower(program, s)
+            instrs += _lower(program, s, base + len(instrs))
         instrs += [{"op": "load", "name": idx_name}, {"op": "const", "value": 1}, {"op": "add"}, {"op": "store", "name": idx_name}]
-        instrs.append({"op": "jump", "target": len(program) + cond_start})
-        instrs[cond_start + 3]["target"] = len(program) + len(instrs)
+        instrs.append({"op": "jump", "target": base + cond_start})
+        instrs[cond_start + 3]["target"] = base + len(instrs)
     else:
         instrs = []
     return instrs
