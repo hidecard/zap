@@ -32,6 +32,7 @@ def emit_c(program, out_path):
     lines.append("#include <stdint.h>")
     lines.append("#include <stdbool.h>")
     lines.append("")
+    lines.append("typedef struct frame frame;")
     lines.append("typedef struct {")
     lines.append("  char **locals;")
     lines.append("  int local_count;")
@@ -43,7 +44,16 @@ def emit_c(program, out_path):
     lines.append("  int output_count;")
     lines.append("  int32_t *int_stack;")
     lines.append("  int int_stack_count;")
+    lines.append("  frame *frames;")
+    lines.append("  int frame_count;")
     lines.append("} state;")
+    lines.append("")
+    lines.append("struct frame {")
+    lines.append("  int return_ip;")
+    lines.append("  char **saved_locals;")
+    lines.append("  int saved_local_count;")
+    lines.append("  int saved_stack_count;")
+    lines.append("};")
     lines.append("")
     lines.append("static void push_str(state *st, const char *value) {")
     lines.append("  st->stack = realloc(st->stack, sizeof(char *) * (st->stack_count + 1));")
@@ -118,6 +128,37 @@ def emit_c(program, out_path):
     lines.append("  return false;")
     lines.append("}")
     lines.append("")
+    lines.append("static void call_push(state *st, int return_ip) {")
+    lines.append("  st->frames = realloc(st->frames, sizeof(frame) * (st->frame_count + 1));")
+    lines.append("  frame *f = &st->frames[st->frame_count++];")
+    lines.append("  f->return_ip = return_ip;")
+    lines.append("  f->saved_locals = st->locals;")
+    lines.append("  f->saved_local_count = st->local_count;")
+    lines.append("  f->saved_stack_count = st->stack_count;")
+    lines.append("}")
+    lines.append("")
+    lines.append("static int call_pop(state *st) {")
+    lines.append("  if (st->frame_count == 0) { fprintf(stderr, \"stack underflow\\n\"); exit(1); }")
+    lines.append("  frame *f = &st->frames[--st->frame_count];")
+    lines.append("  for (int i = 0; i < st->local_count; ++i) free(st->locals[i]);")
+    lines.append("  free(st->locals);")
+    lines.append("  st->locals = f->saved_locals;")
+    lines.append("  st->local_count = f->saved_local_count;")
+    lines.append("  while (st->stack_count > f->saved_stack_count) {")
+    lines.append("    free(pop_str(st));")
+    lines.append("  }")
+    lines.append("  return f->return_ip;")
+    lines.append("}")
+    lines.append("")
+
+    # Precompute function entry points.
+    functions = {}
+    for idx, instr in enumerate(program):
+        if instr.get("op") == "function_def":
+            functions[instr["name"]] = {
+                "entry": instr["entry"],
+                "params": instr.get("params", []),
+            }
 
     name_index = {}
     current_index = 0
@@ -203,12 +244,20 @@ def emit_c(program, out_path):
         elif op == "function_def":
             lines.append(f"  /* function {instr.get('name')} */")
         elif op == "call":
-            lines.append(f"  /* call {instr.get('name')} argc={instr.get('argc', 0)} */")
-            lines.append("  push_str(&st, strdup(\"\"));")
+            fn = functions.get(instr["name"])
+            if fn:
+                lines.append(f"  call_push(&st, {len(lines) + 2});")
+                lines.append(f"  goto label_{fn['entry']};")
+                lines.append(f"label_call_{instr['name']}_{len(lines)}:")
+            else:
+                lines.append(f"  /* unknown call {instr['name']} */")
+                lines.append("  push_str(&st, strdup(\"\"));")
         elif op == "return_value":
-            lines.append("  /* return */")
+            lines.append("  target = call_pop(&st);")
+            lines.append("  goto label_999;")
         elif op == "return_none":
-            lines.append("  /* return */")
+            lines.append("  target = call_pop(&st);")
+            lines.append("  goto label_999;")
         elif op == "make_list":
             count = instr.get("count", 0)
             lines.append(f"  /* make_list count={count} */")
@@ -223,17 +272,21 @@ def emit_c(program, out_path):
             lines.append(f"  /* unhandled op {op} */")
     lines.append("")
 
-    # Emit labels for jumps.
+    # Emit labels for jumps and call return sites.
     label_targets = set()
-    for instr in program:
+    for idx, instr in enumerate(program):
         if instr.get("op") in ("jump", "jump_if_false", "jump_if_true"):
-            label_targets.add(instr.get("target", 0))
-
+            label_targets.add(instr.get("target", idx))
+    label_targets.update(functions.values())
     for target in sorted(label_targets):
+        if isinstance(target, dict):
+            target = target["entry"]
         if target < len(program):
             lines.append(f"label_{target}:")
             lines.append("  { (void)0; }")
 
+    lines.append("label_999:")
+    lines.append("  { (void)0; }")
     lines.append("")
     lines.append("  for (int i = 0; i < st.output_count; ++i) {")
     lines.append('    printf("%s\\n", st.output[i]);')
@@ -246,6 +299,12 @@ def emit_c(program, out_path):
     lines.append("  free(st.int_stack);")
     lines.append("  for (int i = 0; i < st.local_count; ++i) free(st.locals[i]);")
     lines.append("  free(st.locals);")
+    lines.append("  for (int i = 0; i < st.frame_count; ++i) {")
+    lines.append("    frame *f = &st.frames[i];")
+    lines.append("    for (int j = 0; j < f->saved_local_count; ++j) free(f->saved_locals[j]);")
+    lines.append("    free(f->saved_locals);")
+    lines.append("  }")
+    lines.append("  free(st.frames);")
     lines.append("  return 0;")
     lines.append("}")
     lines.append("")
