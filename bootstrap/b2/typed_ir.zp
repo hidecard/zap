@@ -359,7 +359,10 @@ export fn owned_inferred_expression_children(expression, environment, functions,
     if expression["kind"] == "binary":
         return [owned_inferred_expression(expression["left"], environment, functions, source_name), owned_inferred_expression(expression["right"], environment, functions, source_name)]
     if expression["kind"] == "unary":
-        return [owned_inferred_expression(expression["operand"], environment, functions, source_name)]
+        let operand = expression["value"]
+        if contains(json(expression), "\"operand\""):
+            operand = expression["operand"]
+        return [owned_inferred_expression(operand, environment, functions, source_name)]
     if expression["kind"] == "member":
         return [owned_inferred_expression(expression["target"], environment, functions, source_name)]
     if expression["kind"] == "call":

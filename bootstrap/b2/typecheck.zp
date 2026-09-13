@@ -2428,6 +2428,8 @@ export fn b2c_builtin_call_type(name, argument_types):
     if name == "identity" or name == "keep" or name == "recover" or name == "list_keep" or name == "map_keep":
         if len(argument_types) == 1:
             return argument_types[0]
+    if name == "abs" and len(argument_types) == 1 and argument_types[0] == "number":
+        return "number"
     if name == "first" and len(argument_types) >= 1:
         return argument_types[0]
     if name == "same" and len(argument_types) == 2:

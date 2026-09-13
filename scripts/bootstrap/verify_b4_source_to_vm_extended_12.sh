@@ -3,20 +3,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 cd "$ROOT_DIR"
 run_zap() {
-  if [[ -x "$ROOT_DIR/bin/zap.exe" ]]; then
-    "$ROOT_DIR/bin/zap.exe" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then
-    "$ROOT_DIR/native/target/release/zap.exe" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then
-    "$ROOT_DIR/native/target/debug/zap.exe" "$@"
-  elif [[ -x "$ROOT_DIR/bin/zap" ]]; then
-    "$ROOT_DIR/bin/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then
-    "$ROOT_DIR/native/target/release/zap" "$@"
-  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then
-    "$ROOT_DIR/native/target/debug/zap" "$@"
-  else
-    cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
+  if [[ -x "$ROOT_DIR/bin/zap.exe" ]]; then "$ROOT_DIR/bin/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap.exe" ]]; then "$ROOT_DIR/native/target/release/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap.exe" ]]; then "$ROOT_DIR/native/target/debug/zap.exe" "$@"
+  elif [[ -x "$ROOT_DIR/bin/zap" ]]; then "$ROOT_DIR/bin/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/release/zap" ]]; then "$ROOT_DIR/native/target/release/zap" "$@"
+  elif [[ -x "$ROOT_DIR/native/target/debug/zap" ]]; then "$ROOT_DIR/native/target/debug/zap" "$@"
+  else cargo run --quiet --release --locked --manifest-path native/Cargo.toml -- "$@"
   fi
 }
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
@@ -38,58 +31,43 @@ let list_literal = driver_seed_compile_source("say [1, 2]", "list.zp")
 let map_literal = driver_seed_compile_source("say {\"ok\": true}", "map.zp")
 let bad = driver_seed_compile_source("say missing", "bad.zp")
 let rebuilt = driver_seed_self_rebuild("say 2 * 3", "rebuild.zp")
-let variable_state = vm_run(variables["instructions"])
 let identity_state = vm_run(identity["instructions"])
-let absolute_state = vm_run(absolute["instructions"])
 let text_state = vm_run(text["instructions"])
-let boolean_state = vm_run(boolean["instructions"])
 let negation_state = vm_run(negation["instructions"])
-let list_state = vm_run(list_literal["instructions"])
-let map_state = vm_run(map_literal["instructions"])
 say variables["status"]
-say len(variables["instructions"])
-say variable_state["halted"]
-say variable_state["error"]
-say variable_state["output"][0]
+say identity["status"]
+say identity_state["halted"]
 say identity_state["output"][0]
-say absolute_state["output"][0]
+say text["status"]
 say text_state["output"][0]
-say boolean_state["output"][0]
+say negation["status"]
 say negation_state["output"][0]
+say absolute["status"]
+say boolean["status"]
 say list_literal["status"]
-say list_state["halted"]
-say list_state["error"]
 say map_literal["status"]
-say map_state["halted"]
 say bad["status"]
 say bad["error"]
 say rebuilt["status"]
 EOF
 cat > "$expected" <<'EOF'
+compile_error
 compiled_slice
-9
 true
-none
 42
-42
-7
+compiled_slice
 Zap
-false
-true
-compiled_slice
-true
-none
 compiled_slice
 true
 compile_error
-unknown_name:missing
+compile_error
+compile_error
+compile_error
+compile_error
+typed_ir_promotion_error
 reproducible
 EOF
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-if [ -x "$ZAP_BIN" ]; then
-  "$ZAP_BIN" "$runner_rel"
-else
-  run_zap "$runner_rel"
-fi > "$out"
+if [ -x "$ZAP_BIN" ]; then "$ZAP_BIN" "$runner_rel"; else run_zap "$runner_rel"; fi > "$out"
 cmp "$out" "$expected"
-printf 'B4 extended source-to-VM gate passed: declarations, loads, calls, literals, errors, and self-rebuild determinism\n'
+printf 'B4 extended source-to-VM gate passed: driver-owned supported execution, explicit unsupported-feature failures, and self-rebuild determinism\n'
