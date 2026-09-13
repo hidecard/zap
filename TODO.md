@@ -303,6 +303,31 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Updated TODO.md P3 B4 self-hosting section to mark remaining unchecked items as completed with new evidence infrastructure.
 - [x] Updated `bootstrap/evidence/b4/certification_evidence.md` with new CI infrastructure and verifier scripts.
 
+## Remaining B4 Certification Blockers (2026-09-13)
+
+The following blockers prevent B4 certification. Infrastructure is in place; certification requires implementing the missing seed production mechanism.
+
+| ID | Blocker | Current Status | Required Action |
+|----|---------|---------------|-----------------|
+| B4-FULL-013 | cli-entrypoint | provisional | Requires Zap-produced seed to verify `driver_command()` across all commands |
+| B4-FULL-014 | self-rebuild | provisional | Requires Zap-produced seed that can rebuild itself byte-for-byte |
+| B4-FULL-015 | cross-platform-determinism | provisional | Requires Zap-produced seed executed on all three platforms |
+| B4-FULL-016 | byte-determinism | provisional | Requires verified prebuilt Zap seed provenance |
+| B4-FULL-017 | second-stage-rebuild | provisional | Requires Zap-produced seed for second-stage rebuild evidence |
+| B4-FULL-018 | clean-environment | provisional | Requires clean VM execution without Rust/Cargo on all supported platforms |
+
+**Fundamental gap:** No mechanism exists to produce the `native/target/release/zap` binary without Rust/Cargo. The repository has:
+- Zap-owned compiler source (`bootstrap/b1/`, `b2/`, `b3/`, `b4/`)
+- Python-based bounded seed compiler (`host/zap-bootstrap/compile.py`)
+- Extensive verification infrastructure
+
+What's missing:
+- A native code generator or AOT compiler written in Zap that can translate Zap source to a native executable
+- Or an extension of the Python seed compiler to handle the full language surface
+- Or a contract revision that defines "Zap-produced seed" through a different provenance mechanism
+
+Until a Zap-produced Rust-free seed exists, B4 remains `not-certified` per the contract. The `b4-platform-evidence` CI job gathers cross-platform evidence with the current Cargo-built seed, but seed provenance rows remain provisional.
+
 ## အညွှန်းစာတမ်းများ
 
 - [Current status — English](docs/CURRENT_STATUS_EN.md)

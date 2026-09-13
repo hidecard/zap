@@ -80,17 +80,32 @@ A local prebuilt Windows x86_64 seed record exists at:
 - Byte-determinism records: `target/b4-byte-*`
 - Clean-environment records: `target/b4-clean-environment.tsv`
 
-## New CI Infrastructure (2026-09-13)
+## Updated CI Infrastructure (2026-09-13)
 
 | Infrastructure | Status | Purpose |
 |----------------|--------|---------|
-| `.github/workflows/ci.yml` `b4-platform-evidence` job | ✅ Added | Runs B4 self-hosting gates on Linux/Windows/macOS with downloaded platform seeds |
-| `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` | ✅ Added | Comprehensive gate that validates all 18 B4-FULL acceptance rows |
-| `scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh` | ✅ Added | Generates unified artifact manifest with typed-IR/bytecode digests and VM behavior |
-| `ci.yml` quality job integration | ✅ Added | `verify_b4_full_acceptance_matrix.sh` runs in quality job on every push to master |
-| `ci.yml` build matrix integration | ✅ Added | `verify_b4_cross_platform_artifact_manifest.sh` and `verify_b4_full_acceptance_matrix.sh` run per-platform in `b4-platform-evidence` job |
+| `.github/workflows/ci.yml` `b4-platform-evidence` job | ✅ Updated | Runs full B4 gate suite on Linux/Windows/macOS without requiring Rust toolchain in the evidence job |
+| `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` | ✅ Added | Comprehensive gate validating all 18 B4-FULL acceptance rows (12 pass, 6 provisional) |
+| `scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh` | ✅ Added | Per-platform artifact manifest with typed-IR/bytecode digests and VM behavior determinism |
+| Seed provenance metadata | ✅ Updated | `SEED.tsv` now includes `built_with`, `rust_free_provenance`, and `certification_ready` fields |
+| Quality job integration | ✅ Added | `verify_b4_full_acceptance_matrix.sh` runs in quality job on every push to master |
+| Platform evidence job integration | ✅ Added | Full B4 gate suite runs per-platform in `b4-platform-evidence` job with downloaded seeds |
 
-The new `b4-platform-evidence` job downloads the current-master platform seed artifact produced by the `build` job and executes B4 gates on each platform. This closes the gap where Windows and macOS runners previously only packaged seeds without executing B4 self-hosting gates.
+The updated `b4-platform-evidence` job no longer installs Rust or builds the native runtime. It downloads the platform seed artifact from the `build` job and runs the complete B4 gate suite (`verify_b4_rust_free_contract.sh`, `verify_b4_three_stage_self_hosting.sh`, `verify_b4_second_stage_rebuild.sh`, `verify_b4_clean_environment.sh`, `verify_b4_byte_determinism.sh`, `verify_b4_cross_platform_artifact_manifest.sh`, and `verify_b4_full_acceptance_matrix.sh`). This closes the gap where Windows and macOS runners previously only packaged seeds without executing B4 self-hosting gates.
+
+## Remaining Certification Blockers
+
+| Blocker | Current Status | Required Action |
+|---------|---------------|-----------------|
+| Zap-produced Rust-free seed | ❌ Not available | Implement native code generation or extend Python seed compiler to produce full native binary |
+| B4-FULL-013 (cli-entrypoint) | provisional | Requires Zap-produced seed to verify `driver_command()` across all commands |
+| B4-FULL-014 (self-rebuild) | provisional | Requires Zap-produced seed that can rebuild itself byte-for-byte |
+| B4-FULL-015 (cross-platform-determinism) | provisional | Requires Zap-produced seed executed on all three platforms |
+| B4-FULL-016 (byte-determinism) | provisional | Requires verified prebuilt Zap seed provenance (current seed is native/Cargo-built) |
+| B4-FULL-017 (second-stage-rebuild) | provisional | Requires Zap-produced seed for second-stage rebuild evidence |
+| B4-FULL-018 (clean-environment) | provisional | Requires clean VM execution without Rust/Cargo on all supported platforms |
+
+**Note:** The `b4-platform-evidence` job gathers cross-platform evidence using the current Cargo-built seed. This provides platform coverage for rows 015-018, but the seed provenance requirement (rows 013-018) remains unmet because no mechanism exists to produce the native binary without Rust/Cargo.
 
 ## Certification Decision
 

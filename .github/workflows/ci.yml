@@ -680,7 +680,7 @@ jobs:
           mkdir -p "$seed_dir"
           cp "native/target/${{ matrix.target }}/release/zap" "$seed_dir/zap"
           sha256sum "$seed_dir/zap" > "$seed_dir/zap.sha256"
-          printf 'commit\t%s\nplatform\t%s\nartifact\tzap\nstatus\tci-built-native-seed\n' "$GITHUB_SHA" "${{ matrix.target }}" > "$seed_dir/SEED.tsv"
+          printf 'commit\t%s\nplatform\t%s\nartifact\tzap\nbuilt_with\tcargo-rust\nrust_free_provenance\tfalse\ncertification_ready\tfalse\nstatus\tci-built-native-seed\n' "$GITHUB_SHA" "${{ matrix.target }}" > "$seed_dir/SEED.tsv"
       - name: Package Windows current-master seed
         if: runner.os == 'Windows'
         shell: pwsh
@@ -691,7 +691,7 @@ jobs:
           Copy-Item $seed "$seedDir/zap.exe"
           $hash = (Get-FileHash "$seedDir/zap.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  zap.exe" | Set-Content "$seedDir/zap.exe.sha256" -Encoding ascii
-          "commit`t$env:GITHUB_SHA`nplatform`t${{ matrix.target }}`nartifact`tzap.exe`nstatus`tci-built-native-seed" | Set-Content "$seedDir/SEED.tsv" -Encoding utf8
+          "commit`t$env:GITHUB_SHA`nplatform`t${{ matrix.target }}`nartifact`tzap.exe`nbuilt_with`tcargo-rust`nrust_free_provenance`tfalse`ncertification_ready`tfalse`nstatus`tci-built-native-seed" | Set-Content "$seedDir/SEED.tsv" -Encoding utf8
       - name: Upload current-master platform seed
         if: always()
         uses: actions/upload-artifact@v4
@@ -721,23 +721,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.88.0
-          components: rustfmt, clippy
-
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            native
-            host/zap-host
-          key: ${{ matrix.target }}
-
-      - name: Build native runtime
-        run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
-
       - name: Download current-master platform seed artifact
         uses: actions/download-artifact@v4
         with:
@@ -753,17 +736,13 @@ jobs:
             echo "ZAP_BOOTSTRAP_BIN=$(pwd)/target/platform-seed/${{ matrix.target }}/zap" >> "$GITHUB_ENV"
           fi
 
+      - name: Verify B4 Rust-free contract boundary
+        shell: bash
+        run: scripts/bootstrap/verify_b4_rust_free_contract.sh
+
       - name: Verify B4 cross-platform artifact manifest
         shell: bash
         run: scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh
-
-      - name: Upload B4 cross-platform manifest evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-b4-cross-platform-manifest-${{ matrix.target }}-${{ github.sha }}
-          path: target/b4-cross-platform-manifest.tsv
-          if-no-files-found: warn
 
       - name: Verify B4 full acceptance matrix
         shell: bash
@@ -771,10 +750,41 @@ jobs:
           ZAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
         run: scripts/bootstrap/verify_b4_full_acceptance_matrix.sh
 
-      - name: Upload B4 full acceptance matrix evidence
+      - name: Verify B4 three-stage Rust-free self-hosting
+        shell: bash
+        env:
+          ZAP_BOOTSTRAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
+        run: scripts/bootstrap/verify_b4_three_stage_self_hosting.sh
+
+      - name: Verify B4 second-stage rebuild
+        shell: bash
+        env:
+          ZAP_BOOTSTRAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
+        run: scripts/bootstrap/verify_b4_second_stage_rebuild.sh
+
+      - name: Verify B4 clean-environment gate
+        shell: bash
+        env:
+          ZAP_BOOTSTRAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
+        run: scripts/bootstrap/verify_b4_clean_environment.sh
+
+      - name: Verify B4 byte-determinism gate
+        shell: bash
+        env:
+          ZAP_BOOTSTRAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
+        run: scripts/bootstrap/verify_b4_byte_determinism.sh
+
+      - name: Upload B4 platform evidence artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zap-b4-full-acceptance-matrix-${{ matrix.target }}-${{ github.sha }}
-          path: target/b4-full-acceptance-matrix.tsv
+          name: zap-b4-platform-evidence-${{ matrix.target }}-${{ github.sha }}
+          path: |
+            target/b4-rust-free-contract.tsv
+            target/b4-cross-platform-manifest.tsv
+            target/b4-full-acceptance-matrix.tsv
+            target/b4-three-stage-self-hosting.tsv
+            target/b4-second-stage-rebuild.tsv
+            target/b4-clean-environment.tsv
+            target/b4-byte-determinism.tsv
           if-no-files-found: warn
