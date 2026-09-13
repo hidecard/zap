@@ -323,6 +323,17 @@ jobs:
           path: target/b4-clean-environment.tsv
           if-no-files-found: warn
 
+      - name: Verify B4 full acceptance matrix
+        run: scripts/bootstrap/verify_b4_full_acceptance_matrix.sh
+
+      - name: Upload B4 full acceptance matrix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-full-acceptance-matrix-${{ github.sha }}
+          path: target/b4-full-acceptance-matrix.tsv
+          if-no-files-found: warn
+
       - name: Verify B3 AST schema compatibility matrix
         run: scripts/test_b3_ast_schema_compatibility.sh
 
@@ -688,3 +699,82 @@ jobs:
           name: zap-platform-seed-${{ matrix.target }}-${{ github.sha }}
           path: target/platform-seed/${{ matrix.target }}
           if-no-files-found: error
+
+  b4-platform-evidence:
+    name: B4 Platform Evidence ${{ matrix.name }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - name: Windows x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: macOS ARM64
+            os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+          components: rustfmt, clippy
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            native
+            host/zap-host
+          key: ${{ matrix.target }}
+
+      - name: Build native runtime
+        run: cargo build --release --manifest-path native/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Download current-master platform seed artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zap-platform-seed-${{ matrix.target }}-${{ github.sha }}
+          path: target/platform-seed/${{ matrix.target }}
+
+      - name: Set platform seed path
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "ZAP_BOOTSTRAP_BIN=$(pwd)/target/platform-seed/${{ matrix.target }}/zap.exe" >> "$GITHUB_ENV"
+          else
+            echo "ZAP_BOOTSTRAP_BIN=$(pwd)/target/platform-seed/${{ matrix.target }}/zap" >> "$GITHUB_ENV"
+          fi
+
+      - name: Verify B4 cross-platform artifact manifest
+        shell: bash
+        run: scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh
+
+      - name: Upload B4 cross-platform manifest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-cross-platform-manifest-${{ matrix.target }}-${{ github.sha }}
+          path: target/b4-cross-platform-manifest.tsv
+          if-no-files-found: warn
+
+      - name: Verify B4 full acceptance matrix
+        shell: bash
+        env:
+          ZAP_BIN: ${{ env.ZAP_BOOTSTRAP_BIN }}
+        run: scripts/bootstrap/verify_b4_full_acceptance_matrix.sh
+
+      - name: Upload B4 full acceptance matrix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-full-acceptance-matrix-${{ matrix.target }}-${{ github.sha }}
+          path: target/b4-full-acceptance-matrix.tsv
+          if-no-files-found: warn

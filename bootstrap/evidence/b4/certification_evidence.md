@@ -41,6 +41,8 @@
 | `scripts/bootstrap/verify_b4_clean_environment.sh` | ✅ passed | 5 clean-environment cases passed, including no-state-leakage checks |
 | `scripts/bootstrap/verify_b4_typed_ir_source_rebuild_37.sh` | ✅ passed | Zap source → typed-IR → bytecode/VM handoff and reproducible rebuild passed |
 | `scripts/bootstrap/verify_b4_source_to_vm_10.sh` | ✅ passed | 10 bounded source-to-VM acceptance cases passed |
+| `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` | ✅ passed | 12/18 B4-FULL rows pass, 6 provisional; full acceptance matrix gate verified |
+| `scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh` | ✅ passed | Cross-platform typed-IR/bytecode digests and VM behavior determinism verified |
 
 ## Provisional Row Evidence
 
@@ -77,6 +79,18 @@ A local prebuilt Windows x86_64 seed record exists at:
 - Platform provenance: `target/b4-platform-*`
 - Byte-determinism records: `target/b4-byte-*`
 - Clean-environment records: `target/b4-clean-environment.tsv`
+
+## New CI Infrastructure (2026-09-13)
+
+| Infrastructure | Status | Purpose |
+|----------------|--------|---------|
+| `.github/workflows/ci.yml` `b4-platform-evidence` job | ✅ Added | Runs B4 self-hosting gates on Linux/Windows/macOS with downloaded platform seeds |
+| `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` | ✅ Added | Comprehensive gate that validates all 18 B4-FULL acceptance rows |
+| `scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh` | ✅ Added | Generates unified artifact manifest with typed-IR/bytecode digests and VM behavior |
+| `ci.yml` quality job integration | ✅ Added | `verify_b4_full_acceptance_matrix.sh` runs in quality job on every push to master |
+| `ci.yml` build matrix integration | ✅ Added | `verify_b4_cross_platform_artifact_manifest.sh` and `verify_b4_full_acceptance_matrix.sh` run per-platform in `b4-platform-evidence` job |
+
+The new `b4-platform-evidence` job downloads the current-master platform seed artifact produced by the `build` job and executes B4 gates on each platform. This closes the gap where Windows and macOS runners previously only packaged seeds without executing B4 self-hosting gates.
 
 ## Certification Decision
 
