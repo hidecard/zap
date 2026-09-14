@@ -81,7 +81,7 @@ compiled_slice
 compile_error
 missing_while_body
 compile_error
-unsupported_for_iterable
+typed_ir_promotion_error
 compile_error
 missing_catch
 compiled_slice

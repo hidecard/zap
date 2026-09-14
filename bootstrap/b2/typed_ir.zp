@@ -339,7 +339,10 @@ export fn owned_typed_statement(statement):
     if kind == "for":
         return {"ast": statement, "binding": statement["binding"], "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "iterable": owned_typed_expression(statement["iterable"]), "kind": kind, "span": statement["span"]}
     if kind == "try_catch":
-        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "catch_binding": statement["catch_binding"], "catch_body": {"statements": owned_typed_statements(statement["catch_body"]["statements"], [])}, "kind": kind, "span": statement["span"]}
+        let catch_binding = none
+        if contains(json(statement), "\"catch_binding\""):
+            catch_binding = statement["catch_binding"]
+        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "catch_binding": catch_binding, "catch_body": {"statements": owned_typed_statements(statement["catch_body"]["statements"], [])}, "kind": kind, "span": statement["span"]}
     if kind == "function":
         return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
     if kind == "class":
@@ -426,7 +429,10 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
     if kind == "for":
         return {"ast": statement, "binding": statement["binding"], "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "inferred_element_type": b2c_generic_container_element(owned_inferred_expression(statement["iterable"], environment, functions, source_name)["inferred_type"]), "iterable": owned_inferred_expression(statement["iterable"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
     if kind == "try_catch":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": statement["catch_binding"], "kind": kind, "span": statement["span"]}
+        let catch_binding = none
+        if contains(json(statement), "\"catch_binding\""):
+            catch_binding = statement["catch_binding"]
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": catch_binding, "kind": kind, "span": statement["span"]}
     if kind == "function":
         let captures = typed_ir_function_captures(statement)
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "captures": captures, "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "is_closure": len(captures) > 0, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}

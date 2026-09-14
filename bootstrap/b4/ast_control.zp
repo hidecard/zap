@@ -133,6 +133,8 @@ export fn lower_ast_try_node(node, function_depth):
     let catch_body = lower_ast_block(node["catch_body"], function_depth)
     if catch_body["error"] != none:
         return catch_body
+    if len(catch_body["instructions"]) == 0 and not contains(json(node), "\"catch_binding\""):
+        return {"error": "missing_catch", "instructions": []}
     let binding = none
     if contains(json(node), "\"catch_binding\":"):
         binding = node["catch_binding"]

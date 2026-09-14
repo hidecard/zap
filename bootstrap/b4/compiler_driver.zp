@@ -410,7 +410,10 @@ export fn driver_compile_backend(source, source_name):
     if typed["status"] != "typed_ir_promoted":
         let compile_error = "typed_ir_promotion_error"
         if len(typed["typed_ir"]["diagnostics"]) > 0 and contains(typed["typed_ir"]["diagnostics"][0]["message"], "block requires an indented body"):
-            compile_error = "missing_if_body"
+            if starts_with(trim(source), "while "):
+                compile_error = "missing_while_body"
+            else:
+                compile_error = "missing_if_body"
         return {"bytecode": {"artifact_kind": "bytecode", "error": compile_error, "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": compile_error, "output": []}, "ownership": "blocked", "reference_owner": "rust", "status": "error", "typed_ir": typed["typed_ir"]}
     # Inferred typed-IR wraps parser AST under node["ast"]. Lower the recovered
     # AST program — the same path as seed_compile_inferred_typed_ir — because
@@ -562,7 +565,7 @@ export fn driver_seed_compile_bytes(artifact):
 export fn driver_seed_compile_source(source, source_name):
     # Use the full driver pipeline instead of the bounded seed slice
     let backend = driver_compile_backend(source, source_name)
-    if backend["status"] != "ok":
+    if len(backend["bytecode"]["instructions"]) == 0:
         return {"artifact_kind": "bytecode", "error": backend["execution"]["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
     return {"artifact_kind": "bytecode", "instructions": backend["bytecode"]["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
 
