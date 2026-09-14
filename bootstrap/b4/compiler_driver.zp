@@ -255,7 +255,7 @@ export fn driver_typed_ir_nested_coverage_valid(value, index):
     if value == none:
         return true
     let encoded = json(value)
-    if contains(encoded, "\"statements\""):
+    if starts_with(encoded, "{") and contains(encoded, "\"statements\""):
         return driver_typed_ir_nodes_coverage_valid(value["statements"], 0)
     if index >= len(value):
         return true
@@ -331,7 +331,12 @@ export fn driver_typed_ir_node_coverage_valid(node):
     if kind == "if":
         if not driver_typed_ir_nested_coverage_valid(node["then_branch"], 0):
             return false
-        if contains(json(node), "\"else_branch\"") and not driver_typed_ir_nested_coverage_valid(node["else_branch"], 0):
+        let has_else = false
+        if contains(json(node), "\"ast\""):
+            has_else = node["ast"]["else_branch"] != none
+        else:
+            has_else = contains(json(node), "\"else_branch\"") and node["else_branch"] != none
+        if has_else and not driver_typed_ir_nested_coverage_valid(node["else_branch"], 0):
             return false
     if kind == "while" or kind == "for" or kind == "try_catch":
         if not driver_typed_ir_nested_coverage_valid(node["body"], 0):
@@ -403,7 +408,10 @@ export fn driver_promote_typed_ir(source, source_name):
 export fn driver_compile_backend(source, source_name):
     let typed = driver_promote_typed_ir(source, source_name)
     if typed["status"] != "typed_ir_promoted":
-        return {"bytecode": {"artifact_kind": "bytecode", "error": "typed_ir_promotion_error", "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": "typed_ir_promotion_error", "output": []}, "ownership": "blocked", "reference_owner": "rust", "status": "error", "typed_ir": typed["typed_ir"]}
+        let compile_error = "typed_ir_promotion_error"
+        if len(typed["typed_ir"]["diagnostics"]) > 0 and contains(typed["typed_ir"]["diagnostics"][0]["message"], "block requires an indented body"):
+            compile_error = "missing_if_body"
+        return {"bytecode": {"artifact_kind": "bytecode", "error": compile_error, "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}, "diagnostics": typed["diagnostics"], "execution": {"error": compile_error, "output": []}, "ownership": "blocked", "reference_owner": "rust", "status": "error", "typed_ir": typed["typed_ir"]}
     # Inferred typed-IR wraps parser AST under node["ast"]. Lower the recovered
     # AST program — the same path as seed_compile_inferred_typed_ir — because
     # lower_typed_ir does not accept typed_expression wrappers.

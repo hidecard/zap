@@ -305,6 +305,13 @@ Zap သည် established languages များနှင့် feature အရ �
 
 ## Remaining B4 Certification Blockers (2026-09-13)
 
+## CI control-flow regression fix (2026-09-14)
+
+- [x] Fixed `verify_b4_source_to_vm_control_flow_8.sh` `KeyError` by making typed-IR nested coverage distinguish array values containing nested AST metadata from block objects, and by guarding optional `else_branch` access in both AST lowerers.
+- [x] Preserved the stable `missing_if_body` diagnostic through `driver_compile_backend()` when typed-IR promotion rejects an unindented conditional body.
+- [x] Exact control-flow gate passed: if/else execution, nested branches, fall-through, missing-body diagnostics, and deterministic self-rebuild.
+- [x] Neighboring source-to-VM AST, canonical-AST, frontend ownership, module-resolution, and full-language parser gates passed.
+
 The following blockers prevent B4 certification. Infrastructure is in place; certification requires implementing the missing seed production mechanism.
 
 | ID | Blocker | Current Status | Required Action |

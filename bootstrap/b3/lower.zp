@@ -277,7 +277,7 @@ export fn lower_node(node):
         if then_branch["error"] != none:
             return then_branch
         let else_branch = {"error": none, "instructions": []}
-        if node["else_branch"] != none:
+        if contains(json(node), "\"else_branch\"") and node["else_branch"] != none:
             else_branch = lower_block(node["else_branch"])
             if else_branch["error"] != none:
                 return else_branch
@@ -434,7 +434,7 @@ export fn lower_ast_node(node):
         if then_branch["error"] != none:
             return then_branch
         let else_branch = {"error": none, "instructions": []}
-        if node["else_branch"] != none:
+        if contains(json(node), "\"else_branch\"") and node["else_branch"] != none:
             else_branch = lower_ast_block(node["else_branch"])
             if else_branch["error"] != none:
                 return else_branch
