@@ -42,16 +42,16 @@ export fn lower_rebase_targets(instructions, offset):
                     result = append(result, instruction)
     return result
 
-export fn lower_ast_if_for_loop(node, loop_start):
+export fn lower_ast_if_for_loop(node, loop_start, function_depth):
     let condition = lower_expression(node["condition"])
     if condition["error"] != none:
         return condition
-    let then_branch = lower_ast_loop_statements(node["then_branch"]["statements"], loop_start)
+    let then_branch = lower_ast_loop_statements(node["then_branch"]["statements"], function_depth)
     if then_branch["error"] != none:
         return then_branch
     let else_branch = {"error": none, "instructions": []}
     if node["else_branch"] != none:
-        else_branch = lower_ast_loop_statements(node["else_branch"]["statements"], loop_start)
+        else_branch = lower_ast_loop_statements(node["else_branch"]["statements"], function_depth)
         if else_branch["error"] != none:
             return else_branch
     let instructions = condition["instructions"]
@@ -71,7 +71,7 @@ export fn lower_ast_if_for_loop(node, loop_start):
     instructions = patch_ast_jump(instructions, end_jump_index, end_target)
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_loop_statements(statements, loop_start):
+export fn lower_ast_loop_statements(statements, function_depth):
     let instructions = []
     for node in statements:
         let lowering_node = node
@@ -80,18 +80,16 @@ export fn lower_ast_loop_statements(statements, loop_start):
         if node["kind"] == "continue":
             lowering_node = {"kind": "continue", "loop_control": true}
         if node["kind"] == "function":
-            let nested = lower_ast_function_node_owned(node, instructions, node["name"])
+            let nested = lower_ast_function_node_owned(node, instructions, node["name"], function_depth)
             if nested["error"] != none:
                 return nested
             instructions = nested["instructions"]
             continue
-        if node["kind"] == "while":
-            lowering_node = {"body": node["body"], "condition": node["condition"], "kind": "while"}
         let lowered = none
         if node["kind"] == "if":
-            lowered = lower_ast_if_for_loop(node, loop_start)
+            lowered = lower_ast_if_for_loop(node, 0, function_depth)
         else:
-            lowered = lower_ast_node(lowering_node)
+            lowered = lower_ast_node(lowering_node, function_depth)
         if lowered["error"] != none:
             return lowered
         let rebased = lower_rebase_targets(lowered["instructions"], len(instructions))
@@ -99,7 +97,7 @@ export fn lower_ast_loop_statements(statements, loop_start):
             instructions = append(instructions, instruction)
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_for_node(node):
+export fn lower_ast_for_node(node, function_depth):
     if node["iterable"]["kind"] != "list":
         return {"error": "unsupported_ast_for_iterable", "instructions": []}
     let chunks = []
@@ -107,7 +105,7 @@ export fn lower_ast_for_node(node):
         let lowered_element = lower_expression(element)
         if lowered_element["error"] != none:
             return lowered_element
-        let body = lower_ast_loop_statements(node["body"]["statements"], 0)
+        let body = lower_ast_loop_statements(node["body"]["statements"], function_depth)
         if body["error"] != none:
             return body
         let chunk = lowered_element["instructions"]
@@ -128,11 +126,11 @@ export fn lower_ast_for_node(node):
     instructions = patch_breaks(instructions, len(instructions))
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_try_node(node):
-    let body = lower_ast_block(node["body"])
+export fn lower_ast_try_node(node, function_depth):
+    let body = lower_ast_block(node["body"], function_depth)
     if body["error"] != none:
         return body
-    let catch_body = lower_ast_block(node["catch_body"])
+    let catch_body = lower_ast_block(node["catch_body"], function_depth)
     if catch_body["error"] != none:
         return catch_body
     let binding = none
@@ -264,56 +262,56 @@ export fn ast_function_captures(node):
         excluded = ast_append_name(excluded, local_name)
     return ast_capture_from_statements(node["body"]["statements"], excluded, [])
 
-export fn lower_ast_function_block(body, prefix):
+export fn lower_ast_function_block(body, prefix, function_depth):
     let instructions = prefix
     for node in body["statements"]:
         let lowered = none
         if node["kind"] == "function":
-            lowered = lower_ast_function_node_owned(node, instructions, node["name"])
+            lowered = lower_ast_function_node_owned(node, instructions, node["name"], function_depth)
         else:
-            lowered = lower_ast_node_with_prefix(node, instructions)
+            lowered = lower_ast_node_with_prefix(node, instructions, function_depth)
         if lowered["error"] != none:
             return lowered
         instructions = lowered["instructions"]
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_function_node_owned(node, prefix, binding):
+export fn lower_ast_function_node_owned(node, prefix, binding, function_depth):
     let definition_index = len(prefix)
     let entry = definition_index + 1
     let captures = []
     if binding != none:
         captures = ast_function_captures(node)
     let with_definition = append(prefix, {"binding": binding, "captures": captures, "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": none, "params": lower_parameter_names(node["params"]), "required": false})
-    let body = lower_ast_function_block(node["body"], with_definition)
+    let body = lower_ast_function_block(node["body"], with_definition, function_depth + 1)
     if body["error"] != none:
         return body
     let with_return = append(body["instructions"], {"op": "return_none"})
     let end = len(with_return)
     return {"error": none, "instructions": patch_function(with_return, definition_index, entry, end), "next": end}
 
-export fn lower_ast_node(node):
+export fn lower_ast_node(node, function_depth):
     let kind = node["kind"]
     if kind == "function":
-        return lower_ast_function_node_owned(node, [], none)
+        return lower_ast_function_node_owned(node, [], none, function_depth)
     if kind == "class":
-        return lower_class_node(node, [])
+        return lower_class_node(node, [], function_depth)
     if kind == "trait" or kind == "interface":
-        return lower_trait_node(node, [])
+        return lower_trait_node(node, [], function_depth)
     if kind == "break":
         return {"error": none, "instructions": [{"op": "break_jump"}]}
     if kind == "continue":
         return {"error": none, "instructions": [{"op": "continue_jump"}]}
     if kind == "if":
-        return lower_ast_if_for_loop(node, 0)
+        return lower_ast_if_for_loop(node, 0, function_depth)
     if kind == "try_catch":
-        return lower_ast_try_node(node)
+        return lower_ast_try_node(node, function_depth)
     if kind == "for":
-        return lower_ast_for_node(node)
+        return lower_ast_for_node(node, function_depth)
     if kind == "while":
         let condition = lower_expression(node["condition"])
         if condition["error"] != none:
             return condition
-        let body = lower_ast_loop_statements(node["body"]["statements"], 0)
+        let body = lower_ast_loop_statements(node["body"]["statements"], function_depth)
         if body["error"] != none:
             return body
         let instructions = condition["instructions"]
@@ -341,6 +339,8 @@ export fn lower_ast_node(node):
                 return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "field_store_path", "path": pieces})}
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
+        if kind == "return" and function_depth <= 0:
+            return {"error": "return_outside_function", "instructions": []}
         if kind == "return" and node["value"] == none:
             return {"error": none, "instructions": [{"op": "return_none"}]}
         let lowered = lower_expression(node["value"])
@@ -355,15 +355,15 @@ export fn lower_ast_node(node):
         return {"error": none, "instructions": append(lowered["instructions"], {"op": "raise"})}
     return {"error": "unsupported_ast_statement:" + kind, "instructions": []}
 
-export fn lower_ast_node_with_prefix(node, prefix):
+export fn lower_ast_node_with_prefix(node, prefix, function_depth):
     let kind = node["kind"]
     if kind == "function":
-        return lower_ast_function_node_owned(node, prefix, none)
+        return lower_ast_function_node_owned(node, prefix, none, function_depth + 1)
     if kind == "class":
-        return lower_class_node(node, prefix)
+        return lower_class_node(node, prefix, function_depth)
     if kind == "trait" or kind == "interface":
-        return lower_trait_node(node, prefix)
-    let lowered = lower_ast_node(node)
+        return lower_trait_node(node, prefix, function_depth)
+    let lowered = lower_ast_node(node, function_depth)
     if lowered["error"] != none:
         return lowered
     let rebased = lower_rebase_targets(lowered["instructions"], len(prefix))
@@ -372,22 +372,22 @@ export fn lower_ast_node_with_prefix(node, prefix):
         combined = append(combined, instruction)
     return {"error": none, "instructions": combined}
 
-export fn lower_ast_block_with_prefix(body, prefix):
+export fn lower_ast_block_with_prefix(body, prefix, function_depth):
     let instructions = prefix
     for node in body["statements"]:
-        let lowered = lower_ast_node_with_prefix(node, instructions)
+        let lowered = lower_ast_node_with_prefix(node, instructions, function_depth)
         if lowered["error"] != none:
             return lowered
         instructions = lowered["instructions"]
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_block(body):
-    return lower_ast_block_with_prefix(body, [])
+export fn lower_ast_block(body, function_depth):
+    return lower_ast_block_with_prefix(body, [], function_depth)
 
 export fn lower_ast_program(ast):
     if ast["kind"] != "zap.ast":
         return {"error": "invalid_ast_kind", "instructions": []}
-    let lowered = lower_ast_block({"statements": ast["ast"]["statements"]})
+    let lowered = lower_ast_block({"statements": ast["ast"]["statements"]}, 0)
     if lowered["error"] != none:
         return {"error": lowered["error"], "instructions": []}
     for instruction in lowered["instructions"]:

@@ -199,7 +199,7 @@ export fn lower_parameter_names(params):
         names = append(names, parameter["name"])
     return names
 
-export fn lower_function_node_owned(node, prefix, owner):
+export fn lower_function_node_owned(node, prefix, owner, function_depth):
     let definition_index = len(prefix)
     let entry = definition_index + 1
     let params = lower_parameter_names(node["params"])
@@ -207,7 +207,7 @@ export fn lower_function_node_owned(node, prefix, owner):
     if contains(json(node), "\"required\":true"):
         required = true
     let with_definition = append(prefix, {"binding": none, "captures": [], "end": 0, "entry": entry, "name": node["name"], "op": "function_def", "owner": owner, "params": params, "required": required})
-    let body = lower_ast_block_with_prefix(node["body"], with_definition)
+    let body = lower_ast_block_with_prefix(node["body"], with_definition, function_depth)
     if body["error"] != none:
         return body
     let with_return = body["instructions"]
@@ -215,20 +215,20 @@ export fn lower_function_node_owned(node, prefix, owner):
     let end = len(with_return)
     return {"error": none, "instructions": patch_function(with_return, definition_index, entry, end), "next": end}
 
-export fn lower_function_node(node, prefix):
-    return lower_function_node_owned(node, prefix, none)
+export fn lower_function_node(node, prefix, function_depth):
+    return lower_function_node_owned(node, prefix, none, function_depth)
 
-export fn lower_class_body(body, prefix, owner):
+export fn lower_class_body(body, prefix, owner, function_depth):
     let instructions = prefix
     for node in body["statements"]:
         let lowered = none
         if node["kind"] == "function":
-            lowered = lower_function_node_owned(node, instructions, owner)
+            lowered = lower_function_node_owned(node, instructions, owner, function_depth)
         else:
             if node["kind"] == "trait_use":
                 lowered = {"error": none, "instructions": instructions}
             else:
-                lowered = lower_ast_node_with_prefix(node, instructions)
+                lowered = lower_ast_node_with_prefix(node, instructions, function_depth)
         if lowered["error"] != none:
             return lowered
         instructions = lowered["instructions"]
@@ -245,23 +245,23 @@ export fn patch_trait(instructions, index, end):
         cursor = cursor + 1
     return patched
 
-export fn lower_trait_node(node, prefix):
+export fn lower_trait_node(node, prefix, function_depth):
     let trait_index = len(prefix)
     let with_trait = append(prefix, {"end": 0, "kind": node["kind"], "name": node["name"], "op": "trait_def"})
-    let body = lower_class_body(node["body"], with_trait, node["name"])
+    let body = lower_class_body(node["body"], with_trait, node["name"], function_depth)
     if body["error"] != none:
         return body
     let combined = body["instructions"]
     return {"error": none, "instructions": patch_trait(combined, trait_index, len(combined)), "next": len(combined)}
 
-export fn lower_class_node(node, prefix):
+export fn lower_class_node(node, prefix, function_depth):
     let class_index = len(prefix)
     let parents = lower_class_parents(node)
     let traits = lower_class_traits(node)
     let interfaces = lower_class_interfaces(node)
     let trait_selections = lower_class_trait_selections(node)
     let with_class = append(prefix, {"base": node["base"], "end": 0, "interfaces": interfaces, "name": node["name"], "op": "class_def", "parents": parents, "trait_selections": trait_selections, "traits": traits})
-    let body = lower_class_body(node["body"], with_class, node["name"])
+    let body = lower_class_body(node["body"], with_class, node["name"], function_depth)
     if body["error"] != none:
         return body
     let combined = body["instructions"]
@@ -390,27 +390,27 @@ export fn lower_node(node):
         return lowered
     return {"error": "unsupported_statement:" + kind, "instructions": []}
 
-export fn lower_ast_block_with_prefix(body, prefix):
+export fn lower_ast_block_with_prefix(body, prefix, function_depth):
     let instructions = prefix
     for node in body["statements"]:
-        let lowered = lower_ast_node_with_prefix(node, instructions)
+        let lowered = lower_ast_node_with_prefix(node, instructions, function_depth)
         if lowered["error"] != none:
             return lowered
         instructions = lowered["instructions"]
     return {"error": none, "instructions": instructions}
 
-export fn lower_ast_block(body):
-    return lower_ast_block_with_prefix(body, [])
+export fn lower_ast_block(body, function_depth):
+    return lower_ast_block_with_prefix(body, [], function_depth)
 
-export fn lower_ast_node_with_prefix(node, prefix):
+export fn lower_ast_node_with_prefix(node, prefix, function_depth):
     let kind = node["kind"]
     if kind == "function":
-        return lower_function_node(node, prefix)
+        return lower_function_node(node, prefix, function_depth + 1)
     if kind == "class":
-        return lower_class_node(node, prefix)
+        return lower_class_node(node, prefix, function_depth)
     if kind == "trait" or kind == "interface":
-        return lower_trait_node(node, prefix)
-    let lowered = lower_ast_node(node)
+        return lower_trait_node(node, prefix, function_depth)
+    let lowered = lower_ast_node(node, function_depth)
     if lowered["error"] != none:
         return lowered
     let combined = prefix
@@ -418,24 +418,24 @@ export fn lower_ast_node_with_prefix(node, prefix):
         combined = append(combined, instruction)
     return {"error": none, "instructions": combined}
 
-export fn lower_ast_node(node):
+export fn lower_ast_node(node, function_depth):
     let kind = node["kind"]
     if kind == "function":
-        return lower_function_node(node, [])
+        return lower_function_node(node, [], function_depth)
     if kind == "class":
-        return lower_class_node(node, [])
+        return lower_class_node(node, [], function_depth)
     if kind == "trait" or kind == "interface":
-        return lower_trait_node(node, [])
+        return lower_trait_node(node, [], function_depth)
     if kind == "if":
         let condition = lower_expression(node["condition"])
         if condition["error"] != none:
             return condition
-        let then_branch = lower_ast_block(node["then_branch"])
+        let then_branch = lower_ast_block(node["then_branch"], function_depth)
         if then_branch["error"] != none:
             return then_branch
         let else_branch = {"error": none, "instructions": []}
         if contains(json(node), "\"else_branch\"") and node["else_branch"] != none:
-            else_branch = lower_ast_block(node["else_branch"])
+            else_branch = lower_ast_block(node["else_branch"], function_depth)
             if else_branch["error"] != none:
                 return else_branch
         let instructions = condition["instructions"]
@@ -456,7 +456,7 @@ export fn lower_ast_node(node):
         let condition = lower_expression(node["condition"])
         if condition["error"] != none:
             return condition
-        let body = lower_ast_block(node["body"])
+        let body = lower_ast_block(node["body"], function_depth)
         if body["error"] != none:
             return body
         let instructions = condition["instructions"]
@@ -481,6 +481,8 @@ export fn lower_ast_node(node):
                 return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "field_store_path", "path": pieces})}
         return {"error": none, "instructions": append(lowered_value["instructions"], {"op": "store", "name": node["name"]})}
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
+        if kind == "return" and function_depth <= 0:
+            return {"error": "return_outside_function", "instructions": []}
         if kind == "return" and node["value"] == none:
             return {"error": none, "instructions": [{"op": "return_none"}]}
         let lowered = lower_expression(node["value"])
@@ -498,7 +500,7 @@ export fn lower_ast_node(node):
 export fn lower_ast_program(ast):
     if ast["kind"] != "zap.ast":
         return {"error": "invalid_ast_kind", "instructions": []}
-    let lowered = lower_ast_block({"statements": ast["ast"]["statements"]})
+    let lowered = lower_ast_block({"statements": ast["ast"]["statements"]}, 0)
     if lowered["error"] != none:
         return {"error": lowered["error"], "instructions": []}
     return {"error": none, "instructions": append(lowered["instructions"], {"op": "halt"}), "kind": "zap.bytecode", "schema_version": 1}

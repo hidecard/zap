@@ -54,7 +54,7 @@ say factorial_result["output"][0]
 say cross_result["output"][0]
 say cross_result["output"][1]
 say safe_result["output"][0]
-say arity_result["error"]
+say arity["error"]
 say outside["status"]
 say outside["error"]
 say nested_function["status"]
@@ -70,7 +70,7 @@ none
 7
 9
 6
-arity_error:one
+typed_ir_promotion_error
 compile_error
 return_outside_function
 compiled_slice
