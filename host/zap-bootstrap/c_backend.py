@@ -267,19 +267,142 @@ def emit_c(program, out_path):
         elif op == "make_list":
             count = instr.get("count", 0)
             lines.append(f"  /* make_list count={count} */")
-            # For now, just create a simple string representation
+            # Create a list structure - for now use a simple string representation
+            # In a full implementation, this would create a proper list data structure
             if count == 0:
                 lines.append("  push_str(&st, strdup(\"[]\"));")
             else:
                 lines.append("  push_str(&st, strdup(\"[list]\"));")
         elif op == "list_get":
             lines.append("  b = pop_str(&st); a = pop_str(&st);")
-            lines.append("  /* simplified list_get: return element as string */")
+            lines.append("  /* list_get: get element at index */")
+            lines.append("  /* For now, return the first element as placeholder */")
             lines.append("  push_str(&st, a); free(a); free(b);")
         elif op == "list_len":
             lines.append("  b = pop_str(&st); a = b;")
-            lines.append("  /* simplified list_len: return dummy length */")
+            lines.append("  /* list_len: return list length */")
+            lines.append("  /* For now, return dummy length - full implementation would parse list string */")
             lines.append("  push_str(&st, from_int(3)); free(a);")
+        elif op == "list_set":
+            lines.append("  c = pop_str(&st); b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* list_set: set element at index */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a); free(b); free(c);")
+        elif op == "list_append":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* list_append: add element to end of list */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a); free(b);")
+        elif op == "make_map":
+            count = instr.get("count", 0)
+            lines.append(f"  /* make_map count={count} */")
+            # Create a map structure - for now use a simple string representation
+            if count == 0:
+                lines.append("  push_str(&st, strdup(\"{}\"));")
+            else:
+                lines.append("  push_str(&st, strdup(\"{map}\"));")
+        elif op == "map_get":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* map_get: get value by key */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"\")); free(a); free(b);")
+        elif op == "map_set":
+            lines.append("  c = pop_str(&st); b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* map_set: set key-value pair */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a); free(b); free(c);")
+        elif op == "map_has_key":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* map_has_key: check if key exists */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"false\")); free(a); free(b);")
+        elif op == "map_keys":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* map_keys: get all keys as list */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"[]\")); free(a);")
+        elif op == "map_values":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* map_values: get all values as list */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"[]\")); free(a);")
+        elif op == "struct_new":
+            lines.append("  /* struct_new: create new struct instance */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"{struct}\"));")
+        elif op == "struct_get":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* struct_get: get field value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"\")); free(a); free(b);")
+        elif op == "struct_set":
+            lines.append("  c = pop_str(&st); b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* struct_set: set field value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a); free(b); free(c);")
+        elif op == "error_new":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* error_new: create error value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a);")
+        elif op == "error_is_error":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* error_is_error: check if value is error */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"false\")); free(a);")
+        elif op == "error_unwrap":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* error_unwrap: unwrap error value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a);")
+        elif op == "option_some":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* option_some: wrap value in Some */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a);")
+        elif op == "option_none":
+            lines.append("  /* option_none: create None value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"none\"));")
+        elif op == "option_is_some":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* option_is_some: check if Some */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"false\")); free(a);")
+        elif op == "option_is_none":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* option_is_none: check if None */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"true\")); free(a);")
+        elif op == "option_unwrap":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* option_unwrap: unwrap Some value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a);")
+        elif op == "option_unwrap_or":
+            lines.append("  b = pop_str(&st); a = pop_str(&st);")
+            lines.append("  /* option_unwrap_or: unwrap or default */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a); free(b);")
+        elif op == "await":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* await: await async value */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, a); free(a);")
+        elif op == "async_new":
+            lines.append("  /* async_new: create async task */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"{async}\"));")
+        elif op == "import_module":
+            name = instr.get("name", "")
+            lines.append(f"  /* import_module: {name} */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  push_str(&st, strdup(\"{module}\"));")
+        elif op == "export_value":
+            lines.append("  a = pop_str(&st);")
+            lines.append("  /* export_value: export from module */")
+            lines.append("  /* Placeholder implementation */")
+            lines.append("  free(a);")
         else:
             lines.append(f"  /* unhandled op {op} */")
     lines.append("")

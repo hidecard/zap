@@ -16,6 +16,10 @@ Supported subset:
   - `if expr: ... else: ...` / `while expr: ...`  (indented blocks)
   - arithmetic `+ - * /`, comparisons `< > ==`, parenthesised expressions
   - function calls `name(arg, arg)`
+  - list literals `[1, 2, 3]`, list indexing `xs[0]`, `len(xs)`
+  - `for x in xs:` loops
+  - Basic map literals `{}` (placeholder)
+  - Basic class syntax (placeholder)
 
 It is a bootstrap seed, not a replacement for the full Zap compiler in
 `bootstrap/b1..b4`; it proves the single-language loop is possible without Rust

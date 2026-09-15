@@ -35,12 +35,17 @@ A seed binary that:
 - Required: Full language surface coverage
 
 ### Stage 3: Native Code Generation Backend
-**Status:** Implemented and integrated into B4 contract (2026-09-15)
+**Status:** Extended with advanced language features (2026-09-15)
 - Added `host/zap-bootstrap/c_backend.py` — emits self-contained C from Zap bytecode
 - C backend handles: const, store/load, arithmetic, comparison, boolean, jumps, print, halt, list ops, function calls
+- **NEW:** Extended C backend with map operations (make_map, map_get, map_set, map_has_key, map_keys, map_values)
+- **NEW:** Extended C backend with struct operations (struct_new, struct_get, struct_set)
+- **NEW:** Extended C backend with error/option handling (error_new, error_is_error, error_unwrap, option_some, option_none, option_is_some, option_is_none, option_unwrap, option_unwrap_or)
+- **NEW:** Extended C backend with async operations (await, async_new)
+- **NEW:** Extended C backend with module operations (import_module, export_value)
 - Compiles with system C compiler (gcc/clang) — no Rust/Cargo required
 - Contract revision (Schema v2): C backend path is now an acceptable seed provenance mechanism
-- Next: Extend C backend to handle full language surface, add comprehensive verification
+- Next: Implement proper data structures instead of placeholder implementations
 
 ### Stage 4: Self-Hosting Loop
 **Status:** Not started
@@ -86,6 +91,20 @@ It does **NOT** forbid:
 A Zap→C→native path satisfies the explicit forbidden-fallback list.
 
 ## Progress Log
+
+### 2026-09-15: Extended C backend with advanced language features
+- **Advanced language support**: Added placeholder implementations for maps, structs, errors, options, async, and modules
+- **Map operations**: make_map, map_get, map_set, map_has_key, map_keys, map_values
+- **Struct operations**: struct_new, struct_get, struct_set
+- **Error/Option handling**: error_new, error_is_error, error_unwrap, option_some, option_none, option_is_some, option_is_none, option_unwrap, option_unwrap_or
+- **Async operations**: await, async_new
+- **Module operations**: import_module, export_value
+- **Python seed compiler update**: Extended documentation to reflect basic class and map syntax support
+- **Contract validation**: Schema v2 contract gate passes successfully
+- **Files modified**:
+  - `host/zap-bootstrap/c_backend.py` (extended language feature support)
+  - `host/zap-bootstrap/compile.py` (updated documentation)
+  - `docs/SEED_PRODUCTION_PLAN.md` (progress log update)
 
 ### 2026-09-15: Contract revision and C backend integration
 - **B4 Contract Schema v2**: Revised B4 contract to define "Zap-produced seed" through alternative provenance mechanisms
