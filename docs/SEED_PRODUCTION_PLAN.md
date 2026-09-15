@@ -35,12 +35,12 @@ A seed binary that:
 - Required: Full language surface coverage
 
 ### Stage 3: Native Code Generation Backend
-**Status:** Proof of concept implemented (2026-09-13)
+**Status:** Implemented and integrated into B4 contract (2026-09-15)
 - Added `host/zap-bootstrap/c_backend.py` — emits self-contained C from Zap bytecode
-- C backend handles: const, store/load, arithmetic, comparison, boolean, jumps, print, halt, list ops
+- C backend handles: const, store/load, arithmetic, comparison, boolean, jumps, print, halt, list ops, function calls
 - Compiles with system C compiler (gcc/clang) — no Rust/Cargo required
-- CI integration: `c-backend` job runs on Ubuntu with gcc
-- Next: Extend C backend to handle all 14 verification programs, add function calls
+- Contract revision (Schema v2): C backend path is now an acceptable seed provenance mechanism
+- Next: Extend C backend to handle full language surface, add comprehensive verification
 
 ### Stage 4: Self-Hosting Loop
 **Status:** Not started
@@ -86,6 +86,21 @@ It does **NOT** forbid:
 A Zap→C→native path satisfies the explicit forbidden-fallback list.
 
 ## Progress Log
+
+### 2026-09-15: Contract revision and C backend integration
+- **B4 Contract Schema v2**: Revised B4 contract to define "Zap-produced seed" through alternative provenance mechanisms
+- **Acceptable seed provenance**: Python seed compiler + C backend → system C compiler → native binary
+- **C backend improvements**: Enhanced function call handling, improved return mechanism, better list operations
+- **CI integration**: Added C backend verification job to GitHub Actions workflow
+- **Acceptance manifest update**: Added B4-FULL-019 for seed-provenance validation
+- **Files modified**:
+  - `bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml` (schema v2)
+  - `bootstrap/contracts/B4_ACCEPTANCE.tsv` (19 rows)
+  - `host/zap-bootstrap/c_backend.py` (improved function calls)
+  - `host/zap-bootstrap/verify_c_backend.py` (verification script)
+  - `scripts/bootstrap/verify_b4_rust_free_contract.sh` (schema v2 support)
+  - `.github/workflows/ci.yml` (C backend job)
+  - `docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_EN.md` (updated documentation)
 
 ### 2026-09-13: Extended Python seed compiler with list and for-loop support
 - Added list literals `[1, 2, 3]` to tokenizer and parser

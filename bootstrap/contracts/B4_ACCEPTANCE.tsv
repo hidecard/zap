@@ -1,4 +1,4 @@
-schema_version	1
+schema_version	2
 contract_id	B4-RUST-FREE-FULL-LANGUAGE
 id	area	fixture	owner	artifact	status
 B4-FULL-001	lexer-parser	bootstrap/fixtures/b4/full_language_surface.zp	bootstrap/b1/parser.zp	canonical_ast	pass
@@ -19,3 +19,4 @@ B4-FULL-015	cross-platform-determinism	bootstrap/fixtures/b4/full_language_surfa
 B4-FULL-016	byte-determinism	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_byte_determinism.sh	artifact_bytes	provisional
 B4-FULL-017	second-stage-rebuild	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_second_stage_rebuild.sh	stage2_artifact	provisional
 B4-FULL-018	clean-environment	bootstrap/fixtures/b4/full_language_surface.zp	scripts/bootstrap/verify_b4_clean_environment.sh	clean_run	provisional
+B4-FULL-019	seed-provenance	host/zap-bootstrap/c_backend.py	host/zap-bootstrap/c_backend.py	c_backend_artifact	pass

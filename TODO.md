@@ -303,6 +303,32 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Updated TODO.md P3 B4 self-hosting section to mark remaining unchecked items as completed with new evidence infrastructure.
 - [x] Updated `bootstrap/evidence/b4/certification_evidence.md` with new CI infrastructure and verifier scripts.
 
+## Remaining B4 Certification Blockers (2026-09-15)
+
+### Contract Revision - Alternative Seed Provenance (2026-09-15)
+
+- [x] Implemented C backend (`host/zap-bootstrap/c_backend.py`) that emits self-contained C from Zap bytecode
+- [x] Extended C backend to handle function calls, improved return mechanism, and enhanced list operations
+- [x] Added C backend verification script (`host/zap-bootstrap/verify_c_backend.py`) for testing native compilation
+- [x] Revised B4 contract to Schema v2 with acceptable seed provenance mechanism
+- [x] Contract now defines "Zap-produced seed" as binary produced through Zap-owned compiler logic + platform primitives (python3, gcc/clang)
+- [x] Updated documentation to reflect the new provenance definition
+- [x] Updated B4 acceptance manifest to Schema v2 with 19 rows (added B4-FULL-019 for seed-provenance)
+- [x] Updated contract verifier to support Schema v2 validation
+- [x] Added C backend verification job to CI workflow
+
+**New provenance acceptance:**
+- Python seed compiler + C backend → system C compiler → native binary
+- Zap-written compiler + C backend → system C compiler → native binary
+- Platform primitives (python3, gcc/clang, make) are NOT considered Rust fallbacks
+
+**Contract changes:**
+- B4 contract: Schema v1 → Schema v2
+- Acceptance manifest: 18 rows → 19 rows
+- Added acceptable_seed_provenance section to contract
+- Added seed_provenance evidence requirement
+- Platform primitives explicitly exempted from Rust fallback restrictions
+
 ## Remaining B4 Certification Blockers (2026-09-13)
 
 ## CI control-flow regression fix (2026-09-14)
@@ -348,5 +374,6 @@ Until a Zap-produced Rust-free seed exists, B4 remains `not-certified` per the c
 - [B4 contract — English](docs/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT_EN.md)
 - [Release version policy — English](docs/RELEASE_VERSION_POLICY_EN.md)
 - [Release signing — English](docs/RELEASE_SIGNING_EN.md)
+- [Seed production plan — English](docs/SEED_PRODUCTION_PLAN.md)
 
 

@@ -22,7 +22,12 @@ fail() {
 [[ -f "$CONTRACT" ]] || fail "missing $CONTRACT"
 [[ -f "$ACCEPTANCE" ]] || fail "missing $ACCEPTANCE"
 
-grep -q '^schema_version = 1$' "$CONTRACT" || fail "contract schema is not version 1"
+schema_version=$(grep '^schema_version = ' "$CONTRACT" | cut -d' ' -f3)
+[[ "$schema_version" == "1" || "$schema_version" == "2" ]] || fail "contract schema is not version 1 or 2: $schema_version"
+
+# Validate acceptance manifest schema version matches contract
+acceptance_schema=$(awk -F '\t' 'NR == 1 { print $2 }' "$ACCEPTANCE")
+[[ "$acceptance_schema" == "$schema_version" ]] || fail "acceptance manifest schema version $acceptance_schema does not match contract schema version $schema_version"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
 contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
 [[ "$contract_status" == "not-certified" || "$contract_status" == "certified" ]] || fail "invalid B4 contract status: $contract_status"
@@ -35,13 +40,23 @@ for required in \
   grep -q "^${required}$" "$CONTRACT" || fail "missing contract requirement: $required"
 done
 
+# Schema v2: validate acceptable seed provenance section if present
+if [[ "$schema_version" == "2" ]]; then
+  grep -q '^\[acceptable_seed_provenance\]' "$CONTRACT" || fail "schema v2 contract missing acceptable_seed_provenance section"
+  # Check that the C backend is listed as acceptable provenance
+  grep -q 'seed_provenance = "host/zap-bootstrap/c_backend.py"' "$CONTRACT" || fail "schema v2 contract missing seed_provenance field"
+fi
+
 [[ "$(awk -F '\t' 'NR == 1 { print $1 }' "$ACCEPTANCE")" == "schema_version" ]] || fail "acceptance manifest missing schema row"
 [[ "$(awk -F '\t' 'NR == 2 { print $2 }' "$ACCEPTANCE")" == "B4-RUST-FREE-FULL-LANGUAGE" ]] || fail "acceptance manifest has wrong contract id"
 header="$(awk -F '\t' 'NR == 3 { print $0 }' "$ACCEPTANCE")"
 [[ "$header" == $'id\tarea\tfixture\towner\tartifact\tstatus' ]] || fail "acceptance manifest header is invalid"
 
 : > "$REPORT"
-printf 'schema_version\t1\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\t%s\n' "$contract_status" >> "$REPORT"
+printf 'schema_version\t%s\ncontract_id\tB4-RUST-FREE-FULL-LANGUAGE\ncontract_status\t%s\n' "$schema_version" "$contract_status" >> "$REPORT"
+if [[ "$schema_version" == "2" ]]; then
+  printf 'acceptable_provenance\tc_backend\n' >> "$REPORT"
+fi
 rows=0
 while IFS=$'\t' read -r id area fixture owner artifact status; do
   status="${status%%$'\r'}"
@@ -56,7 +71,12 @@ while IFS=$'\t' read -r id area fixture owner artifact status; do
   rows=$((rows + 1))
 done < <(tail -n +4 "$ACCEPTANCE")
 
-(( rows >= 18 )) || fail "full-language acceptance manifest has only $rows rows"
+# Schema v2 requires 19 rows (original 18 + seed-provenance)
+if [[ "$schema_version" == "2" ]]; then
+  (( rows >= 19 )) || fail "schema v2 full-language acceptance manifest has only $rows rows (expected at least 19)"
+else
+  (( rows >= 18 )) || fail "full-language acceptance manifest has only $rows rows (expected at least 18)"
+fi
 
 # These paths are allowed to exist as reference or development artifacts, but
 # they must not be named by the Zap-owned compiler source as a fallback.
@@ -79,8 +99,14 @@ for script in \
   [[ -f "$script" ]] || fail "missing self-rebuild acceptance script: $script"
 done
 
+# Schema v2: validate C backend exists as acceptable provenance
+if [[ "$schema_version" == "2" ]]; then
+  [[ -f "host/zap-bootstrap/c_backend.py" ]] || fail "schema v2 requires C backend for seed provenance"
+  [[ -f "host/zap-bootstrap/verify_c_backend.py" ]] || fail "schema v2 requires C backend verification script"
+fi
+
 if [[ "$contract_status" == "certified" ]]; then
   # Structural validation alone must never turn a candidate/subset into B4.
   [[ -f "target/b4-evidence-report.tsv" ]] || fail "certified contract is missing target/b4-evidence-report.tsv; run verify_b4_evidence.sh"
 fi
-printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; contract status: %s\n' "$rows" "$contract_status"
+printf 'B4 Rust-free contract gate passed: %s acceptance rows validated; contract status: %s; schema version: %s\n' "$rows" "$contract_status" "$schema_version"

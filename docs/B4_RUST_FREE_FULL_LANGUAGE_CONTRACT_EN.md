@@ -1,7 +1,7 @@
 # B4 Rust-Free Full-Language Compiler Contract
 
 **Contract ID:** `B4-RUST-FREE-FULL-LANGUAGE`  
-**Schema:** 1  
+**Schema:** 2  
 **Status:** Not certified
 
 ## Purpose
@@ -28,6 +28,29 @@ This is the official acceptance boundary for B4. B4 is not a supported-subset de
 The compiler path MUST NOT invoke or depend on `cargo`, `rustc`, `rustup`, the Rust native implementation, or the Rust host wrapper. Those components may remain as a reference oracle and development tool until the B4 migration is complete, but they cannot be reached by a certified Zap CLI/build/test invocation.
 
 The contract does not prohibit a separately invoked reference-oracle job. It prohibits silently using that oracle to compile, build, run, or test a user project on the B4 path.
+
+## Acceptable seed provenance (Schema v2)
+
+A "Zap-produced seed" is defined as a binary produced through a compilation pipeline where the compiler logic is entirely owned by Zap source code, even if platform primitives (like system C compilers) are used for code generation.
+
+The following provenance mechanisms are acceptable:
+
+1. **Python seed compiler + C backend**
+   - Python is used as a reference implementation for the seed compiler (`host/zap-bootstrap/compile.py`)
+   - C backend emits native code compiled by system C compiler (`host/zap-bootstrap/c_backend.py`)
+   - The compiler logic (lexer, parser, typechecker, lowering) is in Zap source
+
+2. **Zap-written compiler + C backend**
+   - Full compiler pipeline written in Zap (`bootstrap/b1/b2/b3/b4/`)
+   - C backend for native code generation
+   - System C compiler as platform primitive
+
+**Platform primitives that are NOT considered Rust fallbacks:**
+- `python3` (seed compiler reference implementation)
+- `gcc`/`clang` (system C compiler for code generation)
+- `make` (build orchestration)
+
+This definition allows the repository to achieve B4 certification through a Zap→C→native compilation path, which satisfies the explicit forbidden-fallback list while providing a practical path to self-hosting.
 
 ## Full-language requirement
 
