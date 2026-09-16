@@ -1,0 +1,54 @@
+# B4-FULL-014/016/017 data-structure determinism fixture.
+#
+# This fixture is the Zap source that the Rust-free C backend compiles into a
+# native binary. It exercises the C backend's real data structures (lists,
+# maps, struct-like records, Result/Option values, strings, nested loops) in a
+# fully deterministic order so the emitted C source and the compiled binary can
+# be replayed byte-for-byte:
+#
+#   stage 1: Zap source --(compile.py)--> bytecode --(c_backend.py)--> C
+#   stage 2: C source   --(system C compiler)--> native binary
+#   stage 3: native binary --(execution)--> deterministic stdout
+#
+# Compiled by: host/zap-bootstrap/c_backend.py (Zap source -> C -> native)
+# Verified by: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+
+let values = [3, 1, 4, 1, 5, 9, 2, 6]
+let report = {"name": "b4-determinism", "stage": "c-backend", "values": len(values), "sum": 0}
+
+let total = 0
+let index = 0
+while index < len(values):
+    total = total + values[index]
+    index = index + 1
+
+report["sum"] = total
+values[1] = 12
+
+let sorted = []
+let cursor = 0
+while cursor < len(values):
+    let value = values[cursor]
+    let position = 0
+    while position < len(sorted) and sorted[position] < value:
+        position = position + 1
+    sorted = sorted + [value]
+    let tail = position + 1
+    while tail < len(values):
+        sorted = sorted + []
+        tail = tail + 1
+    cursor = cursor + 1
+
+let option = some(total)
+let fallback = none()
+say "keys: " + keys(report)[0] + "," + keys(report)[1]
+say "has_sum: " + str(has_key(report, "sum"))
+say "missing: " + str(has_key(report, "absent"))
+say "total: " + str(total)
+say "first: " + str(values[0])
+say "mutated: " + str(values[1])
+say "len: " + str(len(values))
+say "map: " + str(report["name"]) + "/" + str(report["stage"])
+say "option: " + str(is_some(option))
+say "fallback: " + str(is_none(fallback))
+say "nested: " + join(["b4", "c", "backend"], "-")

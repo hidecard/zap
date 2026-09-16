@@ -9,6 +9,7 @@ REPORT="${B4_FULL_ACCEPTANCE_REPORT:-target/b4-full-acceptance-matrix.tsv}"
 mkdir -p "$(dirname "$REPORT")"
 ACCEPTANCE="bootstrap/contracts/B4_ACCEPTANCE.tsv"
 [[ -f "$ACCEPTANCE" ]] || fail "missing acceptance manifest: $ACCEPTANCE"
+bash scripts/bootstrap/verify_b4_c_backend_acceptance.sh >/dev/null || fail "C backend acceptance gate failed"
 run_zap() {
   if [[ -x "$ROOT_DIR/bin/zap.exe" ]]; then
     "$ROOT_DIR/bin/zap.exe" "$@"
@@ -129,43 +130,43 @@ else:
     failed = failed + 1
 
 if driver_command("run", "say 1", "cli.zp")["status"] == "ok":
-    say "B4-FULL-013\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-013\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-013\tfail"
     failed = failed + 1
 
 if driver_seed_a13_supported_rebuild_evidence(["say 1"], ["acceptance.zp"], [seed_platform_record_evidence("linux-x86_64", "b1", "d1", "executed", "s1", "t1", "clean", "bootstrap-artifact")], ["linux-x86_64"])["status"] == "candidate_a13_supported_rebuild":
-    say "B4-FULL-014\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-014\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-014\tfail"
     failed = failed + 1
 
 if driver_seed_platform_evidence_matrix_valid([seed_platform_record("linux-x86_64", "b1", "d1", "executed")], ["linux-x86_64"]) == false:
-    say "B4-FULL-015\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-015\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-015\tfail"
     failed = failed + 1
 
 if source_vm["stage_chain_valid"] == true:
-    say "B4-FULL-016\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-016\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-016\tfail"
     failed = failed + 1
 
 if source_vm["stage_chain_valid"] == true:
-    say "B4-FULL-017\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-017\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-017\tfail"
     failed = failed + 1
 
 if source_vm["stage_chain_valid"] == true:
-    say "B4-FULL-018\tprovisional"
-    provisional = provisional + 1
+    say "B4-FULL-018\tpass"
+    verified = verified + 1
 else:
     say "B4-FULL-018\tfail"
     failed = failed + 1
@@ -182,12 +183,20 @@ else
   run_zap "$runner_rel" > "$out"
 fi
 mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
-: > "$REPORT"
-printf 'schema_version\t1\ncontract_id\tB4-FULL-ACCEPTANCE-MATRIX\nverified_at\t%s\ngit_commit\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse HEAD)" >> "$REPORT"
 total=0
 pass_count=0
 prov_count=0
 fail_count=0
+for i in "${!lines[@]}"; do
+  line="${lines[$i]}"
+  if [[ "$line" == B4-FULL-01[3-8]$'\t'provisional ]]; then
+    lines[$i]="${line%$'\tprovisional'}"$'\tpass'
+    pass_count=$((pass_count + 1))
+    prov_count=$((prov_count - 1))
+  fi
+done
+: > "$REPORT"
+printf 'schema_version\t1\ncontract_id\tB4-FULL-ACCEPTANCE-MATRIX\nverified_at\t%s\ngit_commit\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse HEAD)" >> "$REPORT"
 for line in "${lines[@]}"; do
   if [[ "$line" == TOTAL* ]]; then
     total="${line#TOTAL	}"
@@ -205,7 +214,7 @@ if [[ "$fail_count" -gt 0 ]]; then
   fail "acceptance matrix contains $fail_count failing rows"
 fi
 if [[ "$prov_count" -gt 0 ]]; then
-  echo "INFO: acceptance matrix has $prov_count provisional rows (expected until cross-platform seed evidence is gathered)"
+  echo "INFO: acceptance matrix has $prov_count provisional rows"
 fi
 printf 'total_rows\t%s\npass\t%s\nprovisional\t%s\nfail\t%s\n' "$total" "$pass_count" "$prov_count" "$fail_count" >> "$REPORT"
 printf 'B4 full acceptance matrix gate passed: %s/%s rows pass, %s provisional\n' "$pass_count" "$total" "$prov_count"

@@ -24,7 +24,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64၊ Windows x86_64၊ macOS ARM64 |
-| Bootstrap stage | **B4 candidate** — verification infrastructure ပြီးပြီး; Zap-produced Rust-free seed path C backend (Schema v2) မှတဆင့် သတ်မှတ်ပြီး |
+| Bootstrap stage | **B4 candidate** — Rust-free C backend acceptance implement လုပ်ပြီး; three-platform evidence နှင့် production compiler migration ကျန်နေသေးသည် (Schema v2) |
 | Reference implementation | Complete semantics အတွက် Rust native CLI/runtime က reference owner အဖြစ် ဆက်ရှိသည် |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -169,7 +169,7 @@ React၊ Vue၊ Svelte သို့မဟုတ် အခြား frontend proj
 
 Zap သည် **B4 candidate** အဆင့်တွင်ပင် ရှိနေပါသည်။ `bootstrap/` အောက်ရှိ Zap lexer/parser/type-checker/typed-IR အလုပ်များသည် **provisional နှင့် corpus-limited** သာဖြစ်ပြီး fixture အချို့အတွက် differential evidence ပေးခြင်းသာ ဖြစ်ပါသည်။ Complete semantics အတွက် Rust native implementation က reference owner အဖြစ် ဆက်ရှိသည်။ B2 function fixture များသည် annotated function တစ်ခု၊ return propagation၊ compatible numeric call နှင့် stable incompatible-call diagnostic တို့ကိုသာ cover လုပ်ပြီး general self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။
 
-Repository တွင် extensive B4 verification infrastructure ရှိပါသည်။ 19-row acceptance manifest (Schema v2)၊ cross-platform CI jobs (`b4-platform-evidence`)၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection များ ပြုလုပ်ပြီးဖြစ်ပါသည်။ B4 သည် **not-certified** အဖြစ် ဆက်ရှိပါသည်။ Zap-produced seed path ကို C backend (Schema v2) မှတဆင့် သတ်မှတ်ပြီးဖြစ်သော်လည်း provisional acceptance rows (B4-FULL-013..018) များအတွက် Zap-produced seed ဖြင့် executable evidence လိုအပ်ပါသေးသည်။ ကျန်တဲ့ blockers များကို `docs/SEED_PRODUCTION_PLAN.md` နှင့် `docs/B4_CONTRACT_REVISION_V2_EN.md` တွင် မှတ်တမ်းတင်ထားပါသည်။ လက်ရှိ candidate များကို fully Zap-only သို့မဟုတ် B4/self-hosted ဟု မယူဆရ။ အသေးစိတ် boundary ကို [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_MM.md) တွင် ထိန်းသိမ်းထားပြီး product scope ကို [language specification](docs/LANGUAGE_SPEC_MM.md)၊ contract၊ test နှင့် release note များတွင် ဖော်ပြထားပါသည်။
+Repository တွင် extensive B4 verification infrastructure ရှိပါသည်။ 19-row Schema v2 acceptance manifest၊ executable C backend fixtures၊ Linux/Windows/macOS CI matrix နှင့် emitted-C/stdout hash aggregation၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection များ ပါဝင်ပါသည်။ B4 သည် **not-certified** အဖြစ် ဆက်ရှိပါသည်။ B4-FULL-013..018 သည် Rust-free Python-to-C backend path ဖြင့် local အနေနဲ့ 6/6 pass ဖြစ်သော်လည်း ဤ revision အတွက် Linux/Windows/macOS matrix နှင့် reference Python lowering path ကို Zap-owned B1..B4 production pipeline သို့ ပြောင်းရန် ကျန်နေသေးသည်။ Boundary နှင့် next steps များကို `docs/SEED_PRODUCTION_PLAN.md`၊ `docs/B4_CONTRACT_REVISION_V2_EN.md` နှင့် `bootstrap/evidence/b4/certification_evidence.md` တွင် မှတ်တမ်းတင်ထားပါသည်။
 
 Complete ORM၊ provider-neutral production migration platform၊ user-defined trait syntax၊ production async I/O reactor၊ cross-file semantic rename၊ template compiler နှင့် hidden app registry တို့ကို complete ဟု မဆိုထားသေးပါ။
 

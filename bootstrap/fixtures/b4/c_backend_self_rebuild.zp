@@ -1,0 +1,49 @@
+# B4 seed self-rebuild fixture.
+#
+# The Rust-free C backend compiles this source into two independent native
+# executables. Both binaries are then executed and must behave identically,
+# and the emitted C artifacts must be byte-identical, which is the
+# Zap-produced seed's self-rebuild (byte-for-byte) evidence.
+#
+# Compiled by: host/zap-bootstrap/c_backend.py (Zap source -> C -> native)
+# Verified by: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+
+let STAGE_NAME = "zap-seed"
+let STAGE_LIMIT = 3
+
+fn identity(value):
+    return value
+
+fn bump(value):
+    return value + 1
+
+fn stage_report(stage, source_name, status):
+    let report = {"stage": stage, "source": source_name, "status": status}
+    return report
+
+fn stage_chain(limit):
+    let chain = []
+    let index = 0
+    while index < limit:
+        chain = chain + [stage_report(index, "seed_" + str(index), "ok")]
+        index = bump(index)
+    return chain
+
+fn describe(report):
+    return report["stage"] + "-" + report["source"] + ":" + report["status"]
+
+let report = stage_report(1, "seed.zp", "ok")
+let chain = stage_chain(STAGE_LIMIT)
+let names = keys(report)
+let limits = values(report)
+let check = {"self": STAGE_NAME, "bytes": str(len(chain))}
+
+say "seed: " + identity(STAGE_NAME)
+say describe(report)
+say "stages: " + str(len(chain))
+say "keys: " + str(len(names))
+say "values: " + str(len(limits))
+say "self: " + check["self"]
+say "bytes: " + check["bytes"]
+say "has_stage: " + str(has_key(report, "stage"))
+say "has_bytes: " + str(has_key(check, "bytes"))

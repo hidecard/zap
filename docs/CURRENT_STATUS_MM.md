@@ -5,7 +5,7 @@
 **နောက် release line:** v2.11.18 preparation
 **Bootstrap stage:** B4 candidate
 
-> Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။ Repository တွင် extensive B4 verification infrastructure ရှိပြီး 19-row acceptance manifest (Schema v2)၊ cross-platform CI jobs၊ full acceptance matrix gate၊ artifact manifest gate နှင့် evidence collection များ ပြုလုပ်ပြီးဖြစ်ပါသည်။ B4 သည် not-certified အဖြစ် ဆက်ရှိပါသည်။ Zap-produced seed path ကို C backend (Schema v2) မှတဆင့် သတ်မှတ်ပြီးဖြစ်သော်လည်း provisional acceptance rows (B4-FULL-013..018) များအတွက် Zap-produced seed ဖြင့် executable evidence လိုအပ်ပါသေးသည်။
+> Zap သည် Rust reference/native implementation ဖြစ်သည်။ `bootstrap/` အောက်ရှိ Zap lexer၊ parser၊ type-checker နှင့် typed-IR အလုပ်များသည် provisional၊ corpus-limited evidence သာဖြစ်ပြီး fully Zap-only သို့မဟုတ် self-hosted compiler ဖြစ်ကြောင်း မသက်သေပြပါ။ Repository တွင် 19-row Schema v2 acceptance manifest၊ executable Rust-free C backend fixtures နှင့် three-platform CI matrix (emitted-C/stdout hash aggregation) ရှိပါသည်။ B4 သည် not-certified အဖြစ် ဆက်ရှိပြီး B4-FULL-013..018 သည် Windows တွင် C backend မှတဆင့် local 6/6 pass ဖြစ်သည်။ Linux/Windows/macOS hash comparison နှင့် reference Python lowering path ကို Zap-owned B1..B4 production pipeline သို့ migration လုပ်ရန် ကျန်နေသေးသည်။
 
 ## Release နှင့် provenance
 
@@ -57,7 +57,7 @@ P1 language platform tasks အားလုံး ပြီးစီးပြီ�
 | Typed-IR candidate | provisional | ရှိပြီးသား annotated declaration slice နှင့် exact generic `identity<T>` metadata slice တစ်ခုကိုသာ cover လုပ်ပြီး Rust သည် reference emitter အဖြစ် ဆက်ရှိသည်။ |
 | Malformed-source safety | regression-gated | Invalid-source corpus အသေးတစ်ခုသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်။ ဤသည်မှာ safety regression gate ဖြစ်ပြီး compiler ownership evidence မဟုတ်ပါ။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
-| B4 self-hosting | not-certified | Candidate driver contract၊ deterministic gates၊ verifier infrastructure၊ cross-platform CI gates နှင့် full acceptance matrix များကို wiring ပြီးပြီး passing ဖြစ်နေပြီး certification သည် Zap-produced Rust-free seed နှင့် executable full-language self-rebuild evidence မရှိသေးသရွေ�့ blocked ဖြစ်နေသည်။ |
+| B4 self-hosting | not-certified | Rust-free C backend သည် B4-FULL-013..018 ကို local Windows တွင် 6/6 pass ဖြစ်ပြီး 19-row Schema v2 manifest ကို pass အဖြစ် update လုပ်ထားသည်။ Linux/Windows/macOS hash comparison နှင့် reference Python lowering path ကို Zap-owned B1..B4 production pipeline သို့ migration မပြီးမချင်း certification ကျန်နေသည်။ |
 
 ## နောက် bounded work
 

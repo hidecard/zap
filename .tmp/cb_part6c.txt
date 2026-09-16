@@ -1,0 +1,77 @@
+        elif op == "error_new":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, verr(a->str ? a->str : \"\"));")
+        elif op == "error_message":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, vstr(is_error(a) && a->str ? a->str : \"\"));")
+        elif op == "error_is_error":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, vstr(is_error(a) ? \"true\" : \"false\"));")
+        elif op == "error_unwrap":
+            lines.append("  a = pop(&st);")
+            lines.append("  if (is_error(a)) { fprintf(stderr, \"unwrap on error: %s\\n\", a->str ? a->str : \"\"); exit(1); }")
+            lines.append("  push(&st, a);")
+        elif op == "option_some":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, vsome(a));")
+        elif op == "option_none":
+            lines.append("  push(&st, vnone());")
+        elif op == "option_is_some":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, vstr(a->kind == VK_SOME ? \"true\" : \"false\"));")
+        elif op == "option_is_none":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, vstr(a->kind == VK_NONE ? \"true\" : \"false\"));")
+        elif op == "option_unwrap":
+            lines.append("  a = pop(&st);")
+            lines.append("  if (a->kind != VK_SOME) { fprintf(stderr, \"unwrap on none\\n\"); exit(1); }")
+            lines.append("  push(&st, a->items[0]);")
+        elif op == "option_unwrap_or":
+            lines.append("  b = pop(&st);")
+            lines.append("  a = pop(&st);")
+            lines.append("  if (a->kind == VK_SOME) push(&st, a->items[0]);")
+            lines.append("  else push(&st, b);")
+        elif op == "async_new":
+            lines.append("  a = pop(&st);")
+            lines.append("  if (g_task_count >= ZAP_TASKS_MAX) { fprintf(stderr, \"task registry exhausted\\n\"); exit(1); }")
+            lines.append("  g_task_results[g_task_count] = a;")
+            lines.append("  push(&st, vtask(g_task_count));")
+            lines.append("  g_task_count++;")
+        elif op == "await":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, task_run(a->task_id));")
+        elif op == "import_module":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, module_registry(a->str ? a->str : \"\"));")
+        elif op == "import_symbol":
+            lines.append("  c = pop(&st);")
+            lines.append("  b = pop(&st);")
+            lines.append("  push(&st, map_get(b, c->str ? c->str : \"\"));")
+        elif op == "export_value":
+            lines.append("  c = pop(&st);")
+            lines.append("  b = pop(&st);")
+            lines.append("  export_value(b->str ? b->str : \"\", c);")
+        elif op == "function_def":
+            lines.append(f"  target = {instr.get('end', idx + 1)};")
+            lines.append(f"  goto label_{instr.get('end', idx + 1)};")
+        elif op == "call":
+            name = instr["name"]
+            argc = int(instr.get("argc", 0))
+            site = site_ids[idx]
+            fn_info = functions.get(name)
+            if fn_info is None:
+                lines.append(f"  fprintf(stderr, \"unknown function: {name}\\n\");")
+                lines.append("  exit(1);")
+            else:
+                if argc != len(fn_info["params"]):
+                    lines.append(f"  fprintf(stderr, \"arity mismatch calling {name}\\n\");")
+                    lines.append("  exit(1);")
+                lines.append(f"  call_push(&st, {site});")
+                lines.append(f"  target = {fn_info['entry']};")
+                lines.append(f"  goto label_{fn_info['entry']};")
+                lines.append(f"label_return_{site}: ;")
+        elif op == "halt":
+            lines.append(f"  goto label_{len(program)};")
+        else:
+            lines.append(f"  fprintf(stderr, \"unsupported opcode: {op}\\n\");")
+            lines.append("  exit(1);")

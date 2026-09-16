@@ -18,34 +18,34 @@ from compile import compile_program  # noqa: E402
 
 _PROGRAMS = [
     # 1. function definition + call + arithmetic
-    ("fn add(a, b):\n    return a + b\nlet x = add(2, 3)\nsay x\n", [5]),
+    ("fn add(a, b):\n    return a + b\nlet x = add(2, 3)\nsay x\n", ["5"]),
 
     # 2. while loop with accumulator
-    ("let i = 0\nlet total = 0\nwhile i < 5:\n    total = total + i\n    i = i + 1\nsay total\n", [10]),
+    ("let i = 0\nlet total = 0\nwhile i < 5:\n    total = total + i\n    i = i + 1\nsay total\n", ["10"]),
 
     # 3. if / else branch
-    ("if 2 < 3:\n    say 1\nelse:\n    say 2\n", [1]),
+    ("if 2 < 3:\n    say 1\nelse:\n    say 2\n", ["1"]),
 
     # 4. recursion (factorial) -- exercises nested call frames
-    ("fn fact(n):\n    if n == 0:\n        return 1\n    return n * fact(n - 1)\nsay fact(5)\n", [120]),
+    ("fn fact(n):\n    if n == 0:\n        return 1\n    return n * fact(n - 1)\nsay fact(5)\n", ["120"]),
 
     # 5. string output
     ('say "hi"\n', ["hi"]),
 
     # 6. list literal + indexing
-    ("let xs = [10, 20, 30]\nsay xs[0]\nsay xs[2]\n", [10, 30]),
+    ("let xs = [10, 20, 30]\nsay xs[0]\nsay xs[2]\n", ["10", "30"]),
 
     # 7. len() builtin
-    ("let xs = [1, 2, 3]\nsay len(xs)\n", [3]),
+    ("let xs = [1, 2, 3]\nsay len(xs)\n", ["3"]),
 
     # 8. list literal + loop
-    ("let values = [1, 2, 3]\nlet i = 0\nwhile i < len(values):\n    say values[i]\n    i = i + 1\n", [1, 2, 3]),
+    ("let values = [1, 2, 3]\nlet i = 0\nwhile i < len(values):\n    say values[i]\n    i = i + 1\n", ["1", "2", "3"]),
 
     # 9. for loop over list
-    ("let values = [1, 2, 3]\nfor x in values:\n    say x\n", [1, 2, 3]),
+    ("let values = [1, 2, 3]\nfor x in values:\n    say x\n", ["1", "2", "3"]),
 
     # 10. for loop with accumulator
-    ("let total = 0\nfor x in [1, 2, 3, 4]:\n    total = total + x\nsay total\n", [10]),
+    ("let total = 0\nfor x in [1, 2, 3, 4]:\n    total = total + x\nsay total\n", ["10"]),
 ]
 
 

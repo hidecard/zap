@@ -1,0 +1,67 @@
+        if op == "const":
+            value_repr = _c_escape(instr["value"])
+            lines.append(f"  push(&st, vstr({value_repr}));")
+        elif op == "store":
+            lines.append(f"  store_local(&st, {_name_index(instr['name'])}, pop(&st));")
+        elif op == "load":
+            lines.append(f"  push(&st, load_local(&st, {_name_index(instr['name'])}));")
+        elif op == "jump":
+            lines.append(f"  goto label_{instr['target']};")
+        elif op == "jump_if_false":
+            lines.append("  a = pop(&st);")
+            lines.append(f"  if (!to_bool(a)) goto label_{instr['target']};")
+        elif op == "jump_if_true":
+            lines.append("  a = pop(&st);")
+            lines.append(f"  if (to_bool(a)) goto label_{instr['target']};")
+        elif op in ("add", "subtract", "multiply", "divide", "remainder", "less", "greater", "equal", "str_concat"):
+            lines.append("  b = pop(&st);")
+            lines.append("  a = pop(&st);")
+            lines.append("  ia = to_int(a->str);")
+            lines.append("  ib = to_int(b->str);")
+            if op == "add":
+                lines.append("  push(&st, vstr(from_int(ia + ib)));")
+            elif op == "subtract":
+                lines.append("  push(&st, vstr(from_int(ia - ib)));")
+            elif op == "multiply":
+                lines.append("  push(&st, vstr(from_int(ia * ib)));")
+            elif op == "divide":
+                lines.append("  if (ib == 0) { fprintf(stderr, \"division by zero\\n\"); exit(1); }")
+                lines.append("  push(&st, vstr(from_int(ia / ib)));")
+            elif op == "remainder":
+                lines.append("  if (ib == 0) { fprintf(stderr, \"division by zero\\n\"); exit(1); }")
+                lines.append("  push(&st, vstr(from_int(ia % ib)));")
+            elif op == "less":
+                lines.append("  push(&st, vstr(ia < ib ? \"true\" : \"false\"));")
+            elif op == "greater":
+                lines.append("  push(&st, vstr(ia > ib ? \"true\" : \"false\"));")
+            elif op == "equal":
+                lines.append("  push(&st, vstr(strcmp(a->str ? a->str : \"\", b->str ? b->str : \"\") == 0 ? \"true\" : \"false\"));")
+            elif op == "str_concat":
+                lines.append("  c = (value *)calloc(1, sizeof(value));")
+                lines.append("  if (c == NULL) { fprintf(stderr, \"out of memory\\n\"); exit(1); }")
+                lines.append("  c->kind = VK_STR;")
+                lines.append("  c->str = (char *)malloc(strlen(a->str ? a->str : \"\") + strlen(b->str ? b->str : \"\") + 1);")
+                lines.append("  if (c->str == NULL) { fprintf(stderr, \"out of memory\\n\"); exit(1); }")
+                lines.append("  strcpy(c->str, a->str ? a->str : \"\");")
+                lines.append("  strcat(c->str, b->str ? b->str : \"\");")
+                lines.append("  push(&st, track(c));")
+        elif op == "pop":
+            lines.append("  (void)pop(&st);")
+        elif op == "print":
+            lines.append("  print_value(&st, pop(&st));")
+        elif op == "return_value":
+            lines.append("  a = pop(&st);")
+            lines.append("  (void)a;")
+            lines.append("  ia = call_pop(&st);")
+            lines.append(f"  if (ia < 0) {{ goto label_{len(program)}; }}")
+            for site in return_sites:
+                lines.append(f"  if (ia == {site}) {{ goto label_return_{site}; }}")
+            lines.append("  fprintf(stderr, \"invalid return site\\n\");")
+            lines.append("  exit(1);")
+        elif op == "return_none":
+            lines.append("  ia = call_pop(&st);")
+            lines.append(f"  if (ia < 0) {{ goto label_{len(program)}; }}")
+            for site in return_sites:
+                lines.append(f"  if (ia == {site}) {{ goto label_return_{site}; }}")
+            lines.append("  fprintf(stderr, \"invalid return site\\n\");")
+            lines.append("  exit(1);")
