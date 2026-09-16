@@ -60,31 +60,40 @@ Certification requires all rows to pass on every supported platform and requires
 
 ## Acceptance commands
 
-The repository-level integrity gate is:
+The C backend acceptance gate is:
+
+```text
+scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+```
+
+It builds and executes B4-FULL-013..018 through the Rust-free Python-to-C path, verifies deterministic rebuilds, runs a clean-environment check, and writes `target/b4-c-backend-acceptance.tsv`. Cross-platform CI compares emitted C and stdout hashes across Linux, Windows, and macOS.
+
+The repository-level integrity gate remains:
 
 ```text
 scripts/bootstrap/verify_b4_rust_free_contract.sh
 ```
 
-The gate validates the contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until the full source-to-VM and self-rebuild acceptance implementation exists; this prevents a subset implementation from being advertised as B4.
+The gate validates the Schema v2 contract, fixture manifest, ownership declarations, forbidden fallback policy, and evidence schema. It intentionally reports `not-certified` until cross-platform evidence and the production Zap-owned compiler migration are complete.
 
 ## Current status
 
-Zap has a Rust-free seed pipeline, extensive B4 verification infrastructure, and a documented seed production plan, but B4 remains **not-certified**. The repository now has:
+Zap has a Rust-free C backend path, a 19-row Schema v2 acceptance manifest, and executable local evidence for B4-FULL-013..018, but B4 remains **not-certified**. The repository now has:
 
-- 18-row acceptance manifest (`bootstrap/contracts/B4_ACCEPTANCE.tsv`) with 12 passing rows and 6 provisional rows (B4-FULL-013..018)
-- Cross-platform CI job (`b4-platform-evidence`) that runs B4 gates on Linux, Windows, and macOS with downloaded platform seeds
-- Comprehensive acceptance matrix gate (`verify_b4_full_acceptance_matrix.sh`)
-- Cross-platform artifact manifest gate (`verify_b4_cross_platform_artifact_manifest.sh`)
-- Extended Python seed compiler with list support (8 verification programs, no Rust dependency)
+- 19-row acceptance manifest (`bootstrap/contracts/B4_ACCEPTANCE.tsv`) with all rows marked pass
+- C backend acceptance verifier (`scripts/bootstrap/verify_b4_c_backend_acceptance.sh`) covering CLI, self-rebuild, cross-platform replay, byte determinism, second-stage rebuild, and clean-environment execution
+- Cross-platform CI matrix and hash aggregator for emitted C and stdout artifacts
+- C backend regression verifier (`host/zap-bootstrap/verify_c_backend.py`) with 10 passing programs
+- Comprehensive acceptance matrix and cross-platform artifact manifest gates
 - Seed production plan (`docs/SEED_PRODUCTION_PLAN.md`) documenting the path to a Zap-produced Rust-free seed
 
 The remaining certification blockers are:
-1. No mechanism exists to produce the native binary without Rust/Cargo
-2. B4-FULL-013..018 require executable cross-platform evidence with a Zap-produced seed
-3. The Python seed compiler is a reference implementation, not a Zap-owned production compiler
 
-The next promotion gate is to implement a native code generation backend (Stage 3 in the seed production plan) and produce a Zap-produced Rust-free seed binary that can rebuild itself byte-for-byte.
+1. The Linux/Windows/macOS C backend matrix must run successfully on this revision
+2. The reference Python lowering path must be migrated into the Zap-owned B1..B4 production pipeline
+3. The contract certification decision must be reviewed after cross-platform evidence is recorded
+
+The next promotion gate is to complete the production compiler migration, run the three-platform C backend comparison, and record the resulting evidence without changing the not-certified contract prematurely.
 
 ## References
 

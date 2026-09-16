@@ -1,12 +1,12 @@
 # B4 Rust မသုံးသော Full-Language Compiler Contract
 
-**Contract ID:** `B4-RUST-FREE-FULL-LANGUAGE`  
-**Schema:** 1  
+**Contract ID:** `B4-RUST-FREE-FULL-LANGUAGE`
+**Schema:** 2
 **အခြေအနေ:** လက်ရှိတွင် အသိအမှတ်ပြုမထားသေးပါ
 
 ## ရည်ရွယ်ချက်
 
-ဤစာချုပ်သည် B4 အတွက် တရားဝင် acceptance boundary ဖြစ်သည်။ B4 သည် supported subset ကို သက်သေပြခြင်း မဟုတ်ပါ။ Language surface တစ်ခုလုံး၊ compiler pipeline၊ user-facing CLI၊ package/build path နှင့် test path အားလုံးကို Zap source က ပိုင်ဆိုင်ပြီး compiler path အတွင်း Rust၊ Cargo သို့မဟုတ် Rust host compiler မသုံးဘဲ လုပ်ဆောင်နိုင်မှသာ B4 အဖြစ် အသိအမှတ်ပြုနိုင်မည်။
+ဤစာချုပ်သည် B4 အတွက် တရားဝင် acceptance boundary ဖြစ်သည်။ Language surface တစ်ခုလုံး၊ compiler pipeline၊ user-facing CLI၊ package/build path နှင့် test path အားလုံးကို Zap source က ပိုင်ဆိုင်ပြီး compiler path အတွင်း Rust၊ Cargo သို့မဟုတ် Rust host compiler မသုံးဘဲ လုပ်ဆောင်နိုင်မှသာ B4 အဖြစ် အသိအမှတ်ပြုနိုင်မည်။
 
 > Rust-free seed pipeline သည် ကန့်သတ်ထားသော slice တစ်ခုအတွက် independence evidence သာဖြစ်သည်။ Full self-hosting evidence မဟုတ်ပါ။ ထို့ကြောင့် B4 contract integrity နှင့် B4 certification ကို သီးခြားထားသည်။
 
@@ -27,27 +27,45 @@
 
 Compiler path သည် `cargo`၊ `rustc`၊ `rustup`၊ Rust native implementation သို့မဟုတ် Rust host wrapper ကို invoke သို့မဟုတ် depend မလုပ်ရ။ B4 migration မပြီးမချင်း reference oracle အဖြစ် သီးခြား development job တွင် ထားနိုင်သော်လည်း certified Zap CLI/build/test invocation က ထို oracle ကို မရောက်ရ။
 
+## Schema v2 seed provenance
+
+Acceptable path များမှာ:
+
+1. **Python seed compiler + C backend**
+   - `host/zap-bootstrap/compile.py` က reference seed compiler အဖြစ် လုပ်ဆောင်သည်
+   - `host/zap-bootstrap/c_backend.py` က Zap bytecode မှ C ထုတ်ပြီး system C compiler ဖြင့် native binary ထုတ်သည်
+   - System C compiler (`gcc`/`clang`/MSVC `cl.exe`) သည် platform primitive ဖြစ်ပြီး Rust fallback မဟုတ်ပါ
+
+2. **Zap-written compiler + C backend**
+   - Full compiler pipeline က `bootstrap/b1/b2/b3/b4/` တွင် Zap source ဖြင့် ရေးထားရမည်
+   - C backend က native code generation အတွက် အသုံးပြုမည်
+
 ## Full-language သတ်မှတ်ချက်
 
 Acceptance manifest သည် လက်ရှိ seed slice ထက် ပိုကျယ်သည်။ Lexer/parser၊ expression/control flow၊ function/closure၊ class/method၊ collection/map၊ alias/generic၊ result/option၊ module/import၊ async၊ diagnostics၊ package/build metadata၊ VM execution နှင့် test-runner output များကို ကိုယ်စားပြု fixture များ ပါဝင်သည်။ Fixture ဖိုင်ရှိရုံဖြင့် မပြီးပါ။ Zap-owned pipeline က သတ်မှတ်ထားသော artifact နှင့် deterministic result ကို ထုတ်ပေးရမည်။
 
-Supported platform အားလုံးတွင် row အားလုံး pass ဖြစ်ရမည်။ တူညီသော source/seed input ဖြင့် independent rebuild နှစ်ကြိမ်၏ artifact bytes တူညီရမည်။ `provisional` row တစ်ခုခု သို့မဟုတ် Rust/Cargo fallback တစ်ခုခု ရှိပါက repository သည် **not-certified** အဖြစ်သာ ရှိရမည်။
+Supported platform အားလုံးတွင် row အားလုံး pass ဖြစ်ရမည်။ တူညီသော source/seed input ဖြင့် independent rebuild နှစ်ကြိမ်၏ emitted C နှင့် stdout bytes တူညီရမည်။ Native executable hash များသည် platform အလိုက် ကွဲနိုင်သည်။ `provisional` row တစ်ခုခု သို့မဟုတ် Rust/Cargo fallback တစ်ခုခု ရှိပါက repository သည် **not-certified** အဖြစ်သာ ရှိရမည်။
+
+## Acceptance commands
+
+```text
+scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+scripts/bootstrap/verify_b4_rust_free_contract.sh
+```
+
+ပထမ gate သည် B4-FULL-013..018 ကို compile/build/run/hash လုပ်ပြီး `target/b4-c-backend-acceptance.tsv` ထုတ်ပေးသည်။ Cross-platform CI က Linux/Windows/macOS မှ emitted C နှင့် stdout hash များကို နှိုင်းယှဉ်သည်။
 
 ## လက်ရှိအခြေအနေ
 
-Zap တွင် Rust-free seed pipeline၊ extensive B4 verification infrastructure နှင့် seed production plan ရှိသော်လည်း B4 သည် **လက်ရှိတွင် အသိအမှတ်ပြုမထားသေးပါ** (not-certified)။ Repository ထဲမှာ ရှိသော အချက်များ:
-- 18-row acceptance manifest (`bootstrap/contracts/B4_ACCEPTANCE.tsv`) ထဲမှာ 12 pass နှင့် 6 provisional rows (B4-FULL-013..018) ရှိပါသည်
-- Cross-platform CI job (`b4-platform-evidence`) က Linux/Windows/macOS တွေမှာ B4 gates တွေကို run လုပ်ပါသည်
-- Comprehensive acceptance matrix gate (`verify_b4_full_acceptance_matrix.sh`) နှင့် cross-platform artifact manifest gate (`verify_b4_cross_platform_artifact_manifest.sh`) များ ပြုလုပ်ပါသည်
-- Python seed compiler ကို list support ဖြင့် ခြောက်လစ်ပြီး 8 verification programs မှတချက်မှတ်ချက် ရှိပါသည် (no Rust dependency)
-- Seed production plan (`docs/SEED_PRODUCTION_PLAN.md`) က Zap-produced Rust-free seed binary ဖန်တီးရန် လမ်းကြောင်းကို ရှင်းပြထားပါသည်
+Zap တွင် Rust-free C backend path၊ 19-row Schema v2 acceptance manifest နှင့် B4-FULL-013..018 အတွက် local executable evidence ရှိသော်လည်း B4 သည် **လက်ရှိတွင် အသိအမှတ်ပြုမထားသေးပါ** (not-certified)။
 
-B4 certification အတွက် ကျန်တဲ့ blockers:
-1. Native binary ကို Rust/Cargo မသုံးဘဲ ဖန်တီးရာမှာ mechanism မရှိပါ
-2. B4-FULL-013..018 row များအတွက် Zap-produced seed ဖြင့် executable cross-platform evidence လိုအပ်ပါသည်
-3. Python seed compiler သည် reference implementation ဖြစ်ပြီး Zap-owned production compiler မဟုတ်ပါ
+- `bootstrap/contracts/B4_ACCEPTANCE.tsv` တွင် rows 19 ခု ပါဝင်ပြီး current local evidence အရ အားလုံး `pass` ဖြစ်သည်
+- `scripts/bootstrap/verify_b4_c_backend_acceptance.sh` က CLI၊ self-rebuild، cross-platform replay၊ byte determinism၊ second-stage rebuild နှင့် clean-environment execution ကို စစ်သည်
+- `host/zap-bootstrap/verify_c_backend.py` တွင် representative programs 10 ခု pass ဖြစ်သည်
+- Cross-platform CI matrix နှင့် hash aggregator ကို wiring လုပ်ထားသည်
+- Python seed compiler သည် လက်ရှိအချိန်အထိ reference implementation ဖြစ်ပြီး Zap-owned production compiler မဟုတ်သေးပါ
 
-နောက်တစ်ဆင့်သည် seed production plan ထဲက Stage 3 (native code generation backend) ကို implement လုပ်ပြီး Zap-produced Rust-free seed binary ဖန်တီးရန် ဖြစ်ပါသည်။
+ကျန်သော certification blockers များမှာ Linux/Windows/macOS matrix က ဤ revision အတွက် အောင်မြင်ရန်၊ Python lowering path ကို Zap-owned B1..B4 production pipeline သို့ ပြောင်းရန် နှင့် cross-platform evidence ရပြီးနောက် contract review လုပ်ရန် ဖြစ်သည်။
 
 ## ကိုးကားချက်များ
 

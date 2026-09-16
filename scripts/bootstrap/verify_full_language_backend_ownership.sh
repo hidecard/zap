@@ -28,8 +28,11 @@ if grep -n -E '\b(cargo|rustc|rustup)\b|host/zap-host|native/src' "$DRIVER"; the
   fail "driver source contains a forbidden Rust/native fallback"
 fi
 rows=$(awk -F '\t' 'NR >= 4 && $1 ~ /^B4-FULL-/ { count += 1 } END { print count + 0 }' "$MANIFEST")
-[[ "$rows" -eq 18 ]] || fail "expected 18 full-language acceptance rows, got $rows"
+[[ "$rows" -ge 19 ]] || fail "expected at least 19 full-language acceptance rows, got $rows"
 for fixture in $(awk -F '\t' 'NR >= 4 && $1 ~ /^B4-FULL-/ { print $3 }' "$MANIFEST"); do
   [[ -f "$fixture" ]] || fail "missing acceptance fixture: $fixture"
+done
+for owner in $(awk -F '\t' 'NR >= 4 && $1 ~ /^B4-FULL-/ { print $4 }' "$MANIFEST"); do
+  [[ -f "$owner" ]] || fail "missing acceptance owner: $owner"
 done
 printf 'full-language backend ownership wiring gate passed: explicit Zap stages and %s acceptance fixtures verified\n' "$rows"

@@ -3,11 +3,12 @@
 ## Current State
 
 The repository has:
-- **Python seed compiler** (`host/zap-bootstrap/compile.py`) — compiles a bounded subset of Zap to JSON bytecode, executed by `host/zap-vm-host/run.py`
-- **Zap-written compiler modules** (`bootstrap/b1/`, `b2/`, `b3/`, `b4/`) — parser, typechecker, typed-IR, lowering, VM, driver
-- **B4 verification infrastructure** — 46+ scripts, CI jobs, evidence collection
+- **Python seed compiler** (`host/zap-bootstrap/compile.py`) — compiles the acceptance subset to bytecode and C backend instructions
+- **Rust-free C backend** (`host/zap-bootstrap/c_backend.py`) — emits deterministic C and links through gcc, clang, or MSVC without Rust/Cargo
+- **Zap-written compiler modules** (`bootstrap/b1/`, `b2/`, `b3/`, `b4/`) — parser, typechecker, typed-IR, lowering, VM, and driver
+- **B4 acceptance infrastructure** — executable fixtures, cross-platform CI matrix, hash aggregation, and evidence reports
 
-**Current blocker:** The native binary `native/target/release/zap` is produced by `cargo build` from `native/src/*.rs`. There is no mechanism to produce this binary without Rust/Cargo in the compiler path.
+**Current boundary:** the Python-to-C path passes B4-FULL-013..018 locally and is an acceptable Schema v2 provenance mechanism. It remains a reference implementation until the same lowering behavior is owned by the Zap-written B1..B4 production pipeline and the Linux/Windows/macOS matrix completes.
 
 ## What "Zap-Produced Rust-Free Seed Binary" Means
 
@@ -18,13 +19,12 @@ A seed binary that:
 
 ## Production Stages
 
-### Stage 1: Expand Rust-Free Seed Compiler (In Progress)
-**Status:** Extended with list and for-loop support (2026-09-13)
+### Stage 1: Expand Rust-Free Seed Compiler
+**Status:** Reference implementation complete for the C backend acceptance surface (2026-09-15)
 - Python seed compiler handles: let/say/fn/if/while/for/arithmetic/function calls
-- **NEW:** list literals `[1, 2, 3]`, list indexing `xs[0]`, `len(xs)`
-- **NEW:** `for x in xs:` loops with index-based lowering
-- Verification: `verify_non_rust_bootstrap_compiler.sh` (10 programs pass)
-- Next: strings, basic data structures
+- Supports strings, list/map literals, indexing, postfix call-result indexing, short-circuit boolean evaluation, unary signs, Result/Option, errors, tasks, modules, and CLI arguments
+- Verification: `host/zap-bootstrap/verify_c_backend.py` (10 programs pass) and `scripts/bootstrap/verify_b4_c_backend_acceptance.sh` (6 rows pass locally)
+- Next: migrate this behavior into the Zap-owned B1..B4 pipeline
 
 ### Stage 2: Zap-Written Compiler Completion
 **Status:** Partial
@@ -35,17 +35,15 @@ A seed binary that:
 - Required: Full language surface coverage
 
 ### Stage 3: Native Code Generation Backend
-**Status:** Extended with advanced language features (2026-09-15)
-- Added `host/zap-bootstrap/c_backend.py` — emits self-contained C from Zap bytecode
-- C backend handles: const, store/load, arithmetic, comparison, boolean, jumps, print, halt, list ops, function calls
-- **NEW:** Extended C backend with map operations (make_map, map_get, map_set, map_has_key, map_keys, map_values)
-- **NEW:** Extended C backend with struct operations (struct_new, struct_get, struct_set)
-- **NEW:** Extended C backend with error/option handling (error_new, error_is_error, error_unwrap, option_some, option_none, option_is_some, option_is_none, option_unwrap, option_unwrap_or)
-- **NEW:** Extended C backend with async operations (await, async_new)
-- **NEW:** Extended C backend with module operations (import_module, export_value)
-- Compiles with system C compiler (gcc/clang) — no Rust/Cargo required
-- Contract revision (Schema v2): C backend path is now an acceptable seed provenance mechanism
-- Next: Implement proper data structures instead of placeholder implementations
+**Status:** Implemented and locally verified (2026-09-15)
+- `host/zap-bootstrap/c_backend.py` emits self-contained C from Zap bytecode
+- Runtime uses tagged values and proper dynamic lists, maps, Result/Option, task, and module registries
+- Handles function frames, recursion, short-circuit control flow, postfix indexing, unary signs, CLI arguments, arithmetic, comparisons, strings, JSON, errors, options, async values, and modules
+- Compiles with system C compilers: gcc, clang, and MSVC `cl.exe`
+- MSVC builds use `/Brepro` for byte-reproducible PE output
+- B4-FULL-013..018 pass on Windows with executable native evidence
+- Contract revision (Schema v2): C backend path is an acceptable seed provenance mechanism
+- Next: reproduce the same six-row evidence on Linux and macOS and compare emitted C/stdout hashes
 
 ### Stage 4: Self-Hosting Loop
 **Status:** Not started
@@ -55,24 +53,25 @@ A seed binary that:
 
 ## Immediate Next Steps
 
-1. **Extend Python seed compiler** with additional language features (for loops, string operations)
-2. **Document exact bytecode format** for new operations
-3. **Add C emission backend** to Python seed compiler (proof of concept for native binary)
-4. **Update verification** to test new features
-5. **Create roadmap** for Stage 2 (Zap compiler completion)
+1. Run the C backend acceptance matrix on Linux and macOS
+2. Compare emitted C and stdout hashes across Linux, Windows, and macOS
+3. Migrate short-circuit lowering, postfix indexing, tagged structures, and async behavior into the Zap-owned B1..B4 pipeline
+4. Keep the existing Rust pipeline as a reference oracle until production ownership parity is verified
+5. Re-run B4 contract, evidence, and certification review after cross-platform evidence is recorded
 
 ## Technical Approach
 
-The Python seed compiler serves as a **reference implementation** and **proof of concept** for Rust-free compilation. It demonstrates:
-- Source → AST → bytecode → execution without Rust
-- Deterministic output
-- Self-contained execution
+The Python seed compiler and C backend serve as a **reference implementation** and **executable proof of concept** for Rust-free compilation. They demonstrate:
+- Source → bytecode → C → native execution without Rust
+- Proper tagged data structures and deterministic collection behavior
+- Short-circuit evaluation and deterministic rebuilds
+- Clean-environment execution with Rust/Cargo variables removed
 
-To produce a native binary without Rust/Cargo:
-1. Complete the Zap-written compiler
-2. Add a C emission backend to the lowering phase
-3. Use system C compiler (gcc/clang) as the platform primitive
-4. The resulting binary is "Zap-produced" because the compiler logic is entirely in Zap
+The production path must preserve this behavior while moving compiler ownership into Zap source:
+1. Use the Zap-written B1..B4 compiler for parsing, typing, lowering, and driver behavior
+2. Emit the same deterministic C representation through the C backend
+3. Use gcc, clang, or MSVC as the documented platform primitive
+4. Require identical emitted C and stdout across Linux, Windows, and macOS
 
 ## B4 Contract Compatibility
 
@@ -91,6 +90,22 @@ It does **NOT** forbid:
 A Zap→C→native path satisfies the explicit forbidden-fallback list.
 
 ## Progress Log
+
+### 2026-09-15: B4 C backend acceptance evidence
+- **Executable acceptance**: B4-FULL-013..018 pass 6/6 on Windows through the Rust-free C backend
+- **CLI**: `check`, `build`, `run`, `test`, unsupported command, and usage dispatch verified
+- **Determinism**: emitted C and native artifacts are byte-identical across fresh MSVC builds; stdout is identical
+- **Cross-platform design**: CI compares emitted C and stdout hashes while allowing target-specific native binaries
+- **Clean environment**: full-surface execution matches with Rust/Cargo variables removed
+- **Data structures**: tagged lists/maps, Result/Option, task/module registries, short-circuit evaluation, postfix indexing, unary signs, and async values verified by fixtures
+- **Files modified**:
+  - `host/zap-bootstrap/c_backend.py`
+  - `host/zap-bootstrap/compile.py`
+  - `host/zap-bootstrap/verify_b4_c_backend_acceptance.py`
+  - `bootstrap/fixtures/b4/c_backend_*.zp`
+  - `scripts/bootstrap/verify_b4_c_backend_acceptance.sh`
+  - `bootstrap/contracts/B4_ACCEPTANCE.tsv`
+  - `.github/workflows/ci.yml`, `Makefile`, and B4 evidence documentation
 
 ### 2026-09-15: Extended C backend with advanced language features
 - **Advanced language support**: Added placeholder implementations for maps, structs, errors, options, async, and modules

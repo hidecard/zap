@@ -89,47 +89,43 @@ B4-FULL-019	seed-provenance	host/zap-bootstrap/c_backend.py	host/zap-bootstrap/c
 
 ## Implementation Changes
 
-### 1. C Backend Improvements
+### 1. C Backend Implementation
 
 **File:** `host/zap-bootstrap/c_backend.py`
 
-- Enhanced function call handling with proper return mechanism
-- Improved list operations with better index-based access
-- Added proper frame management for nested function calls
-- Fixed label target resolution for jumps and function returns
+- Added tagged list, map, Result/Option, task, and module runtime values
+- Added deterministic dynamic collection operations and map key/value enumeration
+- Added short-circuit code generation for `and`/`or`
+- Added postfix indexing for call results such as `keys(report)[0]`
+- Added unary numeric literals and native `error`, `async`, and `await` support
+- Added reproducible MSVC output with `/Brepro`
 
-### 2. C Backend Verification
+### 2. Seed Compiler Lowering
 
-**File:** `host/zap-bootstrap/verify_c_backend.py`
+**File:** `host/zap-bootstrap/compile.py`
 
-- Comprehensive verification script for C backend functionality
-- Tests 10 representative programs covering:
-  - Function definitions and calls
-  - Arithmetic operations
-  - Control flow (if/else, while, for loops)
-  - List operations and indexing
-  - String operations
-- Generates TSV report for CI integration
+- Preserves absolute jump bases while lowering nested expressions
+- Emits short-circuit control flow without evaluating the RHS of `and`/`or`
+- Supports postfix indexing over variables, maps, lists, and call results
+- Supports unary numeric signs
 
-### 3. Contract Verifier Updates
+### 3. C Backend Verification
 
-**File:** `scripts/bootstrap/verify_b4_rust_free_contract.sh`
+**Files:** `host/zap-bootstrap/verify_c_backend.py`, `host/zap-bootstrap/verify_b4_c_backend_acceptance.py`
 
-- Supports both Schema v1 and Schema v2 validation
-- Validates new acceptable_seed_provenance section
-- Checks for C backend existence in Schema v2
-- Validates acceptance manifest schema version matches contract
-- Adjusts row count requirements (18 for v1, 19 for v2)
+- The regression verifier passes 10 representative programs
+- The B4 verifier passes B4-FULL-013..018 on the local Windows/MSVC toolchain
+- Reports include platform, emitted-C SHA-256, native-artifact SHA-256, and stdout SHA-256
+- Cross-platform comparison allows native binaries to differ while requiring identical emitted C and stdout
 
-### 4. CI Integration
+### 4. Contract And CI Updates
 
-**File:** `.github/workflows/ci.yml`
+**Files:** `scripts/bootstrap/verify_b4_evidence.sh`, `scripts/bootstrap/verify_full_language_backend_ownership.sh`, `.github/workflows/ci.yml`
 
-**New Job:** `c-backend`
-- Runs on Ubuntu with gcc installed
-- Executes C backend verification script
-- Uploads verification results as artifacts
-- Integrated into CI pipeline for continuous validation
+- Evidence validation now uses Schema v2 and dynamic acceptance-row counts
+- Ownership validation checks every manifest fixture without a hardcoded row total
+- CI runs the six-row C backend gate on Linux, Windows, and macOS
+- A separate aggregator compares emitted C and stdout hashes across all three platform reports
 
 ## Documentation Updates
 
@@ -164,29 +160,26 @@ B4-FULL-019	seed-provenance	host/zap-bootstrap/c_backend.py	host/zap-bootstrap/c
 - Acceptable provenance through C backend provides practical path
 - C backend is implemented and verified
 - Contract explicitly allows Zap→C→native compilation
-- Remaining work is to extend C backend to full language surface
+- B4-FULL-013..018 pass locally through executable C backend fixtures
 
 ### Remaining Certification Work
 
-While the contract revision removes the fundamental blocker, the following work is still required for B4 certification:
+While the contract revision removes the fundamental native-code-generation blocker, the following work is still required for B4 certification:
 
-1. **Extend C backend to full language surface**
-   - Handle all language features (classes, generics, async, etc.)
-   - Complete list/map operations
-   - Full error handling and diagnostics
+1. **Run cross-platform C backend evidence**
+   - Linux, Windows, and macOS must produce identical emitted C
+   - All supported targets must produce identical fixture stdout
+   - Native executable hashes remain target-specific
 
-2. **Execute provisional acceptance rows with C backend**
-   - B4-FULL-013: CLI entrypoint verification
-   - B4-FULL-014: Self-rebuild byte-for-byte
-   - B4-FULL-015: Cross-platform determinism
-   - B4-FULL-016: Byte-determinism verification
-   - B4-FULL-017: Second-stage rebuild evidence
-   - B4-FULL-018: Clean-environment execution
+2. **Migrate the production compiler path**
+   - Move the reference Python lowering behavior into the Zap-owned B1..B4 pipeline
+   - Preserve short-circuit, postfix indexing, tagged data structures, and async behavior
+   - Keep the C backend as the platform primitive
 
-3. **Cross-platform C compiler support**
-   - Ensure C backend works on Linux, Windows, macOS
-   - Platform-specific compiler detection and usage
-   - Consistent behavior across platforms
+3. **Complete contract review**
+   - Run the three-platform matrix and aggregator on the final revision
+   - Record the cross-platform report in B4 evidence
+   - Update certification status only after ownership review
 
 ## Verification
 
@@ -196,11 +189,11 @@ The contract revision can be verified by running:
 # Contract validation
 scripts/bootstrap/verify_b4_rust_free_contract.sh
 
-# C backend verification (Linux with gcc)
+# C backend regression and B4 acceptance
 python3 host/zap-bootstrap/verify_c_backend.py
+scripts/bootstrap/verify_b4_c_backend_acceptance.sh
 
-# Full B4 acceptance matrix
-scripts/bootstrap/verify_b4_full_acceptance_matrix.sh
+# Cross-platform comparison is performed by the CI aggregator
 ```
 
 ## Conclusion

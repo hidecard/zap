@@ -5,7 +5,7 @@
 **Next release line:** v2.11.18 preparation
 **Bootstrap stage:** B4 candidate
 
-> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler. The repository has extensive B4 verification infrastructure: 18-row acceptance manifest, cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains not-certified pending a Zap-produced Rust-free seed binary.
+> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler. The repository has a 19-row Schema v2 acceptance manifest, executable Rust-free C backend fixtures, and a three-platform CI matrix with emitted-C/stdout hash aggregation. B4 remains not-certified: B4-FULL-013..018 pass locally on Windows through the C backend, while cross-platform CI for this revision and migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending.
 
 ## Release and provenance
 
@@ -57,7 +57,7 @@ All P1 language platform tasks have been completed:
 | Typed-IR candidate | provisional | Covers the existing annotated declaration slice and one exact generic `identity<T>` metadata slice; Rust remains the reference emitter. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
-| B4 self-hosting | not-certified | Candidate driver contract, deterministic gates, verifier infrastructure, cross-platform CI gates, and full acceptance matrix are wired and passing; certification remains blocked pending a Zap-produced Rust-free seed and executable full-language self-rebuild evidence. |
+| B4 self-hosting | not-certified | The Rust-free C backend passes B4-FULL-013..018 locally (6/6 on Windows), and the 19-row Schema v2 manifest is updated to pass. Certification remains pending the Linux/Windows/macOS hash comparison and migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline. |
 
 ## Next bounded work
 

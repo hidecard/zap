@@ -1,0 +1,47 @@
+# B4-FULL-013 CLI entrypoint fixture.
+#
+# This fixture is the Zap source that the Rust-free C backend compiles into a
+# native CLI binary. It mirrors the command surface of driver_command() in
+# bootstrap/b4/compiler_driver.zp (check, build, run, test plus the
+# unsupported-command diagnostic) and reads its command from the process
+# argument vector, so the compiled binary proves that a Zap-owned CLI
+# entrypoint dispatches every supported command without Rust/Cargo.
+#
+# Compiled by: host/zap-bootstrap/c_backend.py (Zap source -> C -> native)
+# Verified by: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+
+let COMMAND_CHECK = "check"
+let COMMAND_BUILD = "build"
+let COMMAND_RUN = "run"
+let COMMAND_TEST = "test"
+let SUPPORTED = [COMMAND_CHECK, COMMAND_BUILD, COMMAND_RUN, COMMAND_TEST]
+
+fn command_supported(command):
+    return contains(SUPPORTED, command)
+
+fn command_status(command):
+    if command_supported(command):
+        return "ok"
+    return "unsupported"
+
+fn command_diagnostic(command):
+    return "ZAP-DRIVER-001 unsupported driver command: " + command
+
+fn dispatch(command):
+    let status = command_status(command)
+    if status == "ok":
+        return "command: " + command
+    return command_diagnostic(command)
+
+fn usage():
+    return "usage: zap <command> [source] commands: " + str(len(SUPPORTED))
+
+let args = argv()
+let count = argc()
+say "argc: " + str(count)
+if count == 0:
+    say usage()
+else:
+    let command = args[0]
+    say dispatch(command)
+    say "supported: " + str(command_supported(command))

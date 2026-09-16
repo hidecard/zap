@@ -1,0 +1,104 @@
+# B4-FULL-014/016/018 full-language-surface fixture for the Rust-free C backend.
+#
+# Every construct in this file is owned by Zap source and is lowered by
+# host/zap-bootstrap/compile.py into bytecode, then emitted as C by
+# host/zap-bootstrap/c_backend.py and compiled by the system C compiler into a
+# native binary. The observable output is fixed, so the binary can be rebuilt
+# and byte-compared (B4-FULL-014), replayed for byte determinism
+# (B4-FULL-016), and executed in a clean environment
+# (B4-FULL-018) without Rust/Cargo in the compiler path.
+#
+# Verified by: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+
+fn sum(values):
+    let total = 0
+    for value in values:
+        total = total + value
+    return total
+
+fn scale(factor, values):
+    let out = []
+    for value in values:
+        out = push(out, value * factor)
+    return out
+
+fn classify(n):
+    if n < 0:
+        return "negative"
+    if n == 0:
+        return "zero"
+    return "positive"
+
+fn make_record(name, score):
+    let record = {"name": name, "score": score}
+    return record
+
+fn option_lookup(mapping, key):
+    if has_key(mapping, key):
+        return some(mapping[key])
+    return none()
+
+fn unwrap_or(opt, fallback):
+    if is_some(opt):
+        return unwrap(opt)
+    return fallback
+
+fn safe_divide(a, b):
+    if b == 0:
+        return error("divide_by_zero")
+    return a / b
+
+fn factorial(n):
+    if n == 0:
+        return 1
+    return n * factorial(n - 1)
+
+fn greet(name):
+    return "hello " + name
+
+let integers = [1, 2, 3, 4, 5]
+let labels = ["alpha", "beta"]
+let scaled = scale(3, integers)
+let total = sum(integers)
+say "sum: " + str(total)
+say "scaled: " + str(scaled)
+say "labels: " + str(len(labels))
+say "folded: " + str(sum(scaled))
+
+let i = 0
+let squares = []
+while i < 4:
+    squares = push(squares, i * i)
+    i = i + 1
+say "squares: " + str(squares)
+
+let graded = {"alpha": 10, "beta": 20}
+graded["alpha"] = 30
+say "graded: " + json(graded)
+say "keys: " + str(len(keys(graded)))
+say "values: " + str(len(values(graded)))
+say "has_beta: " + str(has_key(graded, "beta"))
+say "score: " + str(graded["beta"])
+
+say "negative: " + classify(-3)
+say "zero: " + classify(0)
+say "positive: " + classify(7)
+
+let record = make_record("zap", 42)
+say "record: " + json(record)
+say "record_name: " + record["name"]
+
+let found = option_lookup(graded, "alpha")
+let missing = option_lookup(graded, "gamma")
+say "found_is_some: " + str(is_some(found))
+say "missing_is_none: " + str(is_none(missing))
+say "missing_fallback: " + str(unwrap_or(missing, "unknown"))
+
+let ok = safe_divide(9, 3)
+let bad = safe_divide(9, 0)
+say "ok: " + str(ok)
+say "bad_is_error: " + str(is_error(bad))
+say "factorial: " + str(factorial(6))
+say "greet: " + greet("zap")
+say "task: " + str(await(async(1)))
+say "argv_is_list: " + str(len(argv()) >= 0)

@@ -95,7 +95,8 @@ fi
 for script in \
   "scripts/bootstrap/verify_b4_byte_determinism.sh" \
   "scripts/bootstrap/verify_b4_second_stage_rebuild.sh" \
-  "scripts/bootstrap/verify_b4_clean_environment.sh"; do
+  "scripts/bootstrap/verify_b4_clean_environment.sh" \
+  "scripts/bootstrap/verify_b4_c_backend_acceptance.sh"; do
   [[ -f "$script" ]] || fail "missing self-rebuild acceptance script: $script"
 done
 

@@ -1,0 +1,48 @@
+# B4-FULL-014..017 seed fixture: collections, maps, control flow and functions.
+#
+# This is the Zap source used as the self-rebuild subject for the Rust-free C
+# backend. The same source is compiled twice, the two emitted C translation
+# units are compared byte-for-byte, and the two native executables must produce
+# identical output. The fixture intentionally mixes every data structure the
+# backend implements so a byte-level regression in any of them is detected:
+#
+# - list literals, list indexing, list_set, append, len, contains, str
+# - map literals, map_get, map_set, has_key, keys, values
+# - if/else, while, for-in as for-in as for-of loops and recursion
+# - numeric arithmetic (add/subtract/multiply/divide/remainder) and comparisons
+
+let xs = [1, 2, 3]
+xs[0] = 10
+append(xs, 4)
+say "list: " + str(xs)
+say "len: " + str(len(xs))
+say "has: " + str(contains(xs, 3))
+
+let m = {"a": 1, "b": 2}
+let after_set = map_set(m, "c", 3)
+say "map: " + str(after_set)
+say "a: " + str(map_get(after_set, "a"))
+say "keys: " + str(len(keys(after_set)))
+
+fn sum_list(values):
+    let total = 0
+    for value in values:
+        total = total + value
+    return total
+
+fn fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+let i = 0
+let squares = 0
+while i < 4:
+    squares = squares + i * i
+    i = i + 1
+say "squares: " + str(squares)
+say "sum: " + str(sum_list(xs))
+say "fib: " + str(fib(7))
+say "div: " + str(17 / 5)
+say "rem: " + str(17 % 5)
+say "bool: " + str(squares > 10 or len(xs) == 4)
