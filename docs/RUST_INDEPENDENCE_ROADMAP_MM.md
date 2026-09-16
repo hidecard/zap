@@ -15,7 +15,7 @@
 | B2 type checker | Generic constraints, compound bounds, aliases, flow/dataflow, recursive alias diagnostics နှင့် verifier များ တိုးချဲ့ထားသည် | **Partial / provisional** — complete language-wide type ownership မရသေး |
 | B2 typed IR | Arbitrary typed-IR, expression, generic, trait နှင့် reference-compare verification scripts တိုးလာသည် | **Partial / provisional** — Zap compiler က full source ကို Rust မခေါ်ဘဲ typed IR ထုတ်နိုင်ကြောင်း B4-level proof မရှိသေး |
 | B3 build/package/VM | Build plan, dependency graph, package metadata နှင့် VM candidate files/fixtures ရှိသည် | **Not certified** — canonical executable ownership နှင့် full runtime replacement မပြီးသေး |
-| B4 self-rebuild | B4 acceptance manifest တွင် 12 pass နှင့် 6 provisional rows; byte-determinism၊ second-stage rebuild နှင့် clean-environment gates CI တွင် run ပြီး | **not-certified** — Zap-produced Rust-free seed binary မရှိသေးပါ |
+| B4 self-rebuild | B4 acceptance manifest တွင် 18 pass rows; byte-determinism၊ second-stage rebuild နှင့် clean-environment gates CI တွင် run ပြီး | **not-certified** — Zap-produced Rust-free seed binary မရှိသေးပါ |
 | Rust independence | Rust-free seed pipeline သည် compiler/VM host ကို Rust VM မပါဘဲ run ပြီး B4 Rust-free contract gate က acceptance rows 18 ခုကို validate လုပ်သည် | **B4 infrastructure pass** — release/documentation ownership boundary ကို legacy B0 wording နှင့် ညှိရန် ကျန်သေး |
 | CI | Latest master CI run အောင်မြင်ထားသည် | CI green သည် B4 self-hosting အောင်မြင်သည်ဟု မဆိုလို |
 
