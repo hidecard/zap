@@ -1,0 +1,15 @@
+fn cmd_ok(command):
+    let supported = ["check", "build"]
+    return contains(supported, command)
+
+fn cmd_status(command):
+    if cmd_ok(command):
+        return "ok"
+    return "unsupported"
+
+let args = argv()
+say "argc: " + str(argc())
+if argc() == 0:
+    say "no args"
+else:
+    say cmd_status(args[0])

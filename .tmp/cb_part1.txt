@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""C backend for the Zap bootstrap compiler.
+
+Emits a self-contained C file from Zap bytecode and compiles it with the
+system C compiler (gcc/clang/cc, or MSVC cl.exe on Windows).  The resulting
+executable is a native Zap-produced binary that does not invoke `cargo`,
+`rustc`, or `rustup`.
+
+The emitted runtime uses proper data structures:
+
+- a tagged value system (scalar / list / map / object / error / option / task)
+- dynamic lists (make_list, list_get, list_len, list_set, list_append)
+- key/value maps (make_map, map_get, map_set, map_has_key, map_keys,
+  map_values)
+- struct objects with named fields (struct_new, struct_get, struct_set)
+- Result/Option tagged values (error_new, error_is_error, error_unwrap,
+  option_some, option_none, option_is_some, option_is_none, option_unwrap,
+  option_unwrap_or)
+- a task registry for async values (async_new, await)
+- a module registry for imports/exports (import_module, export_value)
+- numeric add/subtract/multiply/divide/remainder and comparisons
+- call frames with parameter binding and return-site dispatch
+"""
+import json
+import os
+import platform
+import shutil
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from compile import compile_program  # noqa: E402
+
+
+def _c_escape(value):
+    if isinstance(value, str):
+        return json.dumps(value)
+    if isinstance(value, bool):
+        return json.dumps(value)
+    return repr(value)
+
+
+def emit_c(program, out_path):
+    lines = []
+    lines.append("#include <stdio.h>")
+    lines.append("#include <stdlib.h>")
+    lines.append("#include <string.h>")
+    lines.append("#include <stdint.h>")
+    lines.append("#include <stdbool.h>")
+    lines.append("")
+    lines.append("typedef struct value value;")
+    lines.append("typedef struct frame frame;")
+    lines.append("")
+    lines.append("enum { VK_STR = 0, VK_LIST = 1, VK_MAP = 2, VK_ERROR = 3, VK_SOME = 4, VK_NONE = 5, VK_TASK = 6 };")
+    lines.append("")
+    lines.append("struct value {")
+    lines.append("  int kind;")
+    lines.append("  char *str;")
+    lines.append("  value **items;")
+    lines.append("  value **vals;")
+    lines.append("  int count;")
+    lines.append("  int cap;")
+    lines.append("  int vcount;")
+    lines.append("  int vcap;")
+    lines.append("  int task_id;")
+    lines.append("};")
+    lines.append("")
+    lines.append("struct frame {")
+    lines.append("  int return_site;")
+    lines.append("  value **saved_locals;")
+    lines.append("  int saved_local_count;")
+    lines.append("  int saved_stack_count;")
+    lines.append("};")
+    lines.append("")
