@@ -5,7 +5,7 @@
 **Next release line:** v2.11.18 preparation
 **Bootstrap stage:** B4 candidate
 
-> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler. The repository has extensive B4 verification infrastructure: 18-row acceptance manifest, cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains not-certified pending a Zap-produced Rust-free seed binary.
+> Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` is provisional, corpus-limited evidence and does not establish a fully Zap-only or self-hosted compiler. The repository has extensive B4 verification infrastructure: 19-row acceptance manifest (Schema v2), cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains not-certified because while a Zap-produced seed path is now defined via the C backend (Schema v2), the provisional acceptance rows (B4-FULL-013..018) require executable evidence with a Zap-produced seed.
 
 ## Release and provenance
 
