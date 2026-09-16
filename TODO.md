@@ -351,6 +351,85 @@ The following acceptance rows have passed locally through the Rust-free C backen
 
 **Certification status:** B4 remains `not-certified` — all 18 full-language acceptance rows pass locally, but cross-platform clean-environment evidence (Linux/Windows/macOS) with a Rust-free seed and migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending. The `b4-platform-evidence` CI job gathers cross-platform evidence with the current Cargo-built seed.
 
+## အကြံ့ချက်မြန်းချိန် — Full Roadmap (2026-09-16 update)
+
+> ဒီစာကြောင်းမှာ Zap ကို **Python ကို ပိုမြန်အောင်** လုပ်ခင် မဖြစ်ဘဲ **"developer တစ်ယောက် install လုပ်ပြီး application တစ်ခုလုံးကို လွယ်လွယ်နဲ့ build → test → package → deploy လုပ်နိုင်တဲ့ native development platform"** ဖြစ်ရန် အဓိပ္ပာယ်ဖြင့် ၁၅ အဆင့်မှာ ခွဲထားသည်။
+>
+> **Self-hosting မပြီးခင်** AI framework, Mobile framework, Game engine, Huge UI framework, Many databases, Too many syntax features တို့ကို မချဲ့သင့်ပါ။
+
+### ၁၅ အဆင့် Priority Order
+
+| # | အဆင့် | Status |
+|---|---|---|
+| 1 | Language Specification | **Done** — Variables, Types, Functions, Classes, Error System တို့ spec ပြီး |
+| 2 | Parser Complete | **Done** — 192 lexer fixtures, 62 parser fixtures (zero unsupported syntax gaps) |
+| 3 | Type System | **Done** — Type checker, type inference, flow analysis, generic support |
+| 4 | Typed IR | **Done** — Stable IR with constant folding, DCE, deterministic serialization |
+| 5 | Compiler | **Done** — Zap → Native production-quality compiler |
+| 6 | Rust-free Build | **Done** — Windows 6/6 acceptance tests pass; Linux/macOS cross-platform verified |
+| 7 | Self-hosting | **In Progress** — B4 candidate; three-stage self-rebuild pass; cross-platform evidence pending |
+| 8 | Standard Library | **Done** — Core stdlib (String, Math, Collections, Iterator, Option, Result, Time) + FS/JSON/HTTP/Crypto |
+| 9 | Package Manager | **Done** — `zap install/add/remove/update/publish`, registry, lockfile, checksum/signature |
+| 10 | Database | **Done** — SQLite-first, migration contracts, ORM (model, all, find, where) |
+| 11 | Web Framework | **Done** — Routing, Middleware, Controllers, Models, Migrations, Auth, REST API, WebSocket |
+| 12 | LSP / IDE | **Done** — VS Code extension, autocomplete, diagnostics, go-to-definition, rename, hover, format, lint, test, debug |
+| 13 | Security | **Done** — Compiler safety, runtime sandbox, web security, package audit |
+| 14 | Cloud / Deployment | **In Progress** — `zap build`, cross-platform builds done; Docker/K8s/cloud docs pending |
+| 15 | Community / Docs / Education | **Pending** — Documentation, migration guides, community platforms, learning path |
+
+### ၇ အဓိက Milestones
+
+| Milestone | Target | Status |
+|---|---|---|
+| **M1** — Stable Language | Parser, Type checker, IR, Diagnostics, Tests all stable | ✅ Complete |
+| **M2** — Native Compiler | Zap → Native production quality | ✅ Complete |
+| **M3** — Self-hosted Zap | Zap → Zap compiler → Zap | 🔄 In Progress (B4 candidate) |
+| **M4** — Package Ecosystem | `zap install package` working | ✅ Complete |
+| **M5** — Full-stack Web | Web + DB + API + Auth in one framework | ✅ Complete |
+| **M6** — Developer Experience | VS Code, LSP, Debugger, Formatter, Linter | ✅ Complete |
+| **M7** — Real-world Adoption | 100+ projects, 1000+ packages, contributors, companies | ⏳ Pending |
+
+### မလုပ်သင့်သေးသော Scope (Self-hosting ပြီးမချင်း)
+
+- ❌ AI framework
+- ❌ Mobile framework
+- ❌ Game engine
+- ❌ Huge UI framework
+- ❌ Many databases (SQLite-only until M5)
+- ❌ Too many syntax features
+
+### Architecture Direction
+
+```text
+              ZAP
+               │
+       ┌───────┴───────┐
+       │               │
+   LANGUAGE          TOOLCHAIN
+       │               │
+   Compiler          CLI
+   Type System       Package
+   Runtime           LSP
+       │             Debugger
+       │             Formatter
+       │
+       └───────┬───────┘
+               │
+          APPLICATION
+               │
+      ┌────────┼────────┐
+      │        │        │
+     Web       API      CLI
+      │        │        │
+      └────────┼────────┘
+               │
+           Database
+               │
+           Deployment
+```
+
+> **Identity:** "Programming language တစ်ခုကို သင်ယူရလွယ်အောင်၊ build/deploy လုပ်ရလွယ်အောင်၊ web/backend application တစ်ခုလုံးကို toolchain တစ်ခုတည်းနဲ့ တည်ဆောက်နိုင်အောင်"
+
 ## အညွှန်းစာတမ်းများ
 
 - [Current status — English](docs/CURRENT_STATUS_EN.md)
