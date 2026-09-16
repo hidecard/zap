@@ -58,6 +58,15 @@ def _tokenize_expr(text):
         elif c == ']':
             tokens.append(("RBRACKET", c))
             i += 1
+        elif c == '{':
+            tokens.append(("LBRACE", c))
+            i += 1
+        elif c == '}':
+            tokens.append(("RBRACE", c))
+            i += 1
+        elif c == ':':
+            tokens.append(("OP", ":"))
+            i += 1
         elif c.isdigit():
             j = i
             while j < n and text[j].isdigit():
@@ -75,7 +84,16 @@ def _tokenize_expr(text):
             if two == "==":
                 tokens.append(("OP", two))
                 i += 2
-            elif c in "+-*/<>()=,":
+            elif two == "!=":
+                tokens.append(("OP", two))
+                i += 2
+            elif two == "<=":
+                tokens.append(("OP", two))
+                i += 2
+            elif two == ">=":
+                tokens.append(("OP", two))
+                i += 2
+            elif c in "+-*/%<>()[]=,:":
                 tokens.append(("OP", c))
                 i += 1
             else:
@@ -101,15 +119,44 @@ class _ExprParser:
         return tok
 
     def parse(self):
+        return self._or()
+
+    def _or(self):
+        left = self._and()
+        while self.peek()[0] == "ID" and self.peek()[1] == "or":
+            self.take()
+            right = self._and()
+            left = {"kind": "binop", "op": "or", "left": left, "right": right}
+        return left
+
+    def _and(self):
+        left = self._not()
+        while self.peek()[0] == "ID" and self.peek()[1] == "and":
+            self.take()
+            right = self._not()
+            left = {"kind": "binop", "op": "and", "left": left, "right": right}
+        return left
+
+    def _not(self):
+        if self.peek()[0] == "ID" and self.peek()[1] == "not":
+            self.take()
+            return {"kind": "not", "operand": self._not()}
         return self._comparison()
 
     def _comparison(self):
         left = self._additive()
-        while self.peek()[0] == "OP" and self.peek()[1] in ("<", ">", "=="):
-            op = self.take()[1]
-            right = self._additive()
-            left = {"kind": "binop", "op": op, "left": left, "right": right}
-        return left
+        while True:
+            tok = self.peek()
+            if tok[0] == "OP" and tok[1] in ("<", ">", "==", "!=", "<=", ">="):
+                op = self.take()[1]
+                right = self._additive()
+                left = {"kind": "binop", "op": op, "left": left, "right": right}
+            elif tok[0] == "ID" and tok[1] == "in":
+                self.take()
+                right = self._additive()
+                left = {"kind": "binop", "op": "in", "left": left, "right": right}
+            else:
+                return left
 
     def _additive(self):
         left = self._multiplicative()
@@ -121,14 +168,30 @@ class _ExprParser:
 
     def _multiplicative(self):
         left = self._primary()
-        while self.peek()[0] == "OP" and self.peek()[1] in ("*", "/"):
+        while self.peek()[0] == "OP" and self.peek()[1] in ("*", "/", "%"):
             op = self.take()[1]
             right = self._primary()
             left = {"kind": "binop", "op": op, "left": left, "right": right}
         return left
 
+    def _postfix(self, node):
+        while self.peek()[0] == "LBRACKET":
+            self.take()
+            index = self._comparison()
+            self.take()  # ']'
+            node = {"kind": "index_expr", "base": node, "index": index}
+        return node
+
     def _primary(self):
         tok = self.peek()
+        if tok[0] == "OP" and tok[1] in ("+", "-"):
+            self.take()
+            sign = -1 if tok[1] == "-" else 1
+            if self.peek()[0] == "NUMBER":
+                value = self.take()[1]
+                return {"kind": "num", "value": sign * value}
+            node = self._primary()
+            return {"kind": "unary", "op": tok[1], "operand": node}
         if tok[0] == "NUMBER":
             self.take()
             return {"kind": "num", "value": tok[1]}
@@ -141,7 +204,18 @@ class _ExprParser:
                 self.take()
                 arg = self._comparison()
                 self.take()  # ')'
-                return {"kind": "len", "arg": arg}
+                node = {"kind": "len", "arg": arg}
+                return self._postfix(node)
+            if name in ("keys", "values", "has_key", "contains", "append", "map_get", "map_set") \
+                    and self.peek()[0] == "OP" and self.peek()[1] == "(":
+                self.take()
+                args = [self._comparison()]
+                while self.peek()[0] == "OP" and self.peek()[1] == ",":
+                    self.take()
+                    args.append(self._comparison())
+                self.take()  # ')'
+                node = {"kind": name, "args": args}
+                return self._postfix(node)
             if self.peek()[0] == "OP" and self.peek()[1] == "(":
                 self.take()
                 args = []
@@ -153,18 +227,14 @@ class _ExprParser:
                         self.take()
                         args.append(self._comparison())
                     self.take()  # ')'
-                return {"kind": "call", "name": name, "args": args}
+                node = {"kind": "call", "name": name, "args": args}
+                return self._postfix(node)
             if name == "true":
                 return {"kind": "bool", "value": True}
             if name == "false":
                 return {"kind": "bool", "value": False}
             node = {"kind": "var", "name": name}
-            if self.peek()[0] in ("OP", "LBRACKET") and self.peek()[1] == "[":
-                self.take()
-                index = self._comparison()
-                self.take()  # ']'
-                return {"kind": "index", "name": name, "index": index}
-            return node
+            return self._postfix(node)
         if tok[0] == "LBRACKET":
             self.take()
             elements = []
@@ -174,14 +244,33 @@ class _ExprParser:
                     self.take()
                     elements.append(self._comparison())
             self.take()  # ']'
-            return {"kind": "list", "elements": elements}
+            node = {"kind": "list", "elements": elements}
+            return self._postfix(node)
+        if tok[0] == "LBRACE":
+            self.take()
+            entries = []
+            if self.peek()[0] != "RBRACE":
+                entries.append(self._map_entry())
+                while self.peek()[0] == "OP" and self.peek()[1] == ",":
+                    self.take()
+                    entries.append(self._map_entry())
+            self.take()  # '}'
+            node = {"kind": "map", "entries": entries}
+            return self._postfix(node)
         if tok[0] == "OP" and tok[1] == "(":
             self.take()
             node = self._comparison()
             self.take()  # ')'
-            return node
+            return self._postfix(node)
         self.take()
         return {"kind": "num", "value": 0}
+
+    def _map_entry(self):
+        key = self._comparison()
+        if self.peek()[0] == "OP" and self.peek()[1] == ":":
+            self.take()
+        value = self._comparison()
+        return (key, value)
 
 
 def _parse_expr(text):
@@ -269,6 +358,13 @@ def _parse_stmt(lines, idx, indent):
             expr = text[eq + 1:].strip()
             if name.isidentifier():
                 return {"kind": "assign", "name": name, "expr": _parse_expr(expr)}, idx + 1
+            if name.endswith("]") and "[" in name:
+                base = name[:name.index("[")].strip()
+                index_src = name[name.index("[") + 1:-1].strip()
+                if base.isidentifier() and index_src:
+                    return {"kind": "set_index", "name": base,
+                            "index": _parse_expr(index_src),
+                            "expr": _parse_expr(expr)}, idx + 1
     return {"kind": "expr", "expr": _parse_expr(text)}, idx + 1
 
 
@@ -277,10 +373,16 @@ def _parse_stmt(lines, idx, indent):
 # ---------------------------------------------------------------------------
 
 _BINOP = {"+": "add", "-": "subtract", "*": "multiply", "/": "divide",
-          "<": "less", ">": "greater", "==": "equal"}
+          "%": "remainder", "<": "less", ">": "greater", "==": "equal",
+          "!=": "not_equal", "<=": "less_equal", ">=": "greater_equal",
+          "and": "and", "or": "or", "in": "in"}
 
 
-def _compile_expr(node):
+def _compile_expr(node, base=0):
+    if node["kind"] == "unary":
+        if node["op"] == "+":
+            return _compile_expr(node["operand"], base)
+        return [{"op": "const", "value": 0}] + _compile_expr(node["operand"], base + 1) + [{"op": "subtract"}]
     if node["kind"] == "num":
         return [{"op": "const", "value": node["value"]}]
     if node["kind"] == "str":
@@ -292,27 +394,87 @@ def _compile_expr(node):
     if node["kind"] == "call":
         instrs = []
         for arg in node["args"]:
-            instrs += _compile_expr(arg)
+            instrs += _compile_expr(arg, base + len(instrs))
         instrs.append({"op": "call", "name": node["name"], "argc": len(node["args"])})
         return instrs
     if node["kind"] == "binop":
-        instrs = _compile_expr(node["left"])
-        instrs += _compile_expr(node["right"])
-        instrs.append({"op": _BINOP[node["op"]]})
-        return instrs
+        if node["op"] in ("and", "or"):
+            temp_name = "__zap_short_%d" % base
+            left = _compile_expr(node["left"], base)
+            left_copy = left + [
+                {"op": "store", "name": temp_name},
+                {"op": "load", "name": temp_name},
+            ]
+            jump = {
+                "op": "jump_if_false" if node["op"] == "and" else "jump_if_true",
+                "target": 0,
+            }
+            right = _compile_expr(node["right"], base + len(left_copy) + 2)
+            false_index = base + len(left_copy) + 2 + len(right) + 2
+            end_index = false_index + 1
+            jump["target"] = false_index
+            end_jump = {"op": "jump", "target": end_index}
+            result = left_copy + [
+                jump,
+                {"op": "load", "name": temp_name},
+            ] + right + [
+                {"op": _BINOP[node["op"]]},
+                end_jump,
+                {"op": "const", "value": node["op"] == "or"},
+            ]
+            return result
+        left = _compile_expr(node["left"], base)
+        right = _compile_expr(node["right"], base + len(left))
+        return left + right + [{"op": _BINOP[node["op"]]}]
     if node["kind"] == "list":
         instrs = []
         for element in node["elements"]:
-            instrs += _compile_expr(element)
+            instrs += _compile_expr(element, base + len(instrs))
         instrs.append({"op": "make_list", "count": len(node["elements"])})
         return instrs
-    if node["kind"] == "index":
-        instrs = [{"op": "load", "name": node["name"]}]
-        instrs += _compile_expr(node["index"])
+    if node["kind"] == "not":
+        return _compile_expr(node["operand"], base) + [{"op": "not"}]
+    if node["kind"] == "map":
+        instrs = [{"op": "make_map"}]
+        for key, value in node["entries"]:
+            instrs += _compile_expr(key, base + len(instrs))
+            instrs += _compile_expr(value, base + len(instrs))
+            instrs.append({"op": "map_set_pair"})
+        return instrs
+    if node["kind"] == "map_get":
+        return (_compile_expr(node["args"][0], base)
+                + _compile_expr(node["args"][1], base + 1)
+                + [{"op": "map_get"}])
+    if node["kind"] == "map_set":
+        return (_compile_expr(node["args"][0], base)
+                + _compile_expr(node["args"][1], base + 1)
+                + _compile_expr(node["args"][2], base + 2)
+                + [{"op": "map_set"}])
+    if node["kind"] == "append":
+        return (_compile_expr(node["args"][0], base)
+                + _compile_expr(node["args"][1], base + 1)
+                + [{"op": "list_append"}])
+    if node["kind"] == "keys":
+        return _compile_expr(node["args"][0], base) + [{"op": "map_keys"}]
+    if node["kind"] == "values":
+        return _compile_expr(node["args"][0], base) + [{"op": "map_values"}]
+    if node["kind"] == "has_key":
+        return (_compile_expr(node["args"][0], base)
+                + _compile_expr(node["args"][1], base + 1)
+                + [{"op": "map_has_key"}])
+    if node["kind"] == "contains":
+        return (_compile_expr(node["args"][0], base)
+                + _compile_expr(node["args"][1], base + 1)
+                + [{"op": "list_contains"}])
+    if node["kind"] in ("index", "index_expr"):
+        base_node = node if node["kind"] == "index" else node["base"]
+        index_node = node["index"]
+        instrs = _compile_expr(base_node, base)
+        instrs += _compile_expr(index_node, base + len(instrs))
         instrs.append({"op": "list_get"})
         return instrs
     if node["kind"] == "len":
-        instrs = _compile_expr(node["arg"])
+        instrs = _compile_expr(node["arg"], base)
         instrs.append({"op": "list_len"})
         return instrs
     return []
@@ -324,16 +486,21 @@ def _lower(program, stmt, base=None):
         base = len(program)
     kind = stmt["kind"]
     if kind in ("let", "assign"):
-        instrs = _compile_expr(stmt["expr"]) + [{"op": "store", "name": stmt["name"]}]
+        instrs = _compile_expr(stmt["expr"], base) + [{"op": "store", "name": stmt["name"]}]
+    elif kind == "set_index":
+        instrs = ([{"op": "load", "name": stmt["name"]}]
+                  + _compile_expr(stmt["index"], base + 1)
+                  + _compile_expr(stmt["expr"], base + 2)
+                  + [{"op": "list_set"}, {"op": "pop"}])
     elif kind == "say":
-        instrs = _compile_expr(stmt["expr"]) + [{"op": "print"}]
+        instrs = _compile_expr(stmt["expr"], base) + [{"op": "print"}]
     elif kind == "return":
-        instrs = (_compile_expr(stmt["expr"]) if stmt["expr"] is not None
+        instrs = (_compile_expr(stmt["expr"], base) if stmt["expr"] is not None
                   else []) + [{"op": "return_value" if stmt["expr"] is not None else "return_none"}]
     elif kind == "expr":
-        instrs = _compile_expr(stmt["expr"]) + [{"op": "pop"}]
+        instrs = _compile_expr(stmt["expr"], base) + [{"op": "pop"}]
     elif kind == "if":
-        instrs = _compile_expr(stmt["cond"])
+        instrs = _compile_expr(stmt["cond"], base)
         jf_local = len(instrs)
         instrs.append({"op": "jump_if_false", "target": 0})
         for s in stmt["then"]:
@@ -348,7 +515,7 @@ def _lower(program, stmt, base=None):
         else:
             instrs[jf_local]["target"] = base + len(instrs)
     elif kind == "while":
-        cond = _compile_expr(stmt["cond"])
+        cond = _compile_expr(stmt["cond"], base)
         instrs = cond + [{"op": "jump_if_false", "target": 0}]
         for s in stmt["body"]:
             instrs += _lower(program, s, base + len(instrs))
@@ -361,7 +528,7 @@ def _lower(program, stmt, base=None):
         idx_name = "__for_idx_" + loop_var
         len_name = "__for_len_" + loop_var
         iter_name = "__for_iter_" + loop_var
-        instrs = _compile_expr(iterable) + [{"op": "store", "name": iter_name}]
+        instrs = _compile_expr(iterable, base) + [{"op": "store", "name": iter_name}]
         instrs += [{"op": "const", "value": 0}, {"op": "store", "name": idx_name}]
         instrs += [{"op": "load", "name": iter_name}, {"op": "list_len"}, {"op": "store", "name": len_name}]
         cond_start = len(instrs)
@@ -377,8 +544,15 @@ def _lower(program, stmt, base=None):
     return instrs
 
 
+def _strip_bom(source):
+    """Remove a UTF-8 BOM so Windows-authored sources compile identically."""
+    if source and source[0] == "\ufeff":
+        return source[1:]
+    return source
+
+
 def compile_program(source):
-    lines = _split_lines(source)
+    lines = _split_lines(_strip_bom(source))
     functions = []
     main = []
     i = 0

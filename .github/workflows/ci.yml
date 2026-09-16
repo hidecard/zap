@@ -790,23 +790,75 @@ jobs:
           if-no-files-found: warn
 
   c-backend:
-    name: C Backend Verification
+    name: C Backend ${{ matrix.name }}
     needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - name: Windows x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: macOS ARM64
+            os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux C compiler
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y gcc
+
+      - name: Run C backend acceptance
+        shell: bash
+        env:
+          B4_C_BACKEND_ACCEPTANCE_REPORT: target/b4-c-backend-acceptance-${{ matrix.target }}.tsv
+        run: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+
+      - name: Run C backend regression verifier
+        shell: bash
+        run: python3 host/zap-bootstrap/verify_c_backend.py
+
+      - name: Upload C backend acceptance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-b4-c-backend-${{ matrix.target }}-${{ github.sha }}
+          path: |
+            target/b4-c-backend-acceptance-*.tsv
+            target/c-backend-verification.tsv
+          if-no-files-found: error
+
+  b4-c-backend-cross-platform:
+    name: B4 C Backend Cross-Platform Comparison
+    needs: c-backend
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install C compiler
-        run: sudo apt-get update && sudo apt-get install -y gcc
+      - name: Download C backend reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: zap-b4-c-backend-*
+          path: target/c-backend-reports
+          merge-multiple: true
 
-      - name: Run C backend verification
-        run: python3 host/zap-bootstrap/verify_c_backend.py
+      - name: Compare emitted C and stdout hashes
+        env:
+          B4_C_BACKEND_REPORT_DIR: target/c-backend-reports
+          B4_C_BACKEND_CROSS_PLATFORM_REPORT: target/b4-c-backend-cross-platform.tsv
+        run: scripts/bootstrap/verify_b4_c_backend_cross_platform.sh
 
-      - name: Upload C backend verification results
+      - name: Upload cross-platform C backend evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zap-c-backend-verification-${{ github.sha }}
-          path: target/c-backend-verification.tsv
-          if-no-files-found: warn
+          name: zap-b4-c-backend-cross-platform-${{ github.sha }}
+          path: target/b4-c-backend-cross-platform.tsv
+          if-no-files-found: error

@@ -24,7 +24,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64, Windows x86_64, macOS ARM64 |
-| Bootstrap stage | **B4 candidate** — verification infrastructure complete; Zap-produced Rust-free seed path defined via C backend (Schema v2) |
+| Bootstrap stage | **B4 candidate** — Rust-free C backend acceptance implemented; three-platform evidence and production compiler migration pending (Schema v2) |
 | Reference implementation | Rust native CLI/runtime remains the owner of complete semantics |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -186,7 +186,7 @@ The current stable direction covers the `.zp` language core, native CLI, project
 
 Zap is at bootstrap stage **B4 candidate**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The B2 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
 
-The repository has extensive B4 verification infrastructure: 19-row acceptance manifest (Schema v2), cross-platform CI jobs (`b4-platform-evidence`), full acceptance matrix gate, artifact manifest gate, and evidence collection. B4 remains **not-certified** because while a Zap-produced seed path is now defined via the C backend (Schema v2), the provisional acceptance rows (B4-FULL-013..018) require executable evidence with a Zap-produced seed. The remaining blockers are documented in `docs/SEED_PRODUCTION_PLAN.md` and `docs/B4_CONTRACT_REVISION_V2_EN.md`.
+The repository has extensive B4 verification infrastructure: a 19-row Schema v2 acceptance manifest, executable C backend fixtures, a three-platform CI matrix with emitted-C/stdout hash aggregation, a full acceptance matrix gate, artifact manifest checks, and evidence collection. B4 remains **not-certified**: B4-FULL-013..018 pass locally through the Rust-free Python-to-C backend path, while the Linux/Windows/macOS matrix for this revision and the migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending. The boundary and next steps are documented in `docs/SEED_PRODUCTION_PLAN.md`, `docs/B4_CONTRACT_REVISION_V2_EN.md`, and `bootstrap/evidence/b4/certification_evidence.md`.
 
 Complete type inference, arbitrary-program parser and diagnostic parity, general typed-IR production, package/build ownership, VM execution ownership, and platform-seed acceptance remain future roadmap work. Do not interpret the current candidates as fully Zap-only or B4/self-hosted. The detailed boundary is maintained in the [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_EN.md), and broader product scope is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
 
