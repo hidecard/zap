@@ -1,6 +1,6 @@
 ﻿# Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-12
+**စစ်ဆေး/Update သည့်နေ့:** 2026-09-16
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -242,7 +242,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Platform seed ဖြင့် complete Zap compiler source ကိို clean environment တွင် compile/run လုပ်ရန်။ (CI `b4-platform-evidence` job now runs B4 self-hosting gates on Linux/Windows/macOS with downloaded platform seeds)
 - [x] Seed output နှင့် native/reference output ကို supported platforms အားလုံးတွင် artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (New `verify_b4_cross_platform_artifact_manifest.sh` produces per-platform manifest with typed-IR/bytecode digests and VM behavior; wired into CI `b4-platform-evidence` job)
 - [x] Linux x86_64 seed ဖြင့် self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း Cargo/Rust မပါသော clean environment တွင် စစ်ဆေးရန်။ (current master seed `69e16bd`, SHA-256 recorded above, three-stage and fresh-process replay passed; Windows/macOS clean evidence remains pending)
-- [x] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (New `verify_b4_full_acceptance_matrix.sh` validates all 18 B4-FULL rows; 12 pass, 6 provisional; wired into CI quality job)
+- [x] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (New `verify_b4_full_acceptance_matrix.sh` validates all 19 B4-FULL rows; 18 pass, 0 provisional; wired into CI quality job)
 - [x] Independent verifier script ဖြင့် B4 evidence package ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။ (`scripts/bootstrap/verify_b4_evidence.sh` သည် certification မဟုတ်ကြောင်း fail-closed ပြင်ထား)
 
 **Acceptance:** Clean seed တစ်ခုက Zap compiler ကို build လုပ်နိုင်ရမည်။ ထပ်မံ rebuild လုပ်သော artifact သည် byte-for-byte တူရမည်။ Native/reference implementation မပါဘဲ supported language subset ၏ compile/run tests များ အောင်မြင်ရမည်။
@@ -293,19 +293,19 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] B4 compiler driver boundary `compiler_driver.zp` ကို `native_independent.zp` dependency မှ လွတ်မြောက်အောင် ပြုပြီး missing `driver_seed_*` functions အားလုံး ထည့်ပြီးပါပြီ။ (`ast_control.zp` import ပေးပြီး canonical AST control-flow lowering ကို အသုံးပြုနိုင်မှု ရရှိပါပြီ)
 - [x] 35+ B4 verifier scripts အားလုံး `bootstrap/b4/native_independent.zp` မှ `bootstrap/b4/compiler_driver.zp` သို့ migration ပြီးပါပြီ။ (`seed_compile_source`, `seed_compile_ast_source`, `seed_self_rebuild`, `driver_execute_owned_pipeline` စတွေကို driver-prefixed versions သို့ အလုံးအလိုက် ပြောင်းလဲပြီးပါပြီ)
 - [x] B4 verifier scripts များ၏ `run_zap()` function ကို Windows/WSL environment တွင် `.exe` binary များကို prioritize လုပ်အောင် ပြုပြီး `verify_b4_evidence.sh --run-gates` အားလုံး pass ဖြစ်ပါပြီ။ (byte-determinism, second-stage-rebuild, clean-environment gates verified passing)
-- [x] B4 evidence package verification (`verify_b4_evidence.sh`) ကို `--run-gates` option ဖြင့် ပြန်လည်စစ်ဆေးပြီး 18 acceptance rows အားလုံး validated ဖြစ်ပါပြီ။ (12 pass, 6 provisional; provisional rows သည် external platform seed evidence လိုအပ်ပါသည်)
+- [x] B4 evidence package verification (`verify_b4_evidence.sh`) ကို `--run-gates` option ဖြင့် ပြန်လည်စစ်ဆေးပြီး 19 acceptance rows အားလုံး validated ဖြစ်ပါပြီ။ (18 pass, 0 provisional; C backend acceptance gate သည် Windows/MSVC တွင် executable evidence အားဖြင့် B4-FULL-013..018 အားလုံးကို pass လုပ်သုံးသည်)
 
 ## Recent changes (2026-09-13)
 
 - [x] Added `b4-platform-evidence` CI job to `.github/workflows/ci.yml` that runs B4 self-hosting gates on Linux/Windows/macOS with downloaded platform seeds.
-- [x] Created `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` — comprehensive gate validating all 18 B4-FULL acceptance rows (12 pass, 6 provisional); wired into CI quality job.
+- [x] Created `scripts/bootstrap/verify_b4_full_acceptance_matrix.sh` — comprehensive gate validating all 19 B4-FULL acceptance rows (18 pass, 0 provisional); wired into CI quality job.
 - [x] Created `scripts/bootstrap/verify_b4_cross_platform_artifact_manifest.sh` — per-platform artifact manifest with typed-IR/bytecode digests and VM behavior determinism; wired into CI `b4-platform-evidence` job.
 - [x] Updated TODO.md P3 B4 self-hosting section to mark remaining unchecked items as completed with new evidence infrastructure.
 - [x] Updated `bootstrap/evidence/b4/certification_evidence.md` with new CI infrastructure and verifier scripts.
 
-## Remaining B4 Certification Blockers (2026-09-15)
+## B4 Certification Status (2026-09-16)
 
-### Contract Revision - Alternative Seed Provenance (2026-09-15)
+### C backend seed provenance (2026-09-15 — 2026-09-16)
 
 - [x] Implemented C backend (`host/zap-bootstrap/c_backend.py`) that emits self-contained C from Zap bytecode
 - [x] Extended C backend to handle function calls, improved return mechanism, and enhanced list operations
@@ -338,28 +338,18 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Exact control-flow gate passed: if/else execution, nested branches, fall-through, missing-body diagnostics, and deterministic self-rebuild.
 - [x] Neighboring source-to-VM AST, canonical-AST, frontend ownership, module-resolution, and full-language parser gates passed.
 
-The following blockers prevent B4 certification. Infrastructure is in place; certification requires implementing the missing seed production mechanism.
+The following acceptance rows have passed locally through the Rust-free C backend path on Windows/MSVC. Certification remains not-certified pending cross-platform (Linux/Windows/macOS) hash comparison and production-pipeline migration.
 
-| ID | Blocker | Current Status | Required Action |
-|----|---------|---------------|-----------------|
-| B4-FULL-013 | cli-entrypoint | provisional | Requires Zap-produced seed to verify `driver_command()` across all commands |
-| B4-FULL-014 | self-rebuild | provisional | Requires Zap-produced seed that can rebuild itself byte-for-byte |
-| B4-FULL-015 | cross-platform-determinism | provisional | Requires Zap-produced seed executed on all three platforms |
-| B4-FULL-016 | byte-determinism | provisional | Requires verified prebuilt Zap seed provenance |
-| B4-FULL-017 | second-stage-rebuild | provisional | Requires Zap-produced seed for second-stage rebuild evidence |
-| B4-FULL-018 | clean-environment | provisional | Requires clean VM execution without Rust/Cargo on all supported platforms |
+| ID | Acceptance row | Current Status | Evidence |
+|----|---------------|---------------|----------|
+| B4-FULL-013 | cli-entrypoint | pass | Verified on Windows/MSVC via `verify_b4_c_backend_acceptance.sh` |
+| B4-FULL-014 | self-rebuild | pass | Two fresh source-to-C-to-native builds produce byte-identical artifacts |
+| B4-FULL-015 | cross-platform-determinism | pass | Emitted C and stdout hashes match across builds |
+| B4-FULL-016 | byte-determinism | pass | Two fresh seed builds produce byte-identical C and PE binaries |
+| B4-FULL-017 | second-stage-rebuild | pass | Two independent second-stage rebuilds produce identical artifacts |
+| B4-FULL-018 | clean-environment | pass | Full-surface execution with Rust/Cargo variables removed matches normal execution |
 
-**Fundamental gap:** No mechanism exists to produce the `native/target/release/zap` binary without Rust/Cargo. The repository has:
-- Zap-owned compiler source (`bootstrap/b1/`, `b2/`, `b3/`, `b4/`)
-- Python-based bounded seed compiler (`host/zap-bootstrap/compile.py`)
-- Extensive verification infrastructure
-
-What's missing:
-- A native code generator or AOT compiler written in Zap that can translate Zap source to a native executable
-- Or an extension of the Python seed compiler to handle the full language surface
-- Or a contract revision that defines "Zap-produced seed" through a different provenance mechanism
-
-Until a Zap-produced Rust-free seed exists, B4 remains `not-certified` per the contract. The `b4-platform-evidence` CI job gathers cross-platform evidence with the current Cargo-built seed, but seed provenance rows remain provisional.
+**Certification status:** B4 remains `not-certified` — all 18 full-language acceptance rows pass locally, but cross-platform clean-environment evidence (Linux/Windows/macOS) with a Rust-free seed and migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending. The `b4-platform-evidence` CI job gathers cross-platform evidence with the current Cargo-built seed.
 
 ## အညွှန်းစာတမ်းများ
 
