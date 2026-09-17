@@ -146,7 +146,8 @@ The language includes text, numbers, booleans, lists, maps, objects, functions, 
 | Package and lockfile workflow | [English package guide](docs/PACKAGE_EN.md) · [မြန်မာ package guide](docs/PACKAGE.md) |
 | Web framework and frontend integration | [Zap Web guide](docs/ZAP_WEB_NATIVE_EN.md) · [Frontend integration](docs/FRONTEND_INTEGRATION_EN.md) |
 | Runtime, memory, and async boundaries | [Runtime state](docs/RUNTIME_STATE_EN.md) · [Memory contract](docs/MEMORY_BUDGET_OBJECT_STORE_EN.md) · [Async boundaries](docs/ASYNC_BOUNDARIES_EN.md) |
-| Host adapter and deployment | [Host guide](docs/ZAP_HOST_EN.md) · [Deployment guide](docs/DEPLOYMENT_EN.md) |
+| Host adapter and deployment | [Host guide](docs/ZAP_HOST_EN.md) · [Deployment guide](docs/DEPLOYMENT_EN.md) · [Cloud deployment guide](docs/DEPLOYMENT_CLOUD_EN.md) |
+| Roadmap and planning | [Roadmap](docs/ROADMAP_EN.md) · [Repository structure](docs/REPO_STRUCTURE.md) · [B4 certification plan](docs/B4_CERTIFICATION_ACTION_PLAN.md) · [Database strategy](docs/DATABASE_PROVIDER_STRATEGY_EN.md) · [Adoption tracker](docs/M7_ADOPTION_TRACKER.md) |
 | Burmese documentation navigation | [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) |
 
 ## CLI essentials

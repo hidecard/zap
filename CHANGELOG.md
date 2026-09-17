@@ -4,6 +4,17 @@ Zap ၏ version အလိုက် ပြောင်းလဲမှုမျာ
 
 ## [Unreleased]
 
+### Documentation
+- Added `docs/REPO_STRUCTURE.md` — repository ownership structure mapping implementation code to compiler/runtime/tools/packages/web/bootstrap ownership boundaries.
+- Added `docs/DEPLOYMENT_CLOUD_EN.md` — cloud and container deployment guide covering Docker, Kubernetes, AWS (ECS Fargate), Azure (Container Apps), and GCP (Cloud Run).
+- Added `docs/B4_CERTIFICATION_ACTION_PLAN.md` — B4 self-hosting certification tracker with 5 concrete blockers, action items, and acceptance criteria.
+- Added `docs/DATABASE_PROVIDER_STRATEGY_EN.md` — PostgreSQL, MySQL/MariaDB migration strategy document (deferred until self-hosting certified).
+- Added `docs/M7_ADOPTION_TRACKER.md` — M7 real-world adoption tracker with measurable targets (100+ projects, 1000+ packages, 50+ contributors, 10+ companies).
+- Added `docs/ROADMAP_EN.md` and `docs/ROADMAP_MM.md` — roadmap quick reference documents (redirect to TODO.md).
+- Updated `docs/DOCUMENTATION_NAVIGATION_EN.md` and `docs/DOCUMENTATION_NAVIGATION_MM.md` — added references to new docs in Deployment operator and Bootstrap engineer sections.
+- Updated `README.md` — added Roadmap and planning section with references to all new documentation.
+- All markdown link validation checks pass (825/825).
+
 ### P0 release hygiene
 - Added `scripts/bootstrap/assert_clean_repo_root.sh` CI assertion that runs a representative subset of bootstrap verifiers (success path and forced-failure path) and fails nonzero if any `$ROOT_DIR` scratch artifact is left behind after EXIT, providing a deterministic regression gate for the missing-trap class of bugs.
 - Added the `bootstrap-clean-repo-test` Makefile target and wired it into `make test` so the new gate runs alongside the existing bootstrap verification gates.

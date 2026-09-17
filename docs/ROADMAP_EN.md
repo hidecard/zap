@@ -1,0 +1,34 @@
+# Zap Roadmap
+
+> **Redirect:** The full 15-step roadmap, 7 milestones, and contribution tracker lives in [TODO.md](../TODO.md). This file is a convenience entry point.
+
+## Quick Reference
+
+| Resource | Location |
+|---|---|
+| Full roadmap (15 steps) | [TODO.md](../TODO.md) |
+| Repository ownership structure | [docs/REPO_STRUCTURE.md](REPO_STRUCTURE.md) |
+| Cloud deployment guide | [docs/DEPLOYMENT_CLOUD_EN.md](DEPLOYMENT_CLOUD_EN.md) |
+| B4 certification action plan | [docs/B4_CERTIFICATION_ACTION_PLAN.md](B4_CERTIFICATION_ACTION_PLAN.md) |
+| Database provider strategy | [docs/DATABASE_PROVIDER_STRATEGY_EN.md](DATABASE_PROVIDER_STRATEGY_EN.md) |
+| Community/adoption tracker (M7) | [docs/M7_ADOPTION_TRACKER.md](M7_ADOPTION_TRACKER.md) |
+| Bootstrap contract | [bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md) |
+| B4 acceptance manifest | [bootstrap/contracts/B4_ACCEPTANCE.tsv](../bootstrap/contracts/B4_ACCEPTANCE.tsv) |
+
+## 7 Milestones
+
+| Milestone | Target | Status |
+|---|---|---|
+| **M1** — Stable Language | Parser, type checker, IR, diagnostics, tests stable | ✅ |
+| **M2** — Native Compiler | Zap → Native production quality | ✅ |
+| **M3** — Self-hosted Zap | Zap → Zap compiler → Zap | 🔄 B4 candidate |
+| **M4** — Package Ecosystem | `zap install` working | ✅ |
+| **M5** — Full-stack Web | Web + DB + API + Auth | ✅ |
+| **M6** — Developer Experience | VS Code, LSP, Debugger, Formatter, Linter | ✅ |
+| **M7** — Real-world Adoption | 100+ projects, 1000+ packages | 📊 Tracking |
+
+## See Also
+
+- [Documentation Navigation](DOCUMENTATION_NAVIGATION_EN.md)
+- [Current Status](CURRENT_STATUS_EN.md)
+- [TODO.md](../TODO.md) — full 15-step implementation order
