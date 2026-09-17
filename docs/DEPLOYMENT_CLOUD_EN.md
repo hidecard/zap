@@ -1,7 +1,7 @@
 # Zap Cloud and Container Deployment Guide
 
 **Baseline:** Zap v2.11.18
-**Companion:** [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_EN.md) · [Registry Deployment Boundaries](DEPLOYMENT_EN.md) · [Security Policy](../../SECURITY.md)
+**Companion:** [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_EN.md) · [Registry Deployment Boundaries](DEPLOYMENT_EN.md) · [Security Policy](../SECURITY.md)
 
 This guide extends the on-premise Ubuntu deployment runbook with platform-specific deployment patterns for Docker, Kubernetes, AWS, Azure, and GCP. The core principle is identical across platforms: **Zap stays on loopback; the TLS proxy faces public traffic; secrets come from the platform; the registry backend never touches the public network directly.**
 
@@ -835,6 +835,6 @@ Cloud SQL:
 
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_EN.md)
 - [Registry Deployment Boundaries](DEPLOYMENT_EN.md)
-- [Security Policy](../../SECURITY.md)
-- [Deployment artifacts](../../deploy/)
-- [B4 Acceptance Contract](../../bootstrap/contracts/B4_ACCEPTANCE.tsv)
+- [Security Policy](../SECURITY.md)
+- [Deployment artifacts](../deploy/)
+- [B4 Acceptance Contract](../bootstrap/contracts/B4_ACCEPTANCE.tsv)

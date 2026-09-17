@@ -153,10 +153,10 @@ B4 will be `certified` when ALL of the following are true:
 
 ## Reference Documents
 
-- [B4 Contract (Schema v2)](../../bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml)
-- [B4 Acceptance Manifest](../../bootstrap/contracts/B4_ACCEPTANCE.tsv)
-- [Bootstrap Contract EN](../../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md)
-- [Certification Evidence](../../bootstrap/evidence/b4/certification_evidence.md)
-- [B4 Contract Revision v2 EN](../../docs/B4_CONTRACT_REVISION_V2_EN.md)
-- [Seed Production Plan](../../docs/SEED_PRODUCTION_PLAN.md)
-- [TODO.md](../../TODO.md) — B4 Certification Status section
+- [B4 Contract (Schema v2)](../bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml)
+- [B4 Acceptance Manifest](../bootstrap/contracts/B4_ACCEPTANCE.tsv)
+- [Bootstrap Contract EN](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md)
+- [Certification Evidence](../bootstrap/evidence/b4/certification_evidence.md)
+- [B4 Contract Revision v2 EN](../docs/B4_CONTRACT_REVISION_V2_EN.md)
+- [Seed Production Plan](../docs/SEED_PRODUCTION_PLAN.md)
+- [TODO.md](../TODO.md) — B4 Certification Status section

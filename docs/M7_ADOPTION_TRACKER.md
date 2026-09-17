@@ -316,8 +316,8 @@ Each package must have:
 
 ## References
 
-- [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- [SECURITY.md](../../SECURITY.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [SECURITY.md](../SECURITY.md)
 - [DEPLOYMENT_CLOUD_EN.md](DEPLOYMENT_CLOUD_EN.md)
 - [B4_CERTIFICATION_ACTION_PLAN.md](B4_CERTIFICATION_ACTION_PLAN.md)
-- [ROADMAP.md](../../ROADMAP.md) (if exists) or README.md
+- [README.md](../README.md)

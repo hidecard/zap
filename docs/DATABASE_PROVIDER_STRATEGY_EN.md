@@ -250,5 +250,5 @@ These must be completed before PostgreSQL provider work begins:
 
 - [DEPLOYMENT_CLOUD_EN.md](DEPLOYMENT_CLOUD_EN.md) — Cloud deployment with managed databases
 - [PRODUCTION_DEPLOYMENT_EN.md](PRODUCTION_DEPLOYMENT_EN.md) — Production deployment runbook
-- [docs/DEPLOYMENT_EN.md](DEPLOYMENT_EN.md) — Registry deployment boundaries
-- [SECURITY.md](../../SECURITY.md) — Security policy
+- [DEPLOYMENT_EN.md](DEPLOYMENT_EN.md) — Registry deployment boundaries
+- [SECURITY.md](../SECURITY.md) — Security policy
