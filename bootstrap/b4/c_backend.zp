@@ -1,0 +1,70 @@
+fn c_backend_emit_header():
+    let lines = []
+    lines = append(lines, "#include <stdio.h>")
+    lines = append(lines, "#include <stdlib.h>")
+    lines = append(lines, "#include <string.h>")
+    lines = append(lines, "#include <stdint.h>")
+    lines = append(lines, "#include <stdbool.h>")
+    lines = append(lines, "")
+    lines = append(lines, "typedef struct value value;")
+    lines = append(lines, "struct value { int kind; char *str; value **items; value **vals; int count; int cap; int vcount; int vcap; int task_id; };")
+    lines = append(lines, "")
+    lines = append(lines, "#define ZAP_HEAP_MAX 262144")
+    lines = append(lines, "static value *g_heap[ZAP_HEAP_MAX];")
+    lines = append(lines, "static int g_heap_count = 0;")
+    lines = append(lines, "")
+    lines = append(lines, "static value *track(value *v) {")
+    lines = append(lines, "  if (g_heap_count >= ZAP_HEAP_MAX) { fprintf(stderr, \"heap exhausted\\n\"); exit(1); }")
+    lines = append(lines, "  g_heap[g_heap_count++] = v;")
+    lines = append(lines, "  return v;")
+    lines = append(lines, "}")
+    lines = append(lines, "")
+    return lines
+
+fn c_backend_emit_runtime():
+    let lines = []
+    lines = append(lines, "static value *vmake(int kind) {")
+    lines = append(lines, "  value *v = (value *)calloc(1, sizeof(value));")
+    lines = append(lines, "  if (v == NULL) { fprintf(stderr, \"out of memory\\n\"); exit(1); }")
+    lines = append(lines, "  v->kind = kind;")
+    lines = append(lines, "  return track(v);")
+    lines = append(lines, "}")
+    lines = append(lines, "")
+    lines = append(lines, "static value *vstr(const char *s) {")
+    lines = append(lines, "  value *v = vmake(0);")
+    lines = append(lines, "  v->str = strdup(s ? s : \"\");")
+    lines = append(lines, "  return v;")
+    lines = append(lines, "}")
+    lines = append(lines, "")
+    return lines
+
+fn c_backend_emit_bytecode_handlers():
+    let lines = []
+    lines = append(lines, "static int c_backend_run(void) {")
+    lines = append(lines, "  return 0;")
+    lines = append(lines, "}")
+    lines = append(lines, "")
+    return lines
+
+fn c_backend_emit_entry_point():
+    let lines = []
+    lines = append(lines, "int main(int argc, char **argv) {")
+    lines = append(lines, "  (void)argc;")
+    lines = append(lines, "  (void)argv;")
+    lines = append(lines, "  return c_backend_run();")
+    lines = append(lines, "}")
+    lines = append(lines, "")
+    return lines
+
+fn c_backend_emit(bytecode):
+    let lines = c_backend_emit_header()
+    lines = append(lines, c_backend_emit_runtime())
+    lines = append(lines, c_backend_emit_bytecode_handlers())
+    lines = append(lines, c_backend_emit_entry_point())
+    return lines
+
+export fn c_backend_generate(bytecode):
+    return c_backend_emit(bytecode)
+
+export fn c_backend_add_string_literal(s):
+    return s

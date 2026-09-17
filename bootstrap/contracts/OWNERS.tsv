@@ -1,81 +1,171 @@
 ﻿rule_id	domain	english_section	burmese_section	owner	fixture_path	status
+
 BOOT-001	stage	Bootstrap stages	Bootstrap á€¡á€†á€„á€·á€ºá€™á€»á€¬á€¸	bootstrap/b4/compiler_driver.zp	bootstrap/fixtures/metadata/b0_stage.json	stable
+
 BOOT-002	lexer	Ownership rules	Ownership rules	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/basic.zp	canonical
+
 BOOT-003	spans	Artifact contract	Artifact contract	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.zp	canonical
+
 BOOT-004	diagnostics	Capability contract	Capability contract	bootstrap/b1/lexer.zp	bootstrap/fixtures/diagnostics/invalid_character.zp	canonical
+
 BOOT-005	determinism	Reproducibility and differential gates	Reproducibility á€”á€¾á€„á€·á€º differential gates	scripts/bootstrap	bootstrap/fixtures/lexer/basic.tokens.json	canonical
+
 BOOT-006	stdlib	Ownership rules	Ownership rules	bootstrap/b3/vm.zp	bootstrap/fixtures/stdlib/catalog.json	provisional
+
 BOOT-007	platform	Capability contract	Capability contract	bootstrap/b3/seed.zp	bootstrap/fixtures/metadata/platform_seed.json	provisional
+
 BOOT-008	artifact	Artifact contract	Artifact contract	scripts/bootstrap	bootstrap/fixtures/metadata/artifact_schema.json	canonical
+
 BOOT-009	release	Version policy	Version policy	docs/LANGUAGE_SPEC_EN.md	bootstrap/contracts/VERSIONS.toml	stable
+
 BOOT-010	bootstrap	Current status	á€œá€€á€ºá€›á€¾á€­á€¡á€á€¼á€±á€¡á€”á€±	bootstrap/b4/compiler_driver.zp	bootstrap/BASELINE_B0.md	stable
+
 BOOT-011	b1-lexer	B1 canonical status	B1 canonical status	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/operators.tokens.json	canonical
+
 BOOT-012	typed-ir	Canonical inspection commands	Canonical inspection commands	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/lexer/basic.typed-ir.json	provisional
+
 BOOT-013	parser	Artifact contract	Artifact contract	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/compound.zp	canonical
+
 BOOT-014	syntax-diagnostics	Ownership rules	Ownership rules	bootstrap/b1/parser.zp	bootstrap/fixtures/diagnostics/missing_closing_bracket.zp	canonical
+
 BOOT-015	b1-parser-candidate	B1 candidate status	B1 candidate status	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arithmetic.zp	canonical
+
 BOOT-016	b2-typed-ir	Artifact contract	Artifact contract	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/annotated.typed-ir.json	provisional
+
 BOOT-017	b2-typecheck	Ownership rules	Ownership rules	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/incompatible.zp	provisional
+
 BOOT-018	token-diagnostics	B1 canonical status	B1 canonical status	bootstrap/b1/lexer.zp	bootstrap/fixtures/diagnostics/unexpected_closing_bracket.zp	canonical
+
 BOOT-019	b2-typechecker-candidate	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/incompatible.zp	provisional
+
 BOOT-020	b2-typed-ir-candidate	Artifact contract	Artifact contract	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/annotated.typed-ir.json	provisional
+
 BOOT-021	b2-typechecker-function-corpus	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/function_incompatible.zp	provisional
+
 BOOT-022	b2-typechecker-collection-element	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/collection_incompatible.zp	provisional
+
 BOOT-023	b2-typechecker-nested-collection	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/nested_collection_incompatible.zp	provisional
+
 BOOT-024	b2-typechecker-map-element	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/map_collection_incompatible.zp	provisional
+
 BOOT-025	b2-typechecker-branch-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/branch_narrowing_incompatible.zp	provisional
+
 BOOT-026	b2-typechecker-loop-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/loop_narrowing_incompatible.zp	provisional
+
 BOOT-027	b2-typechecker-else-narrowing	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/else_narrowing_incompatible.zp	provisional
+
 BOOT-028	b2-typechecker-bool-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/bool_annotation_incompatible.zp	provisional
+
 BOOT-029	b2-typechecker-none-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/none_annotation_incompatible.zp	provisional
+
 BOOT-030	b2-typechecker-list-literal-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/list_annotation_incompatible.zp	provisional
+
 BOOT-031	b2-typechecker-map-literal-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/map_annotation_incompatible.zp	provisional
+
 BOOT-032	b2-typechecker-option-constructor-annotation	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/option_annotation_incompatible.zp	provisional
+
 BOOT-033	b2-typechecker-basic-expression-matrix	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/expression_result_constructor_incompatible.zp	provisional
+
 BOOT-034	b2-typechecker-collection-expression-matrix	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/collection_expression_map_incompatible.zp	provisional
+
 BOOT-035	b2-typechecker-generic-declaration-matrix	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_conflict.zp	provisional
+
 BOOT-036	b2-typechecker-generic-structural-substitution	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_option_wrapper.zp	provisional
+
 BOOT-037	b2-typechecker-generic-wrapper-runtime-and-arity	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_runtime_wrappers.zp	provisional
+
 BOOT-038	b2-typechecker-generic-list-wrapper	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_list_wrapper_incompatible.zp	provisional
+
 BOOT-039	b2-typechecker-generic-map-wrapper-and-signature-split	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_map_wrapper_incompatible.zp	provisional
+
 BOOT-040	b2-typechecker-cross-module-generic-signatures	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_cross_module_incompatible.zp	provisional
+
 BOOT-041	b2-typechecker-generic-constraint-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_constraint_where.zp	provisional
+
 BOOT-042	b2-typechecker-explicit-generic-call-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_explicit_call_deferred.zp	provisional
+
 BOOT-043	b2-typechecker-generic-class-alias-deferred	B2 candidate status	B2 candidate status	bootstrap/b2/typecheck.zp	bootstrap/fixtures/typecheck/generic_alias_deferred.zp	provisional
+
 BOOT-044	b2-typed-ir-generic-identity-metadata	B2 candidate status	B2 candidate status	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_identity.zp	provisional
+
 BOOT-045	b2-lsp-generic-hover-metadata	B2 candidate status	Rust LSP reference only	bootstrap/fixtures/typecheck/generic_identity.zp	native/src/lsp.rs::hover_includes_generic_function_type_parameters	provisional
+
 BOOT-046	b2-lsp-generic-document-symbol-metadata	B2 candidate status	Rust LSP reference only	bootstrap/fixtures/typecheck/generic_identity.zp	native/src/lsp.rs::document_symbols_include_generic_type_parameters	provisional
+
 BOOT-047	b2-lsp-generic-signature-help-metadata	B2 candidate status	Rust LSP reference only	bootstrap/fixtures/typecheck/generic_identity.zp	native/src/lsp.rs::signature_help_includes_generic_function_declaration	provisional
+
 BOOT-048	b2-typechecker-nested-generic-substitution-reference	B2 candidate status	Rust reference only	bootstrap/fixtures/typecheck/generic_nested_option_list.zp,bootstrap/fixtures/typecheck/generic_nested_option_list_incompatible.zp	scripts/bootstrap/verify_b2_typecheck.sh::nested option/list generic substitution	provisional
+
 BOOT-049	b2-typechecker-generic-declaration-scope-reference	B2 candidate status	Rust reference only	bootstrap/fixtures/typecheck/generic_scope_positive.zp,bootstrap/fixtures/typecheck/generic_scope_external_incompatible.zp,bootstrap/fixtures/typecheck/generic_scope_parameter_incompatible.zp	scripts/bootstrap/verify_b2_typecheck.sh::generic declaration scope	provisional
+
 BOOT-050	b2-typechecker-imported-generic-body-reference	B2 candidate status	Rust reference only	bootstrap/fixtures/typecheck/generic_cross_module_body_library.zp,bootstrap/fixtures/typecheck/generic_cross_module_body.zp	scripts/bootstrap/verify_b2_typecheck.sh::imported generic body boundary	provisional
+
 BOOT-051	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arbitrary_complex_call.ast.json	canonical
+
 BOOT-052	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arbitrary_deep_nesting.ast.json	canonical
+
 BOOT-053	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/arbitrary_nested_expressions.ast.json	canonical
+
 BOOT-054	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/malformed_recovery.diagnostics.json	canonical
+
 BOOT-055	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/multi_diagnostic.diagnostics.json	canonical
+
 BOOT-056	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/numeric_literals.ast.json	canonical
+
 BOOT-057	parser-corpus-pending-capture	Parser Corpus Gaps	Parser corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/span_coverage.ast.json	canonical
+
 BOOT-058	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/delimiters.ast.json	canonical
+
 BOOT-059	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/delimiters.typed-ir.json	canonical
+
 BOOT-060	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/operators.ast.json	provisional-pending-capture
+
 BOOT-061	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/operators.typed-ir.json	provisional-pending-capture
+
 BOOT-062	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.ast.json	provisional-pending-capture
+
 BOOT-063	lexer-corpus-pending-capture	Lexer Corpus Gaps	Lexer corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b1/lexer.zp	bootstrap/fixtures/lexer/unicode.typed-ir.json	provisional-pending-capture
+
 BOOT-064	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_nested_option_list.typed-ir.json	provisional-pending-capture
+
 BOOT-065	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_scope_external_incompatible.typed-ir.json	provisional-pending-capture
+
 BOOT-066	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_scope_parameter_incompatible.typed-ir.json	provisional-pending-capture
+
 BOOT-067	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_cross_module_body.typed-ir.json	provisional-pending-capture
+
 BOOT-068	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_compound_bounds.typed-ir.json	provisional-pending-capture
+
 BOOT-069	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_explicit_call_deferred.typed-ir.json	provisional-pending-capture
+
 BOOT-070	typecheck-typedir-corpus-pending-capture	Type Checker Corpus Gaps	Type checker corpus á€¡á€€á€½á€¬á€¡á€á€±á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/fixtures/typecheck/generic_alias_deferred.typed-ir.json	provisional-pending-capture
+
 BOOT-071	typedir-missing-node-types	Typed-IR Missing Node Types	Typed-IR á€™á€œá€¯á€¶á€œá€±á€¬á€€á€ºá€žá€±á€¬ node á€¡á€™á€»á€­á€¯á€¸á€¡á€…á€¬á€¸á€™á€»á€¬á€¸	bootstrap/b2/typed_ir.zp	bootstrap/BOOTSTRAP_ADVANCEMENT_EVIDENCE.md#missing-ir-node-types	provisional-pending-capture
+
 B4-001	full-language	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml	bootstrap/contracts/B4_ACCEPTANCE.tsv	certified
+
 B4-002	cli-build-test-ownership	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	scripts/bootstrap/verify_b4_rust_free_contract.sh	bootstrap/fixtures/b4/full_language_surface.zp	certified
+
 B4-003	deterministic-rebuild	B4 Rust-Free Full-Language Compiler Contract	B4 Rust မသုံးသော Full-Language Compiler Contract	bootstrap/b4/compiler_driver.zp	bootstrap/fixtures/b4/full_language_surface.zp	provisional
+
 BOOT-072	parser-control-flow	Control flow	Control flow	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/for_in_list.zp	canonical
+
 BOOT-073	parser-try-catch	Error handling	Error handling	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/try_catch_simple.zp	canonical
+
 BOOT-074	parser-default-args	Function declarations	Function declarations	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/default_named_args.zp	canonical
+
 BOOT-075	parser-generic-annotations	Type annotations	Type annotations	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/generic_annotated_fn.zp	canonical
+
 BOOT-076	parser-member-access	Member access	Member access	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/member_access.zp	canonical
+
 BOOT-077	parser-postfix-indexing	Postfix indexing	Postfix indexing	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/postfix_indexing.zp	canonical
+
+B4-004	seed-generation-pipeline	Seed Generation Pipeline	Seed Generation Pipeline	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	provisional
+
+B4-005	pyton-host-audit	Python Host Modules Audit	Python Host Modules Audit	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	provisional
+
+B4-006	seed-compiler-ownership	Seed Compiler Ownership	Seed Compiler Ownership	host/zap-bootstrap/compile.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#seed-compiler	provisional
+
+B4-007	c-backend-ownership	C Backend Ownership	C Backend Ownership	host/zap-bootstrap/c_backend.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#c-backend	provisional
+
+B4-008	seed-metadata-requirements	Seed Metadata Requirements	Seed Metadata Requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml#seed_metadata_requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml	provisional

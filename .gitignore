@@ -20,3 +20,4 @@ dist/
 /*.zp
 rustup_*.snap
 rustup_*.assert
+*.obj

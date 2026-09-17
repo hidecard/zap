@@ -1,0 +1,5 @@
+import "bootstrap/b4/c_backend.zp"
+let test_bytecode = [{"op": "const", "value": "hello"}]
+let result = c_backend_generate(test_bytecode)
+say "Generated C lines: " + str(len(result))
+say "First line: " + result[0]

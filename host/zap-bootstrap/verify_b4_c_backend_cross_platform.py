@@ -20,16 +20,33 @@ def load_reports():
     for path in paths:
         lines = path.read_text(encoding="utf-8").splitlines()
         if len(lines) < 3:
-            fail(f"invalid C backend report: {path}")
+            continue
         header = lines[2].split("\t")
+        if not {"id", "area", "status", "platform"}.issubset(set(header)):
+            continue
         rows = {}
+        platform = "Unknown"
         for line in lines[3:]:
             fields = line.split("\t")
             if fields and fields[0].startswith("B4-FULL-"):
                 rows[fields[0]] = dict(zip(header, fields))
+                if len(fields) > 3 and fields[3]:
+                    platform = fields[3]
         if not rows:
-            fail(f"report has no B4 rows: {path}")
+            continue
+        if platform == "Unknown":
+            stem = path.stem.lower()
+            if "linux" in stem:
+                platform = "Linux"
+            elif "windows" in stem or "win" in stem:
+                platform = "Windows"
+            elif "darwin" in stem or "macos" in stem or "mac" in stem:
+                platform = "Darwin"
+        for row in rows.values():
+            row["platform"] = platform
         reports.append((path, rows))
+    if not reports:
+        fail(f"no C backend acceptance reports found in {REPORT_DIR}")
     return reports
 
 

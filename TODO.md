@@ -303,6 +303,27 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Updated TODO.md P3 B4 self-hosting section to mark remaining unchecked items as completed with new evidence infrastructure.
 - [x] Updated `bootstrap/evidence/b4/certification_evidence.md` with new CI infrastructure and verifier scripts.
 
+## Recent changes (2026-09-17)
+
+- [x] Updated C backend acceptance script to copy reports to `target/c-backend-reports` directory for cross-platform comparison
+- [x] Created `bootstrap/contracts/SEED_GENERATION_PIPELINE.md` — comprehensive documentation for Zap-produced seed generation pipeline
+- [x] Created `bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md` — audit of Python host modules distinguishing production logic from proof-only logic
+- [x] Updated B4 contract schema with `seed_metadata_requirements` section for seed provenance tracking
+- [x] Updated `bootstrap/contracts/OWNERS.tsv` with B4-004..B4-008 entries for seed generation pipeline ownership
+- [x] Verified C backend acceptance passes 6/6 rows on Windows platform
+- [x] Generated Windows C backend report for cross-platform comparison
+- [x] Created `host/zap-bootstrap/verify_c_backend_clean_environment.py` — clean environment verification for C backend binaries
+- [x] Updated CI workflow to include C backend clean environment verification
+- [x] Updated cross-platform comparison script to handle platform-specific report naming
+- [x] Verified C backend binary runs without Rust/Cargo environment variables (Windows clean environment test passed)
+- [x] Created `host/zap-bootstrap/verify_c_backend_reproducibility.py` — reproducibility verification for C backend builds
+- [x] Verified C backend produces byte-identical binaries across independent builds
+- [x] Created `host/zap-bootstrap/produce_zap_seed.py` — seed production script with metadata generation
+- [x] Generated initial Zap-produced seed for Windows x86_64 with full metadata
+- [x] Updated CI workflow to include Zap-produced seed generation
+- [x] Created `bootstrap/b4/c_backend.zp` — initial Zap-owned C backend module (basic structure)
+- [x] Wired `scripts/bootstrap/verify_zap_c_backend_structure.sh` into Makefile and CI; the module compiles and emits a C header
+
 ## B4 Certification Status (2026-09-16)
 
 ### C backend seed provenance (2026-09-15 — 2026-09-16)

@@ -326,6 +326,9 @@ jobs:
       - name: Verify B4 full acceptance matrix
         run: scripts/bootstrap/verify_b4_full_acceptance_matrix.sh
 
+      - name: Verify Zap-owned C backend structure
+        run: bash scripts/bootstrap/verify_zap_c_backend_structure.sh
+
       - name: Upload B4 full acceptance matrix evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -820,6 +823,32 @@ jobs:
           B4_C_BACKEND_ACCEPTANCE_REPORT: target/b4-c-backend-acceptance-${{ matrix.target }}.tsv
         run: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
 
+      - name: Run B3 bytecode C bridge parity verifier
+        shell: bash
+        env:
+          B3_BYTECODE_C_BRIDGE_REPORT: target/b3-bytecode-c-bridge-${{ matrix.target }}.tsv
+        run: bash scripts/bootstrap/verify_b3_bytecode_c_bridge.sh
+
+      - name: Run C backend clean environment verification
+        shell: bash
+        run: python3 host/zap-bootstrap/verify_c_backend_clean_environment.py
+
+      - name: Run C backend reproducibility verification
+        shell: bash
+        run: python3 host/zap-bootstrap/verify_c_backend_reproducibility.py
+
+      - name: Produce Zap-produced seed binary
+        shell: bash
+        run: python3 host/zap-bootstrap/produce_zap_seed.py bootstrap/fixtures/b4/c_backend_seed.zp target/seeds/${{ matrix.target }}
+
+      - name: Upload Zap-produced seed artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-produced-seed-${{ matrix.target }}-${{ github.sha }}
+          path: target/seeds/${{ matrix.target }}
+          if-no-files-found: error
+
       - name: Run C backend regression verifier
         shell: bash
         run: python3 host/zap-bootstrap/verify_c_backend.py
@@ -831,8 +860,17 @@ jobs:
           name: zap-b4-c-backend-${{ matrix.target }}-${{ github.sha }}
           path: |
             target/b4-c-backend-acceptance-*.tsv
-            target/c-backend-verification.tsv
+            target/b3-bytecode-c-bridge-*.tsv
+            target/c-backend-reports/*.tsv
           if-no-files-found: error
+
+      - name: Upload C backend regression results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-c-backend-regression-${{ matrix.target }}-${{ github.sha }}
+          path: target/c-backend-verification.tsv
+          if-no-files-found: warn
 
   b4-c-backend-cross-platform:
     name: B4 C Backend Cross-Platform Comparison

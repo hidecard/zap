@@ -2,6 +2,7 @@
 import hashlib
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -215,6 +216,10 @@ def cli_case():
 def main():
     report_path = Path(os.environ.get("B4_C_BACKEND_ACCEPTANCE_REPORT", ROOT / "target" / "b4-c-backend-acceptance.tsv"))
     report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Also copy to c-backend-reports directory for cross-platform comparison
+    reports_dir = Path(os.environ.get("B4_C_BACKEND_REPORT_DIR", ROOT / "target" / "c-backend-reports"))
+    reports_dir.mkdir(parents=True, exist_ok=True)
     results = {}
     failures = []
 
@@ -289,6 +294,11 @@ def main():
     if failures:
         raise SystemExit(1)
     print(f"B4 C backend acceptance passed: {len(checks)}/6 rows on {platform.system()}")
+
+    # Copy report to c-backend-reports directory for cross-platform comparison
+    cross_platform_report = reports_dir / f"{platform.system()}.tsv"
+    shutil.copy(report_path, cross_platform_report)
+    print(f"Copied report to {cross_platform_report}")
 
 
 if __name__ == "__main__":

@@ -33,6 +33,26 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from compile import compile_program  # noqa: E402
 
 
+CANONICAL_BYTECODE_KIND = "zap.bytecode"
+CANONICAL_BYTECODE_SCHEMA_VERSION = 1
+_DRIVER_BYTECODE_ARTIFACT_KIND = "bytecode"
+_BYTECODE_TARGET_OPS = frozenset(("jump", "jump_if_false", "jump_if_true"))
+_BYTECODE_SUPPORTED_OPS = frozenset((
+    "add", "and", "async_new", "await", "call", "const", "divide", "dup",
+    "equal", "error_is_error", "error_message", "error_new", "error_unwrap",
+    "export_value", "function_def", "greater", "greater_equal", "halt",
+    "import_module", "import_symbol", "in", "index", "jump",
+    "jump_if_false", "jump_if_true", "less", "less_equal", "list_append",
+    "list_contains", "list_get", "list_len", "list_reverse", "list_set",
+    "make_list", "make_map", "map_get", "map_has_key", "map_keys", "map_set",
+    "map_set_pair", "map_values", "multiply", "not", "not_equal", "option_is_none",
+    "option_is_some", "option_none", "option_some", "option_unwrap",
+    "option_unwrap_or", "or", "pop", "print", "remainder", "return_none",
+    "return_value", "str_concat", "struct_field_names", "struct_get",
+    "struct_has_field", "struct_new", "struct_set", "store", "subtract", "load",
+))
+
+
 def _c_escape(value):
     if isinstance(value, str):
         return json.dumps(value)
@@ -78,6 +98,173 @@ _BUILTIN_SPECS = {
     "diagnostic": (2, "vstr(diagnostic_format(bi_args[0]->str ? bi_args[0]->str : \"\", bi_args[1]->str ? bi_args[1]->str : \"\"))"),
     "equal": (2, "vstr(string_equals(bi_args[0], bi_args[1]) ? \"true\" : \"false\")"),
 }
+
+
+def _is_windows_host():
+    system = platform.system().lower()
+    return os.name == "nt" or system == "windows" or system.startswith(("msys", "mingw"))
+
+
+class BytecodeValidationError(ValueError):
+    """Raised when a bytecode artifact is not in the supported canonical form."""
+
+
+def _load_bytecode_artifact(bytecode):
+    if isinstance(bytecode, os.PathLike):
+        with open(os.fspath(bytecode), "r", encoding="utf-8-sig") as handle:
+            return json.load(handle)
+    if isinstance(bytecode, str):
+        stripped = bytecode.lstrip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            return json.loads(bytecode)
+        with open(bytecode, "r", encoding="utf-8-sig") as handle:
+            return json.load(handle)
+    return bytecode
+
+
+def _require_int(value, label, minimum=None, maximum=None):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise BytecodeValidationError("%s must be an integer" % label)
+    if minimum is not None and value < minimum:
+        raise BytecodeValidationError("%s must be >= %d" % (label, minimum))
+    if maximum is not None and value > maximum:
+        raise BytecodeValidationError("%s must be <= %d" % (label, maximum))
+    return value
+
+
+def _validate_instruction(instruction, index, instruction_count):
+    if not isinstance(instruction, dict):
+        raise BytecodeValidationError("instruction %d must be an object" % index)
+    op = instruction.get("op")
+    if not isinstance(op, str) or not op:
+        raise BytecodeValidationError("instruction %d has no string opcode" % index)
+    if op not in _BYTECODE_SUPPORTED_OPS:
+        raise BytecodeValidationError(
+            "instruction %d uses unsupported opcode %r" % (index, op))
+
+    if op in _BYTECODE_TARGET_OPS:
+        _require_int(
+            instruction.get("target"), "instruction %d target" % index,
+            minimum=0, maximum=instruction_count)
+
+    if op == "const" and not isinstance(
+            instruction.get("value"), (type(None), bool, int, float, str)):
+        raise BytecodeValidationError(
+            "instruction %d const value is not a scalar" % index)
+
+    if op == "function_def":
+        if not isinstance(instruction.get("name"), str):
+            raise BytecodeValidationError(
+                "instruction %d function name must be a string" % index)
+        params = instruction.get("params")
+        if not isinstance(params, list) or not all(isinstance(p, str) for p in params):
+            raise BytecodeValidationError(
+                "instruction %d function params must be strings" % index)
+        entry = _require_int(
+            instruction.get("entry"), "instruction %d entry" % index,
+            minimum=0, maximum=instruction_count)
+        end = _require_int(
+            instruction.get("end"), "instruction %d end" % index,
+            minimum=entry, maximum=instruction_count)
+        if "binding" in instruction and instruction["binding"] is not None \
+                and not isinstance(instruction["binding"], str):
+            raise BytecodeValidationError(
+                "instruction %d binding must be a string or null" % index)
+        captures = instruction.get("captures", [])
+        if not isinstance(captures, list) or not all(isinstance(c, str) for c in captures):
+            raise BytecodeValidationError(
+                "instruction %d captures must be strings" % index)
+
+    if op == "call":
+        if not isinstance(instruction.get("name"), str):
+            raise BytecodeValidationError(
+                "instruction %d call name must be a string" % index)
+        _require_int(
+            instruction.get("argc", 0), "instruction %d call argc" % index,
+            minimum=0)
+
+    if op == "make_list":
+        _require_int(
+            instruction.get("count", 0), "instruction %d make_list count" % index,
+            minimum=0, maximum=64)
+
+
+def _canonical_instructions(bytecode):
+    artifact = _load_bytecode_artifact(bytecode)
+    if not isinstance(artifact, dict):
+        raise BytecodeValidationError("canonical bytecode must be a JSON object")
+
+    if artifact.get("kind") == CANONICAL_BYTECODE_KIND:
+        if artifact.get("schema_version") != CANONICAL_BYTECODE_SCHEMA_VERSION:
+            raise BytecodeValidationError(
+                "canonical bytecode schema_version must be %d" %
+                CANONICAL_BYTECODE_SCHEMA_VERSION)
+    elif artifact.get("artifact_kind") == _DRIVER_BYTECODE_ARTIFACT_KIND:
+        if "schema_version" in artifact and artifact["schema_version"] != \
+                CANONICAL_BYTECODE_SCHEMA_VERSION:
+            raise BytecodeValidationError(
+                "driver bytecode schema_version must be %d" %
+                CANONICAL_BYTECODE_SCHEMA_VERSION)
+    else:
+        raise BytecodeValidationError(
+            "canonical bytecode must have kind %r or artifact_kind %r" %
+            (CANONICAL_BYTECODE_KIND, _DRIVER_BYTECODE_ARTIFACT_KIND))
+
+    instructions = artifact.get("instructions")
+    if not isinstance(instructions, list):
+        raise BytecodeValidationError("canonical bytecode instructions must be a list")
+    instruction_count = len(instructions)
+    for index, instruction in enumerate(instructions):
+        _validate_instruction(instruction, index, instruction_count)
+    return list(instructions)
+
+
+def validate_canonical_bytecode(bytecode):
+    """Validate and return instructions from a canonical B3/B4 bytecode artifact."""
+    return _canonical_instructions(bytecode)
+
+
+def parse_canonical_bytecode(bytecode):
+    """Compatibility alias for validate_canonical_bytecode."""
+    return validate_canonical_bytecode(bytecode)
+
+
+def emit_c_from_bytecode(bytecode, out_path):
+    """Emit C from a canonical B3/B4 bytecode artifact."""
+    return emit_c(validate_canonical_bytecode(bytecode), out_path)
+
+
+def emit_c_from_bytecode_file(bytecode_path, out_path):
+    """Load a canonical bytecode JSON file and emit C."""
+    with open(bytecode_path, "r", encoding="utf-8-sig") as handle:
+        return emit_c_from_bytecode(json.load(handle), out_path)
+
+
+def build_native_binary_from_bytecode(bytecode, out_prefix, compiler=None, work_dir=None):
+    """Emit and compile a native executable from canonical bytecode."""
+    instructions = validate_canonical_bytecode(bytecode)
+    prefix = os.fspath(out_prefix)
+    exe_path = prefix
+    if _is_windows_host() and not prefix.lower().endswith(".exe"):
+        exe_path += ".exe"
+    work_dir = work_dir or os.path.dirname(os.path.abspath(prefix)) or "."
+    os.makedirs(work_dir, exist_ok=True)
+    c_path = os.path.join(
+        work_dir, os.path.splitext(os.path.basename(exe_path))[0] + ".c")
+    emit_c(instructions, c_path)
+    compile_c(c_path, exe_path, compiler=compiler)
+    return {
+        "c_path": c_path,
+        "exe_path": exe_path,
+        "compiler": compiler or find_c_compiler(),
+    }
+
+
+def build_native_binary_from_bytecode_file(bytecode_path, out_prefix, compiler=None):
+    """Load a canonical bytecode JSON file and compile a native executable."""
+    with open(bytecode_path, "r", encoding="utf-8-sig") as handle:
+        return build_native_binary_from_bytecode(
+            json.load(handle), out_prefix, compiler=compiler)
 
 
 def emit_c(program, out_path):
@@ -942,6 +1129,10 @@ def emit_c(program, out_path):
         elif op == "not":
             lines.append("  a = pop(&st);")
             lines.append("  push(&st, vstr(to_bool(a) ? \"false\" : \"true\"));")
+        elif op == "dup":
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, a);")
+            lines.append("  push(&st, a);")
         elif op == "pop":
             lines.append("  (void)pop(&st);")
         elif op == "print":
@@ -978,6 +1169,10 @@ def emit_c(program, out_path):
             lines.append("  if (a->kind != VK_LIST && a->kind != VK_MAP) { fprintf(stderr, \"list_len_non_list\\n\"); exit(1); }")
             lines.append("  push(&st, vstr(from_int(a->count)));")
         elif op == "list_get":
+            lines.append("  b = pop(&st);")
+            lines.append("  a = pop(&st);")
+            lines.append("  push(&st, index_get(a, b));")
+        elif op == "index":
             lines.append("  b = pop(&st);")
             lines.append("  a = pop(&st);")
             lines.append("  push(&st, index_get(a, b));")
@@ -1167,7 +1362,7 @@ def find_c_compiler():
     for candidate in preferred:
         if candidate and os.path.isfile(candidate) and os.access(candidate, os.X_OK):
             return candidate
-    if platform.system() == "Windows":
+    if _is_windows_host():
         cl_candidates = [
             os.environ.get("ZAP_MSVC_CL"),
         ]
@@ -1221,15 +1416,31 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
         vcvars = _find_vcvars(cc)
         fd, bat_path = tempfile.mkstemp(suffix=".bat", prefix="zap_c_backend_build_")
         os.close(fd)
-        bat_lines = ["@echo off"]
-        if vcvars:
-            bat_lines.append(f'call "{vcvars}" >nul')
-        bat_lines.append(f'"{cc}" /Brepro /nologo /O2 /Fe:"{out_path}" "{c_path}"')
-        with open(bat_path, "w", newline="\r\n") as fh:
-            fh.write("\n".join(bat_lines) + "\n")
-        args = ["cmd", "/c", bat_path]
+        fd, object_path = tempfile.mkstemp(suffix=".obj", prefix="zap_c_backend_")
+        os.close(fd)
+        try:
+            os.remove(object_path)
+            bat_lines = ["@echo off"]
+            if vcvars:
+                bat_lines.append(f'call "{vcvars}" >nul')
+            bat_lines.append(
+                f'"{cc}" /Brepro /nologo /O2 /Fo:"{object_path}" /Fe:"{out_path}" "{c_path}"')
+            with open(bat_path, "w", newline="\r\n") as fh:
+                fh.write("\n".join(bat_lines) + "\n")
+            args = ["cmd", "/c", bat_path]
+        except Exception:
+            try:
+                os.remove(object_path)
+            except OSError:
+                pass
+            try:
+                os.remove(bat_path)
+            except OSError:
+                pass
+            raise
     else:
         bat_path = None
+        object_path = None
         args = [cc, "-O2", "-o", out_path, c_path]
     if extra_args:
         args.extend(extra_args)
@@ -1237,6 +1448,11 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
     if bat_path:
         try:
             os.remove(bat_path)
+        except OSError:
+            pass
+    if object_path:
+        try:
+            os.remove(object_path)
         except OSError:
             pass
     if result.returncode != 0:
@@ -1271,7 +1487,7 @@ def build_native_binary_from_file(source_path, out_prefix, compiler=None):
     """Compile a Zap source file to a native executable and report paths."""
     with open(source_path, "r", encoding="utf-8-sig") as fh:
         source = fh.read()
-    exe_path = out_prefix + (".exe" if platform.system() == "Windows" else "")
+    exe_path = out_prefix + (".exe" if _is_windows_host() else "")
     build_native_binary(source, exe_path,
                         work_dir=os.path.dirname(os.path.abspath(out_prefix)) or ".",
                         compiler=compiler)

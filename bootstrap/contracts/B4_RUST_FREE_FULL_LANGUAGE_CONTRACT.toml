@@ -42,3 +42,17 @@ package_build = "bootstrap/b3/package.zp"
 test_runner = "bootstrap/b4/runner.zp"
 rebuild_manifest = "bootstrap/contracts/B4_ACCEPTANCE.tsv"
 seed_provenance = "host/zap-bootstrap/c_backend.py"
+
+[seed_metadata_requirements]
+# Each generated seed must include a SEED.tsv metadata file with these fields:
+commit = "git commit SHA used for seed generation"
+platform = "target triple (e.g., x86_64-unknown-linux-gnu)"
+artifact = "binary filename (e.g., zap or zap.exe)"
+built_with = "toolchain used (e.g., python3-c-backend, cargo-rust, zap-owned)"
+rust_free_provenance = "boolean indicating no Rust/Cargo in compilation chain"
+certification_ready = "boolean indicating seed meets B4 certification requirements"
+status = "seed status (e.g., ci-built-native-seed, zap-produced-seed)"
+bytecode_digest = "SHA-256 of intermediate bytecode (if applicable)"
+c_source_digest = "SHA-256 of generated C source (if applicable)"
+native_digest = "SHA-256 of final native binary"
+timestamp = "ISO 8601 timestamp of seed generation"
