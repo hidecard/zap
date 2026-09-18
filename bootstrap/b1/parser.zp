@@ -3922,6 +3922,12 @@ export fn parse_general(source, source_name):
 
         return json({"diagnostics": [generic_diagnostic], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
+    let while_else = while_else_diagnostic(source, source_name)
+
+    if while_else != none:
+
+        return json({"diagnostics": [while_else], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+
     let indentation = indentation_stack_diagnostic(lines, source_name)
 
     if indentation != none:

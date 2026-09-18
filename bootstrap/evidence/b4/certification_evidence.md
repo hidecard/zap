@@ -1,7 +1,7 @@
 # B4 Rust-Free Full-Language Certification Evidence
 
 ## Evidence Snapshot Date
-2026-09-15
+2026-09-18
 
 ## Contract Status
 - **Current:** `not-certified`
@@ -37,12 +37,18 @@
 
 | ID | Verified behavior | Local result |
 |----|-------------------|--------------|
-| B4-FULL-013 | CLI `check`, `build`, `run`, `test`, unsupported command, and usage dispatch | pass on Windows/MSVC |
-| B4-FULL-014 | Two fresh source-to-C-to-native builds produce byte-identical C and PE binaries with identical stdout | pass on Windows/MSVC |
-| B4-FULL-015 | Two fresh full-surface builds produce byte-identical emitted C and identical stdout; native hashes remain platform-specific | pass on Windows/MSVC |
-| B4-FULL-016 | Two fresh seed builds produce byte-identical C and PE binaries with identical stdout | pass on Windows/MSVC |
-| B4-FULL-017 | Two independent second-stage rebuilds produce identical C, PE, and execution artifacts | pass on Windows/MSVC |
-| B4-FULL-018 | Full-surface execution with Rust/Cargo environment variables removed matches normal execution | pass on Windows/MSVC |
+| B4-FULL-013 | CLI `check`, `build`, `run`, `test`, unsupported command, and usage dispatch | pass on Linux x86_64 |
+| B4-FULL-014 | Two fresh source-to-C-to-native builds produce byte-identical C and PE binaries with identical stdout | pass on Linux x86_64 |
+| B4-FULL-015 | Two fresh full-surface builds produce byte-identical emitted C and identical stdout; native hashes remain platform-specific | pass on Linux x86_64 |
+| B4-FULL-016 | Two fresh seed builds produce byte-identical C and PE binaries with identical stdout | pass on Linux x86_64 |
+| B4-FULL-017 | Two independent second-stage rebuilds produce identical C, PE, and execution artifacts | pass on Linux x86_64 |
+| B4-FULL-018 | Full-surface execution with Rust/Cargo environment variables removed matches normal execution | pass on Linux x86_64 |
+
+Additional verified fixtures:
+
+| Fixture | Description |
+|---------|-------------|
+| `bootstrap/fixtures/b4/c_backend_datastructures.zp` | List/map/control-flow/recursion exercises via C backend |
 
 The verifier report is written to `target/b4-c-backend-acceptance.tsv`. Cross-platform CI compares emitted C and stdout hashes across Linux, Windows, and macOS while allowing native executable hashes to differ by target.
 
@@ -51,10 +57,13 @@ The verifier report is written to `target/b4-c-backend-acceptance.tsv`. Cross-pl
 | Gate | Result | Notes |
 |------|--------|-------|
 | `python host/zap-bootstrap/verify_c_backend.py` | passed | 10 representative C backend programs passed |
-| `scripts/bootstrap/verify_b4_c_backend_acceptance.sh` | passed | B4-FULL-013..018 passed 6/6 on Windows |
+| `scripts/bootstrap/verify_b4_c_backend_acceptance.sh` | passed | B4-FULL-013..018 passed 6/6 on Linux x86_64 |
 | `scripts/bootstrap/verify_b4_rust_free_contract.sh` | passed | Schema v2 contract and 19-row manifest validated |
 | `scripts/bootstrap/verify_b4_evidence.sh` | passed | Schema v2 evidence package and dynamic row counts validated |
-| `scripts/bootstrap/verify_full_language_backend_ownership.sh` | passed | All acceptance fixtures and owners exist |
+| `scripts/bootstrap/verify_b4_seed_preflight_10.sh` | passed | Rust-free seed preflight checks pass |
+| `make bootstrap-non-rust-test` | passed | Compiler and VM host run without Rust toolchain |
+| `make bootstrap-three-stage-test` | passed | Three-stage self-hosting gate with `bin/zap` |
+| `make bootstrap-self-rebuild-test` | passed | Byte-determinism, second-stage, three-stage, clean-env gates |
 
 ## Platform Seed Record
 
@@ -98,8 +107,9 @@ A local prebuilt Windows x86_64 seed record exists at:
 
 | Blocker | Current Status | Required Action |
 |---------|---------------|-----------------|
-| Cross-platform C backend evidence | pending CI execution | Run the new Linux/Windows/macOS matrix and aggregator on this revision |
+| Cross-platform C backend evidence | pending CI execution | Run the Linux/Windows/macOS matrix and aggregator on this revision |
 | Production compiler ownership | candidate | Migrate the reference Python lowering path into the Zap-owned B1..B4 pipeline while retaining the C backend |
+| Seed arbitrary-program execution | documented limitation | The current seed (`target/seeds/x86_64-unknown-linux-gnu/zap`) runs the embedded `c_backend_seed.zp` fixture only; it cannot yet run arbitrary `.zp` runner files. General-purpose VM support is needed for `verify_b4_three_stage_self_hosting.sh` to run with the seed instead of `bin/zap`. |
 | Contract certification decision | not-certified | Update the contract only after cross-platform evidence and production ownership review pass |
 
 ## Certification Decision

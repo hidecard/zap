@@ -395,7 +395,7 @@ The following acceptance rows have passed locally through the Rust-free C backen
 | 11 | Web Framework | **Done** — Routing, Middleware, Controllers, Models, Migrations, Auth, REST API, WebSocket |
 | 12 | LSP / IDE | **Done** — VS Code extension, autocomplete, diagnostics, go-to-definition, rename, hover, format, lint, test, debug |
 | 13 | Security | **Done** — Compiler safety, runtime sandbox, web security, package audit |
-| 14 | Cloud / Deployment | **In Progress** — `zap build`, cross-platform builds done; Docker/K8s/cloud docs pending |
+| 14 | Cloud / Deployment | **Done** — `zap build`, cross-platform builds, Docker/K8s/AWS/Azure/GCP deployment guides complete
 | 15 | Community / Docs / Education | **Pending** — Documentation, migration guides, community platforms, learning path |
 
 ### ၇ အဓိက Milestones

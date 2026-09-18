@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 6/6 pass; B4 evidence gates pass; B4 still `not-certified` pending cross-platform seed evidence
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass; B4 still `not-certified` pending cross-platform CI evidence
 
 ---
 
@@ -210,13 +210,14 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ## Phase 4 — Roadmap Steps 14–15 (after B4 certification)
 
-### Step 13: Step 14 — Cloud/Deployment documentation
+### Step 13: Step 14 — Cloud/Deployment documentation — COMPLETED
 
-- [ ] Write Docker deployment guide with multi-platform support
-- [ ] Write Kubernetes deployment guide with scaling/health-check sections
-- [ ] Document cloud deployment patterns (AWS, GCP, Azure minimum viable configs)
-- [ ] Add deployment security checklist (TLS, secrets, sandbox, quota)
-- [ ] Update CHANGELOG and roadmap to mark Step 14 complete
+- [x] Write Docker deployment guide with multi-platform support
+- [x] Write Kubernetes deployment guide with scaling/health-check sections
+- [x] Document cloud deployment patterns (AWS, GCP, Azure minimum viable configs)
+- [x] Add deployment security checklist (TLS, secrets, sandbox, quota)
+- [x] Update CHANGELOG and roadmap to mark Step 14 complete
+- **Result:** `docs/DEPLOYMENT_CLOUD_EN.md` — Docker, Kubernetes, AWS, Azure, GCP deployment patterns with security principles
 
 ### Step 14: Step 15 — Community/Docs/Education platform
 
@@ -234,7 +235,7 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 |---|---|---|
 | M1 — Stable Language | ✅ Complete | — |
 | M2 — Native Compiler | ✅ Complete | — |
-| M3 — Self-hosted Zap | 🔄 In Progress | Phase 0 Steps 1-2 complete; Step 3 pending CI; B4 still not-certified |
+| M3 — Self-hosted Zap | 🔄 In Progress | Phase 0 Steps 1-2 complete; all B4 evidence gates pass; B4 still not-certified pending cross-platform CI |
 | M4 — Package Ecosystem | ✅ Complete | — |
 | M5 — Full-stack Web | ✅ Complete | — |
 | M6 — Developer Experience | ✅ Complete | — |
@@ -257,7 +258,7 @@ PHASE 1 (P0 reliability — high priority, parallelizable):
   Step 7: P0-04 Memory contract completion
   Step 8: P0-RS-01 Runtime state migration
   Step 9: P0-05 Async boundary completion
-  Step 10: P0-06 Version gate (verify)
+  Step 10: P0-06 Version gate — VERIFIED (zero drift across all surfaces)
 
 PHASE 2 (P1 production — medium priority):
   Step 11: P1-05 Verification expansion (fuzz/heap/platform)
@@ -267,6 +268,6 @@ PHASE 3 (P2 ecosystem — after P0/P1):
   Step 13: P2 items maintenance
 
 PHASE 4 (Roadmap 14-15 — after B4):
-  Step 14: Cloud/Deployment docs
+  Step 14: Cloud/Deployment docs — COMPLETED
   Step 15: Community/Education platform
 ```

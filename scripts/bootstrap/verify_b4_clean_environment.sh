@@ -52,7 +52,10 @@ true
 EOF
 
 run_zap() {
-  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN:-native/target/release/zap.exe}}"
+  local seed="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-${ROOT_DIR}/bin/zap}}}"
+  if [[ ! -x "$seed" && -x "${seed}.exe" ]]; then
+    seed="${seed}.exe"
+  fi
   [ -x "$seed" ] || fail "prebuilt Zap seed required; set ZAP_BOOTSTRAP_BIN (Cargo fallback is disabled)"
   env -u CARGO -u CARGO_HOME -u RUSTC -u RUSTUP_HOME "$seed" "$1"
 }
