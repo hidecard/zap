@@ -29,7 +29,7 @@ schema_version=$(grep '^schema_version = ' "$CONTRACT" | cut -d' ' -f3)
 acceptance_schema=$(awk -F '\t' 'NR == 1 { print $2 }' "$ACCEPTANCE")
 [[ "$acceptance_schema" == "$schema_version" ]] || fail "acceptance manifest schema version $acceptance_schema does not match contract schema version $schema_version"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
-contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
+contract_status=$(grep -m1 '^status = ' "$CONTRACT" | cut -d'"' -f2)
 [[ "$contract_status" == "not-certified" || "$contract_status" == "certified" ]] || fail "invalid B4 contract status: $contract_status"
 for required in \
   'full_language_surface = true' \

@@ -29,7 +29,7 @@ pass() {
 
 grep -q '^schema_version = 2$' "$CONTRACT" || fail "contract schema is not version 2"
 grep -q '^contract_id = "B4-RUST-FREE-FULL-LANGUAGE"$' "$CONTRACT" || fail "wrong contract id"
-contract_status=$(grep '^status = ' "$CONTRACT" | cut -d'"' -f2)
+contract_status=$(grep -m1 '^status = ' "$CONTRACT" | cut -d'"' -f2)
 [[ "$contract_status" == "not-certified" || "$contract_status" == "certified" ]] || fail "invalid contract status: $contract_status"
 
 for required in \

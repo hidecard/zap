@@ -1457,6 +1457,14 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
             pass
     if result.returncode != 0:
         raise RuntimeError(f"C compiler failed: {' '.join(args)}\n{result.stderr}")
+    strip_path = shutil.which("strip")
+    if strip_path and not _is_windows_host():
+        for section in (".note.gnu.build-id", ".note.gnu.property", ".note.ABI-tag"):
+            subprocess.run(
+                [strip_path, "--remove-section=" + section, out_path],
+                capture_output=True, text=True)
+        subprocess.run(
+            [strip_path, out_path], capture_output=True, text=True)
     return {
         "compiler": cc,
         "command": args,
