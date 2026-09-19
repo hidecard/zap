@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed; Phase 1 Step 4 (P0-01 legacy/native parity) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -103,12 +103,12 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 5: P0-02 — Specification ownership expansion
 
-- [ ] Catalog all remaining fragmented rules not yet in `LANGUAGE_SPEC_EN.md`/`LANGUAGE_SPEC_MM.md`
-- [ ] Assign canonical rule IDs and bilingual sections for each
-- [ ] Map every public syntax/type/runtime rule to a fixture or test owner
-- [ ] Add conformance fixture IDs beside normative rules
-- [ ] Apply compatibility/deprecation template to all new rules
-- [ ] Run release preflight ownership gate (currently passes for 37 rules; expand)
+- [x] Catalog all remaining fragmented rules not yet in `LANGUAGE_SPEC_EN.md`/`LANGUAGE_SPEC_MM.md`
+- [x] Assign canonical rule IDs and bilingual sections for each
+- [x] Map every public syntax/type/runtime rule to a fixture or test owner
+- [x] Add conformance fixture IDs beside normative rules
+- [x] Apply compatibility/deprecation template to all new rules
+- [x] Run release preflight ownership gate (expanded from 37 to 79 rules; passes in CI)
 
 **Gate:** No unowned public rule; every rule has fixture ownership; ownership gate passes in CI
 
