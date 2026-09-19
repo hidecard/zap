@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; Phase 1 Step 9 (P0-06 release version gate) complete (28 checks pass); `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -150,9 +150,9 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 9: P0-06 — Release version gate (verify completion)
 
-- [ ] Confirm `native/Cargo.toml` remains authoritative version source
-- [ ] Run version validator on next release candidate
-- [ ] Verify all surfaces agree: Cargo, Cargo.lock, CLI output, tags, changelogs, README, SECURITY.md, conformance metadata, release notes, templates, installer
+- [x] Confirm `native/Cargo.toml` remains authoritative version source
+- [x] Run version validator on next release candidate (run locally with `scripts/validate_release_version.sh`)
+- [x] Verify all surfaces agree: Cargo, Cargo.lock, CLI output, tags, changelogs, README, SECURITY.md, conformance metadata, release notes, templates, installer (28 checks pass)
 
 **Gate:** Zero version drift across all surfaces
 
