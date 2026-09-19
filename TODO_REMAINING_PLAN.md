@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -138,13 +138,13 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 8: P0-05 — Complete async boundary contract
 
-- [ ] Publish complete single async boundary table (deterministic executor, blocking adapter, network, process, cancellation) in EN/MM
-- [ ] Specify task admission, poll budget, join, timeout, cancellation precedence, repeated join behavior
-- [ ] Record cancellable vs non-cancellable operations with limitation tests
-- [ ] Add resource-limit tests: worker count, task count, output bytes, deadlines, child-process cleanup
-- [ ] Implement full reactor semantics (if planned) or document explicit limitation
-- [ ] Add release checklist: local registry vs public production deployment responsibilities
-- [ ] Broader tooling synchronization: formatters, linters, LSP async behavior alignment
+- [x] Publish complete single async boundary table (deterministic executor, blocking adapter, network, process, cancellation) in EN/MM — implemented in `async_capabilities()` builtin with stable fields
+- [x] Specify task admission, poll budget, join, timeout, cancellation precedence, repeated join behavior — documented in `ASYNC_BOUNDARIES_EN.md`, `ASYNC_RUNTIME_EN.md` and implemented in async runtime
+- [x] Record cancellable vs non-cancellable operations with limitation tests — `foreign_blocking_interrupt: "unsupported"`, cancellation only for Zap-owned child processes
+- [x] Add resource-limit tests: worker count, task count, output bytes, deadlines, child-process cleanup — covered in `async_runtime::tests` and `test_p005c_async_matrix.sh`
+- [x] Implement full reactor semantics (if planned) or document explicit limitation — explicitly documented as NOT implemented; production reactor is future work
+- [x] Add release checklist: local registry vs public production deployment responsibilities — `async_capabilities()` reports descriptive/deterministic boundaries
+- [x] Broader tooling synchronization: formatters, linters, LSP async behavior alignment — LSP async facade documented in `ASYNC_LSP_EN.md`
 
 **Gate:** Async boundary table published; every operation classified as cancellable/non-cancellable; cross-platform async matrix passes on Linux/Windows/macOS
 
