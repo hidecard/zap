@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test bootstrap-b4-c-backend-test bootstrap-b4-c-backend-structure-test bootstrap-b3-bytecode-c-bridge-test test package clean
+.PHONY: native native-run native-test host-test legacy-test legacy-parity legacy-parity-inventory bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test bootstrap-b4-c-backend-test bootstrap-b4-c-backend-structure-test bootstrap-b3-bytecode-c-bridge-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -92,6 +92,12 @@ bootstrap-b3-bytecode-c-bridge-test:
 
 legacy-test:
 	cd legacy && python3 -m unittest -v test_zap.py
+
+legacy-parity:
+	bash scripts/test_p001_parity.sh
+
+legacy-parity-inventory:
+	bash scripts/inventory_legacy_parity.sh
 
 test: legacy-test native-test host-test bootstrap-test bootstrap-b1-test bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-b3-test bootstrap-vm-test bootstrap-clean-repo-test bootstrap-refactor-smoke-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-self-rebuild-test bootstrap-b4-c-backend-test bootstrap-b4-c-backend-structure-test bootstrap-b3-bytecode-c-bridge-test
 

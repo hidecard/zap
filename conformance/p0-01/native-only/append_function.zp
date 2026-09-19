@@ -1,0 +1,3 @@
+let items = [1, 2]
+items = append(items, 3)
+say items

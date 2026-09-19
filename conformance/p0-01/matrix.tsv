@@ -1,7 +1,14 @@
 # id	policy	fixture
 P001-COMMON-HELLO	common	common/hello.zp
 P001-COMMON-CONDITIONAL	common	common/conditional.zp
-P001-NATIVE-LET	native-only	native-only/let_binding.zp
 P001-COMMON-FUNCTION	common	common/function_body.zp
+P001-NATIVE-ARITHMETIC	native-only	native-only/arithmetic.zp
+P001-NATIVE-WHILE-LOOP	native-only	native-only/while_loop.zp
+P001-NATIVE-VARIABLES	native-only	native-only/variables.zp
+P001-NATIVE-LET	native-only	native-only/let_binding.zp
+P001-NATIVE-APPEND	native-only	native-only/append_function.zp
+P001-NATIVE-ASSERT	native-only	native-only/assert_statement.zp
+P001-NATIVE-JOIN	native-only	native-only/join_function.zp
 P001-REJECT-GROUP	rejected	rejected/unclosed_group.zp
 P001-REJECT-STRING	rejected	rejected/unterminated_string.zp
+P001-REJECT-INVALID-INDENTATION	rejected	rejected/invalid_indentation.zp

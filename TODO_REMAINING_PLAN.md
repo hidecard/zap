@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass; B4 still `not-certified` pending cross-platform CI evidence
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed; Phase 1 Step 4 (P0-01 legacy/native parity) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added
 
 ---
 
@@ -46,18 +46,18 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 3: Cross-platform clean-environment evidence (Linux/Windows/macOS)
 
-- [ ] Run Linux x86_64 clean-environment gate with Zap-produced seed (Step 1 result)
-- [ ] Run Windows x86_64 clean-environment gate with Zap-produced seed via CI (`b4-platform-evidence` job)
-- [ ] Run macOS ARM64 clean-environment gate with Zap-produced seed via CI
-- [ ] Compare byte-for-byte determinism across all three platforms for:
-  - B4-FULL-014: self-rebuild artifacts
-  - B4-FULL-015: cross-platform determinism (emitted C + stdout hashes)
-  - B4-FULL-016: byte-determinism (C and PE binaries)
-  - B4-FULL-017: second-stage rebuild artifacts
-  - B4-FULL-018: clean-environment execution matches normal execution
+- [x] Updated `verify_b4_evidence.sh` to support Zap-produced seeds (`--seed-path` arg + auto-detection)
+- [x] Script correctly identifies specialized seed limitation and skips executable gates with clear message
+- [x] Added CI step in `c-backend` job to run `verify_b4_evidence.sh --run-gates` with Zap-produced seed on all 3 platforms
+- [ ] Run Linux x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
+- [ ] Run Windows x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
+- [ ] Run macOS ARM64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
+- [x] Compare byte-for-byte determinism across all three platforms for C-backend acceptance (done in `b4-c-backend-cross-platform` job)
 - [ ] Update `bootstrap/contracts/OWNERS.tsv` B4-004..B4-008 entries if seed pipeline changes
 
-**Gate:** All B4-FULL-013..019 rows pass on all three platforms with Zap-produced seed
+**Gate:** All B4-FULL-013..019 rows pass on all three platforms with Zap-produced seed (C-backend acceptance via Python C backend; executable gates require general-purpose Zap VM)
+
+**Note:** C-backend acceptance (6 rows B4-FULL-013..018) already runs cross-platform in CI `c-backend` job and is compared in `b4-c-backend-cross-platform` job. The executable gates (byte-determinism, second-stage, clean-env, three-stage) require a general-purpose Zap VM which is not yet available. The updated `verify_b4_evidence.sh` runs C-backend acceptance with Zap-produced seed and documents the executable gate limitation.
 
 ### Step 4: Audit Python lowering modules — COMPLETED
 

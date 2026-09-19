@@ -1,0 +1,2 @@
+let items = ["a", "b", "c"]
+say join(items, ", ")

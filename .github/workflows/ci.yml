@@ -539,6 +539,19 @@ jobs:
           path: target/p001-parity-report.tsv
           if-no-files-found: warn
 
+      - name: Inventory tracked native/legacy fixtures
+        env:
+          ZAP_LEGACY_PARITY_INVENTORY: target/legacy-parity-inventory.tsv
+        run: bash scripts/inventory_legacy_parity.sh
+
+      - name: Upload P0-01 inventory evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-p001-parity-inventory-${{ github.sha }}
+          path: target/legacy-parity-inventory.tsv
+          if-no-files-found: warn
+
       - name: Validate P0-02 specification ownership index
         env:
           ZAP_SPEC_OWNERSHIP_REPORT: target/spec-ownership-report.tsv
@@ -841,6 +854,20 @@ jobs:
         shell: bash
         run: python3 host/zap-bootstrap/produce_zap_seed.py bootstrap/fixtures/b4/c_backend_seed.zp target/seeds/${{ matrix.target }}
 
+      - name: Run B4 evidence verification with Zap-produced seed
+        shell: bash
+        run: |
+          seed_path="target/seeds/${{ matrix.target }}/zap"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            seed_path="target/seeds/${{ matrix.target }}/zap.exe"
+          fi
+          if [[ -x "$seed_path" ]]; then
+            bash scripts/bootstrap/verify_b4_evidence.sh --run-gates --seed-path="$seed_path"
+          else
+            echo "ERROR: Zap-produced seed not found at $seed_path"
+            exit 1
+          fi
+
       - name: Upload Zap-produced seed artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -862,6 +889,7 @@ jobs:
             target/b4-c-backend-acceptance-*.tsv
             target/b3-bytecode-c-bridge-*.tsv
             target/c-backend-reports/*.tsv
+            target/b4-evidence-report.tsv
           if-no-files-found: error
 
       - name: Upload C backend regression results
