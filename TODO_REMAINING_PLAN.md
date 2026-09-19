@@ -49,9 +49,9 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 - [x] Updated `verify_b4_evidence.sh` to support Zap-produced seeds (`--seed-path` arg + auto-detection)
 - [x] Script correctly identifies specialized seed limitation and skips executable gates with clear message
 - [x] Added CI step in `c-backend` job to run `verify_b4_evidence.sh --run-gates` with Zap-produced seed on all 3 platforms
-- [ ] Run Linux x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
-- [ ] Run Windows x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
-- [ ] Run macOS ARM64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (pending CI run)
+- [ ] Run Linux x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (in progress - triggered by push 46b5807)
+- [ ] Run Windows x86_64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (in progress)
+- [ ] Run macOS ARM64 `verify_b4_evidence.sh --run-gates` with Zap-produced seed via CI (in progress)
 - [x] Compare byte-for-byte determinism across all three platforms for C-backend acceptance (done in `b4-c-backend-cross-platform` job)
 - [ ] Update `bootstrap/contracts/OWNERS.tsv` B4-004..B4-008 entries if seed pipeline changes
 
@@ -92,12 +92,12 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 4: P0-01 — Broader legacy/native parity inventory
 
-- [ ] Inventory all remaining legacy fixtures beyond the current 6-case matrix
-- [ ] Classify each behavior as: normative, compatibility, deprecated, or rejected
-- [ ] Build versioned parity matrix TSV with fixture IDs
-- [ ] Add executable conformance command (`zap conformance` or equivalent) that runs native + legacy with normalized output
-- [ ] Define migration guidance for native-only behavior differences
-- [ ] Add release gating for unapproved parity drift (CI fails on drift)
+- [x] Inventory all remaining legacy fixtures beyond the current 6-case matrix (266 tracked, classified via inventory_legacy_parity.py)
+- [x] Classify each behavior as: normative, compatibility, deprecated, or rejected
+- [x] Build versioned parity matrix TSV with fixture IDs (conformance/p0-01/matrix.tsv with 14 cases)
+- [x] Add executable conformance command (`zap conformance`) that runs native + legacy with normalized output
+- [x] Define migration guidance for native-only behavior differences (docs/P001_MIGRATION_GUIDANCE_EN.md, _MM.md)
+- [x] Add release gating for unapproved parity drift (CI fails on drift via test_p001_parity.sh)
 
 **Gate:** Every legacy fixture has a classification; CI fails on unapproved drift
 

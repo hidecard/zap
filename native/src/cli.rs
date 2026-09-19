@@ -6,7 +6,7 @@ use super::*;
 use crate::database::{
     apply_migrations, database_plan, plan_to_json, plan_to_text, validate_project_database,
 };
-use crate::project::{add_dependency, registry_packages_from_lockfile};
+use crate::project::{add_dependency, registry_packages_from_lockfile, run_conformance};
 
 pub const EXIT_PROGRAM_FAILURE: i32 = 1;
 pub const EXIT_USAGE_ERROR: i32 = 2;
@@ -69,6 +69,7 @@ Usage:
   zap bootstrap ast <file.zp>            Emit the canonical B0 AST artifact
   zap bootstrap typed-ir <file.zp>       Emit reference-only typed IR
   zap bootstrap diagnostics <file.zp>   Emit canonical lexer diagnostics
+  zap conformance [dir]                 Run P0-01 native/legacy parity conformance suite
   zap --version                         Show the version
   zap --help                            Show this help"#;
 
@@ -1422,6 +1423,18 @@ pub fn run_cli(args: &[String]) {
         eprintln!("ZAP-DRIVER-002: command `{requested}` is blocked; only `zap driver status` is available until a verified Zap seed and complete Zap ownership are installed");
         process::exit(EXIT_USAGE_ERROR);
     }
+    if args.len() >= 2 && args[1] == "conformance" {
+        let dir = if args.len() == 3 {
+            Path::new(&args[2])
+        } else {
+            Path::new(".")
+        };
+        if let Err(error) = run_conformance(dir) {
+            eprintln!("Zap conformance error: {error}");
+            process::exit(EXIT_PROGRAM_FAILURE);
+        }
+        return;
+    }
     if args.len() == 4 && args[1] == "inspect" && args[2] == "--bytecode" {
         if let Err(error) = inspect_bytecode_file(Path::new(&args[3])) {
             eprintln!("Zap inspect error: {error}");
@@ -1611,6 +1624,7 @@ mod tests {
             "zap bootstrap ast",
             "zap bootstrap typed-ir",
             "zap bootstrap diagnostics",
+            "zap conformance",
             "zap --version",
             "zap --help",
         ] {

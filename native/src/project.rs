@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use crate::ast::{parse_program, Stmt};
@@ -1795,6 +1796,200 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
     } else {
         Ok(passed)
     }
+}
+
+pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
+    let manifest = dir.join("conformance/p0-01/matrix.tsv");
+    if !manifest.exists() {
+        return Err(format!("conformance manifest not found: {}", manifest.display()));
+    }
+
+    // Find native binary
+    let native_bin = find_native_binary(dir)?;
+    
+    // Find legacy Python
+    let legacy_python = find_legacy_python()?;
+    
+    let legacy_zap = dir.join("legacy/zap.py");
+    if !legacy_zap.exists() {
+        return Err(format!("legacy Zap not found: {}", legacy_zap.display()));
+    }
+
+    // Parse manifest
+    let cases = parse_manifest(&manifest)?;
+    
+    let work_dir = std::env::temp_dir().join(format!("zap-conformance-{}", std::process::id()));
+    std::fs::create_dir_all(&work_dir).map_err(|e| format!("create work dir: {e}"))?;
+    
+    let mut failures = 0;
+    
+    for (case_id, policy, fixture) in cases {
+        let source = dir.join("conformance/p0-01").join(&fixture);
+        if !source.exists() {
+            return Err(format!("missing fixture: {}", source.display()));
+        }
+
+        let native_out = work_dir.join(format!("{}.native.out", case_id));
+        let native_err = work_dir.join(format!("{}.native.err", case_id));
+        let legacy_out = work_dir.join(format!("{}.legacy.out", case_id));
+        let legacy_err = work_dir.join(format!("{}.legacy.err", case_id));
+
+        // Run native
+        let native_status = run_engine(&native_bin, &source, &native_out, &native_err)?;
+        // Run legacy
+        let legacy_status = run_engine_python(&legacy_python, &legacy_zap, &source, &legacy_out, &legacy_err)?;
+
+        let native_digest = normalize_and_hash(&native_out)?;
+        let legacy_digest = normalize_and_hash(&legacy_out)?;
+
+        let decision = match policy.as_str() {
+            "common" => {
+                if native_status == 0 && legacy_status == 0 && native_digest == legacy_digest {
+                    "PASS"
+                } else {
+                    "FAIL"
+                }
+            }
+            "native-only" => {
+                if native_status == 0 && legacy_status != 0 {
+                    "PASS"
+                } else {
+                    "FAIL"
+                }
+            }
+            "rejected" => {
+                if native_status != 0 && legacy_status != 0 {
+                    "PASS"
+                } else {
+                    "FAIL"
+                }
+            }
+            _ => {
+                return Err(format!("unknown policy `{}` for {}", policy, case_id));
+            }
+        };
+
+        println!("p0-01: {} ({}) native={} legacy={} decision={}", 
+            case_id, policy, native_status, legacy_status, decision);
+
+        if decision != "PASS" {
+            failures += 1;
+            eprintln!("conformance: output drift or policy violation in {}", case_id);
+        }
+    }
+
+    let _ = std::fs::remove_dir_all(&work_dir);
+
+    if failures > 0 {
+        Err(format!("p0-01 conformance failed: {} case(s)", failures))
+    } else {
+        println!("p0-01 conformance passed");
+        Ok(())
+    }
+}
+
+fn find_native_binary(dir: &Path) -> Result<PathBuf, String> {
+    let candidates = [
+        dir.join("native/target/release/zap"),
+        dir.join("native/target/release/zap.exe"),
+        dir.join("native/target/debug/zap"),
+        dir.join("native/target/debug/zap.exe"),
+        dir.join("bin/zap"),
+        dir.join("bin/zap.exe"),
+    ];
+    for candidate in &candidates {
+        if candidate.exists() {
+            return Ok(candidate.clone());
+        }
+    }
+    Err("native binary not found; build native/Cargo.toml or set ZAP_BIN".into())
+}
+
+fn find_legacy_python() -> Result<String, String> {
+    if let Ok(python) = std::env::var("ZAP_LEGACY_PYTHON") {
+        if which(&python) {
+            return Ok(python);
+        }
+    }
+    for python in ["python3", "python"] {
+        if which(python) {
+            return Ok(python.into());
+        }
+    }
+    Err("legacy Python interpreter not found (tried python3, python)".into())
+}
+
+fn which(cmd: &str) -> bool {
+    let (cmd_name, args) = if cfg!(windows) {
+        ("where", vec![cmd])
+    } else {
+        ("which", vec![cmd])
+    };
+    Command::new(cmd_name)
+        .args(args)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+fn parse_manifest(manifest: &Path) -> Result<Vec<(String, String, String)>, String> {
+    let content = std::fs::read_to_string(manifest).map_err(|e| format!("read manifest: {e}"))?;
+    let mut cases = Vec::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('\t').collect();
+        if parts.len() != 3 {
+            return Err(format!("invalid manifest line: {}", line));
+        }
+        cases.push((parts[0].into(), parts[1].into(), parts[2].into()));
+    }
+    Ok(cases)
+}
+
+fn run_engine(native_bin: &Path, source: &Path, out: &Path, err: &Path) -> Result<i32, String> {
+    let mut cmd = Command::new(native_bin);
+    cmd.arg("run").arg(source);
+    let output = cmd
+        .stdout(std::fs::File::create(out).map_err(|e| format!("create out: {e}"))?)
+        .stderr(std::fs::File::create(err).map_err(|e| format!("create err: {e}"))?)
+        .status()
+        .map_err(|e| format!("run native: {e}"))?;
+    Ok(output.code().unwrap_or(-1))
+}
+
+fn run_engine_python(python: &str, zap: &Path, source: &Path, out: &Path, err: &Path) -> Result<i32, String> {
+    let mut cmd = Command::new(python);
+    cmd.arg(zap).arg("run").arg(source);
+    let output = cmd
+        .stdout(std::fs::File::create(out).map_err(|e| format!("create out: {e}"))?)
+        .stderr(std::fs::File::create(err).map_err(|e| format!("create err: {e}"))?)
+        .status()
+        .map_err(|e| format!("run legacy: {e}"))?;
+    Ok(output.code().unwrap_or(-1))
+}
+
+fn normalize_and_hash(path: &Path) -> Result<String, String> {
+    let content = std::fs::read_to_string(path).map_err(|e| format!("read: {e}"))?;
+    let normalized: String = content
+        .lines()
+        .map(|l| l.trim_end_matches('\r'))
+        .filter(|l| !l.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let hash = sha256_hex(normalized.as_bytes());
+    Ok(hash)
+}
+
+fn sha256_hex(data: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    format!("{:x}", hasher.finalize())
 }
 
 #[cfg(test)]
