@@ -1194,7 +1194,7 @@ fn require_capability_for_mode(capability: &str, restricted: bool) -> Result<(),
     Ok(())
 }
 
-static ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
+static ATOMIC_WRITE_COUNTER_FALLBACK: AtomicU64 = AtomicU64::new(0);
 
 fn file_metadata_with_context(
     path: &Path,
@@ -1244,7 +1244,9 @@ fn atomic_write_with_context(
         .file_name()
         .and_then(|name| name.to_str())
         .ok_or_else(|| "atomic_write expects a valid file path".to_string())?;
-    let counter = ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let counter = context
+        .map(|ctx| ctx.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed))
+        .unwrap_or_else(|| ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, Ordering::Relaxed));
     let temporary = parent.join(format!(
         ".{file_name}.zap-tmp-{}-{counter}",
         std::process::id()
@@ -1785,9 +1787,12 @@ fn http_serve_once(args: &[Value]) -> Result<Value, String> {
     ]))
 }
 
-static WEB_REQUEST_IDS: AtomicU64 = AtomicU64::new(1);
+static WEB_REQUEST_IDS_FALLBACK: AtomicU64 = AtomicU64::new(1);
 
-fn web_request_id(headers: &HashMap<String, String>) -> String {
+fn web_request_id(
+    headers: &HashMap<String, String>,
+    context: Option<&ExecutionContext>,
+) -> String {
     let candidate = headers
         .get("x-request-id")
         .map(String::as_str)
@@ -1800,7 +1805,10 @@ fn web_request_id(headers: &HashMap<String, String>) -> String {
     {
         return candidate.to_string();
     }
-    format!("zap-{}", WEB_REQUEST_IDS.fetch_add(1, Ordering::Relaxed))
+    let id = context
+        .map(|ctx| ctx.state().web_request_ids().fetch_add(1, Ordering::Relaxed))
+        .unwrap_or_else(|| WEB_REQUEST_IDS_FALLBACK.fetch_add(1, Ordering::Relaxed));
+    format!("zap-{}", id)
 }
 
 fn web_http_reason(status: i64) -> &'static str {
@@ -2616,7 +2624,7 @@ fn web_serve_on_listener(
             .map_err(|error| format!("web_serve failed to set write timeout: {error}"))?;
         let response_bytes = match web_parse_request(&mut stream) {
             Ok((method, path, headers, body)) => {
-                let request_id = web_request_id(&headers);
+                let request_id = web_request_id(&headers, Some(context));
                 let mut matched_path = false;
                 let mut response = None;
                 for route in routes {
@@ -2691,7 +2699,7 @@ fn web_serve_on_listener(
                     }
                 })
             }
-            Err(_error) => web_error_response(400, "bad_request", &web_request_id(&HashMap::new())),
+            Err(_error) => web_error_response(400, "bad_request", &web_request_id(&HashMap::new(), Some(context))),
         };
         let _ = stream.write_all(&response_bytes);
         served += 1;
@@ -5779,7 +5787,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!(
             "zap-ast-module-{}-{}",
             std::process::id(),
-            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+            super::ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir_all(&root).expect("temporary module workspace should be created");
         fs::write(
@@ -5806,7 +5814,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!(
             "zap-nested-module-{}-{}",
             std::process::id(),
-            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+            super::ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, Ordering::Relaxed)
         ));
         let nested = root.join("nested");
         fs::create_dir_all(&nested).expect("nested module workspace should be created");
@@ -5832,7 +5840,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!(
             "zap-module-reset-{}-{}",
             std::process::id(),
-            super::ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed)
+            super::ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir_all(&root).expect("temporary module workspace should be created");
         let module_path = root.join("library.zp");
@@ -6711,7 +6719,7 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         let path = std::env::temp_dir().join(format!(
             "zap-atomic-write-{}-{}.txt",
             std::process::id(),
-            super::ATOMIC_WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            super::ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ));
         let _ = fs::remove_file(&path);
         super::atomic_write(&path, "hello Zap").expect("atomic write should create a file");
@@ -6740,7 +6748,7 @@ assert(join(sorted, ",") == "1,2,4,8", "sort failed")
         let root = std::env::temp_dir().join(format!(
             "zap-web-assets-{}-{}",
             std::process::id(),
-            super::ATOMIC_WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            super::ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ));
         let assets = root.join("assets");
         let _ = fs::remove_dir_all(&root);

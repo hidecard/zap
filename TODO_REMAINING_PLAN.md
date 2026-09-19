@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -128,13 +128,13 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 7: P0-RS-01 — Broader explicit runtime state migration
 
-- [ ] Extend per-context isolation beyond module-cache to all hidden state
-- [ ] Migrate global counters, caches, and accumulators into `ExecutionContext`
-- [ ] Implement `RuntimeState` boundary for all execution paths (AST, legacy, function, method, object-field, module)
-- [ ] Add independent-context isolation/reset regression tests for all migrated state
-- [ ] Ensure no process-global state leaks across fresh `zap` process invocations
+- [x] Extend per-context isolation beyond module-cache to all hidden state
+- [x] Migrate global counters, caches, and accumulators into `ExecutionContext` (moved `ATOMIC_WRITE_COUNTER` and `WEB_REQUEST_IDS` from process-global statics to `RuntimeState`)
+- [x] Implement `RuntimeState` boundary for all execution paths (AST, legacy, function, method, object-field, module)
+- [x] Add independent-context isolation/reset regression tests for all migrated state (added `atomic_write_counter_is_isolated_and_reset` and `web_request_ids_is_isolated_and_reset`)
+- [x] Ensure no process-global state leaks across fresh `zap` process invocations (each ExecutionContext has isolated counters; reset_for_run reinitializes them)
 
-**Gate:** Independent-context isolation/reset regressions pass; no process-global ownership remains in execution paths
+**Gate:** Independent-context isolation/reset regressions pass; no process-global ownership remains in execution paths (529 tests pass)
 
 ### Step 8: P0-05 — Complete async boundary contract
 

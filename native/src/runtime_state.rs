@@ -8,6 +8,7 @@ use std::{
 
 use crate::async_runtime::{AsyncRuntime, Cancellable, CancellationToken};
 use crate::{Function, Value};
+use std::sync::atomic::AtomicU64;
 
 pub(crate) type ModuleCacheEntry = (HashMap<String, Value>, HashMap<String, Rc<Function>>);
 
@@ -407,6 +408,8 @@ pub(crate) struct RuntimeState {
     module_cache: HashMap<PathBuf, ModuleCacheEntry>,
     execution_depth: Rc<Cell<usize>>,
     language_scheduler: LanguageScheduler,
+    atomic_write_counter: AtomicU64,
+    web_request_ids: AtomicU64,
 }
 
 impl Default for RuntimeState {
@@ -425,6 +428,8 @@ impl RuntimeState {
             module_cache: HashMap::new(),
             execution_depth: Rc::new(Cell::new(0)),
             language_scheduler: LanguageScheduler::default(),
+            atomic_write_counter: AtomicU64::new(0),
+            web_request_ids: AtomicU64::new(1),
         }
     }
 
@@ -438,6 +443,8 @@ impl RuntimeState {
         self.module_cache.clear();
         self.execution_depth.set(0);
         self.language_scheduler = LanguageScheduler::default();
+        self.atomic_write_counter = AtomicU64::new(0);
+        self.web_request_ids = AtomicU64::new(1);
     }
 
     pub(crate) fn workspace_root(&self) -> Option<&Path> {
@@ -498,6 +505,14 @@ impl RuntimeState {
 
     pub(crate) fn module_cache_mut(&mut self) -> &mut HashMap<PathBuf, ModuleCacheEntry> {
         &mut self.module_cache
+    }
+
+    pub(crate) fn atomic_write_counter(&self) -> &AtomicU64 {
+        &self.atomic_write_counter
+    }
+
+    pub(crate) fn web_request_ids(&self) -> &AtomicU64 {
+        &self.web_request_ids
     }
 
     #[cfg(test)]
@@ -585,6 +600,7 @@ mod tests {
     use super::ExecutionContext;
     use crate::Value;
     use std::path::Path;
+    use std::sync::atomic::Ordering;
 
     #[test]
     fn independent_contexts_do_not_share_runtime_state() {
@@ -764,5 +780,41 @@ mod tests {
         assert!(context.state().module_loading().is_empty());
         assert!(context.state().module_cache().is_empty());
         assert_eq!(context.state().execution_depth(), 0);
+    }
+
+    #[test]
+    fn atomic_write_counter_is_isolated_and_reset() {
+        let mut first = ExecutionContext::new();
+        let second = ExecutionContext::new();
+
+        let c1_1 = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        let c1_2 = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(c1_1, 0);
+        assert_eq!(c1_2, 1);
+
+        let c2_1 = second.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(c2_1, 0);
+
+        first.reset_for_run();
+        let c1_after = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(c1_after, 0);
+    }
+
+    #[test]
+    fn web_request_ids_is_isolated_and_reset() {
+        let mut first = ExecutionContext::new();
+        let second = ExecutionContext::new();
+
+        let w1_1 = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        let w1_2 = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(w1_1, 1);
+        assert_eq!(w1_2, 2);
+
+        let w2_1 = second.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(w2_1, 1);
+
+        first.reset_for_run();
+        let w1_after = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        assert_eq!(w1_after, 1);
     }
 }
