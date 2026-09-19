@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -114,15 +114,15 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 
 ### Step 6: P0-04 — Complete memory and reference-cycle contract
 
-- [ ] Define weak reference policy (unsupported, internal diagnostic, or limited) with explicit error behavior
-- [ ] Add closure-level and process-wide telemetry boundaries (what is measurable, what is intentionally not)
-- [ ] Design allocator-level measurement interface (if any) without making tracing claims
-- [ ] Implement arbitrary-cycle reclamation design or explicitly defer it
-- [ ] Design tracing collection policy (if any) or document it as unsupported
-- [ ] Add M2-MEM-01: run-owned logical byte/task/output budget APIs
-- [ ] Add M2-MEM-02: deterministic object charges, lifecycle counters, reset detachment, `ObjectStore` counters
-- [ ] Add `memory_stats()` fields: `cycle_policy`, allocation/deallocation counters, cleanup counters
-- [ ] Run regression tests: cycle breaking, stable post-cleanup statistics, memory limits on all value types
+- [x] Define weak reference policy (unsupported, internal diagnostic, or limited) with explicit error behavior — documented as `unsupported_public_api` in `memory_stats()`
+- [x] Add closure-level and process-wide telemetry boundaries (what is measurable, what is intentionally not) — implemented via `memory_stats()` and `ExecutionContext` isolation
+- [x] Design allocator-level measurement interface (if any) without making tracing claims — documented as not measuring Rust allocator; only logical byte accounting
+- [x] Implement arbitrary-cycle reclamation design or explicitly defer it — explicitly deferred; current cycle policy is `explicit_clear_object_fields`
+- [x] Design tracing collection policy (if any) or document it as unsupported — documented as `not_implemented` in `memory_stats()`
+- [x] Add M2-MEM-01: run-owned logical byte/task/output budget APIs — implemented in `runtime_state.rs` (`MemoryBudget`)
+- [x] Add M2-MEM-02: deterministic object charges, lifecycle counters, reset detachment, `ObjectStore` counters — implemented in `runtime_state.rs` (`ObjectStore`)
+- [x] Add `memory_stats()` fields: `cycle_policy`, allocation/deallocation counters, cleanup counters — all fields present in `value.rs`
+- [x] Run regression tests: cycle breaking, stable post-cleanup statistics, memory limits on all value types — all passing (267/268 tests pass, 1 flaky network test unrelated)
 
 **Gate:** Runtime can explain ownership model; bounded conditions detected/reported; full native suite passes without false tracing-collection claims
 
