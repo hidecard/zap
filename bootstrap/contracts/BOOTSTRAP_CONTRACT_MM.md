@@ -4,7 +4,7 @@
 
 ဤ contract သည် လက်ရှိ Rust reference implementation မှ Zap-only self-hosted ecosystem သို့ သွားမည့် အဆင့်လိုက်လမ်းကြောင်းကို သတ်မှတ်သည်။ Zap သည် လက်ရှိတွင် self-hosted ဖြစ်ပြီးဟု မဆိုလိုပါ။ Operating-system loader၊ executable format၊ filesystem နှင့် document လုပ်ထားသော platform seed များသည် အဆင့်တိုင်း၏ platform boundary အဖြစ် ဆက်လက်ရှိမည်။
 
-## Bootstrap အဆင့်များ
+## Bootstrap stages
 
 | အဆင့် | ပြည့်ရမည့်အရာ | Rust/Cargo အခြေအနေ | Release wording |
 |---|---|---|---|
@@ -34,9 +34,13 @@ Compiler-core operation များသည် default အနေဖြင့် p
 
 Path operation အားလုံးသည် absolute path၊ traversal component၊ symlink escape၊ oversized input နှင့် platform-specific ambiguity များကို သက်ဆိုင်ရာ host boundary contract အတိုင်း reject လုပ်ရမည်။ Resource limit များသည် observable diagnostic behavior ၏ အစိတ်အပိုင်းဖြစ်သည်။
 
-## Reproducibility နှင့် differential gates
+## Reproducibility and differential gates
 
-Source bytes၊ contract versions၊ compiler inputs နှင့် platform-seed version တူညီလျှင် repeated run များမှ token၊ AST၊ diagnostic၊ typed-IR နှင့် artifact hash များ တူရမည်။ B1 နှင့် နောက်ပိုင်း implementation များကို owned corpus ပေါ်တွင် B0 နှင့် နှိုင်းယှဉ်ရမည်။ Mismatch ဖြစ်ပါက defect သို့မဟုတ် explicit compatibility decision အဖြစ် မှတ်တမ်းတင်ရမည်။ Fixture ကို contract record မရှိဘဲ ပြောင်း၍ ဖုံးကွယ်ခြင်း မပြုရ။
+Reproducibility and differential gates များသည် identical source bytes, contract versions, compiler inputs နှင့် platform-seed version တူညီလျှင် repeated run များမှ token, AST, diagnostic, typed-IR နှင့် artifact hash များ တူရမည်ဟု သတ်မှတ်သည်။ B1 နှင့် နောက်ပိုင်း implementation များကို owned corpus ပေါ်တွင် B0 နှင့် နှိုင်းယှဉ်ရမည်။ Mismatch ဖြစ်ပါက defect သို့မဟုတ် explicit compatibility decision အဖြစ် မှတ်တမ်းတင်ရမည်။ Fixture ကို contract record မရှိဘဲ ပြောင်း၍ ဖုံးကွယ်ခြင်း မပြုရ။
+
+## Reproducibility and differential gates
+
+Reproducibility and differential gates များသည် identical source bytes, contract versions, compiler inputs နှင့် platform-seed version တူညီလျှင် repeated run များမှ token, AST, diagnostic, typed-IR နှင့် artifact hash များ တူရမည်ဟု သတ်မှတ်သည်။ B1 နှင့် နောက်ပိုင်း implementation များကို owned corpus ပေါ်တွင် B0 နှင့် နှိုင်းယှဉ်ရမည်။ Mismatch ဖြစ်ပါက defect သို့မဟုတ် explicit compatibility decision အဖြစ် မှတ်တမ်းတင်ရမည်။ Fixture ကို contract record မရှိဘဲ ပြောင်းလဲခြင်းမပြုရ။
 
 ## Version policy
 
@@ -45,3 +49,27 @@ Language version၊ compiler version၊ standard-library version နှင့်
 ## လက်ရှိအခြေအနေ
 
 Zap v2.11.17 သည် **B0** ဖြစ်သည်။ လက်ရှိ native Rust lexer၊ parser၊ evaluator၊ standard library၊ registry နှင့် host boundary များသည် reference owner များဖြစ်သည်။ Bootstrap directory များသည် B1 အတွက် လိုအပ်သော contract နှင့် corpus ကို စတင်တည်ဆောက်ပေးခြင်းသာဖြစ်ပြီး native implementation ကို အစားမထိုးသေးပါ။
+
+## Canonical inspection commands
+
+Canonical inspection commands များသည် B0 artifact များကို ထုတ်လုပ်ခြင်းအတွက် စတင်သတ်မှတ်ထားသော CLI command များဖြစ်သည်။ `zap bootstrap tokens`၊ `zap bootstrap ast`၊ `zap bootstrap typed-ir` နှင့် `zap bootstrap diagnostics` များသည် canonical artifact များကို JSON အဖြစ်ထုတ်ပေးသည်။
+
+## B1 candidate status
+
+B1 candidate status သည် Zap-owned lexer နှင့် parser က B0 token/AST contract များကို reproduce လုပ်နိုင်ကြောင်းကို သတ်မှတ်သည်။ B0 seed က candidate ကို build ပေးနိုင်လျှင် B1 မှ တက်ရောက်သည်။
+
+## Self-rebuild acceptance gates
+
+Self-rebuild acceptance gate များသည် B4 self-rebuild acceptance အဆင့်သို့ လမ်းကြောင်းကို လျှောက်လှမ်းသည်။ ထို gate တစ်ခုချင်းစီ deterministic TSV report ထုတ်ပြီး non-determinism ရှိလျှင် fail closed ဖြစ်သည်။
+
+### Byte-for-byte deterministic artifacts
+
+`scripts/bootstrap/verify_b4_byte_determinism.sh` က identical source bytes ဖြင့် multiple runs ပေါ်တွင် real compiler artifacts (tokens, AST, typed IR, bytecode, execution output) ကို ထုတ်ပြီး အပေါ်ကျ Politiczz မရှိ စစ်ဆေးသည်။
+
+### Second-stage rebuild verification
+
+`scripts/bootstrap/verify_b4_second_stage_rebuild.sh` က compiler artifacts ကို input အဖြစ်သုံးပြီး second-stage artifacts ကို deterministic ဖြင့်ထုတ်ရနိုင်ကြောင်းကို စစ်ဆေးသည်။
+
+### Clean environment run verification
+
+`scripts/bootstrap/verify_b4_clean_environment.sh` က bootstrap pipeline က residual host state မရှိသေးတဲ့အထိ correctly run ရနိုင်ကြောင်းကို စစ်ဆေးသည်။

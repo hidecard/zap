@@ -106,6 +106,19 @@ required_domains=(
   stdlib-catalog cli-project-json compatibility-template ownership-validator
   lsp-document-sync lsp-interoperability lsp-scope-rename stdlib-determinism
   memory-budget registry-transport benchmark-provenance release-version
+  runtime-borrow-equality bootstrap-stage bootstrap-artifacts bootstrap-token
+  bootstrap-ast bootstrap-diagnostics bootstrap-stdlib bootstrap-platform
+  bootstrap-versioning bootstrap-b1-lexer bootstrap-typed-ir bootstrap-b3-foundations
+  bootstrap-vm-platform lexer-ownership lexer-spans lexer-diagnostics
+  bootstrap-determinism stdlib-ownership platform-capability artifact-contract
+  b1-lexer-canonical typed-ir-canonical parser-artifact-contract
+  parser-syntax-diagnostics b1-parser-candidate b2-typed-ir-contract
+  b2-typecheck-ownership token-diagnostics parser-control-flow parser-try-catch
+  parser-default-args parser-generic-annotations parser-member-access
+  parser-postfix-indexing typed-ir-missing-nodes b4-full-language
+  b4-cli-build-test b4-deterministic-rebuild seed-generation-pipeline
+  python-host-audit seed-compiler-ownership c-backend-ownership
+  seed-metadata-requirements
 )
 if (( rows < 20 )); then
   printf 'spec ownership: index must contain at least 20 rule rows, found %s\n' "$rows" >&2

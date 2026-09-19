@@ -82,3 +82,11 @@ Three verification gates strengthen the path to B4 self-rebuild acceptance. Each
 3. Sequential runs show no state leakage
 4. Platform evidence records validate correctly
 5. Diverse source surfaces all execute correctly in clean environment
+
+## Canonical inspection commands
+
+Canonical inspection commands are the initially specified CLI commands for emitting B0 artifacts. `zap bootstrap tokens`, `zap bootstrap ast`, `zap bootstrap typed-ir`, and `zap bootstrap diagnostics` emit canonical artifacts as JSON.
+
+## B1 candidate status
+
+B1 candidate status defines when Zap-owned lexer and parser reproduce the B0 token/AST contracts. The B0 seed must be able to build the candidate for B1 to be reached.
