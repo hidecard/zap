@@ -344,7 +344,7 @@ fn value_to_json_inner(
         })),
     }
 }
-pub(crate) fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
+pub fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
     match v {
         serde_json::Value::Null => Ok(Value::None),
         serde_json::Value::Bool(x) => Ok(Value::Bool(x)),
@@ -4869,7 +4869,7 @@ pub(crate) fn execute_ast_program(
     execute_ast_program_with_context(program, vars, funcs, &mut context, base)
 }
 
-pub(crate) fn execute_ast_program_with_context(
+pub fn execute_ast_program_with_context(
     program: &Program,
     vars: &mut HashMap<String, Value>,
     funcs: &mut HashMap<String, Rc<Function>>,

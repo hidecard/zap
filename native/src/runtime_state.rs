@@ -571,12 +571,12 @@ impl RuntimeState {
 
 /// Explicit execution context passed through the runtime entrypoint.
 #[derive(Debug, Default)]
-pub(crate) struct ExecutionContext {
+pub struct ExecutionContext {
     state: RuntimeState,
 }
 
 impl ExecutionContext {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             state: RuntimeState::new(),
         }

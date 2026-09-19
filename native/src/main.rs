@@ -17,8 +17,6 @@ use value::{collect_bounded_values, EnvFrame, Function, Param, StaticSignature, 
 mod database;
 mod project;
 mod registry;
-
-use project::{resolve_module, run_zap_tests, validate_project};
 mod parser;
 
 use parser::{
@@ -38,11 +36,18 @@ mod stdlib_catalog;
 use evaluator::{
     bounded_range_values, call_function_with_context, call_method_with_context,
     check_method_visibility, constructor_delegates_to_parent, direct_builtin_with_context,
-    duration_value, execute_ast_program_with_context, initialize_object_fields, json_to_value,
-    operate, utc_now_value, validate_source_layout, value_to_json, value_type_name, Flow,
+    duration_value, initialize_object_fields, operate, utc_now_value, validate_source_layout,
+    value_to_json, value_type_name, Flow,
 };
 
+use project::{resolve_module, run_zap_tests, validate_project};
+
 use runtime_state::ExecutionContext;
+
+pub use ast::parse_program;
+pub use evaluator::{execute_ast_program_with_context, json_to_value};
+pub use project::parse_resolved_lockfile;
+pub use registry::parse_index_bytes;
 
 use std::{
     collections::HashMap,

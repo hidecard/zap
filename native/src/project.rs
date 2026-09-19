@@ -1058,7 +1058,7 @@ fn parse_lockfile_quoted(value: &str, context: &str) -> Result<String, String> {
     Ok(output)
 }
 
-pub(crate) fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPackage>, String> {
+pub fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPackage>, String> {
     let version = text
         .lines()
         .find_map(|line| line.trim().strip_prefix("lockfile_version = "))

@@ -20,3 +20,24 @@ ureq = { version = "=2.12.1", default-features = false, features = ["tls"] }
 rcgen = "=0.13.2"
 rustls = { version = "=0.23.40", default-features = false, features = ["ring"] }
 time = "=0.3.47"
+libfuzzer-sys = "0.4"
+
+[[fuzz]]
+name = "parser_fuzz"
+path = "fuzz/parser_fuzz.rs"
+
+[[fuzz]]
+name = "json_fuzz"
+path = "fuzz/json_fuzz.rs"
+
+[[fuzz]]
+name = "lockfile_fuzz"
+path = "fuzz/lockfile_fuzz.rs"
+
+[[fuzz]]
+name = "registry_fuzz"
+path = "fuzz/registry_fuzz.rs"
+
+[[fuzz]]
+name = "stdlib_fuzz"
+path = "fuzz/stdlib_fuzz.rs"

@@ -163,7 +163,7 @@ pub(crate) enum Stmt {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub(crate) struct Program {
+pub struct Program {
     pub(crate) statements: Vec<Spanned<Stmt>>,
 }
 
@@ -1203,7 +1203,7 @@ fn parse_block(lines: &[SourceLine], cursor: &mut usize, indent: usize) -> Resul
     Ok(program)
 }
 
-pub(crate) fn parse_program(source: &str) -> Result<Program, String> {
+pub fn parse_program(source: &str) -> Result<Program, String> {
     let lines = source_lines(source)?;
     if lines.is_empty() {
         return Ok(Program::default());
