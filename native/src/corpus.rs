@@ -199,9 +199,12 @@ mod tests {
                 map.insert("next".into(), head.clone());
                 head = Value::Map(map);
             }
-            
+
             let result = head.validate_memory_limits();
-            assert!(result.is_ok() || result.is_err(), "cycle validation should not panic at depth {depth}");
+            assert!(
+                result.is_ok() || result.is_err(),
+                "cycle validation should not panic at depth {depth}"
+            );
         }
     }
 
@@ -212,7 +215,7 @@ mod tests {
         let value = Value::List(large_list);
         let result = value.validate_memory_limits();
         assert!(result.is_ok() || result.is_err());
-        
+
         // Large map
         let mut large_map = std::collections::HashMap::new();
         for i in 0..10000 {
@@ -221,7 +224,7 @@ mod tests {
         let value = Value::Map(large_map);
         let result = value.validate_memory_limits();
         assert!(result.is_ok() || result.is_err());
-        
+
         // Deeply nested structure (reduced depth to avoid stack overflow)
         let mut nested: Value = Value::None;
         for i in 0..500 {
@@ -237,10 +240,12 @@ mod tests {
     #[test]
     fn repeated_module_execution_memory_behavior() {
         let program = parse_program("let x = 1\nlet y = x + 2\nsay y\n").unwrap();
-        
+
         for _ in 0..100 {
             let mut context = crate::runtime_state::ExecutionContext::new();
-            context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+            context
+                .state_mut()
+                .set_workspace_root(std::path::PathBuf::from("."));
             let result = crate::evaluator::execute_ast_program_with_context(
                 &program,
                 &mut std::collections::HashMap::new(),
@@ -258,29 +263,43 @@ mod tests {
         map.insert("z".into(), Value::Number(1));
         map.insert("a".into(), Value::Number(2));
         map.insert("m".into(), Value::Number(3));
-        
+
         let value = Value::Map(map);
         let serialized1 = value.show();
         let serialized2 = value.show();
-        assert_eq!(serialized1, serialized2, "Value::show() should be deterministic");
+        assert_eq!(
+            serialized1, serialized2,
+            "Value::show() should be deterministic"
+        );
     }
 
     // Property tests using deterministic test inputs
     #[test]
     fn json_roundtrip_deterministic() {
         let test_inputs = [
-            "{}", "[]", "\"hello\"", "123", "true", "null",
-            "{\"a\":1,\"b\":2}", "[1,2,3]", "{\"nested\":{\"value\":42}}",
+            "{}",
+            "[]",
+            "\"hello\"",
+            "123",
+            "true",
+            "null",
+            "{\"a\":1,\"b\":2}",
+            "[1,2,3]",
+            "{\"nested\":{\"value\":42}}",
         ];
-        
+
         for input in test_inputs {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(input) {
                 let result1 = json_to_value(parsed.clone());
                 let result2 = json_to_value(parsed);
-                
+
                 match (result1, result2) {
                     (Ok(v1), Ok(v2)) => {
-                        assert_eq!(v1.show(), v2.show(), "json_to_value should be deterministic for: {input}");
+                        assert_eq!(
+                            v1.show(),
+                            v2.show(),
+                            "json_to_value should be deterministic for: {input}"
+                        );
                     }
                     (Err(_), Err(_)) => {}
                     _ => panic!("both should succeed or both should fail for: {input}"),
@@ -296,17 +315,24 @@ mod tests {
             "lockfile_version = 1\n\n[package]\nname = \"test\"\nversion = \"1.0.0\"\n\n[dependencies]\n",
             "invalid lockfile content",
         ];
-        
+
         for input in test_inputs {
             let result1 = crate::project::parse_resolved_lockfile(input);
             let result2 = crate::project::parse_resolved_lockfile(input);
-            
+
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(format!("{:?}", v1), format!("{:?}", v2), "lockfile parse should be deterministic for: {input}");
+                    assert_eq!(
+                        format!("{:?}", v1),
+                        format!("{:?}", v2),
+                        "lockfile parse should be deterministic for: {input}"
+                    );
                 }
                 (Err(e1), Err(e2)) => {
-                    assert_eq!(e1, e2, "lockfile parse errors should be deterministic for: {input}");
+                    assert_eq!(
+                        e1, e2,
+                        "lockfile parse errors should be deterministic for: {input}"
+                    );
                 }
                 _ => panic!("both should succeed or both should fail for: {input}"),
             }
@@ -321,14 +347,18 @@ mod tests {
             b"[{\"name\":\"test\",\"version\":\"1.0.0\"}]",
             b"invalid registry data",
         ];
-        
+
         for bytes in test_inputs {
             let result1 = crate::registry::parse_index_bytes(bytes);
             let result2 = crate::registry::parse_index_bytes(bytes);
-            
+
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(format!("{:?}", v1), format!("{:?}", v2), "registry parse should be deterministic");
+                    assert_eq!(
+                        format!("{:?}", v1),
+                        format!("{:?}", v2),
+                        "registry parse should be deterministic"
+                    );
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "registry parse errors should be deterministic");
@@ -346,14 +376,18 @@ mod tests {
             "fn foo():\n    return 42\n",
             "invalid syntax {",
         ];
-        
+
         for input in test_inputs {
             let result1 = parse_program(input);
             let result2 = parse_program(input);
-            
+
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(format!("{:?}", v1), format!("{:?}", v2), "parser should be deterministic for: {input}");
+                    assert_eq!(
+                        format!("{:?}", v1),
+                        format!("{:?}", v2),
+                        "parser should be deterministic for: {input}"
+                    );
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "parser errors should be deterministic for: {input}");
@@ -371,14 +405,18 @@ mod tests {
             "unterminated \"string",
             "invalid @char",
         ];
-        
+
         for input in test_inputs {
             let result1 = crate::lexer::tokenize_with_spans(input);
             let result2 = crate::lexer::tokenize_with_spans(input);
-            
+
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(format!("{:?}", v1), format!("{:?}", v2), "lexer should be deterministic for: {input}");
+                    assert_eq!(
+                        format!("{:?}", v1),
+                        format!("{:?}", v2),
+                        "lexer should be deterministic for: {input}"
+                    );
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "lexer errors should be deterministic for: {input}");
@@ -392,7 +430,7 @@ mod tests {
     #[test]
     fn path_handling_edge_cases() {
         use std::path::Path;
-        
+
         // Test path separator handling
         let windows_paths = [
             r"C:\Users\test\file.zp",
@@ -400,7 +438,7 @@ mod tests {
             r"..\relative\path.zp",
             r".\current\dir.zp",
         ];
-        
+
         for path_str in windows_paths {
             let path = Path::new(path_str);
             // Should not panic on Windows paths
@@ -408,7 +446,7 @@ mod tests {
             let _ = path.parent();
             let _ = path.is_absolute();
         }
-        
+
         // Test Unix paths
         let unix_paths = [
             "/home/user/file.zp",
@@ -416,14 +454,14 @@ mod tests {
             "../relative/path.zp",
             "./current/dir.zp",
         ];
-        
+
         for path_str in unix_paths {
             let path = Path::new(path_str);
             let _ = path.file_name();
             let _ = path.parent();
             let _ = path.is_absolute();
         }
-        
+
         // Test mixed separators (should be handled gracefully)
         let mixed = r"C:/Users/test\file.zp";
         let path = Path::new(mixed);
@@ -433,13 +471,18 @@ mod tests {
     #[test]
     fn process_behavior_differences() {
         // Test that process spawning handles platform differences
-        let program = parse_program(r#"import "process"
+        let program = parse_program(
+            r#"import "process"
 let result = process_run(["echo", "test"])
 say result.stdout
-"#).unwrap();
-        
+"#,
+        )
+        .unwrap();
+
         let mut context = crate::runtime_state::ExecutionContext::new();
-        context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+        context
+            .state_mut()
+            .set_workspace_root(std::path::PathBuf::from("."));
         let result = crate::evaluator::execute_ast_program_with_context(
             &program,
             &mut std::collections::HashMap::new(),
@@ -461,12 +504,17 @@ say result.stdout
             "line1\nline2\nline3\n",
             "line1\r\nline2\r\nline3\r\n",
         ];
-        
+
         for input in test_cases {
-            let program = format!("say \"{}\"", input.replace("\n", "\\n").replace("\r", "\\r"));
+            let program = format!(
+                "say \"{}\"",
+                input.replace("\n", "\\n").replace("\r", "\\r")
+            );
             if let Ok(parsed) = parse_program(&program) {
                 let mut context = crate::runtime_state::ExecutionContext::new();
-                context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+                context
+                    .state_mut()
+                    .set_workspace_root(std::path::PathBuf::from("."));
                 let result = crate::evaluator::execute_ast_program_with_context(
                     &parsed,
                     &mut std::collections::HashMap::new(),
@@ -474,7 +522,11 @@ say result.stdout
                     &mut context,
                     std::path::Path::new("."),
                 );
-                assert!(result.is_ok() || result.is_err(), "should not panic on newlines: {:?}", input);
+                assert!(
+                    result.is_ok() || result.is_err(),
+                    "should not panic on newlines: {:?}",
+                    input
+                );
             }
         }
     }
@@ -483,15 +535,15 @@ say result.stdout
     fn permission_cases() {
         use std::fs;
         use std::path::Path;
-        
+
         // Test that we can handle read-only files gracefully
         let temp_dir = std::env::temp_dir().join("zap_permission_test");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
-        
+
         let test_file = temp_dir.join("readonly.txt");
         fs::write(&test_file, "test content").unwrap();
-        
+
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -499,7 +551,7 @@ say result.stdout
             perms.set_mode(0o444); // read-only
             fs::set_permissions(&test_file, perms).unwrap();
         }
-        
+
         #[cfg(windows)]
         {
             // On Windows, use read-only attribute
@@ -507,7 +559,7 @@ say result.stdout
             perms.set_readonly(true);
             fs::set_permissions(&test_file, perms).unwrap();
         }
-        
+
         let program = format!("say file_read(\"{}\")", test_file.to_string_lossy());
         if let Ok(parsed) = parse_program(&program) {
             let mut context = crate::runtime_state::ExecutionContext::new();
@@ -522,7 +574,7 @@ say result.stdout
             // Should handle read-only gracefully (not panic)
             assert!(result.is_ok() || result.is_err());
         }
-        
+
         // Cleanup
         #[cfg(unix)]
         {
@@ -531,7 +583,7 @@ say result.stdout
             perms.set_mode(0o644);
             fs::set_permissions(&test_file, perms).unwrap();
         }
-        
+
         let _ = fs::remove_dir_all(&temp_dir);
     }
 
@@ -540,15 +592,17 @@ say result.stdout
         // Test that archive-related operations handle various formats
         // This is a placeholder for future archive format tests
         // Currently tests that we don't panic on archive-related builtins
-        
+
         let program = r#"
             import "archive"
             // Test that archive functions exist and don't panic on invalid input
         "#;
-        
+
         if let Ok(parsed) = parse_program(program) {
             let mut context = crate::runtime_state::ExecutionContext::new();
-            context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+            context
+                .state_mut()
+                .set_workspace_root(std::path::PathBuf::from("."));
             let result = crate::evaluator::execute_ast_program_with_context(
                 &parsed,
                 &mut std::collections::HashMap::new(),
@@ -565,17 +619,21 @@ say result.stdout
     fn corpus_index_with_fixture_ids() {
         // Verify that corpus fixtures have stable IDs
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
-        
+
         for category in categories {
-            let cases = fixture_cases(category).expect(&format!("corpus {} must be readable", category));
+            let cases =
+                fixture_cases(category).expect(&format!("corpus {} must be readable", category));
             assert!(!cases.is_empty(), "corpus {} must not be empty", category);
-            
+
             // Each fixture should have a name that can serve as an ID
             for (name, _) in &cases {
                 assert!(!name.is_empty(), "fixture name must not be empty");
                 // Name should be a valid filename (no path separators)
-                assert!(!name.contains('/') && !name.contains('\\'), 
-                    "fixture name should not contain path separators: {}", name);
+                assert!(
+                    !name.contains('/') && !name.contains('\\'),
+                    "fixture name should not contain path separators: {}",
+                    name
+                );
             }
         }
     }
@@ -584,17 +642,21 @@ say result.stdout
     fn test_naming_convention() {
         // Verify test naming follows convention: category_fixture
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
-        
+
         for category in categories {
-            let cases = fixture_cases(category).expect(&format!("corpus {} must be readable", category));
-            
+            let cases =
+                fixture_cases(category).expect(&format!("corpus {} must be readable", category));
+
             for (name, _) in &cases {
                 // Names should follow pattern: descriptive-name.extension or just descriptive-name
                 // Should not start with numbers or special chars
                 let first_char = name.chars().next().unwrap_or('_');
-                assert!(first_char.is_alphabetic() || first_char == '_', 
-                    "fixture name should start with letter or underscore: {}", name);
-                
+                assert!(
+                    first_char.is_alphabetic() || first_char == '_',
+                    "fixture name should start with letter or underscore: {}",
+                    name
+                );
+
                 // Should be lowercase with hyphens/underscores (snake_case or kebab-case)
                 // This is a soft convention check
             }
@@ -610,7 +672,7 @@ say result.stdout
         // 3. Add fixture files with descriptive names
         // 4. Update CHANGELOG with new corpus entry
         // 5. Run replay test to verify determinism
-        
+
         // Verify current CATEGORIES is up to date
         assert_eq!(CATEGORIES.len(), 6, "CATEGORIES should have 6 entries");
         assert!(CATEGORIES.contains(&"parser"));
@@ -619,11 +681,15 @@ say result.stdout
         assert!(CATEGORIES.contains(&"registry"));
         assert!(CATEGORIES.contains(&"memory"));
         assert!(CATEGORIES.contains(&"async"));
-        
+
         // Verify each has at least one fixture
         for category in CATEGORIES {
             let cases = fixture_cases(category).expect(&format!("corpus {} must exist", category));
-            assert!(!cases.is_empty(), "corpus {} must have at least one fixture", category);
+            assert!(
+                !cases.is_empty(),
+                "corpus {} must have at least one fixture",
+                category
+            );
         }
     }
 }

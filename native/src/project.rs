@@ -1801,15 +1801,18 @@ pub(crate) fn run_zap_tests(dir: &Path, options: &TestOptions) -> Result<usize, 
 pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
     let manifest = dir.join("conformance/p0-01/matrix.tsv");
     if !manifest.exists() {
-        return Err(format!("conformance manifest not found: {}", manifest.display()));
+        return Err(format!(
+            "conformance manifest not found: {}",
+            manifest.display()
+        ));
     }
 
     // Find native binary
     let native_bin = find_native_binary(dir)?;
-    
+
     // Find legacy Python
     let legacy_python = find_legacy_python()?;
-    
+
     let legacy_zap = dir.join("legacy/zap.py");
     if !legacy_zap.exists() {
         return Err(format!("legacy Zap not found: {}", legacy_zap.display()));
@@ -1817,12 +1820,12 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
 
     // Parse manifest
     let cases = parse_manifest(&manifest)?;
-    
+
     let work_dir = std::env::temp_dir().join(format!("zap-conformance-{}", std::process::id()));
     std::fs::create_dir_all(&work_dir).map_err(|e| format!("create work dir: {e}"))?;
-    
+
     let mut failures = 0;
-    
+
     for (case_id, policy, fixture) in cases {
         let source = dir.join("conformance/p0-01").join(&fixture);
         if !source.exists() {
@@ -1837,7 +1840,13 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
         // Run native
         let native_status = run_engine(&native_bin, &source, &native_out, &native_err)?;
         // Run legacy
-        let legacy_status = run_engine_python(&legacy_python, &legacy_zap, &source, &legacy_out, &legacy_err)?;
+        let legacy_status = run_engine_python(
+            &legacy_python,
+            &legacy_zap,
+            &source,
+            &legacy_out,
+            &legacy_err,
+        )?;
 
         let native_digest = normalize_and_hash(&native_out)?;
         let legacy_digest = normalize_and_hash(&legacy_out)?;
@@ -1869,12 +1878,17 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
             }
         };
 
-        println!("p0-01: {} ({}) native={} legacy={} decision={}", 
-            case_id, policy, native_status, legacy_status, decision);
+        println!(
+            "p0-01: {} ({}) native={} legacy={} decision={}",
+            case_id, policy, native_status, legacy_status, decision
+        );
 
         if decision != "PASS" {
             failures += 1;
-            eprintln!("conformance: output drift or policy violation in {}", case_id);
+            eprintln!(
+                "conformance: output drift or policy violation in {}",
+                case_id
+            );
         }
     }
 
@@ -1962,7 +1976,13 @@ fn run_engine(native_bin: &Path, source: &Path, out: &Path, err: &Path) -> Resul
     Ok(output.code().unwrap_or(-1))
 }
 
-fn run_engine_python(python: &str, zap: &Path, source: &Path, out: &Path, err: &Path) -> Result<i32, String> {
+fn run_engine_python(
+    python: &str,
+    zap: &Path,
+    source: &Path,
+    out: &Path,
+    err: &Path,
+) -> Result<i32, String> {
     let mut cmd = Command::new(python);
     cmd.arg(zap).arg("run").arg(source);
     let output = cmd

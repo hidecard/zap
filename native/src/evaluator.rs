@@ -1246,7 +1246,11 @@ fn atomic_write_with_context(
         .and_then(|name| name.to_str())
         .ok_or_else(|| "atomic_write expects a valid file path".to_string())?;
     let counter = context
-        .map(|ctx| ctx.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed))
+        .map(|ctx| {
+            ctx.state()
+                .atomic_write_counter()
+                .fetch_add(1, Ordering::Relaxed)
+        })
         .unwrap_or_else(|| ATOMIC_WRITE_COUNTER_FALLBACK.fetch_add(1, Ordering::Relaxed));
     let temporary = parent.join(format!(
         ".{file_name}.zap-tmp-{}-{counter}",
@@ -1790,10 +1794,7 @@ fn http_serve_once(args: &[Value]) -> Result<Value, String> {
 
 static WEB_REQUEST_IDS_FALLBACK: AtomicU64 = AtomicU64::new(1);
 
-fn web_request_id(
-    headers: &HashMap<String, String>,
-    context: Option<&ExecutionContext>,
-) -> String {
+fn web_request_id(headers: &HashMap<String, String>, context: Option<&ExecutionContext>) -> String {
     let candidate = headers
         .get("x-request-id")
         .map(String::as_str)
@@ -1807,7 +1808,11 @@ fn web_request_id(
         return candidate.to_string();
     }
     let id = context
-        .map(|ctx| ctx.state().web_request_ids().fetch_add(1, Ordering::Relaxed))
+        .map(|ctx| {
+            ctx.state()
+                .web_request_ids()
+                .fetch_add(1, Ordering::Relaxed)
+        })
         .unwrap_or_else(|| WEB_REQUEST_IDS_FALLBACK.fetch_add(1, Ordering::Relaxed));
     format!("zap-{}", id)
 }
@@ -2700,7 +2705,11 @@ fn web_serve_on_listener(
                     }
                 })
             }
-            Err(_error) => web_error_response(400, "bad_request", &web_request_id(&HashMap::new(), Some(context))),
+            Err(_error) => web_error_response(
+                400,
+                "bad_request",
+                &web_request_id(&HashMap::new(), Some(context)),
+            ),
         };
         let _ = stream.write_all(&response_bytes);
         served += 1;

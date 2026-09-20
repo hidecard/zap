@@ -15,9 +15,9 @@ mod value;
 
 use value::{collect_bounded_values, EnvFrame, Function, Param, StaticSignature, Value};
 mod database;
+mod parser;
 mod project;
 mod registry;
-mod parser;
 
 use parser::{
     annotation_matches, generic_parts, generic_type, is_allowed_annotation,

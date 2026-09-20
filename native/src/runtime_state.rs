@@ -787,16 +787,28 @@ mod tests {
         let mut first = ExecutionContext::new();
         let second = ExecutionContext::new();
 
-        let c1_1 = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
-        let c1_2 = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        let c1_1 = first
+            .state()
+            .atomic_write_counter()
+            .fetch_add(1, Ordering::Relaxed);
+        let c1_2 = first
+            .state()
+            .atomic_write_counter()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(c1_1, 0);
         assert_eq!(c1_2, 1);
 
-        let c2_1 = second.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        let c2_1 = second
+            .state()
+            .atomic_write_counter()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(c2_1, 0);
 
         first.reset_for_run();
-        let c1_after = first.state().atomic_write_counter().fetch_add(1, Ordering::Relaxed);
+        let c1_after = first
+            .state()
+            .atomic_write_counter()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(c1_after, 0);
     }
 
@@ -805,16 +817,28 @@ mod tests {
         let mut first = ExecutionContext::new();
         let second = ExecutionContext::new();
 
-        let w1_1 = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
-        let w1_2 = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        let w1_1 = first
+            .state()
+            .web_request_ids()
+            .fetch_add(1, Ordering::Relaxed);
+        let w1_2 = first
+            .state()
+            .web_request_ids()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(w1_1, 1);
         assert_eq!(w1_2, 2);
 
-        let w2_1 = second.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        let w2_1 = second
+            .state()
+            .web_request_ids()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(w2_1, 1);
 
         first.reset_for_run();
-        let w1_after = first.state().web_request_ids().fetch_add(1, Ordering::Relaxed);
+        let w1_after = first
+            .state()
+            .web_request_ids()
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(w1_after, 1);
     }
 }
