@@ -1058,6 +1058,7 @@ fn parse_lockfile_quoted(value: &str, context: &str) -> Result<String, String> {
     Ok(output)
 }
 
+#[allow(private_interfaces)]
 pub fn parse_resolved_lockfile(text: &str) -> Result<Vec<LockedRegistryPackage>, String> {
     let version = text
         .lines()
@@ -1832,10 +1833,10 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
             return Err(format!("missing fixture: {}", source.display()));
         }
 
-        let native_out = work_dir.join(format!("{}.native.out", case_id));
-        let native_err = work_dir.join(format!("{}.native.err", case_id));
-        let legacy_out = work_dir.join(format!("{}.legacy.out", case_id));
-        let legacy_err = work_dir.join(format!("{}.legacy.err", case_id));
+        let native_out = work_dir.join(format!("{case_id}.native.out"));
+        let native_err = work_dir.join(format!("{case_id}.native.err"));
+        let legacy_out = work_dir.join(format!("{case_id}.legacy.out"));
+        let legacy_err = work_dir.join(format!("{case_id}.legacy.err"));
 
         // Run native
         let native_status = run_engine(&native_bin, &source, &native_out, &native_err)?;
@@ -1874,20 +1875,18 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
                 }
             }
             _ => {
-                return Err(format!("unknown policy `{}` for {}", policy, case_id));
+                return Err(format!("unknown policy `{policy}` for {case_id}"));
             }
         };
 
         println!(
-            "p0-01: {} ({}) native={} legacy={} decision={}",
-            case_id, policy, native_status, legacy_status, decision
+            "p0-01: {case_id} ({policy}) native={native_status} legacy={legacy_status} decision={decision}"
         );
 
         if decision != "PASS" {
             failures += 1;
             eprintln!(
-                "conformance: output drift or policy violation in {}",
-                case_id
+                "conformance: output drift or policy violation in {case_id}"
             );
         }
     }
@@ -1895,7 +1894,7 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
     let _ = std::fs::remove_dir_all(&work_dir);
 
     if failures > 0 {
-        Err(format!("p0-01 conformance failed: {} case(s)", failures))
+        Err(format!("p0-01 conformance failed: {failures} case(s)"))
     } else {
         println!("p0-01 conformance passed");
         Ok(())
@@ -1958,7 +1957,7 @@ fn parse_manifest(manifest: &Path) -> Result<Vec<(String, String, String)>, Stri
         }
         let parts: Vec<&str> = line.split('\t').collect();
         if parts.len() != 3 {
-            return Err(format!("invalid manifest line: {}", line));
+            return Err(format!("invalid manifest line: {line}"));
         }
         cases.push((parts[0].into(), parts[1].into(), parts[2].into()));
     }
@@ -2015,12 +2014,12 @@ fn sha256_hex(data: &[u8]) -> String {
 #[cfg(test)]
 mod lockfile_security_tests {
     use super::{
-        collect_test_files, package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile,
+        package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile,
         resolve_module, validate_locked_cache, validate_locked_registry_set, validate_project,
         validate_project_locked, DependencySpec, LockedRegistryPackage,
     };
     use crate::registry::sha256_hex;
-    use std::{collections::BTreeMap, fs, path::Path};
+    use std::{collections::BTreeMap, fs};
 
     #[test]
     fn qualified_bootstrap_imports_resolve_from_nested_modules() {

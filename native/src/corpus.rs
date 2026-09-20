@@ -253,7 +253,7 @@ mod tests {
                 &mut context,
                 std::path::Path::new("."),
             );
-            assert!(result.is_ok(), "execution should succeed: {:?}", result);
+            assert!(result.is_ok(), "execution should succeed: {result:?}");
         }
     }
 
@@ -322,11 +322,7 @@ mod tests {
 
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(
-                        format!("{:?}", v1),
-                        format!("{:?}", v2),
-                        "lockfile parse should be deterministic for: {input}"
-                    );
+                    assert_eq!(v1, v2, "lockfile parse should be deterministic for: {input}");
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(
@@ -354,11 +350,7 @@ mod tests {
 
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(
-                        format!("{:?}", v1),
-                        format!("{:?}", v2),
-                        "registry parse should be deterministic"
-                    );
+                    assert_eq!(v1, v2, "registry parse should be deterministic");
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "registry parse errors should be deterministic");
@@ -383,11 +375,7 @@ mod tests {
 
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(
-                        format!("{:?}", v1),
-                        format!("{:?}", v2),
-                        "parser should be deterministic for: {input}"
-                    );
+                    assert_eq!(v1, v2, "parser should be deterministic for: {input}");
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "parser errors should be deterministic for: {input}");
@@ -412,11 +400,7 @@ mod tests {
 
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(
-                        format!("{:?}", v1),
-                        format!("{:?}", v2),
-                        "lexer should be deterministic for: {input}"
-                    );
+                    assert_eq!(v1, v2, "lexer should be deterministic for: {input}");
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(e1, e2, "lexer errors should be deterministic for: {input}");
@@ -524,8 +508,7 @@ say result.stdout
                 );
                 assert!(
                     result.is_ok() || result.is_err(),
-                    "should not panic on newlines: {:?}",
-                    input
+                    "should not panic on newlines: {input:?}"
                 );
             }
         }
@@ -534,7 +517,6 @@ say result.stdout
     #[test]
     fn permission_cases() {
         use std::fs;
-        use std::path::Path;
 
         // Test that we can handle read-only files gracefully
         let temp_dir = std::env::temp_dir().join("zap_permission_test");
@@ -621,9 +603,8 @@ say result.stdout
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
 
         for category in categories {
-            let cases =
-                fixture_cases(category).expect(&format!("corpus {} must be readable", category));
-            assert!(!cases.is_empty(), "corpus {} must not be empty", category);
+            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must be readable"));
+            assert!(!cases.is_empty(), "corpus {category} must not be empty");
 
             // Each fixture should have a name that can serve as an ID
             for (name, _) in &cases {
@@ -631,8 +612,7 @@ say result.stdout
                 // Name should be a valid filename (no path separators)
                 assert!(
                     !name.contains('/') && !name.contains('\\'),
-                    "fixture name should not contain path separators: {}",
-                    name
+                    "fixture name should not contain path separators: {name}"
                 );
             }
         }
@@ -644,8 +624,7 @@ say result.stdout
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
 
         for category in categories {
-            let cases =
-                fixture_cases(category).expect(&format!("corpus {} must be readable", category));
+            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must be readable"));
 
             for (name, _) in &cases {
                 // Names should follow pattern: descriptive-name.extension or just descriptive-name
@@ -653,8 +632,7 @@ say result.stdout
                 let first_char = name.chars().next().unwrap_or('_');
                 assert!(
                     first_char.is_alphabetic() || first_char == '_',
-                    "fixture name should start with letter or underscore: {}",
-                    name
+                    "fixture name should start with letter or underscore: {name}"
                 );
 
                 // Should be lowercase with hyphens/underscores (snake_case or kebab-case)
@@ -684,11 +662,10 @@ say result.stdout
 
         // Verify each has at least one fixture
         for category in CATEGORIES {
-            let cases = fixture_cases(category).expect(&format!("corpus {} must exist", category));
+            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must exist"));
             assert!(
                 !cases.is_empty(),
-                "corpus {} must have at least one fixture",
-                category
+                "corpus {category} must have at least one fixture"
             );
         }
     }

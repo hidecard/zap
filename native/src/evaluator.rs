@@ -345,6 +345,7 @@ fn value_to_json_inner(
         })),
     }
 }
+#[allow(private_interfaces)]
 pub fn json_to_value(v: serde_json::Value) -> Result<Value, String> {
     match v {
         serde_json::Value::Null => Ok(Value::None),
@@ -1567,15 +1568,15 @@ const SERVER_TIMEOUT: Duration = Duration::from_secs(10);
 fn configuration_directory() -> String {
     #[cfg(target_os = "windows")]
     {
-        return std::env::var("APPDATA")
+        std::env::var("APPDATA")
             .or_else(|_| std::env::var("LOCALAPPDATA"))
-            .unwrap_or_else(|_| ".".into());
+            .unwrap_or_else(|_| ".".into())
     }
     #[cfg(target_os = "macos")]
     {
-        return std::env::var("HOME")
+        std::env::var("HOME")
             .map(|home| format!("{home}/Library/Application Support"))
-            .unwrap_or_else(|_| ".".into());
+            .unwrap_or_else(|_| ".".into())
     }
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
@@ -1814,7 +1815,7 @@ fn web_request_id(headers: &HashMap<String, String>, context: Option<&ExecutionC
                 .fetch_add(1, Ordering::Relaxed)
         })
         .unwrap_or_else(|| WEB_REQUEST_IDS_FALLBACK.fetch_add(1, Ordering::Relaxed));
-    format!("zap-{}", id)
+    format!("zap-{id}")
 }
 
 fn web_http_reason(status: i64) -> &'static str {
@@ -4879,6 +4880,7 @@ pub(crate) fn execute_ast_program(
     execute_ast_program_with_context(program, vars, funcs, &mut context, base)
 }
 
+#[allow(private_interfaces)]
 pub fn execute_ast_program_with_context(
     program: &Program,
     vars: &mut HashMap<String, Value>,
@@ -5748,7 +5750,6 @@ mod tests {
         net::{TcpListener, TcpStream},
         panic::{catch_unwind, AssertUnwindSafe},
         path::Path,
-        process::Command,
         rc::Rc,
         sync::atomic::Ordering,
         thread,

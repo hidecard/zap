@@ -2251,15 +2251,15 @@ fn print_project_json(dir: &Path) {
 fn legacy_configuration_directory() -> String {
     #[cfg(target_os = "windows")]
     {
-        return env::var("APPDATA")
+        env::var("APPDATA")
             .or_else(|_| env::var("LOCALAPPDATA"))
-            .unwrap_or_else(|_| ".".into());
+            .unwrap_or_else(|_| ".".into())
     }
     #[cfg(target_os = "macos")]
     {
-        return env::var("HOME")
+        env::var("HOME")
             .map(|home| format!("{home}/Library/Application Support"))
-            .unwrap_or_else(|_| ".".into());
+            .unwrap_or_else(|_| ".".into())
     }
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
