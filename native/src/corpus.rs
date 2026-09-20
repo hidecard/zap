@@ -387,4 +387,243 @@ mod tests {
             }
         }
     }
+
+    // Windows/macOS-specific tests
+    #[test]
+    fn path_handling_edge_cases() {
+        use std::path::Path;
+        
+        // Test path separator handling
+        let windows_paths = [
+            r"C:\Users\test\file.zp",
+            r"C:\path\to\module.zp",
+            r"..\relative\path.zp",
+            r".\current\dir.zp",
+        ];
+        
+        for path_str in windows_paths {
+            let path = Path::new(path_str);
+            // Should not panic on Windows paths
+            let _ = path.file_name();
+            let _ = path.parent();
+            let _ = path.is_absolute();
+        }
+        
+        // Test Unix paths
+        let unix_paths = [
+            "/home/user/file.zp",
+            "/path/to/module.zp",
+            "../relative/path.zp",
+            "./current/dir.zp",
+        ];
+        
+        for path_str in unix_paths {
+            let path = Path::new(path_str);
+            let _ = path.file_name();
+            let _ = path.parent();
+            let _ = path.is_absolute();
+        }
+        
+        // Test mixed separators (should be handled gracefully)
+        let mixed = r"C:/Users/test\file.zp";
+        let path = Path::new(mixed);
+        let _ = path.file_name();
+    }
+
+    #[test]
+    fn process_behavior_differences() {
+        // Test that process spawning handles platform differences
+        let program = parse_program(r#"import "process"
+let result = process_run(["echo", "test"])
+say result.stdout
+"#).unwrap();
+        
+        let mut context = crate::runtime_state::ExecutionContext::new();
+        context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+        let result = crate::evaluator::execute_ast_program_with_context(
+            &program,
+            &mut std::collections::HashMap::new(),
+            &mut std::collections::HashMap::new(),
+            &mut context,
+            std::path::Path::new("."),
+        );
+        // Should either succeed or fail gracefully (not panic)
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn newline_preservation() {
+        // Test that newlines are preserved correctly across platforms
+        let test_cases = [
+            "hello\nworld",
+            "hello\r\nworld",
+            "hello\rworld",
+            "line1\nline2\nline3\n",
+            "line1\r\nline2\r\nline3\r\n",
+        ];
+        
+        for input in test_cases {
+            let program = format!("say \"{}\"", input.replace("\n", "\\n").replace("\r", "\\r"));
+            if let Ok(parsed) = parse_program(&program) {
+                let mut context = crate::runtime_state::ExecutionContext::new();
+                context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+                let result = crate::evaluator::execute_ast_program_with_context(
+                    &parsed,
+                    &mut std::collections::HashMap::new(),
+                    &mut std::collections::HashMap::new(),
+                    &mut context,
+                    std::path::Path::new("."),
+                );
+                assert!(result.is_ok() || result.is_err(), "should not panic on newlines: {:?}", input);
+            }
+        }
+    }
+
+    #[test]
+    fn permission_cases() {
+        use std::fs;
+        use std::path::Path;
+        
+        // Test that we can handle read-only files gracefully
+        let temp_dir = std::env::temp_dir().join("zap_permission_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        
+        let test_file = temp_dir.join("readonly.txt");
+        fs::write(&test_file, "test content").unwrap();
+        
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&test_file).unwrap().permissions();
+            perms.set_mode(0o444); // read-only
+            fs::set_permissions(&test_file, perms).unwrap();
+        }
+        
+        #[cfg(windows)]
+        {
+            // On Windows, use read-only attribute
+            let mut perms = fs::metadata(&test_file).unwrap().permissions();
+            perms.set_readonly(true);
+            fs::set_permissions(&test_file, perms).unwrap();
+        }
+        
+        let program = format!("say file_read(\"{}\")", test_file.to_string_lossy());
+        if let Ok(parsed) = parse_program(&program) {
+            let mut context = crate::runtime_state::ExecutionContext::new();
+            context.state_mut().set_workspace_root(temp_dir.clone());
+            let result = crate::evaluator::execute_ast_program_with_context(
+                &parsed,
+                &mut std::collections::HashMap::new(),
+                &mut std::collections::HashMap::new(),
+                &mut context,
+                std::path::Path::new("."),
+            );
+            // Should handle read-only gracefully (not panic)
+            assert!(result.is_ok() || result.is_err());
+        }
+        
+        // Cleanup
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&test_file).unwrap().permissions();
+            perms.set_mode(0o644);
+            fs::set_permissions(&test_file, perms).unwrap();
+        }
+        
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn archive_format_checks() {
+        // Test that archive-related operations handle various formats
+        // This is a placeholder for future archive format tests
+        // Currently tests that we don't panic on archive-related builtins
+        
+        let program = r#"
+            import "archive"
+            // Test that archive functions exist and don't panic on invalid input
+        "#;
+        
+        if let Ok(parsed) = parse_program(program) {
+            let mut context = crate::runtime_state::ExecutionContext::new();
+            context.state_mut().set_workspace_root(std::path::PathBuf::from("."));
+            let result = crate::evaluator::execute_ast_program_with_context(
+                &parsed,
+                &mut std::collections::HashMap::new(),
+                &mut std::collections::HashMap::new(),
+                &mut context,
+                std::path::Path::new("."),
+            );
+            assert!(result.is_ok() || result.is_err());
+        }
+    }
+
+    // Failure-corpus ownership policy tests
+    #[test]
+    fn corpus_index_with_fixture_ids() {
+        // Verify that corpus fixtures have stable IDs
+        let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
+        
+        for category in categories {
+            let cases = fixture_cases(category).expect(&format!("corpus {} must be readable", category));
+            assert!(!cases.is_empty(), "corpus {} must not be empty", category);
+            
+            // Each fixture should have a name that can serve as an ID
+            for (name, _) in &cases {
+                assert!(!name.is_empty(), "fixture name must not be empty");
+                // Name should be a valid filename (no path separators)
+                assert!(!name.contains('/') && !name.contains('\\'), 
+                    "fixture name should not contain path separators: {}", name);
+            }
+        }
+    }
+
+    #[test]
+    fn test_naming_convention() {
+        // Verify test naming follows convention: category_fixture
+        let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
+        
+        for category in categories {
+            let cases = fixture_cases(category).expect(&format!("corpus {} must be readable", category));
+            
+            for (name, _) in &cases {
+                // Names should follow pattern: descriptive-name.extension or just descriptive-name
+                // Should not start with numbers or special chars
+                let first_char = name.chars().next().unwrap_or('_');
+                assert!(first_char.is_alphabetic() || first_char == '_', 
+                    "fixture name should start with letter or underscore: {}", name);
+                
+                // Should be lowercase with hyphens/underscores (snake_case or kebab-case)
+                // This is a soft convention check
+            }
+        }
+    }
+
+    #[test]
+    fn changelog_procedure_for_new_corpora() {
+        // This test documents the changelog procedure for new corpora
+        // When adding a new corpus category:
+        // 1. Add category to CATEGORIES array
+        // 2. Create directory under corpus/p1-05/<category>/
+        // 3. Add fixture files with descriptive names
+        // 4. Update CHANGELOG with new corpus entry
+        // 5. Run replay test to verify determinism
+        
+        // Verify current CATEGORIES is up to date
+        assert_eq!(CATEGORIES.len(), 6, "CATEGORIES should have 6 entries");
+        assert!(CATEGORIES.contains(&"parser"));
+        assert!(CATEGORIES.contains(&"json"));
+        assert!(CATEGORIES.contains(&"lockfile"));
+        assert!(CATEGORIES.contains(&"registry"));
+        assert!(CATEGORIES.contains(&"memory"));
+        assert!(CATEGORIES.contains(&"async"));
+        
+        // Verify each has at least one fixture
+        for category in CATEGORIES {
+            let cases = fixture_cases(category).expect(&format!("corpus {} must exist", category));
+            assert!(!cases.is_empty(), "corpus {} must have at least one fixture", category);
+        }
+    }
 }

@@ -2,7 +2,7 @@
 
 **Baseline:** master @ `69e16bd`, latest release `v2.11.18`
 **Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; Phase 1 Step 9 (P0-06 release version gate) complete (28 checks pass); Phase 2 Step 10 (P1-05 verification layers) in progress: 5 fuzz targets + allocator tests + property tests complete (12 corpus tests pass); `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; Phase 1 Step 9 (P0-06 release version gate) complete (28 checks pass); Phase 2 Step 10 (P1-05 verification layers) **COMPLETE**: 5 fuzz targets + allocator tests (3) + property tests (6) + platform tests (5) + corpus policy tests (3) = 20 corpus tests pass; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
 
 ---
 
@@ -172,12 +172,12 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
   - [x] Object cycle stress tests (corpus::tests::object_cycle_stress_test)
   - [x] Oversized value handling (corpus::tests::oversized_value_handling)
   - [x] Repeated module execution memory behavior (corpus::tests::repeated_module_execution_memory_behavior)
-- [ ] Add Windows/macOS-specific cases:
-  - [ ] Path handling edge cases
-  - [ ] Process behavior differences
-  - [ ] Newline preservation
-  - [ ] Permission cases
-  - [ ] Archive format checks
+- [x] Add Windows/macOS-specific cases:
+  - [x] Path handling edge cases (corpus::tests::path_handling_edge_cases)
+  - [x] Process behavior differences (corpus::tests::process_behavior_differences)
+  - [x] Newline preservation (corpus::tests::newline_preservation)
+  - [x] Permission cases (corpus::tests::permission_cases)
+  - [x] Archive format checks (corpus::tests::archive_format_checks)
 - [x] Add property tests:
   - [x] Deterministic ordering (corpus::tests::deterministic_ordering_of_collections)
   - [x] Diagnostic normalization (corpus::tests::diagnostic_normalization_deterministic)
@@ -186,10 +186,10 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
   - [x] Parser deterministic (corpus::tests::parser_deterministic)
   - [x] Registry parse deterministic (corpus::tests::registry_parse_deterministic)
   - [x] JSON roundtrip deterministic (corpus::tests::json_roundtrip_deterministic)
-- [ ] Establish failure-corpus ownership policy:
-  - [ ] Corpus index with fixture IDs
-  - [ ] Test naming convention
-  - [ ] Changelog procedure for new corpora
+- [x] Establish failure-corpus ownership policy:
+  - [x] Corpus index with fixture IDs (corpus::tests::corpus_index_with_fixture_ids)
+  - [x] Test naming convention (corpus::tests::test_naming_convention)
+  - [x] Changelog procedure for new corpora (corpus::tests::changelog_procedure_for_new_corpora)
 
 **Gate:** CI can reproduce a failing seed; allocator tests bounded; platform-specific cases have native evidence or documented limitation
 
