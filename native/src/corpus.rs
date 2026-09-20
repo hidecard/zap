@@ -322,7 +322,10 @@ mod tests {
 
             match (result1, result2) {
                 (Ok(v1), Ok(v2)) => {
-                    assert_eq!(v1, v2, "lockfile parse should be deterministic for: {input}");
+                    assert_eq!(
+                        v1, v2,
+                        "lockfile parse should be deterministic for: {input}"
+                    );
                 }
                 (Err(e1), Err(e2)) => {
                     assert_eq!(
@@ -603,7 +606,8 @@ say result.stdout
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
 
         for category in categories {
-            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must be readable"));
+            let cases = fixture_cases(category)
+                .unwrap_or_else(|_| panic!("corpus {category} must be readable"));
             assert!(!cases.is_empty(), "corpus {category} must not be empty");
 
             // Each fixture should have a name that can serve as an ID
@@ -624,7 +628,8 @@ say result.stdout
         let categories = ["parser", "json", "lockfile", "registry", "memory", "async"];
 
         for category in categories {
-            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must be readable"));
+            let cases = fixture_cases(category)
+                .unwrap_or_else(|_| panic!("corpus {category} must be readable"));
 
             for (name, _) in &cases {
                 // Names should follow pattern: descriptive-name.extension or just descriptive-name
@@ -662,7 +667,8 @@ say result.stdout
 
         // Verify each has at least one fixture
         for category in CATEGORIES {
-            let cases = fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must exist"));
+            let cases =
+                fixture_cases(category).unwrap_or_else(|_| panic!("corpus {category} must exist"));
             assert!(
                 !cases.is_empty(),
                 "corpus {category} must have at least one fixture"

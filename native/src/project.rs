@@ -1885,9 +1885,7 @@ pub(crate) fn run_conformance(dir: &Path) -> Result<(), String> {
 
         if decision != "PASS" {
             failures += 1;
-            eprintln!(
-                "conformance: output drift or policy violation in {case_id}"
-            );
+            eprintln!("conformance: output drift or policy violation in {case_id}");
         }
     }
 
@@ -2014,8 +2012,8 @@ fn sha256_hex(data: &[u8]) -> String {
 #[cfg(test)]
 mod lockfile_security_tests {
     use super::{
-        package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile,
-        resolve_module, validate_locked_cache, validate_locked_registry_set, validate_project,
+        package_cache_path, parse_lockfile_quoted, parse_resolved_lockfile, resolve_module,
+        validate_locked_cache, validate_locked_registry_set, validate_project,
         validate_project_locked, DependencySpec, LockedRegistryPackage,
     };
     use crate::registry::sha256_hex;
