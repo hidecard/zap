@@ -21,6 +21,7 @@ rcgen = "=0.13.2"
 rustls = { version = "=0.23.40", default-features = false, features = ["ring"] }
 time = "=0.3.47"
 libfuzzer-sys = "0.4"
+# proptest = "1.0"  # Network issues with crates.io
 
 [[fuzz]]
 name = "parser_fuzz"

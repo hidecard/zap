@@ -171,6 +171,7 @@ fn enter_execution(lines: &[String], context: &ExecutionContext) -> Result<Execu
     }
 }
 
+#[derive(Debug)]
 pub(crate) enum Flow {
     Continue,
     Break,
