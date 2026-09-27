@@ -172,20 +172,29 @@ def build_pair(name, label, compare_exe=True):
             first_exe = first[1].read_bytes()
             second_exe = second[1].read_bytes()
             if first_exe != second_exe:
-                mismatch = next(
-                    (index for index, pair in enumerate(zip(first_exe, second_exe))
-                     if pair[0] != pair[1]),
-                    min(len(first_exe), len(second_exe)),
-                )
-                first_window = first_exe[max(0, mismatch - 4):mismatch + 8].hex()
-                second_window = second_exe[max(0, mismatch - 4):mismatch + 8].hex()
+                differences = [
+                    index
+                    for index, pair in enumerate(zip(first_exe, second_exe))
+                    if pair[0] != pair[1]
+                ][:8]
+                if len(first_exe) != len(second_exe) and len(differences) < 8:
+                    differences.append(min(len(first_exe), len(second_exe)))
+                mismatch = differences[0]
+                difference_windows = []
+                for index in differences:
+                    start = max(0, index - 4)
+                    end = index + 8
+                    first_window = first_exe[start:end].hex()
+                    second_window = second_exe[start:end].hex()
+                    difference_windows.append(
+                        f"0x{index:x}:{first_window}/{second_window}")
                 raise AssertionError(
                     f"{label} native executable differs across fresh builds "
-                    f"(first difference at 0x{mismatch:x}; sizes "
+                    f"(first difference at 0x{mismatch:x}; nearby differences "
+                    f"{';'.join(difference_windows)}; sizes "
                     f"{len(first_exe)}/{len(second_exe)}; SHA-256 "
                     f"{hashlib.sha256(first_exe).hexdigest()}/"
-                    f"{hashlib.sha256(second_exe).hexdigest()}; bytes "
-                    f"{first_window}/{second_window})")
+                    f"{hashlib.sha256(second_exe).hexdigest()})")
         return {
             "c_sha256": sha256(first[0]),
             "exe_sha256": sha256(first[1]),
