@@ -1441,10 +1441,7 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
     else:
         bat_path = None
         object_path = None
-        args = [cc, "-O2"]
-        if platform.system() == "Darwin":
-            args.append("-Wl,-no_uuid")
-        args.extend(["-o", out_path, c_path])
+        args = [cc, "-O2", "-o", out_path, c_path]
     if extra_args:
         args.extend(extra_args)
     result = subprocess.run(args, capture_output=True, text=True)

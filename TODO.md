@@ -46,7 +46,7 @@
 ### Current B4 remaining work (2026-09-27)
 
 - CI run [#834](https://github.com/hidecard/zap/actions/runs/36295277346): Linux C-backend acceptance and its evidence steps passed; hosted Windows and macOS both failed native-binary byte identity for B4-FULL-014, 016, and 017, so the cross-platform comparison job was skipped. The Windows local acceptance rerun passed 6/6.
-- A local follow-up narrows MSVC detection to `cl`/`cl.exe`, disables Mach-O UUID generation on Darwin, limits ELF section stripping to Linux, and reports first differing native-binary bytes on acceptance failures. The focused bridge tests and local Windows acceptance pass; hosted Windows/macOS validation remains pending.
+- A local follow-up narrows MSVC detection to `cl`/`cl.exe`, limits ELF section stripping to Linux, and reports first differing native-binary bytes on acceptance failures. Run #835 showed that removing Mach-O `LC_UUID` is invalid (`dyld` rejects the executable); the flag was removed, and the next run must verify whether avoiding ELF stripping on Darwin fixes byte identity. Focused bridge tests and local Windows acceptance pass; hosted validation remains pending.
 - The same CI run's Rust quality job failed at `Run Clippy` because two Unix-only tests referenced `collect_test_files`, `Path`, and `Command` without local imports. The imports are now scoped inside those tests, and the exact Clippy command passes locally on Windows; hosted Linux confirmation remains pending.
 - The remaining B4 work is sequenced below. Keep the contract `not-certified` until every acceptance item and the final evidence review pass.
 
