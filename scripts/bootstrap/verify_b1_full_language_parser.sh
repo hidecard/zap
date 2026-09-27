@@ -123,6 +123,24 @@ PY
   fi
 done < "$CORPUS"
 
+cat > "$RUNNER" <<'EOF'
+import "bootstrap/b1/parser.zp"
+let source = read_text("bootstrap/fixtures/b4/c_backend_cli.zp")
+say parse_general(source, "bootstrap/fixtures/b4/c_backend_cli.zp")
+EOF
+"$SEED" "$(basename "$RUNNER")" > "$OUT_A" || fail "CRLF parser fixture failed"
+python3 - "$OUT_A" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+if value.get("kind") != "zap.ast" or value.get("schema_version") != 1:
+    raise SystemExit("CRLF parser fixture did not produce a valid Zap AST")
+statements = value.get("ast", {}).get("statements")
+if not isinstance(statements, list) or not statements:
+    raise SystemExit("CRLF parser fixture produced no AST statements")
+PY
+printf 'crlf_fixture\tbootstrap/fixtures/b4/c_backend_cli.zp\n' >> "$REPORT"
+printf 'crlf_parser\tpass\n' >> "$REPORT"
+
 python3 - "$CORPUS" <<'PY' >> "$REPORT"
 from pathlib import Path
 import re, sys
