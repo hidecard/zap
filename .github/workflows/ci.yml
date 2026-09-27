@@ -807,7 +807,6 @@ jobs:
 
   c-backend:
     name: C Backend ${{ matrix.name }}
-    needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -907,6 +906,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Test cross-platform report validation
+        run: python3 host/zap-bootstrap/test_b4_c_backend_cross_platform.py
 
       - name: Download C backend reports
         uses: actions/download-artifact@v4

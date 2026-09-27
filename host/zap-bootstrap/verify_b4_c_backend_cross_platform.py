@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_DIR = Path(os.environ.get("B4_C_BACKEND_REPORT_DIR", ROOT / "target" / "c-backend-reports"))
 OUTPUT = Path(os.environ.get("B4_C_BACKEND_CROSS_PLATFORM_REPORT", ROOT / "target" / "b4-c-backend-cross-platform.tsv"))
+REQUIRED_PLATFORMS = {"Linux", "Windows", "Darwin"}
+REQUIRED_IDS = {f"B4-FULL-{number:03d}" for number in range(13, 19)}
+HASH_FIELDS = ("c_sha256", "exe_sha256", "stdout_sha256")
 
 
 def fail(message):
@@ -16,35 +20,54 @@ def load_reports():
     paths = sorted(REPORT_DIR.glob("*.tsv"))
     if not paths:
         fail(f"no C backend reports found in {REPORT_DIR}")
-    reports = []
+    reports = {}
     for path in paths:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
         if len(lines) < 3:
             continue
         header = lines[2].split("\t")
         if not {"id", "area", "status", "platform"}.issubset(set(header)):
             continue
         rows = {}
-        platform = "Unknown"
         for line in lines[3:]:
             fields = line.split("\t")
             if fields and fields[0].startswith("B4-FULL-"):
-                rows[fields[0]] = dict(zip(header, fields))
-                if len(fields) > 3 and fields[3]:
-                    platform = fields[3]
+                if len(fields) != len(header):
+                    fail(f"malformed row in {path}: {line}")
+                row = dict(zip(header, fields))
+                row_id = row["id"]
+                if row_id in rows:
+                    fail(f"duplicate {row_id} row in {path}")
+                rows[row_id] = row
         if not rows:
             continue
-        if platform == "Unknown":
-            stem = path.stem.lower()
-            if "linux" in stem:
-                platform = "Linux"
-            elif "windows" in stem or "win" in stem:
-                platform = "Windows"
-            elif "darwin" in stem or "macos" in stem or "mac" in stem:
-                platform = "Darwin"
-        for row in rows.values():
-            row["platform"] = platform
-        reports.append((path, rows))
+        if set(rows) != REQUIRED_IDS:
+            missing = sorted(REQUIRED_IDS - set(rows))
+            unexpected = sorted(set(rows) - REQUIRED_IDS)
+            fail(f"{path} must contain exactly B4-FULL-013..018; missing={missing}, unexpected={unexpected}")
+
+        platforms = {row["platform"] for row in rows.values()}
+        if len(platforms) != 1:
+            fail(f"report {path} contains inconsistent platforms: {sorted(platforms)}")
+        platform = platforms.pop()
+        if platform not in REQUIRED_PLATFORMS:
+            fail(f"report {path} has unsupported platform: {platform!r}")
+        for row_id, row in rows.items():
+            if row["status"] != "pass":
+                fail(f"{path} has a non-passing row: {row_id} ({row['status']})")
+            if not row["area"]:
+                fail(f"{path} has an empty area for {row_id}")
+            for field in HASH_FIELDS:
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", row.get(field, "")):
+                    fail(f"{path} has an invalid {field} for {row_id}")
+
+        existing = reports.get(platform)
+        if existing is not None:
+            _, existing_rows = existing
+            if rows != existing_rows:
+                fail(f"conflicting duplicate reports for {platform}: {existing[0]} and {path}")
+            continue
+        reports[platform] = (path, rows)
     if not reports:
         fail(f"no C backend acceptance reports found in {REPORT_DIR}")
     return reports
@@ -52,10 +75,9 @@ def load_reports():
 
 def main():
     reports = load_reports()
-    platforms = {row.get("platform", "") for _, rows in reports for row in rows.values() if row.get("status") == "pass"}
-    required = {"Linux", "Windows", "Darwin"}
-    if not required.issubset(platforms):
-        fail(f"missing platform reports: expected Linux, Windows, Darwin; got {sorted(platforms)}")
+    platforms = set(reports)
+    if platforms != REQUIRED_PLATFORMS:
+        fail(f"expected exactly Linux, Windows, Darwin reports; got {sorted(platforms)}")
 
     ids = [f"B4-FULL-{number:03d}" for number in range(13, 19)]
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -65,17 +87,7 @@ def main():
         output.write("id\tarea\tstatus\tplatforms\tc_sha256\tstdout_sha256\tnative_sha256s\n")
         failed = 0
         for row_id in ids:
-            values = []
-            for _, rows in reports:
-                row = rows.get(row_id)
-                if row is None or row.get("status") != "pass":
-                    values.append(None)
-                else:
-                    values.append(row)
-            if any(value is None for value in values):
-                failed += 1
-                output.write(f"{row_id}\t\tfail\t\t\t\tmissing or failing row\n")
-                continue
+            values = [reports[platform][1][row_id] for platform in sorted(REQUIRED_PLATFORMS)]
             c_hashes = {value["c_sha256"] for value in values}
             stdout_hashes = {value["stdout_sha256"] for value in values}
             native_hashes = sorted({value["exe_sha256"] for value in values})
