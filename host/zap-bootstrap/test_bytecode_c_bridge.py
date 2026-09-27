@@ -44,17 +44,20 @@ class BytecodeCBridgeTest(unittest.TestCase):
     def test_msvc_reproducible_build_uses_stable_object_filename(self):
         with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-msvc-") as tmp:
             c_path = Path(tmp) / "input.c"
-            out_path = Path(tmp) / "output.exe"
+            out_path = Path(tmp) / "output"
             c_path.write_text("int main(void) { return 0; }\n", encoding="utf-8")
             batch_contents = []
 
             def run_compiler(args, **kwargs):
                 batch_contents.append(Path(args[-1]).read_text(encoding="utf-8"))
+                Path(f"{out_path}.exe").write_bytes(b"MZ")
                 return subprocess.CompletedProcess(
                     args=args, returncode=0, stdout="", stderr="")
 
             with (
                 patch("c_backend._find_vcvars", return_value=None),
+                patch("c_backend.platform.system", return_value="Windows"),
+                patch("c_backend._normalize_windows_pe") as normalize_pe,
                 patch("c_backend.subprocess.run", side_effect=run_compiler),
                 patch("c_backend.shutil.which", return_value=None),
             ):
@@ -63,6 +66,44 @@ class BytecodeCBridgeTest(unittest.TestCase):
             self.assertEqual(len(batch_contents), 1)
             self.assertIn(f'/Fo:"{out_path}.zap-backend.obj"', batch_contents[0])
             self.assertFalse(Path(f"{out_path}.zap-backend.obj").exists())
+            normalize_pe.assert_called_once_with(f"{out_path}.exe")
+
+    def test_windows_pe_normalization_removes_timestamp_nondeterminism(self):
+        with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-pe-") as tmp:
+            first_path = Path(tmp) / "first.exe"
+            second_path = Path(tmp) / "second.exe"
+            pe_offset = 0x80
+            coff_offset = pe_offset + 4
+            optional_offset = coff_offset + 20
+
+            def write_pe(path, timestamp, checksum):
+                image = bytearray(512)
+                image[:2] = b"MZ"
+                image[0x3C:0x40] = pe_offset.to_bytes(4, "little")
+                image[pe_offset:pe_offset + 4] = b"PE\0\0"
+                image[coff_offset + 16:coff_offset + 18] = (0xF0).to_bytes(2, "little")
+                image[coff_offset + 4:coff_offset + 8] = timestamp.to_bytes(4, "little")
+                image[optional_offset:optional_offset + 2] = (0x20B).to_bytes(2, "little")
+                checksum_offset = optional_offset + 64
+                image[checksum_offset:checksum_offset + 4] = checksum.to_bytes(4, "little")
+                path.write_bytes(image)
+
+            write_pe(first_path, 1_800_000_000, 123)
+            write_pe(second_path, 1_800_000_001, 456)
+            c_backend._normalize_windows_pe(first_path)
+            c_backend._normalize_windows_pe(second_path)
+
+            self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
+            normalized = first_path.read_bytes()
+            self.assertEqual(
+                int.from_bytes(normalized[coff_offset + 4:coff_offset + 8], "little"),
+                0,
+            )
+            self.assertNotEqual(
+                int.from_bytes(
+                    normalized[optional_offset + 64:optional_offset + 68], "little"),
+                0,
+            )
 
     def test_macos_preserves_linker_uuid_and_skips_elf_stripping(self):
         with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-macos-") as tmp:

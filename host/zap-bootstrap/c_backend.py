@@ -1407,6 +1407,51 @@ def _find_vcvars(cl_path):
     return None
 
 
+def _normalize_windows_pe(path):
+    """Clear the wall-clock COFF timestamp and recompute the PE checksum."""
+    with open(path, "rb") as handle:
+        image = bytearray(handle.read())
+    if len(image) < 0x40 or image[:2] != b"MZ":
+        raise RuntimeError(f"MSVC output is not a PE executable: {path}")
+
+    pe_offset = int.from_bytes(image[0x3C:0x40], "little")
+    coff_offset = pe_offset + 4
+    if (
+        pe_offset + 24 > len(image)
+        or image[pe_offset:pe_offset + 4] != b"PE\0\0"
+    ):
+        raise RuntimeError(f"MSVC output has an invalid PE header: {path}")
+
+    optional_size = int.from_bytes(image[coff_offset + 16:coff_offset + 18], "little")
+    optional_offset = coff_offset + 20
+    if (
+        optional_size < 68
+        or optional_offset + optional_size > len(image)
+        or int.from_bytes(image[optional_offset:optional_offset + 2], "little")
+        not in (0x10B, 0x20B)
+    ):
+        raise RuntimeError(f"MSVC output has an invalid PE optional header: {path}")
+
+    timestamp_offset = coff_offset + 4
+    checksum_offset = optional_offset + 64
+    image[timestamp_offset:timestamp_offset + 4] = b"\0" * 4
+    image[checksum_offset:checksum_offset + 4] = b"\0" * 4
+    checksum = 0
+    for offset in range(0, len(image), 2):
+        if checksum_offset <= offset < checksum_offset + 4:
+            continue
+        word = image[offset]
+        if offset + 1 < len(image):
+            word |= image[offset + 1] << 8
+        checksum = (checksum & 0xFFFF) + word + (checksum >> 16)
+    checksum = (checksum & 0xFFFF) + (checksum >> 16)
+    checksum = (checksum + len(image)) & 0xFFFFFFFF
+    image[checksum_offset:checksum_offset + 4] = checksum.to_bytes(4, "little")
+
+    with open(path, "wb") as handle:
+        handle.write(image)
+
+
 def compile_c(c_path, out_path, compiler=None, extra_args=None):
     """Compile the emitted C file into a native executable."""
     cc = compiler or find_c_compiler()
@@ -1462,6 +1507,11 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
                     pass
     if result.returncode != 0:
         raise RuntimeError(f"C compiler failed: {' '.join(args)}\n{result.stderr}")
+    if platform.system() == "Windows":
+        pe_path = out_path
+        if not os.path.isfile(pe_path) and os.path.isfile(os.fspath(out_path) + ".exe"):
+            pe_path = os.fspath(out_path) + ".exe"
+        _normalize_windows_pe(pe_path)
     strip_path = shutil.which("strip")
     if strip_path and platform.system() == "Linux":
         for section in (".note.gnu.build-id", ".note.gnu.property", ".note.ABI-tag"):
