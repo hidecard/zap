@@ -47,19 +47,31 @@ export fn lex(source, source_name):
         if i >= source_length:
             break
         let ch = char_at(source, i)
-        if ch == " " or ch == "\t" or ch == "\n":
-            if ch == "\n":
+        if ch == " " or ch == "\t" or ch == "\n" or ch == "\r":
+            if ch == "\r":
+                if i + 1 < source_length:
+                    if char_at(source, i + 1) == "\n":
+                        i = i + 2
+                    else:
+                        i = i + 1
+                else:
+                    i = i + 1
                 line = line + 1
                 column = 1
             else:
-                column = column + 1
-            i = i + 1
+                if ch == "\n":
+                    line = line + 1
+                    column = 1
+                else:
+                    column = column + 1
+                i = i + 1
         else:
             if ch == "#":
                 while true:
                     if i >= source_length:
                         break
-                    if char_at(source, i) == "\n":
+                    let comment_char = char_at(source, i)
+                    if comment_char == "\n" or comment_char == "\r":
                         break
                     i = i + 1
                     column = column + 1
