@@ -168,8 +168,24 @@ def build_pair(name, label, compare_exe=True):
         require_equal(first_output, second_output, f"{label} output")
         if first[0].read_bytes() != second[0].read_bytes():
             raise AssertionError(f"{label} emitted C differs across fresh builds")
-        if compare_exe and first[1].read_bytes() != second[1].read_bytes():
-            raise AssertionError(f"{label} native executable differs across fresh builds")
+        if compare_exe:
+            first_exe = first[1].read_bytes()
+            second_exe = second[1].read_bytes()
+            if first_exe != second_exe:
+                mismatch = next(
+                    (index for index, pair in enumerate(zip(first_exe, second_exe))
+                     if pair[0] != pair[1]),
+                    min(len(first_exe), len(second_exe)),
+                )
+                first_window = first_exe[max(0, mismatch - 4):mismatch + 8].hex()
+                second_window = second_exe[max(0, mismatch - 4):mismatch + 8].hex()
+                raise AssertionError(
+                    f"{label} native executable differs across fresh builds "
+                    f"(first difference at 0x{mismatch:x}; sizes "
+                    f"{len(first_exe)}/{len(second_exe)}; SHA-256 "
+                    f"{hashlib.sha256(first_exe).hexdigest()}/"
+                    f"{hashlib.sha256(second_exe).hexdigest()}; bytes "
+                    f"{first_window}/{second_window})")
         return {
             "c_sha256": sha256(first[0]),
             "exe_sha256": sha256(first[1]),

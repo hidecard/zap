@@ -2144,7 +2144,10 @@ mod lockfile_security_tests {
     #[cfg(unix)]
     #[test]
     fn test_discovery_skips_symlink_directory_cycles() {
+        use super::collect_test_files;
         use std::os::unix::fs::symlink;
+        use std::path::Path;
+
         let root = std::env::temp_dir().join(format!("zap-test-discovery-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let tests = root.join("tests");

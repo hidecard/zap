@@ -1412,7 +1412,7 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
     cc = compiler or find_c_compiler()
     if cc is None:
         raise RuntimeError("no system C compiler found (tried gcc/clang/cc/cl.exe)")
-    if os.path.basename(cc).lower().startswith("cl"):
+    if os.path.basename(cc).lower() in {"cl", "cl.exe"}:
         vcvars = _find_vcvars(cc)
         fd, bat_path = tempfile.mkstemp(suffix=".bat", prefix="zap_c_backend_build_")
         os.close(fd)
@@ -1441,7 +1441,10 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
     else:
         bat_path = None
         object_path = None
-        args = [cc, "-O2", "-o", out_path, c_path]
+        args = [cc, "-O2"]
+        if platform.system() == "Darwin":
+            args.append("-Wl,-no_uuid")
+        args.extend(["-o", out_path, c_path])
     if extra_args:
         args.extend(extra_args)
     result = subprocess.run(args, capture_output=True, text=True)
@@ -1458,7 +1461,7 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
     if result.returncode != 0:
         raise RuntimeError(f"C compiler failed: {' '.join(args)}\n{result.stderr}")
     strip_path = shutil.which("strip")
-    if strip_path and not _is_windows_host():
+    if strip_path and platform.system() == "Linux":
         for section in (".note.gnu.build-id", ".note.gnu.property", ".note.ABI-tag"):
             subprocess.run(
                 [strip_path, "--remove-section=" + section, out_path],

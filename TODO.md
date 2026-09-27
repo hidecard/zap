@@ -43,6 +43,13 @@
 - **Package/artifact linkage fix:** `driver_build_package()` now returns a stable execution result for success and fail-closed dependency paths, executes the owned source-to-VM pipeline for package output, and uses canonical digest validation. The owned package-build and A10-A13 artifact-linkage gates now pass with the current driver.
 - **Certification remains blocked by evidence, not hidden by metadata:** supported-target clean-environment execution (Linux/Windows/macOS), complete full-language compile/run acceptance, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
 
+### Current B4 remaining work (2026-09-27)
+
+- CI run [#834](https://github.com/hidecard/zap/actions/runs/36295277346): Linux C-backend acceptance and its evidence steps passed; hosted Windows and macOS both failed native-binary byte identity for B4-FULL-014, 016, and 017, so the cross-platform comparison job was skipped. The Windows local acceptance rerun passed 6/6.
+- A local follow-up narrows MSVC detection to `cl`/`cl.exe`, disables Mach-O UUID generation on Darwin, limits ELF section stripping to Linux, and reports first differing native-binary bytes on acceptance failures. The focused bridge tests and local Windows acceptance pass; hosted Windows/macOS validation remains pending.
+- The same CI run's Rust quality job failed at `Run Clippy` because two Unix-only tests referenced `collect_test_files`, `Path`, and `Command` without local imports. The imports are now scoped inside those tests, and the exact Clippy command passes locally on Windows; hosted Linux confirmation remains pending.
+- The remaining B4 work is sequenced below. Keep the contract `not-certified` until every acceptance item and the final evidence review pass.
+
 ### Verification run after latest CI-passed pull (2026-09-11)
 
 | Evidence | Result | Interpretation |
@@ -239,11 +246,16 @@ Zap သည် established languages များနှင့် feature အရ �
 
 - [x] B4 driver boundary `compiler_driver.zp` ကို `native_independent.zp` မမှီခိုဘဲ standalone module အဖြစ် ပြုလုပ်ပြီး verifier scripts အားလုံး migration ပြီးပါပြီ။ (seed adapter functions, AST/typed-IR/platform aliases ကို driver module ထဲသို့ ပြန်ချိတ်ဆက်ထားပြီး 35+ verifier scripts ကို compiler_driver.zp ဖြင့် အဆုံးသတ်ပြီး ပြောင်းလဲပြီးပါပြီ)
 - [x] B4 verifier scripts များကို Windows/WSL environment တွင် အားမြင်跑အောင် ပြုပြီး `verify_b4_evidence.sh --run-gates` သည် အားလုံး pass ဖြစ်ပါပြီ။ (byte-determinism, second-stage-rebuild, clean-environment gates verified passing)
-- [x] Platform seed ဖြင့် complete Zap compiler source ကိို clean environment တွင် compile/run လုပ်ရန်။ (CI `b4-platform-evidence` job now runs B4 self-hosting gates on Linux/Windows/macOS with downloaded platform seeds)
-- [x] Seed output နှင့် native/reference output ကို supported platforms အားလုံးတွင် artifact manifest၊ checksum နှင့် behavior tests ဖြင့် နှိုင်းယှဉ်ရန်။ (New `verify_b4_cross_platform_artifact_manifest.sh` produces per-platform manifest with typed-IR/bytecode digests and VM behavior; wired into CI `b4-platform-evidence` job)
-- [x] Linux x86_64 seed ဖြင့် self-rebuild ကို အနည်းဆုံး နှစ်ကြိမ် run ပြီး byte-for-byte deterministic output ရရှိကြောင်း Cargo/Rust မပါသော clean environment တွင် စစ်ဆေးရန်။ (current master seed `69e16bd`, SHA-256 recorded above, three-stage and fresh-process replay passed; Windows/macOS clean evidence remains pending)
-- [x] Rust မပါဘဲ complete compiler → bytecode/IR → VM execution လမ်းကြောင်းကို full acceptance matrix ဖြင့် စစ်ဆေးရန်။ (New `verify_b4_full_acceptance_matrix.sh` validates all 19 B4-FULL rows; 18 pass, 0 provisional; wired into CI quality job)
+- [ ] Confirm the Rust quality `Run Clippy` check passes in hosted Linux CI after scoping Unix-only test imports locally. (The exact command passes locally on Windows; the failing Linux-only test compilation has not yet been rerun remotely.)
+- [ ] Hosted Linux, Windows, and macOS C-backend acceptance plus hash aggregation all pass on one commit. (Run #834: Linux passed; Windows and macOS B4-FULL-014/016/017 failed byte-identical executable checks and the aggregate was skipped. Local Windows acceptance is 6/6.)
+- [ ] Use each supported platform's clean seed to run the full compiler source-to-execution acceptance without Rust/Cargo, and retain commit-bound reports and seed digests. (CI has the jobs, but current hosted evidence is incomplete.)
+- [ ] Compare emitted C, native outputs where the contract requires byte identity, and runtime behavior across supported platforms using complete artifact manifests and a passing aggregate. (The aggregator exists; the present macOS failure prevents a passing aggregate.)
+- [ ] Re-run current-master Linux x86_64 self-rebuild twice with the verified seed and no Rust/Cargo. (The recorded `69e16bd` result predates current master and is not sufficient as current-commit evidence.)
+- [ ] Migrate the production Python reference lowering/backend (`host/zap-bootstrap/compile.py` and `c_backend.py`) to the Zap-owned B1..B4 production pipeline. Replace candidate-only compiler paths and the `bootstrap/b4/c_backend.zp` stub; add differential parity gates before changing production routing.
+- [ ] Produce and verify Rust-free, clean-provenance Zap-owned seeds for Linux, Windows, and macOS; the current C-backend path is Python-hosted and does not establish this provenance.
+- [ ] Run the complete Rust-free compiler → bytecode/IR → VM acceptance matrix through the Zap-owned pipeline. (`verify_b4_full_acceptance_matrix.sh` infrastructure exists, but its passing rows are not proof of production ownership or Rust-free seed provenance.)
 - [x] Independent verifier script ဖြင့် B4 evidence package ကို clean checkout မှ ပြန်လည်စစ်ဆေးနိုင်အောင် ပြုလုပ်ရန်။ (`scripts/bootstrap/verify_b4_evidence.sh` သည် certification မဟုတ်ကြောင်း fail-closed ပြင်ထား)
+- [ ] Only after every prior item passes, update the B4 contract to `certified` and refresh certification evidence plus English/Myanmar current-status documents.
 
 **Acceptance:** Clean seed တစ်ခုက Zap compiler ကို build လုပ်နိုင်ရမည်။ ထပ်မံ rebuild လုပ်သော artifact သည် byte-for-byte တူရမည်။ Native/reference implementation မပါဘဲ supported language subset ၏ compile/run tests များ အောင်မြင်ရမည်။
 
@@ -465,5 +477,3 @@ The following acceptance rows have passed locally through the Rust-free C backen
 - [Release version policy — English](docs/RELEASE_VERSION_POLICY_EN.md)
 - [Release signing — English](docs/RELEASE_SIGNING_EN.md)
 - [Seed production plan — English](docs/SEED_PRODUCTION_PLAN.md)
-
-

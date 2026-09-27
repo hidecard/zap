@@ -7927,6 +7927,7 @@ let routes = [{"method": "GET", "path": "/", "handler": "home"}, {"method": "GET
     #[test]
     fn direct_process_tree_termination_kills_the_process_group() {
         use std::os::unix::process::CommandExt;
+        use std::process::Command;
 
         let mut process = Command::new("sh");
         process.args(["-c", "sleep 5"]);

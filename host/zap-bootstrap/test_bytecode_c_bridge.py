@@ -5,10 +5,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "host" / "zap-bootstrap"))
 
+import c_backend  # noqa: E402
 from c_backend import (  # noqa: E402
     BytecodeValidationError,
     build_native_binary_from_bytecode,
@@ -39,6 +41,23 @@ def _canonical(program):
 
 
 class BytecodeCBridgeTest(unittest.TestCase):
+    def test_macos_link_disables_macho_uuid_for_reproducibility(self):
+        with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-macos-") as tmp:
+            c_path = Path(tmp) / "input.c"
+            out_path = Path(tmp) / "output"
+            c_path.write_text("int main(void) { return 0; }\n", encoding="utf-8")
+            with (
+                patch("c_backend.platform.system", return_value="Darwin"),
+                patch("c_backend.subprocess.run") as run_compiler,
+                patch("c_backend.shutil.which", return_value=None),
+            ):
+                run_compiler.return_value = subprocess.CompletedProcess(
+                    args=["clang"], returncode=0, stdout="", stderr="")
+                compile_c(str(c_path), str(out_path), compiler="clang")
+
+            command = run_compiler.call_args.args[0]
+            self.assertIn("-Wl,-no_uuid", command)
+
     def test_emit_c_matches_reference_for_compile_programs(self):
         with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-") as tmp:
             tmpdir = Path(tmp)
