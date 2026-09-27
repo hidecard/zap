@@ -833,7 +833,7 @@ jobs:
         shell: bash
         env:
           B4_C_BACKEND_ACCEPTANCE_REPORT: target/b4-c-backend-acceptance-${{ matrix.target }}.tsv
-        run: scripts/bootstrap/verify_b4_c_backend_acceptance.sh
+        run: bash scripts/bootstrap/verify_b4_c_backend_acceptance.sh
 
       - name: Run B3 bytecode C bridge parity verifier
         shell: bash
@@ -921,7 +921,7 @@ jobs:
         env:
           B4_C_BACKEND_REPORT_DIR: target/c-backend-reports
           B4_C_BACKEND_CROSS_PLATFORM_REPORT: target/b4-c-backend-cross-platform.tsv
-        run: scripts/bootstrap/verify_b4_c_backend_cross_platform.sh
+        run: bash scripts/bootstrap/verify_b4_c_backend_cross_platform.sh
 
       - name: Upload cross-platform C backend evidence
         if: always()

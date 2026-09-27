@@ -1424,7 +1424,7 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
             if vcvars:
                 bat_lines.append(f'call "{vcvars}" >nul')
             bat_lines.append(
-                f'"{cc}" /Brepro /nologo /O2 /Fo:"{object_path}" /Fe:"{out_path}" "{c_path}"')
+                f'"{cc}" /Brepro /nologo /O2 /Fo:"{object_path}" /Fe:"{out_path}" "{c_path}" /link /Brepro')
             with open(bat_path, "w", newline="\r\n") as fh:
                 fh.write("\n".join(bat_lines) + "\n")
             args = ["cmd", "/c", bat_path]
