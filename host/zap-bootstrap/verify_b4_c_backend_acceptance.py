@@ -160,17 +160,19 @@ def run_fixture(name, args=(), expected=None, env=None):
 
 def build_pair(name, label, compare_exe=True):
     with tempfile.TemporaryDirectory(prefix=f"b4-{label}-") as temp:
-        root = Path(temp)
-        first = build(FIXTURES[name], root / "first")
-        second = build(FIXTURES[name], root / "second")
+        prefix = Path(temp) / "artifact"
+        first = build(FIXTURES[name], prefix)
+        first_c = first[0].read_bytes()
+        first_exe = first[1].read_bytes()
         first_output, _ = run(first[1])
+        second = build(FIXTURES[name], prefix)
+        second_c = second[0].read_bytes()
+        second_exe = second[1].read_bytes()
         second_output, _ = run(second[1])
         require_equal(first_output, second_output, f"{label} output")
-        if first[0].read_bytes() != second[0].read_bytes():
+        if first_c != second_c:
             raise AssertionError(f"{label} emitted C differs across fresh builds")
         if compare_exe:
-            first_exe = first[1].read_bytes()
-            second_exe = second[1].read_bytes()
             if first_exe != second_exe:
                 differences = [
                     index
