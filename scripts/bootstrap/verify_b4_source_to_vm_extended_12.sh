@@ -34,6 +34,8 @@ let rebuilt = driver_seed_self_rebuild("say 2 * 3", "rebuild.zp")
 let identity_state = vm_run(identity["instructions"])
 let text_state = vm_run(text["instructions"])
 let negation_state = vm_run(negation["instructions"])
+let list_state = vm_run(list_literal["instructions"])
+let map_state = vm_run(map_literal["instructions"])
 say variables["status"]
 say identity["status"]
 say identity_state["halted"]
@@ -45,7 +47,9 @@ say negation_state["output"][0]
 say absolute["status"]
 say boolean["status"]
 say list_literal["status"]
+say json(list_state["output"][0])
 say map_literal["status"]
+say json(map_state["output"][0])
 say bad["status"]
 say bad["error"]
 say rebuilt["status"]
@@ -61,8 +65,10 @@ compiled_slice
 true
 compile_error
 compiled_slice
-compile_error
-compile_error
+compiled_slice
+[1,2]
+compiled_slice
+{"entries":[{"key":"ok","value":true}],"vm_map":true}
 compile_error
 typed_ir_promotion_error
 reproducible

@@ -291,6 +291,31 @@ export fn lower_ast_function_node_owned(node, prefix, binding, function_depth):
     let end = len(with_return)
     return {"error": none, "instructions": patch_function(with_return, definition_index, entry, end), "next": end}
 
+export fn lower_ast_index_assignment(name, value_node):
+    let target_parts = split(name, "[")
+    if len(target_parts) != 2:
+        return {"error": "unsupported_index_assignment:" + name, "instructions": []}
+    let target_name = trim(target_parts[0])
+    let index_text = trim(target_parts[1])
+    if not ends_with(index_text, "]"):
+        return {"error": "unsupported_index_assignment:" + name, "instructions": []}
+    index_text = trim(substring(index_text, 0, len(index_text) - 1))
+    let target = lower_expression({"kind": "name", "name": target_name})
+    if target["error"] != none:
+        return target
+    let index = lower_expression(parse_expression(index_text, 1))
+    if index["error"] != none:
+        return index
+    let value = lower_expression(value_node)
+    if value["error"] != none:
+        return value
+    let instructions = target["instructions"]
+    for instruction in index["instructions"]:
+        instructions = append(instructions, instruction)
+    for instruction in value["instructions"]:
+        instructions = append(instructions, instruction)
+    return {"error": none, "instructions": append(instructions, {"name": target_name, "op": "index_store"})}
+
 export fn lower_ast_node(node, function_depth):
     let kind = node["kind"]
     if kind == "function":
@@ -330,6 +355,8 @@ export fn lower_ast_node(node, function_depth):
         instructions = patch_continue_jumps(instructions, 0)
         return {"error": none, "instructions": instructions}
     if kind == "declaration" or kind == "assignment":
+        if kind == "assignment" and contains(node["name"], "["):
+            return lower_ast_index_assignment(node["name"], node["value"])
         let lowered_value = lower_expression(node["value"])
         if lowered_value["error"] != none:
             return lowered_value

@@ -1361,6 +1361,10 @@ export fn parse_statement(line, line_number, body_column):
 
         return {"kind": "say", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
 
+    if contains(statement, " = "):
+
+        return parse_assignment(line, line_number, body_column)
+
     if statement == "break":
 
         return {"kind": "break", "span": span(line_number, body_column, len(statement))}
@@ -3900,12 +3904,21 @@ export fn generic_header_diagnostic(lines, source_name):
 
 
 
+export fn parser_filter_comment_lines(lines, index, result):
+    if index >= len(lines):
+        return join(result, "\n")
+    let line = lines[index]
+    if starts_with(trim(line), "#"):
+        line = ""
+    return parser_filter_comment_lines(lines, index + 1, append(result, line))
+
 export fn parse_general(source, source_name):
 
     let crlf_normalized_source = replace(source, "\r\n", "\n")
     let normalized_source = trim(replace(crlf_normalized_source, "\r", "\n"))
+    let parser_source = parser_filter_comment_lines(split(normalized_source, "\n"), 0, [])
 
-    let lexed = from_json(lex(normalized_source, source_name))
+    let lexed = from_json(lex(parser_source, source_name))
 
     if lexed["kind"] == "zap.diagnostics":
 
@@ -3917,7 +3930,7 @@ export fn parse_general(source, source_name):
 
         return json({"diagnostics": [delimiter], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
-    let lines = split(normalized_source, "\n")
+    let lines = split(parser_source, "\n")
 
     let generic_diagnostic = generic_header_diagnostic(lines, source_name)
 
@@ -3925,7 +3938,7 @@ export fn parse_general(source, source_name):
 
         return json({"diagnostics": [generic_diagnostic], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
-    let while_else = while_else_diagnostic(normalized_source, source_name)
+    let while_else = while_else_diagnostic(parser_source, source_name)
 
     if while_else != none:
 
@@ -3948,6 +3961,12 @@ export fn parse_general(source, source_name):
     if token_indent != none:
 
         return json({"diagnostics": [token_indent], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
+
+    let missing_assignment = missing_assignment_diagnostic(parser_source, lexed["tokens"], source_name)
+
+    if missing_assignment != none:
+
+        return json({"diagnostics": [missing_assignment], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name})
 
     # The source-line parser is the canonical block assembler. Token metadata
 
@@ -4459,17 +4478,42 @@ export fn invalid_member_diagnostic(tokens, source_name):
 
 export fn missing_assignment_diagnostic(source, tokens, source_name):
 
-    let value = trim(source)
+    let lines = split(source, "\n")
 
-    if starts_with(value, "let "):
+    for line in lines:
 
-        for token in tokens:
+        let value = trim(line)
 
-            if token["kind"] == "equal":
+        if starts_with(value, "let "):
 
-                return none
+            let lexed = from_json(lex(value, source_name))
 
-        return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}
+            let line_tokens = lexed["tokens"]
+
+            let has_equal = false
+
+            for token in line_tokens:
+
+                if token["kind"] == "equal":
+
+                    has_equal = true
+
+            if not has_equal:
+
+                return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects '='", "severity": "error", "source_name": source_name}
+
+            let last_index = len(line_tokens) - 1
+
+            if last_index >= 0:
+
+                if line_tokens[last_index]["kind"] == "end":
+
+                    last_index = last_index - 1
+
+            if last_index >= 0:
+
+                if line_tokens[last_index]["kind"] == "equal":
+
+                    return {"code": "ZAP-SYNTAX-001", "column": none, "help": "check the surrounding syntax and delimiters", "line": none, "message": "declaration expects an expression after '='", "severity": "error", "source_name": source_name}
 
     return none
-

@@ -370,6 +370,15 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Exact control-flow gate passed: if/else execution, nested branches, fall-through, missing-body diagnostics, and deterministic self-rebuild.
 - [x] Neighboring source-to-VM AST, canonical-AST, frontend ownership, module-resolution, and full-language parser gates passed.
 
+## CI malformed-pipeline regression fix (2026-09-27)
+
+- [x] Prevented an incomplete `let` initializer from reaching declaration parsing with a missing split operand; the B1 parser now returns deterministic `ZAP-SYNTAX-001` diagnostics.
+- [x] Preserved parser diagnostics through typed-IR promotion and classified rejected source as `syntax_diagnostic` in the Zap-owned driver.
+- [x] The exact malformed-pipeline CI gate now passes, including deterministic replay, fail-closed stage metadata, and a valid-source regression.
+- [x] Extended the source-to-VM gate to execute list/map literal bytecode and verify the resulting VM values.
+- [ ] Full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack; keep this distinct from the passing C-backend acceptance rows until isolated and fixed.
+- [ ] B4 remains `not-certified`; cross-platform seed provenance, full-language production-pipeline migration, and hosted CI verification are still outstanding.
+
 The following acceptance rows have passed locally through the Rust-free C backend path on Windows/MSVC. Certification remains not-certified pending cross-platform (Linux/Windows/macOS) hash comparison and production-pipeline migration.
 
 | ID | Acceptance row | Current Status | Evidence |

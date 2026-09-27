@@ -14,6 +14,29 @@ export fn lower_expression(node):
                 return {"error": none, "instructions": [{"field": trim(pieces[1]), "op": "field_load", "receiver": trim(pieces[0])}]}
         let instructions = []
         return {"error": none, "instructions": append(instructions, {"op": "load", "name": node["name"]})}
+    if kind == "list":
+        let instructions = []
+        for element in node["elements"]:
+            let lowered_element = lower_expression(element)
+            if lowered_element["error"] != none:
+                return lowered_element
+            for instruction in lowered_element["instructions"]:
+                instructions = append(instructions, instruction)
+        return {"error": none, "instructions": append(instructions, {"count": len(node["elements"]), "op": "make_list"})}
+    if kind == "map":
+        let instructions = []
+        for entry in node["entries"]:
+            let lowered_key = lower_expression(entry["key"])
+            if lowered_key["error"] != none:
+                return lowered_key
+            let lowered_value = lower_expression(entry["value"])
+            if lowered_value["error"] != none:
+                return lowered_value
+            for instruction in lowered_key["instructions"]:
+                instructions = append(instructions, instruction)
+            for instruction in lowered_value["instructions"]:
+                instructions = append(instructions, instruction)
+        return {"error": none, "instructions": append(instructions, {"count": len(node["entries"]), "op": "make_map"})}
     if kind == "unary":
         let operand = lower_expression(node["value"])
         if operand["error"] != none:

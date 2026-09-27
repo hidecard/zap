@@ -2068,6 +2068,17 @@ export fn b2c_generic_container_element(type_name):
         return parts["value"]
     return "any"
 
+export fn b2c_global_environment(statements, functions, source_name):
+    let environment = []
+    for statement in statements:
+        if statement["kind"] == "declaration":
+            let value = b2c_infer_expr(statement["value"], environment, functions, source_name)
+            let declared = statement["annotation"]
+            if declared == none:
+                declared = value["type"]
+            environment = b2c_bind(environment, statement["name"], declared, declared, true)
+    return environment
+
 export fn b2c_state(environment, errors, reachable):
     return {"breaks": [], "continues": [], "environment": environment, "errors": errors, "reachable": reachable}
 
@@ -2276,8 +2287,6 @@ export fn b2c_infer_map(node, environment, functions, source_name):
         if has_entry:
             if b2c_collection_type_conflict(key_type, key["type"]):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, entry["key"], "ZAP-TYPE-008", "map keys have incompatible types: " + key_type + " and " + key["type"]))
-            if b2c_collection_type_conflict(value_type, value["type"]):
-                errors = b2c_append_error_unique(errors, b2c_error(source_name, entry["value"], "ZAP-TYPE-008", "map values have incompatible types: " + value_type + " and " + value["type"]))
             key_type = b2c_join_type(key_type, key["type"])
             value_type = b2c_join_type(value_type, value["type"])
         else:
@@ -2297,6 +2306,10 @@ export fn b2c_binary_type(operator, left, right):
             return "number"
         if left == "text" and right == "text":
             return "text"
+        let left_parts = b2c_type_wrapper_parts(left)
+        let right_parts = b2c_type_wrapper_parts(right)
+        if left_parts["wrapper"] == "list" and right_parts["wrapper"] == "list":
+            return "list<" + b2c_join_type(left_parts["inner"], right_parts["inner"]) + ">"
         return "any"
     if operator == "subtract" or operator == "multiply" or operator == "divide" or operator == "remainder":
         if left == "number" and right == "number":
@@ -2307,6 +2320,8 @@ export fn b2c_binary_type(operator, left, right):
             return "bool"
         return "any"
     if operator == "less" or operator == "less_equal" or operator == "greater" or operator == "greater_equal":
+        if left == "any" or right == "any":
+            return "bool"
         if left == "number" and right == "number":
             return "bool"
         if left == "text" and right == "text":
@@ -2326,7 +2341,7 @@ export fn b2c_binary_errors(node, operator, left, right, source_name):
             errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-002", "arithmetic operator expects number, got " + left))
         if right != "number" and right != "any":
             errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-002", "arithmetic operator expects number, got " + right))
-    if operator == "add" and not ((left == "number" and right == "number") or (left == "text" and right == "text") or left == "any" or right == "any"):
+    if operator == "add" and b2c_binary_type(operator, left, right) == "any" and left != "any" and right != "any":
         errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-002", "addition expects two numbers or two texts, got " + left + " and " + right))
     if (operator == "less" or operator == "less_equal" or operator == "greater" or operator == "greater_equal") and b2c_binary_type(operator, left, right) == "any":
         errors = append(errors, b2c_error(source_name, node, "ZAP-TYPE-002", "comparison expects two numbers or two texts, got " + left + " and " + right))
@@ -2417,7 +2432,64 @@ export fn b2c_select_overload(candidates, argument_types, classes, index, best, 
     return b2c_select_overload(candidates, argument_types, classes, index + 1, best, best_score, best_count)
 
 export fn b2c_builtin_call_type(name, argument_types):
+    if name == "str" and len(argument_types) == 1:
+        return "text"
+    if name == "int" and len(argument_types) == 1:
+        return "number"
+    if (name == "len" or name == "len_str") and len(argument_types) == 1:
+        return "number"
+    if name == "contains" and len(argument_types) == 2:
+        return "bool"
+    if name == "has_key" and len(argument_types) == 2:
+        return "bool"
+    if name == "argv" and len(argument_types) == 0:
+        return "list<text>"
+    if name == "argc" and len(argument_types) == 0:
+        return "number"
+    if name == "json" and len(argument_types) == 1:
+        return "text"
+    if name == "join" and len(argument_types) == 2:
+        return "text"
+    if name == "keys" and len(argument_types) == 1:
+        let parts = b2c_type_wrapper_parts(argument_types[0])
+        if parts["wrapper"] == "map":
+            return "list<" + parts["key"] + ">"
+    if name == "values" and len(argument_types) == 1:
+        let parts = b2c_type_wrapper_parts(argument_types[0])
+        if parts["wrapper"] == "map":
+            return "list<" + parts["value"] + ">"
+    if (name == "append" or name == "push" or name == "reverse") and len(argument_types) == 1:
+        if name == "reverse":
+            let parts = b2c_type_wrapper_parts(argument_types[0])
+            if parts["wrapper"] == "list":
+                return argument_types[0]
+    if (name == "append" or name == "push") and len(argument_types) == 2:
+        let parts = b2c_type_wrapper_parts(argument_types[0])
+        if parts["wrapper"] == "list":
+            return argument_types[0]
+    if name == "map_get" and len(argument_types) == 2:
+        let parts = b2c_type_wrapper_parts(argument_types[0])
+        if parts["wrapper"] == "map":
+            return parts["value"]
+    if name == "map_set" and len(argument_types) == 3:
+        let parts = b2c_type_wrapper_parts(argument_types[0])
+        if parts["wrapper"] == "map":
+            return argument_types[0]
+    if name == "is_error" and len(argument_types) == 1:
+        return "bool"
+    if name == "error" and len(argument_types) == 1:
+        return "error"
+    if name == "error_message" and len(argument_types) == 1:
+        return "text"
+    if name == "read_file" and len(argument_types) == 1:
+        return "text"
+    if name == "write_file" and len(argument_types) == 2:
+        return "bool"
+    if name == "exists" and len(argument_types) == 1:
+        return "bool"
     if name == "option_none" and len(argument_types) == 0:
+        return "option<any>"
+    if name == "none" and len(argument_types) == 0:
         return "option<any>"
     if name == "some" and len(argument_types) == 1:
         return "option<" + argument_types[0] + ">"
@@ -2437,6 +2509,8 @@ export fn b2c_builtin_call_type(name, argument_types):
     if name == "new" and len(argument_types) == 1:
         return "object<" + argument_types[0] + ">"
     if name == "is_some" or name == "is_option_none" or name == "is_ok" or name == "is_err":
+        return "bool"
+    if name == "is_none" and len(argument_types) == 1:
         return "bool"
     return ""
 
@@ -2788,6 +2862,40 @@ export fn b2c_check_declaration(statement, state, functions, source_name):
     let environment = b2c_bind(state["environment"], statement["name"], declared, declared, true)
     return b2c_state_with_edges(environment, errors, state["reachable"], state["breaks"], state["continues"])
 
+export fn b2c_check_index_assignment(statement, state, functions, source_name, value, errors):
+    let target_parts = split(statement["name"], "[")
+    let target_name = trim(target_parts[0])
+    let target = b2c_lookup(state["environment"], target_name)
+    if not target["initialized"]:
+        errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + target_name + "'"))
+        return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+    if len(target_parts) != 2:
+        errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-007", "indexed assignment must use one complete index"))
+        return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+    let index_text = trim(target_parts[1])
+    if not ends_with(index_text, "]"):
+        errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-007", "indexed assignment is missing a closing bracket"))
+        return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+    index_text = trim(substring(index_text, 0, len(index_text) - 1))
+    let index_node = parse_expression(index_text, 1)
+    let index = b2c_infer_expr(index_node, state["environment"], functions, source_name)
+    errors = b2c_append_errors(errors, b2c_shift_call_errors(index["errors"], statement))
+    let target_type = b2c_type_wrapper_parts(target["current"])
+    if target_type["wrapper"] == "list":
+        if index["type"] != "number" and index["type"] != "any":
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-007", "list assignment index expects number, got " + index["type"]))
+        if not b2c_type_assignable(target_type["inner"], value["type"], b2c_function_member_classes(functions)):
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "list element expects " + target_type["inner"] + ", got " + value["type"]))
+    else:
+        if target_type["wrapper"] == "map":
+            if not b2c_type_assignable(target_type["key"], index["type"], b2c_function_member_classes(functions)):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-007", "map assignment key expects " + target_type["key"] + ", got " + index["type"]))
+            if not b2c_type_assignable(target_type["value"], value["type"], b2c_function_member_classes(functions)):
+                errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "map value expects " + target_type["value"] + ", got " + value["type"]))
+        else:
+            errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-007", "indexed assignment requires a list or map, got " + target["current"]))
+    return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+
 export fn b2c_check_assignment(statement, state, functions, source_name):
     let value = b2c_infer_expr(statement["value"], state["environment"], functions, source_name)
     let errors = b2c_append_errors(state["errors"], b2c_shift_call_errors(value["errors"], statement))
@@ -2808,6 +2916,8 @@ export fn b2c_check_assignment(statement, state, functions, source_name):
             if member["found"] and not b2c_type_assignable(member["type"], value["type"], b2c_function_member_classes(functions)):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-001", "member '" + statement["name"] + "' expects " + member["type"] + ", got " + value["type"]))
             return b2c_state_with_edges(state["environment"], errors, state["reachable"], state["breaks"], state["continues"])
+    if contains(statement["name"], "["):
+        return b2c_check_index_assignment(statement, state, functions, source_name, value, errors)
     let old = b2c_lookup(state["environment"], statement["name"])
     if not old["initialized"]:
         errors = b2c_append_error_unique(errors, b2c_error(source_name, statement, "ZAP-TYPE-006", "unknown variable '" + statement["name"] + "'"))
@@ -2992,9 +3102,12 @@ export fn b2c_function_with_return_type(function, return_type):
     return {"body": function["body"], "bound_classes": function["bound_classes"], "bound_registry": function["bound_registry"], "constraints": function["constraints"], "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "params": function["params"], "return_type": return_type, "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
 
 export fn b2c_infer_function_returns_once(functions, source_name):
+    return b2c_infer_function_returns_once_with_globals(functions, source_name, [])
+
+export fn b2c_infer_function_returns_once_with_globals(functions, source_name, global_environment):
     let result = []
     for function in functions:
-        let environment = b2c_function_parameter_environment(function["params"], 0, [])
+        let environment = b2c_function_parameter_environment(function["params"], 0, global_environment)
         let inferred = b2c_infer_return_type_statements(function["body"]["statements"], environment, functions, source_name, "any")
         let return_type = function["return_type"]
         if return_type == none:
@@ -3003,11 +3116,14 @@ export fn b2c_infer_function_returns_once(functions, source_name):
     return result
 
 export fn b2c_infer_function_returns(functions, source_name):
+    return b2c_infer_function_returns_with_globals(functions, source_name, [])
+
+export fn b2c_infer_function_returns_with_globals(functions, source_name, global_environment):
     let current = functions
     let iteration = 0
     let stable = false
     while iteration < 8 and not stable:
-        let next = b2c_infer_function_returns_once(current, source_name)
+        let next = b2c_infer_function_returns_once_with_globals(current, source_name, global_environment)
         stable = json(next) == json(current)
         current = next
         iteration = iteration + 1
@@ -3231,7 +3347,10 @@ export fn b2c_generic_bound_errors_all(functions, registry, source_name):
     return errors
 
 export fn b2c_check_function(function, functions, source_name):
-    let environment = []
+    return b2c_check_function_with_globals(function, functions, source_name, [])
+
+export fn b2c_check_function_with_globals(function, functions, source_name, global_environment):
+    let environment = global_environment
     for parameter in function["params"]:
         let parameter_type = parameter["annotation"]
         if parameter_type == none:
@@ -3668,13 +3787,17 @@ export fn b2c_check_program(ast, source_name):
     let registry = b2c_collect_trait_registry(normalized_ast["statements"], [])
     let trait_errors = b2c_collect_trait_class_errors(normalized_ast["statements"], registry, source_name, [])
     let classes = b2c_collect_classes(normalized_ast["statements"], [])
-    let functions = b2c_infer_function_returns(b2c_enrich_functions(b2c_collect_functions(normalized_ast["statements"], []), classes, registry, []), source_name)
+    let functions = b2c_enrich_functions(b2c_collect_functions(normalized_ast["statements"], []), classes, registry, [])
+    let global_environment = b2c_global_environment(normalized_ast["statements"], functions, source_name)
+    let functions = b2c_infer_function_returns_with_globals(functions, source_name, global_environment)
+    let global_environment = b2c_global_environment(normalized_ast["statements"], functions, source_name)
+    let functions = b2c_infer_function_returns_with_globals(functions, source_name, global_environment)
     let bound_errors = b2c_generic_bound_errors_all(functions, registry, source_name)
     let implementation_tables = b2c_collect_trait_implementation_tables(normalized_ast["statements"], registry, [])
     errors = b2c_append_errors(errors, trait_errors)
     errors = b2c_append_errors(errors, bound_errors)
     for function in functions:
-        let function_state = b2c_check_function(function, functions, source_name)
+        let function_state = b2c_check_function_with_globals(function, functions, source_name, global_environment)
         errors = b2c_append_errors(errors, function_state["errors"])
     let state = b2c_check_block(normalized_ast["statements"], b2c_state([], errors, true), functions, "any", source_name, "")
     return {"diagnostics": state["errors"], "environment": state["environment"], "functions": functions, "implementations": implementation_tables, "ok": len(state["errors"]) == 0, "traits": registry}

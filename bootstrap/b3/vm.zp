@@ -29,17 +29,29 @@ export fn vm_push(state, value):
 export fn vm_store(state, name, value):
     return vm_state_with(state["error"], state["halted"], state["handlers"], state["ip"], append(state["locals"], {"name": name, "value": value}), state["output"], state["stack"], state["frames"], state["functions"])
 
+export fn vm_global_environment(state):
+    if len(state["frames"]) > 0:
+        return state["frames"][0]["globals"]
+    return state["locals"]
+
 export fn vm_load(state, name):
-    let found = none
+    let found = false
+    let value = none
     for item in state["locals"]:
         if item["name"] == name:
-            found = item["value"]
-    if found == none:
+            found = true
+            value = item["value"]
+    if not found:
+        for item in vm_global_environment(state):
+            if item["name"] == name:
+                found = true
+                value = item["value"]
+    if not found:
         let definition = vm_find_function(state["functions"], name, 0)
         if definition != none:
             return {"error": none, "value": {"captures": [], "closure": true, "function_name": name}, "state": state}
         return {"error": "unknown_local:" + name, "value": none, "state": state}
-    return {"error": none, "value": found, "state": state}
+    return {"error": none, "value": value, "state": state}
 
 export fn vm_stack_without_last(stack):
     return vm_array_without_last(stack)
@@ -118,6 +130,88 @@ export fn vm_push_values(state, values, index):
     if index >= len(values):
         return state
     return vm_push_values(vm_push(state, values[index]), values, index + 1)
+
+export fn vm_list_set(values, target, replacement, index, result):
+    if index >= len(values):
+        return result
+    let value = values[index]
+    if index == target:
+        value = replacement
+    return vm_list_set(values, target, replacement, index + 1, append(result, value))
+
+export fn vm_list_concat(left, right, index, result):
+    if index >= len(left):
+        let right_index = index - len(left)
+        if right_index >= len(right):
+            return result
+        return vm_list_concat(left, right, index + 1, append(result, right[right_index]))
+    return vm_list_concat(left, right, index + 1, append(result, left[index]))
+
+export fn vm_map_from_values(values, count, index, result):
+    if index >= count:
+        return result
+    let next = vm_map_set(result, values[index * 2], values[index * 2 + 1])
+    return vm_map_from_values(values, count, index + 1, next)
+
+export fn vm_is_map(value):
+    if type(value) != "map":
+        return false
+    for key in keys(value):
+        if key == "vm_map":
+            return true
+    return false
+
+export fn vm_map_set_entries(entries, key, value, index, result, found):
+    if index >= len(entries):
+        if found:
+            return result
+        return append(result, {"key": key, "value": value})
+    let entry = entries[index]
+    if entry["key"] == key:
+        result = append(result, {"key": key, "value": value})
+        found = true
+    else:
+        result = append(result, entry)
+    return vm_map_set_entries(entries, key, value, index + 1, result, found)
+
+export fn vm_map_set(mapping, key, value):
+    let entries = vm_map_set_entries(mapping["entries"], key, value, 0, [], false)
+    return {"entries": entries, "vm_map": true}
+
+export fn vm_map_get(mapping, key):
+    for entry in mapping["entries"]:
+        if entry["key"] == key:
+            return entry["value"]
+    return none
+
+export fn vm_map_has_key(mapping, key):
+    for entry in mapping["entries"]:
+        if entry["key"] == key:
+            return true
+    return false
+
+export fn vm_map_keys(mapping):
+    let result = []
+    for entry in mapping["entries"]:
+        result = append(result, entry["key"])
+    return result
+
+export fn vm_map_values(mapping):
+    let result = []
+    for entry in mapping["entries"]:
+        result = append(result, entry["value"])
+    return result
+
+export fn vm_map_json_text(mapping):
+    let encoded = []
+    for entry in mapping["entries"]:
+        encoded = append(encoded, json(entry["key"]) + ":" + json(entry["value"]))
+    return "{" + join(encoded, ",") + "}"
+
+export fn vm_to_text(value):
+    if vm_is_map(value):
+        return vm_map_json_text(value)
+    return str(value)
 
 export fn vm_object_field(object, field, index):
     if index < 0:
@@ -581,6 +675,48 @@ export fn vm_step(state, instruction):
         return vm_store(stored["state"], path[0], updated["value"])
     if op == "const":
         return vm_push(advanced, instruction["value"])
+    if op == "make_list":
+        let elements = vm_pop_arguments(advanced, instruction["count"], [])
+        if elements["error"] != none:
+            return vm_fail(advanced, elements["error"])
+        return vm_push(elements["state"], elements["values"])
+    if op == "make_map":
+        let entries = vm_pop_arguments(advanced, instruction["count"] * 2, [])
+        if entries["error"] != none:
+            return vm_fail(advanced, entries["error"])
+        let value = vm_map_from_values(entries["values"], instruction["count"], 0, {"entries": [], "vm_map": true})
+        return vm_push(entries["state"], value)
+    if op == "index":
+        let index = vm_pop(advanced)
+        if index["error"] != none:
+            return vm_fail(advanced, index["error"])
+        let target = vm_pop(index["state"])
+        if target["error"] != none:
+            return vm_fail(index["state"], target["error"])
+        let value = none
+        if vm_is_map(target["value"]):
+            value = vm_map_get(target["value"], index["value"])
+        else:
+            value = target["value"][index["value"]]
+        return vm_push(target["state"], value)
+    if op == "index_store":
+        let replacement = vm_pop(advanced)
+        if replacement["error"] != none:
+            return vm_fail(advanced, replacement["error"])
+        let index = vm_pop(replacement["state"])
+        if index["error"] != none:
+            return vm_fail(replacement["state"], index["error"])
+        let target = vm_pop(index["state"])
+        if target["error"] != none:
+            return vm_fail(index["state"], target["error"])
+        let updated = none
+        if starts_with(json(target["value"]), "["):
+            if index["value"] < 0 or index["value"] >= len(target["value"]):
+                return vm_fail(target["state"], "index out of range")
+            updated = vm_list_set(target["value"], index["value"], replacement["value"], 0, [])
+        else:
+            updated = vm_map_set(target["value"], index["value"], replacement["value"])
+        return vm_store(target["state"], instruction["name"], updated)
     if op == "not":
         let operand = vm_pop(advanced)
         if operand["error"] != none:
@@ -638,6 +774,65 @@ export fn vm_step(state, instruction):
             if value < 0:
                 value = 0 - value
             return vm_push(arguments["state"], value)
+        if name == "argv":
+            if instruction["argc"] != 0:
+                return vm_fail(arguments["state"], "arity_error:argv")
+            return vm_push(arguments["state"], [])
+        if name == "argc":
+            if instruction["argc"] != 0:
+                return vm_fail(arguments["state"], "arity_error:argc")
+            return vm_push(arguments["state"], 0)
+        if name == "len":
+            if instruction["argc"] != 1:
+                return vm_fail(arguments["state"], "arity_error:len")
+            let value = arguments["values"][0]
+            if vm_is_map(value):
+                return vm_push(arguments["state"], len(value["entries"]))
+            return vm_push(arguments["state"], len(value))
+        if name == "str":
+            if instruction["argc"] != 1:
+                return vm_fail(arguments["state"], "arity_error:str")
+            if vm_is_map(arguments["values"][0]):
+                return vm_push(arguments["state"], vm_map_json_text(arguments["values"][0]))
+            return vm_push(arguments["state"], str(arguments["values"][0]))
+        if name == "contains":
+            if instruction["argc"] != 2:
+                return vm_fail(arguments["state"], "arity_error:contains")
+            return vm_push(arguments["state"], contains(arguments["values"][0], arguments["values"][1]))
+        if name == "keys" or name == "values":
+            if instruction["argc"] != 1:
+                return vm_fail(arguments["state"], "arity_error:" + name)
+            if name == "keys":
+                return vm_push(arguments["state"], vm_map_keys(arguments["values"][0]))
+            return vm_push(arguments["state"], vm_map_values(arguments["values"][0]))
+        if name == "has_key":
+            if instruction["argc"] != 2:
+                return vm_fail(arguments["state"], "arity_error:has_key")
+            return vm_push(arguments["state"], vm_map_has_key(arguments["values"][0], arguments["values"][1]))
+        if name == "map_get":
+            if instruction["argc"] != 2:
+                return vm_fail(arguments["state"], "arity_error:map_get")
+            return vm_push(arguments["state"], vm_map_get(arguments["values"][0], arguments["values"][1]))
+        if name == "map_set":
+            if instruction["argc"] != 3:
+                return vm_fail(arguments["state"], "arity_error:map_set")
+            return vm_push(arguments["state"], vm_map_set(arguments["values"][0], arguments["values"][1], arguments["values"][2]))
+        if name == "json":
+            if instruction["argc"] != 1:
+                return vm_fail(arguments["state"], "arity_error:json")
+            if vm_is_map(arguments["values"][0]):
+                return vm_push(arguments["state"], vm_map_json_text(arguments["values"][0]))
+            return vm_push(arguments["state"], json(arguments["values"][0]))
+        if name == "some" and instruction["argc"] == 1:
+            return vm_push(arguments["state"], some(arguments["values"][0]))
+        if name == "none" and instruction["argc"] == 0:
+            return vm_push(arguments["state"], none)
+        if name == "is_some" and instruction["argc"] == 1:
+            return vm_push(arguments["state"], is_some(arguments["values"][0]))
+        if name == "is_none" and instruction["argc"] == 1:
+            return vm_push(arguments["state"], arguments["values"][0] == none)
+        if name == "unwrap" and instruction["argc"] == 1:
+            return vm_push(arguments["state"], unwrap(arguments["values"][0]))
         let definition_name = name
         let captures = []
         let owner = none
@@ -707,7 +902,7 @@ export fn vm_step(state, instruction):
         let frame_owner = owner
         if owner != none:
             frame_owner = definition["owner"]
-        let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "owner": frame_owner, "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
+        let frame = {"capture_names": capture_names, "closure_name": closure_name, "constructor_instance": constructor_instance, "function": definition_name, "globals": vm_global_environment(arguments["state"]), "handlers": arguments["state"]["handlers"], "is_constructor": constructor, "locals": arguments["state"]["locals"], "owner": frame_owner, "return_ip": arguments["state"]["ip"], "stack": arguments["state"]["stack"]}
         let callee = vm_state_with(none, false, [], definition["entry"], [], arguments["state"]["output"], [], append(arguments["state"]["frames"], frame), arguments["state"]["functions"])
         let with_captures = vm_bind_captures(callee, captures, 0)
         let with_self = with_captures
@@ -725,7 +920,13 @@ export fn vm_step(state, instruction):
             return vm_fail(advanced, left["error"])
         let value = none
         if op == "add":
-            value = left["value"] + right["value"]
+            if starts_with(json(left["value"]), "[") and starts_with(json(right["value"]), "["):
+                value = vm_list_concat(left["value"], right["value"], 0, [])
+            else:
+                if type(left["value"]) == "number" and type(right["value"]) == "number":
+                    value = left["value"] + right["value"]
+                else:
+                    value = vm_to_text(left["value"]) + vm_to_text(right["value"])
         if op == "subtract":
             value = left["value"] - right["value"]
         if op == "multiply":

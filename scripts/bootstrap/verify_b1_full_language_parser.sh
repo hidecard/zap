@@ -137,9 +137,44 @@ if value.get("kind") != "zap.ast" or value.get("schema_version") != 1:
 statements = value.get("ast", {}).get("statements")
 if not isinstance(statements, list) or not statements:
     raise SystemExit("CRLF parser fixture produced no AST statements")
+def contains_invalid_statement(node):
+    if isinstance(node, dict):
+        if node.get("kind") == "invalid_statement":
+            return True
+        return any(contains_invalid_statement(child) for child in node.values())
+    if isinstance(node, list):
+        return any(contains_invalid_statement(child) for child in node)
+    return False
+if contains_invalid_statement(statements):
+    raise SystemExit("CRLF parser fixture contains invalid statements")
+names = {node.get("name") for node in statements if isinstance(node, dict)}
+if not {"COMMAND_CHECK", "SUPPORTED", "command_supported", "dispatch", "args"} <= names:
+    raise SystemExit("CRLF parser fixture is missing expected top-level declarations")
 PY
 printf 'crlf_fixture\tbootstrap/fixtures/b4/c_backend_cli.zp\n' >> "$REPORT"
 printf 'crlf_parser\tpass\n' >> "$REPORT"
+
+cat > "$RUNNER" <<'EOF'
+import "bootstrap/b1/parser.zp"
+let source = read_text("bootstrap/fixtures/b4/c_backend_self_rebuild.zp")
+say parse_general(source, "bootstrap/fixtures/b4/c_backend_self_rebuild.zp")
+EOF
+"$SEED" "$(basename "$RUNNER")" > "$OUT_A" || fail "call-assignment parser fixture failed"
+python3 - "$OUT_A" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+statements = value.get("ast", {}).get("statements", [])
+function = next((node for node in statements if node.get("kind") == "function" and node.get("name") == "stage_chain"), None)
+if function is None:
+    raise SystemExit("call-assignment fixture is missing stage_chain")
+loop = next((node for node in function["body"]["statements"] if node.get("kind") == "while"), None)
+if loop is None:
+    raise SystemExit("call-assignment fixture is missing its while loop")
+assignment = next((node for node in loop["body"]["statements"] if node.get("kind") == "assignment" and node.get("name") == "index"), None)
+if assignment is None or assignment["value"].get("kind") != "call" or assignment["value"]["callee"].get("name") != "bump":
+    raise SystemExit("assignment with a call-valued RHS was not parsed as an assignment")
+PY
+printf 'call_assignment\tpass\n' >> "$REPORT"
 
 python3 - "$CORPUS" <<'PY' >> "$REPORT"
 from pathlib import Path

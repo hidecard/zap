@@ -398,6 +398,11 @@ export fn driver_finalize_typed_ir(first, ownership):
 export fn driver_promote_typed_ir(source, source_name):
     let normalized = driver_normalize_source(source)
     let first = from_json(emit_inferred_program_typed_ir(normalized, source_name))
+    if first["kind"] != "zap.typed_ir":
+        return {"diagnostics": [first], "ownership": {"ownership": "blocked", "reference_owner": "zap"}, "status": "typed_ir_diagnostic", "typed_ir": first}
+    if len(first["diagnostics"]) > 0:
+        let diagnostic = {"diagnostics": first["diagnostics"], "kind": "zap.diagnostics", "schema_version": 1, "source_name": source_name}
+        return {"diagnostics": [diagnostic], "ownership": {"ownership": "blocked", "reference_owner": "zap"}, "status": "typed_ir_diagnostic", "typed_ir": first}
     let second = from_json(emit_inferred_program_typed_ir(normalized, source_name))
     let ownership = driver_typed_ir_ownership(first, second)
     if ownership["ownership"] != "zap_owned":
@@ -409,6 +414,8 @@ export fn driver_compile_backend(source, source_name):
     let typed = driver_promote_typed_ir(source, source_name)
     if typed["status"] != "typed_ir_promoted":
         let compile_error = "typed_ir_promotion_error"
+        if len(typed["typed_ir"]["diagnostics"]) > 0 and starts_with(typed["typed_ir"]["diagnostics"][0]["code"], "ZAP-SYNTAX-"):
+            compile_error = "syntax_diagnostic"
         if len(typed["typed_ir"]["diagnostics"]) > 0 and contains(typed["typed_ir"]["diagnostics"][0]["message"], "block requires an indented body"):
             if starts_with(trim(source), "while "):
                 compile_error = "missing_while_body"

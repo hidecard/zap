@@ -49,6 +49,7 @@ let legacy_ownership = driver_typed_ir_ownership(legacy, legacy)
 let incomplete_ownership = driver_typed_ir_ownership(incomplete, incomplete)
 let unknown_statement = {"kind": "future_statement"}
 let unknown_expression = {"kind": "future_expression"}
+let list_backend = driver_compile_backend("let items = [1, 2]\nsay len(items)\nsay contains(items, 2)\nsay str(argc())\nsay len(argv())\nlet mapping = {\"a\": 1}\nmapping[\"a\"] = 2\nsay map_get(mapping, \"a\")\nsay has_key(mapping, \"a\")\nsay len(keys(mapping))\nsay values(mapping)[0]\nsay is_some(some(2))\nsay is_none(none())\n", "collections.zp")
 say promoted["status"]
 say promoted["typed_ir"]["candidate_only"]
 say promoted["ownership"]["ownership"]
@@ -64,6 +65,18 @@ say incomplete_ownership["valid"]
 say incomplete_ownership["candidate_only"]
 say driver_typed_ir_node_coverage_valid(unknown_statement)
 say driver_typed_ir_expression_coverage_valid(unknown_expression)
+say list_backend["status"]
+say list_backend["execution"]["error"]
+say list_backend["execution"]["output"][0]
+say list_backend["execution"]["output"][1]
+say list_backend["execution"]["output"][2]
+say list_backend["execution"]["output"][3]
+say list_backend["execution"]["output"][4]
+say list_backend["execution"]["output"][5]
+say list_backend["execution"]["output"][6]
+say list_backend["execution"]["output"][7]
+say list_backend["execution"]["output"][8]
+say list_backend["execution"]["output"][9]
 EOF
 "$SEED" "$(basename "$runner")" > "$output"
 cat > "${output}.expected" <<'EOF'
@@ -82,6 +95,18 @@ false
 true
 false
 false
+ok
+none
+2
+true
+0
+0
+2
+true
+1
+2
+true
+true
 EOF
 cmp "$output" "${output}.expected" || fail "finalized typed-IR/backend propagation changed"
 rm -f "${output}.expected"
