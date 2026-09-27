@@ -1416,10 +1416,16 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
         vcvars = _find_vcvars(cc)
         fd, bat_path = tempfile.mkstemp(suffix=".bat", prefix="zap_c_backend_build_")
         os.close(fd)
-        fd, object_path = tempfile.mkstemp(suffix=".obj", prefix="zap_c_backend_")
-        os.close(fd)
+        object_path = os.fspath(out_path) + ".zap-backend.obj"
+        object_created = False
         try:
-            os.remove(object_path)
+            fd = os.open(
+                object_path,
+                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                0o600,
+            )
+            os.close(fd)
+            object_created = True
             bat_lines = ["@echo off"]
             if vcvars:
                 bat_lines.append(f'call "{vcvars}" >nul')
@@ -1429,10 +1435,11 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
                 fh.write("\n".join(bat_lines) + "\n")
             args = ["cmd", "/c", bat_path]
         except Exception:
-            try:
-                os.remove(object_path)
-            except OSError:
-                pass
+            if object_created:
+                try:
+                    os.remove(object_path)
+                except OSError:
+                    pass
             try:
                 os.remove(bat_path)
             except OSError:
@@ -1444,17 +1451,15 @@ def compile_c(c_path, out_path, compiler=None, extra_args=None):
         args = [cc, "-O2", "-o", out_path, c_path]
     if extra_args:
         args.extend(extra_args)
-    result = subprocess.run(args, capture_output=True, text=True)
-    if bat_path:
-        try:
-            os.remove(bat_path)
-        except OSError:
-            pass
-    if object_path:
-        try:
-            os.remove(object_path)
-        except OSError:
-            pass
+    try:
+        result = subprocess.run(args, capture_output=True, text=True)
+    finally:
+        for temporary_path in (bat_path, object_path):
+            if temporary_path:
+                try:
+                    os.remove(temporary_path)
+                except FileNotFoundError:
+                    pass
     if result.returncode != 0:
         raise RuntimeError(f"C compiler failed: {' '.join(args)}\n{result.stderr}")
     strip_path = shutil.which("strip")

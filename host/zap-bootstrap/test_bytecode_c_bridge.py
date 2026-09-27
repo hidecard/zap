@@ -41,6 +41,29 @@ def _canonical(program):
 
 
 class BytecodeCBridgeTest(unittest.TestCase):
+    def test_msvc_reproducible_build_uses_stable_object_filename(self):
+        with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-msvc-") as tmp:
+            c_path = Path(tmp) / "input.c"
+            out_path = Path(tmp) / "output.exe"
+            c_path.write_text("int main(void) { return 0; }\n", encoding="utf-8")
+            batch_contents = []
+
+            def run_compiler(args, **kwargs):
+                batch_contents.append(Path(args[-1]).read_text(encoding="utf-8"))
+                return subprocess.CompletedProcess(
+                    args=args, returncode=0, stdout="", stderr="")
+
+            with (
+                patch("c_backend._find_vcvars", return_value=None),
+                patch("c_backend.subprocess.run", side_effect=run_compiler),
+                patch("c_backend.shutil.which", return_value=None),
+            ):
+                compile_c(str(c_path), str(out_path), compiler="cl.exe")
+
+            self.assertEqual(len(batch_contents), 1)
+            self.assertIn(f'/Fo:"{out_path}.zap-backend.obj"', batch_contents[0])
+            self.assertFalse(Path(f"{out_path}.zap-backend.obj").exists())
+
     def test_macos_preserves_linker_uuid_and_skips_elf_stripping(self):
         with tempfile.TemporaryDirectory(prefix="zap-bytecode-c-macos-") as tmp:
             c_path = Path(tmp) / "input.c"
