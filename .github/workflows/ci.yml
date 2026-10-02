@@ -741,7 +741,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: zap-platform-seed-${{ matrix.target }}-${{ github.sha }}
-          path: target/platform-seed/${{ matrix.target }}
+          # The build job uploads the target/platform-seed/<target> prefix;
+          # download into target so the exported seed path points at the file.
+          path: target
 
       - name: Set platform seed path
         shell: bash
