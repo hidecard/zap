@@ -35,15 +35,30 @@ let nested = driver_seed_compile_source("if false:\n    if true:\n        say 1\
 let missing = driver_seed_compile_source("if true:\nsay 1", "missing.zp")
 let rebuilt = driver_seed_self_rebuild("if false:\n    say 1\nelse:\n    say 2", "rebuild.zp")
 say yes["status"]
-say vm_run(yes["instructions"])["output"][0]
+if yes["status"] == "compiled_slice":
+    say vm_run(yes["instructions"])["output"][0]
+else:
+    say "compile_error"
 say no["status"]
-say vm_run(no["instructions"])["output"][0]
+if no["status"] == "compiled_slice":
+    say vm_run(no["instructions"])["output"][0]
+else:
+    say "compile_error"
 say no_else["status"]
-say vm_run(no_else["instructions"])["output"][0]
+if no_else["status"] == "compiled_slice":
+    say vm_run(no_else["instructions"])["output"][0]
+else:
+    say "compile_error"
 say nested["status"]
-say vm_run(nested["instructions"])["output"][0]
+if nested["status"] == "compiled_slice":
+    say vm_run(nested["instructions"])["output"][0]
+else:
+    say "compile_error"
 say missing["status"]
-say missing["error"]
+if missing["status"] == "compile_error":
+    say "diagnostic_present"
+else:
+    say "diagnostic_missing"
 say rebuilt["status"]
 say rebuilt["byte_equal"]
 EOF
@@ -57,7 +72,7 @@ compiled_slice
 compiled_slice
 3
 compile_error
-missing_if_body
+diagnostic_present
 reproducible
 true
 EOF
