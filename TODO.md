@@ -9,11 +9,11 @@
 ### Latest verification update (2026-10-03)
 
 - Latest `master` commit checked: `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`).
-- GitHub Actions run [#37085477064](https://github.com/hidecard/zap/actions/runs/37085477064) failed only at the Linux Zap-owned C backend structure smoke test; the cross-platform C backend jobs passed.
+- GitHub Actions run [#37099303061](https://github.com/hidecard/zap/actions/runs/37099303061) is green: all 11 jobs passed, including Rust quality, native builds, C backend cross-platform checks, and B4 platform evidence.
 - Root cause reproduced locally: the smoke fixture passed a string to the scalar-only backend, which returned an empty rejected result and then indexed `result[0]`, causing `ProjectError: index out of range`.
 - Local fix prepared in `scripts/bootstrap/verify_zap_c_backend_structure.sh`: use numeric scalar `42` and print compiler diagnostics on failure. The gate passes locally.
 - B1 aggregate runner passes all 22 discovered gates: `PASS: 22`, `FAIL: 0`, `SKIP: 0`; executable permission for `verify_b1_parser_zap_only.sh` is present.
-- **Next P0:** commit and push the smoke-fixture fix, then verify the successor CI run is fully green before refreshing consolidated evidence.
+- **Baseline result:** the smoke-fixture fix is committed as `258c04d`, pushed to `master`, and verified by the fully green successor CI run. Next work is full parser/type-checker/typed-IR ownership and Rust-free seed provenance; keep `self_hosted = false` until those acceptance contracts pass.
 
 ### Self-hosting progress update (2026-09-09)
 

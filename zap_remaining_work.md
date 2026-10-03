@@ -1,12 +1,12 @@
 # Zap — Remaining Work and Verification Status
 
-> **Snapshot:** `master` at `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`), checked on 2026-10-03. This document separates **verified current results** from **roadmap claims**. A gate is marked complete only when the current checkout passes the corresponding command.
+> **Snapshot:** `master` at `258c04d` (`fix(ci): correct Zap C backend smoke fixture`), checked on 2026-10-03. This document separates **verified current results** from **roadmap claims**. A gate is marked complete only when the current checkout passes the corresponding command.
 
 ## Executive summary
 
 Zap’s developer toolchain, native runtime build, release-version validation, B1 lexer ownership contract, B1 parser candidate gate, and B2 typed-IR candidate gate are now passing locally from the current checkout. The earlier token-native indentation crash and the CI release-binary path problem have been addressed. The lexer ownership contract also now handles the repository’s CRLF-formatted `OWNERS.tsv` correctly.
 
-The latest GitHub CI run for `1e123a8` completed **with failure** in the Zap-owned C backend structure smoke test. The failure was caused by the test fixture passing a string to a scalar-only backend and triggering an out-of-range access on the rejected result; the fixture is now corrected locally to use a numeric scalar and the gate passes. The fix still needs to be committed and pushed before CI can be re-certified. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, Zap-owned package/build/VM execution, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
+The latest GitHub CI run for `258c04d` is **green** across Rust quality, native builds, C backend Linux/Windows/macOS jobs, cross-platform comparison, and B4 platform evidence. The previous failure was caused by the test fixture passing a string to a scalar-only backend and triggering an out-of-range access on the rejected result; the committed fix uses a numeric scalar and prints diagnostics on failure. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, Zap-owned package/build/VM execution, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
 
 ## Current verified status
 
@@ -31,7 +31,7 @@ The latest GitHub CI run for `1e123a8` completed **with failure** in the Zap-own
 
 ### CI status — not final yet
 
-The latest GitHub run is [Zap CI run #37085477064](https://github.com/hidecard/zap/actions/runs/37085477064) for commit `1e123a8`. It completed **failure** in `Verify Zap-owned C backend structure`; the Linux, Windows, and macOS C backend jobs otherwise passed. Because the local fix is not pushed yet, the repository is **not certified CI-green**.
+The latest GitHub run is [Zap CI run #37099303061](https://github.com/hidecard/zap/actions/runs/37099303061) for commit `258c04d`. It completed **successfully**: all 11 jobs passed, including `Rust quality checks`, three native build jobs, three C backend jobs, cross-platform comparison, and three B4 platform-evidence jobs. CI is green for this validation baseline; full self-hosting certification remains open.
 
 ## Completed immediate blockers
 
@@ -47,7 +47,7 @@ The latest GitHub run is [Zap CI run #37085477064](https://github.com/hidecard/z
 
 ## Remaining P0 work — required before declaring the validation baseline green
 
-- [ ] Commit and push the C backend smoke-fixture fix, then wait for the new CI run to complete and inspect every failed job or step.
+- [x] Commit and push the C backend smoke-fixture fix, then wait for and verify the successor CI run.
 - [ ] If CI exposes additional portability failures in `run_zap()` smoke coverage, fix them and rerun the complete workflow.
 - [ ] Refresh consolidated B1/B2/B3/B4 evidence from a clean checkout after CI is green.
 
