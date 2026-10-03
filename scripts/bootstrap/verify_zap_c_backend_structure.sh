@@ -14,6 +14,19 @@ fi
 
 echo "PASS: Zap C backend module exists"
 
+for required in \
+    'export fn c_backend_validate_bytecode(' \
+    'export fn c_backend_emit(' \
+    'export fn c_backend_ownership(' \
+    'zap_owned_scalar_backend'; do
+    if ! grep -Fq "$required" bootstrap/b4/c_backend.zp; then
+        echo "FAIL: Zap C backend missing required ownership slice: $required"
+        exit 1
+    fi
+done
+
+echo "PASS: Zap C backend validation and ownership slice present"
+
 # Try to compile the Zap C backend module with the current Zap binary
 ZAP_BIN="${ZAP_BIN:-${ZAP_BOOTSTRAP_BIN:-$ROOT_DIR/bin/zap}}"
 if [ ! -x "$ZAP_BIN" ] && [ -x "$ZAP_BIN.exe" ]; then

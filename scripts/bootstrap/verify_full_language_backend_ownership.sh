@@ -16,7 +16,9 @@ for required in \
   'import "bootstrap/b3/vm.zp"' \
   'import "bootstrap/b3/package.zp"' \
   'import "bootstrap/b4/runner.zp"' \
+  'import "bootstrap/b4/c_backend.zp"' \
   'export fn driver_compile_backend(' \
+  'export fn driver_compile_c_backend(' \
   'export fn driver_build_package(' \
   'export fn driver_test_source('; do
   grep -Fq "$required" "$DRIVER" || fail "driver is missing explicit ownership path: $required"

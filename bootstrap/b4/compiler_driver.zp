@@ -11,6 +11,7 @@ import "bootstrap/b3/vm.zp"
 import "bootstrap/b3/package.zp"
 import "bootstrap/b4/seed_pipeline.zp"
 import "bootstrap/b4/ast_control.zp"
+import "bootstrap/b4/c_backend.zp"
 
 export fn driver_frontend_ownership():
     return {"acceptance": {"lexer_corpus": {"fixture_count": 192, "status": "verified_deterministic_token_streams"}, "module_resolution": {"diagnostic_count": 5, "status": "verified_deterministic_graph_and_errors"}, "parser_corpus": {"fixture_count": 62, "status": "verified_deterministic_ast_and_diagnostics"}}, "components": [{"owner": "zap", "source": "bootstrap/b1/lexer.zp", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b1/parser.zp", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned"}], "complete_language": false, "reference_owner": "rust", "schema_version": 1, "status": "frontend_ownership_slice"}
@@ -22,7 +23,13 @@ export fn driver_module_resolution_ownership():
     return {"canonicalization": ["backslash-to-slash", "duplicate-separator-collapse", "zp-extension-strip"], "diagnostics": ["ZAP-MODULE-001", "ZAP-MODULE-002", "ZAP-MODULE-003", "ZAP-MODULE-004", "ZAP-MODULE-005"], "owner": "zap", "source": "bootstrap/b4/compiler_driver.zp", "status": "zap_owned", "schema_version": 1, "reference_owner": "rust"}
 
 export fn driver_typed_ir_backend_ownership():
-    return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
+    return {"components": [{"owner": "zap", "source": "bootstrap/b2/typed_ir.zp", "stage": "typed_ir", "status": "promotion_required"}, {"owner": "zap", "source": "bootstrap/b3/lower.zp", "stage": "lowering", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b3/vm.zp", "stage": "backend_vm", "status": "zap_owned"}, {"owner": "zap", "source": "bootstrap/b4/c_backend.zp", "stage": "native_c_backend", "status": "scalar_slice"}], "complete_language": false, "promotion_boundary": "driver_promote_typed_ir", "reference_owner": "rust", "schema_version": 1, "status": "zap_owned_backend_candidate_surface"}
+
+export fn driver_compile_c_backend(bytecode):
+    let generated = c_backend_emit(bytecode)
+    if generated["status"] != "zap_owned_scalar_backend":
+        return {"error": generated["error"], "lines": [], "ownership": "blocked", "reference_owner": "zap", "status": "c_backend_rejected"}
+    return {"error": none, "lines": generated["lines"], "instruction_count": generated["instruction_count"], "ownership": "zap_owned", "reference_owner": "zap", "status": generated["status"]}
 
 export fn driver_normalize_source(source):
     return source

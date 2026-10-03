@@ -1,70 +1,103 @@
-fn c_backend_emit_header():
-    let lines = []
-    lines = append(lines, "#include <stdio.h>")
-    lines = append(lines, "#include <stdlib.h>")
-    lines = append(lines, "#include <string.h>")
-    lines = append(lines, "#include <stdint.h>")
-    lines = append(lines, "#include <stdbool.h>")
-    lines = append(lines, "")
-    lines = append(lines, "typedef struct value value;")
-    lines = append(lines, "struct value { int kind; char *str; value **items; value **vals; int count; int cap; int vcount; int vcap; int task_id; };")
-    lines = append(lines, "")
-    lines = append(lines, "#define ZAP_HEAP_MAX 262144")
-    lines = append(lines, "static value *g_heap[ZAP_HEAP_MAX];")
-    lines = append(lines, "static int g_heap_count = 0;")
-    lines = append(lines, "")
-    lines = append(lines, "static value *track(value *v) {")
-    lines = append(lines, "  if (g_heap_count >= ZAP_HEAP_MAX) { fprintf(stderr, \"heap exhausted\\n\"); exit(1); }")
-    lines = append(lines, "  g_heap[g_heap_count++] = v;")
-    lines = append(lines, "  return v;")
-    lines = append(lines, "}")
-    lines = append(lines, "")
-    return lines
+# Zap-owned C backend foundation.
+#
+# This module owns validation and emission for the canonical scalar bytecode
+# slice. The Python backend remains the reference for the wider runtime until
+# each opcode family is migrated behind the same validation boundary.
 
-fn c_backend_emit_runtime():
-    let lines = []
-    lines = append(lines, "static value *vmake(int kind) {")
-    lines = append(lines, "  value *v = (value *)calloc(1, sizeof(value));")
-    lines = append(lines, "  if (v == NULL) { fprintf(stderr, \"out of memory\\n\"); exit(1); }")
-    lines = append(lines, "  v->kind = kind;")
-    lines = append(lines, "  return track(v);")
-    lines = append(lines, "}")
-    lines = append(lines, "")
-    lines = append(lines, "static value *vstr(const char *s) {")
-    lines = append(lines, "  value *v = vmake(0);")
-    lines = append(lines, "  v->str = strdup(s ? s : \"\");")
-    lines = append(lines, "  return v;")
-    lines = append(lines, "}")
-    lines = append(lines, "")
-    return lines
+export fn c_backend_supported_opcode(op):
+    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal"
 
-fn c_backend_emit_bytecode_handlers():
-    let lines = []
-    lines = append(lines, "static int c_backend_run(void) {")
+export fn c_backend_scalar_value_valid(value):
+    let encoded = json(value)
+    return value == none or value == true or value == false or not contains(encoded, "\"")
+
+export fn c_backend_instruction_valid(instruction):
+    if not contains(json(instruction), "\"op\""):
+        return false
+    let op = instruction["op"]
+    if not c_backend_supported_opcode(op):
+        return false
+    if op == "const" and not contains(json(instruction), "\"value\""):
+        return false
+    if op == "const" and not c_backend_scalar_value_valid(instruction["value"]):
+        return false
+    return true
+
+export fn c_backend_validate_instructions(bytecode, index):
+    if index >= len(bytecode):
+        return {"error": none, "instruction_count": len(bytecode), "status": "validated"}
+    if not c_backend_instruction_valid(bytecode[index]):
+        return {"error": "unsupported_or_malformed_instruction:" + str(index), "instruction_count": index, "status": "rejected"}
+    return c_backend_validate_instructions(bytecode, index + 1)
+
+export fn c_backend_validate_bytecode(bytecode):
+    let checked = c_backend_validate_instructions(bytecode, 0)
+    if checked["status"] != "validated":
+        return {"error": checked["error"], "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+    return {"error": none, "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "validated"}
+
+export fn c_backend_c_scalar(value):
+    if value == none:
+        return "0"
+    if value == true:
+        return "1"
+    if value == false:
+        return "0"
+    return json(value)
+
+export fn c_backend_emit_header():
+    return ["#include <stdio.h>", "#include <stdlib.h>", "#include <stdbool.h>", "", "static long zap_stack[256];", "static int zap_sp = 0;", "static long zap_pop(void) { return zap_stack[--zap_sp]; }", "static void zap_push(long value) { zap_stack[zap_sp++] = value; }", ""]
+
+export fn c_backend_emit_instruction(instruction):
+    let op = instruction["op"]
+    if op == "const":
+        return ["zap_push(" + c_backend_c_scalar(instruction["value"]) + ");"]
+    if op == "print":
+        return ["printf(\"%ld\\n\", zap_pop());"]
+    if op == "pop":
+        return ["(void)zap_pop();"]
+    if op == "add":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs + rhs); }"]
+    if op == "subtract":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs - rhs); }"]
+    if op == "multiply":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs * rhs); }"]
+    if op == "divide":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(rhs == 0 ? 0 : lhs / rhs); }"]
+    if op == "remainder":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(rhs == 0 ? 0 : lhs % rhs); }"]
+    if op == "equal":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs == rhs); }"]
+    if op == "not_equal":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs != rhs); }"]
+    if op == "less":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs < rhs); }"]
+    if op == "less_equal":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs <= rhs); }"]
+    if op == "greater":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs > rhs); }"]
+    if op == "greater_equal":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs >= rhs); }"]
+    return []
+
+export fn c_backend_emit(bytecode):
+    let validation = c_backend_validate_bytecode(bytecode)
+    if validation["status"] != "validated":
+        return {"error": validation["error"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+    let lines = c_backend_emit_header()
+    lines = append(lines, "int main(void) {")
+    for instruction in bytecode:
+        for line in c_backend_emit_instruction(instruction):
+            lines = append(lines, "  " + line)
     lines = append(lines, "  return 0;")
     lines = append(lines, "}")
-    lines = append(lines, "")
-    return lines
-
-fn c_backend_emit_entry_point():
-    let lines = []
-    lines = append(lines, "int main(int argc, char **argv) {")
-    lines = append(lines, "  (void)argc;")
-    lines = append(lines, "  (void)argv;")
-    lines = append(lines, "  return c_backend_run();")
-    lines = append(lines, "}")
-    lines = append(lines, "")
-    return lines
-
-fn c_backend_emit(bytecode):
-    let lines = c_backend_emit_header()
-    lines = append(lines, c_backend_emit_runtime())
-    lines = append(lines, c_backend_emit_bytecode_handlers())
-    lines = append(lines, c_backend_emit_entry_point())
-    return lines
+    return {"error": none, "lines": lines, "instruction_count": validation["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "zap_owned_scalar_backend"}
 
 export fn c_backend_generate(bytecode):
-    return c_backend_emit(bytecode)
+    let result = c_backend_emit(bytecode)
+    if result["status"] == "rejected":
+        return []
+    return result["lines"]
 
-export fn c_backend_add_string_literal(s):
-    return s
+export fn c_backend_ownership():
+    return {"complete_language": false, "implemented_opcode_families": ["scalar_constants", "scalar_arithmetic", "scalar_comparison", "scalar_print"], "owner": "zap", "reference_owner": "python_c_backend", "status": "zap_owned_scalar_backend_slice", "schema_version": 1}
