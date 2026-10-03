@@ -745,6 +745,11 @@ jobs:
           # download into target so the exported seed path points at the file.
           path: target
 
+      - name: Restore Unix platform seed executable bit
+        if: runner.os != 'Windows'
+        shell: bash
+        run: chmod +x "target/platform-seed/${{ matrix.target }}/zap"
+
       - name: Set platform seed path
         shell: bash
         run: |
