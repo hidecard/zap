@@ -1,10 +1,19 @@
 ﻿# Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-09-16
+**စစ်ဆေး/Update သည့်နေ့:** 2026-10-03
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
-**Bootstrap stage:** B0 (B4 candidate evidence exists; full-language certification remains open)
+**Bootstrap stage:** B4 candidate (full-language and Rust-free seed certification remain open)
+
+### Latest verification update (2026-10-03)
+
+- Latest `master` commit checked: `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`).
+- GitHub Actions run [#37085477064](https://github.com/hidecard/zap/actions/runs/37085477064) failed only at the Linux Zap-owned C backend structure smoke test; the cross-platform C backend jobs passed.
+- Root cause reproduced locally: the smoke fixture passed a string to the scalar-only backend, which returned an empty rejected result and then indexed `result[0]`, causing `ProjectError: index out of range`.
+- Local fix prepared in `scripts/bootstrap/verify_zap_c_backend_structure.sh`: use numeric scalar `42` and print compiler diagnostics on failure. The gate passes locally.
+- B1 aggregate runner passes all 22 discovered gates: `PASS: 22`, `FAIL: 0`, `SKIP: 0`; executable permission for `verify_b1_parser_zap_only.sh` is present.
+- **Next P0:** commit and push the smoke-fixture fix, then verify the successor CI run is fully green before refreshing consolidated evidence.
 
 ### Self-hosting progress update (2026-09-09)
 

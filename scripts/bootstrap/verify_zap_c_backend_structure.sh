@@ -43,7 +43,7 @@ trap 'rm -f "$TEST_FILE"' EXIT
 
 cat > "$TEST_FILE" <<'EOF'
 import "bootstrap/b4/c_backend.zp"
-let test_bytecode = [{"op": "const", "value": "hello"}]
+let test_bytecode = [{"op": "const", "value": 42}]
 let result = c_backend_generate(test_bytecode)
 say "Generated C lines: " + str(len(result))
 say "First line: " + result[0]
@@ -51,9 +51,10 @@ EOF
 
 ZAP_TEST_FILE="$TEST_FILE"
 
-if "$ZAP_BIN" "$ZAP_TEST_FILE" > /dev/null 2>&1; then
+if output=$("$ZAP_BIN" "$ZAP_TEST_FILE" 2>&1); then
     echo "PASS: Zap C backend module compiles successfully"
 else
+    printf '%s\n' "$output" >&2
     echo "FAIL: Zap C backend module compilation failed"
     exit 1
 fi

@@ -1,16 +1,16 @@
 # Zap — Remaining Work and Verification Status
 
-> **Snapshot:** `master` at `5cfeb58` (`ci: make lexer ownership contract CRLF-safe`), checked on 2026-09-08. This document separates **verified current results** from **roadmap claims**. A gate is marked complete only when the current checkout passes the corresponding command.
+> **Snapshot:** `master` at `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`), checked on 2026-10-03. This document separates **verified current results** from **roadmap claims**. A gate is marked complete only when the current checkout passes the corresponding command.
 
 ## Executive summary
 
 Zap’s developer toolchain, native runtime build, release-version validation, B1 lexer ownership contract, B1 parser candidate gate, and B2 typed-IR candidate gate are now passing locally from the current checkout. The earlier token-native indentation crash and the CI release-binary path problem have been addressed. The lexer ownership contract also now handles the repository’s CRLF-formatted `OWNERS.tsv` correctly.
 
-The latest GitHub CI run for `5cfeb58` is still **in progress**, so the repository must not yet be called CI-green. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, Zap-owned package/build/VM execution, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
+The latest GitHub CI run for `1e123a8` completed **with failure** in the Zap-owned C backend structure smoke test. The failure was caused by the test fixture passing a string to a scalar-only backend and triggering an out-of-range access on the rejected result; the fixture is now corrected locally to use a numeric scalar and the gate passes. The fix still needs to be committed and pushed before CI can be re-certified. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, Zap-owned package/build/VM execution, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
 
 ## Current verified status
 
-### PASS — verified locally from `5cfeb58`
+### PASS — verified locally from `1e123a8`
 
 - `make doctor` passes with Rust/Cargo `1.88.0`, `cargo-audit`, the pinned toolchain, and native runtime `zap 2.11.18` available.
 - Native tests pass: the latest local run reports **259 passed, 0 failed** for the integration/native test group; the previously recorded native test groups also passed with zero failures.
@@ -26,10 +26,12 @@ The latest GitHub CI run for `5cfeb58` is still **in progress**, so the reposito
 - `scripts/bootstrap/verify_b2_recursive_alias.sh` passes, including `ZAP-TYPE-011` coverage.
 - `scripts/bootstrap/verify_b2_typed_ir_candidate.sh` passes its annotated declaration and bounded generic-identity differential checks.
 - `scripts/verify_section_a_next50.sh` passes the checked-in focused inference/scope/loop/call-graph cases.
+- `scripts/bootstrap/verify_zap_c_backend_structure.sh` passes after correcting its scalar fixture to use a numeric constant; the gate now also prints compiler diagnostics on failure.
+- `scripts/bootstrap/aggregate_b1_parser_gates.sh` passes all 22 discovered B1 gates with `PASS: 22`, `FAIL: 0`, and `SKIP: 0`; direct-execution and failure propagation behavior are verified locally.
 
 ### CI status — not final yet
 
-The latest GitHub run is [Zap CI run #34186734282](https://github.com/hidecard/zap/actions/runs/34186734282) for commit `5cfeb58`. At the latest check it is **in progress** in `Rust quality checks`, currently running `Verify run_zap() portability refactor smoke`, with no recorded failure yet. Because the run has not completed, the repository is **not certified CI-green**.
+The latest GitHub run is [Zap CI run #37085477064](https://github.com/hidecard/zap/actions/runs/37085477064) for commit `1e123a8`. It completed **failure** in `Verify Zap-owned C backend structure`; the Linux, Windows, and macOS C backend jobs otherwise passed. Because the local fix is not pushed yet, the repository is **not certified CI-green**.
 
 ## Completed immediate blockers
 
@@ -39,13 +41,14 @@ The latest GitHub run is [Zap CI run #34186734282](https://github.com/hidecard/z
 - [x] Repair the parser-candidate gate’s hard-coded `D:/zap` temporary paths and use portable `mktemp` paths.
 - [x] Make parser and typed-IR candidate normalization accept the intended multi-record JSON output format.
 - [x] Re-run local doctor, native build/tests, release-version checks, Markdown links, lexer contract, parser candidate, and typed-IR candidate validation.
+- [x] Restore executable permission for `verify_b1_parser_zap_only.sh` and use explicit `bash` invocation in the CI workflow.
+- [x] Correct the Zap C backend structure smoke fixture and verify the gate locally.
+- [x] Verify the B1 aggregate runner executes all 22 gates and returns non-zero on child failure.
 
 ## Remaining P0 work — required before declaring the validation baseline green
 
-- [ ] Wait for CI run `34186734282` to complete and inspect every failed job or step.
+- [ ] Commit and push the C backend smoke-fixture fix, then wait for the new CI run to complete and inspect every failed job or step.
 - [ ] If CI exposes additional portability failures in `run_zap()` smoke coverage, fix them and rerun the complete workflow.
-- [ ] Repair the B1 aggregate runner so it executes every supported gate format directly rather than silently classifying real gates as `SKIP`.
-- [ ] Make aggregate runners return a non-zero exit code whenever any child gate fails.
 - [ ] Refresh consolidated B1/B2/B3/B4 evidence from a clean checkout after CI is green.
 
 ## Remaining P1 work — complete parser and analysis ownership
@@ -71,7 +74,7 @@ The default-parameter parser path is portable, the previous token-native indenta
 
 ## Recommended execution order
 
-First wait for and resolve any remaining failures in CI run `34186734282`. Then make the aggregate runner truthful and regenerate consolidated evidence from a clean checkout. After the validation baseline is genuinely green, continue with complete parser/AST ownership, then general type inference and typed-IR ownership. Only after those are stable should Zap-owned package/build/VM execution and the B4 platform-seed self-rebuild be certified.
+First commit/push the local C backend fixture correction and resolve any remaining failures in the resulting CI run `1e123a8` successor. The B1 aggregate runner is locally truthful (`22/22`, no skips), so next regenerate consolidated evidence from a clean checkout after CI is green. Then continue with complete parser/AST ownership, general type inference, and typed-IR ownership. Only after those are stable should Zap-owned package/build/VM execution and the B4 platform-seed self-rebuild be certified.
 
 ## References
 
