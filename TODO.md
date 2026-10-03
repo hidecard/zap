@@ -15,6 +15,7 @@
 - B1 aggregate runner passes all 22 discovered gates: `PASS: 22`, `FAIL: 0`, `SKIP: 0`; executable permission for `verify_b1_parser_zap_only.sh` is present.
 - **Baseline result:** the smoke-fixture fix is committed as `258c04d`, pushed to `master`, and verified by the fully green successor CI run. Next work is full parser/type-checker/typed-IR ownership and Rust-free seed provenance; keep `self_hosted = false` until those acceptance contracts pass.
 - **Parser ownership increment:** `while ... else` is no longer rejected as an artificial unsupported syntax. The Zap parser emits a `while` AST node with `else_branch`; token-native indentation, 62-fixture full-language parser, and parser-candidate gates pass locally.
+- **CI follow-up:** the arbitrary-block gate had a stale assertion expecting `while ... else` to fail; it now expects the supported AST path. Local arbitrary-block, token-native, and aggregate B1 gates pass (`22/22`).
 
 ### Self-hosting progress update (2026-09-09)
 

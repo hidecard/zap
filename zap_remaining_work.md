@@ -29,6 +29,7 @@ The latest GitHub CI run for `258c04d` is **green** across Rust quality, native 
 - `scripts/bootstrap/verify_zap_c_backend_structure.sh` passes after correcting its scalar fixture to use a numeric constant; the gate now also prints compiler diagnostics on failure.
 - `scripts/bootstrap/aggregate_b1_parser_gates.sh` passes all 22 discovered B1 gates with `PASS: 22`, `FAIL: 0`, and `SKIP: 0`; direct-execution and failure propagation behavior are verified locally.
 - `while ... else` is now accepted by the Zap-owned general parser as a `while` node with `else_branch`; the token-native indentation, full-language corpus, and parser-candidate gates pass locally with 6 diagnostics and no unsupported valid-syntax fixture.
+- The follow-up arbitrary-block gate expectation was updated to the same supported contract after CI exposed the stale rejection assertion; local B1 aggregate remains `22/22` with zero failures and zero skips.
 
 ### CI status — not final yet
 

@@ -57,18 +57,14 @@ else
   run_zap "$runner_rel"
 fi > "$output"
 
-# while ... else is explicitly unsupported and must produce a diagnostic.
-grep -q "while_else_syntax.zp => DIAGNOSTIC" "$output" || { printf 'FAIL: while_else_syntax did not produce a diagnostic\n' >&2; exit 1; }
-grep -q "unsupported 'while ... else' syntax" "$output" || { printf 'FAIL: while_else_syntax missing unsupported-syntax message\n' >&2; exit 1; }
-
 # invalid indentation jump -> diagnostic reporting unexpected indentation.
 grep -q "invalid_indentation_jump.zp => DIAGNOSTIC" "$output" || { printf 'FAIL: invalid_indentation_jump did not produce a diagnostic\n' >&2; exit 1; }
 grep -q "unexpected indentation" "$output" || { printf 'FAIL: invalid_indentation_jump missing unexpected-indentation message\n' >&2; exit 1; }
 
 # Valid arbitrary programs must parse to an AST (no diagnostic).
-for valid in while_without_else mixed_top_level_statements arbitrary_deep_indentation arbitrary_nested_blocks_complex; do
+for valid in while_without_else while_else_syntax mixed_top_level_statements arbitrary_deep_indentation arbitrary_nested_blocks_complex; do
   grep -q "${valid}.zp => AST" "$output" || { printf 'FAIL: %s expected to parse to AST\n' "$valid" >&2; exit 1; }
   grep -q "${valid}.zp => DIAGNOSTIC" "$output" && { printf 'FAIL: %s unexpectedly produced a diagnostic\n' "$valid" >&2; exit 1; }
 done
 
-printf 'B1 arbitrary-block candidate gate passed: while-else rejected, invalid-indentation jump rejected, and arbitrary-depth/mixed-top-level programs parse\n'
+printf 'B1 arbitrary-block candidate gate passed: while-else accepted, invalid-indentation jump rejected, and arbitrary-depth/mixed-top-level programs parse\n'
