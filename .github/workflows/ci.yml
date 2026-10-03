@@ -741,9 +741,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: zap-platform-seed-${{ matrix.target }}-${{ github.sha }}
-          # The build job uploads the target/platform-seed/<target> prefix;
-          # download into target so the exported seed path points at the file.
-          path: target
+          # The uploaded artifact contains the seed files at its root; place
+          # them in the per-target directory used by the exported seed path.
+          path: target/platform-seed/${{ matrix.target }}
 
       - name: Restore Unix platform seed executable bit
         if: runner.os != 'Windows'
