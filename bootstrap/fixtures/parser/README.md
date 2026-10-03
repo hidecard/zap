@@ -87,7 +87,7 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 | `two_declarations.zp` | `two_declarations.ast.json` | ✅ captured | |
 | `unexpected_indentation.zp` | `unexpected_indentation.json` | ✅ captured | |
 | `unicode_identifier.zp` | `unicode_identifier.ast.json` | ✅ captured | BOOT-003 |
-| `while_else_syntax.zp` | *(none — rejected by parser)* | 🚫 negative | Used by `verify_b1_token_native_indentation.sh`; expected message `"unsupported 'while ... else' syntax"` |
+| `while_else_syntax.zp` | `while_else_syntax.ast.json` | ✅ captured | `while` AST with `else_branch`; verified by `verify_b1_token_native_indentation.sh` |
 | `while_simple.zp` | `while_simple.ast.json` | ✅ captured | |
 | `while_without_else.zp` | *(none — accepted by token-native path)* | ✅ captured (runtime) | Used by `verify_b1_token_native_indentation.sh` |
 
@@ -96,8 +96,8 @@ reference runner; see `BASELINE_B0.md` "Scope of frozen artifacts" and
 - Total `.zp` sources: **55**
 - AST/diagnostics JSON captured: **55**
 - ⚠️ Pending capture: **0**
-- Negative fixtures (rejected by parser; companion JSON captures rejection): **6**
-- Runtime-only (accepted by token-native path; no companion JSON expected): **5**
+- Negative fixtures (rejected by parser; companion JSON captures rejection): **5**
+- Runtime-only (accepted by token-native path; no companion JSON expected): **4**
 
 ## How to close the pending captures
 

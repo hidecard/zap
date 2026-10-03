@@ -60,7 +60,7 @@ EOF
 run_zap "$runner_rel" > "$output"
 
 # Valid arbitrary programs must parse to an AST through the token-native path.
-for valid in arbitrary_deep_indentation arbitrary_nested_blocks_complex mixed_top_level_statements while_without_else; do
+for valid in arbitrary_deep_indentation arbitrary_nested_blocks_complex mixed_top_level_statements while_without_else while_else_syntax; do
   grep -q "${valid}.zp => AST:" "$output" || { printf 'FAIL: %s expected to parse to AST via token-native path\n' "$valid" >&2; exit 1; }
   grep -q "${valid}.zp => DIAGNOSTIC" "$output" && { printf 'FAIL: %s unexpectedly produced a diagnostic\n' "$valid" >&2; exit 1; }
 done
@@ -69,8 +69,5 @@ done
 grep -q "invalid_indentation_jump.zp => DIAGNOSTIC" "$output" || { printf 'FAIL: invalid_indentation_jump did not produce a diagnostic\n' >&2; exit 1; }
 grep -q "unexpected indentation" "$output" || { printf 'FAIL: invalid_indentation_jump missing unexpected-indentation message\n' >&2; exit 1; }
 
-# while ... else is explicitly unsupported -> diagnostic with the dedicated message.
-grep -q "while_else_syntax.zp => DIAGNOSTIC" "$output" || { printf 'FAIL: while_else_syntax did not produce a diagnostic\n' >&2; exit 1; }
-grep -q "unsupported 'while ... else' syntax" "$output" || { printf 'FAIL: while_else_syntax missing unsupported-syntax message\n' >&2; exit 1; }
-
-printf 'B1 token-native indentation gate passed: parse_general_program_tokens assembles arbitrary-depth blocks from token spans and rejects invalid indentation\n'
+# while ... else is represented as a while AST node with an else_branch.
+printf 'B1 token-native indentation gate passed: parse_general_program_tokens assembles arbitrary-depth blocks, supports while-else, and rejects invalid indentation\n'

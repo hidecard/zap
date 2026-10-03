@@ -28,6 +28,7 @@ The latest GitHub CI run for `258c04d` is **green** across Rust quality, native 
 - `scripts/verify_section_a_next50.sh` passes the checked-in focused inference/scope/loop/call-graph cases.
 - `scripts/bootstrap/verify_zap_c_backend_structure.sh` passes after correcting its scalar fixture to use a numeric constant; the gate now also prints compiler diagnostics on failure.
 - `scripts/bootstrap/aggregate_b1_parser_gates.sh` passes all 22 discovered B1 gates with `PASS: 22`, `FAIL: 0`, and `SKIP: 0`; direct-execution and failure propagation behavior are verified locally.
+- `while ... else` is now accepted by the Zap-owned general parser as a `while` node with `else_branch`; the token-native indentation, full-language corpus, and parser-candidate gates pass locally with 6 diagnostics and no unsupported valid-syntax fixture.
 
 ### CI status — not final yet
 
@@ -53,7 +54,7 @@ The latest GitHub run is [Zap CI run #37099303061](https://github.com/hidecard/z
 
 ## Remaining P1 work — complete parser and analysis ownership
 
-- [ ] Complete arbitrary-program parser ownership for all required valid and invalid grammar, nested function/class/module forms, complete block metadata, and token-native handling without bounded-corpus assumptions.
+- [ ] Complete arbitrary-program parser ownership for all remaining valid and invalid grammar, nested function/class/module forms, complete block metadata, and token-native handling without bounded-corpus assumptions. The former `while ... else` gap is closed.
 - [ ] Complete the B1 diagnostic parity matrix for code, line, column, message, severity, and source-name fields.
 - [ ] Replace bounded/provisional type inference with a complete AST-driven flow environment covering arbitrary expressions, nested collections, generic calls, imported bodies, loop mutation, reassignment invalidation, and call cycles.
 - [ ] Make the typed-IR producer consume the complete parser AST directly, including all statement/expression kinds, source spans, generic substitutions, and deterministic serialization/readback.
