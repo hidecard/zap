@@ -75,7 +75,13 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel" > "$out"
 fi
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+# Read the non-empty output lines into an array using only POSIX-era Bash
+# features supported by both macOS and Linux runners.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 expected=(true true true true true)
 if [[ "${lines[*]:0:5}" != "${expected[*]}" ]]; then
   fail "cross-platform artifact manifest mismatch: ${lines[*]}"
@@ -83,7 +89,11 @@ fi
 typed_ir_digest="${lines[5]}"
 bytecode_digest="${lines[6]}"
 vm_output="${lines[7]}"
-seed_sha=$(sha256sum "$SEED" | awk '{print $1}')
+if command -v sha256sum >/dev/null 2>&1; then
+  seed_sha=$(sha256sum "$SEED" | awk '{print $1}')
+else
+  seed_sha=$(shasum -a 256 "$SEED" | awk '{print $1}')
+fi
 seed_name=$(basename "$SEED")
 platform="unknown"
 if [[ "$(uname -s)" == "Linux" ]]; then
