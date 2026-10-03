@@ -50,7 +50,11 @@ if [[ -x "$ZAP_BIN" ]]; then
 else
   run_zap "$runner_rel" >"$out"
 fi
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "module_resolution_error ZAP-MODULE-003 module_resolution_error ZAP-MODULE-002 module_resolution_error ZAP-MODULE-004 module_resolution_error ZAP-MODULE-005" ]]; then
   echo "unexpected module-resolution error output: ${lines[*]}" >&2
   exit 1

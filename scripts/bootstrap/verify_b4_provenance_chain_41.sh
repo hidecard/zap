@@ -56,7 +56,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel"
 fi >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true contract_only false 3 source tokens source-digest false false false true" ]]; then
   echo "unexpected provenance output: ${lines[*]}" >&2
   exit 1

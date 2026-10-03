@@ -59,7 +59,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel"
 fi >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "candidate_pipeline_executed false true 3 2 typed_ir bytecode true true none 7 candidate_pipeline_replay true candidate_pipeline_executed none 5 compile_error false false true" ]]; then
   echo "unexpected owned pipeline output: ${lines[*]}" >&2
   exit 1

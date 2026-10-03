@@ -58,7 +58,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel"
 fi >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true false produced rejected digest_missing executed rejected digest_missing rejected digest_missing rejected digest_missing executed ast" ]]; then
   echo "unexpected runner digest output: ${lines[*]}" >&2
   exit 1

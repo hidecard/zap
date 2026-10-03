@@ -182,7 +182,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel" > "$out"
 fi
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 total=0
 pass_count=0
 prov_count=0

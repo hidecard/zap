@@ -45,7 +45,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel"
 fi >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "candidate_vm_contract true true 7 candidate_vm_contract true stack_underflow candidate_vm_contract unknown_opcode:not-an-op" ]]; then
   echo "unexpected VM contract output: ${lines[*]}" >&2
   exit 1

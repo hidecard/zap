@@ -28,7 +28,11 @@ ZP
 ZAP_BIN="${ZAP_BOOTSTRAP_BIN:-${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}}"
 [ -x "$ZAP_BIN" ] || { echo "B4 supported-subset rebuild blocked: prebuilt Zap seed required" >&2; exit 2; }
 "$ZAP_BIN" "$runner_rel" >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "candidate_driver_subset_rebuild false 3 true true 7 1 5" ]]; then
   echo "unexpected supported subset output: ${lines[*]}" >&2
   exit 1

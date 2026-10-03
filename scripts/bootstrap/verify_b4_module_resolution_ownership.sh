@@ -26,7 +26,11 @@ say graph["modules"][1]["module"]
 say replay["byte_equal"]
 EOF
 "$SEED" "$(basename "$runner")" > "$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 expected=(zap zap_owned pkg/sub/feature modules_resolved module_graph_base app true)
 [[ "${lines[*]}" == "${expected[*]}" ]] || fail "unexpected ownership/graph output: ${lines[*]}"
 {

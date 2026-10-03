@@ -48,7 +48,11 @@ if [ -x "$ZAP_BIN" ]; then
 else
   run_zap "$runner_rel"
 fi >"$out"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out")
 if [[ "${lines[*]}" != "true false candidate_self_rebuild_evidence true false candidate_self_rebuild_blocked false" ]]; then
   echo "unexpected A12/A13 evidence output: ${lines[*]}" >&2
   exit 1

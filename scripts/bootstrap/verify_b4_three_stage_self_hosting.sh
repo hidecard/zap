@@ -32,7 +32,11 @@ minimal_env=(env -i PATH="$PATH" HOME="$HOME" RUSTC= RUSTUP_HOME= CARGO= CARGO_H
 "${minimal_env[@]}" "$SEED" "$(basename "$runner")" > "$out_a"
 "${minimal_env[@]}" "$SEED" "$(basename "$runner")" > "$out_b"
 cmp "$out_a" "$out_b" || fail "three-stage artifact changed across fresh processes"
-mapfile -t lines < <(sed '/^[[:space:]]*$/d' "$out_a")
+# Bash 3.2 (the system Bash on macOS runners) does not provide mapfile.
+lines=()
+while IFS= read -r line; do
+  lines+=("$line")
+done < <(sed '/^[[:space:]]*$/d' "$out_a")
 expected=(true true true true)
 [[ "${lines[*]}" == "${expected[*]}" ]] || fail "invalid three-stage output: ${lines[*]}"
 
