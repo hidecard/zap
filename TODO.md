@@ -16,6 +16,7 @@
 - **Baseline result:** the smoke-fixture fix is committed as `258c04d`, pushed to `master`, and verified by the fully green successor CI run. Next work is full parser/type-checker/typed-IR ownership and Rust-free seed provenance; keep `self_hosted = false` until those acceptance contracts pass.
 - **Parser ownership increment:** `while ... else` is no longer rejected as an artificial unsupported syntax. The Zap parser emits a `while` AST node with `else_branch`; token-native indentation, 62-fixture full-language parser, and parser-candidate gates pass locally.
 - **CI follow-up:** the arbitrary-block gate had a stale assertion expecting `while ... else` to fail; it now expects the supported AST path. Local arbitrary-block, token-native, and aggregate B1 gates pass (`22/22`).
+- **Typed-IR increment:** direct `while` `else_branch` blocks are preserved through parser rebasing, Zap-owned typed/inferred IR, recursive shape/coverage validation, reference projection, and AST lowering. B1 full-language/arbitrary-block, B2 owned typed-IR, B4 ownership, and aggregate B1 (`22/22`) gates pass locally.
 
 ### Self-hosting progress update (2026-09-09)
 

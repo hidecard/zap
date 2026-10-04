@@ -335,7 +335,11 @@ export fn owned_typed_statement(statement):
             return {"ast": statement, "condition": owned_typed_expression(statement["condition"]), "kind": kind, "span": statement["span"], "then_branch": {"statements": owned_typed_statements(statement["then_branch"]["statements"], [])}}
         return {"ast": statement, "condition": owned_typed_expression(statement["condition"]), "else_branch": {"statements": owned_typed_statements(statement["else_branch"]["statements"], [])}, "kind": kind, "span": statement["span"], "then_branch": {"statements": owned_typed_statements(statement["then_branch"]["statements"], [])}}
     if kind == "while":
-        return {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "condition": owned_typed_expression(statement["condition"]), "kind": kind, "span": statement["span"]}
+        let result = {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "condition": owned_typed_expression(statement["condition"]), "kind": kind, "span": statement["span"]}
+        if has_direct_while_else(statement):
+            if statement["else_branch"] != none:
+                result = {"ast": statement, "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "condition": owned_typed_expression(statement["condition"]), "else_branch": {"statements": owned_typed_statements(statement["else_branch"]["statements"], [])}, "kind": kind, "span": statement["span"]}
+        return result
     if kind == "for":
         return {"ast": statement, "binding": statement["binding"], "body": {"statements": owned_typed_statements(statement["body"]["statements"], [])}, "iterable": owned_typed_expression(statement["iterable"]), "kind": kind, "span": statement["span"]}
     if kind == "try_catch":
@@ -425,7 +429,11 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
             return {"ast": statement, "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "kind": kind, "span": statement["span"], "then_branch": owned_inferred_statements(statement["then_branch"]["statements"], environment, functions, source_name, [])}
         return {"ast": statement, "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "else_branch": owned_inferred_statements(statement["else_branch"]["statements"], environment, functions, source_name, []), "kind": kind, "span": statement["span"], "then_branch": owned_inferred_statements(statement["then_branch"]["statements"], environment, functions, source_name, [])}
     if kind == "while":
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
+        let result = {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
+        if has_direct_while_else(statement):
+            if statement["else_branch"] != none:
+                result = {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "condition": owned_inferred_expression(statement["condition"], environment, functions, source_name), "else_branch": owned_inferred_statements(statement["else_branch"]["statements"], environment, functions, source_name, []), "kind": kind, "span": statement["span"]}
+        return result
     if kind == "for":
         return {"ast": statement, "binding": statement["binding"], "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "inferred_element_type": b2c_generic_container_element(owned_inferred_expression(statement["iterable"], environment, functions, source_name)["inferred_type"]), "iterable": owned_inferred_expression(statement["iterable"], environment, functions, source_name), "kind": kind, "span": statement["span"]}
     if kind == "try_catch":
@@ -543,9 +551,12 @@ export fn typed_ir_reference_control_node(node):
         return {"condition": typed_ir_reference_expression(ast["condition"]), "else_branch": else_branch, "kind": "if", "span": ast["span"], "then_branch": then_branch}
     if kind == "while":
         let body = []
+        let else_branch = []
         if contains(json(ast), "\"body\""):
             body = typed_ir_reference_statement_list(ast["body"])
-        return {"body": body, "condition": typed_ir_reference_expression(ast["condition"]), "kind": "while", "span": ast["span"]}
+        if contains(json(ast), "\"else_branch\""):
+            else_branch = typed_ir_reference_statement_list(ast["else_branch"])
+        return {"body": body, "condition": typed_ir_reference_expression(ast["condition"]), "else_branch": else_branch, "kind": "while", "span": ast["span"]}
     if kind == "for":
         let binding = ""
         let body = []
@@ -842,6 +853,15 @@ export fn typed_ir_node_shape_valid(node):
             return false
         if kind == "for" and not typed_ir_expression_shape_valid(node["iterable"], 0):
             return false
+        let has_while_else = false
+        if kind == "while":
+            if contains(json(node), "\"ast\":"):
+                has_while_else = has_direct_while_else(node["ast"])
+            else:
+                has_while_else = has_direct_while_else(node)
+        if kind == "while" and has_while_else:
+            if not typed_ir_nested_nodes_shape_valid(node["else_branch"], 0):
+                return false
         return typed_ir_nested_nodes_shape_valid(node["body"], 0)
     if kind == "say" or kind == "return" or kind == "raise" or kind == "expression":
         if not contains(json(node), "\"value\""):

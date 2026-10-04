@@ -318,6 +318,11 @@ export fn driver_typed_ir_expression_metadata_valid(expression):
                 return false
     return true
 
+export fn driver_has_direct_while_else(node):
+    if contains(json(node), "\"ast\":"):
+        return has_direct_while_else(node["ast"])
+    return has_direct_while_else(node)
+
 export fn driver_typed_ir_node_coverage_valid(node):
     if not contains(json(node), "\"kind\""):
         return false
@@ -348,6 +353,9 @@ export fn driver_typed_ir_node_coverage_valid(node):
     if kind == "while" or kind == "for" or kind == "try_catch":
         if not driver_typed_ir_nested_coverage_valid(node["body"], 0):
             return false
+        if kind == "while" and driver_has_direct_while_else(node):
+            if not driver_typed_ir_nested_coverage_valid(node["else_branch"], 0):
+                return false
         if kind == "try_catch" and not driver_typed_ir_nested_coverage_valid(node["catch_body"], 0):
             return false
     return true

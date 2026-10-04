@@ -158,6 +158,18 @@ export fn rebase_statement_spans_list(statements, line_delta):
 
 
 
+export fn has_direct_while_else(node):
+
+    let parts = split(json(node), "\"condition\":")
+
+    if len(parts) == 0:
+
+        return false
+
+    return contains(parts[len(parts) - 1], "\"else_branch\":{")
+
+
+
 export fn rebase_statement_spans(node, line_delta):
 
     let node_span = node["span"]
@@ -236,7 +248,10 @@ export fn rebase_statement_spans(node, line_delta):
 
     if kind == "while":
 
-        return {"body": {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}, "condition": node["condition"], "kind": kind, "span": rebased_span}
+        let body = {"statements": rebase_statement_spans_list(node["body"]["statements"], line_delta)}
+        if has_direct_while_else(node):
+            return {"body": body, "condition": node["condition"], "else_branch": {"statements": rebase_statement_spans_list(node["else_branch"]["statements"], line_delta)}, "kind": kind, "span": rebased_span}
+        return {"body": body, "condition": node["condition"], "kind": kind, "span": rebased_span}
 
     if kind == "return":
 
@@ -2943,14 +2958,25 @@ export fn parse_block_from_tokens(lines, start_index, indent, table):
                                 if len(current) > 6:
 
                                     let condition_text = trim(substring(current, 6, len(current) - 1))
-
-                                    statements = append(statements, {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))})
+                                    let while_else_branch = none
+                                    let while_next = nested["next"]
+                                    if nested["next"] < len(lines):
+                                        let while_else_line = lines[nested["next"]]
+                                        if token_indentation_for(table, nested["next"] + 1, 0) == indent and trim(while_else_line) == "else:":
+                                            let while_else_nested = parse_block_from_tokens(lines, nested["next"] + 1, indent + 4, table)
+                                            while_else_branch = {"statements": while_else_nested["statements"]}
+                                            while_next = while_else_nested["next"]
+                                    let while_node = {"body": body, "condition": parse_expression(condition_text, 1), "kind": "while", "span": span(index + 1, indent + 1, len(current))}
+                                    if while_else_branch != none:
+                                        while_node = {"body": body, "condition": parse_expression(condition_text, 1), "else_branch": while_else_branch, "kind": "while", "span": span(index + 1, indent + 1, len(current))}
+                                    statements = append(statements, while_node)
+                                    cursor = {"index": while_next, "lines": lines}
 
                                 else:
 
                                     statements = append(statements, {"body": body, "condition": none, "kind": "while", "span": span(index + 1, indent + 1, len(current))})
 
-                    if not starts_with(current, "if ") and current != "try:":
+                    if not starts_with(current, "if ") and current != "try:" and not starts_with(current, "while "):
 
                         cursor = {"index": nested["next"], "lines": lines}
 

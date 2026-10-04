@@ -487,10 +487,24 @@ export fn lower_ast_node(node, function_depth):
         instructions = append(instructions, {"op": "jump_if_false", "target": 0})
         for instruction in body["instructions"]:
             instructions = append(instructions, instruction)
+        let loop_jump_index = len(instructions)
         instructions = append(instructions, {"op": "jump", "target": 0})
+        let has_else = contains(json(node), "\"else_branch\":{")
+        let else_branch = {"error": none, "instructions": []}
+        if has_else:
+            else_branch = lower_ast_block(node["else_branch"], function_depth)
+            if else_branch["error"] != none:
+                return else_branch
+        let else_start = len(instructions)
+        for instruction in else_branch["instructions"]:
+            instructions = append(instructions, instruction)
         let end_target = len(instructions)
-        instructions = patch_jump(instructions, false_jump_index, end_target)
-        instructions = patch_jump(instructions, end_target - 1, 0)
+        if has_else:
+            instructions = patch_jump(instructions, false_jump_index, else_start)
+        else:
+            instructions = patch_jump(instructions, false_jump_index, end_target)
+        instructions = patch_jump(instructions, loop_jump_index, 0)
+        instructions = patch_breaks(instructions, end_target)
         return {"error": none, "instructions": instructions}
     if kind == "declaration" or kind == "assignment":
         let lowered_value = lower_expression(node["value"])
