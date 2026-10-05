@@ -348,9 +348,24 @@ export fn lower_ast_node(node, function_depth):
         let rebased_body = lower_rebase_targets(body["instructions"], body_offset)
         for instruction in rebased_body:
             instructions = append(instructions, instruction)
+        let loop_jump_index = len(instructions)
         instructions = append(instructions, {"op": "jump", "target": 0})
+        let has_else = contains(json(node), "\"else_branch\":{")
+        let else_branch = {"error": none, "instructions": []}
+        if has_else:
+            else_branch = lower_ast_loop_statements(node["else_branch"]["statements"], function_depth)
+            if else_branch["error"] != none:
+                return else_branch
+        let else_start = len(instructions)
+        let rebased_else = lower_rebase_targets(else_branch["instructions"], else_start)
+        for instruction in rebased_else:
+            instructions = append(instructions, instruction)
         let end_target = len(instructions)
-        instructions = patch_jump(instructions, false_jump_index, end_target)
+        if has_else:
+            instructions = patch_jump(instructions, false_jump_index, else_start)
+        else:
+            instructions = patch_jump(instructions, false_jump_index, end_target)
+        instructions = patch_jump(instructions, loop_jump_index, 0)
         instructions = patch_breaks(instructions, end_target)
         instructions = patch_continue_jumps(instructions, 0)
         return {"error": none, "instructions": instructions}

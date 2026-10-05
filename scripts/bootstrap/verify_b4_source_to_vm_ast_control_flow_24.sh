@@ -39,6 +39,16 @@ let nested_state = vm_run(nested["instructions"])
 say nested["status"]
 say nested_state["error"]
 say nested_state["output"][0]
+let while_else = driver_seed_compile_ast_source("let count = 0\nwhile count < 1:\n    let count = count + 1\nelse:\n    say \"done\"", "ast-while-else.zp")
+let while_else_state = vm_run(while_else["instructions"])
+say while_else["status"]
+say while_else_state["error"]
+say while_else_state["output"][0]
+let while_break = driver_seed_compile_ast_source("while true:\n    break\nelse:\n    say \"bad\"\nsay \"after\"", "ast-while-break-else.zp")
+let while_break_state = vm_run(while_break["instructions"])
+say while_break["status"]
+say while_break_state["error"]
+say while_break_state["output"][0]
 ZP
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 if [ -x "$ZAP_BIN" ]; then
@@ -49,7 +59,7 @@ fi >"$out"
 python3 - "$out" <<'PY'
 import pathlib, sys
 lines = [line.strip() for line in pathlib.Path(sys.argv[1]).read_text().splitlines() if line.strip()]
-if lines != ["compiled_ast_slice", "none", "0", "2", "9", "compiled_ast_slice", "none", "2"]:
+if lines != ["compiled_ast_slice", "none", "0", "2", "9", "compiled_ast_slice", "none", "2", "compiled_ast_slice", "none", "done", "compiled_ast_slice", "none", "after"]:
     raise SystemExit(f"unexpected AST control-flow output: {lines!r}")
 PY
 printf 'B4 canonical AST control-flow gate passed: nested if/while, nearest-loop break, and continue\n'

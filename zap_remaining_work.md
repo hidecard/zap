@@ -31,6 +31,7 @@ The latest GitHub CI run for `8057d1e` is **green** across Rust quality, native 
 - `while ... else` is now accepted by the Zap-owned general parser as a `while` node with `else_branch`; the token-native indentation, full-language corpus, and parser-candidate gates pass locally with 6 diagnostics and no unsupported valid-syntax fixture.
 - The follow-up arbitrary-block gate expectation was updated to the same supported contract after CI exposed the stale rejection assertion; local B1 aggregate remains `22/22` with zero failures and zero skips.
 - Typed-IR ownership now preserves direct `while` `else_branch` blocks in both structural and inferred IR, validates the nested branch recursively, and keeps the reference projection branch-aware. Top-level parser rebasing and AST lowering also retain the branch; local B1 full-language/arbitrary-block, B2 owned typed-IR, B4 ownership, and B1 aggregate gates pass.
+- The canonical B4 AST lowering path had a runtime-only gap: `while ... else` was retained in AST/typed-IR but its `else` instructions were dropped by `ast_control.zp`. The lowering now emits the branch on natural termination and skips it on `break`; the regression gate covers both semantics, with B4 full acceptance `18/18` and three-stage Rust-free replay passing.
 
 ### CI status — green validation baseline
 

@@ -19,6 +19,7 @@
 - **Typed-IR increment:** direct `while` `else_branch` blocks are preserved through parser rebasing, Zap-owned typed/inferred IR, recursive shape/coverage validation, reference projection, and AST lowering. B1 full-language/arbitrary-block, B2 owned typed-IR, B4 ownership, and aggregate B1 (`22/22`) gates pass locally.
 - **Current CI:** commit `8057d1e` is green in [Zap CI run #37190863622](https://github.com/hidecard/zap/actions/runs/37190863622), with all 11 jobs successful.
 - **B3/B4 increment:** B3 foundations, build plan, dependency graph, transitive resolver, and registry/semver transport gates pass; B4 owned-package-build, user-command integration, and supported-subset rebuild gates also pass locally.
+- **Runtime control-flow fix:** canonical B4 AST lowering now preserves `while ... else`: natural loop completion enters the `else` block, while `break` skips it. The AST control-flow gate covers both cases; full acceptance remains `18/18` and the three-stage Rust-free gate passes.
 
 ### Self-hosting progress update (2026-09-09)
 
