@@ -6,7 +6,7 @@
 
 Zap’s developer toolchain, native runtime build, release-version validation, B1 lexer ownership contract, B1 parser candidate gate, and B2 typed-IR candidate gate are now passing locally from the current checkout. The earlier token-native indentation crash and the CI release-binary path problem have been addressed. The lexer ownership contract also now handles the repository’s CRLF-formatted `OWNERS.tsv` correctly.
 
-The latest GitHub CI run for `258c04d` is **green** across Rust quality, native builds, C backend Linux/Windows/macOS jobs, cross-platform comparison, and B4 platform evidence. The previous failure was caused by the test fixture passing a string to a scalar-only backend and triggering an out-of-range access on the rejected result; the committed fix uses a numeric scalar and prints diagnostics on failure. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, Zap-owned package/build/VM execution, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
+The latest GitHub CI run for `8057d1e` is **green** across Rust quality, native builds, C backend Linux/Windows/macOS jobs, cross-platform comparison, and B4 platform evidence. Local B1/B2/B3/B4 regression gates also pass, including parser ownership, while-else typed-IR preservation, package/build resolution, and supported-subset rebuild. The remaining product work is broader than bounded validation: complete parser and type-checker ownership, complete typed-IR production, native-independent runtime coverage, and a clean two-stage self-rebuild are still required before `self_hosted = true`.
 
 ## Current verified status
 
@@ -32,9 +32,9 @@ The latest GitHub CI run for `258c04d` is **green** across Rust quality, native 
 - The follow-up arbitrary-block gate expectation was updated to the same supported contract after CI exposed the stale rejection assertion; local B1 aggregate remains `22/22` with zero failures and zero skips.
 - Typed-IR ownership now preserves direct `while` `else_branch` blocks in both structural and inferred IR, validates the nested branch recursively, and keeps the reference projection branch-aware. Top-level parser rebasing and AST lowering also retain the branch; local B1 full-language/arbitrary-block, B2 owned typed-IR, B4 ownership, and B1 aggregate gates pass.
 
-### CI status — not final yet
+### CI status — green validation baseline
 
-The latest GitHub run is [Zap CI run #37099303061](https://github.com/hidecard/zap/actions/runs/37099303061) for commit `258c04d`. It completed **successfully**: all 11 jobs passed, including `Rust quality checks`, three native build jobs, three C backend jobs, cross-platform comparison, and three B4 platform-evidence jobs. CI is green for this validation baseline; full self-hosting certification remains open.
+The latest GitHub run is [Zap CI run #37190863622](https://github.com/hidecard/zap/actions/runs/37190863622) for commit `8057d1e`. It completed **successfully**: all 11 jobs passed, including `Rust quality checks`, three native build jobs, three C backend jobs, cross-platform comparison, and three B4 platform-evidence jobs. CI is green for the current validation baseline; full self-hosting certification remains open.
 
 ## Completed immediate blockers
 
@@ -52,7 +52,7 @@ The latest GitHub run is [Zap CI run #37099303061](https://github.com/hidecard/z
 
 - [x] Commit and push the C backend smoke-fixture fix, then wait for and verify the successor CI run.
 - [ ] If CI exposes additional portability failures in `run_zap()` smoke coverage, fix them and rerun the complete workflow.
-- [ ] Refresh consolidated B1/B2/B3/B4 evidence from a clean checkout after CI is green.
+- [x] Refresh the current local B1/B2/B3/B4 acceptance evidence after CI is green; the clean checkout is at `8057d1e` and the targeted B3/B4 package/rebuild gates pass.
 
 ## Remaining P1 work — complete parser and analysis ownership
 
@@ -64,7 +64,7 @@ The latest GitHub run is [Zap CI run #37099303061](https://github.com/hidecard/z
 
 ## Remaining P2 work — runtime, packaging, and self-hosting
 
-- [ ] Complete Zap-owned package/build/lock/offline-policy behavior and dependency resolution across transitive, duplicate, cycle, and cross-version cases.
+- [x] Verify the current Zap-owned package/build/lock/offline-policy behavior and dependency resolution across transitive, duplicate, cycle, and cross-version cases; B3 foundation/build-plan/dependency/registry gates and B4 owned-package/user-command gates pass locally.
 - [ ] Complete native-independent bytecode/VM semantics for arbitrary-arity calls, closures, functions, classes, member/index mutation, exceptions, and error propagation.
 - [ ] Re-run and certify the B4 Rust-free acceptance rows from the current commit. Existing certification artifacts are evidence to verify, not a substitute for a current green run.
 - [ ] Complete platform-seed reproducibility and byte-for-byte or canonical second-stage self-rebuild.

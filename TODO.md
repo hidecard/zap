@@ -17,6 +17,8 @@
 - **Parser ownership increment:** `while ... else` is no longer rejected as an artificial unsupported syntax. The Zap parser emits a `while` AST node with `else_branch`; token-native indentation, 62-fixture full-language parser, and parser-candidate gates pass locally.
 - **CI follow-up:** the arbitrary-block gate had a stale assertion expecting `while ... else` to fail; it now expects the supported AST path. Local arbitrary-block, token-native, and aggregate B1 gates pass (`22/22`).
 - **Typed-IR increment:** direct `while` `else_branch` blocks are preserved through parser rebasing, Zap-owned typed/inferred IR, recursive shape/coverage validation, reference projection, and AST lowering. B1 full-language/arbitrary-block, B2 owned typed-IR, B4 ownership, and aggregate B1 (`22/22`) gates pass locally.
+- **Current CI:** commit `8057d1e` is green in [Zap CI run #37190863622](https://github.com/hidecard/zap/actions/runs/37190863622), with all 11 jobs successful.
+- **B3/B4 increment:** B3 foundations, build plan, dependency graph, transitive resolver, and registry/semver transport gates pass; B4 owned-package-build, user-command integration, and supported-subset rebuild gates also pass locally.
 
 ### Self-hosting progress update (2026-09-09)
 
