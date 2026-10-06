@@ -588,8 +588,11 @@ export fn driver_seed_compile_source(source, source_name):
     # Use the full driver pipeline instead of the bounded seed slice
     let backend = driver_compile_backend(source, source_name)
     if len(backend["bytecode"]["instructions"]) == 0:
-        return {"artifact_kind": "bytecode", "error": backend["execution"]["error"], "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
-    return {"artifact_kind": "bytecode", "instructions": backend["bytecode"]["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
+        let error = backend["bytecode"]["error"]
+        if error == none:
+            error = backend["execution"]["error"]
+        return {"artifact_kind": "bytecode", "error": error, "instructions": [], "native_independent": false, "source_name": source_name, "status": "compile_error"}
+    return {"artifact_kind": "bytecode", "error": none, "instructions": backend["bytecode"]["instructions"], "native_independent": false, "source_name": source_name, "status": "compiled_slice"}
 
 export fn driver_seed_pipeline_replay(source, source_name):
     let first = driver_execute_owned_pipeline(source, source_name)

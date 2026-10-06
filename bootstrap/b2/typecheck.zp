@@ -2572,6 +2572,9 @@ export fn b2c_infer_call(node, environment, functions, source_name):
                 errors = b2c_append_error_unique(errors, b2c_error(source_name, node, "ZAP-TYPE-010", "ambiguous call to '" + name + "'"))
         else:
             function = b2c_find_function(functions, name)
+    let classes = b2c_function_member_classes(functions)
+    if function == none and callee["kind"] == "name" and b2c_class_exists(name, classes):
+        return b2c_result(name, errors)
     let builtin = b2c_builtin_call_type(name, argument_types)
     if function == none and builtin != "":
         if name == "same" and len(argument_types) == 2 and argument_types[0] != argument_types[1]:
@@ -3045,10 +3048,31 @@ export fn b2c_collect_classes(statements, classes):
             result = b2c_collect_classes(statement["catch_body"]["statements"], result)
     return result
 
+export fn b2c_class_exists(class_name, classes):
+    for class_node in classes:
+        if class_node["name"] == class_name:
+            return true
+    return false
+
+export fn b2c_function_with_owner(function, owner):
+    return {"body": function["body"], "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "owner": owner, "params": function["params"], "return_type": function["return_type"], "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
+
+export fn b2c_collect_class_functions(statements, owner, functions):
+    let result = functions
+    for statement in statements:
+        if statement["kind"] == "function":
+            result = append(result, b2c_function_with_owner(statement, owner))
+    return result
+
+export fn b2c_function_owner(function):
+    if contains(json(function), "\"owner\":"):
+        return function["owner"]
+    return none
+
 export fn b2c_enrich_function_with_registry(function, classes, registry):
     if contains(json(function), "\"required\""):
-        return {"body": function["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(function), "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "params": function["params"], "required": function["required"], "return_type": function["return_type"], "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
-    return {"body": function["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(function), "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "params": function["params"], "return_type": function["return_type"], "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
+        return {"body": function["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(function), "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "owner": b2c_function_owner(function), "params": function["params"], "required": function["required"], "return_type": function["return_type"], "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
+    return {"body": function["body"], "bound_classes": classes, "bound_registry": registry, "constraints": b2c_function_constraints(function), "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "owner": b2c_function_owner(function), "params": function["params"], "return_type": function["return_type"], "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
 
 export fn b2c_enrich_function(function, classes):
     return b2c_enrich_function_with_registry(function, classes, [])
@@ -3099,7 +3123,7 @@ export fn b2c_infer_return_type_statements(statements, environment, functions, s
     return inferred_return
 
 export fn b2c_function_with_return_type(function, return_type):
-    return {"body": function["body"], "bound_classes": function["bound_classes"], "bound_registry": function["bound_registry"], "constraints": function["constraints"], "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "params": function["params"], "return_type": return_type, "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
+    return {"body": function["body"], "bound_classes": function["bound_classes"], "bound_registry": function["bound_registry"], "constraints": function["constraints"], "exported": function["exported"], "is_async": function["is_async"], "kind": function["kind"], "name": function["name"], "owner": b2c_function_owner(function), "params": function["params"], "return_type": return_type, "span": function["span"], "type_params": function["type_params"], "visibility": function["visibility"]}
 
 export fn b2c_infer_function_returns_once(functions, source_name):
     return b2c_infer_function_returns_once_with_globals(functions, source_name, [])
@@ -3108,6 +3132,8 @@ export fn b2c_infer_function_returns_once_with_globals(functions, source_name, g
     let result = []
     for function in functions:
         let environment = b2c_function_parameter_environment(function["params"], 0, global_environment)
+        if b2c_function_owner(function) != none and len(function["params"]) > 0:
+            environment = b2c_reassign(environment, function["params"][0]["name"], b2c_function_owner(function))
         let inferred = b2c_infer_return_type_statements(function["body"]["statements"], environment, functions, source_name, "any")
         let return_type = function["return_type"]
         if return_type == none:
@@ -3144,7 +3170,7 @@ export fn b2c_collect_functions(statements, functions):
             result = b2c_collect_functions(statement["body"]["statements"], result)
             result = b2c_collect_functions(statement["catch_body"]["statements"], result)
         if statement["kind"] == "class":
-            result = b2c_collect_functions(statement["body"]["statements"], result)
+            result = b2c_collect_class_functions(statement["body"]["statements"], statement["name"], result)
     return result
 
 export fn b2c_function_constraints(function):
@@ -3356,6 +3382,8 @@ export fn b2c_check_function_with_globals(function, functions, source_name, glob
         if parameter_type == none:
             parameter_type = "any"
         environment = b2c_bind(environment, parameter["name"], parameter_type, parameter_type, true)
+    if b2c_function_owner(function) != none and len(function["params"]) > 0:
+        environment = b2c_reassign(environment, function["params"][0]["name"], b2c_function_owner(function))
     let expected_return = function["return_type"]
     if expected_return == none:
         expected_return = "any"

@@ -76,14 +76,16 @@ The latest GitHub run is [Zap CI run #37190863622](https://github.com/hidecard/z
 
 The default-parameter parser path is portable, the previous token-native indentation crash is fixed, the lexer ownership contract is now CRLF-safe, and the CI release-version test no longer assumes a Windows executable name on Linux. Parser boundary fixtures, recursive type-alias diagnostics, B2 typecheck coverage, typed-IR golden normalization, Python-based JSON checking, compatibility matrices, security regression tests, and release gates have been added or expanded.
 
+The latest runtime audit found and fixed a class-path ownership gap: class methods were checked without a receiver type, constructors were reported as unknown functions, and class method lowering used the outer function depth. Class constructors/method receivers are now typechecked, class methods lower with the correct depth, stable seed artifacts always expose an `error` field, and empty/nested class diagnostics remain fail-closed. The B4 classes gate and B2 member-method/owned-typed-IR gates pass. Closure, field mutation, and mutable-closure source-to-VM gates still expose the next type-environment/runtime ownership gap and remain open.
+
 ## Recommended execution order
 
-First commit/push the local C backend fixture correction and resolve any remaining failures in the resulting CI run `1e123a8` successor. The B1 aggregate runner is locally truthful (`22/22`, no skips), so next regenerate consolidated evidence from a clean checkout after CI is green. Then continue with complete parser/AST ownership, general type inference, and typed-IR ownership. Only after those are stable should Zap-owned package/build/VM execution and the B4 platform-seed self-rebuild be certified.
+The validation baseline and CI are green. Next continue with closure capture/type-environment ownership, then field/index mutation and full native-independent VM semantics. The B1 aggregate remains `22/22`, B2 inference gates pass, B4 full acceptance is `18/18`, and Rust-free three-stage replay passes; B4 certification remains blocked by complete ownership and seed provenance evidence.
 
 ## References
 
-- Latest fix commit: https://github.com/hidecard/zap/commit/5cfeb5804b5e36d8fbcfbc1d6ad1205542c20280
-- Latest CI run: https://github.com/hidecard/zap/actions/runs/34186734282
+- Latest fix commit: https://github.com/hidecard/zap/commit/5e3ccae
+- Latest CI run: https://github.com/hidecard/zap/actions/runs/37260637327
 - B1 lexer ownership contract: https://github.com/hidecard/zap/blob/master/scripts/bootstrap/verify_b1_lexer_contract.sh
 - B1 lexer gate: https://github.com/hidecard/zap/blob/master/scripts/bootstrap/verify_b1_lexer.sh
 - B1 parser candidate gate: https://github.com/hidecard/zap/blob/master/scripts/bootstrap/verify_b1_parser_candidate.sh
