@@ -70,6 +70,13 @@ The latest GitHub run is [Zap CI run #37190863622](https://github.com/hidecard/z
 - [ ] Re-run and certify the B4 Rust-free acceptance rows from the current commit. Existing certification artifacts are evidence to verify, not a substitute for a current green run.
 - [ ] Complete platform-seed reproducibility and byte-for-byte or canonical second-stage self-rebuild.
 - [ ] Run the self-build from a clean checkout without the Rust reference compiler, hidden local binaries, temporary symlinks, or manually generated expected outputs.
+
+### 2026-10-07 verification update
+
+- Commit `549f5c9` is pushed and its successor CI run `37566075685` is green.
+- Closure scope, immutable/mutable captures, field store/load/rebinding, nested member diagnostics, canonical AST closure/exception/loop gates, B2 member-field inference, and A9 closure/member semantics all pass locally.
+- Full-language backend ownership, compiler ownership, B3 Zap ownership, provenance-chain, platform self-rebuild candidate evidence, and three-stage Rust-free self-hosting gates all pass locally.
+- The remaining P1/P2 items are **scope/completeness claims**, not current targeted-gate failures: arbitrary grammar and differential diagnostics breadth, complete generic/imported flow inference, all-kind typed-IR serialization, arbitrary-arity VM semantics, and independently reproducible seed provenance.
 - [ ] Keep `self_hosted = false` until the platform-seed self-rebuild acceptance gate passes and its evidence is committed.
 
 ## Recent progress now reflected

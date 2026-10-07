@@ -22,6 +22,7 @@
 - **Runtime control-flow fix:** canonical B4 AST lowering now preserves `while ... else`: natural loop completion enters the `else` block, while `break` skips it. The AST control-flow gate covers both cases; full acceptance remains `18/18` and the three-stage Rust-free gate passes.
 - **Class/closure/field ownership fix:** class constructors and method receivers are now recognized by B2 type inference, class methods lower with the correct function depth, and `driver_seed_compile_source()` exposes a stable `error` field. Nested function environments now preserve outer parameters and function bindings; `set target = value` is parsed as field assignment; nested member lookup no longer returns an undefined value. B2 complete inference/typed-IR/member gates and B4 functions, classes, closures, fields, mutable closures, and canonical AST closure gates all pass locally (`10/10`).
 - **Latest pushed commit:** `2d8e3dc` passed GitHub Actions run `37406561233`; the current local closure/field fixes are the next commit to push and re-run through CI.
+- **Current verification:** commit `549f5c9` and CI run `37566075685` are green. Closure/field/mutable-capture, canonical AST exception/loop, full-language backend ownership, compiler ownership, provenance-chain, platform self-rebuild candidate evidence, and three-stage Rust-free gates pass locally. Remaining work is completeness/provenance certification rather than a known targeted runtime failure.
 
 ### Self-hosting progress update (2026-09-09)
 
