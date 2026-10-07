@@ -255,13 +255,29 @@ export fn ast_capture_from_statements(statements, excluded, result):
             captured = ast_capture_from_statements(statement["catch_body"]["statements"], excluded, captured)
     return captured
 
+export fn ast_capture_local_exclusions(statements, result):
+    let excluded = result
+    for statement in statements:
+        if statement["kind"] == "declaration":
+            let referenced = ast_capture_names_expr(statement["value"], [], [])
+            if not ast_name_in_list(referenced, statement["name"], 0):
+                excluded = ast_append_name(excluded, statement["name"])
+        if statement["kind"] == "if":
+            excluded = ast_capture_local_exclusions(statement["then_branch"]["statements"], excluded)
+            if statement["else_branch"] != none:
+                excluded = ast_capture_local_exclusions(statement["else_branch"]["statements"], excluded)
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            excluded = ast_capture_local_exclusions(statement["body"]["statements"], excluded)
+        if statement["kind"] == "try_catch":
+            excluded = ast_capture_local_exclusions(statement["body"]["statements"], excluded)
+            excluded = ast_capture_local_exclusions(statement["catch_body"]["statements"], excluded)
+    return excluded
+
 export fn ast_function_captures(node):
     let excluded = []
     for parameter in node["params"]:
         excluded = ast_append_name(excluded, parameter["name"])
-    let locals = ast_capture_locals(node["body"]["statements"], [])
-    for local_name in locals:
-        excluded = ast_append_name(excluded, local_name)
+    excluded = ast_capture_local_exclusions(node["body"]["statements"], excluded)
     return ast_capture_from_statements(node["body"]["statements"], excluded, [])
 
 export fn lower_ast_function_block(body, prefix, function_depth):

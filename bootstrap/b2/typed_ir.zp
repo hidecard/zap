@@ -443,7 +443,8 @@ export fn owned_inferred_statement(statement, environment, functions, source_nam
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "catch_body": owned_inferred_statements(statement["catch_body"]["statements"], environment, functions, source_name, []), "catch_binding": catch_binding, "kind": kind, "span": statement["span"]}
     if kind == "function":
         let captures = typed_ir_function_captures(statement)
-        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "captures": captures, "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "is_closure": len(captures) > 0, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
+        let function_environment = b2c_function_parameter_environment(statement["params"], 0, environment)
+        return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], function_environment, functions, source_name, []), "captures": captures, "inferred_parameters": typed_ir_parameter_nodes(statement["params"], 0, []), "inferred_return_type": typed_ir_function_return_type(statement, functions, 0), "is_closure": len(captures) > 0, "kind": kind, "name": statement["name"], "params": statement["params"], "return_type": statement["return_type"], "span": statement["span"], "type_params": statement["type_params"]}
     if kind == "class":
         return {"ast": statement, "body": owned_inferred_statements(statement["body"]["statements"], environment, functions, source_name, []), "interfaces": statement["interfaces"], "kind": kind, "member_semantics": typed_ir_member_semantics(statement["body"]["statements"], environment, functions, source_name, 0, []), "name": statement["name"], "parents": statement["parents"], "span": statement["span"], "traits": statement["traits"]}
     if kind == "trait" or kind == "interface":
@@ -468,6 +469,8 @@ export fn owned_inferred_statements(statements, environment, functions, source_n
             if declared == none:
                 declared = inferred["type"]
             current = append(current, b2c_binding(statement["name"], declared, declared, true))
+        if statement["kind"] == "function":
+            current = append(current, b2c_binding(statement["name"], "function", "function", true))
     return result
 
 export fn emit_inferred_program_typed_ir(source, source_name):

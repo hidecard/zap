@@ -2575,6 +2575,10 @@ export fn b2c_infer_call(node, environment, functions, source_name):
     let classes = b2c_function_member_classes(functions)
     if function == none and callee["kind"] == "name" and b2c_class_exists(name, classes):
         return b2c_result(name, errors)
+    if function == none and callee["kind"] == "name":
+        let binding = b2c_lookup(environment, name)
+        if binding["initialized"] and binding["current"] != "any":
+            return b2c_result("any", errors)
     let builtin = b2c_builtin_call_type(name, argument_types)
     if function == none and builtin != "":
         if name == "same" and len(argument_types) == 2 and argument_types[0] != argument_types[1]:
@@ -3094,6 +3098,8 @@ export fn b2c_infer_return_type_statements(statements, environment, functions, s
     let current = environment
     let inferred_return = result
     for statement in statements:
+        if statement["kind"] == "function":
+            current = b2c_bind(current, statement["name"], "function", "function", true)
         if statement["kind"] == "declaration":
             let value = b2c_infer_expr(statement["value"], current, functions, source_name)
             let declared = statement["annotation"]
@@ -3283,9 +3289,9 @@ export fn b2c_nested_member_lookup(class_name, member_names, index, classes):
         return {"class_found": true, "found": true, "type": class_name}
     let member = b2c_class_member_lookup(class_name, member_names[index], classes, [])
     if not member["found"]:
-        return membe
+        return {"class_found": member["class_found"], "found": false, "type": "any"}
     if index + 1 >= len(member_names):
-        return membe
+        return member
     return b2c_nested_member_lookup(member["type"], member_names, index + 1, classes)
 
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
@@ -3375,6 +3381,13 @@ export fn b2c_generic_bound_errors_all(functions, registry, source_name):
 export fn b2c_check_function(function, functions, source_name):
     return b2c_check_function_with_globals(function, functions, source_name, [])
 
+export fn b2c_bind_nested_functions(statements, environment):
+    let current = environment
+    for statement in statements:
+        if statement["kind"] == "function":
+            current = b2c_bind(current, statement["name"], "function", "function", true)
+    return current
+
 export fn b2c_check_function_with_globals(function, functions, source_name, global_environment):
     let environment = global_environment
     for parameter in function["params"]:
@@ -3382,6 +3395,7 @@ export fn b2c_check_function_with_globals(function, functions, source_name, glob
         if parameter_type == none:
             parameter_type = "any"
         environment = b2c_bind(environment, parameter["name"], parameter_type, parameter_type, true)
+    environment = b2c_bind_nested_functions(function["body"]["statements"], environment)
     if b2c_function_owner(function) != none and len(function["params"]) > 0:
         environment = b2c_reassign(environment, function["params"][0]["name"], b2c_function_owner(function))
     let expected_return = function["return_type"]

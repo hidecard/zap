@@ -1376,6 +1376,9 @@ export fn parse_statement(line, line_number, body_column):
 
         return {"kind": "say", "payload": value, "span": span(line_number, body_column, len(statement)), "value": value}
 
+    if starts_with(statement, "set ") and contains(statement, " = "):
+        return parse_assignment(substring(statement, 4, len(statement)), line_number, body_column)
+
     if contains(statement, " = "):
 
         return parse_assignment(line, line_number, body_column)

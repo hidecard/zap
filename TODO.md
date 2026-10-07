@@ -1,6 +1,6 @@
 ﻿# Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-10-03
+**စစ်ဆေး/Update သည့်နေ့:** 2026-10-07
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
@@ -20,7 +20,8 @@
 - **Current CI:** commit `8057d1e` is green in [Zap CI run #37190863622](https://github.com/hidecard/zap/actions/runs/37190863622), with all 11 jobs successful.
 - **B3/B4 increment:** B3 foundations, build plan, dependency graph, transitive resolver, and registry/semver transport gates pass; B4 owned-package-build, user-command integration, and supported-subset rebuild gates also pass locally.
 - **Runtime control-flow fix:** canonical B4 AST lowering now preserves `while ... else`: natural loop completion enters the `else` block, while `break` skips it. The AST control-flow gate covers both cases; full acceptance remains `18/18` and the three-stage Rust-free gate passes.
-- **Class ownership fix:** class constructors and method receivers are now recognized by B2 type inference, class methods lower with the correct function depth, and `driver_seed_compile_source()` exposes a stable `error` field. B4 classes plus B2 member-method and owned-typed-IR gates pass. Closure capture, field mutation, and mutable-closure source-to-VM gates remain the next open runtime/type-environment slice.
+- **Class/closure/field ownership fix:** class constructors and method receivers are now recognized by B2 type inference, class methods lower with the correct function depth, and `driver_seed_compile_source()` exposes a stable `error` field. Nested function environments now preserve outer parameters and function bindings; `set target = value` is parsed as field assignment; nested member lookup no longer returns an undefined value. B2 complete inference/typed-IR/member gates and B4 functions, classes, closures, fields, mutable closures, and canonical AST closure gates all pass locally (`10/10`).
+- **Latest pushed commit:** `2d8e3dc` passed GitHub Actions run `37406561233`; the current local closure/field fixes are the next commit to push and re-run through CI.
 
 ### Self-hosting progress update (2026-09-09)
 
