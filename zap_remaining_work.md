@@ -77,6 +77,7 @@ The latest GitHub run is [Zap CI run #37190863622](https://github.com/hidecard/z
 - Closure scope, immutable/mutable captures, field store/load/rebinding, nested member diagnostics, canonical AST closure/exception/loop gates, B2 member-field inference, and A9 closure/member semantics all pass locally.
 - Full-language backend ownership, compiler ownership, B3 Zap ownership, provenance-chain, platform self-rebuild candidate evidence, and three-stage Rust-free self-hosting gates all pass locally.
 - The remaining P1/P2 items are **scope/completeness claims**, not current targeted-gate failures: arbitrary grammar and differential diagnostics breadth, complete generic/imported flow inference, all-kind typed-IR serialization, arbitrary-arity VM semantics, and independently reproducible seed provenance.
+- A9 recursive typed-IR coverage exposed and fixed an import-path bug: explicit `.zp` imports were being resolved as `.zp.zp` and then recursively parsed to the execution-depth limit. The resolver now normalizes an existing `.zp` suffix and treats explicit source imports as a runtime-module boundary for alias collection. Imported-alias, typecheck-engine, recursive-AST, and general typed-IR contract gates pass.
 - [ ] Keep `self_hosted = false` until the platform-seed self-rebuild acceptance gate passes and its evidence is committed.
 
 ## Recent progress now reflected
