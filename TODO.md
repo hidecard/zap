@@ -397,7 +397,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] The exact malformed-pipeline CI gate now passes, including deterministic replay, fail-closed stage metadata, and a valid-source regression.
 - [x] Extended the source-to-VM gate to execute list/map literal bytecode and verify the resulting VM values.
 - [ ] Full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack; keep this distinct from the passing C-backend acceptance rows until isolated and fixed.
-- [ ] B4 remains `not-certified`; cross-platform seed provenance, full-language production-pipeline migration, and hosted CI verification are still outstanding.
+- [ ] B4 remains `not-certified`; cross-platform seed provenance and full-language production-pipeline migration are still outstanding. Hosted CI verification for commit `e19a2ad` passed in run `37576188102`; the documentation-only follow-up is commit `65bed19`.
 
 The following acceptance rows have passed locally through the Rust-free C backend path on Windows/MSVC. Certification remains not-certified pending cross-platform (Linux/Windows/macOS) hash comparison and production-pipeline migration.
 
