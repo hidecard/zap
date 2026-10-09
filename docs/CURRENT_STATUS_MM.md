@@ -72,7 +72,7 @@ P1 language platform tasks အားလုံး ပြီးစီးပြီ�
 | Typed-IR candidate | provisional | ရှိပြီးသား annotated declaration slice နှင့် exact generic `identity<T>` metadata slice တစ်ခုကိုသာ cover လုပ်ပြီး Rust သည် reference emitter အဖြစ် ဆက်ရှိသည်။ |
 | Malformed-source safety | regression-gated | Invalid-source corpus အသေးတစ်ခုသည် panic သို့မဟုတ် unchecked-unwrap signature မပါဘဲ nonzero ဖြင့် fail ရမည်။ ဤသည်မှာ safety regression gate ဖြစ်ပြီး compiler ownership evidence မဟုတ်ပါ။ |
 | B3 package/build foundations | reference-only | Offline/deterministic foundation check များသည် compiler ownership ကို Zap သို့ မလွှဲပြောင်းပါ။ |
-| B4 self-hosting | not-certified | Rust-free C backend နှင့် platform-evidence gates များသည် CI run `37952991946` တွင် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 သုံးခုလုံးအတွက်၊ three-platform hash aggregate အပါအဝင် အောင်မြင်ပါသည်။ Zap-owned lowering/backend migration နှင့် `certification_ready=true` clean multi-platform seed provenance တို့ ကျန်သေးသည်။ |
+| B4 self-hosting | not-certified | Rust-free C backend နှင့် platform-evidence gates များသည် CI run `37952991946` တွင် Linux x86_64၊ macOS ARM64 နှင့် Windows x86_64 သုံးခုလုံးအတွက်၊ three-platform hash aggregate အပါအဝင် အောင်မြင်ပါသည်။ Zap-owned scalar slice တွင် boolean logic နှင့် stack `dup` ပါဝင်လာပြီဖြစ်သော်လည်း wider lowering/backend migration နှင့် `certification_ready=true` clean multi-platform seed provenance တို့ ကျန်သေးသည်။ |
 
 ## နောက် bounded work
 

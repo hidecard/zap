@@ -72,7 +72,7 @@ All P1 language platform tasks have been completed:
 | Typed-IR candidate | provisional | Covers the existing annotated declaration slice and one exact generic `identity<T>` metadata slice; Rust remains the reference emitter. |
 | Malformed-source safety | regression-gated | A small invalid-source corpus must fail nonzero without panic or unchecked-unwrap signatures; this is a safety regression gate, not compiler-ownership evidence. |
 | B3 package/build foundations | reference-only | Offline and deterministic foundation checks do not transfer compiler ownership to Zap. |
-| B4 self-hosting | not-certified | The Rust-free C backend and platform-evidence gates pass in CI run `37952991946` across Linux x86_64, macOS ARM64, and Windows x86_64, including the three-platform hash aggregate. Zap-owned lowering/backend migration and clean multi-platform seed provenance with `certification_ready=true` remain pending. |
+| B4 self-hosting | not-certified | The Rust-free C backend and platform-evidence gates pass in CI run `37952991946` across Linux x86_64, macOS ARM64, and Windows x86_64, including the three-platform hash aggregate. The Zap-owned scalar slice now covers boolean logic and stack `dup`; wider lowering/backend migration and clean multi-platform seed provenance with `certification_ready=true` remain pending. |
 
 ## Next bounded work
 

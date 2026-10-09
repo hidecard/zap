@@ -75,7 +75,7 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 | `host/zap-parser-host/parser.py` | Python parser (no-Rust proof) | 971 lines | Proof only |
 | `host/zap-vm-host/run.py` | Python VM host | ~800 lines | Proof only |
 
-**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** partial scalar slice. It now validates and emits constants, printing, halt, arithmetic, comparisons, and boolean `and`/`or`/`not` opcodes through a Zap-owned C-generation boundary; the Python backend remains the reference for the wider opcode surface.
+**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** partial scalar slice. It now validates and emits constants, printing, halt, arithmetic, comparisons, boolean `and`/`or`/`not`, and stack `dup` through a Zap-owned C-generation boundary; malformed and unknown instructions are rejected deterministically. The Python backend remains the reference for the wider opcode surface.
 
 **Migration gap:** ~1400 lines of C code generation (remaining opcode handlers: `store`, `load`, `jump`, `call`, list/map/struct operations, and other runtime families) would need to be ported from Python to Zap to complete the migration. This is a large-scale engineering effort requiring:
 - New builtins in the Zap runtime for C-level operations (`malloc`, `free`, `strdup`, `fprintf`, etc.)
