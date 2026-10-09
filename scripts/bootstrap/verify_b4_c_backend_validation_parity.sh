@@ -9,7 +9,8 @@ for required in \
   'export fn c_backend_validate_bytecode(' \
   'export fn c_backend_validate_artifact(' \
   'export fn c_backend_validation_contract(' \
-  'export fn c_backend_artifact_instructions('; do
+  'export fn c_backend_artifact_instructions(' \
+  'export fn c_backend_validation_opcode_manifest('; do
   grep -q "$required" bootstrap/b4/c_backend.zp || fail "missing Zap-owned export: $required"
 done
 
@@ -24,6 +25,8 @@ cases = [
     ({"artifact_kind": "bytecode", "instructions": [{"op": "const", "value": "zap"}, {"op": "print"}, {"op": "halt"}]}, True),
     ({"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "const", "value": [1, 2]}]}, False),
     ({"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "unknown"}]}, False),
+    ({"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "jump", "target": 1}]}, True),
+    ({"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "jump"}]}, False),
 ]
 for artifact, expected in cases:
     try:
@@ -58,10 +61,15 @@ let valid_scalar = {"kind": "zap.bytecode", "schema_version": 1, "instructions":
 let valid_string = {"artifact_kind": "bytecode", "instructions": [{"op": "const", "value": "zap"}, {"op": "print"}, {"op": "halt"}]}
 let invalid_collection = {"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "const", "value": [1, 2]}]}
 let invalid_opcode = {"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "unknown"}]}
+let valid_jump = {"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "jump", "target": 1}]}
+let invalid_jump = {"kind": "zap.bytecode", "schema_version": 1, "instructions": [{"op": "jump"}]}
 say c_backend_validate_artifact(valid_scalar)["status"]
 say c_backend_validate_artifact(valid_string)["status"]
 say c_backend_validate_artifact(invalid_collection)["status"]
 say c_backend_validate_artifact(invalid_opcode)["status"]
+say c_backend_validate_artifact(valid_jump)["status"]
+say c_backend_validate_artifact(invalid_jump)["status"]
+say len(c_backend_validation_opcode_manifest())
 say c_backend_validation_contract()["status"]
 EOF
 cat > "$expected" <<'EOF'
@@ -69,6 +77,9 @@ validated
 validated
 rejected
 rejected
+validated
+rejected
+65
 zap_owned_validation_slice
 EOF
 run_zap "$(basename "$runner")" > "$out"

@@ -7,6 +7,15 @@
 export fn c_backend_supported_opcode(op):
     return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal"
 
+export fn c_backend_validation_supported_opcode(op):
+    return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
+
+export fn c_backend_validation_opcode_manifest():
+    return ["add", "and", "async_new", "await", "call", "const", "divide", "dup", "equal", "error_is_error", "error_message", "error_new", "error_unwrap", "export_value", "function_def", "greater", "greater_equal", "halt", "import_module", "import_symbol", "in", "index", "jump", "jump_if_false", "jump_if_true", "less", "less_equal", "list_append", "list_contains", "list_get", "list_len", "list_reverse", "list_set", "load", "make_list", "make_map", "map_get", "map_has_key", "map_keys", "map_set", "map_set_pair", "map_values", "multiply", "not", "not_equal", "option_is_none", "option_is_some", "option_none", "option_some", "option_unwrap", "option_unwrap_or", "or", "pop", "print", "remainder", "return_none", "return_value", "store", "str_concat", "struct_field_names", "struct_get", "struct_has_field", "struct_new", "struct_set", "subtract"]
+
+export fn c_backend_validation_target_opcode(op):
+    return op == "jump" or op == "jump_if_false" or op == "jump_if_true"
+
 export fn c_backend_scalar_value_valid(value):
     let encoded = json(value)
     return value == none or value == true or value == false or (starts_with(encoded, "\"") and ends_with(encoded, "\"")) or (not starts_with(encoded, "[") and not starts_with(encoded, "{") and not contains(encoded, "\""))
@@ -23,10 +32,29 @@ export fn c_backend_instruction_valid(instruction):
         return false
     return true
 
+export fn c_backend_canonical_instruction_valid(instruction, instruction_count):
+    let encoded = json(instruction)
+    if not contains(encoded, "\"op\""):
+        return false
+    let op = instruction["op"]
+    if not c_backend_validation_supported_opcode(op):
+        return false
+    if op == "const" and (not contains(encoded, "\"value\"") or not c_backend_scalar_value_valid(instruction["value"])):
+        return false
+    if c_backend_validation_target_opcode(op) and not contains(encoded, "\"target\""):
+        return false
+    if op == "call" and not contains(encoded, "\"name\""):
+        return false
+    if op == "function_def" and (not contains(encoded, "\"name\"") or not contains(encoded, "\"params\"") or not contains(encoded, "\"entry\"") or not contains(encoded, "\"end\"")):
+        return false
+    if op == "make_list" and not contains(encoded, "\"count\""):
+        return false
+    return true
+
 export fn c_backend_validate_instructions(bytecode, index):
     if index >= len(bytecode):
         return {"error": none, "instruction_count": len(bytecode), "status": "validated"}
-    if not c_backend_instruction_valid(bytecode[index]):
+    if not c_backend_canonical_instruction_valid(bytecode[index], len(bytecode)):
         return {"error": "unsupported_or_malformed_instruction:" + str(index), "instruction_count": index, "status": "rejected"}
     return c_backend_validate_instructions(bytecode, index + 1)
 
@@ -35,6 +63,13 @@ export fn c_backend_validate_bytecode(bytecode):
     if checked["status"] != "validated":
         return {"error": checked["error"], "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
     return {"error": none, "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "validated"}
+
+export fn c_backend_emittable_instructions(bytecode, index):
+    if index >= len(bytecode):
+        return true
+    if not c_backend_instruction_valid(bytecode[index]):
+        return false
+    return c_backend_emittable_instructions(bytecode, index + 1)
 
 export fn c_backend_artifact_instructions(artifact):
     let encoded = json(artifact)
@@ -104,6 +139,8 @@ export fn c_backend_emit(bytecode):
     let validation = c_backend_validate_bytecode(bytecode)
     if validation["status"] != "validated":
         return {"error": validation["error"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+    if not c_backend_emittable_instructions(bytecode, 0):
+        return {"error": "opcode_family_not_emitted_by_zap_slice", "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
     let lines = c_backend_emit_header()
     lines = append(lines, "int main(void) {")
     for instruction in bytecode:
