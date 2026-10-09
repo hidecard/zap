@@ -759,6 +759,10 @@ jobs:
             echo "ZAP_BOOTSTRAP_BIN=$(pwd)/target/platform-seed/${{ matrix.target }}/zap" >> "$GITHUB_ENV"
           fi
 
+      - name: Verify Zap-owned C-backend validation parity
+        shell: bash
+        run: bash scripts/bootstrap/verify_b4_c_backend_validation_parity.sh
+
       - name: Verify B4 Rust-free contract boundary
         shell: bash
         run: scripts/bootstrap/verify_b4_rust_free_contract.sh

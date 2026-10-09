@@ -9,7 +9,7 @@ export fn c_backend_supported_opcode(op):
 
 export fn c_backend_scalar_value_valid(value):
     let encoded = json(value)
-    return value == none or value == true or value == false or not contains(encoded, "\"")
+    return value == none or value == true or value == false or (starts_with(encoded, "\"") and ends_with(encoded, "\"")) or (not starts_with(encoded, "[") and not starts_with(encoded, "{") and not contains(encoded, "\""))
 
 export fn c_backend_instruction_valid(instruction):
     if not contains(json(instruction), "\"op\""):
@@ -35,6 +35,26 @@ export fn c_backend_validate_bytecode(bytecode):
     if checked["status"] != "validated":
         return {"error": checked["error"], "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
     return {"error": none, "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "validated"}
+
+export fn c_backend_artifact_instructions(artifact):
+    let encoded = json(artifact)
+    if contains(encoded, "\"kind\":\"zap.bytecode\"") and contains(encoded, "\"instructions\""):
+        return artifact["instructions"]
+    if contains(encoded, "\"artifact_kind\":\"bytecode\"") and contains(encoded, "\"instructions\""):
+        return artifact["instructions"]
+    return none
+
+export fn c_backend_validate_artifact(artifact):
+    let instructions = c_backend_artifact_instructions(artifact)
+    if instructions == none:
+        return {"error": "invalid_canonical_bytecode_artifact", "instruction_count": 0, "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+    let checked = c_backend_validate_bytecode(instructions)
+    if checked["status"] != "validated":
+        return checked
+    return {"artifact_kind": "bytecode", "error": none, "instruction_count": checked["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "validated"}
+
+export fn c_backend_validation_contract():
+    return {"artifact_kinds": ["zap.bytecode", "bytecode"], "complete_language": false, "instruction_validation": "zap_owned", "reference_owner": "python_c_backend", "schema_version": 1, "status": "zap_owned_validation_slice"}
 
 export fn c_backend_c_scalar(value):
     if value == none:

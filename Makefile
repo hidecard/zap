@@ -1,4 +1,4 @@
-.PHONY: native native-run native-test host-test legacy-test legacy-parity legacy-parity-inventory bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test bootstrap-b4-c-backend-test bootstrap-b4-c-backend-structure-test bootstrap-b3-bytecode-c-bridge-test test package clean
+.PHONY: native native-run native-test host-test legacy-test legacy-parity legacy-parity-inventory bootstrap-b1-arbitrary-test bootstrap-b1-full-corpus-test bootstrap-b1-parser-corpus-test bootstrap-non-rust-test bootstrap-driver-contract-test bootstrap-driver-module-test bootstrap-module-ownership-test bootstrap-frontend-ownership-test bootstrap-backend-ownership-test bootstrap-byte-determinism-test bootstrap-second-stage-test bootstrap-three-stage-test bootstrap-clean-env-test bootstrap-self-rebuild-test bootstrap-b4-c-backend-test bootstrap-b4-c-backend-structure-test bootstrap-b4-c-backend-validation-parity-test bootstrap-b3-bytecode-c-bridge-test test package clean
 
 native:
 	cargo build --release --locked --manifest-path native/Cargo.toml
@@ -86,6 +86,9 @@ bootstrap-b4-c-backend-test:
 
 bootstrap-b4-c-backend-structure-test:
 	bash scripts/bootstrap/verify_zap_c_backend_structure.sh
+
+bootstrap-b4-c-backend-validation-parity-test:
+	bash scripts/bootstrap/verify_b4_c_backend_validation_parity.sh
 
 bootstrap-b3-bytecode-c-bridge-test:
 	bash scripts/bootstrap/verify_b3_bytecode_c_bridge.sh
