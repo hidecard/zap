@@ -1,11 +1,11 @@
 # B4 Rust-Free Full-Language Certification Evidence
 
 ## Evidence Snapshot Date
-2026-09-27
+2026-10-09
 
 ## Contract Status
 - **Current:** `not-certified`
-- **Reason:** Windows passes the six C-backend checks locally, but Linux/macOS reports and a successful three-platform aggregate are absent. The available Zap-produced Windows seed was built by the Python reference compiler and is explicitly `certification_ready=false`; the Zap-owned B1..B4 production path and C backend are not complete.
+- **Reason:** The three-platform C-backend and platform-evidence jobs now pass in CI, but the available seed is still explicitly `certification_ready=false`; the Zap-owned B1..B4 production lowering/backend path and clean multi-platform seed provenance are not complete.
 
 ## Acceptance Manifest Declarations (19 rows marked pass; not certification evidence)
 
@@ -101,8 +101,9 @@ A local prebuilt Windows x86_64 seed record exists at:
 
 | Infrastructure | Status | Purpose |
 |----------------|--------|---------|
-| `.github/workflows/ci.yml` C backend matrix | configured; cross-platform result unverified | Runs six C-backend checks on Linux, Windows, and macOS |
-| `b4-c-backend-cross-platform` aggregator | hardened; awaits Linux/macOS reports | Runs independently of the native build job; compares emitted-C and stdout hashes and requires all six rows per platform |
+| `.github/workflows/ci.yml` C backend matrix | passed in run `37952991946` | Linux x86_64 (`113896938850`), macOS ARM64 (`113896939138`), and Windows x86_64 (`113896939421`) all passed |
+| `b4-c-backend-cross-platform` aggregator | passed in run `37952991946` (`113897356953`) | Compared emitted-C and stdout hashes across all three platforms |
+| B4 platform evidence matrix | passed in run `37952991946` | macOS (`113901664157`), Linux (`113901664267`), and Windows (`113901664379`) all passed the Rust-free gates |
 | `scripts/bootstrap/verify_b4_c_backend_acceptance.sh` | present | Portable entrypoint for B4-FULL-013..018 |
 | `host/zap-bootstrap/verify_b4_c_backend_acceptance.py` | present | Builds, executes, hashes, and reports C backend artifacts |
 | `Makefile` `bootstrap-b4-c-backend-test` | present | Runs the C backend acceptance gate |
@@ -111,11 +112,11 @@ A local prebuilt Windows x86_64 seed record exists at:
 
 | Blocker | Current evidence |
 |---------|------------------|
-| Cross-platform C backend evidence | Windows passes 6/6 locally. Linux/macOS runs and the three-platform hash aggregate are not available in this worktree. |
+| Cross-platform C backend evidence | **Passed in CI run `37952991946`** across Linux x86_64, macOS ARM64, and Windows x86_64, including the three-platform hash aggregate. |
 | Production compiler ownership | Source lowering and C emission still use `host/zap-bootstrap/compile.py` and `c_backend.py`; `bootstrap/b4/c_backend.zp` is a stub and the Zap-owned pipeline is incomplete. |
 | Clean multi-platform seed provenance | The recorded Windows seed is Python+C-produced with `certification_ready=false`; no complete, verified three-platform seed set is present. |
 | Contract certification decision | Remains `not-certified` until the above evidence and ownership gates pass. |
 
 ## Certification Decision
 
-The repository is **not yet certified** for the B4 Rust-Free Full-Language Compiler Contract. The Windows C-backend subset passes locally, but this does not replace the missing cross-platform CI evidence, Zap-owned lowering/backend migration, and clean multi-platform seed provenance.
+The repository is **not yet certified** for the B4 Rust-Free Full-Language Compiler Contract. Cross-platform CI evidence now passes, but certification still requires Zap-owned lowering/backend migration and clean multi-platform seed provenance with `certification_ready=true`.
