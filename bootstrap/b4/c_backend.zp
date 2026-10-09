@@ -5,7 +5,7 @@
 # each opcode family is migrated behind the same validation boundary.
 
 export fn c_backend_supported_opcode(op):
-    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal"
+    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not"
 
 export fn c_backend_validation_supported_opcode(op):
     return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
@@ -135,6 +135,12 @@ export fn c_backend_emit_instruction(instruction):
         return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs > rhs); }"]
     if op == "greater_equal":
         return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs >= rhs); }"]
+    if op == "and":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs && rhs); }"]
+    if op == "or":
+        return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs || rhs); }"]
+    if op == "not":
+        return ["{ long value = zap_pop(); zap_push(!value); }"]
     return []
 
 export fn c_backend_emit(bytecode):
@@ -159,4 +165,4 @@ export fn c_backend_generate(bytecode):
     return result["lines"]
 
 export fn c_backend_ownership():
-    return {"complete_language": false, "implemented_opcode_families": ["scalar_constants", "scalar_arithmetic", "scalar_comparison", "scalar_print"], "owner": "zap", "reference_owner": "python_c_backend", "status": "zap_owned_scalar_backend_slice", "schema_version": 1}
+    return {"complete_language": false, "implemented_opcode_families": ["scalar_constants", "scalar_arithmetic", "scalar_boolean_logic", "scalar_comparison", "scalar_print"], "owner": "zap", "reference_owner": "python_c_backend", "status": "zap_owned_scalar_backend_slice", "schema_version": 1}

@@ -43,16 +43,26 @@ trap 'rm -f "$TEST_FILE"' EXIT
 
 cat > "$TEST_FILE" <<'EOF'
 import "bootstrap/b4/c_backend.zp"
-let test_bytecode = [{"op": "const", "value": 42}, {"op": "halt"}]
+let test_bytecode = [{"op": "const", "value": true}, {"op": "const", "value": false}, {"op": "and"}, {"op": "const", "value": false}, {"op": "not"}, {"op": "or"}, {"op": "halt"}]
 let result = c_backend_generate(test_bytecode)
 say "Generated C lines: " + str(len(result))
 say "First line: " + result[0]
 say "Has halt: " + str(contains(result, "  return 0;"))
+say "Has and: " + str(contains(result, "  { long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs && rhs); }"))
+say "Has not: " + str(contains(result, "  { long value = zap_pop(); zap_push(!value); }"))
+say "Has or: " + str(contains(result, "  { long rhs = zap_pop(); long lhs = zap_pop(); zap_push(lhs || rhs); }"))
 EOF
 
 ZAP_TEST_FILE="$TEST_FILE"
 
-if output=$("$ZAP_BIN" "$ZAP_TEST_FILE" 2>&1); then
+if output=$("$ZAP_BIN" "$TEST_FILE" 2>&1); then
+    printf '%s\n' "$output"
+    for expected in 'Has halt: true' 'Has and: true' 'Has not: true' 'Has or: true'; do
+        if ! grep -Fq "$expected" <<<"$output"; then
+            echo "FAIL: C backend boolean emission check missing: $expected"
+            exit 1
+        fi
+    done
     echo "PASS: Zap C backend module compiles successfully"
 else
     printf '%s\n' "$output" >&2
