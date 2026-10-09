@@ -107,6 +107,8 @@ export fn c_backend_emit_instruction(instruction):
     let op = instruction["op"]
     if op == "const":
         return ["zap_push(" + c_backend_c_scalar(instruction["value"]) + ");"]
+    if op == "halt":
+        return ["return 0;"]
     if op == "print":
         return ["printf(\"%ld\\n\", zap_pop());"]
     if op == "pop":

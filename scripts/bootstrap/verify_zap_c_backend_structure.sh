@@ -43,10 +43,11 @@ trap 'rm -f "$TEST_FILE"' EXIT
 
 cat > "$TEST_FILE" <<'EOF'
 import "bootstrap/b4/c_backend.zp"
-let test_bytecode = [{"op": "const", "value": 42}]
+let test_bytecode = [{"op": "const", "value": 42}, {"op": "halt"}]
 let result = c_backend_generate(test_bytecode)
 say "Generated C lines: " + str(len(result))
 say "First line: " + result[0]
+say "Has halt: " + str(contains(result, "  return 0;"))
 EOF
 
 ZAP_TEST_FILE="$TEST_FILE"
