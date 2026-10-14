@@ -67,7 +67,7 @@ export fn c_backend_validate_bytecode(bytecode):
 export fn c_backend_emittable_instructions(bytecode, index):
     if index >= len(bytecode):
         return true
-    if not c_backend_instruction_valid(bytecode[index]):
+    if not c_backend_instruction_valid(bytecode[index]) or not c_backend_emittable_instruction_valid(bytecode[index]):
         return false
     return c_backend_emittable_instructions(bytecode, index + 1)
 
@@ -99,6 +99,15 @@ export fn c_backend_c_scalar(value):
     if value == false:
         return "0"
     return json(value)
+
+export fn c_backend_emittable_value_valid(value):
+    let encoded = json(value)
+    return value == none or value == true or value == false or (not starts_with(encoded, "\"") and not starts_with(encoded, "[") and not starts_with(encoded, "{"))
+
+export fn c_backend_emittable_instruction_valid(instruction):
+    if instruction["op"] == "const":
+        return c_backend_emittable_value_valid(instruction["value"])
+    return true
 
 export fn c_backend_emit_header():
     return ["#include <stdio.h>", "#include <stdlib.h>", "#include <stdbool.h>", "", "static long zap_stack[256];", "static int zap_sp = 0;", "static long zap_pop(void) { return zap_stack[--zap_sp]; }", "static void zap_push(long value) { zap_stack[zap_sp++] = value; }", ""]
