@@ -27,7 +27,7 @@ export fn driver_typed_ir_backend_ownership():
 
 export fn driver_compile_c_backend(bytecode):
     let generated = c_backend_emit(bytecode)
-    if generated["status"] != "zap_owned_scalar_backend" and generated["status"] != "zap_owned_scalar_backend_with_numeric_lists":
+    if generated["status"] != "zap_owned_scalar_backend" and generated["status"] != "zap_owned_scalar_backend_with_numeric_lists" and generated["status"] != "zap_owned_scalar_collection_object_backend_slice":
         return {"error": generated["error"], "lines": [], "ownership": "blocked", "reference_owner": "zap", "status": "c_backend_rejected"}
     return {"error": none, "lines": generated["lines"], "instruction_count": generated["instruction_count"], "ownership": "zap_owned", "reference_owner": "zap", "status": generated["status"]}
 
