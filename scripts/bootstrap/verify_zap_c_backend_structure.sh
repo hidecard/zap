@@ -50,6 +50,7 @@ let malformed = c_backend_validate_bytecode([{"op": "const"}])
 let string_validation = c_backend_validate_bytecode([{"op": "const", "value": "hello"}])
 let string_emission = c_backend_emit([{"op": "const", "value": "hello"}])
 let control_flow = c_backend_emit([{"op": "const", "value": true}, {"op": "jump_if_false", "target": 4}, {"op": "jump", "target": 4}, {"op": "halt"}])
+let list_runtime = c_backend_emit([{"op": "const", "value": 10}, {"op": "const", "value": 20}, {"op": "make_list", "count": 2}, {"op": "dup"}, {"op": "list_len"}, {"op": "pop"}, {"op": "const", "value": 0}, {"op": "list_get"}, {"op": "pop"}, {"op": "const", "value": 1}, {"op": "const", "value": 30}, {"op": "list_set"}, {"op": "const", "value": 40}, {"op": "list_append"}, {"op": "halt"}])
 say "Generated C lines: " + str(len(result))
 say "First line: " + result[0]
 say "Has halt: " + str(contains(result, "  return 0;"))
@@ -63,13 +64,14 @@ say "Accepts string validation: " + str(string_validation["status"] == "validate
 say "Rejects incomplete string emission: " + str(string_emission["status"] == "rejected")
 say "Emits jump_if_false: " + str(contains(control_flow["lines"], "  if (!zap_pop()) goto zap_label_4;"))
 say "Emits jump: " + str(contains(control_flow["lines"], "  goto zap_label_4;"))
+say "Emits list runtime: " + str(contains(json(list_runtime["lines"]), "static long zap_list_get(long handle, long index)") and contains(json(list_runtime["lines"]), "zap_list_len(zap_pop())") and contains(json(list_runtime["lines"]), "zap_list_append(handle, value)"))
 EOF
 
 ZAP_TEST_FILE="$TEST_FILE"
 
 if output=$("$ZAP_BIN" "$TEST_FILE" 2>&1); then
     printf '%s\n' "$output"
-    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Rejects incomplete string emission: true' 'Emits jump_if_false: true' 'Emits jump: true'; do
+    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Rejects incomplete string emission: true' 'Emits jump_if_false: true' 'Emits jump: true' 'Emits list runtime: true'; do
         if ! grep -Fq "$expected" <<<"$output"; then
             echo "FAIL: C backend boolean emission check missing: $expected"
             exit 1
