@@ -5,7 +5,7 @@
 # each opcode family is migrated behind the same validation boundary.
 
 export fn c_backend_supported_opcode(op):
-    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup"
+    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true"
 
 export fn c_backend_validation_supported_opcode(op):
     return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
@@ -29,6 +29,8 @@ export fn c_backend_instruction_valid(instruction):
     if op == "const" and not contains(json(instruction), "\"value\""):
         return false
     if op == "const" and not c_backend_scalar_value_valid(instruction["value"]):
+        return false
+    if (op == "jump" or op == "jump_if_false" or op == "jump_if_true") and not contains(json(instruction), "\"target\""):
         return false
     return true
 
@@ -107,6 +109,8 @@ export fn c_backend_emittable_value_valid(value):
 export fn c_backend_emittable_instruction_valid(instruction):
     if instruction["op"] == "const":
         return c_backend_emittable_value_valid(instruction["value"])
+    if instruction["op"] == "jump" or instruction["op"] == "jump_if_false" or instruction["op"] == "jump_if_true":
+        return not starts_with(json(instruction["target"]), "\"")
     return true
 
 export fn c_backend_emit_header():
@@ -152,6 +156,12 @@ export fn c_backend_emit_instruction(instruction):
         return ["{ long value = zap_pop(); zap_push(!value); }"]
     if op == "dup":
         return ["{ long value = zap_pop(); zap_push(value); zap_push(value); }"]
+    if op == "jump":
+        return ["goto zap_label_" + str(instruction["target"]) + ";"]
+    if op == "jump_if_false":
+        return ["if (!zap_pop()) goto zap_label_" + str(instruction["target"]) + ";"]
+    if op == "jump_if_true":
+        return ["if (zap_pop()) goto zap_label_" + str(instruction["target"]) + ";"]
     return []
 
 export fn c_backend_emit(bytecode):
@@ -162,9 +172,13 @@ export fn c_backend_emit(bytecode):
         return {"error": "opcode_family_not_emitted_by_zap_slice", "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
     let lines = c_backend_emit_header()
     lines = append(lines, "int main(void) {")
+    let instruction_index = 0
     for instruction in bytecode:
+        lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
         for line in c_backend_emit_instruction(instruction):
             lines = append(lines, "  " + line)
+        instruction_index = instruction_index + 1
+    lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
     lines = append(lines, "  return 0;")
     lines = append(lines, "}")
     return {"error": none, "lines": lines, "instruction_count": validation["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "zap_owned_scalar_backend"}

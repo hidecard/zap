@@ -49,6 +49,7 @@ let unknown = c_backend_validate_bytecode([{"op": "future_opcode"}])
 let malformed = c_backend_validate_bytecode([{"op": "const"}])
 let string_validation = c_backend_validate_bytecode([{"op": "const", "value": "hello"}])
 let string_emission = c_backend_emit([{"op": "const", "value": "hello"}])
+let control_flow = c_backend_emit([{"op": "const", "value": true}, {"op": "jump_if_false", "target": 4}, {"op": "jump", "target": 4}, {"op": "halt"}])
 say "Generated C lines: " + str(len(result))
 say "First line: " + result[0]
 say "Has halt: " + str(contains(result, "  return 0;"))
@@ -60,13 +61,15 @@ say "Rejects unknown: " + str(unknown["status"] == "rejected")
 say "Rejects malformed const: " + str(malformed["status"] == "rejected")
 say "Accepts string validation: " + str(string_validation["status"] == "validated")
 say "Rejects incomplete string emission: " + str(string_emission["status"] == "rejected")
+say "Emits jump_if_false: " + str(contains(control_flow["lines"], "  if (!zap_pop()) goto zap_label_4;"))
+say "Emits jump: " + str(contains(control_flow["lines"], "  goto zap_label_4;"))
 EOF
 
 ZAP_TEST_FILE="$TEST_FILE"
 
 if output=$("$ZAP_BIN" "$TEST_FILE" 2>&1); then
     printf '%s\n' "$output"
-    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Rejects incomplete string emission: true'; do
+    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Rejects incomplete string emission: true' 'Emits jump_if_false: true' 'Emits jump: true'; do
         if ! grep -Fq "$expected" <<<"$output"; then
             echo "FAIL: C backend boolean emission check missing: $expected"
             exit 1
