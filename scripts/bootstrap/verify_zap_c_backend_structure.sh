@@ -48,7 +48,7 @@ let result = c_backend_generate(test_bytecode)
 let unknown = c_backend_validate_bytecode([{"op": "future_opcode"}])
 let malformed = c_backend_validate_bytecode([{"op": "const"}])
 let string_validation = c_backend_validate_bytecode([{"op": "const", "value": "hello"}])
-let string_emission = c_backend_emit([{"op": "const", "value": "hello"}])
+let string_runtime = c_backend_emit([{"op": "const", "value": "hello"}, {"op": "const", "value": " world"}, {"op": "str_concat"}, {"op": "print"}, {"op": "halt"}])
 let control_flow = c_backend_emit([{"op": "const", "value": true}, {"op": "jump_if_false", "target": 4}, {"op": "jump", "target": 4}, {"op": "halt"}])
 let list_runtime = c_backend_emit([{"op": "const", "value": 10}, {"op": "const", "value": 20}, {"op": "make_list", "count": 2}, {"op": "dup"}, {"op": "list_len"}, {"op": "pop"}, {"op": "const", "value": 0}, {"op": "list_get"}, {"op": "pop"}, {"op": "const", "value": 1}, {"op": "const", "value": 30}, {"op": "list_set"}, {"op": "const", "value": 40}, {"op": "list_append"}, {"op": "halt"}])
 let map_runtime = c_backend_emit([{"op": "make_map"}, {"op": "const", "value": 1}, {"op": "const", "value": 10}, {"op": "map_set_pair"}, {"op": "dup"}, {"op": "const", "value": 1}, {"op": "map_get"}, {"op": "pop"}, {"op": "dup"}, {"op": "map_keys"}, {"op": "pop"}, {"op": "dup"}, {"op": "map_values"}, {"op": "pop"}, {"op": "const", "value": 2}, {"op": "const", "value": 20}, {"op": "map_set"}, {"op": "struct_new"}, {"op": "const", "value": 3}, {"op": "const", "value": 30}, {"op": "struct_set"}, {"op": "halt"}])
@@ -62,7 +62,7 @@ say "Has or: " + str(contains(result, "  { long rhs = zap_pop(); long lhs = zap_
 say "Rejects unknown: " + str(unknown["status"] == "rejected")
 say "Rejects malformed const: " + str(malformed["status"] == "rejected")
 say "Accepts string validation: " + str(string_validation["status"] == "validated")
-say "Rejects incomplete string emission: " + str(string_emission["status"] == "rejected")
+say "Emits string runtime: " + str(string_runtime["status"] != "rejected" and contains(json(string_runtime["lines"]), "static long zap_string_new") and contains(json(string_runtime["lines"]), "zap_string_concat(lhs, rhs)") and contains(json(string_runtime["lines"]), "zap_is_string(value)"))
 say "Emits jump_if_false: " + str(contains(control_flow["lines"], "  if (!zap_pop()) goto zap_label_4;"))
 say "Emits jump: " + str(contains(control_flow["lines"], "  goto zap_label_4;"))
 say "Emits list runtime: " + str(contains(json(list_runtime["lines"]), "static long zap_list_get(long handle, long index)") and contains(json(list_runtime["lines"]), "zap_list_len(zap_pop())") and contains(json(list_runtime["lines"]), "zap_list_append(handle, value)"))
@@ -73,7 +73,7 @@ ZAP_TEST_FILE="$TEST_FILE"
 
 if output=$("$ZAP_BIN" "$TEST_FILE" 2>&1); then
     printf '%s\n' "$output"
-    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Rejects incomplete string emission: true' 'Emits jump_if_false: true' 'Emits jump: true' 'Emits list runtime: true' 'Emits map/object runtime: true'; do
+    for expected in 'Has halt: true' 'Has dup: true' 'Has and: true' 'Has not: true' 'Has or: true' 'Rejects unknown: true' 'Rejects malformed const: true' 'Accepts string validation: true' 'Emits string runtime: true' 'Emits jump_if_false: true' 'Emits jump: true' 'Emits list runtime: true' 'Emits map/object runtime: true'; do
         if ! grep -Fq "$expected" <<<"$output"; then
             echo "FAIL: C backend boolean emission check missing: $expected"
             exit 1
