@@ -140,6 +140,10 @@ export fn c_backend_emit_header():
     lines = append(lines, "static int zap_frame_depth = 0; static int zap_return_labels[32]; static char zap_local_names[32][64][64]; static long zap_local_values[32][64]; static int zap_local_counts[32];")
     lines = append(lines, "static void zap_store(const char *name, long value) { int i; for (i = 0; i < zap_local_counts[zap_frame_depth]; ++i) if (strcmp(zap_local_names[zap_frame_depth][i], name) == 0) { zap_local_values[zap_frame_depth][i] = value; return; } if (zap_local_counts[zap_frame_depth] >= 64) { fprintf(stderr, \"local limit exceeded\\n\"); exit(1); } strncpy(zap_local_names[zap_frame_depth][zap_local_counts[zap_frame_depth]], name, 63); zap_local_names[zap_frame_depth][zap_local_counts[zap_frame_depth]][63] = 0; zap_local_values[zap_frame_depth][zap_local_counts[zap_frame_depth]++] = value; }")
     lines = append(lines, "static long zap_load(const char *name) { int i; for (i = zap_local_counts[zap_frame_depth] - 1; i >= 0; --i) if (strcmp(zap_local_names[zap_frame_depth][i], name) == 0) return zap_local_values[zap_frame_depth][i]; fprintf(stderr, \"unknown local: %s\\n\", name); exit(1); }")
+    lines = append(lines, "static long zap_closure_values[64][16]; static int zap_closure_lengths[64]; static int zap_closure_count = 0;")
+    lines = append(lines, "static long zap_closure_new(int count, long *values) { int i; if (zap_closure_count >= 64 || count > 16) { fprintf(stderr, \"closure limit exceeded\\n\"); exit(1); } for (i = 0; i < count; ++i) zap_closure_values[zap_closure_count][i] = values[i]; zap_closure_lengths[zap_closure_count] = count; zap_closure_count += 1; return 4000 + zap_closure_count; }")
+    lines = append(lines, "static int zap_closure_index(long handle) { if (handle < 4001 || handle > 4000 + zap_closure_count) { fprintf(stderr, \"closure handle invalid\\n\"); exit(1); } return (int)(handle - 4001); }")
+    lines = append(lines, "static long zap_closure_get(long handle, int index) { int closure = zap_closure_index(handle); if (index < 0 || index >= zap_closure_lengths[closure]) { fprintf(stderr, \"closure capture invalid\\n\"); exit(1); } return zap_closure_values[closure][index]; }")
     return lines
 
 export fn c_backend_find_function(bytecode, name, index):
@@ -148,6 +152,13 @@ export fn c_backend_find_function(bytecode, name, index):
     if bytecode[index]["op"] == "function_def" and bytecode[index]["name"] == name:
         return bytecode[index]
     return c_backend_find_function(bytecode, name, index + 1)
+
+export fn c_backend_find_function_binding(bytecode, binding, index):
+    if index >= len(bytecode):
+        return none
+    if bytecode[index]["op"] == "function_def" and contains(json(bytecode[index]), "\"binding\"") and bytecode[index]["binding"] == binding:
+        return bytecode[index]
+    return c_backend_find_function_binding(bytecode, binding, index + 1)
 
 export fn c_backend_emit_instruction(instruction):
     let op = instruction["op"]
@@ -270,21 +281,39 @@ export fn c_backend_emit(bytecode):
         lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
         let op = instruction["op"]
         if op == "function_def":
+            if contains(json(instruction), "\"binding\"") and contains(json(instruction), "\"captures\""):
+                let captures = instruction["captures"]
+                lines = append(lines, "  { long zap_capture_values[16];")
+                let capture_index = 0
+                for capture in captures:
+                    lines = append(lines, "    zap_capture_values[" + str(capture_index) + "] = zap_load(" + json(capture) + ");")
+                    capture_index = capture_index + 1
+                lines = append(lines, "    zap_store(" + json(instruction["binding"]) + ", zap_closure_new(" + str(len(captures)) + ", zap_capture_values)); }")
             lines = append(lines, "  goto zap_label_" + str(instruction["end"]) + ";")
         if op == "call":
             let definition = c_backend_find_function(bytecode, instruction["name"], 0)
+            let closure_binding = c_backend_find_function_binding(bytecode, instruction["name"], 0)
+            if definition == none and closure_binding != none:
+                definition = closure_binding
             if definition == none:
                 return {"error": "unknown_function:" + instruction["name"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
             let argc = instruction["argc"]
             if argc != len(definition["params"]):
                 return {"error": "arity_mismatch:" + instruction["name"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
             lines = append(lines, "  { long zap_call_args[64]; int zap_call_i = " + str(argc - 1) + "; while (zap_call_i >= 0) { zap_call_args[zap_call_i] = zap_pop(); zap_call_i -= 1; }")
+            if contains(json(definition), "\"binding\""):
+                lines = append(lines, "    long zap_closure = zap_load(" + json(definition["binding"]) + ");")
             lines = append(lines, "    if (zap_frame_depth >= 31) { fprintf(stderr, \"call frame limit exceeded\\n\"); exit(1); }")
             lines = append(lines, "    zap_return_labels[zap_frame_depth] = " + str(instruction_index + 1) + "; zap_frame_depth += 1; zap_local_counts[zap_frame_depth] = 0;")
             let parameter_index = 0
             for parameter in definition["params"]:
                 lines = append(lines, "    zap_store(" + json(parameter) + ", zap_call_args[" + str(parameter_index) + "]); ")
                 parameter_index = parameter_index + 1
+            if contains(json(definition), "\"binding\"") and contains(json(definition), "\"captures\""):
+                let capture_index = 0
+                for capture in definition["captures"]:
+                    lines = append(lines, "    zap_store(" + json(capture) + ", zap_closure_get(zap_closure, " + str(capture_index) + ")); ")
+                    capture_index = capture_index + 1
             lines = append(lines, "    goto zap_label_" + str(definition["entry"]) + "; }")
         if op == "return_value" or op == "return_none":
             for line in c_backend_emit_instruction(instruction):
