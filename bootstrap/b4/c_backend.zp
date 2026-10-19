@@ -5,7 +5,7 @@
 # each opcode family is migrated behind the same validation boundary.
 
 export fn c_backend_supported_opcode(op):
-    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "str_concat" or op == "in" or op == "index" or op == "option_none" or op == "option_some" or op == "option_is_none" or op == "option_is_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "error_new" or op == "error_message" or op == "error_is_error" or op == "error_unwrap" or op == "store" or op == "load" or op == "make_list" or op == "list_len" or op == "list_get" or op == "list_set" or op == "list_append" or op == "list_contains" or op == "list_reverse" or op == "make_map" or op == "map_set_pair" or op == "map_get" or op == "map_set" or op == "map_has_key" or op == "map_keys" or op == "map_values" or op == "struct_new" or op == "struct_get" or op == "struct_set" or op == "struct_has_field" or op == "struct_field_names"
+    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "str_concat" or op == "in" or op == "index" or op == "option_none" or op == "option_some" or op == "option_is_none" or op == "option_is_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "error_new" or op == "error_message" or op == "error_is_error" or op == "error_unwrap" or op == "store" or op == "load" or op == "function_def" or op == "call" or op == "return_value" or op == "return_none" or op == "make_list" or op == "list_len" or op == "list_get" or op == "list_set" or op == "list_append" or op == "list_contains" or op == "list_reverse" or op == "make_map" or op == "map_set_pair" or op == "map_get" or op == "map_set" or op == "map_has_key" or op == "map_keys" or op == "map_values" or op == "struct_new" or op == "struct_get" or op == "struct_set" or op == "struct_has_field" or op == "struct_field_names"
 
 export fn c_backend_validation_supported_opcode(op):
     return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
@@ -137,10 +137,17 @@ export fn c_backend_emit_header():
     lines = append(lines, "static int zap_is_error(long handle) { return handle >= 3001 && handle <= 3000 + zap_error_count; }")
     lines = append(lines, "static int zap_error_index(long handle) { if (!zap_is_error(handle)) { fprintf(stderr, \"error handle invalid\\n\"); exit(1); } return (int)(handle - 3001); }")
     lines = append(lines, "static long zap_error_new(long message) { if (zap_error_count >= 64) { fprintf(stderr, \"error limit exceeded\\n\"); exit(1); } zap_errors[zap_error_count] = message; zap_error_count += 1; return 3000 + zap_error_count; }")
-    lines = append(lines, "static char zap_local_names[64][64]; static long zap_local_values[64]; static int zap_local_count = 0;")
-    lines = append(lines, "static void zap_store(const char *name, long value) { int i; for (i = 0; i < zap_local_count; ++i) if (strcmp(zap_local_names[i], name) == 0) { zap_local_values[i] = value; return; } if (zap_local_count >= 64) { fprintf(stderr, \"local limit exceeded\\n\"); exit(1); } strncpy(zap_local_names[zap_local_count], name, 63); zap_local_names[zap_local_count][63] = 0; zap_local_values[zap_local_count++] = value; }")
-    lines = append(lines, "static long zap_load(const char *name) { int i; for (i = zap_local_count - 1; i >= 0; --i) if (strcmp(zap_local_names[i], name) == 0) return zap_local_values[i]; fprintf(stderr, \"unknown local: %s\\n\", name); exit(1); }")
+    lines = append(lines, "static int zap_frame_depth = 0; static int zap_return_labels[32]; static char zap_local_names[32][64][64]; static long zap_local_values[32][64]; static int zap_local_counts[32];")
+    lines = append(lines, "static void zap_store(const char *name, long value) { int i; for (i = 0; i < zap_local_counts[zap_frame_depth]; ++i) if (strcmp(zap_local_names[zap_frame_depth][i], name) == 0) { zap_local_values[zap_frame_depth][i] = value; return; } if (zap_local_counts[zap_frame_depth] >= 64) { fprintf(stderr, \"local limit exceeded\\n\"); exit(1); } strncpy(zap_local_names[zap_frame_depth][zap_local_counts[zap_frame_depth]], name, 63); zap_local_names[zap_frame_depth][zap_local_counts[zap_frame_depth]][63] = 0; zap_local_values[zap_frame_depth][zap_local_counts[zap_frame_depth]++] = value; }")
+    lines = append(lines, "static long zap_load(const char *name) { int i; for (i = zap_local_counts[zap_frame_depth] - 1; i >= 0; --i) if (strcmp(zap_local_names[zap_frame_depth][i], name) == 0) return zap_local_values[zap_frame_depth][i]; fprintf(stderr, \"unknown local: %s\\n\", name); exit(1); }")
     return lines
+
+export fn c_backend_find_function(bytecode, name, index):
+    if index >= len(bytecode):
+        return none
+    if bytecode[index]["op"] == "function_def" and bytecode[index]["name"] == name:
+        return bytecode[index]
+    return c_backend_find_function(bytecode, name, index + 1)
 
 export fn c_backend_emit_instruction(instruction):
     let op = instruction["op"]
@@ -156,6 +163,10 @@ export fn c_backend_emit_instruction(instruction):
         return ["zap_store(" + json(instruction["name"]) + ", zap_pop());"]
     if op == "load":
         return ["zap_push(zap_load(" + json(instruction["name"]) + ")); "]
+    if op == "return_value":
+        return ["{ int zap_return = zap_return_labels[zap_frame_depth]; zap_frame_depth -= 1; switch (zap_return) {"]
+    if op == "return_none":
+        return ["zap_push(0); { int zap_return = zap_return_labels[zap_frame_depth]; zap_frame_depth -= 1; switch (zap_return) {"]
     if op == "add":
         return ["{ long rhs = zap_pop(); long lhs = zap_pop(); zap_push(zap_add(lhs, rhs)); }"]
     if op == "subtract":
@@ -257,8 +268,35 @@ export fn c_backend_emit(bytecode):
     let instruction_index = 0
     for instruction in bytecode:
         lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
-        for line in c_backend_emit_instruction(instruction):
-            lines = append(lines, "  " + line)
+        let op = instruction["op"]
+        if op == "function_def":
+            lines = append(lines, "  goto zap_label_" + str(instruction["end"]) + ";")
+        if op == "call":
+            let definition = c_backend_find_function(bytecode, instruction["name"], 0)
+            if definition == none:
+                return {"error": "unknown_function:" + instruction["name"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+            let argc = instruction["argc"]
+            if argc != len(definition["params"]):
+                return {"error": "arity_mismatch:" + instruction["name"], "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
+            lines = append(lines, "  { long zap_call_args[64]; int zap_call_i = " + str(argc - 1) + "; while (zap_call_i >= 0) { zap_call_args[zap_call_i] = zap_pop(); zap_call_i -= 1; }")
+            lines = append(lines, "    if (zap_frame_depth >= 31) { fprintf(stderr, \"call frame limit exceeded\\n\"); exit(1); }")
+            lines = append(lines, "    zap_return_labels[zap_frame_depth] = " + str(instruction_index + 1) + "; zap_frame_depth += 1; zap_local_counts[zap_frame_depth] = 0;")
+            let parameter_index = 0
+            for parameter in definition["params"]:
+                lines = append(lines, "    zap_store(" + json(parameter) + ", zap_call_args[" + str(parameter_index) + "]); ")
+                parameter_index = parameter_index + 1
+            lines = append(lines, "    goto zap_label_" + str(definition["entry"]) + "; }")
+        if op == "return_value" or op == "return_none":
+            for line in c_backend_emit_instruction(instruction):
+                lines = append(lines, "  " + line)
+            let return_index = 0
+            for ignored in bytecode:
+                lines = append(lines, "  case " + str(return_index) + ": goto zap_label_" + str(return_index) + ";")
+                return_index = return_index + 1
+            lines = append(lines, "  default: fprintf(stderr, \"invalid return label\\n\"); exit(1); }")
+        if op != "function_def" and op != "call" and op != "return_value" and op != "return_none":
+            for line in c_backend_emit_instruction(instruction):
+                lines = append(lines, "  " + line)
         instruction_index = instruction_index + 1
     lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
     lines = append(lines, "  return 0;")
