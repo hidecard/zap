@@ -5,7 +5,7 @@
 # each opcode family is migrated behind the same validation boundary.
 
 export fn c_backend_supported_opcode(op):
-    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "str_concat" or op == "in" or op == "index" or op == "make_list" or op == "list_len" or op == "list_get" or op == "list_set" or op == "list_append" or op == "list_contains" or op == "list_reverse" or op == "make_map" or op == "map_set_pair" or op == "map_get" or op == "map_set" or op == "map_has_key" or op == "map_keys" or op == "map_values" or op == "struct_new" or op == "struct_get" or op == "struct_set" or op == "struct_has_field" or op == "struct_field_names"
+    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "str_concat" or op == "in" or op == "index" or op == "option_none" or op == "option_some" or op == "option_is_none" or op == "option_is_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "error_new" or op == "error_message" or op == "error_is_error" or op == "error_unwrap" or op == "make_list" or op == "list_len" or op == "list_get" or op == "list_set" or op == "list_append" or op == "list_contains" or op == "list_reverse" or op == "make_map" or op == "map_set_pair" or op == "map_get" or op == "map_set" or op == "map_has_key" or op == "map_keys" or op == "map_values" or op == "struct_new" or op == "struct_get" or op == "struct_set" or op == "struct_has_field" or op == "struct_field_names"
 
 export fn c_backend_validation_supported_opcode(op):
     return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
@@ -129,6 +129,14 @@ export fn c_backend_emit_header():
     lines = append(lines, "static long zap_greater_equal(long left, long right) { if (zap_is_string(left) && zap_is_string(right)) return strcmp(zap_string_get(left), zap_string_get(right)) >= 0; if (zap_is_string(left) || zap_is_string(right)) { fprintf(stderr, \"comparison requires matching values\\n\"); exit(1); } return left >= right; }")
     lines = append(lines, "static long zap_index(long handle, long index) { if (zap_is_map(handle)) return zap_map_get(handle, index); return zap_list_get(handle, index); }")
     lines = append(lines, "static long zap_contains(long handle, long needle) { if (zap_is_map(handle)) return zap_map_has_key(handle, needle); { int list = zap_list_index(handle); int index; for (index = 0; index < zap_list_lengths[list]; ++index) if (zap_value_equal(zap_lists[list][index], needle)) return 1; return 0; } }")
+    lines = append(lines, "static long zap_options[64]; static int zap_option_some[64]; static int zap_option_count = 0;")
+    lines = append(lines, "static int zap_is_option(long handle) { return handle >= 2001 && handle <= 2000 + zap_option_count; }")
+    lines = append(lines, "static int zap_option_index(long handle) { if (!zap_is_option(handle)) { fprintf(stderr, \"option handle invalid\\n\"); exit(1); } return (int)(handle - 2001); }")
+    lines = append(lines, "static long zap_option_new(long value, int some) { if (zap_option_count >= 64) { fprintf(stderr, \"option limit exceeded\\n\"); exit(1); } zap_options[zap_option_count] = value; zap_option_some[zap_option_count] = some; zap_option_count += 1; return 2000 + zap_option_count; }")
+    lines = append(lines, "static long zap_errors[64]; static int zap_error_count = 0;")
+    lines = append(lines, "static int zap_is_error(long handle) { return handle >= 3001 && handle <= 3000 + zap_error_count; }")
+    lines = append(lines, "static int zap_error_index(long handle) { if (!zap_is_error(handle)) { fprintf(stderr, \"error handle invalid\\n\"); exit(1); } return (int)(handle - 3001); }")
+    lines = append(lines, "static long zap_error_new(long message) { if (zap_error_count >= 64) { fprintf(stderr, \"error limit exceeded\\n\"); exit(1); } zap_errors[zap_error_count] = message; zap_error_count += 1; return 3000 + zap_error_count; }")
     return lines
 
 export fn c_backend_emit_instruction(instruction):
@@ -195,6 +203,26 @@ export fn c_backend_emit_instruction(instruction):
         return ["{ long needle = zap_pop(); long handle = zap_pop(); zap_push(zap_contains(handle, needle)); }"]
     if op == "index":
         return ["{ long index = zap_pop(); long handle = zap_pop(); zap_push(zap_index(handle, index)); }"]
+    if op == "option_none":
+        return ["zap_push(zap_option_new(0, 0));"]
+    if op == "option_some":
+        return ["zap_push(zap_option_new(zap_pop(), 1));"]
+    if op == "option_is_none":
+        return ["{ long handle = zap_pop(); zap_push(!zap_option_some[zap_option_index(handle)]); }"]
+    if op == "option_is_some":
+        return ["{ long handle = zap_pop(); zap_push(zap_option_some[zap_option_index(handle)]); }"]
+    if op == "option_unwrap":
+        return ["{ long handle = zap_pop(); int option = zap_option_index(handle); if (!zap_option_some[option]) { fprintf(stderr, \"option unwrap none\\n\"); exit(1); } zap_push(zap_options[option]); }"]
+    if op == "option_unwrap_or":
+        return ["{ long fallback = zap_pop(); long handle = zap_pop(); int option = zap_option_index(handle); zap_push(zap_option_some[option] ? zap_options[option] : fallback); }"]
+    if op == "error_new":
+        return ["zap_push(zap_error_new(zap_pop()));"]
+    if op == "error_message":
+        return ["{ long handle = zap_pop(); zap_push(zap_errors[zap_error_index(handle)]); }"]
+    if op == "error_is_error":
+        return ["zap_push(zap_is_error(zap_pop()));"]
+    if op == "error_unwrap":
+        return ["{ long handle = zap_pop(); if (zap_is_error(handle)) { fprintf(stderr, \"error unwrap\\n\"); exit(1); } zap_push(handle); }"]
     if op == "list_reverse":
         return ["{ long source = zap_pop(); int index; int list = zap_list_index(source); long reversed = zap_list_new(); for (index = zap_list_lengths[list] - 1; index >= 0; --index) zap_list_append(reversed, zap_lists[list][index]); zap_push(reversed); }"]
     if op == "make_map" or op == "struct_new":
