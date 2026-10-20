@@ -1,8 +1,8 @@
 # Zap Remaining Work — Step-by-Step Plan
 
-**Baseline:** master @ `69e16bd`, latest release `v2.11.18`
-**Date:** 2026-09-18
-**Status:** Phase 0 Steps 1-2 complete; B4 acceptance 19/19 pass; B4 evidence gates (byte-determinism, second-stage, clean-env, three-stage) all pass with Rust-built binary; B4 still `not-certified` pending cross-platform CI evidence with Zap-produced seed (CI in progress); Phase 1 Step 4 (P0-01 legacy/native parity) complete; Phase 1 Step 5 (P0-02 specification ownership) complete (79 rules); Phase 1 Step 6 (P0-04 memory/ref-cycle contract) complete; Phase 1 Step 7 (P0-RS-01 runtime state migration) complete; Phase 1 Step 8 (P0-05 async boundary contract) complete; Phase 1 Step 9 (P0-06 release version gate) complete (28 checks pass); Phase 2 Step 10 (P1-05 verification layers) **COMPLETE**: 5 fuzz targets + allocator tests (3) + property tests (6) + platform tests (5) + corpus policy tests (3) = 20 corpus tests pass; `verify_b4_evidence.sh` updated for Zap-produced seed support; CI integration added; `zap conformance` command implemented
+**Baseline:** master @ `5c136b4`, latest release `v2.11.18`
+**Date:** 2026-10-20
+**Status:** B4 acceptance 19/19 remains declared pass and hosted current-master CI run `39204640666` is green; B4 is still `not-certified` because the full Zap-owned production path, the data-structure driver overflow fix, and certified Rust-free three-platform seed provenance remain incomplete. Phase 1 reliability/specification/runtime/async/release gates remain complete; Phase 2 verification layers and `zap conformance` remain complete.
 
 ---
 
@@ -75,16 +75,16 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 | `host/zap-parser-host/parser.py` | Python parser (no-Rust proof) | 971 lines | Proof only |
 | `host/zap-vm-host/run.py` | Python VM host | ~800 lines | Proof only |
 
-**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** partial scalar slice. It now validates and emits constants, printing, halt, arithmetic, comparisons, boolean `and`/`or`/`not`, and stack `dup` through a Zap-owned C-generation boundary; malformed and unknown instructions are rejected deterministically. The Python backend remains the reference for the wider opcode surface.
+**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** expanded bounded slice. Recent master commits migrate numeric and generic list/map semantics, strings, options/errors, locals, function call frames, and closure captures behind Zap-owned runtime/lowering boundaries. The full acceptance harness still uses the Python reference compiler/backend, and a data-structure driver fixture still overflows the native stack.
 
-**Migration gap:** ~1400 lines of C code generation (remaining opcode handlers: `store`, `load`, `jump`, `call`, list/map/struct operations, and other runtime families) would need to be ported from Python to Zap to complete the migration. This is a large-scale engineering effort requiring:
+**Migration gap:** the remaining full-language integration, unsupported opcode/runtime families, frontend ownership promotion, and production seed transition still need to be completed. The current blocker is no longer a scalar-only backend stub; it is end-to-end integration and certification evidence.
 - New builtins in the Zap runtime for C-level operations (`malloc`, `free`, `strdup`, `fprintf`, etc.)
 - Opcode dispatch in Zap (currently Python uses Python `if/elif` chains)
 - Stack machine semantics in Zap (currently Python uses explicit C pointers)
 
-**Current status:** B4 acceptance uses Python lowering which is explicitly listed as acceptable in B4 contract. No action needed for B4 certification. Migration is a feature for long-term Rust independence.
+**Current status:** B4 acceptance still uses the Python reference lowering path, while bounded Zap-owned slices are validated separately. The data-structure driver overflow and Rust-free seed provenance remain active gates.
 
-**Gate:** No action required — Python lowering is acceptable provenance per B4 contract
+**Gate:** Keep `not-certified` until full production-path ownership, overflow remediation, and seed provenance evidence are complete.
 
 ---
 
@@ -238,7 +238,7 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 |---|---|---|
 | M1 — Stable Language | ✅ Complete | — |
 | M2 — Native Compiler | ✅ Complete | — |
-| M3 — Self-hosted Zap | 🔄 In Progress | Phase 0 Steps 1-2 complete; all B4 evidence gates pass; B4 still not-certified pending cross-platform CI |
+| M3 — Self-hosted Zap | 🔄 In Progress | Bounded backend/runtime migrations pass current CI; full production ownership, overflow remediation, and Rust-free seed provenance remain |
 | M4 — Package Ecosystem | ✅ Complete | — |
 | M5 — Full-stack Web | ✅ Complete | — |
 | M6 — Developer Experience | ✅ Complete | — |
@@ -252,8 +252,9 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 PHASE 0 (Critical path — blocks B4 claim):
   Step 1: Produce Zap-generated Rust-free seed — COMPLETED
   Step 2: Fix C backend determinism — COMPLETED (6/6 B4 acceptance rows pass)
-  Step 3: Cross-platform clean-environment evidence (Linux/Win/Mac) — pending CI
-  Step 4: Migrate Python lowering into Zap-owned pipeline
+  Step 3: Cross-platform clean-environment evidence (Linux/Win/Mac) — hosted evidence exists; refresh against current seed/provenance contract
+  Step 4: Complete Python-lowering migration into the Zap-owned production pipeline
+  Step 5: Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
 
 PHASE 1 (P0 reliability — high priority, parallelizable):
   Step 5: P0-01 Legacy parity expansion

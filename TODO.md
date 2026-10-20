@@ -1,12 +1,12 @@
 ﻿# Zap Remaining TODO
 
-**စစ်ဆေး/Update သည့်နေ့:** 2026-10-07
+**စစ်ဆေး/Update သည့်နေ့:** 2026-10-20
 **Repository:** [hidecard/zap](https://github.com/hidecard/zap)
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Current branch:** `master`
 **Bootstrap stage:** B4 candidate (full-language and Rust-free seed certification remain open)
 
-### Latest verification update (2026-10-03)
+### Latest verification update (2026-10-20)
 
 - Latest `master` commit checked: `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`).
 - GitHub Actions run [#37099303061](https://github.com/hidecard/zap/actions/runs/37099303061) is green: all 11 jobs passed, including Rust quality, native builds, C backend cross-platform checks, and B4 platform evidence.
@@ -60,9 +60,9 @@
 - **Cross-platform clean execution limitation:** this Linux x86_64 sandbox can verify archive checksums and binary formats, but cannot execute Windows PE or macOS ARM64 Mach-O binaries. Native clean-environment execution for those targets remains a GitHub Actions/Windows/macOS runner requirement.
 - **Current-master artifact workflow:** the CI platform build matrix now packages each successful Linux, Windows, and macOS native build with commit metadata and SHA-256 checksum, then uploads a commit-scoped platform seed artifact. This closes the current-master artifact availability gap; native clean-environment self-hosting behavior still requires the corresponding runner.
 - **Package/artifact linkage fix:** `driver_build_package()` now returns a stable execution result for success and fail-closed dependency paths, executes the owned source-to-VM pipeline for package output, and uses canonical digest validation. The owned package-build and A10-A13 artifact-linkage gates now pass with the current driver.
-- **Zap-owned C backend migration slice (2026-10-03):** `bootstrap/b4/c_backend.zp` now owns canonical scalar bytecode validation and deterministic C emission for constants, arithmetic, comparisons, printing, and stack operations; `compiler_driver.zp` exposes this through `driver_compile_c_backend()`, with structure/contract gates wired. Full data-structure/runtime opcode parity and Zap-produced seed provenance remain open.
-- **Zap-owned emitter increment (2026-10-09):** the previously validated `halt` opcode now has an explicit Zap-owned C emission path (`return 0;`), and the dynamic structure fixture exercises `const` followed by `halt`. This is an emitter-coverage increment only; the production acceptance harness still uses the Python backend until the complete C runtime/emitter is migrated.
-- **Certification remains blocked by evidence, not hidden by metadata:** supported-target clean-environment execution (Linux/Windows/macOS), complete full-language compile/run acceptance, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
+- **Current B4 migration:** master now includes bounded Zap-owned numeric/generic list/map, string, option/error, locals, function-frame, and closure-capture runtime/lowering slices; the latest hosted CI run `39204640666` for commit `5c136b4` passed.
+- **Current targeted regression:** full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack. Keep this separate from the passing reference C-backend acceptance rows until isolated and fixed.
+- **Certification remains blocked by evidence and completeness:** full Zap-owned production compile/run acceptance, the stack-overflow fix, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
 
 ### Current B4 remaining work (2026-09-27)
 
@@ -271,7 +271,7 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Use each supported platform's clean seed to run the full compiler source-to-execution acceptance without Rust/Cargo, and retain commit-bound reports and seed digests. (Run `37576188102` produced Linux/Windows/macOS full-acceptance, three-stage, clean-environment, second-stage, and byte-determinism reports; each platform passed with `rust_environment=unavailable`.)
 - [x] Compare emitted C, native outputs where the contract requires byte identity, and runtime behavior across supported platforms using complete artifact manifests and a passing aggregate. (Run `37576188102` cross-platform report passed B4-FULL-013..018 with complete C/stdout/native hash columns.)
 - [x] Re-run current-master Linux x86_64 self-rebuild twice with the verified seed and no Rust/Cargo. (Run `37576188102`, commit `e19a2ad`: Linux three-stage and second-stage reports passed; seed SHA-256 `3e9736a76cc3c4a48b5fe5db6e5291650985e001e355991c68960c0e4ad8ae68`.)
-- [ ] Migrate the production Python reference lowering/backend (`host/zap-bootstrap/compile.py` and `c_backend.py`) to the Zap-owned B1..B4 production pipeline. Replace candidate-only compiler paths and the `bootstrap/b4/c_backend.zp` stub; add differential parity gates before changing production routing.
+- [ ] Migrate the remaining production Python reference lowering/backend (`host/zap-bootstrap/compile.py` and `c_backend.py`) to the Zap-owned B1..B4 production pipeline. Preserve the bounded migrated slices, replace remaining candidate-only compiler paths, and add differential parity gates before changing production routing.
 - [x] Begin the migration with a Zap-owned canonical bytecode/artifact validation slice: `bootstrap/b4/c_backend.zp` now accepts both `zap.bytecode` and driver `bytecode` artifacts, validates scalar/string constants and rejects collection constants/unknown opcodes, while `verify_b4_c_backend_validation_parity.sh` compares the Zap contract against Python validation on the same fixtures. The full emitter/runtime migration remains open.
 - [x] Expand that validation slice to the complete Python canonical inventory (65 opcodes), including jump target/call/function-shape presence checks; scalar C emission now rejects validated-but-not-yet-emitted opcode families instead of silently producing incomplete C. Hosted CI parity executes the same manifest and negative fixtures on each platform.
 - [x] Tighten the scalar emitter boundary: string constants remain accepted by canonical validation for Python parity, but the incomplete numeric C runtime now rejects them explicitly instead of emitting invalid C. The structure gate covers both outcomes; string runtime representation remains part of the open production migration.
@@ -412,9 +412,9 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] The exact malformed-pipeline CI gate now passes, including deterministic replay, fail-closed stage metadata, and a valid-source regression.
 - [x] Extended the source-to-VM gate to execute list/map literal bytecode and verify the resulting VM values.
 - [ ] Full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack; keep this distinct from the passing C-backend acceptance rows until isolated and fixed.
-- [ ] B4 remains `not-certified`; cross-platform seed provenance and full-language production-pipeline migration are still outstanding. Hosted CI verification for commit `e19a2ad` passed in run `37576188102`; the documentation-only follow-up is commit `65bed19`.
+- [ ] B4 remains `not-certified`; full-language production-pipeline migration, the data-structure stack-overflow fix, and Rust-free seed provenance are still outstanding. Current master `5c136b4` passed hosted CI in run `39204640666`.
 
-The following acceptance rows have passed locally through the Rust-free C backend path on Windows/MSVC. Certification remains not-certified pending cross-platform (Linux/Windows/macOS) hash comparison and production-pipeline migration.
+The following acceptance rows have passed through the Rust-free C backend path, with hosted cross-platform hash comparison also recorded. Certification remains not-certified pending complete Zap-owned production-pipeline migration, the data-structure driver overflow fix, and certified Rust-free seed provenance.
 
 | ID | Acceptance row | Current Status | Evidence |
 |----|---------------|---------------|----------|
@@ -425,7 +425,7 @@ The following acceptance rows have passed locally through the Rust-free C backen
 | B4-FULL-017 | second-stage-rebuild | pass | Two independent second-stage rebuilds produce identical artifacts |
 | B4-FULL-018 | clean-environment | pass | Full-surface execution with Rust/Cargo variables removed matches normal execution |
 
-**Certification status:** B4 remains `not-certified` — all 18 full-language acceptance rows pass locally, but cross-platform clean-environment evidence (Linux/Windows/macOS) with a Rust-free seed and migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending. The `b4-platform-evidence` CI job gathers cross-platform evidence with the current Cargo-built seed.
+**Certification status:** B4 remains `not-certified` — hosted cross-platform evidence passes, but the full acceptance rows have not yet been rerun through the complete Zap-owned B1..B4 production path. The current CI platform seed is Cargo-built (`rust_free_provenance=false`), and the data-structure driver overflow must also be fixed.
 
 ## အကြံ့ချက်မြန်းချိန် — Full Roadmap (2026-09-16 update)
 
@@ -442,8 +442,8 @@ The following acceptance rows have passed locally through the Rust-free C backen
 | 3 | Type System | **Done** — Type checker, type inference, flow analysis, generic support |
 | 4 | Typed IR | **Done** — Stable IR with constant folding, DCE, deterministic serialization |
 | 5 | Compiler | **Done** — Zap → Native production-quality compiler |
-| 6 | Rust-free Build | **Done** — Windows 6/6 acceptance tests pass; Linux/macOS cross-platform verified |
-| 7 | Self-hosting | **In Progress** — B4 candidate; three-stage self-rebuild pass; cross-platform evidence pending |
+| 6 | Rust-free Build | **In Progress** — bounded Rust-free runtime/backend gates pass; certified Rust-free seed provenance is not complete |
+| 7 | Self-hosting | **In Progress** — B4 candidate; bounded Zap-owned migrations pass CI; full production ownership and overflow remediation remain |
 | 8 | Standard Library | **Done** — Core stdlib (String, Math, Collections, Iterator, Option, Result, Time) + FS/JSON/HTTP/Crypto |
 | 9 | Package Manager | **Done** — `zap install/add/remove/update/publish`, registry, lockfile, checksum/signature |
 | 10 | Database | **Done** — SQLite-first, migration contracts, ORM (model, all, find, where) |
