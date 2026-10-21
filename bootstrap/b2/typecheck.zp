@@ -2946,7 +2946,17 @@ export fn b2c_check_while(statement, state, functions, expected_return, source_n
     let exit_environment = state["environment"]
     let iteration = 0
     let converged = false
-    while iteration < 8 and not converged:
+    # Nested loop bodies multiply the bounded fixpoint work: each outer
+    # iteration re-checks the inner loop, which previously expanded as 8^N
+    # for N nested loops and could exhaust the native stack on real fixtures.
+    # Keep the wider budget for ordinary loops, but use a smaller bounded
+    # budget when this loop directly contains another loop. The analysis is
+    # still fail-closed through ZAP-FLOW-001 if it cannot converge.
+    let iteration_limit = 8
+    let body_json = json(statement["body"])
+    if contains(body_json, "\"kind\":\"while\"") or contains(body_json, "\"kind\":\"for\""):
+        iteration_limit = 2
+    while iteration < iteration_limit and not converged:
         let condition = b2c_infer_expr(statement["condition"], head_environment, functions, source_name)
         let errors = b2c_append_errors(head_errors, condition["errors"])
         if condition["type"] != "bool" and condition["type"] != "any":

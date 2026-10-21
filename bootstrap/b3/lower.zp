@@ -429,6 +429,15 @@ export fn lower_ast_block_with_prefix(body, prefix, function_depth):
 export fn lower_ast_block(body, function_depth):
     return lower_ast_block_with_prefix(body, [], function_depth)
 
+export fn shift_ast_jump_targets(instructions, offset):
+    let shifted = []
+    for instruction in instructions:
+        if instruction["op"] == "jump" or instruction["op"] == "jump_if_false" or instruction["op"] == "jump_if_true":
+            shifted = append(shifted, {"op": instruction["op"], "target": instruction["target"] + offset})
+        else:
+            shifted = append(shifted, instruction)
+    return shifted
+
 export fn lower_ast_node_with_prefix(node, prefix, function_depth):
     let kind = node["kind"]
     if kind == "function":
@@ -441,7 +450,8 @@ export fn lower_ast_node_with_prefix(node, prefix, function_depth):
     if lowered["error"] != none:
         return lowered
     let combined = prefix
-    for instruction in lowered["instructions"]:
+    let shifted = shift_ast_jump_targets(lowered["instructions"], len(prefix))
+    for instruction in shifted:
         combined = append(combined, instruction)
     return {"error": none, "instructions": combined}
 
@@ -489,7 +499,9 @@ export fn lower_ast_node(node, function_depth):
         let instructions = condition["instructions"]
         let false_jump_index = len(instructions)
         instructions = append(instructions, {"op": "jump_if_false", "target": 0})
-        for instruction in body["instructions"]:
+        let body_start = len(instructions)
+        let shifted_body = shift_ast_jump_targets(body["instructions"], body_start)
+        for instruction in shifted_body:
             instructions = append(instructions, instruction)
         let loop_jump_index = len(instructions)
         instructions = append(instructions, {"op": "jump", "target": 0})

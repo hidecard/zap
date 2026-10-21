@@ -112,7 +112,7 @@ A local prebuilt Windows x86_64 seed record exists at:
 | Blocker | Current evidence |
 |---------|------------------|
 | Cross-platform C backend evidence | Hosted cross-platform evidence remains passing; the latest current-master workflow is run `39204640666`. |
-| Production compiler ownership | Bounded Zap-owned runtime/lowering slices now cover numeric/generic collections, strings, options/errors, locals, function frames, and closure captures, but full acceptance still uses the Python reference path and the Zap-owned driver has a known data-structure stack-overflow regression. |
+| Production compiler ownership | Bounded Zap-owned runtime/lowering slices now cover numeric/generic collections, strings, options/errors, locals, function frames, and closure captures. Full acceptance still uses the Python reference path; the data-structure driver overflow is fixed locally and awaits CI confirmation. |
 | Clean multi-platform seed provenance | The CI platform seed metadata remains `built_with=cargo-rust`, `rust_free_provenance=false`, and `certification_ready=false`; a complete Zap-produced three-platform seed set is still absent. |
 | Contract certification decision | Remains `not-certified` until the above evidence and ownership gates pass. |
 

@@ -1,8 +1,8 @@
 # Zap Remaining Work — Step-by-Step Plan
 
 **Baseline:** master @ `5c136b4`, latest release `v2.11.18`
-**Date:** 2026-10-20
-**Status:** B4 acceptance 19/19 remains declared pass and hosted current-master CI run `39204640666` is green; B4 is still `not-certified` because the full Zap-owned production path, the data-structure driver overflow fix, and certified Rust-free three-platform seed provenance remain incomplete. Phase 1 reliability/specification/runtime/async/release gates remain complete; Phase 2 verification layers and `zap conformance` remain complete.
+**Date:** 2026-10-21
+**Status:** B4 acceptance 19/19 remains declared pass and hosted current-master CI run `39204640666` is green; the local data-structure driver overflow is fixed and the full fixture now completes. B4 is still `not-certified` because the full Zap-owned production path and certified Rust-free three-platform seed provenance remain incomplete. Phase 1 reliability/specification/runtime/async/release gates remain complete; Phase 2 verification layers and `zap conformance` remain complete.
 
 ---
 
@@ -75,16 +75,15 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 | `host/zap-parser-host/parser.py` | Python parser (no-Rust proof) | 971 lines | Proof only |
 | `host/zap-vm-host/run.py` | Python VM host | ~800 lines | Proof only |
 
-**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** expanded bounded slice. Recent master commits migrate numeric and generic list/map semantics, strings, options/errors, locals, function call frames, and closure captures behind Zap-owned runtime/lowering boundaries. The full acceptance harness still uses the Python reference compiler/backend, and a data-structure driver fixture still overflows the native stack.
+**Zap-owned lowering (`bootstrap/b4/c_backend.zp`):** expanded bounded slice. Recent master commits migrate numeric and generic list/map semantics, strings, options/errors, locals, function call frames, and closure captures behind Zap-owned runtime/lowering boundaries. The full acceptance harness still uses the Python reference compiler/backend; the data-structure driver fixture now completes locally after bounded loop analysis and absolute jump-target fixes.
 
 **Migration gap:** the remaining full-language integration, unsupported opcode/runtime families, frontend ownership promotion, and production seed transition still need to be completed. The current blocker is no longer a scalar-only backend stub; it is end-to-end integration and certification evidence.
 - New builtins in the Zap runtime for C-level operations (`malloc`, `free`, `strdup`, `fprintf`, etc.)
 - Opcode dispatch in Zap (currently Python uses Python `if/elif` chains)
 - Stack machine semantics in Zap (currently Python uses explicit C pointers)
 
-**Current status:** B4 acceptance still uses the Python reference lowering path, while bounded Zap-owned slices are validated separately. The data-structure driver overflow and Rust-free seed provenance remain active gates.
-
-**Gate:** Keep `not-certified` until full production-path ownership, overflow remediation, and seed provenance evidence are complete.
+**Current status:** B4 acceptance still uses the Python reference lowering path, while bounded Zap-owned slices are validated separately. Rust-free seed provenance and full production-path ownership remain active gates.
+**Gate:** Keep `not-certified` until full production-path ownership and seed provenance evidence are complete.
 
 ---
 
@@ -238,7 +237,7 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 |---|---|---|
 | M1 — Stable Language | ✅ Complete | — |
 | M2 — Native Compiler | ✅ Complete | — |
-| M3 — Self-hosted Zap | 🔄 In Progress | Bounded backend/runtime migrations pass current CI; full production ownership, overflow remediation, and Rust-free seed provenance remain |
+| M3 — Self-hosted Zap | 🔄 In Progress | Bounded backend/runtime migrations pass current CI; full production ownership and Rust-free seed provenance remain |
 | M4 — Package Ecosystem | ✅ Complete | — |
 | M5 — Full-stack Web | ✅ Complete | — |
 | M6 — Developer Experience | ✅ Complete | — |
@@ -254,7 +253,7 @@ PHASE 0 (Critical path — blocks B4 claim):
   Step 2: Fix C backend determinism — COMPLETED (6/6 B4 acceptance rows pass)
   Step 3: Cross-platform clean-environment evidence (Linux/Win/Mac) — hosted evidence exists; refresh against current seed/provenance contract
   Step 4: Complete Python-lowering migration into the Zap-owned production pipeline
-  Step 5: Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
+  Step 5: [DONE 2026-10-21] Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
 
 PHASE 1 (P0 reliability — high priority, parallelizable):
   Step 5: P0-01 Legacy parity expansion

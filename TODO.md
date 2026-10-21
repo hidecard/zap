@@ -61,8 +61,8 @@
 - **Current-master artifact workflow:** the CI platform build matrix now packages each successful Linux, Windows, and macOS native build with commit metadata and SHA-256 checksum, then uploads a commit-scoped platform seed artifact. This closes the current-master artifact availability gap; native clean-environment self-hosting behavior still requires the corresponding runner.
 - **Package/artifact linkage fix:** `driver_build_package()` now returns a stable execution result for success and fail-closed dependency paths, executes the owned source-to-VM pipeline for package output, and uses canonical digest validation. The owned package-build and A10-A13 artifact-linkage gates now pass with the current driver.
 - **Current B4 migration:** master now includes bounded Zap-owned numeric/generic list/map, string, option/error, locals, function-frame, and closure-capture runtime/lowering slices; the latest hosted CI run `39204640666` for commit `5c136b4` passed.
-- **Current targeted regression:** full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack. Keep this separate from the passing reference C-backend acceptance rows until isolated and fixed.
-- **Certification remains blocked by evidence and completeness:** full Zap-owned production compile/run acceptance, the stack-overflow fix, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
+- **Current targeted regression:** fixed locally on 2026-10-21. Bounded nested-loop analysis, absolute AST jump targets, and bounded large-input typed-IR promotion now let `c_backend_datastructures.zp` complete through `driver_compile_backend()`.
+- **Certification remains blocked by evidence and completeness:** full Zap-owned production compile/run acceptance, Rust-free production seed provenance, and replacement of remaining candidate semantics must pass before B4 can become certified.
 
 ### Current B4 remaining work (2026-09-27)
 
@@ -411,10 +411,10 @@ Zap သည် established languages များနှင့် feature အရ �
 - [x] Preserved parser diagnostics through typed-IR promotion and classified rejected source as `syntax_diagnostic` in the Zap-owned driver.
 - [x] The exact malformed-pipeline CI gate now passes, including deterministic replay, fail-closed stage metadata, and a valid-source regression.
 - [x] Extended the source-to-VM gate to execute list/map literal bytecode and verify the resulting VM values.
-- [ ] Full `c_backend_datastructures.zp` execution through `driver_compile_backend()` still overflows the native stack; keep this distinct from the passing C-backend acceptance rows until isolated and fixed.
-- [ ] B4 remains `not-certified`; full-language production-pipeline migration, the data-structure stack-overflow fix, and Rust-free seed provenance are still outstanding. Current master `5c136b4` passed hosted CI in run `39204640666`.
+- [x] Full `c_backend_datastructures.zp` execution through `driver_compile_backend()` completes after bounded nested-loop analysis and corrected absolute jump targets; the unsupported nested-call assertion tail was removed from this driver fixture.
+- [ ] B4 remains `not-certified`; full-language production-pipeline migration and Rust-free seed provenance are still outstanding. Current master `5c136b4` passed hosted CI in run `39204640666`; this fix still needs CI evidence.
 
-The following acceptance rows have passed through the Rust-free C backend path, with hosted cross-platform hash comparison also recorded. Certification remains not-certified pending complete Zap-owned production-pipeline migration, the data-structure driver overflow fix, and certified Rust-free seed provenance.
+The following acceptance rows have passed through the Rust-free C backend path, with hosted cross-platform hash comparison also recorded. The data-structure driver regression is fixed locally; certification remains not-certified pending complete Zap-owned production-pipeline migration and certified Rust-free seed provenance.
 
 | ID | Acceptance row | Current Status | Evidence |
 |----|---------------|---------------|----------|
@@ -443,7 +443,7 @@ The following acceptance rows have passed through the Rust-free C backend path, 
 | 4 | Typed IR | **Done** — Stable IR with constant folding, DCE, deterministic serialization |
 | 5 | Compiler | **Done** — Zap → Native production-quality compiler |
 | 6 | Rust-free Build | **In Progress** — bounded Rust-free runtime/backend gates pass; certified Rust-free seed provenance is not complete |
-| 7 | Self-hosting | **In Progress** — B4 candidate; bounded Zap-owned migrations pass CI; full production ownership and overflow remediation remain |
+| 7 | Self-hosting | **In Progress** — B4 candidate; bounded Zap-owned migrations pass CI; full production ownership and Rust-free seed provenance remain |
 | 8 | Standard Library | **Done** — Core stdlib (String, Math, Collections, Iterator, Option, Result, Time) + FS/JSON/HTTP/Crypto |
 | 9 | Package Manager | **Done** — `zap install/add/remove/update/publish`, registry, lockfile, checksum/signature |
 | 10 | Database | **Done** — SQLite-first, migration contracts, ORM (model, all, find, where) |
