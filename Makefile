@@ -61,11 +61,14 @@ bootstrap-module-ownership-test:
 bootstrap-frontend-ownership-test:
 	bash scripts/bootstrap/verify_b4_frontend_ownership_slice.sh
 
-bootstrap-backend-ownership-test:
+bootstrap-backend-ownership-test: bootstrap-source-to-c-ownership-test
 	bash scripts/bootstrap/verify_full_language_backend_ownership.sh
 
 bootstrap-typed-ir-backend-ownership-test:
 	bash scripts/bootstrap/verify_b4_typed_ir_backend_ownership.sh
+
+bootstrap-source-to-c-ownership-test:
+	bash scripts/bootstrap/verify_b4_source_to_c_ownership.sh
 
 bootstrap-byte-determinism-test:
 	./scripts/bootstrap/verify_b4_byte_determinism.sh

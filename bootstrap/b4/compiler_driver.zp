@@ -31,6 +31,19 @@ export fn driver_compile_c_backend(bytecode):
         return {"error": generated["error"], "lines": [], "ownership": "blocked", "reference_owner": "zap", "status": "c_backend_rejected"}
     return {"error": none, "lines": generated["lines"], "instruction_count": generated["instruction_count"], "ownership": "zap_owned", "reference_owner": "zap", "status": generated["status"]}
 
+export fn driver_compile_c_source(source, source_name):
+    let typed = driver_promote_typed_ir(source, source_name)
+    if typed["status"] != "typed_ir_promoted":
+        return {"bytecode": {"artifact_kind": "bytecode", "error": "typed_ir_promotion_error", "instructions": [], "source_name": source_name, "status": "compile_error"}, "c_source": [], "diagnostics": typed["diagnostics"], "ownership": "blocked", "reference_owner": "zap", "status": "compile_error"}
+    let statements = driver_typed_ir_ast_statements(typed["typed_ir"]["ir"]["nodes"], [])
+    let lowered = lower_ast_program({"ast": {"statements": statements}, "kind": "zap.ast"})
+    if lowered["error"] != none:
+        return {"bytecode": {"artifact_kind": "bytecode", "error": lowered["error"], "instructions": [], "source_name": source_name, "status": "compile_error"}, "c_source": [], "diagnostics": [], "ownership": "zap_owned", "reference_owner": "zap", "status": "compile_error"}
+    let generated = driver_compile_c_backend(lowered["instructions"])
+    if generated["status"] == "c_backend_rejected":
+        return {"bytecode": {"artifact_kind": "bytecode", "error": generated["error"], "instructions": lowered["instructions"], "source_name": source_name, "status": "compile_error"}, "c_source": [], "diagnostics": [], "ownership": generated["ownership"], "reference_owner": generated["reference_owner"], "status": "compile_error"}
+    return {"bytecode": {"artifact_kind": "bytecode", "error": none, "instructions": lowered["instructions"], "source_name": source_name, "status": "compiled_driver_c_backend"}, "c_source": generated["lines"], "diagnostics": [], "instruction_count": generated["instruction_count"], "ownership": "zap_owned", "reference_owner": "zap", "source_name": source_name, "status": "zap_owned_source_to_c"}
+
 export fn driver_normalize_source(source):
     return source
 

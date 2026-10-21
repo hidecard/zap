@@ -237,7 +237,7 @@ _B4 is the critical-path blocker. Everything else can proceed in parallel, but B
 |---|---|---|
 | M1 — Stable Language | ✅ Complete | — |
 | M2 — Native Compiler | ✅ Complete | — |
-| M3 — Self-hosted Zap | 🔄 In Progress | Bounded backend/runtime migrations pass current CI; full production ownership and Rust-free seed provenance remain |
+| M3 — Self-hosted Zap | 🔄 In Progress | Source-to-C driver ownership slice now passes locally; full production ownership and Rust-free seed provenance remain |
 | M4 — Package Ecosystem | ✅ Complete | — |
 | M5 — Full-stack Web | ✅ Complete | — |
 | M6 — Developer Experience | ✅ Complete | — |
@@ -252,8 +252,9 @@ PHASE 0 (Critical path — blocks B4 claim):
   Step 1: Produce Zap-generated Rust-free seed — COMPLETED
   Step 2: Fix C backend determinism — COMPLETED (6/6 B4 acceptance rows pass)
   Step 3: Cross-platform clean-environment evidence (Linux/Win/Mac) — hosted evidence exists; refresh against current seed/provenance contract
-  Step 4: Complete Python-lowering migration into the Zap-owned production pipeline
-  Step 5: [DONE 2026-10-21] Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
+  Step 4: Source-to-C driver ownership slice — DONE 2026-10-22; `driver_compile_c_source()` now promotes, lowers, validates, and emits through Zap-owned C backend
+  Step 5: Complete Python-lowering migration into the Zap-owned production pipeline
+  Step 6: [DONE 2026-10-21] Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
 
 PHASE 1 (P0 reliability — high priority, parallelizable):
   Step 5: P0-01 Legacy parity expansion
