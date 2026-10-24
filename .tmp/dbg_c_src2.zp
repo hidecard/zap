@@ -1,0 +1,16 @@
+import "bootstrap/b4/compiler_driver.zp"
+import "bootstrap/b4/c_backend.zp"
+let source = "let answer = 1\nsay answer\n"
+let typed = driver_promote_typed_ir(source, "source-c.zp")
+say "promote_status=" + typed["status"]
+if typed["status"] != "typed_ir_promoted":
+    say json(typed["diagnostics"])
+    say json(typed["ownership"])
+else:
+    let statements = driver_typed_ir_ast_statements(typed["typed_ir"]["ir"]["nodes"], [])
+    let lowered = lower_ast_program({"ast": {"statements": statements}, "kind": "zap.ast"})
+    say "lowered_error=" + str(lowered["error"])
+    say json(lowered["instructions"])
+    let generated = c_backend_emit(lowered["instructions"])
+    say "backend_status=" + generated["status"]
+    say "backend_error=" + str(generated["error"])

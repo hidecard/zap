@@ -1,0 +1,9 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+let source = "let answer = 1\nsay answer"
+let plines = split(trim(source), "\n")
+say "plines=" + json(plines)
+say "diag1=" + json(indentation_stack_diagnostic(plines, "x.zp"))
+say "diag2=" + json(indentation_stack_diagnostic(plines, "x.zp"))
+say "diag3=" + json(indentation_stack_diagnostic(split(trim(source), "\n"), "x.zp"))
+say "width_say=" + str(indentation_width("say answer"))

@@ -1,0 +1,19 @@
+import "bootstrap/b4/compiler_driver.zp"
+import "bootstrap/b2/typed_ir.zp"
+let source = "class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return super().value() + 10\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()"
+let normalized = driver_normalize_source(source)
+let first = from_json(emit_inferred_program_typed_ir(normalized, "super-chain.zp"))
+let second = from_json(emit_inferred_program_typed_ir(normalized, "super-chain.zp"))
+say "kind=" + first["kind"]
+say "schema=" + str(first["schema_version"])
+say "typed_metadata=" + str(first["typed_metadata"])
+say "coverage=" + first["coverage"]
+say "diagnostics=" + str(len(first["diagnostics"]))
+say "nodes=" + str(len(first["ir"]["nodes"]))
+let ownership = driver_typed_ir_ownership(first, second)
+say "valid=" + str(ownership["valid"])
+say "deterministic=" + str(ownership["deterministic"])
+say "coverage_valid=" + str(ownership["coverage_valid"])
+say "metadata_valid=" + str(ownership["metadata_valid"])
+say "executable=" + str(ownership["executable"])
+say "nodes_shape=" + str(typed_ir_nodes_shape_valid(first["ir"]["nodes"], 0))

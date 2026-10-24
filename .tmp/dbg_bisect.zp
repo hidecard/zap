@@ -1,0 +1,15 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+
+let source = "let answer = 1\nsay answer"
+say "len_source=" + str(len(source))
+say "len_escape=" + str(len("a\r\nb"))
+say "len_escape_r=" + str(len("a\rb"))
+let s1 = replace(source, "\r\n", "\n")
+say "s1=" + json(s1)
+let s2 = trim(replace(s1, "\r", "\n"))
+say "s2=" + json(s2)
+say "diag_raw=" + json(indentation_stack_diagnostic(split(trim(source), "\n"), "x.zp"))
+say "diag_s2=" + json(indentation_stack_diagnostic(split(s2, "\n"), "x.zp"))
+say "diag_s1=" + json(indentation_stack_diagnostic(split(s1, "\n"), "x.zp"))
+say "len_s1=" + str(len(s1)) + " len_s2=" + str(len(s2))

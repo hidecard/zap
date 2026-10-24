@@ -1,0 +1,7 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+let source = "let answer = 1\nsay answer"
+let parser_source = parser_filter_comment_lines(split(trim(source), "\n"), 0, [])
+let lexed = from_json(lex(parser_source, "x.zp"))
+say "lexed_kind=" + lexed["kind"]
+say "lexed=" + json(lexed)

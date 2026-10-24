@@ -1,0 +1,7 @@
+import "bootstrap/b1/parser.zp"
+let source = "let answer = 1\nsay answer\n"
+say parse_general(source, "source-c.zp")
+let source2 = "let answer = 1\nsay answer"
+say parse_general(source2, "source2.zp")
+let source3 = "let answer = 1\nlet other = 2\n"
+say parse_general(source3, "source3.zp")

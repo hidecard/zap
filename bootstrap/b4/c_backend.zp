@@ -4,14 +4,27 @@
 # slice. The Python backend remains the reference for the wider runtime until
 # each opcode family is migrated behind the same validation boundary.
 
+# The canonical bytecode opcode contract is shared with the reference C
+# backend. The Zap-owned backend validates and emits exactly this set, so it
+# can never accept an opcode that it is unable to lower to C. Builtins are not
+# opcodes: they are `call` sites whose callee name matches a builtin.
+export fn c_backend_opcode_manifest():
+    return ["add", "and", "async_new", "await", "call", "const", "divide", "dup", "equal", "error_is_error", "error_message", "error_new", "error_unwrap", "export_value", "function_def", "greater", "greater_equal", "halt", "import_module", "import_symbol", "in", "index", "jump", "jump_if_false", "jump_if_true", "less", "less_equal", "list_append", "list_contains", "list_get", "list_len", "list_reverse", "list_set", "load", "make_list", "make_map", "map_get", "map_has_key", "map_keys", "map_set", "map_set_pair", "map_values", "multiply", "not", "not_equal", "option_is_none", "option_is_some", "option_none", "option_some", "option_unwrap", "option_unwrap_or", "or", "pop", "print", "remainder", "return_none", "return_value", "store", "str_concat", "struct_field_names", "struct_get", "struct_has_field", "struct_new", "struct_set", "subtract"]
+
+export fn c_backend_opcode_manifest_contains(manifest, op):
+    for candidate in manifest:
+        if candidate == op:
+            return true
+    return false
+
 export fn c_backend_supported_opcode(op):
-    return op == "const" or op == "print" or op == "pop" or op == "halt" or op == "add" or op == "subtract" or op == "multiply" or op == "divide" or op == "remainder" or op == "equal" or op == "not_equal" or op == "less" or op == "less_equal" or op == "greater" or op == "greater_equal" or op == "and" or op == "or" or op == "not" or op == "dup" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "str_concat" or op == "in" or op == "index" or op == "option_none" or op == "option_some" or op == "option_is_none" or op == "option_is_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "error_new" or op == "error_message" or op == "error_is_error" or op == "error_unwrap" or op == "store" or op == "load" or op == "function_def" or op == "call" or op == "return_value" or op == "return_none" or op == "make_list" or op == "list_len" or op == "list_get" or op == "list_set" or op == "list_append" or op == "list_contains" or op == "list_reverse" or op == "make_map" or op == "map_set_pair" or op == "map_get" or op == "map_set" or op == "map_has_key" or op == "map_keys" or op == "map_values" or op == "struct_new" or op == "struct_get" or op == "struct_set" or op == "struct_has_field" or op == "struct_field_names"
+    return c_backend_opcode_manifest_contains(c_backend_opcode_manifest(), op)
 
 export fn c_backend_validation_supported_opcode(op):
-    return op == "add" or op == "and" or op == "async_new" or op == "await" or op == "call" or op == "const" or op == "divide" or op == "dup" or op == "equal" or op == "error_is_error" or op == "error_message" or op == "error_new" or op == "error_unwrap" or op == "export_value" or op == "function_def" or op == "greater" or op == "greater_equal" or op == "halt" or op == "import_module" or op == "import_symbol" or op == "in" or op == "index" or op == "jump" or op == "jump_if_false" or op == "jump_if_true" or op == "less" or op == "less_equal" or op == "list_append" or op == "list_contains" or op == "list_get" or op == "list_len" or op == "list_reverse" or op == "list_set" or op == "make_list" or op == "make_map" or op == "map_get" or op == "map_has_key" or op == "map_keys" or op == "map_set" or op == "map_set_pair" or op == "map_values" or op == "multiply" or op == "not" or op == "not_equal" or op == "option_is_none" or op == "option_is_some" or op == "option_none" or op == "option_some" or op == "option_unwrap" or op == "option_unwrap_or" or op == "or" or op == "pop" or op == "print" or op == "remainder" or op == "return_none" or op == "return_value" or op == "str_concat" or op == "struct_field_names" or op == "struct_get" or op == "struct_has_field" or op == "struct_new" or op == "struct_set" or op == "store" or op == "subtract" or op == "load"
+    return c_backend_supported_opcode(op)
 
 export fn c_backend_validation_opcode_manifest():
-    return ["add", "and", "async_new", "await", "call", "const", "divide", "dup", "equal", "error_is_error", "error_message", "error_new", "error_unwrap", "export_value", "function_def", "greater", "greater_equal", "halt", "import_module", "import_symbol", "in", "index", "jump", "jump_if_false", "jump_if_true", "less", "less_equal", "list_append", "list_contains", "list_get", "list_len", "list_reverse", "list_set", "load", "make_list", "make_map", "map_get", "map_has_key", "map_keys", "map_set", "map_set_pair", "map_values", "multiply", "not", "not_equal", "option_is_none", "option_is_some", "option_none", "option_some", "option_unwrap", "option_unwrap_or", "or", "pop", "print", "remainder", "return_none", "return_value", "store", "str_concat", "struct_field_names", "struct_get", "struct_has_field", "struct_new", "struct_set", "subtract"]
+    return c_backend_opcode_manifest()
 
 export fn c_backend_validation_target_opcode(op):
     return op == "jump" or op == "jump_if_false" or op == "jump_if_true"
@@ -120,7 +133,7 @@ export fn c_backend_emittable_instruction_valid(instruction):
     return true
 
 export fn c_backend_emit_header():
-    let lines = ["#include <stdio.h>", "#include <stdlib.h>", "#include <stdbool.h>", "#include <string.h>", "", "#define ZAP_LIST_MAX 32", "#define ZAP_LIST_ITEMS_MAX 64", "#define ZAP_MAP_MAX 32", "#define ZAP_MAP_ENTRIES_MAX 64", "#define ZAP_STRING_MAX 64", "static long zap_stack[256];", "static int zap_sp = 0;", "static char zap_strings[ZAP_STRING_MAX][256];", "static int zap_string_count = 0;", "static long zap_lists[ZAP_LIST_MAX][ZAP_LIST_ITEMS_MAX];", "static int zap_list_lengths[ZAP_LIST_MAX];", "static int zap_list_count = 0;", "static long zap_map_keys[ZAP_MAP_MAX][ZAP_MAP_ENTRIES_MAX];", "static long zap_map_values[ZAP_MAP_MAX][ZAP_MAP_ENTRIES_MAX];", "static int zap_map_lengths[ZAP_MAP_MAX];", "static int zap_map_count = 0;", "static long zap_pop(void) { return zap_stack[--zap_sp]; }", "static void zap_push(long value) { zap_stack[zap_sp++] = value; }", "static long zap_string_new(const char *text) { if (zap_string_count >= ZAP_STRING_MAX) { fprintf(stderr, \"string limit exceeded\\n\"); exit(1); } strncpy(zap_strings[zap_string_count], text, 255); zap_strings[zap_string_count][255] = 0; zap_string_count += 1; return -zap_string_count; }", "static int zap_string_index(long handle) { if (handle >= 0 || handle < -zap_string_count) { fprintf(stderr, \"string handle invalid\\n\"); exit(1); } return (int)(-handle - 1); }", "static const char *zap_string_get(long handle) { return zap_strings[zap_string_index(handle)]; }", "static int zap_is_string(long value) { return value < 0 && -value <= zap_string_count; }", "static int zap_value_equal(long left, long right) { if (zap_is_string(left) && zap_is_string(right)) return strcmp(zap_string_get(left), zap_string_get(right)) == 0; return left == right; }", "static long zap_list_new(void) { if (zap_list_count >= ZAP_LIST_MAX) { fprintf(stderr, \"list limit exceeded\\n\"); exit(1); } zap_list_count += 1; zap_list_lengths[zap_list_count - 1] = 0; return zap_list_count; }", "static int zap_list_index(long handle) { if (handle <= 0 || handle > zap_list_count) { fprintf(stderr, \"list handle invalid\\n\"); exit(1); } return (int)(handle - 1); }", "static long zap_list_len(long handle) { return zap_list_lengths[zap_list_index(handle)]; }", "static long zap_list_get(long handle, long index) { int list = zap_list_index(handle); if (index < 0 || index >= zap_list_lengths[list]) { fprintf(stderr, \"list index out of range\\n\"); exit(1); } return zap_lists[list][index]; }", "static void zap_list_set(long handle, long index, long value) { int list = zap_list_index(handle); if (index < 0 || index >= ZAP_LIST_ITEMS_MAX) { fprintf(stderr, \"list index out of range\\n\"); exit(1); } if (index >= zap_list_lengths[list]) zap_list_lengths[list] = (int)(index + 1); zap_lists[list][index] = value; }", "static void zap_list_append(long handle, long value) { int list = zap_list_index(handle); if (zap_list_lengths[list] >= ZAP_LIST_ITEMS_MAX) { fprintf(stderr, \"list too large\\n\"); exit(1); } zap_lists[list][zap_list_lengths[list]++] = value; }", "static long zap_map_new(void) { if (zap_map_count >= ZAP_MAP_MAX) { fprintf(stderr, \"map limit exceeded\\n\"); exit(1); } zap_map_count += 1; zap_map_lengths[zap_map_count - 1] = 0; return 1000 + zap_map_count; }", "static int zap_is_map(long handle) { return handle >= 1001 && handle <= 1000 + zap_map_count; }", "static int zap_map_index(long handle) { if (!zap_is_map(handle)) { fprintf(stderr, \"map handle invalid\\n\"); exit(1); } return (int)(handle - 1001); }", "static int zap_map_find(long handle, long key) { int map = zap_map_index(handle); int i; for (i = 0; i < zap_map_lengths[map]; ++i) if (zap_value_equal(zap_map_keys[map][i], key)) return i; return -1; }", "static void zap_map_set(long handle, long key, long value) { int map = zap_map_index(handle); int found = zap_map_find(handle, key); if (found >= 0) { zap_map_values[map][found] = value; return; } if (zap_map_lengths[map] >= ZAP_MAP_ENTRIES_MAX) { fprintf(stderr, \"map too large\\n\"); exit(1); } found = zap_map_lengths[map]++; zap_map_keys[map][found] = key; zap_map_values[map][found] = value; }", "static long zap_map_get(long handle, long key) { int map = zap_map_index(handle); int found = zap_map_find(handle, key); return found < 0 ? 0 : zap_map_values[map][found]; }", "static long zap_map_has_key(long handle, long key) { return zap_map_find(handle, key) >= 0; }", "static long zap_map_keys_list(long handle) { int map = zap_map_index(handle); int i; long list = zap_list_new(); for (i = 0; i < zap_map_lengths[map]; ++i) zap_list_append(list, zap_map_keys[map][i]); return list; }", "static long zap_map_values_list(long handle) { int map = zap_map_index(handle); int i; long list = zap_list_new(); for (i = 0; i < zap_map_lengths[map]; ++i) zap_list_append(list, zap_map_values[map][i]); return list; }", ""]
+    let lines = ["#include <stdio.h>", "#include <stdlib.h>", "#include <stdbool.h>", "#include <string.h>", "", "#define ZAP_LIST_MAX 32", "#define ZAP_LIST_ITEMS_MAX 64", "#define ZAP_MAP_MAX 32", "#define ZAP_MAP_ENTRIES_MAX 64", "#define ZAP_STRING_MAX 64", "#define ZAP_TASKS_MAX 64", "#define ZAP_MODULE_MAX 64", "static long zap_stack[256];", "static int zap_sp = 0;", "static char zap_strings[ZAP_STRING_MAX][256];", "static int zap_string_count = 0;", "static long zap_lists[ZAP_LIST_MAX][ZAP_LIST_ITEMS_MAX];", "static int zap_list_lengths[ZAP_LIST_MAX];", "static int zap_list_count = 0;", "static long zap_map_keys[ZAP_MAP_MAX][ZAP_MAP_ENTRIES_MAX];", "static long zap_map_values[ZAP_MAP_MAX][ZAP_MAP_ENTRIES_MAX];", "static int zap_map_lengths[ZAP_MAP_MAX];", "static int zap_map_count = 0;", "static long zap_pop(void) { return zap_stack[--zap_sp]; }", "static void zap_push(long value) { zap_stack[zap_sp++] = value; }", "static long zap_string_new(const char *text) { if (zap_string_count >= ZAP_STRING_MAX) { fprintf(stderr, \"string limit exceeded\\n\"); exit(1); } strncpy(zap_strings[zap_string_count], text, 255); zap_strings[zap_string_count][255] = 0; zap_string_count += 1; return -zap_string_count; }", "static int zap_string_index(long handle) { if (handle >= 0 || handle < -zap_string_count) { fprintf(stderr, \"string handle invalid\\n\"); exit(1); } return (int)(-handle - 1); }", "static const char *zap_string_get(long handle) { return zap_strings[zap_string_index(handle)]; }", "static int zap_is_string(long value) { return value < 0 && -value <= zap_string_count; }", "static int zap_value_equal(long left, long right) { if (zap_is_string(left) && zap_is_string(right)) return strcmp(zap_string_get(left), zap_string_get(right)) == 0; return left == right; }", "static long zap_list_new(void) { if (zap_list_count >= ZAP_LIST_MAX) { fprintf(stderr, \"list limit exceeded\\n\"); exit(1); } zap_list_count += 1; zap_list_lengths[zap_list_count - 1] = 0; return zap_list_count; }", "static int zap_list_index(long handle) { if (handle <= 0 || handle > zap_list_count) { fprintf(stderr, \"list handle invalid\\n\"); exit(1); } return (int)(handle - 1); }", "static long zap_list_len(long handle) { return zap_list_lengths[zap_list_index(handle)]; }", "static int zap_is_list(long handle) { return handle >= 1 && handle <= zap_list_count; }", "static long zap_list_get(long handle, long index) { int list = zap_list_index(handle); if (index < 0 || index >= zap_list_lengths[list]) { fprintf(stderr, \"list index out of range\\n\"); exit(1); } return zap_lists[list][index]; }", "static void zap_list_set(long handle, long index, long value) { int list = zap_list_index(handle); if (index < 0 || index >= ZAP_LIST_ITEMS_MAX) { fprintf(stderr, \"list index out of range\\n\"); exit(1); } if (index >= zap_list_lengths[list]) zap_list_lengths[list] = (int)(index + 1); zap_lists[list][index] = value; }", "static void zap_list_append(long handle, long value) { int list = zap_list_index(handle); if (zap_list_lengths[list] >= ZAP_LIST_ITEMS_MAX) { fprintf(stderr, \"list too large\\n\"); exit(1); } zap_lists[list][zap_list_lengths[list]++] = value; }", "static long zap_map_new(void) { if (zap_map_count >= ZAP_MAP_MAX) { fprintf(stderr, \"map limit exceeded\\n\"); exit(1); } zap_map_count += 1; zap_map_lengths[zap_map_count - 1] = 0; return 1000 + zap_map_count; }", "static int zap_is_map(long handle) { return handle >= 1001 && handle <= 1000 + zap_map_count; }", "static int zap_map_index(long handle) { if (!zap_is_map(handle)) { fprintf(stderr, \"map handle invalid\\n\"); exit(1); } return (int)(handle - 1001); }", "static int zap_map_find(long handle, long key) { int map = zap_map_index(handle); int i; for (i = 0; i < zap_map_lengths[map]; ++i) if (zap_value_equal(zap_map_keys[map][i], key)) return i; return -1; }", "static void zap_map_set(long handle, long key, long value) { int map = zap_map_index(handle); int found = zap_map_find(handle, key); if (found >= 0) { zap_map_values[map][found] = value; return; } if (zap_map_lengths[map] >= ZAP_MAP_ENTRIES_MAX) { fprintf(stderr, \"map too large\\n\"); exit(1); } found = zap_map_lengths[map]++; zap_map_keys[map][found] = key; zap_map_values[map][found] = value; }", "static long zap_map_get(long handle, long key) { int map = zap_map_index(handle); int found = zap_map_find(handle, key); return found < 0 ? 0 : zap_map_values[map][found]; }", "static long zap_map_has_key(long handle, long key) { return zap_map_find(handle, key) >= 0; }", "static long zap_map_keys_list(long handle) { int map = zap_map_index(handle); int i; long list = zap_list_new(); for (i = 0; i < zap_map_lengths[map]; ++i) zap_list_append(list, zap_map_keys[map][i]); return list; }", "static long zap_map_values_list(long handle) { int map = zap_map_index(handle); int i; long list = zap_list_new(); for (i = 0; i < zap_map_lengths[map]; ++i) zap_list_append(list, zap_map_values[map][i]); return list; }", ""]
     lines = append(lines, "static long zap_string_concat(long left, long right) { char buffer[256]; if (!zap_is_string(left) || !zap_is_string(right)) { fprintf(stderr, \"string concat requires strings\\n\"); exit(1); } snprintf(buffer, sizeof(buffer), \"%s%s\", zap_string_get(left), zap_string_get(right)); return zap_string_new(buffer); }")
     lines = append(lines, "static long zap_add(long left, long right) { if (zap_is_string(left) || zap_is_string(right)) return zap_string_concat(left, right); return left + right; }")
     lines = append(lines, "static long zap_less(long left, long right) { if (zap_is_string(left) && zap_is_string(right)) return strcmp(zap_string_get(left), zap_string_get(right)) < 0; if (zap_is_string(left) || zap_is_string(right)) { fprintf(stderr, \"comparison requires matching values\\n\"); exit(1); } return left < right; }")
@@ -144,6 +157,26 @@ export fn c_backend_emit_header():
     lines = append(lines, "static long zap_closure_new(int count, long *values) { int i; if (zap_closure_count >= 64 || count > 16) { fprintf(stderr, \"closure limit exceeded\\n\"); exit(1); } for (i = 0; i < count; ++i) zap_closure_values[zap_closure_count][i] = values[i]; zap_closure_lengths[zap_closure_count] = count; zap_closure_count += 1; return 4000 + zap_closure_count; }")
     lines = append(lines, "static int zap_closure_index(long handle) { if (handle < 4001 || handle > 4000 + zap_closure_count) { fprintf(stderr, \"closure handle invalid\\n\"); exit(1); } return (int)(handle - 4001); }")
     lines = append(lines, "static long zap_closure_get(long handle, int index) { int closure = zap_closure_index(handle); if (index < 0 || index >= zap_closure_lengths[closure]) { fprintf(stderr, \"closure capture invalid\\n\"); exit(1); } return zap_closure_values[closure][index]; }")
+    lines = append(lines, "static long zap_tasks[ZAP_TASKS_MAX]; static int zap_task_count = 0;")
+    lines = append(lines, "static int zap_is_task(long handle) { return handle >= 5001 && handle <= 5000 + zap_task_count; }")
+    lines = append(lines, "static int zap_task_index(long handle) { if (!zap_is_task(handle)) { fprintf(stderr, \"task handle invalid\\n\"); exit(1); } return (int)(handle - 5001); }")
+    lines = append(lines, "static long zap_task_new(long value) { if (zap_task_count >= ZAP_TASKS_MAX) { fprintf(stderr, \"task limit exceeded\\n\"); exit(1); } zap_tasks[zap_task_count] = value; zap_task_count += 1; return 5000 + zap_task_count; }")
+    lines = append(lines, "static long zap_task_run(long handle) { int index = zap_task_index(handle); return zap_tasks[index]; }")
+    lines = append(lines, "static long zap_modules[64]; static int zap_module_count = 0;")
+    lines = append(lines, "static int zap_is_module(long handle) { return handle >= 6001 && handle <= 6000 + zap_module_count; }")
+    lines = append(lines, "static int zap_module_index(long handle) { if (!zap_is_module(handle)) { fprintf(stderr, \"module handle invalid\\n\"); exit(1); } return (int)(handle - 6001); }")
+    lines = append(lines, "static long zap_module_new(long value) { if (zap_module_count >= 64) { fprintf(stderr, \"module limit exceeded\\n\"); exit(1); } zap_modules[zap_module_count] = value; zap_module_count += 1; return 6000 + zap_module_count; }")
+    lines = append(lines, "static long zap_module_get(long handle) { int index = zap_module_index(handle); return zap_modules[index]; }")
+    lines = append(lines, "static int g_argc = 0;")
+    lines = append(lines, "static long g_argv_list = 0;")
+    lines = append(lines, "static void init_argv(int argc, char **argv) {")
+    lines = append(lines, "  g_argc = argc;")
+    lines = append(lines, "  g_argv_list = zap_list_new();")
+    lines = append(lines, "  int i;")
+    lines = append(lines, "  for (i = 0; i < argc; ++i) {")
+    lines = append(lines, "    zap_list_append(g_argv_list, zap_string_new(argv[i]));")
+    lines = append(lines, "  }")
+    lines = append(lines, "}")
     return lines
 
 export fn c_backend_find_function(bytecode, name, index):
@@ -266,6 +299,16 @@ export fn c_backend_emit_instruction(instruction):
         return ["zap_push(zap_map_keys_list(zap_pop()));"]
     if op == "map_values":
         return ["zap_push(zap_map_values_list(zap_pop()));"]
+    if op == "async_new":
+        return ["{ long value = zap_pop(); zap_push(zap_task_new(value)); }"]
+    if op == "await":
+        return ["{ long handle = zap_pop(); zap_push(zap_task_run(handle)); }"]
+    if op == "import_module":
+        return ["{ long name = zap_pop(); zap_push(zap_module_new(name)); }"]
+    if op == "import_symbol":
+        return ["{ long symbol = zap_pop(); long module = zap_pop(); zap_push(zap_module_get(module)); }"]
+    if op == "export_value":
+        return ["(void)zap_pop();"]
     return []
 
 export fn c_backend_emit(bytecode):
@@ -275,7 +318,8 @@ export fn c_backend_emit(bytecode):
     if not c_backend_emittable_instructions(bytecode, 0):
         return {"error": "opcode_family_not_emitted_by_zap_slice", "lines": [], "ownership": "zap", "reference_owner": "zap", "status": "rejected"}
     let lines = c_backend_emit_header()
-    lines = append(lines, "int main(void) {")
+    lines = append(lines, "int main(int argc, char **argv) {")
+    lines = append(lines, "  init_argv(argc, argv);")
     let instruction_index = 0
     for instruction in bytecode:
         lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
@@ -304,7 +348,7 @@ export fn c_backend_emit(bytecode):
             if contains(json(definition), "\"binding\""):
                 lines = append(lines, "    long zap_closure = zap_load(" + json(definition["binding"]) + ");")
             lines = append(lines, "    if (zap_frame_depth >= 31) { fprintf(stderr, \"call frame limit exceeded\\n\"); exit(1); }")
-            lines = append(lines, "    zap_return_labels[zap_frame_depth] = " + str(instruction_index + 1) + "; zap_frame_depth += 1; zap_local_counts[zap_frame_depth] = 0;")
+            lines = append(lines, "    zap_frame_depth += 1; zap_return_labels[zap_frame_depth] = " + str(instruction_index + 1) + "; zap_local_counts[zap_frame_depth] = 0;")
             let parameter_index = 0
             for parameter in definition["params"]:
                 lines = append(lines, "    zap_store(" + json(parameter) + ", zap_call_args[" + str(parameter_index) + "]); ")
@@ -322,7 +366,7 @@ export fn c_backend_emit(bytecode):
             for ignored in bytecode:
                 lines = append(lines, "  case " + str(return_index) + ": goto zap_label_" + str(return_index) + ";")
                 return_index = return_index + 1
-            lines = append(lines, "  default: fprintf(stderr, \"invalid return label\\n\"); exit(1); }")
+            lines = append(lines, "  default: fprintf(stderr, \"invalid return label\\n\"); exit(1); } }")
         if op != "function_def" and op != "call" and op != "return_value" and op != "return_none":
             for line in c_backend_emit_instruction(instruction):
                 lines = append(lines, "  " + line)
@@ -330,7 +374,7 @@ export fn c_backend_emit(bytecode):
     lines = append(lines, "  zap_label_" + str(instruction_index) + ":;")
     lines = append(lines, "  return 0;")
     lines = append(lines, "}")
-    return {"error": none, "lines": lines, "instruction_count": validation["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "zap_owned_scalar_backend_with_numeric_lists"}
+    return {"error": none, "lines": lines, "instruction_count": validation["instruction_count"], "ownership": "zap", "reference_owner": "zap", "schema_version": 1, "status": "zap_owned_backend_with_core_builtins"}
 
 export fn c_backend_generate(bytecode):
     let result = c_backend_emit(bytecode)

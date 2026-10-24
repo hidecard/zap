@@ -1,0 +1,3 @@
+let text = read_text("D:/zap/.tmp/manifest_dump.zp")
+say len(text)
+say text

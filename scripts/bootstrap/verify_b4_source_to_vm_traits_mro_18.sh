@@ -27,7 +27,7 @@ trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'ZP'
 import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let inherited = seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait\"\nclass Base with Printable:\n    fn base(self) -> text:\n        return \"base\"\nclass Child extends Base:\n    fn render(self) -> text:\n        return super().render() + \"-child\"\nlet item = Child()\nsay item.render()", "trait-mro.zp")
+let inherited = driver_seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait\"\nclass Base with Printable:\n    fn base(self) -> text:\n        return \"base\"\nclass Child extends Base:\n    fn render(self) -> text:\n        return super().render() + \"-child\"\nlet item = Child()\nsay item.render()", "trait-mro.zp")
 let inherited_state = vm_run(inherited["instructions"])
 say inherited["status"]
 say inherited_state["error"]

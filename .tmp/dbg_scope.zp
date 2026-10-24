@@ -1,0 +1,16 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+
+fn check(lines, tag):
+    say tag + "=" + json(indentation_stack_diagnostic(lines, "x.zp"))
+
+let source = "let answer = 1\nsay answer"
+let plines = split(trim(source), "\n")
+say "plines=" + json(plines)
+check(plines, "in_fn_plines")
+say "top_plines=" + json(indentation_stack_diagnostic(plines, "x.zp"))
+let parser_source = parser_filter_comment_lines(split(trim(source), "\n"), 0, [])
+let plines2 = split(parser_source, "\n")
+say "plines2=" + json(plines2)
+check(plines2, "in_fn_plines2")
+say "top_plines2=" + json(indentation_stack_diagnostic(plines2, "x.zp"))

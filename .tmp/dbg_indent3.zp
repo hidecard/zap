@@ -1,0 +1,9 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+let source = "let answer = 1\nsay answer"
+say "general=" + json(parse_general(source, "x.zp"))
+say "filtered=" + json(parser_filter_comment_lines(split(trim(source), "\n"), 0, []))
+let parser_source = parser_filter_comment_lines(split(trim(source), "\n"), 0, [])
+let plines = split(parser_source, "\n")
+say "plines=" + json(plines)
+say "diag=" + json(indentation_stack_diagnostic(plines, "x.zp"))

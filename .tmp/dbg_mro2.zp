@@ -1,0 +1,23 @@
+import "bootstrap/b4/compiler_driver.zp"
+import "bootstrap/b3/vm.zp"
+let reverse = driver_seed_compile_source("class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return 2\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Right, Left:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()", "reverse.zp")
+say "reverse_status=" + reverse["status"]
+say "reverse_error=" + str(reverse["error"])
+let super_chain = driver_seed_compile_source("class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return super().value() + 10\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()", "super-chain.zp")
+say "super_status=" + super_chain["status"]
+say "super_error=" + str(super_chain["error"])
+let constructors = driver_seed_compile_source("class Root:\n    fn __init__(self):\n        set self.value = 1\n        return self\nclass Left extends Root:\n    fn __init__(self):\n        super().__init__()\n        set self.value = 2\n        return self\nclass Right extends Root:\n    fn __init__(self):\n        super().__init__()\n        set self.value = 3\n        return self\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value", "constructors.zp")
+say "ctor_status=" + constructors["status"]
+say "ctor_error=" + str(constructors["error"])
+let conflict = driver_seed_compile_source("class A:\n    fn marker(self):\n        return 0\nclass B:\n    fn marker(self):\n        return 0\nclass C extends A, B:\n    fn marker(self):\n        return 0\nclass D extends B, A:\n    fn marker(self):\n        return 0\nclass E extends C, D:\n    fn marker(self):\n        return 0\nlet value = E()", "conflict.zp")
+say "conflict_status=" + conflict["status"]
+say "conflict_error=" + str(conflict["error"])
+let unknown = driver_seed_compile_source("class Child extends Missing:\n    fn marker(self):\n        return 0\nlet value = Child()", "unknown.zp")
+say "unknown_status=" + unknown["status"]
+say "unknown_error=" + str(unknown["error"])
+let cycle = driver_seed_compile_source("class A extends B:\n    fn marker(self):\n        return 0\nclass B extends A:\n    fn marker(self):\n        return 0\nlet value = A()", "cycle.zp")
+say "cycle_status=" + cycle["status"]
+say "cycle_error=" + str(cycle["error"])
+let canonical = driver_seed_compile_ast_source("class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return 2\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()", "canonical.zp")
+say "canonical_status=" + canonical["status"]
+say "canonical_error=" + str(canonical["error"])

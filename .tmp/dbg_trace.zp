@@ -1,0 +1,29 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+
+fn dbg_parse_general(source, source_name):
+    let crlf_normalized_source = replace(source, "\r\n", "\n")
+    let normalized_source = trim(replace(crlf_normalized_source, "\r", "\n"))
+    let parser_source = parser_filter_comment_lines(split(normalized_source, "\n"), 0, [])
+    let lexed = from_json(lex(parser_source, source_name))
+    say "A: lexed_kind=" + lexed["kind"]
+    if lexed["kind"] == "zap.diagnostics":
+        say "B: lex diagnostics"
+        return json(lexed)
+    let delimiter = delimiter_diagnostics(lexed["tokens"], source_name)
+    say "C: delimiter=" + json(delimiter)
+    let lines = split(parser_source, "\n")
+    let generic_diagnostic = generic_header_diagnostic(lines, source_name)
+    say "D: generic=" + json(generic_diagnostic)
+    let indentation = indentation_stack_diagnostic(lines, source_name)
+    say "E: indentation=" + json(indentation)
+    let missing_block = missing_block_diagnostic(lines, source_name)
+    say "F: missing_block=" + json(missing_block)
+    let token_indent = token_indentation_diagnostic(lexed["tokens"], source_name)
+    say "G: token_indent=" + json(token_indent)
+    let missing_assignment = missing_assignment_diagnostic(parser_source, lexed["tokens"], source_name)
+    say "H: missing_assignment=" + json(missing_assignment)
+    return json({"ast": {"statements": []}, "kind": "zap.ast", "schema_version": 1, "source_name": source_name})
+
+let source = "let answer = 1\nsay answer"
+say "RESULT=" + dbg_parse_general(source, "x.zp")

@@ -1,0 +1,20 @@
+import "bootstrap/b4/c_backend.zp"
+let out_dir = "D:/zap/.tmp/"
+let bc2 = [{"op": "builtin_argc"}, {"op": "print"}, {"op": "builtin_argv"}, {"op": "builtin_len"}, {"op": "halt"}]
+let g2 = c_backend_emit(bc2)
+say "status2=" + g2["status"]
+say "err2=" + str(g2["error"])
+if g2["status"] != "rejected":
+    write_text(out_dir + "zap_emit_builtin.c", join(g2["lines"], "\n"))
+    say "written"
+let bc3 = [{"op": "const", "value": 5}, {"op": "async_new"}, {"op": "await"}, {"op": "print"}, {"op": "halt"}]
+let g3 = c_backend_emit(bc3)
+say "status3=" + g3["status"]
+say "err3=" + str(g3["error"])
+let v3 = c_backend_validate_bytecode(bc3)
+say "validate3=" + v3["status"]
+let bc4 = [{"op": "builtin_has_key"}, {"op": "halt"}]
+let g4 = c_backend_emit(bc4)
+say "status4=" + g4["status"]
+let v4 = c_backend_validate_bytecode(bc4)
+say "validate4=" + v4["status"]

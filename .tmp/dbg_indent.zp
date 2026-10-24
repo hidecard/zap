@@ -1,0 +1,8 @@
+import "bootstrap/b1/parser.zp"
+let source = "let answer = 1\nsay answer"
+let lines = split(trim(source), "\n")
+say "lines=" + json(lines)
+for line in lines:
+    say "line=[" + line + "] width=" + str(indentation_width(line))
+say "diag=" + json(indentation_stack_diagnostic(lines, "x.zp"))
+say "token_diag=" + json(token_indentation_diagnostic(from_json(lex(source, "x.zp"))["tokens"], "x.zp"))

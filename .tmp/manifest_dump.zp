@@ -1,0 +1,3 @@
+import "bootstrap/b4/c_backend.zp"
+for op in c_backend_validation_opcode_manifest():
+    say op

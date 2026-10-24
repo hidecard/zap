@@ -1,0 +1,10 @@
+import "bootstrap/b4/c_backend.zp"
+let bytecode = [{"op": "const", "value": 5}, {"op": "async_new"}, {"op": "await"}, {"op": "print"}, {"op": "halt"}]
+let generated = c_backend_emit(bytecode)
+say "status=" + generated["status"]
+let text = join(generated["lines"], "\n")
+write_text(".tmp/zap_emit_async.c", text)
+let bc2 = [{"op": "builtin_argc"}, {"op": "print"}, {"op": "builtin_argv"}, {"op": "builtin_len"}, {"op": "halt"}]
+let g2 = c_backend_emit(bc2)
+say "status2=" + g2["status"]
+write_text(".tmp/zap_emit_builtin.c", join(g2["lines"], "\n"))

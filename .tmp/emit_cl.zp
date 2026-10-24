@@ -1,0 +1,5 @@
+import "bootstrap/b4/c_backend.zp"
+let bytecode = [{"op": "const", "value": 10}, {"op": "store", "name": "n"}, {"op": "function_def", "name": "add", "binding": "f", "captures": ["n"], "params": ["x"], "entry": 4, "end": 8}, {"op": "load", "name": "f"}, {"op": "load", "name": "x"}, {"op": "load", "name": "n"}, {"op": "add"}, {"op": "return_value"}, {"op": "const", "value": 5}, {"op": "call", "name": "f", "argc": 1}, {"op": "print"}, {"op": "halt"}]
+let generated = c_backend_emit(bytecode)
+say generated["status"]
+write_text("D:/zap/.tmp/cl_emit.c", join(generated["lines"], "\n"))

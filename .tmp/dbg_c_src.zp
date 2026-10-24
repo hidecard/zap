@@ -1,0 +1,7 @@
+import "bootstrap/b4/compiler_driver.zp"
+let result = driver_compile_c_source("let answer = 1\nsay answer\n", "source-c.zp")
+say result["status"]
+say result["ownership"]
+say result["reference_owner"]
+say result["bytecode"]["status"]
+say result["instruction_count"]

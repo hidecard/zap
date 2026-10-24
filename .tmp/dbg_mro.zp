@@ -1,0 +1,9 @@
+import "bootstrap/b4/compiler_driver.zp"
+import "bootstrap/b3/vm.zp"
+let diamond = driver_seed_compile_source("class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return 2\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()", "diamond.zp")
+say "status=" + diamond["status"]
+say "error=" + str(diamond["error"])
+say "instructions=" + str(len(diamond["instructions"]))
+let result = vm_run(diamond["instructions"])
+say "vm_error=" + str(result["error"])
+say "output_len=" + str(len(result["output"]))

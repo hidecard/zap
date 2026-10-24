@@ -27,7 +27,7 @@ export fn driver_typed_ir_backend_ownership():
 
 export fn driver_compile_c_backend(bytecode):
     let generated = c_backend_emit(bytecode)
-    if generated["status"] != "zap_owned_scalar_backend" and generated["status"] != "zap_owned_scalar_backend_with_numeric_lists" and generated["status"] != "zap_owned_scalar_collection_object_backend_slice":
+    if generated["status"] != "zap_owned_scalar_backend" and generated["status"] != "zap_owned_scalar_backend_with_numeric_lists" and generated["status"] != "zap_owned_scalar_collection_object_backend_slice" and generated["status"] != "zap_owned_scalar_backend_with_async_modules" and generated["status"] != "zap_owned_backend_with_core_builtins":
         return {"error": generated["error"], "lines": [], "ownership": "blocked", "reference_owner": "zap", "status": "c_backend_rejected"}
     return {"error": none, "lines": generated["lines"], "instruction_count": generated["instruction_count"], "ownership": "zap_owned", "reference_owner": "zap", "status": generated["status"]}
 
@@ -381,29 +381,48 @@ export fn driver_typed_ir_nodes_coverage_valid(nodes, index):
     return driver_typed_ir_nodes_coverage_valid(nodes, index + 1)
 
 export fn driver_typed_ir_ownership(first, second):
-    # Compare the canonical IR payload rather than serializing the full
-    # wrapper twice. The wrapper retains parser AST references for lowering;
-    # serializing those duplicated trees exhausted the native seed's memory
-    # budget on the real data-structure fixture.
-    let deterministic = first["kind"] == second["kind"] and first["schema_version"] == second["schema_version"] and json(first["ir"]["nodes"]) == json(second["ir"]["nodes"])
-    let promotable = first["kind"] == "zap.typed_ir"
-    if first["schema_version"] < 4:
+    # One wrapper serialization serves the determinism comparison and every
+    # key-presence guard. The wrapper retains parser AST references for
+    # lowering; serializing those duplicated trees more than once exhausted
+    # the native seed memory budget on the real data-structure fixture.
+    let encoded = json(first)
+    let deterministic = encoded == json(second)
+    let kind = ""
+    let schema_version = 0
+    let candidate_only = false
+    let nodes = []
+    let has_nodes = false
+    if contains(encoded, "\"kind\""):
+        kind = first["kind"]
+    if contains(encoded, "\"schema_version\""):
+        schema_version = first["schema_version"]
+    if contains(encoded, "\"candidate_only\""):
+        candidate_only = first["candidate_only"]
+    if contains(encoded, "\"ir\"") and contains(encoded, "\"nodes\""):
+        has_nodes = true
+        nodes = first["ir"]["nodes"]
+    let promotable = true
+    if kind != "zap.typed_ir":
         promotable = false
-    if first["typed_metadata"] != true:
+    if schema_version < 4:
         promotable = false
-    if first["coverage"] != "owned_ast_with_checker_inferred_types":
+    if not contains(encoded, "\"typed_metadata\"") or first["typed_metadata"] != true:
         promotable = false
-    if len(first["diagnostics"]) != 0:
+    if not contains(encoded, "\"coverage\"") or first["coverage"] != "owned_ast_with_checker_inferred_types":
         promotable = false
-    if first["ir"]["nodes"] == none:
+    if not contains(encoded, "\"diagnostics\"") or len(first["diagnostics"]) != 0:
         promotable = false
-    if promotable and not typed_ir_nodes_shape_valid(first["ir"]["nodes"], 0):
+    if not has_nodes or nodes == none:
         promotable = false
-    let coverage_valid = driver_typed_ir_nodes_coverage_valid(first["ir"]["nodes"], 0)
+    if promotable and not typed_ir_nodes_shape_valid(nodes, 0):
+        promotable = false
+    let coverage_valid = true
+    if has_nodes:
+        coverage_valid = driver_typed_ir_nodes_coverage_valid(nodes, 0)
     if not coverage_valid:
         promotable = false
     let metadata_valid = true
-    for node in first["ir"]["nodes"]:
+    for node in nodes:
         let has_value = node["kind"] == "declaration" or node["kind"] == "assignment" or node["kind"] == "say" or node["kind"] == "return" or node["kind"] == "raise" or node["kind"] == "expression"
         if has_value and not driver_typed_ir_expression_metadata_valid(node["value"]):
             metadata_valid = false
@@ -414,15 +433,12 @@ export fn driver_typed_ir_ownership(first, second):
     let ownership = "candidate"
     let reference_owner = "rust"
     let status = "candidate_typed_ir_ownership"
-    let candidate_only = false
-    if contains(json(first), "\"candidate_only\""):
-        candidate_only = first["candidate_only"]
     if promotable:
         ownership = "zap_owned"
         reference_owner = "zap"
         status = "zap_owned_typed_ir"
         candidate_only = false
-    return {"candidate_only": candidate_only, "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": first["kind"], "metadata_valid": metadata_valid, "node_count": len(first["ir"]["nodes"]), "ownership": ownership, "reference_owner": reference_owner, "schema_version": first["schema_version"], "status": status, "valid": promotable}
+    return {"candidate_only": candidate_only, "coverage_valid": coverage_valid, "deterministic": deterministic, "executable": promotable, "kind": kind, "metadata_valid": metadata_valid, "node_count": len(nodes), "ownership": ownership, "reference_owner": reference_owner, "schema_version": schema_version, "status": status, "valid": promotable}
 
 export fn driver_finalize_typed_ir(first, ownership):
     return {"candidate_only": false, "coverage": first["coverage"], "diagnostics": first["diagnostics"], "ir": first["ir"], "kind": first["kind"], "ownership": ownership["ownership"], "reference_owner": ownership["reference_owner"], "schema_version": first["schema_version"], "source_name": first["source_name"], "typed_metadata": first["typed_metadata"]}
@@ -445,9 +461,12 @@ export fn driver_promote_typed_ir(source, source_name):
     let ownership = driver_typed_ir_ownership(first, second)
     if ownership["ownership"] != "zap_owned":
         return {"diagnostics": [{"code": "ZAP-TYPED-IR-001", "message": "typed IR promotion failed closed", "ownership": ownership["ownership"], "source_name": source_name}], "ownership": ownership, "status": "typed_ir_promotion_blocked", "typed_ir": first}
-    # `first` is already validated and canonical; re-wrapping its large IR
-    # here duplicates the AST and can exhaust the seed memory budget.
-    return {"diagnostics": [], "ownership": ownership, "status": "typed_ir_promoted", "typed_ir": first}
+    # Promotion hands back the finalized wrapper so the promoted artifact
+    # reports `candidate_only = false` with the Zap-owned reference owner.
+    # The wrapper shares the canonical IR payload with `first`; only the
+    # ownership envelope is new, so the AST is not duplicated.
+    let finalized = driver_finalize_typed_ir(first, ownership)
+    return {"diagnostics": [], "ownership": ownership, "status": "typed_ir_promoted", "typed_ir": finalized}
 
 export fn driver_compile_backend(source, source_name):
     let typed = driver_promote_typed_ir(source, source_name)

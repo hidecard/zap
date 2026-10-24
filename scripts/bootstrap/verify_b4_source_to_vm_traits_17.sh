@@ -27,9 +27,9 @@ trap 'rm -f "$runner" "$out"' EXIT
 cat >"$runner" <<'EOF'
 import "bootstrap/b4/compiler_driver.zp"
 import "bootstrap/b3/vm.zp"
-let provided = seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait-render\"\nclass Report with Printable:\n    fn name(self) -> text:\n        return \"report\"\nlet item = Report()\nsay item.render()", "provided.zp")
-let selected = seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    use JsonView.render as render\nlet item = Report()\nsay item.render()", "selected.zp")
-let conflict = seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    fn name(self):\n        return \"report\"\nlet item = Report()\nsay item.render()", "conflict.zp")
+let provided = driver_seed_compile_ast_source("trait Printable:\n    fn render(self) -> text:\n        return \"trait-render\"\nclass Report with Printable:\n    fn name(self) -> text:\n        return \"report\"\nlet item = Report()\nsay item.render()", "provided.zp")
+let selected = driver_seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    use JsonView.render as render\nlet item = Report()\nsay item.render()", "selected.zp")
+let conflict = driver_seed_compile_ast_source("trait JsonView:\n    fn render(self) -> text:\n        return \"json\"\ntrait TableView:\n    fn render(self) -> text:\n        return \"table\"\nclass Report with JsonView, TableView:\n    fn name(self):\n        return \"report\"\nlet item = Report()\nsay item.render()", "conflict.zp")
 let provided_state = vm_run(provided["instructions"])
 let selected_state = vm_run(selected["instructions"])
 let conflict_state = vm_run(conflict["instructions"])

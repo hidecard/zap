@@ -1,0 +1,10 @@
+import "bootstrap/b1/parser.zp"
+import "bootstrap/b1/lexer.zp"
+let source = "let answer = 1\nsay answer"
+let lexed = from_json(lex(source, "x.zp"))
+say "token_diag=" + json(token_indentation_diagnostic(lexed["tokens"], "x.zp"))
+say "missing_assignment=" + json(missing_assignment_diagnostic(source, lexed["tokens"], "x.zp"))
+let lines = split(trim(source), "\n")
+say "missing_block=" + json(missing_block_diagnostic(lines, "x.zp"))
+say "generic=" + json(generic_header_diagnostic(lines, "x.zp"))
+say "delimiter=" + json(delimiter_diagnostics(lexed["tokens"], "x.zp"))

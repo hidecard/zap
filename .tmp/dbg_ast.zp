@@ -1,0 +1,4 @@
+import "bootstrap/b1/parser.zp"
+let source = "class Root:\n    fn __init__(self):\n        set self.value = 1\n        return self\nlet child = Root()\nsay child.value"
+let parsed = from_json(parse_general(source, "x.zp"))
+say json(parsed["ast"]["statements"][0])

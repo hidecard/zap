@@ -1,0 +1,9 @@
+import "bootstrap/b4/compiler_driver.zp"
+import "bootstrap/b2/typed_ir.zp"
+let source = "class Root:\n    fn value(self):\n        return 1\nclass Left extends Root:\n    fn value(self):\n        return super().value() + 10\nclass Right extends Root:\n    fn value(self):\n        return 3\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value()"
+let normalized = driver_normalize_source(source)
+let first = from_json(emit_inferred_program_typed_ir(normalized, "super-chain.zp"))
+say json(first["diagnostics"])
+let source2 = "class Root:\n    fn __init__(self):\n        set self.value = 1\n        return self\nclass Left extends Root:\n    fn __init__(self):\n        super().__init__()\n        set self.value = 2\n        return self\nclass Right extends Root:\n    fn __init__(self):\n        super().__init__()\n        set self.value = 3\n        return self\nclass Child extends Left, Right:\n    fn marker(self):\n        return 0\nlet child = Child()\nsay child.value"
+let first2 = from_json(emit_inferred_program_typed_ir(driver_normalize_source(source2), "constructors.zp"))
+say json(first2["diagnostics"])

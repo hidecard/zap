@@ -2564,6 +2564,10 @@ export fn b2c_infer_call(node, environment, functions, source_name):
         name = function["name"]
     else:
         name = callee["name"]
+        # `super()` is resolved by the runtime against the enclosing class
+        # hierarchy; it is not a declared function in the current scope.
+        if name == "super":
+            return b2c_result("any", errors)
         let candidates = b2c_function_candidates(functions, name, [])
         let selection = b2c_select_overload(candidates, argument_types, b2c_function_member_classes(functions), 0, none, -1, 0)
         if selection["found"]:
@@ -3304,6 +3308,43 @@ export fn b2c_nested_member_lookup(class_name, member_names, index, classes):
         return member
     return b2c_nested_member_lookup(member["type"], member_names, index + 1, classes)
 
+export fn b2c_self_field_assignment_type(statements, member_name):
+    for statement in statements:
+        if statement["kind"] == "assignment":
+            let name = statement["name"]
+            if starts_with(name, "self.") and substring(name, 5, len(name)) == member_name:
+                let inferred = b2c_infer_expr(statement["value"], [], [], "<class-field>")
+                return {"found": true, "type": inferred["type"]}
+        if statement["kind"] == "if":
+            let nested = b2c_self_field_assignment_type(statement["then_branch"]["statements"], member_name)
+            if nested["found"]:
+                return nested
+            if statement["else_branch"] != none:
+                let nested_else = b2c_self_field_assignment_type(statement["else_branch"]["statements"], member_name)
+                if nested_else["found"]:
+                    return nested_else
+        if statement["kind"] == "while" or statement["kind"] == "for":
+            let nested = b2c_self_field_assignment_type(statement["body"]["statements"], member_name)
+            if nested["found"]:
+                return nested
+        if statement["kind"] == "try_catch":
+            let nested = b2c_self_field_assignment_type(statement["body"]["statements"], member_name)
+            if nested["found"]:
+                return nested
+            let nested_catch = b2c_self_field_assignment_type(statement["catch_body"]["statements"], member_name)
+            if nested_catch["found"]:
+                return nested_catch
+    return {"found": false, "type": "any"}
+
+export fn b2c_class_instance_field_lookup(class_node, member_name):
+    for statement in class_node["body"]["statements"]:
+        if statement["kind"] != "function":
+            continue
+        let found = b2c_self_field_assignment_type(statement["body"]["statements"], member_name)
+        if found["found"]:
+            return found
+    return {"found": false, "type": "any"}
+
 export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
     let nominal = b2c_nominal_class_name(class_name)
     if nominal != class_name:
@@ -3323,6 +3364,11 @@ export fn b2c_class_member_lookup(class_name, member_name, classes, seen):
                         let inferred_field = b2c_infer_expr(statement["value"], [], [], "<class-field>")
                         field_type = inferred_field["type"]
                 return {"class_found": true, "found": true, "type": field_type}
+        # Instance fields are introduced by `set self.<name>` assignments inside
+        # the class methods rather than by a class-level declaration.
+        let instance_field = b2c_class_instance_field_lookup(class_node, member_name)
+        if instance_field["found"]:
+            return {"class_found": true, "found": true, "type": instance_field["type"]}
         for parent in class_node["parents"]:
             let inherited = b2c_class_member_lookup(parent, member_name, classes, next_seen)
             if inherited["found"]:

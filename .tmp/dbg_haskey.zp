@@ -1,0 +1,5 @@
+let m = {"a": 1}
+say has_key(m, "a")
+say has_key(m, "b")
+let e = {}
+say has_key(e, "x")
