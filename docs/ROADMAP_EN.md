@@ -12,6 +12,7 @@
 | B4 certification action plan | [docs/B4_CERTIFICATION_ACTION_PLAN.md](B4_CERTIFICATION_ACTION_PLAN.md) |
 | Database provider strategy | [docs/DATABASE_PROVIDER_STRATEGY_EN.md](DATABASE_PROVIDER_STRATEGY_EN.md) |
 | Community/adoption tracker (M7) | [docs/M7_ADOPTION_TRACKER.md](M7_ADOPTION_TRACKER.md) |
+| Migration guide | [docs/MIGRATION_GUIDE_EN.md](MIGRATION_GUIDE_EN.md) |
 | Bootstrap contract | [bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md](../bootstrap/contracts/BOOTSTRAP_CONTRACT_EN.md) |
 | B4 acceptance manifest | [bootstrap/contracts/B4_ACCEPTANCE.tsv](../bootstrap/contracts/B4_ACCEPTANCE.tsv) |
 
