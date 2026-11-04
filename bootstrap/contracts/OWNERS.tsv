@@ -160,12 +160,12 @@ BOOT-076	parser-member-access	Member access	Member access	bootstrap/b1/parser.zp
 
 BOOT-077	parser-postfix-indexing	Postfix indexing	Postfix indexing	bootstrap/b1/parser.zp	bootstrap/fixtures/parser/postfix_indexing.zp	canonical
 
-B4-004	seed-generation-pipeline	Seed Generation Pipeline	Seed Generation Pipeline	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	provisional
+B4-004	seed-generation-pipeline	Seed Generation Pipeline	Seed Generation Pipeline	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	bootstrap/contracts/SEED_GENERATION_PIPELINE.md	canonical
 
-B4-005	pyton-host-audit	Python Host Modules Audit	Python Host Modules Audit	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	provisional
+B4-005	pyton-host-audit	Python Host Modules Audit	Python Host Modules Audit	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	bootstrap/contracts/PYTHON_HOST_MODULES_AUDIT.md	canonical
 
-B4-006	seed-compiler-ownership	Seed Compiler Ownership	Seed Compiler Ownership	host/zap-bootstrap/compile.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#seed-compiler	provisional
+B4-006	seed-compiler-ownership	Seed Compiler Ownership	Seed Compiler Ownership	host/zap-bootstrap/compile.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#seed-compiler	canonical
 
-B4-007	c-backend-ownership	C Backend Ownership	C Backend Ownership	host/zap-bootstrap/c_backend.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#c-backend	provisional
+B4-007	c-backend-ownership	C Backend Ownership	C Backend Ownership	host/zap-bootstrap/c_backend.py	bootstrap/contracts/SEED_GENERATION_PIPELINE.md#c-backend	canonical
 
-B4-008	seed-metadata-requirements	Seed Metadata Requirements	Seed Metadata Requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml#seed_metadata_requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml	provisional
+B4-008	seed-metadata-requirements	Seed Metadata Requirements	Seed Metadata Requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml#seed_metadata_requirements	bootstrap/contracts/B4_RUST_FREE_FULL_LANGUAGE_CONTRACT.toml	canonical
