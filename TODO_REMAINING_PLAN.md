@@ -253,7 +253,7 @@ PHASE 0 (Critical path — blocks B4 claim):
   Step 2: Fix C backend determinism — COMPLETED (6/6 B4 acceptance rows pass)
   Step 3: Cross-platform clean-environment evidence (Linux/Win/Mac) — hosted evidence exists; refresh against current seed/provenance contract
   Step 4: Source-to-C driver ownership slice — DONE 2026-10-22; `driver_compile_c_source()` now promotes, lowers, validates, and emits through Zap-owned C backend
-  Step 5: Complete Python-lowering migration into the Zap-owned production pipeline
+  Step 5: Complete Python-lowering migration into the Zap-owned production pipeline — still open; A10 received an offline package-artifact envelope increment
   Step 6: [DONE 2026-10-21] Fix `c_backend_datastructures.zp` driver stack overflow and rerun full-surface acceptance
 
 PHASE 1 (P0 reliability — high priority, parallelizable):

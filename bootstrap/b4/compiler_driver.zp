@@ -560,8 +560,41 @@ export fn driver_build_package(package_name, package_version, main, requirements
     let built = driver_run_source(source, source_name)
     if built["status"] != "ok":
         return {"artifact_bytes": "", "artifact_digest": "", "dependency_graph": graph["resolved"], "diagnostics": built["diagnostics"], "execution": built["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "package_pipeline_error"}
-    let artifact_bytes = json(built["artifacts"])
-    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": built["execution"], "lockfile": resolved_graph_lockfile(manifest_value, graph), "native_independent": false, "status": "driver_package_build_executed"}
+    # A package artifact is now a canonical, self-describing offline envelope,
+    # rather than a bare list of stage records.  The envelope keeps the
+    # resolved lock graph and package manifest beside the exact typed-IR and
+    # bytecode bytes, so a consumer can validate/replay it without consulting
+    # a registry.  Rust remains the reference owner and the candidate stays
+    # explicitly non-native-independent.
+    let lockfile = resolved_graph_lockfile(manifest_value, graph)
+    let artifact_manifest = {"artifacts": built["artifacts"], "command": "build", "main": main, "package": manifest_value, "schema_version": 2, "source_name": source_name, "status": "offline_package_artifact"}
+    let envelope = {"artifact_manifest": artifact_manifest, "dependency_graph": graph["resolved"], "lockfile": lockfile, "manifest": manifest_value, "schema_version": 2}
+    let artifact_bytes = json(envelope)
+    return {"artifact_bytes": artifact_bytes, "artifact_digest": "package_artifact:" + artifact_bytes, "artifact_manifest": artifact_manifest, "dependency_graph": graph["resolved"], "diagnostics": [], "execution": built["execution"], "lockfile": lockfile, "native_independent": false, "offline": true, "status": "driver_package_build_executed"}
+
+export fn driver_package_artifact_envelope(artifact_bytes):
+    if trim(artifact_bytes) == "":
+        return none
+    let envelope = from_json(artifact_bytes)
+    if envelope == none or not contains(json(envelope), "\"artifact_manifest\"") or not contains(json(envelope), "\"lockfile\"") or not contains(json(envelope), "\"dependency_graph\""):
+        return none
+    return envelope
+
+export fn driver_validate_package_artifact(artifact_bytes, artifact_digest):
+    let envelope = driver_package_artifact_envelope(artifact_bytes)
+    let valid = envelope != none
+    if artifact_digest != "package_artifact:" + artifact_bytes:
+        valid = false
+    if valid and envelope["schema_version"] != 2:
+        valid = false
+    if valid and envelope["artifact_manifest"]["status"] != "offline_package_artifact":
+        valid = false
+    if valid and envelope["artifact_manifest"]["schema_version"] != 2:
+        valid = false
+    let status = "candidate_offline_package_artifact"
+    if not valid:
+        status = "candidate_offline_package_artifact_error"
+    return {"artifact_bytes_nonempty": trim(artifact_bytes) != "", "dependency_graph_present": envelope != none, "digest_match": artifact_digest == "package_artifact:" + artifact_bytes, "offline": valid, "status": status, "valid": valid}
 
 export fn driver_artifact_record(kind, bytes):
     return {"bytes": bytes, "digest": kind + ":" + bytes, "kind": kind}
