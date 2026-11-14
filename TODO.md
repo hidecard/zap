@@ -21,6 +21,8 @@ The supplied AI-native roadmap is now the planning umbrella for this register. T
 
 **Current hosted blocker:** CI run [42849365359](https://github.com/hidecard/zap/actions/runs/42849365359) passed the Linux, Windows, macOS C-backend jobs and cross-platform comparison, but failed the Rust-quality `run_zap()` portability smoke because `scripts/bootstrap/verify_b4_source_to_vm_break_payload_10.sh` has a Bash parse failure and the sweep leaked `.zap-c3-gate.7fFkJW`. This is an engineering blocker, not B4 certification evidence.
 
+**Portability remediation prepared (2026-11-14):** `verify_b4_source_to_vm_break_payload_10.sh` was normalized from mixed CRLF/LF to LF, its duplicated `run_case()` definition was removed, and both the break-payload and C3-MRO gates now use strict-mode-safe EXIT cleanup traps. Local `bash -n` parsing passes for all 158 refactored scripts; forced-failure cleanup tests confirm that `.zap-break-gate.*` and `.zap-c3-gate.*` directories are removed. Hosted CI confirmation is required before marking the blocker closed.
+
 ### Latest verification update (2026-10-20)
 
 - Latest `master` commit checked: `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`).

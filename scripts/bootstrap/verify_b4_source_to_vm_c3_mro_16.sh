@@ -24,6 +24,7 @@ run_zap() {
 
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
 TMPDIR_GATE=$(mktemp -d "$ROOT_DIR/.zap-c3-gate.XXXXXX")
+trap 'rm -rf "$TMPDIR_GATE" "${out:-}" "${expected:-}"' EXIT
 
 run_case() {
   local runner_rel="$1"

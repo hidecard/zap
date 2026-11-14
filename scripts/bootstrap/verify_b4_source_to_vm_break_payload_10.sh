@@ -23,22 +23,9 @@ run_zap() {
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 
 ZAP_BIN="${ZAP_BIN_OVERRIDE:-${ZAP_BIN:-native/target/release/zap}}"
-run_case() {
-  local runner_path="$1"
-  local out="$2"
-  local runner_name
-  runner_name="$(basename "$runner_path")"
-  cp "$runner_path" "$ROOT_DIR/.zap-break-$$-$runner_name"
-  if [ -x "$ZAP_BIN" ]; then
-    (cd "$ROOT_DIR" && "$ZAP_BIN" ".zap-break-$$-$runner_name") > "$out" 2>&1
-  else
-    (cd "$ROOT_DIR" && run_zap ".zap-break-$$-$runner_name") > "$out" 2>&1
-  fi
-  rm -f "$ROOT_DIR/.zap-break-$$-$runner_name"
-}
-
 TMPDIR_GATE=$(mktemp -d "$ROOT_DIR/.zap-break-gate.XXXXXX")
 mkdir -p "$TMPDIR_GATE"
+trap 'rm -rf "$TMPDIR_GATE" "${out:-}" "${expected:-}"' EXIT
 
 run_case() {
   local runner_path="$1"
