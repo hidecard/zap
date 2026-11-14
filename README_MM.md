@@ -24,7 +24,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64၊ Windows x86_64၊ macOS ARM64 |
-| Bootstrap stage | **B4 candidate** — Rust-free C backend acceptance implement လုပ်ပြီး; three-platform evidence နှင့် production compiler migration ကျန်နေသေးသည် (Schema v2) |
+| Bootstrap stage | **B4 candidate / not certified** — bounded Zap-owned C backend slice များနှင့် platform C-backend evidence ရှိပြီး၊ full-language production ownership နှင့် certified Rust-free seed provenance များ ကျန်နေသေးသည် |
 | Reference implementation | Complete semantics အတွက် Rust native CLI/runtime က reference owner အဖြစ် ဆက်ရှိသည် |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -32,6 +32,8 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | လက်ရှိအခြေအနေ | [Canonical current-status page](docs/CURRENT_STATUS_MM.md) |
 
 ## Install လုပ်ခြင်း
+
+Zap ၏ AI-native roadmap သည် Phase 0 B4 self-hosting/certification ကို အရင်ဆုံးပြီးစီးစေပြီး၊ ထို့နောက် language/runtime reliability၊ developer experience၊ machine-readable AI interface၊ permission-aware agent tools၊ real-world application၊ provider-neutral AI contract နှင့် community/adoption အဆင့်များသို့ ဆက်သွားမည်ဖြစ်သည်။ လက်ရှိ B4 သည် မပြီးစီးသေးသောကြောင့် scaffold သို့မဟုတ် bounded backend slice ကို production-ready ဟု မယူဆရပါ။ အသေးစိတ်ကို [Roadmap](docs/ROADMAP_EN.md)၊ [TODO](TODO.md) နှင့် [လက်ရှိအခြေအနေ](docs/CURRENT_STATUS_MM.md) တွင် ကြည့်နိုင်ပါသည်။
 
 သင့် operating system နှင့် CPU architecture ကိုက်ညီသော archive ကို [v2.11.18 release page](https://github.com/hidecard/zap/releases/tag/v2.11.18) မှ download လုပ်ပြီး checksum/signature verify လုပ်ကာ extract လုပ်ပါ။
 
@@ -192,5 +194,4 @@ Local validation မစတင်မီ `make doctor` ကို run လုပ်�
 ## License
 
 Zap ကို [MIT License](LICENSE) အောက်တွင် ဖြန့်ချိထားပါသည်။
-
 

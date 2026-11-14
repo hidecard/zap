@@ -4,8 +4,13 @@
 **Latest published release:** [v2.11.18](https://github.com/hidecard/zap/releases/tag/v2.11.18)
 **Next release line:** post-v2.11.18 development
 **Bootstrap stage:** B4 certification in progress (not certified)
+**Roadmap phase:** Phase 0 — self-hosting and B4 certification; later AI-native phases remain planned and are not represented as completed product capability.
 
 > Zap is a Rust reference/native implementation. The Zap lexer, parser, type-checker, and typed-IR work under `bootstrap/` remains provisional and corpus-limited. Recent B4 work has migrated bounded Zap-owned runtime/lowering slices for numeric and generic collections, strings, options/errors, locals, function frames, and closure captures. A new `driver_compile_c_source()` path now promotes, lowers, validates, and emits C through the Zap-owned backend, with a dedicated CI gate. B4 is **not certified**: full production compiler ownership and clean multi-platform Rust-free seed provenance remain incomplete.
+
+The attached AI-native roadmap is adopted as the repository-level sequence: Phase 0 B4 certification; Phase 1 language/runtime reliability; Phase 2 developer experience; Phase 3 machine-readable AI interfaces; Phase 4 permission-aware agent tools; Phase 5 real-world applications; Phase 6 provider-neutral AI application contracts; and Phase 7 community/adoption. Existing CLI, LSP, package, Web, SQLite, and AI starter foundations are audited and extended rather than treated as production-complete by default.
+
+The latest overall CI run [42849365359](https://github.com/hidecard/zap/actions/runs/42849365359) passed all three C-backend platform jobs and cross-platform comparison, but failed the Rust-quality `run_zap()` portability smoke due to a Bash parse failure in `scripts/bootstrap/verify_b4_source_to_vm_break_payload_10.sh` and a leaked `.zap-c3-gate.7fFkJW` scratch artifact. This is the current engineering blocker; it does not change the B4 certification status.
 
 ## Current bootstrap ownership
 

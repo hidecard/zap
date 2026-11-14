@@ -24,7 +24,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 | Lockfile | `zap.lock` |
 | Runtime | Standalone native executable |
 | Platforms | Linux x86_64, Windows x86_64, macOS ARM64 |
-| Bootstrap stage | **B4 candidate** — Rust-free C backend acceptance implemented; three-platform evidence and production compiler migration pending (Schema v2) |
+| Bootstrap stage | **B4 candidate / not certified** — bounded Zap-owned C backend slices and three-platform C-backend evidence exist; full-language production ownership and certified Rust-free seed provenance remain pending |
 | Reference implementation | Rust native CLI/runtime remains the owner of complete semantics |
 | License | MIT |
 | Repository | [github.com/hidecard/zap](https://github.com/hidecard/zap) |
@@ -137,6 +137,8 @@ The language includes text, numbers, booleans, lists, maps, objects, functions, 
 
 ## Documentation
 
+Zap follows an AI-native development roadmap: first complete compiler correctness and B4 self-hosting, then strengthen language/runtime reliability, developer tooling, machine-readable project interfaces, permission-aware agent tools, real-world application workflows, provider-neutral AI contracts, and community adoption. The roadmap does not treat scaffolding as production readiness. See the [AI-native roadmap](docs/ROADMAP_EN.md), [remaining implementation plan](TODO_REMAINING_PLAN.md), and [current status](docs/CURRENT_STATUS_EN.md).
+
 | Need | Start here |
 |---|---|
 | Install and learn Zap from beginner to advanced | [English Language Guide](docs/LEARN_ZAP_EN.md) · [မြန်မာ Language Guide](docs/LEARN_ZAP_MM.md) |
@@ -185,9 +187,9 @@ The current stable direction covers the `.zp` language core, native CLI, project
 
 ### Bootstrap and self-hosting status
 
-Zap is at bootstrap stage **B4 candidate**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` is **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner. The B2 function fixtures cover one annotated function, return propagation, a compatible numeric call, and a stable incompatible-call diagnostic; they do not establish a general self-hosted compiler.
+Zap is at bootstrap stage **B4 candidate and not certified**. The Zap lexer/parser/type-checker/typed-IR work currently documented under `bootstrap/` remains **provisional and corpus-limited**: it provides differential evidence for selected fixtures, while the Rust native implementation remains the reference owner for complete semantics. Recent bounded Zap-owned backend slices cover numeric/generic collections, strings, options/errors, locals, function frames, and closure captures; these slices do not establish a general self-hosted compiler.
 
-The repository has extensive B4 verification infrastructure: a 19-row Schema v2 acceptance manifest, executable C backend fixtures, a three-platform CI matrix with emitted-C/stdout hash aggregation, a full acceptance matrix gate, artifact manifest checks, and evidence collection. B4 remains **not-certified**: B4-FULL-013..018 pass locally through the Rust-free Python-to-C backend path, while the Linux/Windows/macOS matrix for this revision and the migration of the reference Python lowering path into the Zap-owned B1..B4 production pipeline remain pending. The boundary and next steps are documented in `docs/SEED_PRODUCTION_PLAN.md`, `docs/B4_CONTRACT_REVISION_V2_EN.md`, and `bootstrap/evidence/b4/certification_evidence.md`.
+The repository has extensive B4 verification infrastructure: a 19-row Schema v2 acceptance manifest, executable C backend fixtures, a three-platform CI matrix with emitted-C/stdout hash aggregation, a full acceptance matrix gate, artifact manifest checks, and evidence collection. The latest overall CI run [42849365359](https://github.com/hidecard/zap/actions/runs/42849365359) passed the Linux/Windows/macOS C-backend jobs and cross-platform comparison, but the Rust-quality `run_zap()` portability smoke failed on a Bash parse error in `scripts/bootstrap/verify_b4_source_to_vm_break_payload_10.sh` and a leaked `.zap-c3-gate.7fFkJW` scratch artifact. B4 remains **not-certified** until that regression, full-language production ownership, and certified Rust-free seed provenance are resolved.
 
 Complete type inference, arbitrary-program parser and diagnostic parity, general typed-IR production, package/build ownership, VM execution ownership, and platform-seed acceptance remain future roadmap work. Do not interpret the current candidates as fully Zap-only or B4/self-hosted. The detailed boundary is maintained in the [Bootstrap Contract](docs/BOOTSTRAP_CONTRACT_EN.md), and broader product scope is tracked in the [language specification](docs/LANGUAGE_SPEC_EN.md), contracts, tests, and release notes.
 

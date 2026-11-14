@@ -1,8 +1,10 @@
 # Zap Remaining Work — Step-by-Step Plan
 
-**Baseline:** master @ `5c136b4`, latest release `v2.11.18`
-**Date:** 2026-10-21
-**Status:** B4 acceptance 19/19 remains declared pass and hosted current-master CI run `39204640666` is green; the local data-structure driver overflow is fixed and the full fixture now completes. B4 is still `not-certified` because the full Zap-owned production path and certified Rust-free three-platform seed provenance remain incomplete. Phase 1 reliability/specification/runtime/async/release gates remain complete; Phase 2 verification layers and `zap conformance` remain complete.
+**Baseline:** master @ `b5b5fa1`, latest release `v2.11.18`
+**Date:** 2026-11-14
+**Status:** B4 acceptance 19/19 remains declared pass and the C-backend Linux/Windows/macOS jobs plus cross-platform comparison pass on the latest master. B4 is still `not-certified` because full Zap-owned production ownership and certified Rust-free three-platform seed provenance remain incomplete. The overall CI run `42849365359` is currently red in the `run_zap()` portability smoke due to a Bash parse failure in `verify_b4_source_to_vm_break_payload_10.sh` and a leaked `.zap-c3-gate.7fFkJW` scratch file. Phase 1 reliability/specification/runtime/async/release gates remain largely complete; Phase 2–7 roadmap work is sequenced below.
+
+**Roadmap alignment:** The attached AI-native plan is adopted as the parent plan: Phase 0 B4 certification, Phase 1 language reliability, Phase 2 developer experience, Phase 3 AI-readable interfaces, Phase 4 permission-aware agent integration, Phase 5 real-world applications, Phase 6 AI application contracts, and Phase 7 community/adoption. Workstreams A–D map respectively to the existing audit/foundation, interface prototypes, integration/release verification, and application/ecosystem sections in this repository.
 
 ---
 

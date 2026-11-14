@@ -1,8 +1,15 @@
 # B4 Certification Action Plan
 
 **Created:** 2026-09-17
+**Last reviewed:** 2026-11-14 against master `b5b5fa1`
 **Status:** B4 remains `not-certified`
 **Goal:** B4-RUST-FREE-FULL-LANGUAGE contract → `certified`
+
+> **Roadmap position:** This is Phase 0 of the AI-native roadmap and is a hard prerequisite for the later reliability, developer-experience, AI-interface, agent, application, and adoption phases. Do not represent bounded backend slices or local acceptance as full self-hosting.
+
+### Current evidence correction (2026-11-14)
+
+The latest overall CI run [42849365359](https://github.com/hidecard/zap/actions/runs/42849365359) passed the Linux x86_64, Windows x86_64, and macOS ARM64 C-backend jobs and the cross-platform comparison. It did not produce a green overall CI result: the Rust-quality `run_zap()` portability smoke failed on a Bash parse error in `scripts/bootstrap/verify_b4_source_to_vm_break_payload_10.sh` and a leaked `.zap-c3-gate.7fFkJW` root scratch file. The B4 contract therefore remains `not-certified`; the CI regression is tracked separately from the certification blockers below.
 
 ---
 

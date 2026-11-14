@@ -6,6 +6,21 @@
 **Current branch:** `master`
 **Bootstrap stage:** B4 candidate (full-language and Rust-free seed certification remain open)
 
+### AI-native roadmap alignment (2026-11-14)
+
+The supplied AI-native roadmap is now the planning umbrella for this register. The execution order remains: **Phase 0 B4 self-hosting and certification → Phase 1 language/runtime reliability → Phase 2 developer experience → Phase 3 machine-readable AI interfaces → Phase 4 permission-aware agent tools → Phase 5 real-world applications → Phase 6 provider-neutral AI application contracts → Phase 7 community and adoption**. Existing work is reused rather than recreated.
+
+| Roadmap phase | Repository baseline | Next evidence-led outcome |
+|---|---|---|
+| Phase 0 | B4 is not certified; bounded Zap-owned backend slices and 19/19 local acceptance rows exist | Finish full-language ownership, Zap-produced seed provenance, and independent three-platform clean-environment evidence |
+| Phase 1 | Native runtime, async/resource, security, parity, and release gates are established | Fix current CI portability regressions and close remaining compiler/runtime conformance gaps |
+| Phase 2 | CLI, formatter, linter, LSP, package, and documentation foundations exist | Stabilize project workflows and machine-readable command contracts |
+| Phase 3 | `zap check --json` and structured artifact contracts exist | Define versioned diagnostics, context, inspection, and test-result schemas |
+| Phase 4 | No production MCP/tool server is claimed | Prototype read-only context/check tools first, then add explicit write/execute permissions |
+| Phase 5–7 | Web, SQLite, package, AI starter, examples, and community foundations exist | Validate representative applications, provider contracts, tutorials, and transparent adoption evidence |
+
+**Current hosted blocker:** CI run [42849365359](https://github.com/hidecard/zap/actions/runs/42849365359) passed the Linux, Windows, macOS C-backend jobs and cross-platform comparison, but failed the Rust-quality `run_zap()` portability smoke because `scripts/bootstrap/verify_b4_source_to_vm_break_payload_10.sh` has a Bash parse failure and the sweep leaked `.zap-c3-gate.7fFkJW`. This is an engineering blocker, not B4 certification evidence.
+
 ### Latest verification update (2026-10-20)
 
 - Latest `master` commit checked: `1e123a8` (`feat(self-hosting): start Zap-owned C backend migration`).
