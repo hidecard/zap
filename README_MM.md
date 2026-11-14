@@ -1,6 +1,6 @@
-﻿# Zap Programming Language
+﻿# Zap — AI-Native Programming Language
 
-![Zap Programming Language banner](assets/branding/zap-banner.png)
+![Zap AI-Native Programming Language banner](assets/branding/zap-banner.png)
 
 [![Zap CI](https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg)](https://github.com/hidecard/zap/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/hidecard/zap?display_name=tag&sort=semver&color=2ea44f)](https://github.com/hidecard/zap/releases/latest)
@@ -10,11 +10,11 @@
 
 **ဘာသာစကားရွေးချယ်ရန်:** [English README](README.md) · [မြန်မာ README](README_MM.md) · [မြန်မာ Documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) · [Zap Language Guide](docs/LEARN_ZAP_MM.md) · [Rust independence အသေးစိတ် TODO](docs/RUST_INDEPENDENCE_ROADMAP_MM.md)
 
-> **Zap** သည် `.zp` source file၊ indentation-based block၊ optional type check၊ explicit module၊ structured error နှင့် standalone native runtime ပါဝင်သော ဖတ်ရလွယ်ကူသည့် general-purpose programming language ဖြစ်ပါသည်။
+> **Zap** သည် `.zp` source file၊ indentation-based block၊ optional type check၊ explicit module၊ structured error နှင့် standalone native runtime ပါဝင်သော **AI-Native general-purpose programming language** ဖြစ်ပါသည်။ လူနှင့် AI agent နှစ်မျိုးလုံးက project ကို စစ်ဆေး၊ build၊ test၊ debug နှင့် maintain လုပ်နိုင်ရန် tools နှင့် project contract များကို ရည်ရွယ်တည်ဆောက်ထားပါသည်။
 
 Zap သည် native executable အဖြစ် ဖြန့်ချိထားသောကြောင့် install ပြီးနောက် application runtime အတွက် Python၊ Node.js၊ Java သို့မဟုတ် Rust ထပ်မလိုပါ။ HTML၊ CSS၊ plain JavaScript သို့မဟုတ် React၊ Vue၊ Svelte စသည့် frontend tool များ၏ build output ကို project `public/` directory ထဲ ထည့်ပြီး Zap ဖြင့် serve လုပ်နိုင်ပါသည်။
 
-## လက်ရှိ release
+## AI-Native Programming Language — လက်ရှိ Release
 
 | အချက် | အခြေအနေ |
 |---|---|
@@ -31,7 +31,7 @@ Zap သည် native executable အဖြစ် ဖြန့်ချိထာ�
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | လက်ရှိအခြေအနေ | [Canonical current-status page](docs/CURRENT_STATUS_MM.md) |
 
-## Install လုပ်ခြင်း
+## AI-Native Programming Language ကို Install လုပ်ခြင်း
 
 Zap ၏ AI-native roadmap သည် Phase 0 B4 self-hosting/certification ကို အရင်ဆုံးပြီးစီးစေပြီး၊ ထို့နောက် language/runtime reliability၊ developer experience၊ machine-readable AI interface၊ permission-aware agent tools၊ real-world application၊ provider-neutral AI contract နှင့် community/adoption အဆင့်များသို့ ဆက်သွားမည်ဖြစ်သည်။ လက်ရှိ B4 သည် မပြီးစီးသေးသောကြောင့် scaffold သို့မဟုတ် bounded backend slice ကို production-ready ဟု မယူဆရပါ။ အသေးစိတ်ကို [Roadmap](docs/ROADMAP_EN.md)၊ [TODO](TODO.md) နှင့် [လက်ရှိအခြေအနေ](docs/CURRENT_STATUS_MM.md) တွင် ကြည့်နိုင်ပါသည်။
 
@@ -120,7 +120,7 @@ zap hello.zp
 zap run hello.zp
 ```
 
-## Language Guide နှင့် Documentation
+## AI-Native Developer Documentation နှင့် Language Guide
 
 | လိုအပ်ချက် | စတင်ဖတ်ရန် |
 |---|---|
@@ -176,7 +176,7 @@ Repository တွင် extensive B4 verification infrastructure ရှိပါ
 Complete ORM၊ provider-neutral production migration platform၊ user-defined trait syntax၊ production async I/O reactor၊ cross-file semantic rename၊ template compiler နှင့် hidden app registry တို့ကို complete ဟု မဆိုထားသေးပါ။
 
 
-## Development
+## Development နှင့် AI-Agent Contribution Workflow
 
 Zap runtime ကို Rust ဖြင့် တည်ဆောက်ထားပါသည်။ Source မှ build လုပ်ရန် `rust-toolchain.toml` တွင် သတ်မှတ်ထားသော toolchain ကို install ပြီး—
 
@@ -194,4 +194,3 @@ Local validation မစတင်မီ `make doctor` ကို run လုပ်�
 ## License
 
 Zap ကို [MIT License](LICENSE) အောက်တွင် ဖြန့်ချိထားပါသည်။
-

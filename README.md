@@ -1,6 +1,6 @@
-# Zap Programming Language
+# Zap — AI-Native Programming Language
 
-![Zap Programming Language banner](assets/branding/zap-banner.png)
+![Zap AI-Native Programming Language banner](assets/branding/zap-banner.png)
 
 [![Zap CI](https://github.com/hidecard/zap/actions/workflows/ci.yml/badge.svg)](https://github.com/hidecard/zap/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/hidecard/zap?display_name=tag&sort=semver&color=2ea44f)](https://github.com/hidecard/zap/releases/latest)
@@ -10,11 +10,11 @@
 
 **Documentation:** [English](README.md) · [မြန်မာ](README_MM.md) · [Documentation hub](docs/DOCUMENTATION_NAVIGATION_EN.md) · [Language Guide](docs/LEARN_ZAP_EN.md)
 
-> **Zap** is a readable, general-purpose programming language with `.zp` source files, indentation-based blocks, optional type checking, explicit modules, structured errors, and a standalone native runtime.
+> **Zap** is an AI-native, readable general-purpose programming language with `.zp` source files, indentation-based blocks, optional type checking, explicit modules, structured errors, and a standalone native runtime. Its tools and project contracts are designed so both people and AI agents can inspect, build, test, debug, and maintain Zap projects reliably.
 
 Zap is distributed as a native executable. After Zap is installed, a project can be created, checked, built, tested, and served without installing Python, Node.js, Java, or Rust as application runtime dependencies. HTML, CSS, plain JavaScript, or the built output of React, Vue, Svelte, and other frontend tools can be placed under the project’s `public/` directory and served by Zap.
 
-## Current release
+## AI-Native Programming Language — Current Release
 
 | Item | Status |
 |---|---|
@@ -31,7 +31,7 @@ Zap is distributed as a native executable. After Zap is installed, a project can
 | Releases | [GitHub Releases](https://github.com/hidecard/zap/releases) |
 | Current status | [Canonical current-status page](docs/CURRENT_STATUS_EN.md) |
 
-## Install
+## Install the AI-Native Programming Language
 
 Download the archive matching your operating system and CPU architecture from the [v2.11.18 release page](https://github.com/hidecard/zap/releases/tag/v2.11.18), verify its checksum and signature, extract it, and place the `zap` executable on `PATH`.
 
@@ -66,7 +66,7 @@ zap.exe --version
 
 If you do not have administrator access, keep the executable in a user-owned directory and add that directory to `PATH`. The [complete Language Guide](docs/LEARN_ZAP_EN.md) contains platform-specific installation and verification details.
 
-## Create a project with one command
+## Create an AI-Native Zap Project
 
 Zap intentionally uses a simple, user-managed project workflow. There is no Django-style `startapp` command and no hidden app registry.
 
@@ -101,7 +101,7 @@ my_app/
 
 These are ordinary user-owned directories. Add, remove, rename, and organize modules directly inside the project as it grows. Use `models/` for data shape and validation, `functions/` for business logic, `ui/` for browser UI metadata, `routes/` for HTTP routes, `middleware/` for request/response policy, `migrations/` for schema changes, `admin/` for optional administration registrations, `public/` for browser assets, and `tests/` for executable checks.
 
-## First Zap program
+## First Zap Program
 
 Create `hello.zp`:
 
@@ -120,7 +120,7 @@ zap hello.zp
 zap run hello.zp
 ```
 
-## Language at a glance
+## Language at a Glance
 
 ```zap
 let scores: list<number> = [80, 45, 90]
@@ -135,7 +135,7 @@ for score in scores:
 
 The language includes text, numbers, booleans, lists, maps, objects, functions, classes, inheritance, optional annotations, closures, explicit modules, JSON, `Result`/`Option`, default and named arguments, bounded asynchronous tasks, and deterministic diagnostics.
 
-## Documentation
+## AI-Native Developer Documentation
 
 Zap follows an AI-native development roadmap: first complete compiler correctness and B4 self-hosting, then strengthen language/runtime reliability, developer tooling, machine-readable project interfaces, permission-aware agent tools, real-world application workflows, provider-neutral AI contracts, and community adoption. The roadmap does not treat scaffolding as production readiness. See the [AI-native roadmap](docs/ROADMAP_EN.md), [remaining implementation plan](TODO_REMAINING_PLAN.md), and [current status](docs/CURRENT_STATUS_EN.md).
 
@@ -152,7 +152,7 @@ Zap follows an AI-native development roadmap: first complete compiler correctnes
 | Roadmap and planning | [Roadmap](docs/ROADMAP_EN.md) · [Repository structure](docs/REPO_STRUCTURE.md) · [B4 certification plan](docs/B4_CERTIFICATION_ACTION_PLAN.md) · [Database strategy](docs/DATABASE_PROVIDER_STRATEGY_EN.md) · [Adoption tracker](docs/M7_ADOPTION_TRACKER.md) |
 | Burmese documentation navigation | [မြန်မာ documentation hub](docs/DOCUMENTATION_NAVIGATION_MM.md) |
 
-## CLI essentials
+## AI-Native CLI Essentials
 
 ```bash
 zap file.zp                 # run a source file
@@ -171,7 +171,7 @@ zap dev                     # start the bounded development server
 zap --help                  # show all commands
 ```
 
-## Frontend integration
+## Application and Frontend Integration
 
 Plain HTML, CSS, and JavaScript work without a JavaScript runtime in production:
 
@@ -181,7 +181,7 @@ Plain HTML, CSS, and JavaScript work without a JavaScript runtime in production:
 
 A React, Vue, Svelte, or other frontend project may be built separately and its output copied into `public/`. Zap serves the resulting files; it does not require npm or Node.js at deployment time. Keep API route declarations in `routes/` and browser assets in `public/` as described in the [frontend integration guide](docs/FRONTEND_INTEGRATION_EN.md).
 
-## What is implemented and what is deferred
+## What Is Implemented and What Is Deferred
 
 The current stable direction covers the `.zp` language core, native CLI, project manifests and lockfiles, typed checks, modules, classes, Result/Option, JSON, tests, formatter/linter, structured diagnostics, LSP foundations, a user-managed Web scaffold, bounded native Web serving, and SQLite-first migration contracts.
 
@@ -195,7 +195,7 @@ Complete type inference, arbitrary-program parser and diagnostic parity, general
 
 A complete ORM, provider-neutral production migration platform, user-defined trait syntax, production asynchronous I/O reactor, cross-file semantic rename, template compiler, and hidden app registry are not claimed as complete. Their status is tracked in the same specification and release documentation.
 
-## Development
+## Development and AI-Agent Contribution Workflow
 
 Zap itself is implemented in Rust. To build the runtime from source, install the pinned toolchain described by `rust-toolchain.toml`, then run:
 
