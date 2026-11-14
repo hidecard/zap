@@ -100,7 +100,7 @@
 ### ကိုးကားချက်
 - [Language Specification](LANGUAGE_SPEC_MM.md) - Sections 6-10
 - [Standard Library Index](STDLIB_INDEX_MM.md)
-- [Package Guide](PACKAGE_MM.md)
+- [Package Guide](PACKAGE.md)
 
 ---
 
@@ -239,20 +239,20 @@
 ### Learning Materials
 - [Learn Zap](LEARN_ZAP_MM.md)
 - [Examples](../examples/)
-- [Syntax Guide](SYNTAX_GUIDE_MM.md)
-- [Language Guide](LANGUAGE_GUIDE_MM.md)
+- [Syntax Guide](SYNTAX_GUIDE.md)
+- [Language Guide](LANGUAGE_GUIDE.md)
 
 ### Developer Tools
 - [VS Code Extension](../vscode-extension/)
 - [LSP Guide](ASYNC_LSP_MM.md)
 - [Debugging Guide](RUNTIME_STATE_MM.md)
-- [Testing Guide](../examples/testing/)
+- [Testing Example](../examples/testing.zp)
 
 ### Community
 - [GitHub Issues](https://github.com/hidecard/zap/issues)
-- [Contributing Guide](CONTRIBUTING.md)
-- [RFC Template](RFC_TEMPLATE.md)
-- [Security Policy](SECURITY.md)
+- [Contributing Guide](../CONTRIBUTING.md)
+- [RFC Template](../RFC_TEMPLATE.md)
+- [Security Policy](../SECURITY.md)
 
 ---
 

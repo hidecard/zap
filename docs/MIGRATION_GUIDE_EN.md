@@ -160,7 +160,7 @@ scripts/test_p001_parity.sh
 
 ## v0.x to v2.0.x
 
-**Release:** [v2.0.0](RELEASE_2.0.0_EN.md)
+**Release:** [v2.11.18 release notes](RELEASE_2.11.18_EN.md)
 
 ### Breaking Changes
 

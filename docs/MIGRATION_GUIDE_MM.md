@@ -160,7 +160,7 @@ scripts/test_p001_parity.sh
 
 ## v0.x မှ v2.0.x
 
-**ထုတ်ဝေမှု:** [v2.0.0](RELEASE_2.0.0_MM.md)
+**ထုတ်ဝေမှု:** [v2.0.0](https://github.com/hidecard/zap/releases/tag/v2.0.0)
 
 ### Breaking Changes
 

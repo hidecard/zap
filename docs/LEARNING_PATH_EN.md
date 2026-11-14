@@ -246,13 +246,13 @@ This guide provides a structured learning path from beginner to advanced Zap pro
 - [VS Code Extension](../vscode-extension/)
 - [LSP Guide](ASYNC_LSP_EN.md)
 - [Debugging Guide](RUNTIME_STATE_EN.md)
-- [Testing Guide](../examples/testing/)
+- [Testing Example](../examples/testing.zp)
 
 ### Community
 - [GitHub Issues](https://github.com/hidecard/zap/issues)
-- [Contributing Guide](CONTRIBUTING.md)
-- [RFC Template](RFC_TEMPLATE.md)
-- [Security Policy](SECURITY.md)
+- [Contributing Guide](../CONTRIBUTING.md)
+- [RFC Template](../RFC_TEMPLATE.md)
+- [Security Policy](../SECURITY.md)
 
 ---
 
